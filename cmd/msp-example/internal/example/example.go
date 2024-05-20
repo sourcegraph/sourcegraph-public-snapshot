@@ -1,12 +1,20 @@
 package example
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/background"
@@ -42,17 +50,17 @@ func (s Service) Initialize(
 		if err := initPostgreSQL(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "initPostgreSQL")
 		}
-		logger.Info("postgresql database configured")
+		logger.Info("postgresql connection success")
 
 		if err := writeBigQueryEvent(ctx, contract, "service.initialized"); err != nil {
 			return nil, errors.Wrap(err, "writeBigQueryEvent")
 		}
-		logger.Info("bigquery connection checked")
+		logger.Info("bigquery connection success")
 
 		if err := testRedisConnection(ctx, contract); err != nil {
 			return nil, errors.Wrap(err, "newRedisConnection")
 		}
-		logger.Info("redis connection checked")
+		logger.Info("redis connection success")
 	}
 
 	requestCounter, err := getRequestCounter()
@@ -65,7 +73,67 @@ func (s Service) Initialize(
 		requestCounter.Add(r.Context(), 1)
 		_, _ = w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
 	}))
-	contract.RegisterDiagnosticsHandlers(h, serviceState{
+	// Test endpoint for making CURL requests to arbitrary targets from this
+	// service, for testing networking. Requires diagnostic auth.
+	h.Handle("/proxy", contract.Diagnostics.DiagnosticsAuthMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			host := r.URL.Query().Get("host")
+			if host == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("query parameter 'host' is required"))
+				return
+			}
+			hostURL, err := url.Parse(host)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			path := r.URL.Query().Get("path")
+			if path == "" {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("query parameter 'path' is required"))
+				return
+			}
+
+			insecure, _ := strconv.ParseBool(r.URL.Query().Get("insecure"))
+
+			// Copy the request body and build the request
+			defer r.Body.Close()
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+			proxiedRequest, err := http.NewRequest(r.Method, "/"+path, bytes.NewReader(body))
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			// Copy relevant request headers after stripping their prefixes
+			for k, vs := range r.Header {
+				if strings.HasPrefix(k, "X-Proxy-") {
+					for _, v := range vs {
+						proxiedRequest.Header.Add(strings.TrimPrefix(k, "X-Proxy-"), v)
+					}
+				}
+			}
+
+			// Send to target
+			proxy := httputil.NewSingleHostReverseProxy(hostURL)
+			if insecure {
+				customTransport := http.DefaultTransport.(*http.Transport).Clone()
+				customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+				proxy.Transport = customTransport
+			}
+			proxy.ServeHTTP(w, proxiedRequest)
+		}),
+	))
+	contract.Diagnostics.RegisterDiagnosticsHandlers(h, serviceState{
 		statelessMode: config.StatelessMode,
 		contract:      contract,
 	})
@@ -74,8 +142,20 @@ func (s Service) Initialize(
 		&httpRoutine{
 			log: logger,
 			Server: &http.Server{
-				Addr:    fmt.Sprintf(":%d", contract.Port),
-				Handler: h,
+				Addr: fmt.Sprintf(":%d", contract.Port),
+				Handler: otelhttp.NewHandler(h, "http",
+					otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+						// If incoming, just include the path since our own host is not
+						// very interesting. If outgoing, include the host as well.
+						target := r.URL.Path
+						if r.RemoteAddr == "" { // no RemoteAddr indicates this is an outgoing request
+							target = r.Host + target
+						}
+						if operation != "" {
+							return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
+						}
+						return fmt.Sprintf("%s %s", r.Method, target)
+					})),
 			},
 		},
 	}, nil

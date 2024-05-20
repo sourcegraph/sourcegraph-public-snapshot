@@ -23,6 +23,7 @@ import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/sh
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
@@ -94,6 +95,7 @@ export interface V2SearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
+        TelemetryV2Props,
         Pick<SuggestionsSourceConfig, 'authenticatedUser' | 'isSourcegraphDotCom'> {
     submitSearch(parameters: Partial<SubmitSearchParameters>): void
 }
@@ -111,6 +113,7 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     visualMode,
     onFocus,
     onBlur,
+    telemetryRecorder,
     ...inputProps
 }) => {
     const { recentSearches } = useRecentSearches()
@@ -171,6 +174,20 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
                     type: option.kind,
                     source,
                 })
+                switch (action.type) {
+                    case 'command': {
+                        telemetryRecorder.recordEvent('search.input.command', 'select')
+                        break
+                    }
+                    case 'completion': {
+                        telemetryRecorder.recordEvent('search.input.completion', 'select')
+                        break
+                    }
+                    case 'goto': {
+                        telemetryRecorder.recordEvent('search.input.goto', 'select')
+                        break
+                    }
+                }
             }),
             Prec.low(
                 exampleSuggestions({
@@ -180,7 +197,7 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
                 })
             ),
         ],
-        [telemetryService, addExample]
+        [telemetryService, telemetryRecorder, addExample]
     )
 
     return (

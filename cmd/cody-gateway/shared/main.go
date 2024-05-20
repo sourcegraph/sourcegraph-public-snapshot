@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -142,7 +143,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
 		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken)
+		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken, cfg.Dotcom.ClientID, cfg.Environment)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
@@ -163,15 +164,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Sources:     sources,
 	}
 
+	// Prompt recorder to save flagged requests temporarily, in case they are
+	// needed to understand ongoing spam/abuse waves.
+	promptRecorder := &dotcomPromptRecorder{
+		redis:      redisCache,
+		ttlSeconds: int(cfg.Dotcom.FlaggedPromptRecorderTTL.Seconds()),
+	}
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr,
-		&dotcomPromptRecorder{
-			// TODO: Make configurable
-			ttlSeconds: 60 * // minutes
-				60,
-			redis: redisCache,
-		},
+	handler, err := httpapi.NewHandler(
+		obctx.Logger, eventLogger, rs, httpClient, authr,
+		promptRecorder,
 		&httpapi.Config{
 			RateLimitNotifier:           rateLimitNotifier,
 			Anthropic:                   cfg.Anthropic,
@@ -180,14 +184,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			EmbeddingsAllowedModels:     cfg.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses: cfg.AutoFlushStreamingResponses,
 			EnableAttributionSearch:     cfg.Attribution.Enabled,
+			Sourcegraph:                 cfg.Sourcegraph,
 		},
 		dotcomClient)
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
-
-	// Diagnostic layers
+	// Diagnostic and Maintenance layers, exposing additional APIs and endpoints.
 	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, cfg.DiagnosticsSecret, sources)
+	handler = httpapi.NewMaintenanceHandler(obctx.Logger, handler, cfg, redisCache)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of Cody Gateway. This comes first.
@@ -322,19 +327,24 @@ type dotcomPromptRecorder struct {
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com
-	if !actor.FromContext(ctx).IsDotComActor() {
+	// Only log prompts from Sourcegraph.com.
+	reqActor := actor.FromContext(ctx)
+	if !reqActor.IsDotComActor() {
 		return errors.New("attempted to record prompt from non-dotcom actor")
 	}
-	// Must expire entries
-	if p.ttlSeconds == 0 {
+
+	// Require entries expire.
+	if p.ttlSeconds <= 0 {
 		return errors.New("prompt recorder must have TTL")
 	}
-	// Always use trace ID as traceID - each trace = 1 request, and we always record
-	// it in our entries.
+
+	// Encode the traceID as a way to map it to the original request.
 	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
-	if traceID == "" {
-		return errors.New("prompt recorder requires a trace context")
+	feature := featurelimiter.GetFeature(ctx)
+	if traceID == "" || feature == "" || reqActor.ID == "" {
+		return errors.New("prompt recorder requires a trace, feature, and actor ID")
 	}
-	return p.redis.SetEx(fmt.Sprintf("prompt:%s", traceID), p.ttlSeconds, prompt)
+
+	key := fmt.Sprintf("prompt:%s:%s:%s", traceID, feature, reqActor.ID)
+	return p.redis.SetEx(key, p.ttlSeconds, prompt)
 }

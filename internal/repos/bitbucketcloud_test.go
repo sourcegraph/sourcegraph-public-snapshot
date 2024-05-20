@@ -80,6 +80,20 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			err: "<nil>",
 		},
 		{
+			name: "with repos",
+			assert: assertAllReposListed([]string{
+				"/sourcegraph-testing/src-cli",
+			}),
+			conf: &schema.BitbucketCloudConnection{
+				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
+				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Repos: []string{
+					"sourcegraph-testing/src-cli",
+				},
+			},
+			err: "<nil>",
+		},
+		{
 			name: "with access token",
 			assert: assertAllReposListed([]string{
 				"/sourcegraph-source/src-cli",

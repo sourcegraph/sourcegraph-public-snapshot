@@ -11,11 +11,13 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/executor",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

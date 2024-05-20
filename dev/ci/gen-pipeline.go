@@ -79,12 +79,34 @@ func main() {
 	}
 }
 
+func isAspectWorkflowsEnabled() bool {
+	value, ok := os.LookupEnv("DISABLE_ASPECT_WORKFLOWS")
+	if ok && value == "true" {
+		return false
+	}
+
+	return true
+}
+
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "- **Detected run type:** %s\n", c.RunType.String())
 	fmt.Fprintf(w, "- **Detected diffs:** %s\n", c.Diff.String())
 	fmt.Fprintf(w, "- **Computed variables:**\n")
 	fmt.Fprintf(w, "  - VERSION=%s\n", c.Version)
 	fmt.Fprintf(w, "- **Computed build steps:**\n")
+
+	if c.RunType != runtype.BazelDo && isAspectWorkflowsEnabled() {
+		// The reason we hard code the Aspect steps here is because we have no control over the Aspect steps
+		// that get generated, so we rather just specify that there will be Aspect Workflow steps instead of
+		// running the risk of hardcoding all the steps and the rendered steps getting out of sync with what
+		// is ACTUALLY running on the agent.
+		steps := []any{&buildkite.Pipeline{
+			Group: buildkite.Group{Group: "Aspect Workflow specific steps"},
+			Steps: []any{&buildkite.Step{Label: "🤖 Generated steps that include Buildifier, Gazelle, Test and Integration/E2E tests"}},
+		}}
+		// Flipping the order so that the Aspect steps appear first
+		pipeline.Steps = append(steps, pipeline.Steps...)
+	}
 	printPipeline(w, "", pipeline)
 }
 
@@ -123,7 +145,7 @@ func renderPipelineDocs(logger log.Logger, w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
 	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
 	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
-	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://sourcegraph.com/docs/dev/background-information/ci).")
+	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs-legacy.sourcegraph.com/dev/background-information/ci).")
 
 	fmt.Fprintln(w, "\n## Run types")
 

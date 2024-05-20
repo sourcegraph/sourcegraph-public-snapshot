@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"fmt"
+
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,6 +28,14 @@ type ServiceSpec struct {
 	// in a public-facing document. For now, this is used for reference in the
 	// private service spec and for internal integrations like Opsgenie.
 	Description string `yaml:"description"`
+	// NotionPageID is the unique Notion ID representing the page that should
+	// be populated with generated MSP operational guidance for this service
+	// and its environments. This page is owned by the MSP doc generator - any
+	// manual changes will be periodically overwritten.
+	//
+	// If not provided, no operational guidance will be generated for this
+	// service.
+	NotionPageID *string `yaml:"notionPageID,omitempty"`
 
 	// Kind is the type of the service, either 'service' or 'job'. Defaults to
 	// 'service'.
@@ -79,6 +89,18 @@ func (s ServiceSpec) Validate() []error {
 	}
 
 	return errs
+}
+
+// GetHandbookPageURL returns the public URL of the Notion page that is populated
+// with operational guidance for this service for embedding in docs or help
+// text.
+//
+// If no NotionPageID is configured, this returns a warning message instead.
+func (s ServiceSpec) GetHandbookPageURL() string {
+	if s.NotionPageID == nil {
+		return fmt.Sprintf("<%s service spec does not have a notionPageID configured for generated docs>", s.ID)
+	}
+	return fmt.Sprintf("https://sourcegraph.notion.site/%s", *s.NotionPageID)
 }
 
 type ServiceProtocol string

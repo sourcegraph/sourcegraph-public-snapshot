@@ -1,8 +1,6 @@
-include: ./sourcegraph-base.yaml
+include: ./sourcegraph-template.yaml
 
 contents:
   packages:
     ## node-exporter-specific packages
     - prometheus-node-exporter
-
-# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

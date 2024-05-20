@@ -4,11 +4,11 @@ import type { FetchResult } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { logger, renderMarkdown } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H3, H4, Markdown, PageHeader } from '@sourcegraph/wildcard'
 
-import type { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
+import type { AddExternalServiceInput, AddExternalServiceResult, ExternalServiceKind } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
@@ -24,6 +24,27 @@ interface Props extends TelemetryProps, TelemetryV2Props {
 
     /** For testing only. */
     autoFocusForm?: boolean
+}
+
+const v2ExternalServiceKinds: { [key in ExternalServiceKind]: number } = {
+    AWSCODECOMMIT: 1,
+    AZUREDEVOPS: 2,
+    BITBUCKETCLOUD: 3,
+    BITBUCKETSERVER: 4,
+    GERRIT: 5,
+    GITHUB: 6,
+    GITLAB: 7,
+    GITOLITE: 8,
+    GOMODULES: 9,
+    JVMPACKAGES: 10,
+    NPMPACKAGES: 11,
+    OTHER: 12,
+    PAGURE: 13,
+    PERFORCE: 14,
+    PHABRICATOR: 15,
+    PYTHONPACKAGES: 16,
+    RUBYPACKAGES: 17,
+    RUSTPACKAGES: 18,
 }
 
 /**
@@ -44,8 +65,10 @@ export const AddExternalServicePage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
-        telemetryRecorder.recordEvent('admin.externalServices.add', 'view')
-    }, [telemetryService, telemetryRecorder])
+        telemetryRecorder.recordEvent('admin.codeHostConnections.add', 'view', {
+            metadata: { kind: v2ExternalServiceKinds[externalService.kind] },
+        })
+    }, [telemetryService, telemetryRecorder, externalService.kind])
 
     useEffect(() => {
         setConfig(externalService.defaultConfig)
@@ -82,7 +105,7 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
                 onCompleted: data => {
                     telemetryService.log('AddExternalServiceSucceeded')
-                    telemetryRecorder.recordEvent('admin.externalServices.add', 'success')
+                    telemetryRecorder.recordEvent('admin.codeHostConnections.add', 'success')
                     refreshSiteFlags(client).catch((error: Error) => logger.error(error))
 
                     // Only navigates to the new code host connection information page if the token is valid
@@ -92,7 +115,7 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
                 onError: () => {
                     telemetryService.log('AddExternalServiceFailed')
-                    telemetryRecorder.recordEvent('admin.externalServices.add', 'fail')
+                    telemetryRecorder.recordEvent('admin.codeHostConnections.add', 'fail')
                 },
             })
         },

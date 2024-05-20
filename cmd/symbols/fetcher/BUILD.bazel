@@ -9,6 +9,7 @@ go_library(
         "repository_fetcher.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/symbols/gitserver",
@@ -29,9 +30,11 @@ go_test(
         "repository_fetcher_test.go",
     ],
     embed = [":fetcher"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//cmd/symbols/gitserver",
         "//internal/api",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",

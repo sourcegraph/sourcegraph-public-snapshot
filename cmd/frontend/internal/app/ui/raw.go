@@ -20,10 +20,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Examples:
@@ -75,7 +76,7 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err := newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
+		common, err := newCommon(w, r, db, conf.Branding().BrandName, noIndex, serveError)
 		if err != nil {
 			return err
 		}
@@ -258,13 +259,21 @@ func serveRaw(logger log.Logger, db database.DB, gitserverClient gitserver.Clien
 
 			if fi.IsDir() {
 				requestType = "dir"
-				infos, err := gitserverClient.ReadDir(r.Context(), common.Repo.Name, common.CommitID, requestedPath, false)
+				it, err := gitserverClient.ReadDir(r.Context(), common.Repo.Name, common.CommitID, requestedPath, false)
 				if err != nil {
 					return err
 				}
-				size = int64(len(infos))
+				defer it.Close()
+
 				var names []string
-				for _, info := range infos {
+				for {
+					info, err := it.Next()
+					if err != nil {
+						if errors.Is(err, io.EOF) {
+							break
+						}
+						return err
+					}
 					// A previous version of this code returned relative paths so we trim the paths
 					// here too so as not to break backwards compatibility
 					name := path.Base(info.Name())

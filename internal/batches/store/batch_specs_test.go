@@ -28,7 +28,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 	batchSpecs := make([]*btypes.BatchSpec, 0, 4)
 
 	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(batchSpecs); i++ {
+		for i := range cap(batchSpecs) {
 			// only the fourth batch spec should be locally-created
 			createdFromRaw := i != 3
 			// only the third batch spec should be 'empty'
@@ -182,7 +182,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
 			}
 
-			for i := 0; i < len(have); i++ {
+			for i := range len(have) {
 				haveID, wantID := int(have[i].ID), len(have)-i
 				if haveID != wantID {
 					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
@@ -201,7 +201,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
 			}
 
-			for i := 0; i < len(have); i++ {
+			for i := range len(have) {
 				haveID, wantID := int(have[i].ID), i+1
 				if haveID != wantID {
 					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
@@ -710,7 +710,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+	s := NewWithClock(db, observation.TestContextTB(t), nil, c.Now)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
@@ -780,7 +780,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 
 		// Workspaces without execution job
-		for i := 0; i < setup.additionalWorkspace; i++ {
+		for range setup.additionalWorkspace {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 				t.Fatal(err)
@@ -788,7 +788,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 
 		// Workspaces with cached result
-		for i := 0; i < setup.additionalCachedWorkspace; i++ {
+		for range setup.additionalCachedWorkspace {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, CachedResultFound: true}
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 				t.Fatal(err)
@@ -797,7 +797,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 		// Workspaces without execution job and skipped
 		if setup.additionalSkippedWorkspace > 0 {
-			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
+			for range setup.additionalSkippedWorkspace {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,
@@ -885,7 +885,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, observation.TestContextTB(t), nil)
 
 	// Create two repos, one of which will be visible to everyone, and one which
 	// won't be.

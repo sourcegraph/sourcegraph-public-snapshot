@@ -12,9 +12,9 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -144,6 +144,10 @@ type SymbolsParameters struct {
 type SymbolsResponse struct {
 	Symbols result.Symbols `json:"symbols,omitempty"`
 	Err     string         `json:"error,omitempty"`
+
+	// LimitHit is true if the search results are incomplete due to limits
+	// imposed by the service.
+	LimitHit bool `json:"limitHit,omitempty"`
 }
 
 type IndexedRequestType string
@@ -181,24 +185,21 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 
 	defaultTimeout := 20 * time.Second
 	searchOpts = &zoekt.SearchOptions{
-		Trace:             policy.ShouldTrace(ctx),
-		MaxWallTime:       defaultTimeout,
-		ChunkMatches:      true,
-		UseKeywordScoring: o.PatternType == query.SearchTypeCodyContext,
-		NumContextLines:   o.NumContextLines,
+		Trace:           policy.ShouldTrace(ctx),
+		MaxWallTime:     defaultTimeout,
+		ChunkMatches:    true,
+		UseBM25Scoring:  o.PatternType == query.SearchTypeCodyContext,
+		NumContextLines: o.NumContextLines,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
 	// replica respectively.
 	searchOpts.ShardMaxMatchCount = 10_000
 	searchOpts.TotalMaxMatchCount = 100_000
-	// KeywordScoring and Features.UseZoektParser represent different approaches we
-	// are evaluating to deliver a better keyword-based search experience. For now
-	// these are separate, but we might combine them in the future. Both profit from
-	// higher defaults.
-	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeKeyword {
-		// Keyword searches tends to match much more broadly than code searches, so we need to
-		// consider more candidates to ensure we don't miss highly-ranked documents
+	// Keyword searches tends to match much more broadly than code searches, so we need to
+	// consider more candidates to ensure we don't miss highly-ranked documents. The same
+	// holds for BM25 scoring, which is used for Cody context searches.
+	if searchOpts.UseBM25Scoring || o.PatternType == query.SearchTypeKeyword {
 		searchOpts.ShardMaxMatchCount *= 10
 		searchOpts.TotalMaxMatchCount *= 10
 	}
@@ -228,7 +229,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 
 	// This enables our stream based ranking, where we wait a certain amount
 	// of time to collect results before ranking.
-	searchOpts.FlushWallTime = conf.SearchFlushWallTime(searchOpts.UseKeywordScoring)
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(searchOpts.UseBM25Scoring)
 
 	// Only use document ranks if the jobs to calculate the ranks are enabled. This
 	// is to make sure we don't use outdated ranks for scoring in Zoekt.
@@ -397,6 +398,15 @@ type Features struct {
 	// options. This should be used for quick interactive experiments only. An
 	// invalid JSON string or unknown fields will be ignored.
 	ZoektSearchOptionsOverride string
+
+	// Experimental fields for Cody context search, for internal use only.
+	CodyContextCodeCount int `json:"-"`
+	CodyContextTextCount int `json:"-"`
+
+	// CodyFileMatcher is used to pass down "Cody ignore" filters. This matcher returns true if
+	// the given repo and path are allowed to be returned. NOTE: we should eventually switch
+	// to standard repo and file filters instead of having this custom 'postfiltering' logic.
+	CodyFileMatcher func(repo api.RepoID, path string) bool `json:"-"`
 }
 
 func (f *Features) String() string {

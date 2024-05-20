@@ -10,12 +10,14 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/shared/trie",
         "//internal/codeintel/uploads/shared",
+        "//internal/collections",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",
@@ -42,6 +44,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":lsifstore"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],

@@ -3,6 +3,7 @@ package policies
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -71,45 +72,63 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		}, nil
 	}
 
-	refDescriptions := func(ctx context.Context, repo api.RepoName, _ ...string) (map[string][]gitdomain.RefDescription, error) {
-		refDescriptions := map[string][]gitdomain.RefDescription{}
+	refs := func(ctx context.Context, repo api.RepoName, _ gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
+		refs := []gitdomain.Ref{}
 		for branch, commit := range branchHeads {
 			branchHeadCreateDate := createdAt[commit]
-			refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-				Name:            branch,
-				Type:            gitdomain.RefTypeBranch,
-				IsDefaultBranch: branch == defaultBranchName,
-				CreatedDate:     &branchHeadCreateDate,
+			refs = append(refs, gitdomain.Ref{
+				Name:        "refs/heads/" + branch,
+				ShortName:   branch,
+				Type:        gitdomain.RefTypeBranch,
+				IsHead:      branch == defaultBranchName,
+				CreatedDate: branchHeadCreateDate,
+				CommitID:    api.CommitID(commit),
 			})
 		}
 
 		for tag, commit := range tagHeads {
 			tagCreateDate := createdAt[commit]
-			refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-				Name:        tag,
+			refs = append(refs, gitdomain.Ref{
+				Name:        "refs/tags/" + tag,
+				ShortName:   tag,
 				Type:        gitdomain.RefTypeTag,
-				CreatedDate: &tagCreateDate,
+				CreatedDate: tagCreateDate,
+				CommitID:    api.CommitID(commit),
 			})
 		}
 
-		return refDescriptions, nil
+		return refs, nil
 	}
 
-	commitsUniqueToBranch := func(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error) {
-		branches := map[string]time.Time{}
-		for _, commit := range branchMembers[branchName] {
-			if maxAge == nil || !createdAt[commit].Before(*maxAge) {
-				branches[commit] = createdAt[commit]
+	commits := func(ctx context.Context, repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		commits := []*gitdomain.Commit{}
+		for _, commit := range branchMembers[opts.Ranges[0][strings.Index(opts.Ranges[0], "..")+2:]] {
+			c := &gitdomain.Commit{
+				ID: api.CommitID(commit),
+				Committer: &gitdomain.Signature{
+					Date: createdAt[commit],
+				},
+			}
+			if opts.After == "" {
+				commits = append(commits, c)
+			} else {
+				after, err := time.Parse(time.RFC3339, opts.After)
+				if err != nil {
+					return nil, err
+				}
+				if !createdAt[commit].Before(after) {
+					commits = append(commits, c)
+				}
 			}
 		}
 
-		return branches, nil
+		return commits, nil
 	}
 
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.GetCommitFunc.SetDefaultHook(getCommit)
-	gitserverClient.RefDescriptionsFunc.SetDefaultHook(refDescriptions)
-	gitserverClient.CommitsUniqueToBranchFunc.SetDefaultHook(commitsUniqueToBranch)
+	gitserverClient.ListRefsFunc.SetDefaultHook(refs)
+	gitserverClient.CommitsFunc.SetDefaultHook(commits)
 
 	return gitserverClient
 }
@@ -118,7 +137,7 @@ func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time
 	for commit, matches := range expectedPolicyMatches {
 		for i, match := range matches {
 			committedAt := testCommitDateFor(commit, now)
-			match.CommittedAt = &committedAt
+			match.CommittedAt = committedAt
 			matches[i] = match
 		}
 	}

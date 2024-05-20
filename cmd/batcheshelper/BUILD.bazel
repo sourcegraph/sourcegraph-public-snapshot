@@ -3,6 +3,7 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("//dev:go_defs.bzl", "go_test")
+load("//wolfi-images:defs.bzl", "wolfi_base")
 
 go_library(
     name = "batcheshelper_lib",
@@ -24,16 +25,13 @@ go_binary(
     name = "batcheshelper",
     embed = [":batcheshelper_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 go_test(
     name = "batcheshelper_test",
     srcs = ["main_test.go"],
     embed = [":batcheshelper_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/batches/execution",
         "//lib/errors",
@@ -50,7 +48,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_batcheshelper_base",
+    base = ":base_image",
     tars = [":tar_batcheshelper"],
 )
 
@@ -69,6 +67,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
 )
 
@@ -77,3 +76,5 @@ oci_push(
     image = ":image",
     repository = image_repository("batcheshelper"),
 )
+
+wolfi_base()

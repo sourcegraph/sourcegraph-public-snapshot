@@ -10,9 +10,11 @@ go_library(
     ],
     embedsrcs = ["state.html.tmpl"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/globals",
+        "//cmd/repo-updater/internal/gitserver",
         "//cmd/repo-updater/internal/phabricator",
         "//cmd/repo-updater/internal/purge",
         "//cmd/repo-updater/internal/repoupdater",
@@ -47,8 +49,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//reflection",
     ],
 )
 
@@ -57,6 +57,7 @@ go_test(
     timeout = "short",
     srcs = ["main_test.go"],
     embed = [":shared"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database",
         "//internal/database/dbmocks",

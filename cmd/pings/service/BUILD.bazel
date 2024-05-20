@@ -8,6 +8,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/pings/service",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/hubspot/hubspotutil",
@@ -18,6 +19,7 @@ go_library(
         "//lib/background",
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",
+        "//lib/managedservicesplatform/runtime/contract",
         "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//:otel",

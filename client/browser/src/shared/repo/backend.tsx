@@ -1,5 +1,5 @@
-import { from, type Observable } from 'rxjs'
-import { delay, filter, map, retryWhen, switchMap } from 'rxjs/operators'
+import { from, throwError, timer, type Observable } from 'rxjs'
+import { map, retry, switchMap } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable, sha256 } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -12,7 +12,7 @@ import {
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     type FileSpec,
-    makeRepoURI,
+    makeRepoGitURI,
     type RawRepoSpec,
     type RepoSpec,
     type ResolvedRevisionSpec,
@@ -161,25 +161,15 @@ export const resolveRevision = memoizeObservable(
                 return repository.commit.oid
             })
         ),
-    makeRepoURI
+    makeRepoGitURI
 )
 
 export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observable<T> {
     return (maybeErrors: Observable<T>) =>
         maybeErrors.pipe(
-            retryWhen(errors =>
-                errors.pipe(
-                    filter(error => {
-                        if (isCloneInProgressErrorLike(error)) {
-                            return true
-                        }
-
-                        // Don't swallow other errors.
-                        throw error
-                    }),
-                    delay(1000)
-                )
-            )
+            retry({
+                delay: error => (isCloneInProgressErrorLike(error) ? timer(1000) : throwError(() => error)),
+            })
         )
 }
 
@@ -241,5 +231,5 @@ export const fetchBlobContentLines = memoizeObservable(
                 return repository.commit.file.content.split('\n')
             })
         ),
-    makeRepoURI
+    makeRepoGitURI
 )

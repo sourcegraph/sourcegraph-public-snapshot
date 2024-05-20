@@ -4,13 +4,12 @@ go_library(
     name = "profiler",
     srcs = ["profiler.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/profiler",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/conf/deploy",
-        "//internal/dotcom",
         "//internal/env",
         "//internal/version",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_profiler//:profiler",
     ],
 )

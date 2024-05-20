@@ -28,31 +28,51 @@
         languages: string[]
     }
 
-    const extensionsCompartment = new Compartment()
-
     const defaultTheme = EditorView.theme({
         '&': {
-            width: '100%',
-            'min-height': 0,
+            height: '100%',
             color: 'var(--color-code)',
-            flex: 1,
+        },
+        '&.cm-focused': {
+            outline: 'none',
         },
         '.cm-scroller': {
             lineHeight: '1rem',
             fontFamily: 'var(--code-font-family)',
             fontSize: 'var(--code-font-size)',
+            overflow: 'auto',
         },
-        '.cm-content:focus-visible': {
-            outline: 'none',
-            boxShadow: 'none',
+        '.cm-content': {
+            paddingBottom: '1.5rem',
+            '&:focus-visible': {
+                outline: 'none',
+                boxShadow: 'none',
+            },
+        },
+        '.cm-panels': {
+            '&-top': {
+                borderBottom: '1px solid var(--border-color)',
+            },
+            backgroundColor: 'transparent',
         },
         '.cm-gutters': {
             'background-color': 'var(--code-bg)',
             border: 'none',
             color: 'var(--line-number-color)',
         },
+        '.cm-gutterElement': {
+            lineHeight: '1.54',
+            minWidth: '40px !important',
+
+            '&:hover': {
+                color: 'var(--text-body)',
+            },
+        },
+        '.cm-lineNumbers .cm-gutterElement': {
+            padding: '0 1.5ex',
+        },
         '.cm-line': {
-            paddingLeft: '0',
+            lineHeight: '1.54',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -95,25 +115,21 @@
         }),
         defaultTheme,
         linkify,
+        hideEmptyLastLine,
     ]
-
-    function configureSyntaxHighlighting(content: string, lsif: string): Extension {
-        return lsif ? syntaxHighlight.of({ content, lsif }) : []
-    }
-
-    function configureMiscSettings({ wrapLines }: { wrapLines: boolean }): Extension {
-        return [wrapLines ? EditorView.lineWrapping : []]
-    }
 </script>
 
 <script lang="ts">
     import '$lib/highlight.scss'
 
-    import { Compartment, EditorState, type Extension } from '@codemirror/state'
+    import { EditorState, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
+    import { goto } from '$app/navigation'
+    import type { LineOrPositionOrRange } from '$lib/common'
+    import type { CodeIntelAPI } from '$lib/shared'
     import {
         selectableLineNumbers,
         syntaxHighlight,
@@ -123,30 +139,60 @@
         linkify,
         createCodeIntelExtension,
         syncSelection,
+        showBlame as showBlameColumn,
+        blameData as blameDataFacet,
+        type BlameHunkData,
+        lockFirstVisibleLine,
         temporaryTooltip,
+        hideEmptyLastLine,
     } from '$lib/web'
-    import { goto } from '$app/navigation'
-    import type { CodeIntelAPI } from '$lib/shared'
+
+    import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { type Range, staticHighlights } from './codemirror/static-highlights'
+    import {
+        createCompartments,
+        restoreScrollSnapshot,
+        type ExtensionType,
+        type ScrollSnapshot,
+        getScrollSnapshot as getScrollSnapshot_internal,
+    } from './codemirror/utils'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
-    import type { LineOrPositionOrRange } from '$lib/common'
 
     export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
-    export let codeIntelAPI: CodeIntelAPI
+    export let codeIntelAPI: CodeIntelAPI | null
+    export let staticHighlightRanges: Range[] = []
+    export let onCopy: () => void = () => {}
+    /**
+     * The initial scroll position when the editor is first mounted.
+     * Changing the value afterwards has no effect.
+     */
+    export let initialScrollPosition: ScrollSnapshot | null = null
+
+    export let showBlame: boolean = false
+    export let blameData: BlameHunkData | undefined = undefined
+
+    export function getScrollSnapshot(): ScrollSnapshot | null {
+        return view ? getScrollSnapshot_internal(view) : null
+    }
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
-
-    let editor: EditorView
-    let container: HTMLDivElement | null = null
-
-    const lineNumbers = selectableLineNumbers({
-        onSelection(range) {
-            dispatch('selectline', range)
-        },
-        initialSelection: selectedLines?.line === undefined ? null : selectedLines,
+    const extensionsCompartment = createCompartments({
+        selectableLineNumbers: null,
+        syntaxHighlighting: null,
+        lineWrapping: null,
+        temporaryTooltip,
+        codeIntelExtension: null,
+        staticExtensions,
+        staticHighlightExtension: null,
+        blameDataExtension: null,
+        blameColumnExtension: null,
     })
+
+    let container: HTMLDivElement | null = null
+    let view: EditorView | undefined = undefined
 
     $: documentInfo = {
         repoName: blobInfo.repoName,
@@ -155,71 +201,144 @@
         filePath: blobInfo.filePath,
         languages: blobInfo.languages,
     }
-    $: codeIntelExtension = createCodeIntelExtension({
-        api: {
-            api: codeIntelAPI,
-            documentInfo: documentInfo,
-            goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
-            openReferences,
-            openImplementations,
-            createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
-        },
-        // TODO(fkling): Support tooltip pinning
-        pin: {},
-        navigate: to => {
-            if (typeof to === 'number') {
-                if (to > 0) {
-                    history.forward()
-                } else {
-                    history.back()
-                }
-            } else {
-                goto(to.toString())
-            }
-        },
-    })
-    $: settings = configureMiscSettings({ wrapLines })
-    $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
+    $: codeIntelExtension = codeIntelAPI
+        ? createCodeIntelExtension({
+              api: {
+                  api: codeIntelAPI,
+                  documentInfo: documentInfo,
+                  goToDefinition: (view, definition, options) =>
+                      goToDefinition(documentInfo, view, definition, options),
+                  openReferences,
+                  openImplementations,
+                  createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
+              },
+              // TODO(fkling): Support tooltip pinning
+              pin: {},
+              navigate: to => {
+                  if (typeof to === 'number') {
+                      if (to > 0) {
+                          history.forward()
+                      } else {
+                          history.back()
+                      }
+                  } else {
+                      goto(to.toString())
+                  }
+              },
+          })
+        : null
+    $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
+    $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
+    $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
 
-    $: extensions = [sh, settings, lineNumbers, temporaryTooltip, codeIntelExtension, staticExtensions]
+    $: blameColumnExtension = showBlame
+        ? showBlameColumn({
+              createBlameDecoration(target, props) {
+                  const decoration = new BlameDecoration({ target, props })
+                  return {
+                      destroy() {
+                          decoration.$destroy()
+                      },
+                  }
+              },
+          })
+        : null
+    $: blameDataExtension = blameDataFacet(blameData)
 
-    function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
-        if (editor) {
-            // TODO(fkling): Find a way to combine this into a single transaction.
-            if (editor.state.sliceDoc() !== blobInfo.content) {
-                editor.setState(
-                    EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) })
-                )
-            } else {
-                editor.dispatch({ effects: [extensionsCompartment.reconfigure(extensions)] })
-            }
-            editor.dispatch({
-                effects: setSelectedLines.of(range?.line && isValidLineRange(range, editor.state.doc) ? range : null),
-            })
-
-            if (range) {
-                syncSelection(editor, range)
-            }
+    // Reinitialize the editor when its content changes. Update only the extensions when they change.
+    $: update(view => {
+        // blameColumnExtension is omitted here. It's updated separately below because we need to
+        // apply additional effects when it changes (but only when it changes).
+        const extensions: Partial<ExtensionType<typeof extensionsCompartment>> = {
+            codeIntelExtension,
+            lineWrapping,
+            syntaxHighlighting,
+            staticHighlightExtension,
+            blameDataExtension,
         }
-    }
+        if (view.state.sliceDoc() !== blobInfo.content) {
+            view.setState(createEditorState(blobInfo, extensions))
+        } else {
+            extensionsCompartment.update(view, extensions)
+        }
+    })
 
-    $: update(blobInfo, extensions, selectedLines)
+    // Show/hide the blame column and ensure that the style changes do not change the scroll position
+    $: update(view => {
+        extensionsCompartment.update(view, { blameColumnExtension }, ...lockFirstVisibleLine(view))
+    })
+
+    // Update the selected lines. This will scroll the selected lines into view. Also set the editor's
+    // selection (essentially the cursor position) to the selected lines. This is necessary in case the
+    // selected range references a symbol.
+    $: update(view => {
+        view.dispatch({
+            effects: setSelectedLines.of(
+                selectedLines?.line && isValidLineRange(selectedLines, view.state.doc) ? selectedLines : null
+            ),
+        })
+        if (selectedLines) {
+            syncSelection(view, selectedLines)
+        }
+    })
 
     onMount(() => {
         if (container) {
-            editor = new EditorView({
-                state: EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) }),
+            view = new EditorView({
+                // On first render initialize all extensions
+                state: createEditorState(blobInfo, {
+                    codeIntelExtension,
+                    lineWrapping,
+                    syntaxHighlighting,
+                    staticHighlightExtension,
+                    blameDataExtension,
+                    blameColumnExtension,
+                }),
                 parent: container,
             })
             if (selectedLines) {
-                syncSelection(editor, selectedLines)
+                syncSelection(view, selectedLines)
+            }
+            if (initialScrollPosition) {
+                restoreScrollSnapshot(view, initialScrollPosition)
             }
         }
+        return () => {
+            view?.destroy()
+        }
     })
+
+    // Helper function to update the editor state whithout depending on the view variable
+    // (those updates should only run on subsequent updates)
+    function update(updater: (view: EditorView) => void) {
+        if (view) {
+            updater(view)
+        }
+    }
+
+    function createEditorState(blobInfo: BlobInfo, extensions: Partial<ExtensionType<typeof extensionsCompartment>>) {
+        return EditorState.create({
+            doc: blobInfo.content,
+            extensions: extensionsCompartment.init({
+                selectableLineNumbers: selectableLineNumbers({
+                    onSelection(range) {
+                        dispatch('selectline', range)
+                    },
+                    initialSelection: selectedLines?.line === undefined ? null : selectedLines,
+                    // We don't want to scroll the selected line into view when a scroll position is explicitly set.
+                    skipInitialScrollIntoView: initialScrollPosition !== null,
+                }),
+                ...extensions,
+            }),
+            selection: {
+                anchor: 0,
+            },
+        })
+    }
 </script>
 
 {#if browser}
-    <div bind:this={container} class="root test-editor" data-editor="codemirror6" />
+    <div bind:this={container} class="root test-editor" data-editor="codemirror6" on:copy={onCopy} />
 {:else}
     <div class="root">
         <pre>{blobInfo.content}</pre>
@@ -228,8 +347,10 @@
 
 <style lang="scss">
     .root {
-        display: contents;
-        overflow: hidden;
+        --blame-decoration-width: 300px;
+        --blame-recency-width: 4px;
+
+        height: 100%;
     }
     pre {
         margin: 0;

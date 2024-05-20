@@ -27,7 +27,6 @@ func New(logger log.Logger) *Middleware {
 
 type Middleware struct {
 	checker *checker.Checker
-	next    http.Handler
 }
 
 func (m *Middleware) Handle(next http.Handler) http.Handler {

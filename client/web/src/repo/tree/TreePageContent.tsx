@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiSourceCommit, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
@@ -9,7 +9,6 @@ import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegrap
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -41,10 +40,11 @@ import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
-import { getRefType } from '../utils'
+import { getRefType, RepoCommitsButton } from '../utils'
 
 import { FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
+import menuStyles from './TreePage.module.scss'
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
@@ -145,7 +145,7 @@ const ExtraInfoSection: React.FC<{
     )
 }
 
-interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     treeWithHistory?: TreeHistoryFields[]
@@ -177,6 +177,19 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
+            {!isRoot && (
+                <div className={menuStyles.menu}>
+                    <RepoCommitsButton
+                        repoName={repo.name}
+                        repoType={repo.sourceType}
+                        revision={revision}
+                        filePath={filePath}
+                        svgPath={mdiSourceCommit}
+                        className={menuStyles.text}
+                    />
+                </div>
+            )}
+
             {(readmeEntry || isRoot) && (
                 <section className={classNames('container mb-3 px-0', styles.section)}>
                     {readmeEntry && (
@@ -196,7 +209,14 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     )}
                 </section>
             )}
-            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
+
+            <section
+                className={classNames(
+                    'test-tree-entries container mb-3 px-0',
+                    styles.section,
+                    !readmeEntry ? 'mt-3' : undefined
+                )}
+            >
                 <FilesCard historyEntries={treeWithHistory} entries={tree.entries} className={styles.files} />
 
                 {!isPackage && (

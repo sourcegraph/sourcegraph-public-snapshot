@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "connection",
+    srcs = [
+        "addrs.go",
+        "connection.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/connection",
+    tags = [TAG_PLATFORM_SOURCE],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/gitserver/protocol",
+        "//internal/grpc/defaults",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "connection_test",
+    srcs = ["addrs_test.go"],
+    embed = [":connection"],
+    tags = [TAG_PLATFORM_SOURCE],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//schema",
+        "@com_github_stretchr_testify//require",
+    ],
+)

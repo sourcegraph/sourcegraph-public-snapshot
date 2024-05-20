@@ -10,7 +10,6 @@ import (
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ownsearch "github.com/sourcegraph/sourcegraph/internal/own/search"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/smartsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,7 +53,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 			return nil, errors.New("The 'codycontext' patterntype is not compatible with Smart Search")
 		}
 
-		newJobTree, err := codycontext.NewSearchJob(plan, newJob)
+		newJobTree, err := codycontext.NewSearchJob(plan, inputs, newJob)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
-			newNodes = append(newNodes, query.Pattern{Value: pat})
+			node := query.Pattern{Value: pat}
+			node.Annotation.Labels.Set(query.Regexp)
+			newNodes = append(newNodes, node)
 		}
 		if b.Pattern != nil {
 			newNodes = append(newNodes, b.Pattern)
@@ -96,7 +98,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		resultTypes := computeResultTypes(b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType, defaultResultTypes)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -135,8 +137,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 						containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 					})
 				}
-
-				// searcher to use full deadline if timeout: set or we are not batch.
 
 				searcherJob := NewTextSearchJob(b, inputs, resultTypes, repoOptions)
 				addJob(searcherJob)
@@ -177,6 +177,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
+				Concurrency:          4,
 			}
 
 			addJob(
@@ -362,7 +363,7 @@ func orderRacingJobs(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType, defaultResultTypes)
 
 	// searcher to use full deadline if timeout: set or we are not batch.
 	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
@@ -406,12 +407,16 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 				Features:        *searchInputs.Features,
 			}
 
-			addJob(&structural.SearchJob{
-				SearcherArgs:     searcherArgs,
-				UseIndex:         f.Index(),
-				ContainsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
-				RepoOpts:         repoOptions,
-				BatchRetry:       searchInputs.Protocol == search.Batch,
+			structuralSearchJob := &structural.SearchJob{
+				SearcherArgs: searcherArgs,
+				UseIndex:     f.Index(),
+				BatchRetry:   searchInputs.Protocol == search.Batch,
+			}
+
+			addJob(&repoPagerJob{
+				child:            &reposPartialJob{structuralSearchJob},
+				repoOpts:         repoOptions,
+				containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 			})
 		}
 
@@ -518,7 +523,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 		if p.IsCaseSensitive {
 			pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 		} else {
-			pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+			pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 
@@ -534,7 +539,7 @@ func getPathRegexps(b query.Basic, p *search.TextPatternInfo) (pathRegexps []*re
 			if p.IsCaseSensitive {
 				pathRegexps = append(pathRegexps, regexp.MustCompile(pattern))
 			} else {
-				pathRegexps = append(pathRegexps, regexp.MustCompile(`(?i)`+pattern))
+				pathRegexps = append(pathRegexps, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 			}
 		})
 	}
@@ -596,7 +601,7 @@ func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*r
 		if isCaseSensitive {
 			res = append(res, regexp.MustCompile(pattern))
 		} else {
-			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+			res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(pattern)))
 		}
 	}
 	return res
@@ -725,9 +730,11 @@ func toLangFilters(aliases []string) []string {
 	return filters
 }
 
+const defaultResultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
+func computeResultTypes(b query.Basic, searchType query.SearchType, defaultTypes result.Types) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		return result.TypeStructural
 	}
@@ -750,7 +757,7 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	}
 
 	if len(types) == 0 {
-		return result.TypeFile | result.TypePath | result.TypeRepo
+		return defaultTypes
 	}
 
 	var rts result.Types
@@ -926,7 +933,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(typedQ.Regexp.String()))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+typedQ.Regexp.String()))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(typedQ.Regexp.String())))
 				}
 			}
 		case *zoektquery.Substring:
@@ -934,7 +941,7 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 				if typedQ.CaseSensitive {
 					res = append(res, regexp.MustCompile(regexp.QuoteMeta(typedQ.Pattern)))
 				} else {
-					res = append(res, regexp.MustCompile(`(?i)`+regexp.QuoteMeta(typedQ.Pattern)))
+					res = append(res, regexp.MustCompile(query.CaseInsensitiveRegExp(regexp.QuoteMeta(typedQ.Pattern))))
 				}
 			}
 		}

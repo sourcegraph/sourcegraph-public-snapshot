@@ -6,7 +6,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"sort"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -179,18 +182,18 @@ func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
 // defaultBranchContains tells if the default branch contains the given commit ID.
 func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
 	// Determine default branch name.
-	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, true)
+	defaultBranchName, _, err := c.gitserverClient.GetDefaultBranch(ctx, repo, false)
 	if err != nil {
 		return false, err
 	}
 
 	// Determine if branch contains commit.
-	branches, err := c.gitserverClient.BranchesContaining(ctx, repo, api.CommitID(commit))
+	branches, err := c.gitserverClient.ListRefs(ctx, repo, gitserver.ListRefsOpts{HeadsOnly: true, Contains: api.CommitID(commit)})
 	if err != nil {
 		return false, err
 	}
 	for _, branch := range branches {
-		if branch == defaultBranchName {
+		if branch.Name == defaultBranchName {
 			return true, nil
 		}
 	}
@@ -218,11 +221,40 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, repo.Name, api.CommitID(upload.Commit), dirnames)
-		if err != nil {
-			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
+		allFDs := make([]fs.FileInfo, 0)
+		seen := make(map[string]struct{})
+		for _, d := range dirnames {
+			it, err := h.gitserverClient.ReadDir(ctx, repo.Name, api.CommitID(upload.Commit), d, false)
+			if err != nil {
+				// Ignore non-existent directories, we request all directories in the
+				// upload and some might not exist in the repo, for example node_modules.
+				if os.IsNotExist(err) {
+					continue
+				}
+				return nil, errors.Wrap(err, "gitserverClient.ReadDir")
+			}
+			defer it.Close()
+
+			for {
+				fd, err := it.Next()
+				if err != nil {
+					if errors.Is(err, io.EOF) {
+						break
+					}
+					return nil, errors.Wrap(err, "gitserverClient.ReadDir.Next")
+				}
+				if fd.IsDir() {
+					continue
+				}
+				if _, ok := seen[fd.Name()]; ok {
+					continue
+				}
+				allFDs = append(allFDs, fd)
+				seen[fd.Name()] = struct{}{}
+			}
 		}
-		return directoryChildren, nil
+
+		return parseDirectoryChildren(dirnames, allFDs), nil
 	}
 
 	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(indexReader gzipReadSeeker) (err error) {
@@ -290,8 +322,8 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise, the transaction
 			// will fail as these values form a unique constraint.
-			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+			if err := tx.DeleteOverlappingCompletedUploads(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+				return errors.Wrap(err, "store.DeleteOverlappingCompletedUploads")
 			}
 
 			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))
@@ -326,6 +358,45 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	})
 }
 
+// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
+// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
+func parseDirectoryChildren(dirnames []string, fis []fs.FileInfo) map[string][]string {
+	childrenMap := map[string][]string{}
+
+	// Ensure each directory has an entry, even if it has no children
+	// listed in the gitserver output.
+	for _, dirname := range dirnames {
+		childrenMap[dirname] = nil
+	}
+
+	// Order directory names by length (biggest first) so that we assign
+	// paths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnames, func(i, j int) bool {
+		return len(dirnames[i]) > len(dirnames[j])
+	})
+
+	for _, fi := range fis {
+		path := fi.Name()
+		if strings.Contains(path, "/") {
+			for _, dirname := range dirnames {
+				if strings.HasPrefix(path, dirname) {
+					childrenMap[dirname] = append(childrenMap[dirname], path)
+					break
+				}
+			}
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
+			// No need to loop here. If we have a root input directory it
+			// will necessarily be the last element due to the previous
+			// sorting step.
+			childrenMap[""] = append(childrenMap[""], path)
+		}
+	}
+
+	return childrenMap
+}
+
 func inTransaction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
 	return dbStore.WithTransaction(ctx, fn)
 }
@@ -340,7 +411,7 @@ const requeueDelay = time.Minute
 // valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{EnsureRevision: true})
 	if err == nil {
 		// commit is resolvable
 		return false, nil

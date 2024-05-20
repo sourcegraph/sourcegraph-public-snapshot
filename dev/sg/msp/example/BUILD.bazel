@@ -10,6 +10,7 @@ go_library(
         "environment.template.yaml",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/example",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/spec",
@@ -25,6 +26,7 @@ go_test(
     srcs = ["example_test.go"],
     data = glob(["testdata/**"]),
     embed = [":example"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//dev/managedservicesplatform/spec",
         "@com_github_hexops_autogold_v2//:autogold",

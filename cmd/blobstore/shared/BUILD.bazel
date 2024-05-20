@@ -7,11 +7,11 @@ go_library(
         "shared.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/blobstore/internal/blobstore",
         "//internal/actor",
-        "//internal/conf",
         "//internal/conf/deploy",
         "//internal/debugserver",
         "//internal/env",

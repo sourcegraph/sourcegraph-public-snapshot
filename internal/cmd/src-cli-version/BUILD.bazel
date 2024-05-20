@@ -4,6 +4,7 @@ go_library(
     name = "src-cli-version_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/src-cli-version",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = ["//internal/src-cli"],
 )
@@ -11,9 +12,6 @@ go_library(
 go_binary(
     name = "src-cli-version",
     embed = [":src-cli-version_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//:__subpackages__"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )

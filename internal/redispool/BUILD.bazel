@@ -7,8 +7,6 @@ go_library(
     srcs = [
         "keyvalue.go",
         "mocks.go",
-        "redis.go",
-        "redis_conn.go",
         "redispool.go",
         "sysreq.go",
         "utils.go",

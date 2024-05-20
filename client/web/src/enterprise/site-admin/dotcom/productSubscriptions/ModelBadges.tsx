@@ -40,13 +40,17 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-v1.1-100k':
             case 'anthropic/claude-instant-v1.2':
             case 'anthropic/claude-instant-1.2':
-            case 'anthropic/claude-instant-1.2-cyan':
+            case 'anthropic/claude-3-sonnet-20240229':
+            case 'anthropic/claude-3-opus-20240229':
+            case 'anthropic/claude-3-haiku-20240307':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
             // allow list the models on the Cody Gateway side.
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
-            case 'openai/gpt-4-1106-preview':
+            case 'openai/gpt-4o':
+            case 'openai/gpt-4-turbo':
+            case 'openai/gpt-4-turbo-preview':
             // Virtual models that are translated by Cody Gateway and allow access to all StarCoder
             // models hosted for us by Fireworks.
             case 'fireworks/starcoder':
@@ -57,7 +61,8 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
             case 'fireworks/accounts/fireworks/models/llama-v2-34b-code-instruct':
             case 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k':
-            case 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct': {
+            case 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct':
+            case 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct': {
                 return 'secondary'
             }
             default: {

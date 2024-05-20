@@ -4,16 +4,17 @@ import (
 	"strconv"
 	"strings"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 // extractPubSubAttributes extracts attributes from the event for use in the
 // published pub/sub message as attributes. This makes it easiser to build
 // routing of events in our data pipelines.
-func extractPubSubAttributes(event *telemetrygatewayv1.Event) map[string]string {
+func extractPubSubAttributes(publisherSource string, event *telemetrygatewayv1.Event) map[string]string {
 	attributes := map[string]string{
-		"event.feature": event.Feature,
-		"event.action":  event.Action,
+		"publisher.source": publisherSource,
+		"event.feature":    event.Feature,
+		"event.action":     event.Action,
 		"event.hasPrivateMetadata": strconv.FormatBool(
 			event.GetParameters().GetPrivateMetadata() != nil),
 	}

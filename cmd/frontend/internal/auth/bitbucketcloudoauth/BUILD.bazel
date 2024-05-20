@@ -29,6 +29,7 @@ go_library(
         "//internal/lazyregexp",
         "//internal/licensing",
         "//internal/session",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",
@@ -49,6 +50,7 @@ go_test(
     ],
     embed = [":bitbucketcloudoauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # allows network requests to localhost (database)
         "requires-network",
     ],
@@ -62,7 +64,6 @@ go_test(
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
-        "//internal/dotcom",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
         "//internal/httpcli",
@@ -73,6 +74,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )

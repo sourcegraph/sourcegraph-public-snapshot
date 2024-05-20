@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gitops",
+    srcs = ["git_ops.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/gitops",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/oobmigration",
+        "//lib/errors",
+    ],
+)

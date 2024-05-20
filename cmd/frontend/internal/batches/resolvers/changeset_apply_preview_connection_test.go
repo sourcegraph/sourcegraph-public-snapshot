@@ -39,7 +39,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, false).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, observation.TestContextTB(t), nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,
@@ -53,7 +53,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	repoStore := database.ReposWith(logger, bstore)
 
 	rs := make([]*types.Repo, 0, 3)
-	for i := 0; i < cap(rs); i++ {
+	for i := range cap(rs) {
 		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-apply-preview-connection-repo-%d", i)
 		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
 		if err := repoStore.Create(ctx, r); err != nil {

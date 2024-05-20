@@ -158,7 +158,7 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		// Fetch hover text attached to a definition in the defining index
 		text, _, exists, err := s.lsifstore.GetHover(
 			ctx,
-			locations[i].DumpID,
+			locations[i].UploadID,
 			locations[i].Path,
 			locations[i].Range.Start.Line,
 			locations[i].Range.Start.Character,
@@ -178,16 +178,16 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 
 // getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
 // This method will not return uploads for commits which are unknown to gitserver.
-func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, requestState RequestState) ([]uploadsshared.Dump, error) {
-	dumps, err := s.uploadSvc.GetDumpsWithDefinitionsForMonikers(ctx, orderedMonikers)
+func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, requestState RequestState) ([]uploadsshared.CompletedUpload, error) {
+	uploads, err := s.uploadSvc.GetCompletedUploadsWithDefinitionsForMonikers(ctx, orderedMonikers)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
 
-	uploads := copyDumps(dumps)
-	requestState.dataLoader.SetUploadInCacheMap(uploads)
+	uploadsCopy := copyUploads(uploads)
+	requestState.dataLoader.SetUploadInCacheMap(uploadsCopy)
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploads, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploadsCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -198,11 +198,11 @@ func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orde
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
+func (s *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visibleUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range visibleUploads {
-		rangeMonikers, err := r.lsifstore.GetMonikersByPosition(
+		rangeMonikers, err := s.lsifstore.GetMonikersByPosition(
 			ctx,
 			visibleUploads[i].Upload.ID,
 			visibleUploads[i].TargetPathWithoutRoot,
@@ -219,7 +219,7 @@ func (r *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 					continue
 				}
 
-				packageInformationData, _, err := r.lsifstore.GetPackageInformation(
+				packageInformationData, _, err := s.lsifstore.GetPackageInformation(
 					ctx,
 					visibleUploads[i].Upload.ID,
 					visibleUploads[i].TargetPathWithoutRoot,
@@ -256,7 +256,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 		a = actor.FromContext(ctx)
 	}
 	for _, location := range locations {
-		upload, ok := requestState.dataLoader.GetUploadFromCacheMap(location.DumpID)
+		upload, ok := requestState.dataLoader.GetUploadFromCacheMap(location.UploadID)
 		if !ok {
 			continue
 		}
@@ -272,7 +272,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 		if !checkerEnabled {
 			uploadLocations = append(uploadLocations, adjustedLocation)
 		} else {
-			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			repo := api.RepoName(adjustedLocation.Upload.RepositoryName)
 			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, repo, adjustedLocation.Path); err != nil {
 				return nil, err
 			} else if include {
@@ -287,15 +287,15 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 // getUploadLocation translates a location (relative to the indexed commit) into an equivalent location in
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location and a false flag is returned.
-func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, dump uploadsshared.Dump, location shared.Location) (shared.UploadLocation, bool, error) {
-	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, upload uploadsshared.CompletedUpload, location shared.Location) (shared.UploadLocation, bool, error) {
+	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, upload.Root+location.Path, location.Range)
 	if err != nil {
 		return shared.UploadLocation{}, ok, err
 	}
 
 	return shared.UploadLocation{
-		Dump:         dump,
-		Path:         dump.Root + location.Path,
+		Upload:       upload,
+		Path:         upload.Root + location.Path,
 		TargetCommit: adjustedCommit,
 		TargetRange:  adjustedRange,
 	}, ok, nil
@@ -322,9 +322,9 @@ func (s *Service) getSourceRange(ctx context.Context, args RequestArgs, requestS
 // getUploadsByIDs returns a slice of uploads with the given identifiers. This method will not return a
 // new upload record for a commit which is unknown to gitserver. The given upload map is used as a
 // caching mechanism - uploads present in the map are not fetched again from the database.
-func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState RequestState) ([]uploadsshared.Dump, error) {
+func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState RequestState) ([]uploadsshared.CompletedUpload, error) {
 	missingIDs := make([]int, 0, len(ids))
-	existingUploads := make([]uploadsshared.Dump, 0, len(ids))
+	existingUploads := make([]uploadsshared.CompletedUpload, 0, len(ids))
 
 	for _, id := range ids {
 		if upload, ok := requestState.dataLoader.GetUploadFromCacheMap(id); ok {
@@ -334,12 +334,12 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 		}
 	}
 
-	uploads, err := s.uploadSvc.GetDumpsByIDs(ctx, missingIDs)
+	uploads, err := s.uploadSvc.GetCompletedUploadsByIDs(ctx, missingIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "service.GetDumpsByIDs")
+		return nil, errors.Wrap(err, "service.GetCompletedUploadsByIDs")
 	}
 
-	uploadsWithResolvableCommits, err := s.removeUploadsWithUnknownCommits(ctx, uploads, requestState)
+	uploadsWithResolvableCommits, err := filterUploadsWithCommits(ctx, requestState.commitCache, uploads)
 	if err != nil {
 		return nil, nil
 	}
@@ -350,35 +350,9 @@ func (s *Service) getUploadsByIDs(ctx context.Context, ids []int, requestState R
 	return allUploads, nil
 }
 
-// removeUploadsWithUnknownCommits removes uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
-func (s *Service) removeUploadsWithUnknownCommits(ctx context.Context, uploads []uploadsshared.Dump, requestState RequestState) ([]uploadsshared.Dump, error) {
-	rcs := make([]RepositoryCommit, 0, len(uploads))
-	for _, upload := range uploads {
-		rcs = append(rcs, RepositoryCommit{
-			RepositoryID: upload.RepositoryID,
-			Commit:       upload.Commit,
-		})
-	}
-
-	exists, err := requestState.commitCache.AreCommitsResolvable(ctx, rcs)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := uploads[:0]
-	for i, upload := range uploads {
-		if exists[i] {
-			filtered = append(filtered, upload)
-		}
-	}
-
-	return filtered, nil
-}
-
 // getBulkMonikerLocations returns the set of locations (within the given uploads) with an attached moniker
 // whose scheme+identifier matches any of the given monikers.
-func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploadsshared.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]shared.Location, int, error) {
+func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploadsshared.CompletedUpload, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]shared.Location, int, error) {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
 		ids = append(ids, uploads[i].ID)
@@ -449,7 +423,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 			}
 
 			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, api.RepoName(adjustedDiagnostic.Upload.RepositoryName), adjustedDiagnostic.Path); err != nil {
 				return nil, 0, err
 			} else if include {
 				diagnosticsAtUploads = append(diagnosticsAtUploads, adjustedDiagnostic)
@@ -502,13 +476,13 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 
 	return DiagnosticAtUpload{
 		Diagnostic:     diagnostic,
-		Dump:           adjustedUpload.Upload,
+		Upload:         adjustedUpload.Upload,
 		AdjustedCommit: adjustedCommit,
 		AdjustedRange:  adjustedRange,
 	}, nil
 }
 
-func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
+func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (uploads []uploadsshared.CompletedUpload, err error) {
 	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("path", requestState.Path),
 		attribute.String("commit", requestState.Commit),
@@ -516,7 +490,7 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 	}})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("numUploads", len(dumps)),
+			attribute.Int("numUploads", len(uploads)),
 		}})
 	}()
 
@@ -526,7 +500,7 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 	}
 
 	for _, upload := range visibleUploads {
-		dumps = append(dumps, upload.Upload)
+		uploads = append(uploads, upload.Upload)
 	}
 
 	return
@@ -666,7 +640,7 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 		}
 
 		for i, rn := range ranges {
-			// FIXME: change this at it expects an empty uploadsshared.Dump{}
+			// FIXME: change this at it expects an empty uploadsshared.CompletedUpload{}
 			cu := requestState.GetCacheUploadsAtIndex(i)
 			// Adjust the highlighted range back to the appropriate range in the target commit
 			_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
@@ -683,71 +657,44 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
-// TODO(#48681) - do not proxy this
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]uploadsshared.Dump, error) {
-	return s.uploadSvc.GetDumpsByIDs(ctx, ids)
-}
-
-func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getClosestDumpsForBlob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("exactPath", exactPath),
-		attribute.String("indexer", indexer),
-	}})
+func (s *Service) GetClosestCompletedUploadsForBlob(ctx context.Context, opts uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error) {
+	ctx, trace, endObservation := s.operations.getClosestCompletedUploadsForBlob.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	candidates, err := s.uploadSvc.InferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
+	candidates, err := s.uploadSvc.InferClosestUploads(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	uploadCandidates := copyDumps(candidates)
-	trace.AddEvent("TODO Domain Owner",
+	trace.AddEvent("InferClosestUploads",
 		attribute.Int("numCandidates", len(candidates)),
-		attribute.String("candidates", uploadIDsToString(uploadCandidates)))
+		attribute.String("candidates", uploadIDsToString(candidates)))
 
 	commitChecker := NewCommitCache(s.repoStore, s.gitserver)
-	commitChecker.SetResolvableCommit(repositoryID, commit)
+	commitChecker.SetResolvableCommit(opts.RepositoryID, opts.Commit)
 
-	candidatesWithCommits, err := filterUploadsWithCommits(ctx, commitChecker, uploadCandidates)
+	candidatesWithExistingCommits, err := filterUploadsWithCommits(ctx, commitChecker, candidates)
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numCandidatesWithCommits", len(candidatesWithCommits)),
-		attribute.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)))
+	trace.AddEvent("filterUploadsWithCommits",
+		attribute.Int("numCandidatesWithExistingCommits", len(candidatesWithExistingCommits)),
+		attribute.String("candidatesWithExistingCommits", uploadIDsToString(candidatesWithExistingCommits)))
 
-	// Filter in-place
-	filtered := candidatesWithCommits[:0]
-
-	for i := range candidatesWithCommits {
-		if exactPath {
-			// TODO - this breaks if the file was renamed in git diff
-			pathExists, err := s.lsifstore.GetPathExists(ctx, candidates[i].ID, strings.TrimPrefix(path, candidates[i].Root))
-			if err != nil {
-				return nil, errors.Wrap(err, "lsifStore.Exists")
-			}
-			if !pathExists {
-				continue
-			}
-		} else { //nolint:staticcheck
-			// TODO(efritz) - ensure there's a valid document path for this condition as well
-		}
-
-		filtered = append(filtered, uploadCandidates[i])
+	candidatesWithExistingCommitsAndPaths, err := filterUploadsWithPaths(ctx, s.lsifstore, opts, candidatesWithExistingCommits)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering uploads based on paths")
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numFiltered", len(filtered)),
-		attribute.String("filtered", uploadIDsToString(filtered)))
+	trace.AddEvent("filterUploadsWithPaths",
+		attribute.Int("numFiltered", len(candidatesWithExistingCommitsAndPaths)),
+		attribute.String("filtered", uploadIDsToString(candidatesWithExistingCommitsAndPaths)))
 
-	return filtered, nil
+	return candidatesWithExistingCommitsAndPaths, nil
 }
 
-// filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
-// slice. The slice is filtered in-place and returned (to update the slice length).
-func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []uploadsshared.Dump) ([]uploadsshared.Dump, error) {
+// filterUploadsWithCommits only keeps the uploads for commits which are known to gitserver.
+// A fresh slice is returned without modifying the original slice.
+func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uploads []uploadsshared.CompletedUpload) ([]uploadsshared.CompletedUpload, error) {
 	rcs := make([]RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
 		rcs = append(rcs, RepositoryCommit{
@@ -760,7 +707,7 @@ func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uplo
 		return nil, err
 	}
 
-	filtered := uploads[:0]
+	filtered := make([]uploadsshared.CompletedUpload, 0, len(uploads))
 	for i, upload := range uploads {
 		if exists[i] {
 			filtered = append(filtered, upload)
@@ -770,9 +717,35 @@ func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uplo
 	return filtered, nil
 }
 
-func copyDumps(uploadDumps []uploadsshared.Dump) []uploadsshared.Dump {
-	ud := make([]uploadsshared.Dump, len(uploadDumps))
-	copy(ud, uploadDumps)
+func filterUploadsWithPaths(
+	ctx context.Context,
+	lsifstore lsifstore.LsifStore,
+	opts uploadsshared.UploadMatchingOptions,
+	candidates []uploadsshared.CompletedUpload,
+) ([]uploadsshared.CompletedUpload, error) {
+	filtered := make([]uploadsshared.CompletedUpload, 0, len(candidates))
+	for _, candidate := range candidates {
+		switch opts.RootToPathMatching {
+		case uploadsshared.RootMustEnclosePath:
+			// TODO - this breaks if the file was renamed in git diff
+			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, strings.TrimPrefix(opts.Path, candidate.Root))
+			if err != nil {
+				return nil, errors.Wrap(err, "lsifStore.Exists")
+			}
+			if !pathExists {
+				continue
+			}
+		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
+			// TODO(efritz) - ensure there's a valid document path for this condition as well
+		}
+		filtered = append(filtered, candidate)
+	}
+	return filtered, nil
+}
+
+func copyUploads(uploads []uploadsshared.CompletedUpload) []uploadsshared.CompletedUpload {
+	ud := make([]uploadsshared.CompletedUpload, len(uploads))
+	copy(ud, uploads)
 	return ud
 }
 
@@ -800,7 +773,7 @@ func (s *Service) getVisibleUploads(ctx context.Context, line, character int, r 
 
 // getVisibleUpload returns the current target path and the given position for the given upload. If
 // the upload cannot be adjusted, a false-valued flag is returned.
-func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upload uploadsshared.Dump, r RequestState) (visibleUpload, bool, error) {
+func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upload uploadsshared.CompletedUpload, r RequestState) (visibleUpload, bool, error) {
 	position := shared.Position{
 		Line:      line,
 		Character: character,
@@ -832,23 +805,23 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		}})
 	}()
 
-	dumps, err := s.GetDumpsByIDs(ctx, []int{uploadID})
+	uploads, err := s.uploadSvc.GetCompletedUploadsByIDs(ctx, []int{uploadID})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(dumps) == 0 {
+	if len(uploads) == 0 {
 		return nil, nil
 	}
 
-	dump := dumps[0]
+	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, strings.TrimPrefix(path, upload.Root))
 	if err != nil || document == nil {
 		return nil, err
 	}
 
-	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path)
 	if err != nil {
 		return nil, err
 	}
@@ -861,7 +834,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
 	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
+	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
@@ -953,7 +926,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			}
 		}
 
-		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, shared.Position{
 			Line:      int(originalRange.Start.Line),
 			Character: int(originalRange.Start.Character),
 		}, false)

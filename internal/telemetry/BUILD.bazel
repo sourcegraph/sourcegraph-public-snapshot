@@ -12,11 +12,14 @@ go_library(
         "telemetrygateway.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/telemetrygateway/event",
         "//internal/trace",
         "//internal/version",
+        "//lib/errors",
+        "//lib/telemetrygateway/v1:telemetrygateway",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_protobuf//types/known/structpb",
     ],
@@ -29,7 +32,10 @@ go_test(
         "telemetrygateway_test.go",
     ],
     embed = [":telemetry"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/database",

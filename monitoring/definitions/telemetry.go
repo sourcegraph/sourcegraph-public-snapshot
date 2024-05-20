@@ -18,7 +18,7 @@ func Telemetry() *monitoring.Dashboard {
 		Title:       "Telemetry",
 		Description: "Monitoring telemetry services in Sourcegraph.",
 		Groups: []monitoring.Group{
-			// The new stuff - https://sourcegraph.com/docs/dev/background-information/telemetry
+			// The new stuff - https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 			{
 				Title: "Telemetry Gateway Exporter: Export and queue metrics",
 				Rows: []monitoring.Row{

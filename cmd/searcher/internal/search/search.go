@@ -22,9 +22,11 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -43,16 +45,19 @@ type Service struct {
 
 	Indexed zoekt.Streamer
 
-	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
-	// --no-renames commitA commitB" against repo.
-	//
-	// TODO Git client should be exposing a better API here.
-	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+	// GitChangedFiles returns an iterator that yields list of changed files that have changed in between commitA and commitB in the given
+	// repo. The returned statuses will be one of StatusAdded, StatusRemoved, StatusModified, or StatusTypeChanged.
+	GitChangedFiles func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error)
 
 	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
 	// single call to git archive. This mainly needs to be less than ARG_MAX
 	// for the exec.Command on gitserver.
 	MaxTotalPathsLength int
+
+	// DisableHybridSearch disables hybrid search, which means searcher will not
+	// call out to Zoekt to offload part of the search workload. This is useful for
+	// troubleshooting, for example if searcher causes a high load on Zoekt.
+	DisableHybridSearch bool
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
@@ -142,27 +147,29 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return badRequestError{err.Error()}
 	}
 
-	logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
-		log.String("repo", string(p.Repo)),
-		log.String("commit", string(p.Commit)),
-	)
-
 	var paths []string
-	unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
-	if err != nil {
-		// error logging is done inside of s.hybrid so we just return
-		// error here.
-		return errors.Wrap(err, "hybrid search failed")
-	}
-	if !ok {
-		logger.Debug("hybrid search is falling back to normal unindexed search")
-	} else {
-		// now we only need to search unsearched
-		if len(unsearched) == 0 {
-			// indexed search did it all
-			return nil
+	if !s.DisableHybridSearch {
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+		)
+
+		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
+		if err != nil {
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
+			return errors.Wrap(err, "hybrid search failed")
 		}
-		paths = unsearched
+		if !ok {
+			logger.Debug("hybrid search is falling back to normal unindexed search")
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+			paths = unsearched
+		}
 	}
 
 	_, zf, err := s.getZipFile(ctx, tr, p, paths)

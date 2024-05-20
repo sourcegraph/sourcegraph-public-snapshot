@@ -2,11 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:msp_delivery.bzl", "msp_delivery")
 
 go_library(
     name = "msp-example_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/msp-example/internal/example",
@@ -17,6 +19,7 @@ go_library(
 go_binary(
     name = "msp-example",
     embed = [":msp-example_lib"],
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )
 
@@ -27,7 +30,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -50,6 +53,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_CORESERVICES,
         "exclusive",
         "requires-network",
     ],
@@ -59,4 +63,11 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("msp-example"),
+)
+
+msp_delivery(
+    name = "msp_deploy",
+    gcp_project = "msp-testbed-robert-7be9",
+    msp_service_id = "msp-testbed",
+    repository = "us.gcr.io/sourcegraph-dev/msp-example",
 )

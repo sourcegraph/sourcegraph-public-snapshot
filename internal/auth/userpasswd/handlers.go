@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
@@ -109,6 +110,8 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
 	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool,
 ) {
+	ctx := r.Context()
+
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -118,13 +121,15 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
-	err, statusCode, usr := unsafeSignUp(r.Context(), logger, db, creds, failIfNewUserIsNotInitialSiteAdmin)
+	err, statusCode, usr := unsafeSignUp(ctx, logger, db, creds, failIfNewUserIsNotInitialSiteAdmin)
 	if err != nil {
 		http.Error(w, err.Error(), statusCode)
 		return
 	}
 
-	if _, err := session.SetActorFromUser(r.Context(), w, r, usr, 0); err != nil {
+	// Write the session cookie and get an authenticated context
+	ctx, err = session.SetActorFromUser(ctx, w, r, usr, 0)
+	if err != nil {
 		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 	}
 
@@ -141,9 +146,7 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 			DatabaseID:             usr.ID,
 			AnonymousUserID:        creds.AnonymousUserID,
-			FirstSourceURL:         creds.FirstSourceURL,
 			LastSourceURL:          creds.LastSourceURL,
-			OriginalReferrer:       getCookie("originalReferrer"),
 			LastReferrer:           getCookie("sg_referrer"),
 			SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
 			SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
@@ -157,16 +160,17 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		})
 	}
 
-	// New event - we record legacy event manually for now, hence teestore.WithoutV1
-	// TODO: Remove in 5.3
+	// New event - we record legacy event manually for now below, hence
+	// teestore.WithoutV1
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
-	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
+	events.Record(teestore.WithoutV1(ctx), "signUp", telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Version: 2,
 		Metadata: telemetry.EventMetadata{
 			"failIfNewUserIsNotInitialSiteAdmin": telemetry.Bool(failIfNewUserIsNotInitialSiteAdmin),
 		},
 	})
 	//lint:ignore SA1019 existing usage of deprecated functionality. TODO: Use only the new V2 event instead.
-	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(ctx), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
 }
@@ -329,7 +333,9 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 		telemetrySignInResult := telemetry.ActionFailed
 		defer func() {
 			recordSignInSecurityEvent(r, db, &user, &signInResult)
-			events.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
+			events.Record(ctx, "signIn", telemetrySignInResult, &telemetry.EventParameters{
+				Version: 2,
+			})
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
@@ -385,7 +391,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 			return
 		}
 
-		// Write the session cookie
+		// Write the session cookie and get an authenticated context
 		ctx, err = session.SetActorFromUser(ctx, w, r, &user, 0)
 		if err != nil {
 			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
@@ -547,18 +553,27 @@ func httpLogError(logFunc func(string, ...log.Field), w http.ResponseWriter, msg
 // Usernames that could not be converted return an error.
 //
 // Note: Do not forget to change database constraints on "users" and "orgs" tables.
+// WARNING: The current implementation of repo permission syncing for Bitbucket Server
+// depends on matching usernames on the code host and Sourcegraph, so we should try
+// our best to not make any unnecessary transformations here, as every transformation
+// increases the risk of some usernames not matching up with Bitbucket usernames
+// and those will need manual fixup.
 func NormalizeUsername(name string) (string, error) {
 	origName := name
 
 	// If the username is an email address, extract the username part.
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
+		name = name[:i]
+
 		// NOTE: When we derive the username from the email address, it is high chance
-		// that the username is not unique, so we always append a random suffix to the
-		// username.
-		var err error
-		name, err = AddRandomSuffix(name[:i])
-		if err != nil {
-			return "", errors.Wrap(err, "add random suffix")
+		// that the username is not unique on dotcom, because many emails, are of formats
+		// like me@XX.com. So we always append a random suffix to the username in dotcom.
+		if dotcom.SourcegraphDotComMode() {
+			var err error
+			name, err = AddRandomSuffix(name)
+			if err != nil {
+				return "", errors.Wrap(err, "add random suffix")
+			}
 		}
 	}
 

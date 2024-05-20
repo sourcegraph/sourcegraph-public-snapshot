@@ -6,6 +6,7 @@ go_library(
     name = "auth",
     srcs = ["auth.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -26,6 +27,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/actor/anonymous",
@@ -36,7 +38,7 @@ go_test(
         "//internal/licensing",
         "//internal/productsubscription",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

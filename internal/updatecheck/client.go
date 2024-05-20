@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,6 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,7 +43,7 @@ var metricsRecorder = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "updat
 type Status struct {
 	Date          time.Time // the time that the last check completed
 	Err           error     // the error that occurred, if any. When present, indicates the instance is offline / unable to contact Sourcegraph.com
-	UpdateVersion string    // the version string of the updated version, if any
+	UpdateVersion string    // the version string of the updated version, if any. i.e. the latest sourcegraph release
 }
 
 // HasUpdate reports whether the status indicates an update is available.
@@ -389,6 +392,43 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(repoMetadataUsage)
 }
 
+func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	Manager := tokenusage.NewManager()
+	err = storeTokenUsageinDbBeforeRedisSync(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	usageData, err := Manager.RetrieveAndResetTokenUsageData()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(usageData)
+}
+
+// Stores in postgres right before the reset of the tokens to zero
+func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) error {
+	recorder := telemetryrecorder.New(db)
+	tokenManager := tokenusage.NewManager()
+	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
+	if err != nil {
+		return err
+	}
+	convertedTokenUsageData := make(telemetry.EventMetadata)
+	for key, value := range tokenUsageData {
+		convertedTokenUsageData[telemetry.SafeMetadataKey(key)] = value
+	}
+
+	// This extra variable helps demarcate that this was the final fetch and sync before the redis was reset
+	convertedTokenUsageData["FinalFetchAndSync"] = 1.0
+
+	if err := recorder.Record(ctx, "cody.llmTokenCounter", "record", &telemetry.EventParameters{
+		Metadata: convertedTokenUsageData,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
 	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions"))
 	var (
@@ -500,6 +540,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodyUsage2:                    []byte("{}"),
 		CodyProviders:                 []byte("{}"),
 		RepoMetadataUsage:             []byte("{}"),
+		LlmUsage:                      []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -558,13 +599,6 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
-	}
-	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !dotcom.SourcegraphDotComMode() {
-		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
-		}
 	}
 	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 	if err != nil {
@@ -631,14 +665,6 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
 	}
 
-	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
-	if !dotcom.SourcegraphDotComMode() {
-		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
-		}
-	}
-
 	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
@@ -668,11 +694,29 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("repoMetadataUsage failed", log.Error(err))
 	}
-
+	r.LlmUsage, err = getLLMUsageData(ctx, db)
+	if err != nil {
+		logFunc("getLLMUsageData failed", log.Error(err))
+	}
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
 	r.AuthProviders = authProviderTypes()
+
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !dotcom.SourcegraphDotComMode() {
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+		}
+
+		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+		}
+
+		r.CodyContextFiltersConfigured = conf.SiteConfig().CodyContextFilters != nil
+	}
 
 	// The following methods are the most expensive to calculate, so we do them in
 	// parallel.

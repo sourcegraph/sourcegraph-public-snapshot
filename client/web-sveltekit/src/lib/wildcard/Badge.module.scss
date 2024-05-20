@@ -3,7 +3,7 @@
     --badge-font-weight: 500;
     --badge-padding-y: 0.125rem;
     --badge-padding-x: 0.375rem;
-    --badge-border-radius: 3px;
+    --badge-border-radius: 4px;
     --badge-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
         box-shadow 0.15s ease-in-out;
 }
@@ -37,7 +37,8 @@
 .info,
 .warning,
 .merged,
-.outline-secondary {
+.outline-secondary,
+.link {
     background-color: var(--badge-base);
     color: var(--badge-text);
     border: var(--badge-border, none);
@@ -100,6 +101,17 @@
     --badge-border: 1px solid var(--secondary);
 }
 
+.link {
+    --badge-base: var(--color-bg-2);
+    --badge-light: var(--color-bg-2);
+    --badge-dark: var(--color-bg-2);
+    --badge-text: var(--link-color);
+    --badge-border: none;
+
+    font-weight: normal;
+    font-family: monospace;
+}
+
 a.primary,
 a.secondary,
 a.success,
@@ -107,7 +119,8 @@ a.danger,
 a.info,
 a.warning,
 a.merged,
-a.outline-secondary {
+a.outline-secondary,
+a.link {
     background-color: var(--badge-base);
     color: var(--badge-text);
 

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "deployment",
+    srcs = ["deployment.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment",
+    tags = [TAG_INFRA_RELEASE],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/pointers",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

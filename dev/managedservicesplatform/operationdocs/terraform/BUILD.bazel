@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "terraform",
+    srcs = ["terraform.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/terraform",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//visibility:public"],
+)

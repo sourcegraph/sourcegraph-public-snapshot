@@ -139,7 +139,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 	}
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
-		// New events that get exported: https://sourcegraph.com/docs/dev/background-information/telemetry
+		// New events that get exported: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 		events := telemetryrecorder.NewBestEffort(clients.Logger, clients.DB)
 		// For now, do not tee into event_logs in telemetryrecorder - retain the
 		// custom instrumentation of V1 events instead (usagestats.LogBackendEvent)
@@ -148,7 +148,7 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 		a := actor.FromContext(ctx)
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			// New event
-			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
+			events.Record(ctx, "search.latencies", telemetry.SafeAction(types[0]), &telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
 					"durationMs": float64(duration.Milliseconds()),
 				},

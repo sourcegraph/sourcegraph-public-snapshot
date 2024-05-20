@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = ["service.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/service",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//dev/linearhooks:__subpackages__"],
+    deps = [
+        "//dev/linearhooks/internal/handlers",
+        "//internal/version",
+        "//lib/background",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+    ],
+)

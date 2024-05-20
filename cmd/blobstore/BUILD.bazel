@@ -7,6 +7,7 @@ go_library(
     name = "blobstore_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/blobstore/shared",
@@ -18,11 +19,8 @@ go_library(
 go_binary(
     name = "blobstore",
     embed = [":blobstore_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -32,7 +30,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -56,5 +54,6 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_GRAPH,
     ],
 )

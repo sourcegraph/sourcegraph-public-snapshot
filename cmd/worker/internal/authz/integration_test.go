@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
 	authzGitLab "github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
@@ -110,6 +112,21 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Github: &schema.GitHubAuthProvider{
+						Url: "https://github.com",
+					},
+				},
+			},
+		},
+	})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
 	ratelimit.SetupForTest(t)
 
@@ -286,6 +303,21 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Github: &schema.GitHubAuthProvider{
+						Url: "https://ghe.sgdev.org",
+					},
+				},
+			},
+		},
+	})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
 	ratelimit.SetupForTest(t)
 	rcache.SetupForTest(t)

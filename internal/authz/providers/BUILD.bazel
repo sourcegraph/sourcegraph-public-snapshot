@@ -5,6 +5,7 @@ go_library(
     name = "providers",
     srcs = ["authz.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -15,7 +16,6 @@ go_library(
         "//internal/authz/providers/github",
         "//internal/authz/providers/gitlab",
         "//internal/authz/providers/perforce",
-        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/extsvc",
@@ -35,8 +35,8 @@ go_test(
         "main_test.go",
     ],
     embed = [":providers"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
-        "//cmd/frontend/globals",
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/authz/providers/gitlab",

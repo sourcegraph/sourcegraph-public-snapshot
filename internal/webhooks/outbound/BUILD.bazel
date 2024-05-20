@@ -8,6 +8,7 @@ go_library(
         "outbound.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/webhooks/outbound",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -24,11 +25,12 @@ go_test(
     timeout = "short",
     srcs = ["outbound_test.go"],
     embed = [":outbound"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
         "@com_github_stretchr_testify//assert",
     ],
 )

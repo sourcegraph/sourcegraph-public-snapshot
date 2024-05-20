@@ -10,6 +10,7 @@ go_library(
         "perms_syncer_worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -57,6 +58,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":authz"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost for database
         "requires-network",
     ],
@@ -66,6 +68,7 @@ go_test(
         "//internal/authz",
         "//internal/authz/providers/github",
         "//internal/authz/providers/gitlab",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
@@ -84,7 +87,8 @@ go_test(
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "//schema",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",

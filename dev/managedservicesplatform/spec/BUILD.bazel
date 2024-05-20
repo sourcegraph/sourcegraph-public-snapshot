@@ -13,6 +13,7 @@ go_library(
         "spec.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/internal/imageupdater",
@@ -29,10 +30,10 @@ go_test(
     name = "spec_test",
     srcs = [
         "environment_test.go",
-        "projectid_test.go",
         "service_test.go",
     ],
     embed = [":spec"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//lib/pointers",
         "@com_github_hexops_autogold_v2//:autogold",

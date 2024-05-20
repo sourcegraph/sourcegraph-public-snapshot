@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -56,7 +57,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 
 	repositoryCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
 	if err != nil {
-		log15.Error("Failed to count repos", "error", err)
+		s.logger.Error("failed to count repos", log.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -69,7 +70,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	repoRows := []repoRow{}
 	repoSqlRows, err := s.db.QueryContext(ctx, "SELECT repo, last_accessed_at FROM rockskip_repos ORDER BY last_accessed_at DESC LIMIT 5")
 	if err != nil {
-		log15.Error("Failed to list repoRows", "error", err)
+		s.logger.Error("failed to list repoRows", log.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -78,7 +79,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 		var repo string
 		var lastAccessedAt time.Time
 		if err := repoSqlRows.Scan(&repo, &lastAccessedAt); err != nil {
-			log15.Error("Failed to scan repo", "error", err)
+			s.logger.Error("failed to scan repo", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -87,7 +88,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 
 	symbolsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_symbols'))"))
 	if err != nil {
-		log15.Error("Failed to get size of symbols table", "error", err)
+		s.logger.Error("failed to get size of symbols table", log.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

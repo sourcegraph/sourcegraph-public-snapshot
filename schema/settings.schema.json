@@ -415,6 +415,15 @@
       "type": "boolean",
       "default": false
     },
+    "search.displayLimit": {
+      "description": "The number of results we send down during a search. Note: this is different to the count: in the query. The search will continue once we hit displayLimit and updated filters and statistics will continue to stream down. Defaults to 1500.",
+      "type": "integer",
+      "minimum": 1,
+      "default": 1500,
+      "!go": {
+        "pointer": true
+      }
+    },
     "search.includeForks": {
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",
@@ -479,10 +488,32 @@
             "type": "string",
             "enum": ["top", "home"]
           },
+          "variant": {
+            "type": "string",
+            "enum": ["primary", "secondary", "success", "danger", "warning", "info", "note"]
+          },
           "dismissible": {
             "description": "Whether this notice can be dismissed (closed) by the user.",
             "type": "boolean",
             "default": false
+          },
+          "styleOverrides": {
+            "description": "Overrides for the notice's default style. You probably want to use notice 'variant' setting instead.",
+            "type": "object",
+            "properties": {
+              "backgroundColor": {
+                "description": "The hex code of the background color for this notice.",
+                "type": "string"
+              },
+              "textColor": {
+                "description": "The hex code of the text color for this notice.",
+                "type": "string"
+              },
+              "textCentered": {
+                "description": "Whether the notice text should be centered.",
+                "type": "boolean"
+              }
+            }
           }
         }
       }

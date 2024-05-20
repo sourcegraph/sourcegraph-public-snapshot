@@ -8,18 +8,22 @@ packer="$(pwd)/$2"
 base="cmd/executor/docker-mirror/"
 
 ## Setting up the folder we're going to use with packer
-mkdir workdir
+mkdir workdir -p
 trap "rm -Rf workdir" EXIT
 
 cp "${base}/docker-mirror.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
 
-"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
+GCP_PROJECT="aspect-dev"
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project="$GCP_PROJECT" >"workdir/builder-sa-key.json"
 
 ## Setting up packer
 export PKR_VAR_name
-PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
+PKR_VAR_name="${IMAGE_FAMILY}"
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
+  PKR_VAR_name="${PKR_VAR_name}-${BUILDKITE_BUILD_NUMBER}"
+fi
 export PKR_VAR_image_family="${IMAGE_FAMILY}"
 export PKR_VAR_tagged_release="${EXECUTOR_IS_TAGGED_RELEASE}"
 export PKR_VAR_aws_access_key=${AWS_EXECUTOR_AMI_ACCESS_KEY}

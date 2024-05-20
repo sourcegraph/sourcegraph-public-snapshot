@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "search",
+    srcs = [
+        "diff_fetcher.go",
+        "diff_format.go",
+        "highlight.go",
+        "lazy_commit.go",
+        "match_tree.go",
+        "search.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/search",
+    tags = [TAG_PLATFORM_SOURCE],
+    visibility = ["//cmd/gitserver:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/byteutils",
+        "//internal/gitserver/protocol",
+        "//internal/search/casetransform",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_test(
+    name = "search_test",
+    srcs = [
+        "diff_format_test.go",
+        "diff_test.go",
+        "match_tree_test.go",
+        "search_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":search"],
+    embedsrcs = [
+        "testdata/large_diff.txt",
+        "testdata/small_diff.txt",
+    ],
+    tags = [TAG_PLATFORM_SOURCE],
+    deps = [
+        "//internal/actor",
+        "//internal/authz",
+        "//internal/gitserver/protocol",
+        "//internal/search/result",
+        "//lib/errors",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_stretchr_testify//require",
+    ],
+)

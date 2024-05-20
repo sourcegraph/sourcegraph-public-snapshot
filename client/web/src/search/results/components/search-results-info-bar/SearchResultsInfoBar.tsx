@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { type FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiOpenInNew, mdiThumbDown, mdiThumbUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -10,7 +10,9 @@ import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Alert,
     Button,
@@ -36,7 +38,6 @@ import {
 } from '../../../../batches/utils'
 import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
-import { eventLogger } from '../../../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../../../tracking/util'
 import { SearchResultsCsvExportModal } from '../../export/SearchResultsCsvExportModal'
 import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
@@ -59,6 +60,7 @@ const KEYWORD_SEARCH_POPOVER_PADDING = createRectangle(0, 0, 0, 2)
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
+        TelemetryV2Props,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     /** The currently authenticated user or null */
@@ -114,6 +116,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         sourcegraphURL,
         onTogglePatternType,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const popoverRef = useRef<HTMLDivElement>(null)
@@ -195,7 +198,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
             return
         }
 
-        eventLogger.log(
+        EVENT_LOGGER.log(
             'web:codySearch:feedbackSubmitted',
             !isPrivateInstance ? { ...codySearchInput, positive } : null,
             !isPrivateInstance ? { ...codySearchInput, positive } : null
@@ -206,12 +209,14 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('search.resultsInfoBar.savedQueriesModal', 'close')
+    }, [telemetryService, telemetryRecorder])
 
     const handleKeywordSearchToggle = useCallback(() => {
         telemetryService.log('ToggleKeywordPatternType', { currentStatus: patternType === SearchPatternType.keyword })
+        telemetryRecorder.recordEvent('search.resultsInfoBar.toggleKeywordSearch', 'toggle')
         onTogglePatternType(patternType)
-    }, [onTogglePatternType, patternType, telemetryService])
+    }, [onTogglePatternType, patternType, telemetryService, telemetryRecorder])
 
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
 
@@ -431,6 +436,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                     query={query}
                     authenticatedUser={authenticatedUser}
                     onDidCancel={onSaveQueryModalClose}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             {showCsvExportModal && (
@@ -440,6 +446,7 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
                     results={results}
                     sourcegraphURL={sourcegraphURL}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                     onClose={() => setShowCsvExportModal(false)}
                 />
             )}

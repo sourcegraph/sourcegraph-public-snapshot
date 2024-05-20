@@ -4,11 +4,11 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'
 
 import type { SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 import { V2AuthProviderTypes } from '../util/constants'
 
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
@@ -52,7 +52,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
             }
 
             setLoading(true)
-            eventLogger.log('InitiateSignIn')
+            EVENT_LOGGER.log('InitiateSignIn')
             telemetryRecorder.recordEvent('auth', 'initiate', { metadata: { type: V2AuthProviderTypes.builtin } })
             try {
                 const response = await fetch('/-/sign-in', {

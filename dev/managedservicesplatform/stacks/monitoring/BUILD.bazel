@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -5,6 +6,7 @@ go_library(
     srcs = [
         "cloudsql.go",
         "common.go",
+        "dashboard.go",
         "job.go",
         "monitoring.go",
         "nobl9.go",
@@ -14,6 +16,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/monitoring",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//dev/managedservicesplatform:__subpackages__",
         "//dev/sg/msp:__pkg__",
@@ -37,6 +40,8 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringdashboard",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringnotificationchannel",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringuptimecheckconfig",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//serviceaccountkey",
@@ -51,5 +56,16 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_sentry//project",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_slack//conversation",
         "@org_golang_x_exp//maps",
+    ],
+)
+
+go_test(
+    name = "monitoring_test",
+    srcs = ["dashboard_test.go"],
+    embed = [":monitoring"],
+    tags = [TAG_INFRA_CORESERVICES],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//monitoringalertpolicy",
     ],
 )

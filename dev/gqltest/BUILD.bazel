@@ -17,6 +17,7 @@ go_test(
         "search_test.go",
         "site_config_test.go",
         "sub_repo_permissions_test.go",
+        "symbol_search_test.go",
     ],
     visibility = [
         "//testing:__pkg__",

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { dirname } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -194,7 +194,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
 
             telemetryService.log('FileTreeLoadDirectory')
-            telemetryRecorder.recordEvent('blobSidebar.fileTreeDirectory', 'load')
+            telemetryRecorder.recordEvent('repoSidebar.fileTreeDirectory', 'load')
             await fetchEntries({
                 ...defaultVariables,
                 filePath: fullPath,
@@ -227,7 +227,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
-                telemetryRecorder.recordEvent('blobSidebar.fileTreeParentLink', 'click')
+                telemetryRecorder.recordEvent('repoSidebar.fileTreeParentLink', 'click')
                 navigate(element.dotdot)
 
                 let parent = props.initialFilePathIsDirectory
@@ -242,7 +242,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.entry) {
                 telemetryService.log('FileTreeClick')
-                telemetryRecorder.recordEvent('blobSidebar.fileTreeLink', 'click')
+                telemetryRecorder.recordEvent('repoSidebar.fileTreeLink', 'click')
                 navigate(element.entry.url)
             }
             setSelectedIds([element.id])

@@ -8,6 +8,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,7 @@ import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, type NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
 
-export interface NotebooksListPageProps extends TelemetryProps {
+export interface NotebooksListPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
@@ -55,22 +56,21 @@ function setSelectedLocationTab(location: Location, navigate: NavigateFunction, 
 
 const LOADING = 'loading' as const
 
+export type NotebooksFilterEvents = 'myNotebooks' | 'starredNotebooks' | 'allNotebooks' | 'orgNotebooks'
+
 interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'starredByUserID' | 'namespace'> {
     id: string
     label: string
-    logEventName: string
+    logEventName: NotebooksFilterEvents
 }
 
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
     telemetryService,
+    telemetryRecorder,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
 }) => {
-    useEffect(() => {
-        telemetryService.logPageView('SearchNotebooksListPage')
-    }, [telemetryService])
-
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const navigate = useNavigate()
     const location = useLocation()
@@ -78,6 +78,14 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
         getSelectedTabFromLocation(location.search, authenticatedUser)
     )
+
+    useEffect(() => {
+        telemetryService.logPageView('SearchNotebooksListPage')
+        telemetryRecorder.recordEvent('notebooks.list', 'view', {
+            metadata: { tab: selectedTab === 'notebooks' ? 0 : 1 },
+        })
+    }, [telemetryService, telemetryRecorder, selectedTab])
+
     const [selectedFilter, setSelectedFilter] = useState<NotebooksFilter>()
 
     const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
@@ -93,8 +101,9 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
             setSelectedTab(tab)
             setSelectedLocationTab(location, navigate, tab)
             telemetryService.log(logName)
+            telemetryRecorder.recordEvent(`notebooks.list.tab.${tab}`, 'click')
         },
-        [navigate, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService, telemetryRecorder]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [
@@ -161,7 +170,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
             authenticatedUser?.organizations.nodes.map(org => ({
                 id: `org-${org.id}-notebooks`,
                 label: `${org.displayName} notebooks`,
-                logEventName: 'OrgNotebooks',
+                logEventName: 'orgNotebooks',
                 namespace: org.id,
             })),
         [authenticatedUser]
@@ -192,18 +201,18 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                     id: 'my-notebooks',
                     label: 'Created by me',
                     creatorUserID: authenticatedUser.id,
-                    logEventName: 'MyNotebooks',
+                    logEventName: 'myNotebooks',
                 },
                 authenticatedUser && {
                     id: 'starred-notebooks',
                     label: 'Starred',
                     starredByUserID: authenticatedUser.id,
-                    logEventName: 'StarredNotebooks',
+                    logEventName: 'starredNotebooks',
                 },
                 {
                     id: 'all-notebooks',
                     label: 'All notebooks',
-                    logEventName: 'ExploreNotebooks',
+                    logEventName: 'exploreNotebooks',
                 },
                 ...(orgFilters || []),
             ].filter((filter): filter is NotebooksFilter => !!filter),
@@ -236,6 +245,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
+        telemetryRecorder.recordEvent('notebook', 'importedFromMarkdown')
         return <Navigate to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
@@ -250,6 +260,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 importNotebook={importNotebook}
                                 setImportState={setImportState}
                                 telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         )
                     }

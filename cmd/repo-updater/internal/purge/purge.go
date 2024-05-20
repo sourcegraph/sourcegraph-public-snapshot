@@ -11,10 +11,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -105,7 +105,7 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 // purge purges repos, returning the number of repos that were successfully purged
 func purge(ctx context.Context, logger log.Logger, db database.DB, options database.ListPurgableReposOptions) error {
 	start := time.Now()
-	gitserverClient := gitserver.NewClient("repos.purgeworker")
+	gitserverClient := gitserver.NewRepositoryServiceClient()
 	var (
 		total   int
 		success int
@@ -125,9 +125,9 @@ func purge(ctx context.Context, logger log.Logger, db database.DB, options datab
 			}
 		}
 		total++
-		if err := gitserverClient.Remove(ctx, repo); err != nil {
+		if err := gitserverClient.DeleteRepository(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other repos.
-			logger.Warn("failed to remove repository", log.String("repo", string(repo)), log.Error(err))
+			logger.Error("failed to remove repository", log.String("repo", string(repo)), log.Error(err))
 			purgeFailed.Inc()
 			failed++
 			continue

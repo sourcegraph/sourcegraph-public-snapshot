@@ -47,25 +47,8 @@ To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
 
 #### Docker
 
-[Run `gitserver` in a Docker container](https://sourcegraph.com/docs/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
+[Run `gitserver` in a Docker container](https://docs-legacy.sourcegraph.com/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
 
 #### Bazel
 
 Native binaries are provided through Bazel, built via Nix in [our fork of p4-fusion](https://github.com/sourcegraph/p4-fusion/actions/workflows/nix-build-and-upload.yaml). It can be invoked either through `./dev/p4-fusion-dev` or directly with `bazel run //dev/tools:p4-fusion`.
-
-#### Native binary executable
-
-The `p4-fusion` native binary has been built on Linux and macOS, but is untested on Windows.
-
-Read the [comprehensive instructions](https://sourcegraph.com/docs/dev/background-information/build_p4_fusion).
-
-If you do go the native binary route, you may also want to enable using the wrapper shell script that detects when the process has been killed and outputs an error so that the calling process can handle it.
-
-That wrapper shell script is `p4-fusion-wrapper-detect-kill.sh`, and in order to use it:
-
-1. Rename the `p4-fusion` binary executable to `p4-fusion-binary` and move it to a location in the `PATH`.
-1. Copy the shell script `p4-fusion-wrapper-detect-kill.sh` to a location in the `PATH`, renaming it `p4-fusion`.
-1. Copy the shell script `process-stats-watcher.sh` to a location in the `PATH`.
-1. Ensure all three of those are executable.
-
-After those steps, when a native `gitserver` process runs `p4-fusion`, it will run the wrapper shell script, which will itself run the `p4-fusion-binary` executable, and the `process-stats-watcher.sh` executable.

@@ -11,9 +11,11 @@ go_library(
         "operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/dotcom/genhelper",
+        "//internal/version",
         "@com_github_khan_genqlient//graphql",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
@@ -46,6 +48,7 @@ go_test(
     name = "dotcom_test",
     srcs = ["dotcom_test.go"],
     embed = [":dotcom"],
+    tags = [TAG_CODY_PRIME],
     deps = ["@com_github_stretchr_testify//assert"],
 )
 

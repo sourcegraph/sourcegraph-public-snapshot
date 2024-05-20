@@ -8,8 +8,6 @@ This image comes in two flavours, the old alpine image, and the hardened one, bu
 
 ### Alpine
 
-As per [RFC 793]() Sourcegraph 5.1.0 is the last release we ship this variant to customers.
-
 - Build: `./docker-images/postgres-12-alpine/build.sh`
 - Test: N/A
 

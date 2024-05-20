@@ -32,8 +32,6 @@ type kubernetesRunner struct {
 	dir            string
 	filesStore     files.Store
 	options        command.KubernetesContainerOptions
-	// tmpDir is used to store temporary files used for k8s execution.
-	tmpDir string
 }
 
 var _ Runner = &kubernetesRunner{}
@@ -201,10 +199,5 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 		return nil, err
 	}
 
-	urlx, err := baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
-	if err != nil {
-		return nil, err
-	}
-
-	return urlx, nil
+	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
 }

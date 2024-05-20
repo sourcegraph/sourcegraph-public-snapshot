@@ -18,6 +18,7 @@ go_library(
         "verify_email.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/auth/userpasswd",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
@@ -29,10 +30,10 @@ go_library(
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/cookie",
         "//internal/database",
         "//internal/deviceid",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",
@@ -60,7 +61,6 @@ go_test(
     name = "userpasswd_test",
     timeout = "short",
     srcs = [
-        "config_test.go",
         "handlers_test.go",
         "lockout_test.go",
         "main_test.go",
@@ -70,6 +70,7 @@ go_test(
     ],
     embed = [":userpasswd"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # requires localhost database
         "requires-network",
     ],
@@ -87,7 +88,7 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_golang_jwt_jwt_v4//:jwt",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",

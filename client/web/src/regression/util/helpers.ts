@@ -1,6 +1,6 @@
 import * as jsonc from 'jsonc-parser'
 import { first } from 'lodash'
-import { throwError } from 'rxjs'
+import { lastValueFrom, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
@@ -89,31 +89,35 @@ async function createTestUser(
     { username, testUserPassword }: { username: string } & Pick<Config, 'testUserPassword'>
 ): Promise<void> {
     // If there's an error, try to create the user
-    const passwordResetURL = await gqlClient
-        .mutateGraphQL<CreateUserResult, CreateUserVariables>(
-            gql`
-                mutation CreateUser($username: String!, $email: String) {
-                    createUser(username: $username, email: $email) {
-                        resetPasswordURL
+    const passwordResetURL = await lastValueFrom(
+        gqlClient
+            .mutateGraphQL<CreateUserResult, CreateUserVariables>(
+                gql`
+                    mutation CreateUser($username: String!, $email: String) {
+                        createUser(username: $username, email: $email) {
+                            resetPasswordURL
+                        }
                     }
-                }
-            `,
-            { username, email: null }
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            catchError(error =>
-                throwError(
-                    new Error(
-                        `Could not create user ${JSON.stringify(
-                            username
-                        )} (you may need to update the sudo access token used by the test): ${asError(error).message})`
+                `,
+                { username, email: null }
+            )
+            .pipe(
+                map(dataOrThrowErrors),
+                catchError(error =>
+                    throwError(
+                        () =>
+                            new Error(
+                                `Could not create user ${JSON.stringify(
+                                    username
+                                )} (you may need to update the sudo access token used by the test): ${
+                                    asError(error).message
+                                })`
+                            )
                     )
-                )
-            ),
-            map(({ createUser }) => createUser.resetPasswordURL)
-        )
-        .toPromise()
+                ),
+                map(({ createUser }) => createUser.resetPasswordURL)
+            )
+    )
     if (!passwordResetURL) {
         throw new Error('passwordResetURL was empty')
     }
@@ -131,7 +135,7 @@ export async function createAuthProvider(
     gqlClient: GraphQLClient,
     authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
 ): Promise<ResourceDestructor> {
-    const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
+    const siteConfig = await lastValueFrom(fetchSiteConfiguration(gqlClient))
     const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
     const authProviders = siteConfigParsed['auth.providers']
     if (
@@ -174,7 +178,7 @@ export async function ensureNewUser(
             throw error
         }
     }
-    await createUser({ requestGraphQL }, username, email).toPromise()
+    await createUser({ requestGraphQL }, username, email)
     return () => deleteUser({ requestGraphQL }, username, true)
 }
 
@@ -185,18 +189,18 @@ export async function ensureNewOrganization(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     variables: CreateOrganizationVariables
 ): Promise<{ destroy: ResourceDestructor; result: CreateOrganizationResult['createOrganization'] }> {
-    const matchingOrgs = (await fetchAllOrganizations({ requestGraphQL }, { first: 1000 }).toPromise()).nodes.filter(
+    const matchingOrgs = (await lastValueFrom(fetchAllOrganizations({ requestGraphQL }, { first: 1000 }))).nodes.filter(
         org => org.name === variables.name
     )
     if (matchingOrgs.length > 1) {
         throw new Error(`More than one organization name exists with name ${variables.name}`)
     }
     if (matchingOrgs.length === 1) {
-        await deleteOrganization({ requestGraphQL }, matchingOrgs[0].id).toPromise()
+        await deleteOrganization({ requestGraphQL }, matchingOrgs[0].id)
     }
-    const createdOrg = await createOrganization({ requestGraphQL }, variables).toPromise()
+    const createdOrg = await lastValueFrom(createOrganization({ requestGraphQL }, variables))
     return {
-        destroy: () => deleteOrganization({ requestGraphQL }, createdOrg.id).toPromise(),
+        destroy: () => deleteOrganization({ requestGraphQL }, createdOrg.id),
         result: createdOrg,
     }
 }
@@ -239,20 +243,16 @@ export async function editSiteConfig(
     gqlClient: GraphQLClient,
     ...edits: ((contents: string) => jsonc.Edit[])[]
 ): Promise<{ destroy: ResourceDestructor; result: boolean }> {
-    const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
+    const origConfig = await lastValueFrom(fetchSiteConfiguration(gqlClient))
     let newContents = origConfig.configuration.effectiveContents
     for (const editFunc of edits) {
         newContents = jsonc.applyEdits(newContents, editFunc(newContents))
     }
     return {
-        result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),
+        result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents),
         destroy: async () => {
-            const site = await fetchSiteConfiguration(gqlClient).toPromise()
-            await updateSiteConfiguration(
-                gqlClient,
-                site.configuration.id,
-                origConfig.configuration.effectiveContents
-            ).toPromise()
+            const site = await lastValueFrom(fetchSiteConfiguration(gqlClient))
+            await updateSiteConfiguration(gqlClient, site.configuration.id, origConfig.configuration.effectiveContents)
         },
     }
 }

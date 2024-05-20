@@ -16,10 +16,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
@@ -110,7 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient())
 	server := &repoupdater.Server{
 		Logger:    logger,
 		Store:     store,
@@ -206,9 +205,8 @@ func makeGRPCServer(logger log.Logger, server *repoupdater.Server) goroutine.Bac
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := defaults.NewServer(logger)
 	proto.RegisterRepoUpdaterServiceServer(grpcServer, server)
-	reflection.Register(grpcServer)
 
 	return grpcserver.NewFromAddr(logger.Scoped("repo-updater.grpcserver"), addr, grpcServer)
 }
@@ -382,9 +380,8 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 // TODO: This might clash with what osscmd.Main does.
 // watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db database.DB) {
-	globals.WatchPermissionsUserMapping()
 	go func() {
-		t := time.NewTicker(providers.RefreshInterval())
+		t := time.NewTicker(providers.RefreshInterval(conf.Get()))
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
 				ctx,
@@ -540,25 +537,6 @@ where last_fetched < now() - interval '8 hours'
 `)
 		if err != nil {
 			logger.Error("Failed to count stale repos", log.Error(err))
-			return 0
-		}
-		return count
-	})
-
-	// Count the number of repos that are deleted but still cloned on disk. These
-	// repos are eligible to be purged.
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_purgeable_repos",
-		Help: "The number of deleted repos that are still cloned on disk",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT
-	COALESCE(SUM(cloned), 0)
-FROM
-	repo_statistics
-`)
-		if err != nil {
-			logger.Error("Failed to count purgeable repos", log.Error(err))
 			return 0
 		}
 		return count

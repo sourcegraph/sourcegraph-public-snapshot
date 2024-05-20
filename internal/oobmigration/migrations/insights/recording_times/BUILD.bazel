@@ -8,6 +8,7 @@ go_library(
         "migrator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/recording_times",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/basestore",
@@ -27,6 +28,7 @@ go_test(
     ],
     embed = [":recording_times"],
     tags = [
+        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

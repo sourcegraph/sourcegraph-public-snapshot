@@ -19,7 +19,7 @@ import (
 var dependencies = []dependency{
 	"github.com/bufbuild/buf/cmd/buf@v1.11.0",
 	"github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.5.1",
-	"google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1",
+	"google.golang.org/protobuf/cmd/protoc-gen-go@v1.33.0",
 }
 
 type dependency string

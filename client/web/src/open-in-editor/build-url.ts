@@ -108,7 +108,7 @@ export function isProjectPathValid(projectPath: string | undefined): boolean {
     return !!projectPath && (isWindowsPath(projectPath) || path.isAbsolute(projectPath))
 }
 
-function getProjectPath(editorSettings: EditorSettings): string | undefined {
+export function getProjectPath(editorSettings: EditorSettings): string | undefined {
     if (navigator.userAgent.includes('Win') && editorSettings['projectPaths.windows']) {
         return editorSettings['projectPaths.windows']
     }
@@ -125,7 +125,7 @@ function isWindowsPath(path: string): boolean {
     return /^[A-Za-z]:\\/.test(path)
 }
 
-function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
+export function getUrlPattern(editor: Editor, editorSettings: EditorSettings): string {
     if (editor.urlPattern) {
         return editor.urlPattern
     }

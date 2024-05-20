@@ -5,8 +5,10 @@ go_library(
     name = "repoupdater",
     srcs = ["server.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/repo-updater/internal/gitserver",
         "//internal/actor",
         "//internal/api",
         "//internal/batches/syncer",
@@ -33,10 +35,12 @@ go_test(
     ],
     embed = [":repoupdater"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],
     deps = [
+        "//cmd/repo-updater/internal/gitserver",
         "//cmd/repo-updater/internal/scheduler",
         "//internal/api",
         "//internal/conf/reposource",
@@ -47,7 +51,6 @@ go_test(
         "//internal/extsvc/awscodecommit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
-        "//internal/gitserver",
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/observation",

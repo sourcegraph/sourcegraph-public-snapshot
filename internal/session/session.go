@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -45,23 +44,6 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 
 // cookieName is the name of the HTTP cookie that stores the session ID.
 const cookieName = "sgs"
-
-func init() {
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if c.SiteConfig().AuthSessionExpiry == "" {
-			return nil
-		}
-
-		d, err := time.ParseDuration(c.SiteConfig().AuthSessionExpiry)
-		if err != nil {
-			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
-		}
-		if d == 0 {
-			return conf.NewSiteProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
-		}
-		return nil
-	})
-}
 
 // sessionInfo is the information we store in the session. The gorilla/sessions library doesn't appear to
 // enforce the maxAge field in its session store implementations, so we include the expiry here.
@@ -237,6 +219,10 @@ func GetData(r *http.Request, key string, value any) error {
 	return nil
 }
 
+// SetActorFromUser creates an actor from a user, sets it in the session, and
+// returns a context with the user attached.
+//
+// 🚨 SECURITY: Should only be called after user is successfully authenticated.
 func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
 	info, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
@@ -247,12 +233,16 @@ func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Reques
 		return ctx, errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
 	}
 
-	// Write the session cookie
-	actor := sgactor.Actor{
+	// Authentication passed at this point, this is our actor
+	act := sgactor.Actor{
 		UID: user.ID,
 	}
 
-	return ctx, SetActor(w, r, &actor, expiryPeriod, user.CreatedAt)
+	// Add actor to the context, because we return it
+	ctx = actor.WithActor(ctx, &act)
+
+	// Write the session cookie with SetActor
+	return ctx, SetActor(w, r, &act, expiryPeriod, user.CreatedAt)
 }
 
 // SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a

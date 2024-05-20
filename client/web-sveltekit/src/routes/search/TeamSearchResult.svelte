@@ -22,7 +22,7 @@
     <div slot="title">
         &nbsp;
         {#if ownerURL}
-            <a data-sveltekit-reload href={ownerURL}>{displayName}</a>
+            <a href={ownerURL}>{displayName}</a>
         {:else}
             {displayName}
         {/if}
@@ -32,7 +32,7 @@
         </span>
     </div>
     {#if fileSearchQueryParams}
-        <p class="p-2 m-0">
+        <p>
             <a data-sveltekit-preload-data="tap" href="/search?{fileSearchQueryParams}">Show files</a>
         </p>
     {/if}
@@ -43,5 +43,10 @@
         border-left: 1px solid var(--border-color);
         margin-left: 0.5rem;
         padding-left: 0.5rem;
+    }
+
+    p {
+        padding: 0.5rem;
+        margin: 0;
     }
 </style>

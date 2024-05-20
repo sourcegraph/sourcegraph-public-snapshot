@@ -18,6 +18,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/Keyboa
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
 import { GlobalContributions } from './contributions'
+import { ExternalAccountsModal } from './external-account-modal/ExternalAccountsModal'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
@@ -157,7 +158,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard telemetryService={props.telemetryService} />
+                <LazySetupWizard
+                    telemetryService={props.telemetryService}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
+                />
             </Suspense>
         )
     }
@@ -218,9 +222,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} />
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                telemetryRecorder={props.platformContext.telemetryRecorder}
+            />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
+                <SurveyToast
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
+                />
             )}
             {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
                 <>
@@ -230,7 +240,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showSearchBox={showNavigationSearchBox}
                             authenticatedUser={props.authenticatedUser}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            ownEnabled={props.ownEnabled}
                             notebooksEnabled={props.notebooksEnabled}
                             searchContextsEnabled={props.searchContextsEnabled}
                             codeMonitoringEnabled={props.codeMonitoringEnabled}
@@ -239,6 +248,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                             showFeedbackModal={showFeedbackModal}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
+                            telemetryRecorder={props.platformContext.telemetryRecorder}
                         />
                     ) : (
                         <GlobalNavbar
@@ -254,11 +264,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ApplicationRoutes routes={props.routes} />
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-            />
+            <GlobalContributions key={3} />
             {fuzzyFinder && (
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
@@ -269,6 +275,14 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                     location={location}
                     userHistory={userHistory}
+                />
+            )}
+            {props.authenticatedUser && (
+                <ExternalAccountsModal
+                    context={window.context}
+                    authenticatedUser={props.authenticatedUser}
+                    isLightTheme={theme === Theme.Light}
+                    telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
             {showDeveloperDialog && <LazyDeveloperDialog />}

@@ -1,9 +1,11 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
+import { PermissionNamespace } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { PermissionsMap } from '../backend'
 import { mockPermissionsMap, mockRoles } from '../mock'
 
 import { PermissionsList } from './Permissions'
@@ -82,3 +84,33 @@ export const AllPermissionsAssigned: StoryFn = () => (
 )
 
 AllPermissionsAssigned.storyName = 'All permissions assigned'
+
+export const DotComPermissionIncluded: StoryFn = () => (
+    <WebStory>
+        {() => {
+            const allPermissions: PermissionsMap = {
+                ...mockPermissionsMap,
+                [PermissionNamespace.PRODUCT_SUBSCRIPTIONS]: [
+                    {
+                        __typename: 'Permission',
+                        id: 'test-03-01',
+                        namespace: PermissionNamespace.PRODUCT_SUBSCRIPTIONS,
+                        action: 'TEST',
+                        displayName: 'PRODUCT_SUBSCRIPTIONS#TEST',
+                    },
+                ],
+            }
+            return (
+                <MockedTestProvider>
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        onChange={noop}
+                        onBlur={noop}
+                        isChecked={isChecked(roleWithAllPermissions)}
+                        roleName={roleName}
+                    />
+                </MockedTestProvider>
+            )
+        }}
+    </WebStory>
+)

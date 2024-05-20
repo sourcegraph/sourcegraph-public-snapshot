@@ -24,7 +24,7 @@ import (
 
 func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	entries := make([]*btypes.BatchSpecExecutionCacheEntry, 0, 3)
-	for i := 0; i < cap(entries); i++ {
+	for i := range cap(entries) {
 		job := &btypes.BatchSpecExecutionCacheEntry{
 			UserID: 900 + int32(i),
 			Key:    fmt.Sprintf("check-out-this-cache-key-%d", i),
@@ -151,7 +151,7 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	c := &bt.TestClock{Time: timeutil.Now()}
-	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+	s := NewWithClock(db, observation.TestContextTB(t), nil, c.Now)
 	user := bt.CreateTestUser(t, db, true)
 
 	maxSize := 10 * 1024 // 10kb

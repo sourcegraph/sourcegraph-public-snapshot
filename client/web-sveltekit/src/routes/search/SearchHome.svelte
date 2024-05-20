@@ -1,11 +1,14 @@
 <script lang="ts">
-    import { setContext } from 'svelte'
+    import { setContext, onMount } from 'svelte'
 
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import type { QueryStateStore } from '$lib/search/state'
+    import type { QueryStateStore, QueryState } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
+
+    import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
 
@@ -14,13 +17,26 @@
             queryState.setQuery(newQuery)
         },
     })
+
+    onMount(() => {
+        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewHomePage)
+    })
+
+    function handleSubmit(state: QueryState) {
+        SVELTE_LOGGER.log(
+            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
+            { source: 'home', query: state.query },
+            { source: 'home', patternType: state.patternType }
+        )
+    }
 </script>
 
 <section>
     <div class="content">
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
-            <SearchInput {queryState} />
+            <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
+            <SearchHomeNotifications />
         </div>
     </div>
 </section>
@@ -50,6 +66,9 @@
 
     .search {
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
     }
 
     img.logo {

@@ -87,9 +87,14 @@ func (b *serviceBuilder) AddDependency(dep cdktf.ITerraformDependable) {
 func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
 	if vars.PrivateNetwork != nil {
+		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#example-usage---cloudrunv2-service-directvpc
+		// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc
 		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
-			Connector: vars.PrivateNetwork.Connector.SelfLink(),
-			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
+			NetworkInterfaces: &[]*cloudrunv2service.CloudRunV2ServiceTemplateVpcAccessNetworkInterfaces{{
+				Network:    vars.PrivateNetwork.Network.Id(),
+				Subnetwork: vars.PrivateNetwork.Subnetwork.Id(),
+			}},
+			Egress: pointers.Ptr("PRIVATE_RANGES_ONLY"),
 		}
 	}
 
@@ -187,18 +192,18 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
 				Name:  pointers.Ptr(vars.Service.ID),
-				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
+				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ImageTag)),
 
 				Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
 					Limits: &vars.ResourceLimits,
 				},
 
-				Ports: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{{
+				Ports: &cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{
 					// ContainerPort is provided to the container as $PORT in Cloud Run
 					ContainerPort: pointers.Float64(builder.ServicePort),
 					// Name is protocol, supporting 'h2c', 'http1', or nil (http1)
 					Name: (*string)(vars.Service.Protocol),
-				}},
+				},
 
 				Env: b.env,
 

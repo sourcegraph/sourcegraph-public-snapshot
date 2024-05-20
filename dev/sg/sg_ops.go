@@ -202,6 +202,13 @@ func opsUpdateImages(
 				return errors.Errorf("invalid custom registry %q", registryType)
 			}
 
+			// might have specified the public registry url without knowing, so we check and create dockrhub!
+			if strings.Contains(registryType, "index.docker.io") {
+				registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
+				std.Out.WriteNoticef("using Docker Hub registry %s/%s", registry.Host(), registry.Org())
+				break
+			}
+
 			// custom regisry is in the format <host>/<org>, so host = parts[0], org = parts[1]
 			gcr := images.NewGCR(parts[0], parts[1])
 			if err := gcr.LoadToken(); err != nil {

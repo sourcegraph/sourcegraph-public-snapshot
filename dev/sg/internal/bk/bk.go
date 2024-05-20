@@ -47,7 +47,7 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	}
 
 	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
+		Project: secrets.LocalDevProject,
 		Name:    "SG_BUILDKITE_TOKEN",
 	}, func(_ context.Context) (string, error) {
 		return getTokenFromUser(out)
@@ -121,7 +121,7 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no build found")
+			return nil, errors.Newf("build %s not found on pipeline %q", number, pipeline)
 		}
 		return nil, err
 	}
@@ -148,9 +148,6 @@ func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit s
 // ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build
 func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifact, error) {
 	artifacts, _, err := c.bk.Artifacts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New("no artifacts because no build found")
@@ -215,12 +212,22 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 	return result, nil
 }
 
+func (c *Client) CancelBuild(ctx context.Context, org, pipeline, number string) (*buildkite.Build, error) {
+	return c.bk.Builds.Cancel(org, pipeline, number)
+}
+
 // TriggerBuild request a build on Buildkite API and returns that build.
-func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
-	build, _, err := c.bk.Builds.Create(BuildkiteOrg, pipeline, &buildkite.CreateBuild{
-		Commit: commit,
+func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string, opts ...CreateBuildOpt) (*buildkite.Build, error) {
+	newBuild := &buildkite.CreateBuild{
 		Branch: branch,
-	})
+		Commit: commit,
+	}
+
+	for _, opt := range opts {
+		opt(newBuild)
+	}
+	build, _, err := c.bk.Builds.Create(BuildkiteOrg, pipeline, newBuild)
+
 	return build, err
 }
 

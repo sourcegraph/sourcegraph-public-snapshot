@@ -1,6 +1,6 @@
 import { type Remote, proxy } from 'comlink'
-import { type Unsubscribable, Subscription, from, of } from 'rxjs'
-import { publishReplay, refCount, switchMap } from 'rxjs/operators'
+import { type Unsubscribable, Subscription, from, of, lastValueFrom, ReplaySubject } from 'rxjs'
+import { share, switchMap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 
@@ -101,13 +101,13 @@ export const initMainThreadAPI = (
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
         requestGraphQL: (request, variables) =>
-            platformContext
-                .requestGraphQL({
+            lastValueFrom(
+                platformContext.requestGraphQL({
                     request,
                     variables,
                     mightContainPrivateInfo: true,
                 })
-                .toPromise(),
+            ),
         // Commands
         executeCommand: (command, args) => executeCommand({ command, args }),
         registerCommand: (command, run) => {
@@ -120,13 +120,20 @@ export const initMainThreadAPI = (
         getEnabledExtensions: () => {
             if (platformContext.getStaticExtensions) {
                 return proxySubscribable(
-                    platformContext
-                        .getStaticExtensions()
-                        .pipe(
-                            switchMap(staticExtensions =>
-                                staticExtensions ? of(staticExtensions).pipe(publishReplay(1), refCount()) : of([])
-                            )
+                    platformContext.getStaticExtensions().pipe(
+                        switchMap(staticExtensions =>
+                            staticExtensions
+                                ? of(staticExtensions).pipe(
+                                      share({
+                                          connector: () => new ReplaySubject(1),
+                                          resetOnError: false,
+                                          resetOnComplete: false,
+                                          resetOnRefCountZero: false,
+                                      })
+                                  )
+                                : of([])
                         )
+                    )
                 )
             }
 

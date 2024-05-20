@@ -6,7 +6,7 @@ import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
@@ -49,7 +49,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CodeIntelRankingPage')
-        telemetryRecorder.recordEvent('codeIntel.ranking', 'view')
+        telemetryRecorder.recordEvent('admin.codeIntel.ranking', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const { data, loading, error, refetch } = useRankingSummary({})

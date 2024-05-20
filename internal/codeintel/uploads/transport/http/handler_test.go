@@ -91,7 +91,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 
 	for _, user := range users {
 		var expectedContents []byte
-		for i := 0; i < 20000; i++ {
+		for i := range 20000 {
 			expectedContents = append(expectedContents, byte(i))
 		}
 
@@ -120,12 +120,12 @@ func TestHandleEnqueueAuth(t *testing.T) {
 				repoStore,
 				mockUploadStore,
 				mockDBStore,
-				uploadhandler.NewOperations(&observation.TestContext, "test"),
+				uploadhandler.NewOperations(observation.TestContextTB(t), "test"),
 			),
 			db.Users(),
 			repoStore,
 			authValidators,
-			newOperations(&observation.TestContext).authMiddleware,
+			newOperations(observation.TestContextTB(t)).authMiddleware,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {

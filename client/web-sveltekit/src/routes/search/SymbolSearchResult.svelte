@@ -1,15 +1,15 @@
 <svelte:options immutable />
 
 <script lang="ts">
+    import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
+    import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
-    import CodeExcerpt from '$lib/search/CodeExcerpt.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
-    import SymbolKind from '$lib/search/SymbolKind.svelte'
+    import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import type { SymbolMatch } from '$lib/shared'
 
     import FileSearchResultHeader from './FileSearchResultHeader.svelte'
-    import RepoStars from './RepoStars.svelte'
+    import PreviewButton from './PreviewButton.svelte'
     import SearchResult from './SearchResult.svelte'
 
     export let result: SymbolMatch
@@ -29,24 +29,22 @@
 </script>
 
 <SearchResult>
-    <CodeHostIcon slot="icon" repository={result.repository} />
     <FileSearchResultHeader slot="title" {result} />
     <svelte:fragment slot="info">
         {#if result.repoStars}
             <RepoStars repoStars={result.repoStars} />
         {/if}
+        <PreviewButton {result} />
     </svelte:fragment>
     <svelte:fragment slot="body">
         <div use:observeIntersection on:intersecting={event => (visible = event.detail)}>
             {#each result.symbols as symbol, index}
                 <a href={symbol.url}>
                     <div class="result">
-                        <div class="symbol-kind">
-                            <SymbolKind symbolKind={symbol.kind} />
-                        </div>
+                        <SymbolKindIcon symbolKind={symbol.kind} />
                         {#await highlightedHTMLRows then result}
                             <CodeExcerpt
-                                startLine={symbol.line - 1}
+                                startLine={symbol.line}
                                 plaintextLines={['']}
                                 highlightedHTMLRows={result?.[index]}
                                 --background-color="transparent"
@@ -64,13 +62,14 @@
         display: flex;
         align-items: center;
         width: 100%;
-        background-color: var(--code-bg);
         padding: 0.5rem;
+        gap: 0.5rem;
         border-bottom: 1px solid var(--border-color);
-    }
 
-    .symbol-kind {
-        margin-right: 0.5rem;
+        background-color: var(--code-bg);
+        &:hover {
+            background-color: var(--subtle-bg-2);
+        }
     }
 
     a:hover {

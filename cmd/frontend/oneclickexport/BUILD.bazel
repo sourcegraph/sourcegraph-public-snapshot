@@ -9,6 +9,7 @@ go_library(
         "processor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/conf",
@@ -23,6 +24,7 @@ go_test(
     timeout = "short",
     srcs = ["export_test.go"],
     embed = [":oneclickexport"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/conf",
         "//internal/database/dbmocks",

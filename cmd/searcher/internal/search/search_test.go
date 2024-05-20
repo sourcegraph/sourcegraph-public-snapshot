@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,9 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 type fileType int
@@ -85,6 +86,7 @@ func main() {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IsCaseSensitive: true},
 		want: autogold.Expect(`README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 main.go:6:6:
 fmt.Println("Hello world")
 `),
@@ -94,6 +96,7 @@ fmt.Println("Hello world")
 		want: autogold.Expect(`README.md:2:3:
 
 Hello world example in go
+// No newline at end of chunk
 main.go:5:7:
 func main() {
 fmt.Println("Hello world")
@@ -106,6 +109,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
+// No newline at end of chunk
 main.go:4:7:
 
 func main() {
@@ -119,6 +123,7 @@ fmt.Println("Hello world")
 # Hello World
 
 Hello world example in go
+// No newline at end of chunk
 main.go:1:7:
 package main
 
@@ -134,6 +139,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 main.go:6:6:
 fmt.Println("Hello world")
 `),
@@ -168,6 +174,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: ""}, ExcludeLangs: []string{"Markdown"}},
@@ -184,10 +191,14 @@ symlink
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
-		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{`\.(md|txt)$`, `\.txt$`}},
-		want: autogold.Expect("abc.txt:1:1:\nw\n"),
+		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{`\.(md|txt)$`, `\.txt$`}},
+		want: autogold.Expect(`abc.txt:1:1:
+w
+// No newline at end of chunk
+`),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, ExcludePaths: "README\\.md"},
 		want: autogold.Expect(`main.go:6:6:
@@ -199,6 +210,7 @@ fmt.Println("Hello world")
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "w"}, IncludePaths: []string{"\\.(md|txt)", "README"}},
@@ -206,6 +218,7 @@ Hello world example in go
 # Hello World
 README.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "world"}, IncludePaths: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true},
@@ -289,7 +302,8 @@ func main() {
 # Hello World
 
 Hello world example in go
-main.go:1:8:
+// No newline at end of chunk
+main.go:1:7:
 package main
 
 import "fmt"
@@ -297,7 +311,6 @@ import "fmt"
 func main() {
 fmt.Println("Hello world")
 }
-
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "^$", IsRegExp: true}},
@@ -309,8 +322,10 @@ main.go:4:4:
 
 main.go:8:8:
 
+// No newline at end of chunk
 milton.png:1:1:
 
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{
@@ -323,6 +338,7 @@ milton.png:1:1:
 		},
 		want: autogold.Expect(`file++.plus:1:1:
 filename contains regex metachars
+// No newline at end of chunk
 `),
 	}, {
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "World", IsNegated: true}},
@@ -359,10 +375,10 @@ symlink
 `),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: true, PatternMatchesContent: true},
-		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n"),
+		want: autogold.Expect("abc.txt\nsymlink:1:1:\nabc.txt\n// No newline at end of chunk\n"),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: false, PatternMatchesContent: true},
-		want: autogold.Expect("symlink:1:1:\nabc.txt\n"),
+		want: autogold.Expect("symlink:1:1:\nabc.txt\n// No newline at end of chunk\n"),
 	}, {
 		arg:  protocol.PatternInfo{Query: &protocol.PatternNode{Value: "abc"}, PatternMatchesPath: true, PatternMatchesContent: false},
 		want: autogold.Expect("abc.txt\n"),
@@ -370,6 +386,7 @@ symlink
 		arg: protocol.PatternInfo{Query: &protocol.PatternNode{Value: "utf8"}, PatternMatchesPath: false, PatternMatchesContent: true},
 		want: autogold.Expect(`nonutf8.txt:1:1:
 file contains invalid utf8 � characters
+// No newline at end of chunk
 `),
 	}}
 
@@ -381,55 +398,61 @@ file contains invalid utf8 � characters
 		}, nil
 	}
 
-	service := &search.Service{
-		Store:   s,
-		Log:     s.Log,
-		Indexed: backend.ZoektDial(zoektURL),
-	}
-
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
-		Service: service,
-	})
-
-	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
-
-	ts := httptest.NewServer(handler)
-
-	t.Cleanup(func() {
-		ts.Close()
-	})
-
-	conf.Mock(&conf.Unified{})
-	t.Cleanup(func() {
-		conf.Mock(nil)
-	})
-
-	for i, test := range cases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			if test.arg.IsStructuralPat {
-				maybeSkipComby(t)
+	hybridSearch := []bool{true, false}
+	for _, withHybridSearch := range hybridSearch {
+		t.Run(fmt.Sprintf("withHybridSearch=%t", withHybridSearch), func(t *testing.T) {
+			service := &search.Service{
+				Store:               s,
+				Log:                 s.Log,
+				Indexed:             backend.ZoektDial(zoektURL),
+				DisableHybridSearch: !withHybridSearch,
 			}
 
-			req := protocol.Request{
-				Repo:            "foo",
-				URL:             "u",
-				Commit:          "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				PatternInfo:     test.arg,
-				FetchTimeout:    fetchTimeoutForCI(t),
-				NumContextLines: test.contextLines,
+			grpcServer := defaults.NewServer(logtest.Scoped(t))
+			proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
+				Service: service,
+			})
+
+			handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
+
+			ts := httptest.NewServer(handler)
+
+			t.Cleanup(func() {
+				ts.Close()
+			})
+
+			conf.Mock(&conf.Unified{})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
+
+			for i, test := range cases {
+				t.Run(strconv.Itoa(i), func(t *testing.T) {
+					if test.arg.IsStructuralPat {
+						maybeSkipComby(t)
+					}
+
+					req := protocol.Request{
+						Repo:            "foo",
+						URL:             "u",
+						Commit:          "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+						PatternInfo:     test.arg,
+						FetchTimeout:    fetchTimeoutForCI(t),
+						NumContextLines: test.contextLines,
+					}
+					m, err := doSearch(t, ts.URL, &req)
+					if err != nil {
+						t.Fatalf("%s failed: %s", test.arg.String(), err)
+					}
+					sort.Sort(sortByPath(m))
+					got := toString(m)
+					err = sanityCheckSorted(m)
+					if err != nil {
+						t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
+					}
+					test.want.Equal(t, got)
+				})
 			}
-			m, err := doSearch(t, ts.URL, &req)
-			if err != nil {
-				t.Fatalf("%s failed: %s", test.arg.String(), err)
-			}
-			sort.Sort(sortByPath(m))
-			got := toString(m)
-			err = sanityCheckSorted(m)
-			if err != nil {
-				t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
-			}
-			test.want.Equal(t, got)
 		})
 	}
 }
@@ -733,13 +756,17 @@ func toString(m []protocol.FileMatch) string {
 		for _, cm := range f.ChunkMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + 1))
+			firstLine := int(cm.ContentStart.Line) + 1
+			lastLine := firstLine + strings.Count(strings.TrimSuffix(cm.Content, "\n"), "\n")
+			buf.WriteString(strconv.Itoa(firstLine))
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + strings.Count(cm.Content, "\n") + 1))
+			buf.WriteString(strconv.Itoa(lastLine))
 			buf.WriteByte(':')
 			buf.WriteByte('\n')
 			buf.WriteString(cm.Content)
-			buf.WriteByte('\n')
+			if !strings.HasSuffix(cm.Content, "\n") {
+				buf.WriteString("\n// No newline at end of chunk\n")
+			}
 		}
 	}
 	return buf.String()

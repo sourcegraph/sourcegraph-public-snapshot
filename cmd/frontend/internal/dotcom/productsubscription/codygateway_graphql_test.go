@@ -49,7 +49,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
-		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
+		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)))
 		assert.Equal(t, graphqlbackend.BigInt(wantRateLimit.Limit), rateLimit.Limit())
 		assert.Equal(t, wantRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
@@ -69,7 +69,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
-		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10), []string{})
+		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10))
 		assert.Equal(t, graphqlbackend.BigInt(10), rateLimit.Limit())
 		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})

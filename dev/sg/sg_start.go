@@ -7,12 +7,12 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
-	sgrun "github.com/sourcegraph/run"
+	hashstructure "github.com/mitchellh/hashstructure/v2"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
@@ -21,9 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -45,8 +43,6 @@ func init() {
 		},
 	)
 }
-
-const devPrivateDefaultBranch = "master"
 
 var (
 	debugStartServices cli.StringSlice
@@ -79,6 +75,9 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 
 # View configuration for a commandset
 sg start -describe single-program
+
+# Run a set of commands instead of a commandset
+sg start --commands frontend gitserver
 `,
 		Category: category.Dev,
 		Flags: []cli.Flag{
@@ -94,7 +93,11 @@ sg start -describe single-program
 				Name:  "profile",
 				Usage: "Starts up pprof on port 6060",
 			},
-
+			&cli.BoolFlag{
+				Name:    "commands",
+				Aliases: []string{"cmd", "cmds"},
+				Usage:   "Signifies that you will be passing in individual commands to run, instead of a set of commands",
+			},
 			&cli.StringSliceFlag{
 				Name:        "debug",
 				Aliases:     []string{"d"},
@@ -183,26 +186,6 @@ func constructStartCmdLongHelp() string {
 }
 
 func startExec(ctx *cli.Context) error {
-	config, err := getConfig()
-	if err != nil {
-		return err
-	}
-
-	args := ctx.Args().Slice()
-	if len(args) > 2 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
-	}
-
-	if len(args) != 1 {
-		if config.DefaultCommandset != "" {
-			args = append(args, config.DefaultCommandset)
-		} else {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
-			return flag.ErrHelp
-		}
-	}
-
 	pid, exists, err := run.PidExistsWithArgs(os.Args[1:])
 	if err != nil {
 		std.Out.WriteAlertf("Could not check if 'sg %s' is already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
@@ -219,71 +202,6 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
-	commandset := args[0]
-	set, ok := config.Commandsets[commandset]
-	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", commandset))
-		return flag.ErrHelp
-	}
-
-	if ctx.Bool("describe") {
-		out, err := yaml.Marshal(set)
-		if err != nil {
-			return err
-		}
-
-		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", commandset, string(out)))
-	}
-
-	// If the commandset requires the dev-private repository to be cloned, we
-	// check that it's at the right location here.
-	if set.RequiresDevPrivate && !NoDevPrivateCheck {
-		repoRoot, err := root.RepositoryRoot()
-		if err != nil {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
-			return exit.NewEmptyExitErr(1)
-		}
-
-		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
-		exists, err := pathExists(devPrivatePath)
-		if err != nil {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			return exit.NewEmptyExitErr(1)
-		}
-		if !exists {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://sourcegraph.com/docs/dev/setup/quickstart#run-sg-setup"))
-
-			std.Out.Write("")
-			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
-			std.Out.WriteLine(output.Styledf(output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
-			std.Out.Write("")
-			std.Out.Write(fmt.Sprintf(`  commandsets:
-    %s:
-      requiresDevPrivate: false
-`, set.Name))
-			std.Out.Write("")
-
-			return exit.NewEmptyExitErr(1)
-		}
-
-		// dev-private exists, let's see if there are any changes
-		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
-		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath, devPrivateDefaultBranch)
-		if shouldUpdate {
-			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
-		}
-		if err != nil {
-			update.Close()
-			std.Out.WriteWarningf("WARNING: Encountered some trouble while checking if there are remote changes in dev-private!")
-			std.Out.Write("")
-			std.Out.Write(err.Error())
-			std.Out.Write("")
-		} else {
-			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
-		}
-	}
 	if ctx.Bool("profile") {
 		// start a pprof server
 		go func() {
@@ -306,92 +224,273 @@ go tool pprof -help
 `)
 	}
 
-	return startCommandSet(ctx.Context, set, config)
+	args := StartArgs{
+		Describe: ctx.Bool("describe"),
+	}
+	if ctx.Bool("commands") {
+		args.Commands = ctx.Args().Slice()
+	} else {
+		commandsets := ctx.Args().Slice()
+		switch length := len(commandsets); {
+		case length > 1:
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: too many arguments"))
+			return flag.ErrHelp
+		case length == 1:
+			args.CommandSet = commandsets[0]
+		}
+	}
+
+	return start(ctx.Context, args)
 }
 
-func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
-	// git fetch so that we check whether there are any remote changes
-	if err := sgrun.Bash(ctx, fmt.Sprintf("git fetch origin %s", branch)).Dir(path).Run().Wait(); err != nil {
-		return false, err
-	}
-	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
-	outputStr, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
+func start(ctx context.Context, args StartArgs) error {
+	// Start the config watcher
+	configs, err := watchConfig(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return len(outputStr) > 0, err
 
+	var (
+		childCtx context.Context
+		cancel   func()
+		errs     = make(chan error)
+		hash     uint64
+	)
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case err := <-errs:
+			if err != nil {
+				return err
+			}
+		case conf := <-configs:
+			// Construct the new commands definition and only restart if the changes
+			// to the config file are relevant to the commands we're running
+			cmds, err := args.toCommands(conf)
+			if err != nil {
+				return err
+			}
+
+			newHash, err := hashstructure.Hash(cmds, hashstructure.FormatV2, nil)
+			if err != nil {
+				return err
+			}
+			if hash == newHash {
+				continue
+			} else {
+				hash = newHash
+			}
+
+			// Cancel current context if exists, wait for it to close then create a new one
+			if cancel != nil {
+				cancel()
+
+				// Wait for the context to close and make sure it's a context cancellation error.
+				// In the case where all watched commands have already exited with 0 status,
+				// there won't be an error so we can just continue
+				select {
+				case err := <-errs:
+					if !errors.Is(err, context.Canceled) {
+						return err
+					}
+				case <-time.After(500 * time.Millisecond):
+				}
+			}
+
+			// Create a new child context and restart the process
+			childCtx, cancel = context.WithCancel(ctx)
+			defer cancel()
+
+			std.Out.ClearScreen()
+
+			go func() {
+				if args.Describe {
+					errs <- cmds.describe(conf)
+				} else {
+					errs <- cmds.start(childCtx)
+				}
+			}()
+		}
+	}
 }
 
-func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {
-	if err := runChecksWithName(ctx, set.Checks); err != nil {
+type StartArgs struct {
+	Describe   bool
+	Commands   []string
+	CommandSet string
+}
+
+func (args StartArgs) toCommands(conf *sgconf.Config) (*Commands, error) {
+	if conf == nil {
+		return nil, errors.New("config is nil")
+	}
+
+	// If the commands flag is passed, we just extract the command line arguments as
+	// a list of commands to run. Else we extract the commandset and parse out its individual commands
+	if len(args.Commands) > 0 {
+		return listToCommands(conf, args.Commands)
+	} else {
+		set, err := getCommandSet(conf, args.CommandSet)
+		if err != nil {
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: extracting commandset failed %q :(", err))
+			return nil, flag.ErrHelp
+		}
+
+		return commandSetToCommands(conf, set)
+	}
+}
+
+func getCommandSet(config *sgconf.Config, name string) (*sgconf.Commandset, error) {
+	if name == "" {
+		name = config.DefaultCommandset
+	}
+	if set, ok := config.Commandsets[name]; ok {
+		return set, nil
+	} else {
+		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: commandset %q not found :(", name))
+		return nil, flag.ErrHelp
+	}
+}
+
+// Public keys are considered part of hash calculation
+type Commands struct {
+	Name     string
+	Checks   []string
+	Commands []run.SGConfigCommand
+	Env      map[string]string
+	ibazel   *run.IBazel
+}
+
+func (cmds *Commands) add(cmd ...run.SGConfigCommand) {
+	cmds.Commands = append(cmds.Commands, cmd...)
+}
+
+func (cmds *Commands) getBazelTargets() (targets []string) {
+	for _, cmd := range cmds.Commands {
+		target := cmd.GetBazelTarget()
+		if target != "" && !slices.Contains(targets, target) {
+			targets = append(targets, target)
+		}
+	}
+
+	return targets
+}
+
+func (cmds *Commands) getInstallers() (installers []run.Installer, err error) {
+	for _, cmd := range cmds.Commands {
+		if installer, ok := cmd.(run.Installer); ok {
+			installers = append(installers, installer)
+		}
+	}
+	targets := cmds.getBazelTargets()
+	if len(targets) > 0 {
+		if cmds.ibazel, err = run.NewIBazel(targets); err != nil {
+			return nil, err
+		}
+		installers = append(installers, cmds.ibazel)
+	}
+	return
+}
+
+func (cmds *Commands) start(ctx context.Context) error {
+	if err := runChecksWithName(ctx, cmds.Checks); err != nil {
 		return err
 	}
 
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
-	cmds, err := getCommands(set.Commands, set, conf.Commands)
-	if err != nil {
-		return err
-	}
-
-	bcmds, err := getCommands(set.BazelCommands, set, conf.BazelCommands)
-	if err != nil {
-		return err
-	}
-
-	if len(cmds) == 0 && len(bcmds) == 0 {
+	if len(cmds.Commands) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
 
-	levelOverrides := logLevelOverrides()
-	for _, cmd := range cmds {
-		enrichWithLogLevels(&cmd, levelOverrides)
-	}
-
-	env := conf.Env
-	for k, v := range set.Env {
-		env[k] = v
-	}
-
-	installers := make([]run.Installer, 0, len(cmds)+1)
-	for _, cmd := range cmds {
-		installers = append(installers, cmd)
-	}
-
-	var ibazel *run.IBazel
-	if len(bcmds) > 0 {
-		ibazel, err = run.NewIBazel(bcmds, repoRoot)
-		if err != nil {
-			return err
-		}
-		defer ibazel.Close()
-		installers = append(installers, ibazel)
-	}
-	if err := run.Install(ctx, env, verbose, installers...); err != nil {
+	installers, err := cmds.getInstallers()
+	if err != nil {
 		return err
 	}
 
-	if ibazel != nil {
-		ibazel.StartOutput()
+	if err := run.Install(ctx, cmds.Env, verbose, installers); err != nil {
+		return err
 	}
 
-	configCmds := make([]run.SGConfigCommand, 0, len(bcmds)+len(cmds))
-	for _, cmd := range bcmds {
-		configCmds = append(configCmds, cmd)
+	if cmds.ibazel != nil {
+		cmds.ibazel.StartOutput()
+		defer cmds.ibazel.Close()
 	}
 
-	for _, cmd := range cmds {
-		configCmds = append(configCmds, cmd)
-	}
-	return run.Commands(ctx, env, verbose, configCmds...)
+	return run.Commands(ctx, cmds.Env, verbose, cmds.Commands)
 }
 
-func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]T, error) {
+func listToCommands(config *sgconf.Config, names []string) (*Commands, error) {
+	if len(names) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: no commands passed"))
+		return nil, flag.ErrHelp
+	}
+	var cmds Commands
+	for _, arg := range names {
+		if cmd, ok := getCommand(config, arg); ok {
+			cmds.add(cmd)
+		} else {
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
+			return nil, flag.ErrHelp
+		}
+	}
+	cmds.Env = config.Env
+
+	return &cmds, nil
+}
+
+func commandSetToCommands(config *sgconf.Config, set *sgconf.Commandset) (*Commands, error) {
+	cmds := Commands{
+		Name: set.Name,
+	}
+	if ccmds, err := getCommands(set.Commands, set, config.Commands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(ccmds...)
+	}
+
+	if bcmds, err := getCommands(set.BazelCommands, set, config.BazelCommands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(bcmds...)
+	}
+
+	if dcmds, err := getCommands(set.DockerCommands, set, config.DockerCommands); err != nil {
+		return nil, err
+	} else {
+		cmds.add(dcmds...)
+	}
+
+	cmds.Env = config.Env
+	for k, v := range set.Env {
+		cmds.Env[k] = v
+	}
+
+	addLogLevel := createLogLevelAdder(logLevelOverrides())
+	for i, cmd := range cmds.Commands {
+		cmds.Commands[i] = cmd.UpdateConfig(addLogLevel)
+	}
+
+	cmds.Checks = set.Checks
+
+	return &cmds, nil
+
+}
+
+func getCommand(config *sgconf.Config, name string) (run.SGConfigCommand, bool) {
+	if cmd, ok := config.BazelCommands[name]; ok {
+		return cmd, ok
+	}
+	if cmd, ok := config.DockerCommands[name]; ok {
+		return cmd, ok
+	}
+	if cmd, ok := config.Commands[name]; ok {
+		return cmd, ok
+	}
+	return nil, false
+}
+
+func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandset, conf map[string]T) ([]run.SGConfigCommand, error) {
 	exceptList := exceptServices.Value()
 	exceptSet := make(map[string]interface{}, len(exceptList))
 	for _, svc := range exceptList {
@@ -404,7 +503,7 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 		onlySet[svc] = struct{}{}
 	}
 
-	cmds := make([]T, 0, len(commands))
+	cmds := make([]run.SGConfigCommand, 0, len(commands))
 	for _, name := range commands {
 		cmd, ok := conf[name]
 		if !ok {
@@ -412,7 +511,7 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 		}
 
 		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.GetName()))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", name))
 			continue
 		}
 
@@ -423,12 +522,39 @@ func getCommands[T run.SGConfigCommand](commands []string, set *sgconf.Commandse
 			if _, inSet := onlySet[name]; inSet {
 				cmds = append(cmds, cmd)
 			} else {
-				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.GetName()))
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", name))
 			}
 		}
 
 	}
 	return cmds, nil
+}
+
+func (cmds *Commands) describe(config *sgconf.Config) error {
+	if cmds.Name == "" {
+		for _, cmd := range cmds.Commands {
+			out, err := yaml.Marshal(cmd)
+			if err != nil {
+				return err
+			}
+			if err = std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.GetConfig().Name, string(out))); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	} else {
+		set, err := getCommandSet(config, cmds.Name)
+		if err != nil {
+			return nil
+		}
+		out, err := yaml.Marshal(set)
+		if err != nil {
+			return err
+		}
+
+		return std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", set.Name, string(out)))
+	}
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
@@ -451,26 +577,17 @@ func logLevelOverrides() map[string]string {
 }
 
 // enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
-func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
-	logLevelVariable := "SRC_LOG_LEVEL"
+func createLogLevelAdder(overrides map[string]string) func(*run.SGConfigCommandOptions) {
+	return func(config *run.SGConfigCommandOptions) {
+		logLevelVariable := "SRC_LOG_LEVEL"
 
-	if level, ok := overrides[cmd.Name]; ok {
-		std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
-		if cmd.Env == nil {
-			cmd.Env = make(map[string]string, 1)
-			cmd.Env[logLevelVariable] = level
+		if level, ok := overrides[config.Name]; ok {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Setting log level: %s for command %s.", level, config.Name))
+			if config.Env == nil {
+				config.Env = make(map[string]string, 1)
+			}
+
+			config.Env[logLevelVariable] = level
 		}
-		cmd.Env[logLevelVariable] = level
 	}
-}
-
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }

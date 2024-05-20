@@ -7,6 +7,7 @@ import {
     useLayoutEffect,
     useEffect,
     type FormEvent,
+    useCallback,
 } from 'react'
 
 import { useApolloClient } from '@apollo/client'
@@ -15,6 +16,8 @@ import { useDebounce } from 'use-debounce'
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Button,
     H2,
@@ -35,17 +38,16 @@ import type { AuthenticatedUser } from '../auth'
 import { LoaderButton } from '../components/LoaderButton'
 import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables } from '../graphql-operations'
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
-import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './GettingStartedTourSetup.module.scss'
 
 const DIALOG_TITLE_ID = 'onboarding-setup-title'
 
-interface GettingStartedTourSetupProps {
+interface GettingStartedTourSetupProps extends TelemetryV2Props {
     user: AuthenticatedUser
 }
 
-export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user }) => {
+export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user, telemetryRecorder }) => {
     const [open, setOpen] = useState(true)
     const [repoInput, setRepoInput] = useState('')
     const [emailInput, setEmailInput] = useState('')
@@ -54,16 +56,18 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
     const [, setConfig] = useTemporarySetting('onboarding.userconfig')
 
     const nextStep = (): void => setStep(step => step + 1)
-    const done = (): void => {
-        eventLogger.log('TourSetupCompleted')
+    const done = useCallback(() => {
+        EVENT_LOGGER.log('TourSetupCompleted')
+        telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'complete')
         setOpen(false)
-    }
+    }, [telemetryRecorder, setOpen])
 
     useEffect(() => {
         if (open) {
-            eventLogger.log('TourSetupShown')
+            EVENT_LOGGER.log('TourSetupShown')
+            telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'view')
         }
-    }, [open])
+    }, [open, telemetryRecorder])
 
     useEffect(() => {
         if (!open && repoInput && emailInput && languageInput) {
@@ -79,9 +83,22 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
     }, [open, repoInput, emailInput, languageInput, setConfig])
 
     const steps: ((step: number) => React.ReactElement)[] = [
-        step => <RepositoryModal step={[step + 1, steps.length]} onSelect={setRepoInput} onHandleNext={nextStep} />,
         step => (
-            <EmailModal step={[step + 1, steps.length]} onSelect={setEmailInput} onHandleNext={nextStep} user={user} />
+            <RepositoryModal
+                step={[step + 1, steps.length]}
+                onSelect={setRepoInput}
+                onHandleNext={nextStep}
+                telemetryRecorder={telemetryRecorder}
+            />
+        ),
+        step => (
+            <EmailModal
+                step={[step + 1, steps.length]}
+                onSelect={setEmailInput}
+                onHandleNext={nextStep}
+                user={user}
+                telemetryRecorder={telemetryRecorder}
+            />
         ),
         step => (
             <LanguageModal
@@ -89,6 +106,7 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
                 onSelect={setLanguageInput}
                 onHandleNext={done}
                 repo={repoInput}
+                telemetryRecorder={telemetryRecorder}
             />
         ),
     ]
@@ -109,7 +127,7 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
     )
 }
 
-interface ModalInnerProps {
+interface ModalInnerProps extends TelemetryV2Props {
     title: string
     step: [number, number]
     label?: string
@@ -124,16 +142,18 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     onHandleNext,
     loading,
     children,
+    telemetryRecorder,
 }): JSX.Element => {
     const [, setConfig] = useTemporarySetting('onboarding.userconfig')
     const onSubmit = (event: FormEvent): void => {
         event.preventDefault()
         onHandleNext?.()
     }
-    const skip = (): void => {
-        eventLogger.log('TourSetupSkipped')
+    const skip = useCallback(() => {
+        EVENT_LOGGER.log('TourSetupSkipped')
+        telemetryRecorder.recordEvent('tour.gettingStarted.setup', 'skip')
         setConfig({ skipped: true })
-    }
+    }, [setConfig, telemetryRecorder])
     return (
         <Form onSubmit={onSubmit}>
             <div className={styles.fade}>
@@ -164,7 +184,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     )
 }
 
-interface ModalContentProps extends Pick<ModalInnerProps, 'step' | 'onHandleNext'> {
+interface ModalContentProps extends Pick<ModalInnerProps, 'step' | 'onHandleNext' | 'telemetryRecorder'> {
     onSelect: (value: string) => void
 }
 
@@ -176,7 +196,7 @@ const REPO_QUERY = gql`
     }
 `
 
-const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }) => {
+const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect, telemetryRecorder }) => {
     const [value, setValue] = useState('')
     const [isValidating, setIsValidating] = useState(false)
     const [error, setError] = useState('')
@@ -239,6 +259,7 @@ const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }
             step={step}
             onHandleNext={value.trim() && !isValidating && !error ? validateRepo : undefined}
             loading={isValidating}
+            telemetryRecorder={telemetryRecorder}
         >
             <Combobox aria-label="Choose a repo" openOnFocus={true} hidden={false} onSelect={setValue}>
                 <ComboboxInput
@@ -270,7 +291,7 @@ interface EmailModalProps extends ModalContentProps {
     user: AuthenticatedUser
 }
 
-const EmailModal: FC<EmailModalProps> = ({ step, onHandleNext, onSelect, user }) => {
+const EmailModal: FC<EmailModalProps> = ({ step, onHandleNext, onSelect, user, telemetryRecorder }) => {
     const [email, setEmail] = useState(user.emails.find(email => email.isPrimary)?.email ?? '')
     const [error, setError] = useState('')
 
@@ -292,6 +313,7 @@ const EmailModal: FC<EmailModalProps> = ({ step, onHandleNext, onSelect, user })
             label="Example: person@company.com"
             step={step}
             onHandleNext={email && !error ? validate : undefined}
+            telemetryRecorder={telemetryRecorder}
         >
             <Input
                 ref={input}
@@ -314,7 +336,7 @@ interface LanguageModalProps extends ModalContentProps {
     repo: string
 }
 
-const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSelect }) => {
+const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSelect, telemetryRecorder }) => {
     const [language, setLanguage] = useState('')
     const [error, setError] = useState('')
     const { suggestions } = useLanguageCompletionSource(language)
@@ -341,6 +363,7 @@ const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSel
             title={`What language do you use the most in ${displayRepoName(repo)}?`}
             step={step}
             onHandleNext={language && !error ? validate : undefined}
+            telemetryRecorder={telemetryRecorder}
         >
             <Combobox
                 className="mt-3"

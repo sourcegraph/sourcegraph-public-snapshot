@@ -4,9 +4,11 @@ go_library(
     name = "bk",
     srcs = [
         "bk.go",
+        "create_build_opts.go",
         "logs.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/bk",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/secrets",

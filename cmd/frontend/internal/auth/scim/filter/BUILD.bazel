@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "filter",
+    srcs = [
+        "filter.go",
+        "op_binary.go",
+        "op_boolean.go",
+        "op_datetime.go",
+        "op_decimal.go",
+        "op_integer.go",
+        "op_string.go",
+        "operators.go",
+        "path.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/scim/filter",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_di_wu_xsd_datetime//:xsd-datetime",
+        "@com_github_elimity_com_scim//schema",
+        "@com_github_scim2_filter_parser_v2//:filter-parser",
+    ],
+)
+
+go_test(
+    name = "filter_test",
+    srcs = [
+        "filter_test.go",
+        "op_boolean_test.go",
+        "op_datetime_test.go",
+        "op_decimal_test.go",
+        "op_integer_test.go",
+        "op_string_test.go",
+        "operators_test.go",
+    ],
+    embed = [":filter"],
+    tags = [TAG_PLATFORM_SOURCE],
+    deps = [
+        "@com_github_elimity_com_scim//schema",
+        "@com_github_scim2_filter_parser_v2//:filter-parser",
+    ],
+)

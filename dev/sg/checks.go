@@ -23,6 +23,7 @@ var checks = map[string]check.CheckFunc{
 	"docker":        check.Docker,
 	"ibazel":        check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
 	"bazelisk":      check.Bazelisk,
+	"dev-private":   check.DevPrivate,
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {

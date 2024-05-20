@@ -3,6 +3,7 @@ load("//dev:go_defs.bzl", "go_test")
 go_test(
     name = "example_test",
     srcs = ["example_test.go"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/codehost_testing",
         "//dev/codehost_testing/config",

@@ -5,6 +5,7 @@ import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike, isMobile, pluralize } from '@sourcegraph/common'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Card, ErrorAlert, H1, H2, Link, Text, useEventObservable } from '@sourcegraph/wildcard'
@@ -20,7 +21,10 @@ import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
+interface Props
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+        TelemetryProps,
+        TelemetryV2Props {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
@@ -134,6 +138,7 @@ function isRedirectable(name: string | null): boolean {
  */
 export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     telemetryService,
+    telemetryRecorder,
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
@@ -144,7 +149,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const defaultAccessTokenExpiryDays = window.context.accessTokensExpirationDaysDefault
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
-    }, [telemetryService])
+        telemetryRecorder.recordEvent('settings.tokens.newAccessToken', 'callback')
+    }, [telemetryService, telemetryRecorder])
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
@@ -224,12 +230,13 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 click.pipe(
                     switchMap(() =>
                         (requester
-                            ? createAccessToken(
-                                  user.id,
-                                  [AccessTokenScopes.UserAll],
+                            ? createAccessToken({
+                                  user: user.id,
+                                  scopes: [AccessTokenScopes.UserAll],
                                   note,
-                                  defaultAccessTokenExpiryDays * 86400 // days to seconds
-                              )
+                                  durationSeconds: defaultAccessTokenExpiryDays * 86400, // days to seconds
+                                  telemetryRecorder,
+                              })
                             : NEVER
                         ).pipe(
                             tap(async result => {
@@ -276,6 +283,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 requestFrom,
                 port,
                 tokenReceiverUrl,
+                telemetryRecorder,
             ]
         )
     )

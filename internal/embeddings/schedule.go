@@ -59,6 +59,9 @@ func ScheduleRepositoriesForPolicy(
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
 ) (err error) {
+	if len(repoIDs) == 0 {
+		return nil
+	}
 	tx, err := repoEmbeddingJobsStore.Transact(ctx)
 	if err != nil {
 		return err

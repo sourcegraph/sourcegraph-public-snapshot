@@ -9,11 +9,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
@@ -30,10 +30,10 @@ func TestMarshalBatchChange(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
-	marshalledUserID := gql.MarshalUserID(userID)
+	marshalledUserID := relay.MarshalID("User", userID)
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
 

@@ -108,9 +108,10 @@ func (r *Renderer) RenderEnvironment(
 		Image:           svc.Build.Image,
 		Service:         svc.Service,
 		SecretEnv:       env.SecretEnv,
+		SecretVolumes:   env.SecretVolumes,
 		PreventDestroys: preventDestroys,
 
-		IsFinalStageOfRollout: rolloutPipeline != nil,
+		IsFinalStageOfRollout: rolloutPipeline.IsFinalStage(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")
@@ -120,6 +121,7 @@ func (r *Renderer) RenderEnvironment(
 		IAM:       *iamOutput,
 
 		Service:     svc.Service,
+		Repository:  svc.Build.Source.Repo,
 		Image:       svc.Build.Image,
 		Environment: env,
 

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../../schema/service.schema.json
 service:
   id: msp-example
   name: Msp Example

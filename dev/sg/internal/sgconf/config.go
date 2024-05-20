@@ -8,7 +8,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func parseConfigFile(name string) (*Config, error) {
@@ -32,15 +34,25 @@ func parseConfig(data []byte) (*Config, error) {
 		return nil, err
 	}
 
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return nil, err
+	}
+
 	for name, cmd := range conf.BazelCommands {
-		cmd.Name = name
-		conf.BazelCommands[name] = cmd
+		cmd.Config.Name = name
+		cmd.Config.RepositoryRoot = root
+	}
+
+	for name, cmd := range conf.DockerCommands {
+		cmd.Config.Name = name
+		cmd.Config.RepositoryRoot = root
 	}
 
 	for name, cmd := range conf.Commands {
-		cmd.Name = name
-		normalizeCmd(&cmd)
-		conf.Commands[name] = cmd
+		cmd.Config.Name = name
+		cmd.Config.RepositoryRoot = root
+		normalizeCmd(cmd)
 	}
 
 	for name, cmd := range conf.Commandsets {
@@ -49,8 +61,9 @@ func parseConfig(data []byte) (*Config, error) {
 	}
 
 	for name, cmd := range conf.Tests {
-		cmd.Name = name
-		normalizeCmd(&cmd)
+		cmd.Config.Name = name
+		cmd.Config.RepositoryRoot = root
+		normalizeCmd(cmd)
 		conf.Tests[name] = cmd
 	}
 
@@ -64,15 +77,12 @@ func normalizeCmd(cmd *run.Command) {
 }
 
 type Commandset struct {
-	Name          string            `yaml:"-"`
-	Commands      []string          `yaml:"commands"`
-	BazelCommands []string          `yaml:"bazelCommands"`
-	Checks        []string          `yaml:"checks"`
-	Env           map[string]string `yaml:"env"`
-
-	// If this is set to true, then the commandset requires the dev-private
-	// repository to be cloned at the same level as the sourcegraph repository.
-	RequiresDevPrivate bool `yaml:"requiresDevPrivate"`
+	Name           string            `yaml:"-"`
+	Commands       []string          `yaml:"commands"`
+	BazelCommands  []string          `yaml:"bazelCommands"`
+	DockerCommands []string          `yaml:"dockerCommands"`
+	Checks         []string          `yaml:"checks"`
+	Env            map[string]string `yaml:"env"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
@@ -102,84 +112,93 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 		merged.Name = other.Name
 	}
 
-	if !equal(merged.Commands, other.Commands) && len(other.Commands) != 0 {
+	if len(other.Commands) != 0 {
 		merged.Commands = other.Commands
 	}
 
-	if !equal(merged.Checks, other.Checks) && len(other.Checks) != 0 {
+	if len(other.Checks) != 0 {
 		merged.Checks = other.Checks
 	}
 
-	if !equal(merged.BazelCommands, other.BazelCommands) && len(other.BazelCommands) != 0 {
+	if len(other.BazelCommands) != 0 {
 		merged.BazelCommands = other.BazelCommands
+	}
+
+	if len(other.DockerCommands) != 0 {
+		merged.DockerCommands = other.DockerCommands
 	}
 
 	for k, v := range other.Env {
 		merged.Env[k] = v
 	}
 
-	merged.RequiresDevPrivate = other.RequiresDevPrivate
-
 	return merged
 }
 
+// If you add an entry here, remember to add it to the merge function.
 type Config struct {
-	Env               map[string]string           `yaml:"env"`
-	Commands          map[string]run.Command      `yaml:"commands"`
-	BazelCommands     map[string]run.BazelCommand `yaml:"bazelCommands"`
-	Commandsets       map[string]*Commandset      `yaml:"commandsets"`
-	DefaultCommandset string                      `yaml:"defaultCommandset"`
-	Tests             map[string]run.Command      `yaml:"tests"`
+	Env               map[string]string             `yaml:"env"`
+	Commands          map[string]*run.Command       `yaml:"commands"`
+	BazelCommands     map[string]*run.BazelCommand  `yaml:"bazelCommands"`
+	DockerCommands    map[string]*run.DockerCommand `yaml:"dockerCommands"`
+	Commandsets       map[string]*Commandset        `yaml:"commandsets"`
+	DefaultCommandset string                        `yaml:"defaultCommandset"`
+	Tests             map[string]*run.Command       `yaml:"tests"`
 }
 
-// Merges merges the top-level entries of two Config objects, with the receiver
-// being modified.
-func (c *Config) Merge(other *Config) {
+// Merge merges the top-level entries of two Config objects, using the
+// values from `other` if they are set as overrides and returns a new config
+func (c *Config) Merge(other *Config) *Config {
+	merged := *c
 	for k, v := range other.Env {
-		c.Env[k] = v
+		merged.Env[k] = v
 	}
 
-	for k, v := range other.Commands {
-		if original, ok := c.Commands[k]; ok {
-			c.Commands[k] = original.Merge(v)
+	for name, override := range other.Commands {
+		if original, ok := merged.Commands[name]; ok {
+			merged.Commands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
-			c.Commands[k] = v
+			merged.Commands[name] = override
 		}
 	}
 
-	for k, v := range other.Commandsets {
-		if original, ok := c.Commandsets[k]; ok {
-			c.Commandsets[k] = original.Merge(v)
+	for name, override := range other.BazelCommands {
+		if original, ok := merged.BazelCommands[name]; ok {
+			merged.BazelCommands[name] = pointers.Ptr(original.Merge(*override))
 		} else {
-			c.Commandsets[k] = v
+			merged.BazelCommands[name] = override
+		}
+	}
+
+	for name, override := range other.DockerCommands {
+		if original, ok := merged.DockerCommands[name]; ok {
+			merged.DockerCommands[name] = pointers.Ptr(original.Merge(*override))
+		} else {
+			merged.DockerCommands[name] = override
+		}
+	}
+
+	for name, override := range other.Commandsets {
+		if original, ok := merged.Commandsets[name]; ok {
+			merged.Commandsets[name] = original.Merge(override)
+		} else {
+			merged.Commandsets[name] = override
 		}
 	}
 
 	if other.DefaultCommandset != "" {
-		c.DefaultCommandset = other.DefaultCommandset
+		merged.DefaultCommandset = other.DefaultCommandset
 	}
 
-	for k, v := range other.Tests {
-		if original, ok := c.Tests[k]; ok {
-			c.Tests[k] = original.Merge(v)
+	for name, override := range other.Tests {
+		if original, ok := merged.Tests[name]; ok {
+			merged.Tests[name] = pointers.Ptr(original.Merge(*override))
 		} else {
-			c.Tests[k] = v
-		}
-	}
-}
-
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
+			merged.Tests[name] = override
 		}
 	}
 
-	return true
+	return &merged
 }
 
 func (c *Config) GetEnv(key string) string {

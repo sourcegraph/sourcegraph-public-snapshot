@@ -4,7 +4,7 @@ import { noop } from 'rxjs'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container, PageHeader, H3, Text, Label, Button, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'

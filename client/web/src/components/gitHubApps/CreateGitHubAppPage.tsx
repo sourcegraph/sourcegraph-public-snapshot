@@ -2,7 +2,8 @@ import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { noop } from 'lodash'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Alert,
     Container,
@@ -17,7 +18,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
@@ -91,7 +91,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [error, setError] = useState<string>()
 
     useEffect(() => {
-        eventLogger.logPageView('SiteAdminCreateGiHubApp')
+        EVENT_LOGGER.logPageView('SiteAdminCreateGiHubApp')
         telemetryRecorder.recordEvent('admin.GitHubApp.create', 'view')
     }, [telemetryRecorder])
 

@@ -23,10 +23,10 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 		Level: log.LevelError,
 	})
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	t.Run("scip", func(t *testing.T) {
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			query := sqlf.Sprintf("INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tooL_name, tool_version, tool_arguments, protocol_version) VALUES (%s, 'utf8', '', '', '{}', 1)", i+1)
 
 			if _, err := codeIntelDB.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -38,12 +38,12 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 			t.Fatalf("unexpected error clearing bundle data: %s", err)
 		}
 
-		dumpIDs, err := basestore.ScanInts(codeIntelDB.QueryContext(context.Background(), "SELECT upload_id FROM codeintel_scip_metadata"))
+		uploadIDs, err := basestore.ScanInts(codeIntelDB.QueryContext(context.Background(), "SELECT upload_id FROM codeintel_scip_metadata"))
 		if err != nil {
 			t.Fatalf("Unexpected error querying dump identifiers: %s", err)
 		}
 
-		if diff := cmp.Diff([]int{1, 3, 5}, dumpIDs); diff != "" {
+		if diff := cmp.Diff([]int{1, 3, 5}, uploadIDs); diff != "" {
 			t.Errorf("unexpected dump identifiers (-want +got):\n%s", diff)
 		}
 	})
@@ -54,7 +54,7 @@ func TestDeleteAbandonedSchemaVersionsRecords(t *testing.T) {
 		Level: log.LevelError,
 	})
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	assertCounts := func(expectedNumSymbols, expectedNumDocuments int) {
@@ -126,9 +126,9 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	internalStore := basestore.NewWithHandle(codeIntelDB.Handle())
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		insertDocumentQuery := sqlf.Sprintf(
 			`INSERT INTO codeintel_scip_documents(id, schema_version, payload_hash, raw_scip_payload) VALUES (%s, 1, %s, %s)`,
 			i+1,
@@ -140,7 +140,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		insertDocumentLookupQuery := sqlf.Sprintf(
 			`INSERT INTO codeintel_scip_document_lookup(upload_id, document_path, document_id) VALUES (%s, %s, %s)`,
 			42,
@@ -182,7 +182,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	// process this workload.
 
 	totalCount := 0
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		_, count, err = store.DeleteUnreferencedDocuments(context.Background(), 20, time.Minute, time.Now().Add(time.Minute*5))
 		if err != nil {
 			t.Fatalf("unexpected error deleting unreferenced documents: %s", err)
@@ -209,7 +209,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	}
 
 	var expectedIDs []int
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		if i%3 == 0 {
 			expectedIDs = append(expectedIDs, i+1)
 		}
@@ -222,7 +222,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 func TestIDsWithMeta(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 	ctx := context.Background()
 
 	if _, err := codeIntelDB.ExecContext(ctx, `
@@ -257,7 +257,7 @@ func TestIDsWithMeta(t *testing.T) {
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, codeIntelDB)
+	store := New(observation.TestContextTB(t), codeIntelDB)
 
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()

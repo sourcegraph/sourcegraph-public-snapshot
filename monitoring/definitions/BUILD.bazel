@@ -28,12 +28,16 @@ go_library(
         "zoekt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/pointers",
         "//monitoring/definitions/shared",
         "//monitoring/monitoring",
         "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_iancoleman_strcase//:strcase",
         "@com_github_prometheus_common//model",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )

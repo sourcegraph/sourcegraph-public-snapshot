@@ -6,6 +6,7 @@ go_library(
     name = "symbol",
     srcs = ["symbol.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/symbol",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -13,7 +14,7 @@ go_library(
         "//internal/authz",
         "//internal/search",
         "//internal/search/result",
-        "//internal/search/zoekt",
+        "//internal/search/zoektquery",
         "//internal/symbols",
         "//internal/trace/policy",
         "//internal/types",
@@ -33,6 +34,7 @@ go_test(
         "symbol_test.go",
     ],
     embed = [":symbol"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/actor",
         "//internal/api",

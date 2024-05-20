@@ -21,8 +21,8 @@ type key int
 var jobsKey key
 
 type backgroundJobs struct {
-	wg    sync.WaitGroup
-	count atomic.Int32
+	wg                sync.WaitGroup
+	stillRunningCount atomic.Int32
 
 	verbose bool
 	output  chan string
@@ -43,11 +43,14 @@ func loadFromContext(ctx context.Context) *backgroundJobs {
 // Run starts the given job and registers it so that background.Wait does not exit until
 // this job is complete.
 //
-// Jobs get a context timeout of 30 seconds.
-func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
+// Jobs get a context timeout of 30 seconds, and must respect the cancellation.
+// In long-running jobs, output should be sent to the provided backgroundOutput
+// to be rendered to the user only on command exit - otherwise, dev/sg/internal/std.Out
+// can be used instead to render output immediately.
+func Run(ctx context.Context, job func(ctx context.Context, backgroundOutput *std.Output)) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
-	jobs.count.Add(1)
+	jobs.stillRunningCount.Add(1)
 
 	b := new(bytes.Buffer)
 	out := std.NewOutput(b, jobs.verbose)
@@ -58,26 +61,29 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 		// Execute job
 		job(jobCtx, out)
 		// Signal the completion of this job
-		jobs.count.Dec()
+		jobs.stillRunningCount.Dec()
+		// If the job provides background output, collect it to be rendered on
+		// command exit.
 		jobs.output <- strings.TrimSpace(b.String())
 	}()
 }
 
 // Wait blocks until jobs registered in context are complete, rendering their results as
 // they complete. If the jobs are all completed when Wait gets called, it will simply flush out
-// outputs from completed jobs.
+// outputs from completed jobs. This should only be called when user command execution is
+// complete, and we are now waiting for background tasks to complete.
 func Wait(ctx context.Context, out *std.Output) {
 	jobs := loadFromContext(ctx)
-	count := int(jobs.count.Load())
+	pendingCount := int(jobs.stillRunningCount.Load())
 
 	_, span := analytics.StartSpan(ctx, "background_wait", "",
-		trace.WithAttributes(attribute.Int("jobs", count)))
+		trace.WithAttributes(attribute.Int("jobs", pendingCount)))
 	defer span.End()
 
 	firstResultWithOutput := true
-	if jobs.verbose && count > 0 {
+	if jobs.verbose && pendingCount > 0 {
 		out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
-			count, pluralize("job", "jobs", count)))
+			pendingCount, pluralize("job", "jobs", pendingCount)))
 	}
 	go func() {
 		// Stream job output as they complete
@@ -96,7 +102,7 @@ func Wait(ctx context.Context, out *std.Output) {
 
 	// Done!
 	close(jobs.output)
-	if jobs.verbose {
+	if jobs.verbose && pendingCount > 0 {
 		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
 	}
 	span.Succeeded()

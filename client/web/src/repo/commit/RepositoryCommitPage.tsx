@@ -128,7 +128,8 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
-    }, [props.telemetryService])
+        props.platformContext.telemetryRecorder.recordEvent('repo.commit', 'view')
+    }, [props.telemetryService, props.platformContext.telemetryRecorder])
 
     useEffect(() => {
         if (commit) {
@@ -180,6 +181,7 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
                                     diffMode={diffMode}
                                     onHandleDiffMode={setDiffMode}
                                     className={styles.gitCommitNode}
+                                    telemetryRecorder={props.platformContext.telemetryRecorder}
                                 />
                             </div>
                         </div>

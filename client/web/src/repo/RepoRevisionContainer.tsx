@@ -4,10 +4,10 @@ import { Route, Routes } from 'react-router-dom'
 
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import {
@@ -49,7 +49,6 @@ import styles from './RepoRevisionContainer.module.scss'
 export interface RepoRevisionContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
-        ExtensionsControllerProps,
         PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
@@ -83,7 +82,6 @@ interface RepoRevisionContainerProps
         PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
-        ExtensionsControllerProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
@@ -113,12 +111,14 @@ interface RepoRevisionContainerProps
     isSourcegraphDotCom: boolean
 }
 
-interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'repoName'> {
+interface RepoRevisionBreadcrumbProps
+    extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'repoName'>,
+        TelemetryV2Props {
     resolvedRevision: ResolvedRevision | undefined
 }
 
 export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = props => {
-    const { revision, resolvedRevision, repoName, repo } = props
+    const { revision, resolvedRevision, repoName, repo, telemetryRecorder } = props
 
     const [revisionLabelElement, setRevisionLabelElement] = useState<HTMLElement | null>(null)
     const [showRevisionTooltip, setShowRevisionTooltip] = useState(false)
@@ -180,6 +180,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                         currentCommitID={resolvedRevision?.commitID}
                         togglePopover={togglePopover}
                         onSelect={togglePopover}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 )}
             </PopoverContent>
@@ -209,10 +210,11 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         revision={revision}
                         repoName={repoName}
                         repo={repo}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 ),
             }
-        }, [resolvedRevision, revision, repo, repoName])
+        }, [resolvedRevision, revision, repo, repoName, props.platformContext.telemetryRecorder])
     )
 
     const isPackage = useMemo(

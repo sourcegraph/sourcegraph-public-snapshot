@@ -1,17 +1,17 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-    import { onMount } from 'svelte'
+    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
 
-    import { afterNavigate, goto } from '$app/navigation'
-    import { getFileIconInfo, Alert } from '$lib/wildcard'
+    import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type TreeEntry } from '$lib/repo/api/tree'
+    import FileIcon from '$lib/repo/FileIcon.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
+    import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
-    import { replaceRevisionInURL } from '$lib/web'
+    import { Alert } from '$lib/wildcard'
 
     export let repoName: string
     export let treeProvider: FileTreeProvider
@@ -21,7 +21,7 @@
     /**
      * Returns the corresponding icon for `entry`
      */
-    function getDirectoryIconPath(entry: TreeEntryFields, open: boolean) {
+    function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
             return mdiFolderArrowUpOutline
         }
@@ -52,6 +52,19 @@
         }
     }
 
+    function handleScopeChange(scopedTreeProvider: FileTreeProvider): void {
+        treeProvider = scopedTreeProvider.copy({ parent: undefined })
+        const root = treeProvider.getRoot()
+
+        if (root === NODE_LIMIT) {
+            return
+        }
+
+        if (!selectedPath.startsWith(root.path)) {
+            goto(replaceRevisionInURL(root.canonicalURL, revision), { keepFocus: true })
+        }
+    }
+
     /**
      * For a given path (e.g. foo/bar/baz) returns a list of ancestor paths (e.g.
      * [foo, foo/bar]
@@ -77,35 +90,28 @@
         $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
     }
 
-    function scrollSelectedItemIntoView() {
-        treeView.scrollSelectedItemIntoView()
-    }
-
-    let treeView: TreeView<FileTreeNodeValue>
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
     const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
-
-    // Always scroll the selected item into view when we navigate to a different one.
-    // NOTE: At the moment this won't always work because the file tree might not be
-    // fully loaded after navigation.
-    afterNavigate(scrollSelectedItemIntoView)
-    // The documentation says afterNavigate will also run on mount but
-    // that doesn't seem to be the case
-    onMount(scrollSelectedItemIntoView)
 </script>
 
 <div tabindex="-1">
-    <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView
+        {treeProvider}
+        on:select={event => handleSelect(event.detail)}
+        on:scope-change={event => handleScopeChange(event.detail.provider)}
+    >
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
@@ -117,20 +123,15 @@
                     Using a link here allows us to benefit from data preloading.
                 -->
                 <a
+                    tabindex={-1}
                     href={replaceRevisionInURL(entry.canonicalURL, revision)}
                     on:click|preventDefault={() => {}}
-                    tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
                 >
                     {#if entry.isDirectory}
                         <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
                     {:else}
-                        {@const icon = (entry.__typename === 'GitBlob' &&
-                            getFileIconInfo(entry.name, entry.languages.at(0) ?? '')?.svg) || {
-                            path: mdiFileCodeOutline,
-                            color: 'var(--gray-05)',
-                        }}
-                        <Icon svgPath={icon.path} inline --color={icon.color} />
+                        <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                     {/if}
                     {isRoot ? '..' : entry.name}
                 </a>
@@ -146,28 +147,37 @@
     div {
         overflow: auto;
 
-        :global(.treeitem.selectable) > :global(.label) {
+        :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
             cursor: pointer;
-            border-radius: var(--border-radius);
 
             &:hover {
-                background-color: var(--color-bg-2);
+                background-color: var(--color-bg-3);
             }
         }
 
-        :global(.treeitem.selected) > :global(.label) {
-            background-color: var(--color-bg-2);
+        :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
+            --tree-node-expand-icon-color: var(--body-bg);
+            background-color: var(--primary);
+
+            &:hover {
+                background-color: var(--primary);
+            }
         }
     }
 
     a {
-        color: var(--body-color);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+        padding: 0.2rem 0.25rem 0.2rem 0;
+        color: inherit;
         text-decoration: none;
-        padding: 0.1rem 0;
+
+        &:hover {
+            color: inherit;
+            text-decoration: none;
+        }
     }
 
     .note {

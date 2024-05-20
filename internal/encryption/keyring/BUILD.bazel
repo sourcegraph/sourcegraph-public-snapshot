@@ -4,10 +4,10 @@ go_library(
     name = "keyring",
     srcs = ["ring.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/keyring",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/encryption",
         "//internal/encryption/awskms",
         "//internal/encryption/cache",

@@ -2,13 +2,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "backport",
-    srcs = [
-        "backport.go",
-        "exec.go",
-    ],
+    srcs = ["backport.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/backport",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
+        "//dev/sg/internal/execute",
         "//dev/sg/internal/std",
         "//lib/errors",
         "//lib/output",

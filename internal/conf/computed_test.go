@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -319,11 +318,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:                "anthropic/claude-2.0",
+		ChatModel:                "anthropic/claude-3-sonnet-20240229",
 		ChatModelMaxTokens:       12000,
-		FastChatModel:            "anthropic/claude-instant-1",
-		FastChatModelMaxTokens:   9000,
-		CompletionModel:          "anthropic/claude-instant-1",
+		FastChatModel:            "anthropic/claude-3-haiku-20240307",
+		FastChatModelMaxTokens:   12000,
+		CompletionModel:          "fireworks/starcoder",
 		CompletionModelMaxTokens: 9000,
 		AccessToken:              licenseAccessToken,
 		Provider:                 "sourcegraph",
@@ -397,7 +396,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantDisabled: true,
 		},
 		{
-			name: "anthropic completions",
+			name: "anthropic completion defaults",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -408,19 +407,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-2.0",
+				ChatModel:                "claude-3-sonnet-20240229",
 				ChatModelMaxTokens:       12000,
-				FastChatModel:            "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
-				CompletionModelMaxTokens: 9000,
+				FastChatModel:            "claude-3-haiku-20240307",
+				FastChatModelMaxTokens:   12000,
+				CompletionModel:          "claude-3-haiku-20240307",
+				CompletionModelMaxTokens: 12000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
-			name: "anthropic completions, with only completions.enabled",
+			name: "anthropic completions, with overwrites",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -428,20 +427,20 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Enabled:         pointers.Ptr(true),
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
-					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-1",
+					ChatModel:       "claude-3-opus-20240229",
+					CompletionModel: "claude-instant-1.2",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-v1",
-				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
+				ChatModel:                "claude-3-opus-20240229",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "claude-3-haiku-20240307",
+				FastChatModelMaxTokens:   12000,
+				CompletionModel:          "claude-instant-1.2",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				Endpoint:                 "https://api.anthropic.com/v1/messages",
 			},
 		},
 		{
@@ -469,7 +468,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModel:                "gpt-4",
 				ChatModelMaxTokens:       7000,
 				FastChatModel:            "gpt-3.5-turbo",
-				FastChatModelMaxTokens:   4000,
+				FastChatModelMaxTokens:   16000,
 				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",
@@ -540,6 +539,30 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       12000,
 				FastChatModel:            "anthropic.claude-instant-v1",
 				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic.claude-instant-v1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "",
+				Provider:                 "aws-bedrock",
+				Endpoint:                 "us-west-2",
+			},
+		},
+		{
+			name: "AWS Bedrock completions with Provisioned Throughput for some of the models",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:      "aws-bedrock",
+					Endpoint:      "us-west-2",
+					ChatModel:     "anthropic.claude-3-haiku-20240307-v1:0-100k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+					FastChatModel: "anthropic.claude-v2",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic.claude-3-haiku-20240307-v1:0-100k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+				ChatModelMaxTokens:       100_000,
+				FastChatModel:            "anthropic.claude-v2",
+				FastChatModelMaxTokens:   12000,
 				CompletionModel:          "anthropic.claude-instant-v1",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "",
@@ -767,19 +790,6 @@ func TestGetFeaturesConfig(t *testing.T) {
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
-	defaultQdrantConfig := conftypes.QdrantConfig{
-		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
-			OnDisk: true,
-		},
-		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
-			IndexingThreshold: 0,
-			MemmapThreshold:   100,
-		},
-		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
-			Enabled:  true,
-			Quantile: 0.98,
-		},
-	}
 	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
 		Provider:                   "sourcegraph",
 		AccessToken:                licenseAccessToken,
@@ -795,19 +805,18 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			MaxFileSizeBytes: 1000000,
 		},
 		ExcludeChunkOnError: true,
-		Qdrant:              defaultQdrantConfig,
 	}
 
 	testCases := []struct {
-		name         string
-		siteConfig   schema.SiteConfiguration
-		deployType   string
-		wantConfig   *conftypes.EmbeddingsConfig
-		dotcom       bool
-		wantDisabled bool
+		name            string
+		siteConfig      schema.SiteConfiguration
+		deployType      string
+		wantConfig      *conftypes.EmbeddingsConfig
+		allowEmbeddings bool
+		wantDisabled    bool
 	}{
 		{
-			name: "dotcom Embeddings disabled",
+			name: "Embeddings explicitly disabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -815,39 +824,39 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Enabled: pointers.Ptr(false),
 				},
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom cody.enabled and empty embeddings object",
+			name: "Cody.enabled and empty embeddings object",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings:  &schema.Embeddings{},
 			},
-			dotcom:     true,
-			wantConfig: zeroConfigDefaultWithLicense,
+			allowEmbeddings: true,
+			wantConfig:      zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "dotcom cody.enabled set false",
+			name: "Cody.enabled set false",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(false),
 				Embeddings:  &schema.Embeddings{},
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom no cody config",
+			name: "No Cody config",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: nil,
 				Embeddings:  nil,
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom Invalid provider",
+			name: "Enabled, Invalid provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -855,20 +864,20 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "invalid",
 				},
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom Implicit config with cody.enabled",
+			name: "Enabled, Implicit config with cody.enabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			dotcom:     true,
-			wantConfig: zeroConfigDefaultWithLicense,
+			allowEmbeddings: true,
+			wantConfig:      zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "dotcom Sourcegraph provider",
+			name: "Enabled, Sourcegraph provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -876,11 +885,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
-			dotcom:     true,
-			wantConfig: zeroConfigDefaultWithLicense,
+			allowEmbeddings: true,
+			wantConfig:      zeroConfigDefaultWithLicense,
 		},
 		{
-			name: "dotcom File filters",
+			name: "Enabled, File filters",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -893,7 +902,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -911,11 +920,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "dotcom File filters w/o MaxFileSizeBytes",
+			name: "Enabled, File filters w/o MaxFileSizeBytes",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -927,7 +935,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					},
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -945,11 +953,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "dotcom Disable exclude failed chunk during indexing",
+			name: "Enabled, Disable exclude failed chunk during indexing",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -963,7 +970,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludeChunkOnError: pointers.Ptr(false),
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -981,11 +988,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
 				ExcludeChunkOnError: false,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "dotcom No provider and no token, assume Sourcegraph",
+			name: "Enabled, No provider and no token, assume Sourcegraph",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -993,7 +999,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Model: "openai/text-embedding-bobert-9000",
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
@@ -1009,11 +1015,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "dotcom Sourcegraph provider without license",
+			name: "Enabled, Sourcegraph provider without license",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  "",
@@ -1021,11 +1026,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom OpenAI provider",
+			name: "Enabled, OpenAI provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -1034,7 +1039,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					AccessToken: "asdf",
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "openai",
 				AccessToken:                "asdf",
@@ -1050,11 +1055,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "dotcom OpenAI provider without access token",
+			name: "Enabled, OpenAI provider without access token",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -1062,11 +1066,11 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "openai",
 				},
 			},
-			dotcom:       true,
-			wantDisabled: true,
+			allowEmbeddings: true,
+			wantDisabled:    true,
 		},
 		{
-			name: "dotcom Azure OpenAI provider",
+			name: "Enabled, Azure OpenAI provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -1078,7 +1082,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Model:       "the-model",
 				},
 			},
-			dotcom: true,
+			allowEmbeddings: true,
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "azure-openai",
 				AccessToken:                "asdf",
@@ -1094,32 +1098,19 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					MaxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
-				Qdrant:              defaultQdrantConfig,
 			},
 		},
 		{
-			name: "Enterprise Implicit config with cody.enabled",
+			name: "Disabled, Implicit config with cody.enabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			dotcom:       false,
-			wantDisabled: true,
+			allowEmbeddings: false,
+			wantDisabled:    true,
 		},
 		{
-			name: "Enterprise Sourcegraph provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-				},
-			},
-			dotcom:       false,
-			wantDisabled: true,
-		},
-		{
-			name: "Enterprise explict enabled",
+			name: "Disabled, Sourcegraph provider",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
@@ -1127,20 +1118,31 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
-			dotcom:       false,
-			wantDisabled: true,
+			allowEmbeddings: false,
+			wantDisabled:    true,
+		},
+		{
+			name: "Disabled, explict enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			allowEmbeddings: false,
+			wantDisabled:    true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
-			dotcom.MockSourcegraphDotComMode(tc.dotcom)
+			MockForceAllowEmbeddings(t, tc.allowEmbeddings)
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
 			t.Cleanup(func() {
-				dotcom.MockSourcegraphDotComMode(false)
 				deploy.Mock(defaultDeploy)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)

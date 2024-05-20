@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use paste::paste;
 use scip::types::{Document, Occurrence, SyntaxKind};
-use std::collections::HashMap;
 use tree_sitter_all_languages::ParserId;
 use tree_sitter_highlight::{
     Highlight, HighlightConfiguration, HighlightEvent, Highlighter as TSHighlighter,
@@ -9,7 +10,7 @@ use tree_sitter_highlight::{
 use crate::range::Range;
 
 macro_rules! include_scip_query {
-    ($lang: expr, $query: literal) => {
+    ($lang:expr, $query:literal) => {
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/queries/",
@@ -20,8 +21,9 @@ macro_rules! include_scip_query {
         ))
     };
 }
-use crate::highlighting::TreeSitterLanguageName;
 pub(crate) use include_scip_query;
+
+use crate::highlighting::TreeSitterLanguageName;
 
 #[rustfmt::skip]
 // This table serves two purposes.
@@ -65,7 +67,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
     ("string.escape",           SyntaxKind::StringLiteralEscape),
-    ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
+    ("tag",                     SyntaxKind::Tag),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
@@ -143,6 +145,24 @@ macro_rules! create_configurations {
             m.insert(ParserId::Tsx, lang);
         }
 
+        {
+            let highlights = vec![
+                // We have a separate file for jsx since TypeScript inherits the base javascript highlights
+                // and if we include the query for jsx attributes it would fail since it is not in the tree-sitter
+                // grammar for TypeScript.
+                include_scip_query!("javascript", "highlights-jsx"),
+                include_scip_query!("javascript", "highlights"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                ParserId::Javascript.language(),
+                &highlights.join("\n"),
+                include_scip_query!("javascript", "injections"),
+                include_scip_query!("javascript", "locals"),
+            ).expect("parser for 'javascript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert(ParserId::Javascript, lang);
+        }
+
         m
     }}
 }
@@ -153,14 +173,18 @@ lazy_static::lazy_static! {
             (C, "c"),
             (Cpp, "cpp"),
             (C_Sharp, "c_sharp"),
+            (Dart, "dart"),
             (Go, "go"),
             (Java, "java"),
-            (Javascript, "javascript"),
+            // Skipping Javascript here as it is handled
+            // specially inside the macro implementation
+            // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),
             (Perl, "perl"),
+            (Pkl, "pkl"),
             (Pod, "pod"),
             (Python, "python"),
             (Ruby, "ruby"),
@@ -401,9 +425,13 @@ mod test {
         io::Read,
     };
 
+    use if_chain::if_chain;
+
     use super::*;
-    use crate::highlighting::FileInfo;
-    use crate::snapshot::{self, dump_document_with_config};
+    use crate::{
+        highlighting::FileInfo,
+        snapshot::{self, dump_document_with_config},
+    };
 
     fn snapshot_treesitter_syntax_kinds(doc: &Document, source: &str) -> String {
         dump_document_with_config(
@@ -429,6 +457,33 @@ mod test {
             },
         )
         .expect("dump document")
+    }
+
+    fn get_language_for_test(filepath: &std::path::Path, contents: &str) -> TreeSitterLanguageName {
+        let language_from_syntect = crate::highlighting::test::SYNTAX_SET
+            .with(|syntax_set| {
+                FileInfo::new(filepath.to_string_lossy().as_ref(), contents, None)
+                    .determine_language(syntax_set)
+            })
+            .unwrap();
+
+        // If we can't determine language from Syntect, determine from path just for the test
+        // This is only needed for test, since when running in production, we
+        // will always have the language passed in
+
+        // Remove me once let-chains are stabilized
+        // (https://github.com/rust-lang/rust/issues/53667)
+        if_chain! {
+            if language_from_syntect.raw.is_empty()
+                || language_from_syntect.raw.to_lowercase() == "plain text";
+            if let Some(extension) = filepath.extension();
+            if let Some(parser_id) = ParserId::from_file_extension(extension.to_str().unwrap());
+            then {
+                return TreeSitterLanguageName::new(parser_id.name());
+            }
+        }
+
+        language_from_syntect
     }
 
     #[test]
@@ -484,12 +539,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = &crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
             // TODO: I'm not sure if there's a better way to run the snapshots without
@@ -536,12 +586,7 @@ SELECT * FROM my_table
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let language = crate::highlighting::test::SYNTAX_SET
-                .with(|syntax_set| {
-                    FileInfo::new(filepath.to_string_lossy().as_ref(), &contents, None)
-                        .determine_language(syntax_set)
-                })
-                .unwrap();
+            let language = get_language_for_test(&filepath, &contents);
 
             let document = language.highlight_document(&contents, true).unwrap();
 

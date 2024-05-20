@@ -1,31 +1,24 @@
 import type { FC } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiFlaskEmptyOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { enableSvelteAndReload, canEnableSvelteKit } from './util'
 
-import { isSvelteKitSupportedURL, reload } from './util'
-
-function useIsSvelteKitToggleEnabled(): boolean {
-    const [isSvelteKitToggleEnabled] = useFeatureFlag('enable-sveltekit-toggle')
-    const [isExperimentalWebAppToggleEnabled] = useFeatureFlag('web-next-toggle')
-    return isSvelteKitToggleEnabled || isExperimentalWebAppToggleEnabled
-}
-
-export const SvelteKitNavItem: FC = () => {
+export const SvelteKitNavItem: FC<{ userID?: string }> = ({ userID }) => {
     const location = useLocation()
-    const isEnabled = useIsSvelteKitToggleEnabled()
+    const client = useApolloClient()
 
-    if (!isEnabled || !isSvelteKitSupportedURL(location.pathname)) {
+    if (!userID || !canEnableSvelteKit(location.pathname)) {
         return null
     }
 
     return (
         <Tooltip content="Go to experimental web app">
-            <Button variant="icon" onClick={reload}>
+            <Button variant="icon" onClick={() => enableSvelteAndReload(client, userID)}>
                 <span className="text-muted">
                     <Icon svgPath={mdiFlaskEmptyOutline} aria-hidden={true} inline={false} />
                 </span>

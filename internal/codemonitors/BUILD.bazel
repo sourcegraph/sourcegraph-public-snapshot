@@ -5,12 +5,14 @@ go_library(
     name = "codemonitors",
     srcs = ["search.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/database",
         "//internal/errcode",
         "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/search",
         "//internal/search/client",
@@ -32,6 +34,7 @@ go_test(
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

@@ -1,15 +1,9 @@
-import {
-    mdiCodeTags,
-    mdiFileCodeOutline,
-    mdiPlusMinus,
-    mdiShapeOutline,
-    mdiSourceCommit,
-    mdiSourceRepository,
-} from '@mdi/js'
+import { mdiCodeBraces, mdiFileOutline, mdiFunction, mdiPlusMinus, mdiSourceCommit, mdiSourceFork } from '@mdi/js'
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { parseExtendedSearchURL } from '..'
+import { SearchCachePolicy, setCachePolicyInURL } from '../state'
 
 export type SectionItem = Omit<Filter, 'count'> & {
     count?: Filter['count']
@@ -53,6 +47,7 @@ export function updateFilterInURL(url: URL, filter: URLQueryFilter, remove: bool
     selectedFilters
         .map(serializeURLFilter)
         .forEach(selectedFilter => newURL.searchParams.append(DYNAMIC_FILTER_URL_QUERY_KEY, selectedFilter))
+    setCachePolicyInURL(newURL, SearchCachePolicy.CacheFirst)
 
     return newURL
 }
@@ -88,10 +83,10 @@ export const staticTypeFilters: URLQueryFilter[] = [
 ]
 
 export const typeFilterIcons: Record<string, string> = {
-    Code: mdiCodeTags,
-    Repositories: mdiSourceRepository,
-    Paths: mdiFileCodeOutline,
-    Symbols: mdiShapeOutline,
+    Code: mdiCodeBraces,
+    Repositories: mdiSourceFork,
+    Paths: mdiFileOutline,
+    Symbols: mdiFunction,
     Commits: mdiSourceCommit,
     Diffs: mdiPlusMinus,
 }

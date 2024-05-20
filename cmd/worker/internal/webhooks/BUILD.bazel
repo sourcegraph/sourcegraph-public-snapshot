@@ -8,6 +8,7 @@ go_library(
         "janitor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -27,10 +28,11 @@ go_test(
     timeout = "short",
     srcs = ["handler_test.go"],
     embed = [":webhooks"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//lib/errors",
-        "@com_github_derision_test_go_mockgen//testutil/assert",
+        "@com_github_derision_test_go_mockgen_v2//testutil/assert",
         "@com_github_stretchr_testify//assert",
     ],
 )

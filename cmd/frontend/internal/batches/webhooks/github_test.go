@@ -98,7 +98,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+		s := store.NewWithClock(db, observation.TestContextTB(t), nil, clock)
 		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
@@ -187,7 +187,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				tc := loadWebhookTestCase(t, fixtureFile)
 
 				// Send all events twice to ensure we are idempotent
-				for i := 0; i < 2; i++ {
+				for range 2 {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
 							Router: &webhooks.Router{

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "appliance",
+    srcs = [
+        "appliance.go",
+        "grpc.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/appliance/config",
+        "//internal/appliance/v1:appliance",
+        "//lib/pointers",
+        "@com_github_masterminds_semver//:semver",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)
+
+filegroup(
+    name = "testdata",
+    srcs = glob(["testdata/**"]),
+)

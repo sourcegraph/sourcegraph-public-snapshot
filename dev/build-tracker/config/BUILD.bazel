@@ -4,6 +4,7 @@ go_library(
     name = "config",
     srcs = ["config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/build-tracker/config",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
-    deps = ["//lib/errors"],
+    deps = ["//lib/managedservicesplatform/runtime"],
 )

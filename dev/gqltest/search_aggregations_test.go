@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestModeAvailability(t *testing.T) {
@@ -85,13 +86,8 @@ func TestAggregations(t *testing.T) {
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-aggregation-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
+		Config: mustMarshalJSONString(&schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/go-diff",

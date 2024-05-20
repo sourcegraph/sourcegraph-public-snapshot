@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -7,19 +8,46 @@ go_library(
         "counter.go",
         "encrypter.go",
         "encrypter_job.go",
+        "encryption.go",
+        "encryption_tables.go",
+        "encryption_utils.go",
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
         "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "encryption_test",
+    srcs = ["encryption_test.go"],
+    embed = [":encryption"],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/encryption",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

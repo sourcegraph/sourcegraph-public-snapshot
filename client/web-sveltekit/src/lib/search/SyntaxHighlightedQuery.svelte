@@ -8,18 +8,16 @@
     $: decorations = decorateQuery(query)
 </script>
 
-<span class="text-monospace search-query-link">
+<code class="search-query-link">
     {#if decorations}
         {#each decorations as { key, className, value, token } (key)}
             <span class={className}>
                 {#if matches}
-                    <EmphasizedLabel label={value} {matches} offset={token.range.start} />
-                {:else}
-                    {value}
-                {/if}
-            </span>
+                    <EmphasizedLabel label={value} {matches} offset={token.range.start} />{:else}
+                    {value}{/if}</span
+            >
         {/each}
     {:else}
         {query}
     {/if}
-</span>
+</code>

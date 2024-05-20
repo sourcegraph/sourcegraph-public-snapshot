@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import type { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     createRectangle,
-    createLinkClickHandler,
     Icon,
     Link,
     Popover,
@@ -19,9 +18,8 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
-import { replaceRevisionInURL } from '../../util/url'
-import type { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
+import { getURLToFileCommit } from '../../util/url'
+import type { BlameHunk, BlameHunkData } from '../blame/shared'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import styles from './BlameDecoration.module.scss'
@@ -110,7 +108,6 @@ interface BlameDecorationProps {
     line: number // 1-based line number
     blameHunk?: BlameHunk
     externalURLs?: BlameHunkData['externalURLs']
-    navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
 }
@@ -121,13 +118,12 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     onSelect,
     onDeselect,
     externalURLs,
-    navigate,
 }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(hunkStartLine)
-        eventLogger.log('GitBlamePopupViewed')
+        EVENT_LOGGER.log('GitBlamePopupViewed')
     }, [onSelect, hunkStartLine])
     const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
@@ -141,9 +137,6 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
         (event: PopoverOpenEvent) => (event.isOpen ? close() : open()),
         [close, open]
     )
-
-    // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
     if (!blameHunk) {
         return null
@@ -226,16 +219,16 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
                                 />
                             </div>
                         </div>
-                        {blameHunk.commit.parents.length > 0 && (
+                        {blameHunk.commit.previous && (
                             <>
                                 <hr className={classNames(styles.separator, 'm-0')} />
                                 <div className={classNames('px-3', styles.block)}>
                                     <Link
-                                        to={
-                                            window.location.origin +
-                                            replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
-                                        }
-                                        onClick={handleParentCommitLinkClick}
+                                        to={getURLToFileCommit(
+                                            window.location.href,
+                                            blameHunk.commit.previous.filename,
+                                            blameHunk.commit.previous.rev
+                                        )}
                                         className={styles.footerLink}
                                     >
                                         View blame prior to this change
@@ -251,5 +244,5 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
 }
 
 const logCommitClick = (): void => {
-    eventLogger.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
+    EVENT_LOGGER.log('GitBlamePopupClicked', { target: 'commit' }, { target: 'commit' })
 }

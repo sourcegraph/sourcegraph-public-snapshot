@@ -5,6 +5,7 @@ go_library(
     name = "resolvers",
     srcs = ["resolver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac/resolvers",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -28,6 +29,7 @@ go_test(
     embed = [":resolvers"],
     flaky = True,
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

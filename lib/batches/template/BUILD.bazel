@@ -9,6 +9,7 @@ go_library(
         "templating.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/template",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/batches/execution",
@@ -28,6 +29,7 @@ go_test(
         "templating_test.go",
     ],
     embed = [":template"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/batches/execution",
         "//lib/batches/git",

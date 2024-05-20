@@ -145,7 +145,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 	// No runtime is configured.
 	// Will go away once firecracker is implemented.
 	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name           string
@@ -418,7 +418,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 
 func TestHandler_Handle(t *testing.T) {
 	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+	operations := command.NewOperations(observation.TestContextTB(t))
 
 	tests := []struct {
 		name           string

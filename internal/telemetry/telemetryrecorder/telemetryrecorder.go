@@ -19,6 +19,12 @@ import (
 // The current defaults tee events to both the legacy event_logs table, as well
 // as the new Telemetry Gateway export queue.
 func New(db database.DB) *telemetry.EventRecorder {
+	if db == nil {
+		// Let panic happen later, when events are actually recorded - useful in
+		// some tests to avoid having to mock out the database where a recorder
+		// is created but never in the test's coverage.
+		return telemetry.NewEventRecorder(nil)
+	}
 	return telemetry.NewEventRecorder(teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()))
 }
 

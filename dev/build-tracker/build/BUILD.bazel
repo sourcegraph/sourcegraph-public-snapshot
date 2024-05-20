@@ -8,11 +8,12 @@ go_library(
         "steps.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/build-tracker/build",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/build-tracker/notify",
-        "//dev/build-tracker/util",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -23,6 +24,7 @@ go_test(
     timeout = "short",
     srcs = ["build_test.go"],
     embed = [":build"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_sourcegraph_log//logtest",

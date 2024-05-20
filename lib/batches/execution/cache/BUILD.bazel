@@ -8,6 +8,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/batches",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["cache_test.go"],
     embed = [":cache"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/batches",
         "//lib/batches/env",

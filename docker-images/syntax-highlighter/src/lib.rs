@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use anyhow::Context;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
@@ -105,8 +107,8 @@ impl ScipHighlightQuery {
     }
 }
 
-pub fn jsonify_err(e: impl ToString) -> JsonValue {
-    json!({"error": e.to_string()})
+pub fn jsonify_err(e: impl Display) -> JsonValue {
+    json!({"error": format!("{:#}", e)})
 }
 
 pub fn syntect_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
@@ -115,8 +117,7 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
             syntax_set,
             line_length_limit: q.line_length_limit,
         };
-        let output = backend.highlight(&q.file_info())
-            .map_err(jsonify_err)?;
+        let output = backend.highlight(&q.file_info()).map_err(jsonify_err)?;
 
         debug_assert!(output.kind == PayloadKind::Html);
         Ok(json!({ "data": output.payload, "plaintext": &output.grammar == "Plain Text", }))
@@ -156,4 +157,26 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
         debug_assert!(output.kind == PayloadKind::Base64EncodedScip);
         Ok(json!({"scip": output.payload, "plaintext": false}))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use insta;
+
+    use crate::{scip_highlight, ScipHighlightQuery, SyntaxEngine};
+
+    #[test]
+    fn check_error() {
+        let result = scip_highlight(ScipHighlightQuery {
+            engine: SyntaxEngine::TreeSitter,
+            code: "int a = 3;".to_string(),
+            filepath: "a.c".to_string(),
+            filetype: None,
+            line_length_limit: None,
+        });
+        assert!(result.is_err());
+        // The default string formatting for an error only picks the most
+        // recent element. Make sure we're serializing the full context.
+        insta::assert_display_snapshot!(result.unwrap_err());
+    }
 }

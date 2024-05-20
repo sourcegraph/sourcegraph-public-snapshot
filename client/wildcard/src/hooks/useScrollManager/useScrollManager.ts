@@ -1,9 +1,9 @@
-import { useEffect, RefObject } from 'react'
+import { useEffect, type RefObject } from 'react'
 
 import { debounce } from 'lodash'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
-import { logger } from '@sourcegraph/common'
+import { logger } from '../../utils'
 
 import {
     type MutationObserverError,
@@ -28,7 +28,6 @@ const SCROLL_RETRY_TIMEOUT = 3000
 
 /**
  * This hook will preserve the scroll state of a provided container between history changes ("forward" and "back" navigation, specifically).
- *
  * @param containerKey A unique key to identify the container where scrolling will be managed. Usually the component name.
  * @param containerRef A React ref object of the container where scrolling will be managed.
  */

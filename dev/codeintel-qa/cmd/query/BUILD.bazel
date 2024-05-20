@@ -13,6 +13,7 @@ go_library(
         "test_cases_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/query",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
@@ -24,13 +25,6 @@ go_library(
 go_binary(
     name = "query",
     embed = [":query_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
-)
-
-go_cross_binary(
-    name = "query-darwin-arm64",
-    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
-    tags = ["manual"],
-    target = ":query",
-    visibility = ["//testing:__pkg__"],
 )

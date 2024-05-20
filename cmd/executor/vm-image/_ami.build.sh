@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -eu
-
 ## Setting up inputs/data
 gcloud="$(pwd)/$1" # used in workdir folder, so need an absolute path
 packer="$(pwd)/$2"
@@ -19,7 +18,7 @@ trap 'rm -Rf "$workdir_abs"' EXIT
 cp "${base}/executor.pkr.hcl" workdir/
 cp "${base}/aws_regions.json" workdir/
 cp "${base}/install.sh" workdir/
-cp "$executor" workdir
+cp "$executor" workdir/
 
 # Copy src-cli, see //dev/tools:src-cli
 cp "$srccli" workdir/
@@ -31,10 +30,14 @@ cp "$srccli" workdir/
 docker tag executor-vm:candidate "sourcegraph/executor-vm:$VERSION"
 docker save --output workdir/executor-vm.tar "sourcegraph/executor-vm:$VERSION"
 
-"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"workdir/builder-sa-key.json"
+GCP_PROJECT="aspect-dev"
+"$gcloud" secrets versions access latest --secret=e2e-builder-sa-key --quiet --project="$GCP_PROJECT" >"workdir/builder-sa-key.json"
 
 export PKR_VAR_name
-PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
+PKR_VAR_name="${IMAGE_FAMILY}"
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
+  PKR_VAR_name="${PKR_VAR_name}-${BUILDKITE_BUILD_NUMBER}"
+fi
 export PKR_VAR_image_family="${IMAGE_FAMILY}"
 export PKR_VAR_tagged_release="${EXECUTOR_IS_TAGGED_RELEASE}"
 export PKR_VAR_version="${VERSION}"

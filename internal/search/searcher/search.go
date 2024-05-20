@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -120,11 +120,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
+					status, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
-							IsLimitHit: limitHit,
+							IsLimitHit: repoLimitHit,
 						},
 					})
 					return err
@@ -195,7 +195,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 	if err != nil {
 		return false, err
 	}

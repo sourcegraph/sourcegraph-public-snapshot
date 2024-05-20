@@ -28,7 +28,7 @@ type PolicyMatch struct {
 	Name           string
 	PolicyID       *int
 	PolicyDuration *time.Duration
-	CommittedAt    *time.Time
+	CommittedAt    time.Time
 }
 
 func NewMatcher(
@@ -78,22 +78,28 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 		branchRequests: map[string]branchRequestMeta{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repoName, filterCommits...)
-	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
+	opt := gitserver.ListRefsOpts{
+		HeadsOnly: true,
+		TagsOnly:  true,
+	}
+	for _, c := range filterCommits {
+		opt.PointsAtCommit = append(opt.PointsAtCommit, api.CommitID(c))
 	}
 
-	for commit, refDescriptions := range refDescriptions {
-		for _, refDescription := range refDescriptions {
-			switch refDescription.Type {
-			case gitdomain.RefTypeTag:
-				// Match tagged commits
-				m.matchTaggedCommits(mContext, commit, refDescription, now)
+	refs, err := m.gitserverClient.ListRefs(ctx, repoName, opt)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.ListRefs")
+	}
 
-			case gitdomain.RefTypeBranch:
-				// Match tips of branches
-				m.matchBranchHeads(mContext, commit, refDescription, now)
-			}
+	for _, ref := range refs {
+		switch ref.Type {
+		case gitdomain.RefTypeTag:
+			// Match tagged commits
+			m.matchTaggedCommits(mContext, string(ref.CommitID), ref, now)
+
+		case gitdomain.RefTypeBranch:
+			// Match tips of branches
+			m.matchBranchHeads(mContext, string(ref.CommitID), ref, now)
 		}
 	}
 
@@ -141,33 +147,33 @@ type branchRequestMeta struct {
 
 // matchTaggedCommits determines if the given commit (described by the tag-type ref given description) matches any tag-type
 // policies. For each match, a commit/policy pair will be added to the given context.
-func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
+func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, ref gitdomain.Ref, now time.Time) {
 	visitor := func(policy shared.ConfigurationPolicy) {
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+			Name:           ref.ShortName,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
-			CommittedAt:    refDescription.CreatedDate,
+			CommittedAt:    ref.CreatedDate,
 		})
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, shared.GitObjectTypeTag, visitor, now)
+	m.forEachMatchingPolicy(context, ref, shared.GitObjectTypeTag, visitor, now)
 }
 
 // matchBranchHeads determines if the given commit (described by the branch-type ref given description) matches any branch-type
 // policies. For each match, a commit/policy pair will be added to the given context. This method also adds matches for the tip
 // of the default branch (if configured to do so), and adds bookkeeping metadata to the context's branchRequests field when a
 // matching policy's intermediate commits should be checked.
-func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
-	if refDescription.IsDefaultBranch && m.includeTipOfDefaultBranch {
+func (m *Matcher) matchBranchHeads(context matcherContext, commit string, ref gitdomain.Ref, now time.Time) {
+	if ref.IsHead && m.includeTipOfDefaultBranch {
 		// Add a match with no associated policy for the tip of the default branch
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+			Name:           ref.ShortName,
 			PolicyID:       nil,
 			PolicyDuration: nil,
-			CommittedAt:    refDescription.CreatedDate,
+			CommittedAt:    ref.CreatedDate,
 		})
 	}
 
@@ -175,27 +181,27 @@ func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDes
 		policyDuration, _ := m.extractor(policy)
 
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+			Name:           ref.ShortName,
 			PolicyID:       &policy.ID,
 			PolicyDuration: policyDuration,
-			CommittedAt:    refDescription.CreatedDate,
+			CommittedAt:    ref.CreatedDate,
 		})
 
 		// Build requests to be made in batch via the matchCommitsOnBranch method
 		if policyDuration, includeIntermediateCommits := m.extractor(policy); includeIntermediateCommits {
-			meta, ok := context.branchRequests[refDescription.Name]
+			meta, ok := context.branchRequests[ref.ShortName]
 			if !ok {
 				meta.policyDurationByIDs = map[int]*time.Duration{}
 			}
 
 			meta.policyDurationByIDs[policy.ID] = policyDuration
-			meta.isDefaultBranch = meta.isDefaultBranch || refDescription.IsDefaultBranch
+			meta.isDefaultBranch = meta.isDefaultBranch || ref.IsHead
 			meta.commitID = commit
-			context.branchRequests[refDescription.Name] = meta
+			context.branchRequests[ref.ShortName] = meta
 		}
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, shared.GitObjectTypeTree, visitor, now)
+	m.forEachMatchingPolicy(context, ref, shared.GitObjectTypeTree, visitor, now)
 }
 
 // matchCommitsOnBranch makes a request for commits belonging to any branch matching a branch-type
@@ -211,10 +217,11 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 			maxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(
+		commitDates, err := commitsUniqueToBranch(
 			ctx,
+			m.gitserverClient,
 			context.repo,
-			branchRequestMeta.commitID,
+			api.CommitID(branchRequestMeta.commitID),
 			branchRequestMeta.isDefaultBranch,
 			maxCommitAge,
 		)
@@ -225,7 +232,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 		for commit, commitDate := range commitDates {
 		policyLoop:
 			for policyID, policyDuration := range branchRequestMeta.policyDurationByIDs {
-				for _, match := range context.commitMap[commit] {
+				for _, match := range context.commitMap[string(commit)] {
 					if match.PolicyID != nil && *match.PolicyID == policyID {
 						// Skip duplicates (can happen at head of branch)
 						continue policyLoop
@@ -237,21 +244,51 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 					continue policyLoop
 				}
 
-				// Don't capture loop variable pointers
-				localPolicyID := policyID
-				commitDate := commitDate
-
-				context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
+				context.commitMap[string(commit)] = append(context.commitMap[string(commit)], PolicyMatch{
 					Name:           branchName,
-					PolicyID:       &localPolicyID,
+					PolicyID:       &policyID,
 					PolicyDuration: policyDuration,
-					CommittedAt:    &commitDate,
+					CommittedAt:    commitDate,
 				})
 			}
 		}
 	}
 
 	return nil
+}
+
+// commitsUniqueToBranch returns a map from commits that exist on a particular
+// branch in the given repository to their committer date. This set of commits is
+// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+// commits on {branchName} not also on the tip of the default branch. If the
+// supplied branch name is the default branch, then this method instead returns
+// all commits reachable from HEAD.
+func commitsUniqueToBranch(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, commitID api.CommitID, isDefaultBranch bool, maxCommitAge *time.Time) (map[api.CommitID]time.Time, error) {
+	rng := "HEAD"
+	if !isDefaultBranch {
+		rng = fmt.Sprintf("HEAD..%s", commitID)
+	}
+
+	var after string
+	if maxCommitAge != nil {
+		after = maxCommitAge.Format(time.RFC3339)
+	}
+
+	commits, err := gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
+		Ranges: []string{rng},
+		After:  after,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	commitMap := make(map[api.CommitID]time.Time)
+	for _, commit := range commits {
+		commitMap[commit.ID] = commit.Committer.Date
+	}
+
+	return commitMap, nil
+
 }
 
 // matchCommitPolicies compares the each commit-type policy pattern as a rev-like against the target
@@ -273,12 +310,11 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
-			id := policy.ID // avoid a reference to the loop variable
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
 				Name:           string(commit.ID),
-				PolicyID:       &id,
+				PolicyID:       &policy.ID,
 				PolicyDuration: policyDuration,
-				CommittedAt:    &commit.Committer.Date,
+				CommittedAt:    commit.Committer.Date,
 			})
 		}
 	}
@@ -286,21 +322,21 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 	return nil
 }
 
-func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitdomain.RefDescription, targetObjectType shared.GitObjectType, f func(policy shared.ConfigurationPolicy), now time.Time) {
+func (m *Matcher) forEachMatchingPolicy(context matcherContext, ref gitdomain.Ref, targetObjectType shared.GitObjectType, f func(policy shared.ConfigurationPolicy), now time.Time) {
 	for _, policy := range context.policies {
-		if policy.Type == targetObjectType && m.policyMatchesRefDescription(context, policy, refDescription, now) {
+		if policy.Type == targetObjectType && m.policyMatchesRef(context, policy, ref, now) {
 			f(policy)
 		}
 	}
 }
 
-func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy shared.ConfigurationPolicy, refDescription gitdomain.RefDescription, now time.Time) bool {
-	if !context.patterns[policy.Pattern].Match(refDescription.Name) {
+func (m *Matcher) policyMatchesRef(context matcherContext, policy shared.ConfigurationPolicy, ref gitdomain.Ref, now time.Time) bool {
+	if !context.patterns[policy.Pattern].Match(ref.ShortName) {
 		// Name doesn't match policy's pattern
 		return false
 	}
 
-	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && (refDescription.CreatedDate == nil || now.Sub(*refDescription.CreatedDate) > *policyDuration) {
+	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && now.Sub(ref.CreatedDate) > *policyDuration {
 		// Policy is not unbounded, we are filtering by commit date, commit is too old
 		return false
 	}

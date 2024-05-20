@@ -12,6 +12,7 @@ go_library(
         "webhooks.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/webhooks",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi",
@@ -36,11 +37,11 @@ go_test(
     ],
     embed = [":webhooks"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//internal/actor",
         "//internal/batches/graphql",
         "//internal/batches/store",
@@ -53,6 +54,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//mock",
         "@com_github_stretchr_testify//require",

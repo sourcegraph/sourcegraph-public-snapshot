@@ -2,12 +2,12 @@
 
 ## General
 
-### `bazel configure` prints out a warning about TSConfig 
+### `sg bazel configure` prints out a warning about TSConfig
 
-Everytime you run `bazel configure`, you'll see a warning: 
+Everytime you run `sg bazel configure`, you'll see a warning:
 
 ```
-$ bazel configure
+$ sg bazel configure
 Updating BUILD files for protobuf, go, javascript
 2023/11/16 12:32:52 Failed to load base tsconfig file @sourcegraph/tsconfig: open /Users/thorstenball/work/sourcegraph/@sourcegraph/tsconfig: no such file or directory
 ```
@@ -33,40 +33,52 @@ By default, JetBrains IDEs such as GoLand will try and index the files in your p
 
 There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
 
-### My local `bazel configure` or `./dev/ci/bazel-prechecks.sh` run has diff with a result of Bazel CI step
+### My local `sg bazel configure` or `./dev/ci/bazel-prechecks.sh` run has diff with a result of Bazel CI step
 
-This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
+This could happen when there are any files which are not tracked by Git. These files affect the run of `sg bazel configure` and typically add more items to `BUILD.bazel` file.
 
-Solution: run `git clean -ffdx` then run `bazel configure` again.
+Solution: run `git clean -ffdx` then run `sg bazel configure` again.
 
 ### How do I clean up all local Bazel cache?
 
 1. The simplest way to clean up the cache is to use the clean command: `bazel clean`. This command will remove all output files and the cache in the bazel-* directories within your workspace. Use the `--expunge` flag to remove the entire working tree, including the cache directory, and force a full rebuild.
 2. To manually clear the global Bazel cache, you need to remove the respective folders from your machine. On macOS, the global cache is typically located at either `~/.cache/bazel` or `/var/tmp/_bazel_$(whoami)`.
 
-### Where do I fine Bazel rules locally on disk?
+### Where do I find Bazel rules locally on disk?
 
 Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
 
 ### How do I build a container on MacOS
 
-Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you.
+Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. This is automatically handled by Bazel, so there should be no difference between the command to build containers on Linux and MacOS.
 
 Example:
 
 ```
 # Create a tarball that can be loaded in Docker of the worker service:
-bazel build //cmd/worker:image_tarball --config darwin-docker
+bazel build //cmd/worker:image_tarball
 
 # Load the image in Docker:
-docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --output=files)
 ```
 
 You can also use the same configuration flag to run the container tests on MacOS:
 
 ```
-bazel test //cmd/worker:image_test --config darwin-docker
+bazel test //cmd/worker:image_test
 ```
+
+### I am not able to run image tests locally as Docker is not detected
+
+If you get an error like:
+
+```
+time="2024-02-28T06:31:07Z" level=fatal msg="error loading oci layout into daemon: error loading image: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?, %!s(MISSING)"
+```
+
+It might be because Docker Desktop was configured to use a different Docker socket during installation.
+
+To fix this error, enable the checkbox under **Docker Desktop > Settings > Advanced > Allow the default Docker socket to be used (requires password)** and then restart Docker.
 
 ### Can I run integration tests (`bazel test //testing/...`) locally?
 
@@ -125,10 +137,10 @@ Bazel uses `xcrun` to locate the SDK and toolchain for iOS/Mac compilation and x
 
 Nonetheless, there is a workaround! Pass the following CLI flag when you try to build a target `--macos_sdk_version=13.3`. With the flag bazel should be able to find the MacOS SDK and you should not get the error anymore. It's recommended to add `build --macos_sdk_version=13.3` to your `.bazelrc` file so that you don't have to add the CLI flag every time you invoke a build.
 
-### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI) 
+### I see `error: unable to open mailmap at .mailmap: Too many levels of symbolic links` when running my `bazel run` target (both locally and in CI)
 
-If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because 
-`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way. 
+If you see this, it most probably means that you have a `bazel run //something` that calls `git log`. Git will look for a `.mailmap` at the root of the repository, which we do have in the monorepo. Because
+`bazel run` runs commands with a working directory which is in the runfiles, symbolic links are getting in the way.
 
 While it says "error", it's to be noted that it doesn't prevent the Git command to continue.
 
@@ -183,7 +195,7 @@ Any tests that make network calls on `localhost` need to be reachable from your 
 
 This can be achieved by adding the attribute `tags = ["requires-network"]` to the `go_test` rule in the `BUILD.bazel` file of the test directory.
 
-> NOTE: make sure to run `bazel configure` after adding the tag as it will probably move it to another line. Save yourself a failing build!
+> NOTE: make sure to run `sg bazel configure` after adding the tag as it will probably move it to another line. Save yourself a failing build!
 
 ## Go
 
@@ -217,7 +229,7 @@ INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
 
-Solution: run `bazel configure` to update the buildfiles automatically.
+Solution: run `sg bazel configure` to update the buildfiles automatically.
 
 ### My go tests complains about missing testdata
 
@@ -275,7 +287,7 @@ ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_reposit
 Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/fake.lock
 ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
 ```
-The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`.
+The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `sg bazel configure rustdeps`.
 
 ### When I build `syntax-highlighter` it complains that the current `lockfile` is out of date
 The error will look like this:
@@ -308,29 +320,23 @@ ERROR: Error computing the main repository mapping: no such package '@crate_inde
 
 The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
 ```
-Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+Bazel uses a separate lock file to track the dependencies, which need to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN_ONLY=crate_index sg bazel configure rustdeps`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`. This command _might also fail_ in that case [see](#bazel-sync-authentication-failure-when-cloning-syntect).
 
 ### `syntax-highlighter` fails to build and has the error `failed to resolve: use of undeclared crate or module`
 The error looks something like this:
 ```
-error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
-  --> docker-images/syntax-highlighter/src/main.rs:56:5
-   |
-56 |     scip_treesitter_languages::highlights::CONFIGURATIONS
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
-
-error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
+error[E0433]: failed to resolve: use of undeclared crate or module `tree_sitter_all_languages`
   --> docker-images/syntax-highlighter/src/main.rs:57:15
    |
-57 |         .get(&scip_treesitter_languages::parsers::BundledParser::Go);
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
+57 |         .get(&tree_sitter_all_languages::ParserId::Go);
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `tree_sitter_all_languages`
 
 error: aborting due to 2 previous errors
 ```
 Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
-1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
+1. Run `sg bazel configure builds rustdeps`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
 2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency.
-For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
+For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `tree-sitter-all-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `tree-sitter-all-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
 ```
 rust_binary(
     name = "syntect_server",
@@ -343,10 +349,46 @@ rust_binary(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/tree-sitter-all-languages:tree-sitter-all-languages",
     ],
 )
 ```
+
+### `bazel sync` authentication failure when cloning `syntect`
+
+When repinning dependencies with `CARGO_BAZEL_REPIN_ONLY=crate_index sg bazel configure rustdeps` it may fail with the following Cargo error:
+
+```
+STDERR ------------------------------------------------------------------------
+
+    Updating crates.io index
+    Updating git repository `https://github.com/sourcegraph/syntect`
+error: failed to get `syntect` as a dependency of package `sg-syntax v0.1.0 (/var/folders/1r/5z42n9p52zv8rfp93gxc1vfr0000gn/T/.tmpyhlucq/crates/sg-syntax)`
+
+Caused by:
+  failed to load source for dependency `syntect`
+
+Caused by:
+  Unable to update https://github.com/sourcegraph/syntect?rev=7e02c5b4085e6d935b960b8106cdd85da04532d2#7e02c5b4
+
+Caused by:
+  failed to clone into: /private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/crate_index/.cargo_home/git/db/syntect-383b2f29eb0ef0d0
+
+Caused by:
+  failed to authenticate when downloading repository: ssh://git@github.com/sourcegraph/syntect
+
+  * attempted ssh-agent authentication, but no usernames succeeded: `git`
+
+  if the git CLI succeeds then `net.git-fetch-with-cli` may help here
+  https://doc.rust-lang.org/cargo/reference/config.html#netgit-fetch-with-cli
+
+Caused by:
+  no authentication methods succeeded
+
+Error: Failed to update lockfile: exit status: 101
+```
+
+You might be able to Git SSH clone that repository locally, yet in Bazel Cargo, it fails. This is because Bazel Cargo doesn't use your `~/.ssh/config` file and thus can't use your SSH private key. The error says you can set `net.git-fetch-with-cli` in `Cargo.toml` or configure a credential helper. All cargo settings also have environment variable variants, so you can do the repinning with `CARGO_NET_GIT_FETCH_WITH_CLI=true sg bazel configure rustdeps` without setting the value in the `Cargo.toml`.
 
 ## Docs
 

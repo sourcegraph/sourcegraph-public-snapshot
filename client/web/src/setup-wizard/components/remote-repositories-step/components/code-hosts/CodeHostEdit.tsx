@@ -1,11 +1,11 @@
-import { FC, ReactNode, useEffect } from 'react'
+import { type FC, type ReactNode, useEffect } from 'react'
 
 import { useQuery } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -52,7 +52,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
     const { codehostId } = useParams()
 
     useEffect(() => {
-        telemetryRecorder.recordEvent('setup-wizard.code-host-edit', 'view')
+        telemetryRecorder.recordEvent('setupWizard.addRemoteRepos.edit', 'view')
     }, [telemetryRecorder])
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
@@ -170,6 +170,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
                 externalServiceId={codeHostId}
                 telemetryService={telemetryService}
                 onSubmit={handleSubmit}
+                telemetryRecorder={telemetryRecorder}
             >
                 {children}
             </GithubConnectView>

@@ -12,7 +12,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/usr/local/bin/sg",
     ],
@@ -35,6 +35,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_INFRA_DEVINFRA,
     ],
 )
 

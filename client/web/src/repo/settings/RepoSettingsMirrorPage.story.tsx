@@ -1,11 +1,12 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
-import {
+import type {
     CheckMirrorRepositoryConnectionResult,
     CheckMirrorRepositoryConnectionVariables,
     SettingsAreaRepositoryFields,
@@ -106,7 +107,7 @@ export const CloneInProgress: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[FETCH_SETTINGS_AREA_REPOSITORY_MOCK, CHECK_MIRROR_REPOSITORY_CONNECTION_MOCK]}>
-                <RepoSettingsMirrorPage disablePolling={true} repo={repo} />
+                <RepoSettingsMirrorPage disablePolling={true} repo={repo} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>

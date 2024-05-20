@@ -7,8 +7,10 @@ go_library(
         "handler.go",
         "models.go",
         "openai.go",
+        "sourcegraph.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -23,6 +25,8 @@ go_library(
         "//internal/trace",
         "//lib/errors",
         "@com_github_go_json_experiment_json//:json",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_json_iterator_go//:go",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
@@ -33,6 +37,7 @@ go_test(
     name = "embeddings_test",
     srcs = ["openai_test.go"],
     embed = [":embeddings"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",

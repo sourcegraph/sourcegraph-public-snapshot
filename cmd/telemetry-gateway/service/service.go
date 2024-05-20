@@ -11,6 +11,10 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -22,10 +26,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
 
 var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/service")
@@ -61,11 +66,32 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "create pubsub.published_message_size metric")
 	}
 
+	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
+	logger.Debug("using SAMS client",
+		log.String("samsExternalURL", config.SAMS.ExternalURL),
+		log.Stringp("samsAPIURL", config.SAMS.APIURL),
+		log.String("clientID", config.SAMS.ClientID))
+	samsClient, err := sams.NewClientV1(
+		sams.ClientV1Config{
+			ConnConfig: config.SAMS.ConnConfig,
+			TokenSource: sams.ClientCredentialsTokenSource(
+				config.SAMS.ConnConfig,
+				config.SAMS.ClientID,
+				config.SAMS.ClientSecret,
+				[]scopes.Scope{scopes.OpenID, scopes.Profile, scopes.Email},
+			),
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
+	}
+
 	// Initialize our gRPC server
 	grpcServer := defaults.NewPublicServer(logger)
 	telemetryGatewayServer, err := server.New(
 		logger,
 		eventsTopic,
+		samsClient,
 		events.PublishStreamOptions{
 			ConcurrencyLimit:     config.Events.StreamPublishConcurrency,
 			MessageSizeHistogram: publishMessageBytes,
@@ -79,7 +105,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 
 	// Set up diagnostics endpoints
 	diagnosticsServer := http.NewServeMux()
-	contract.RegisterDiagnosticsHandlers(diagnosticsServer, &serviceStatus{
+	contract.Diagnostics.RegisterDiagnosticsHandlers(diagnosticsServer, &serviceStatus{
 		eventsTopic: eventsTopic,
 	})
 	if !contract.MSP {
@@ -87,6 +113,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		// development!
 		grpcUI := debugserver.NewGRPCWebUIEndpoint("telemetry-gateway", listenAddr)
 		diagnosticsServer.Handle(grpcUI.Path, grpcUI.Handler)
+		logger.Warn("gRPC web UI enabled", log.String("url", fmt.Sprintf("%s%s", listenAddr, grpcUI.Path)))
 	}
 
 	return background.LIFOStopRoutine{
@@ -115,7 +142,7 @@ type serviceStatus struct {
 	eventsTopic pubsub.TopicClient
 }
 
-var _ runtime.ServiceState = (*serviceStatus)(nil)
+var _ contract.ServiceState = (*serviceStatus)(nil)
 
 func (s *serviceStatus) Healthy(ctx context.Context, _ url.Values) error {
 	if err := s.eventsTopic.Ping(ctx); err != nil {

@@ -3,11 +3,15 @@ import { join } from 'path'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
+import type { UserConfig as VitestUserConfig } from 'vitest'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
 
 export default defineConfig(({ mode }) => {
-    let config: UserConfig = {
+    // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
+    // in bazel. It's not clear what needs to be done to make it work without it, just like it does
+    // locally.
+    let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
             // Generates typescript types for gql-tags and .gql files
@@ -21,6 +25,7 @@ export default defineConfig(({ mode }) => {
                       'process.platform': '"browser"',
                       'process.env.VITEST': 'null',
                       'process.env.NODE_ENV': `"${mode}"`,
+                      'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
                       'process.env': '{}',
                   },
         css: {
@@ -32,6 +37,7 @@ export default defineConfig(({ mode }) => {
                         // (without it scss @import paths are always relative to the importing file)
                         join(__dirname, '..'),
                     ],
+                    additionalData: `@use '$lib/styles/breakpoints.scss';`,
                 },
             },
             modules: {
@@ -46,7 +52,7 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
+                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)|(/-/raw/)': {
                     target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                     changeOrigin: true,
                     secure: false,
@@ -71,12 +77,6 @@ export default defineConfig(({ mode }) => {
                 {
                     find: /^(.*)\.gql$/,
                     replacement: '$1.gql.ts',
-                },
-                // These are directories and cannot be imported from directly in
-                // production build.
-                {
-                    find: /^rxjs\/(operators|fetch)$/,
-                    replacement: 'rxjs/$1/index.js',
                 },
                 // Without aliasing lodash to lodash-es we get the following error:
                 // SyntaxError: Named export 'castArray' not found. The requested module 'lodash' is a CommonJS module, which may not support all module.exports as named exports.
@@ -141,8 +141,12 @@ export default defineConfig(({ mode }) => {
                 // and processes them as well.
                 // In a bazel sandbox however all @sourcegraph/* dependencies are built packages and thus not processed
                 // by vite without this additional setting.
-                // We have to process those files to apply certain "fixes", such as aliases defined in svelte.config.js.
+                // We have to process those files to apply certain "fixes", such as aliases defined in here
+                // and in svelte.config.js.
                 noExternal: [/@sourcegraph\/.*/],
+                // Exceptions to the above rule. These are packages that are not part of this monorepo and should
+                // not be processed by vite.
+                external: ['@sourcegraph/telemetry'],
             },
         } satisfies UserConfig)
     }

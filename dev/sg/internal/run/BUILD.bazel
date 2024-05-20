@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "bazel_command.go",
         "command.go",
+        "docker_commmand.go",
         "helpers.go",
         "ibazel.go",
         "installer.go",
@@ -14,8 +15,10 @@ go_library(
         "prefix_suffix_saver.go",
         "run.go",
         "sgconfig_command.go",
+        "sgconfig_command_options.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/run",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/analytics",
@@ -37,7 +40,15 @@ go_library(
 go_test(
     name = "run_test",
     timeout = "short",
-    srcs = ["logger_test.go"],
+    srcs = [
+        "docker_command_test.go",
+        "logger_test.go",
+    ],
     embed = [":run"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    tags = [TAG_INFRA_DEVINFRA],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
 )

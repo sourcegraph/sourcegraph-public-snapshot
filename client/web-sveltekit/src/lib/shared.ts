@@ -1,12 +1,13 @@
 // We want to limit the number of imported modules as much as possible
 
-export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-
 export {
     parseRepoRevision,
-    parseQueryAndHash,
     buildSearchURLQuery,
-    makeRepoURI,
+    makeRepoGitURI,
+    toPrettyBlobURL,
+    toRepoURL,
+    type AbsoluteRepoFile,
+    replaceRevisionInURL,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
@@ -26,6 +27,7 @@ export {
     getFileMatchUrl,
     getRepositoryUrl,
     aggregateStreamingSearch,
+    emptyAggregateResults,
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
@@ -46,6 +48,8 @@ export {
     type Progress,
     type Range,
     type Filter,
+    type SearchEvent,
+    type Alert,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,
@@ -72,6 +76,7 @@ export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/c
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
 export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 export { repositoryInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+export { ThemeSetting, Theme } from '@sourcegraph/shared/src/theme-types'
 
 // Copies of non-reusable code
 
@@ -86,12 +91,4 @@ export function displayRepoName(repoName: string): string {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
-}
-
-/**
- * Splits the repository name into the dir and base components.
- */
-export function splitPath(path: string): [string, string] {
-    const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }

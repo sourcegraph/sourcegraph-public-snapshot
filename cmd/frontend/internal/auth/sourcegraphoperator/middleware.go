@@ -69,7 +69,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, usernamePrefix, GetOIDCProvider)
+			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(logger, db, r, usernamePrefix, GetOIDCProvider)
 			if err != nil {
 				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(err))
 				http.Error(w, safeErrMsg, errStatus)

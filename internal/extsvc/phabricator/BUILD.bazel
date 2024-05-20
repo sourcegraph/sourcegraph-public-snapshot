@@ -5,6 +5,7 @@ go_library(
     name = "phabricator",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         ":phabricator",
         "//internal/httpcli",

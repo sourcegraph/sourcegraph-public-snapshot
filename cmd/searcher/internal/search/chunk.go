@@ -5,7 +5,7 @@ import (
 	"sort"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 // chunkRanges groups a set of ranges into chunks of adjacent ranges.
@@ -81,7 +81,13 @@ func chunksToMatches(buf []byte, chunks []rangeChunk, contextLines int32) []prot
 func extendRangeToLines(inputRange protocol.Range, buf []byte) protocol.Range {
 	firstLineStart := lineStart(buf, inputRange.Start.Offset)
 	lastLineStart := lineStart(buf, inputRange.End.Offset)
-	lastLineEnd := lineEnd(buf, inputRange.End.Offset)
+	lastLineEnd := lineEnd(buf,
+		// We want the end of the line containing the last byte of the
+		// match, not the first byte after the match. In the case of a
+		// zero-width match between lines, prefer the line after rather
+		// than the line before (like we do for lineStart).
+		max(inputRange.End.Offset, max(inputRange.End.Offset, 1)-1 /* prevent underflow */),
+	)
 
 	return protocol.Range{
 		Start: protocol.Location{
@@ -113,12 +119,8 @@ func addContextLines(inputRange protocol.Range, buf []byte, contextLines int32) 
 			precedingLinesAdded += 1
 		}
 
-		rest := buf[lastLineEnd:]
-		if bytes.HasPrefix(rest, []byte("\n")) && len(rest) > 1 {
-			lastLineEnd = lineEnd(buf, lastLineEnd+1)
-			succeedingLinesAdded += 1
-		} else if bytes.HasPrefix(rest, []byte("\r\n")) && len(rest) > 2 {
-			lastLineEnd = lineEnd(buf, lastLineEnd+2)
+		if int(lastLineEnd) < len(buf) {
+			lastLineEnd = lineEnd(buf, lastLineEnd)
 			succeedingLinesAdded += 1
 		}
 	}
@@ -150,10 +152,7 @@ func lineStart(buf []byte, offset int32) int32 {
 func lineEnd(buf []byte, offset int32) int32 {
 	end := int32(len(buf))
 	if loc := bytes.IndexByte(buf[offset:], '\n'); loc >= 0 {
-		end = int32(loc) + offset
-		if bytes.HasSuffix(buf[:end], []byte("\r")) {
-			end -= 1
-		}
+		end = int32(loc) + offset + 1
 	}
 	return end
 }

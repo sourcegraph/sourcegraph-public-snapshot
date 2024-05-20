@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "config.go",
+        "dotcomdb.go",
+        "service.go",
+        "state.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/enterprise-portal/internal/dotcomdb",
+        "//internal/httpserver",
+        "//internal/trace/policy",
+        "//internal/version",
+        "//lib/background",
+        "//lib/errors",
+        "//lib/managedservicesplatform/cloudsql",
+        "//lib/managedservicesplatform/runtime",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

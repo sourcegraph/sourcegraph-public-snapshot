@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func cloneStatus(cloned, cloning bool) types.CloneStatus {
+func cloneStatus(cloned, locked bool) types.CloneStatus {
 	switch {
 	case cloned:
 		return types.CloneStatusCloned
-	case cloning:
+	case locked:
 		return types.CloneStatusCloning
 	}
 	return types.CloneStatusNotCloned
@@ -44,9 +44,9 @@ var repoLastFetched = func(dir common.GitDir) (time.Time, error) {
 	return fi.ModTime(), nil
 }
 
-// repoLastChanged returns the mtime of the repo's sg_refhash, which is the
+// repoLastChanged returns the mtime of the repo's sg_refhash_v2, which is the
 // cached timestamp of the most recent commit we could find in the tree. As a
-// special case when sg_refhash is missing we return repoLastFetched(dir).
+// special case when sg_refhash_v2 is missing we return repoLastFetched(dir).
 //
 // This breaks on file systems that do not record mtime. This is a Sourcegraph
 // extension to track last time a repo changed. The file is updated by
@@ -55,7 +55,7 @@ var repoLastFetched = func(dir common.GitDir) (time.Time, error) {
 // As a special case, tries both the directory given, and the .git subdirectory,
 // because we're a bit inconsistent about which name to use.
 var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
-	fi, err := os.Stat(dir.Path("sg_refhash"))
+	fi, err := os.Stat(dir.Path("sg_refhash_v2"))
 	if os.IsNotExist(err) {
 		return repoLastFetched(dir)
 	}

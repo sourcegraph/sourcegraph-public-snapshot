@@ -12,10 +12,12 @@ go_library(
         "window.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/window",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
         "//schema",
+        "@com_github_sourcegraph_log//:log",
         "@org_uber_go_ratelimit//:ratelimit",
     ],
 )
@@ -32,6 +34,7 @@ go_test(
         "window_test.go",
     ],
     embed = [":window"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/errors",
         "//lib/pointers",

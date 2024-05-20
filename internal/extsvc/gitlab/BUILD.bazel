@@ -24,6 +24,7 @@ go_library(
         "version.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -68,6 +69,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":gitlab"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # requires localhost database
         "requires-network",
     ],

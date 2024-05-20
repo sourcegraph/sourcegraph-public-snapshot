@@ -36,6 +36,7 @@ ts_project(
         "util/init.ts",
         "util/settings.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/lodash",
@@ -61,6 +62,7 @@ ts_project(
         "init.test.ts",
         "integrations.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":regression",

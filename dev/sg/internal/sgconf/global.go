@@ -57,6 +57,16 @@ func GetWithoutOverwrites(confFile string) (*Config, error) {
 	return globalConf, globalConfErr
 }
 
+// GetUnbuffered retrieves the global config files and merges them into a single sg config.
+// Unlike Get, it doesn't cache the result, and will evaluate every time. This is to allow file watching.
+//
+// It must not be called before flag initalization, i.e. when confFile or overwriteFile is
+// not set, or it will panic. This means that it can only be used in (*cli).Action,
+// (*cli).Before/(*cli).After, and postInitHooks
+func GetUnbuffered(confFile, overwriteFile string, disableOverwrite bool) (*Config, error) {
+	return parseConf(confFile, overwriteFile, false)
+}
+
 func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error) {
 	// Try to determine root of repository, so we can look for config there
 	repoRoot, err := root.RepositoryRoot()
@@ -84,7 +94,7 @@ func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error
 			if err != nil {
 				return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
 			}
-			conf.Merge(overwriteConf)
+			conf = conf.Merge(overwriteConf)
 		}
 	}
 

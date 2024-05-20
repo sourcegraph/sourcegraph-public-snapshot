@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "container",
+    srcs = ["container.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/container",
+    tags = [TAG_INFRA_RELEASE],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/appliance/config",
+        "//lib/pointers",
+        "@com_github_grafana_regexp//:regexp",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/util/intstr",
+    ],
+)

@@ -2,11 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//wolfi-images:defs.bzl", "wolfi_base")
 
 go_library(
     name = "gitserver_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/gitserver/shared",
@@ -18,11 +20,8 @@ go_library(
 go_binary(
     name = "gitserver",
     embed = [":gitserver_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -30,22 +29,9 @@ pkg_tar(
     srcs = [":gitserver"],
 )
 
-pkg_tar(
-    name = "tar_p4_fusion_wrappers",
-    srcs = [
-        "p4-fusion-wrapper-detect-kill.sh",
-        "process-stats-watcher.sh",
-    ],
-    remap_paths = {
-        "/p4-fusion-wrapper-detect-kill.sh": "/usr/local/bin/p4-fusion",
-        "/process-stats-watcher.sh": "/usr/local/bin/process-stats-watcher.sh",
-    },
-    visibility = ["//visibility:public"],
-)
-
 oci_image(
     name = "image",
-    base = "@wolfi_gitserver_base",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -53,7 +39,6 @@ oci_image(
     ],
     tars = [
         ":tar_gitserver",
-        ":tar_p4_fusion_wrappers",
     ],
     user = "sourcegraph",
     workdir = "/",
@@ -74,6 +59,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
 )
 
@@ -82,3 +68,5 @@ oci_push(
     image = ":image",
     repository = image_repository("gitserver"),
 )
+
+wolfi_base()

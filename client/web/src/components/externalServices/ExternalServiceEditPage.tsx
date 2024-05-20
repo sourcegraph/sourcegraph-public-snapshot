@@ -2,7 +2,7 @@ import React, { type FC, useEffect, useState, useCallback, useMemo } from 'react
 
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
@@ -42,7 +42,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-        telemetryRecorder.recordEvent('admin.externalService.edit', 'view')
+        telemetryRecorder.recordEvent('admin.codeHostConnection.edit', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()

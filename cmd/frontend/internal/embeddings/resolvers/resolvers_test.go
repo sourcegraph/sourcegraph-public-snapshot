@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -32,8 +31,8 @@ import (
 
 func TestEmbeddingSearchResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dotcom.MockSourcegraphDotComMode(true)
-	defer dotcom.MockSourcegraphDotComMode(false)
+	conf.MockForceAllowEmbeddings(t, true)
+
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
 		return nil

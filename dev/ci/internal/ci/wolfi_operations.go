@@ -21,7 +21,7 @@ import (
 const wolfiImageDir = "wolfi-images"
 const wolfiPackageDir = "wolfi-packages"
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
+var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.](?:yaml|lock[.]json)`)
 var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
 // WolfiPackagesOperations rebuilds any packages whose configurations have changed
@@ -50,10 +50,17 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 	ops := operations.NewNamedSet("Base image builds")
 	logger := log.Scoped("gen-pipeline")
 
+	builtImage := make(map[string]bool)
 	var buildStepKeys []string
 	for _, c := range changedFiles {
 		match := baseImageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
+			// Don't build the same image twice
+			if builtImage[match[1]] {
+				continue
+			}
+			builtImage[match[1]] = true
+
 			buildFunc, key := buildWolfiBaseImage(match[1], tag, packagesChanged)
 			ops.Append(buildFunc)
 			buildStepKeys = append(buildStepKeys, key)
@@ -61,8 +68,6 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 			logger.Fatal(fmt.Sprintf("Unable to extract base image name from '%s', matches were %+v\n", c, match))
 		}
 	}
-
-	ops.Append(allBaseImagesBuilt(buildStepKeys))
 
 	return ops, len(buildStepKeys)
 }
@@ -77,7 +82,8 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
 			bk.Cmd(fmt.Sprintf("./dev/ci/scripts/wolfi/build-package.sh %s", target)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		)
@@ -88,11 +94,12 @@ func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
 			bk.Cmd("./dev/ci/scripts/wolfi/build-repo-index.sh"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			// This script is lightweight, so fine to run on the small queue
+			bk.Agent("queue", AspectWorkflows.QueueSmall),
 			// Depend on all previous package building steps
 			bk.DependsOn(packageKeys...),
 			bk.Key("buildRepoIndex"),
+			bk.SoftFail(222),
 		)
 	}
 }
@@ -112,7 +119,8 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 				},
 			}),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", AspectWorkflows.QueueDefault),
+			bk.DependsOn(AspectWorkflows.TestStepKey, AspectWorkflows.IntegrationTestStepKey),
 			bk.Key(stepKey),
 			bk.SoftFail(222),
 		}
@@ -126,20 +134,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			opts...,
 		)
 	}, stepKey
-}
-
-// No-op to ensure all base images are updated before building full images
-func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":octopus: All base images built",
-			bk.Cmd("echo 'All base images built'"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
-			// Depend on all previous package building steps
-			bk.DependsOn(baseImageKeys...),
-			bk.Key("buildAllBaseImages"),
-		)
-	}
 }
 
 var reStepKeySanitizer = lazyregexp.New(`[^a-zA-Z0-9_-]+`)
@@ -275,7 +269,7 @@ func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 }
 
 // addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
-func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
+func addWolfiOps(c Config) (packageOps, apkoOps *operations.Set) {
 	// Rebuild Wolfi packages that have config changes
 	var updatedPackages []string
 	if c.Diff.Has(changed.WolfiPackages) {
@@ -293,57 +287,51 @@ func addWolfiOps(c Config) (packageOps, baseImageOps *operations.Set) {
 	imagesToRebuild = sortUniq(imagesToRebuild)
 
 	if len(imagesToRebuild) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			imagesToRebuild,
-			c.Version,
-			(len(updatedPackages) > 0),
-		)
+		apkoOps = WolfiCheckApkoLocks()
 	}
 
-	return packageOps, baseImageOps
+	return packageOps, apkoOps
 }
 
-// wolfiRebuildAllBaseImages adds operations to rebuild all Wolfi base images and push to registry
-func wolfiRebuildAllBaseImages(c Config) *operations.Set {
-	// List all YAML files in wolfi-images/
-	dir := "wolfi-images"
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
-
-	var wolfiBaseImages []string
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".yaml" {
-			fullPath := filepath.Join(dir, f.Name())
-			wolfiBaseImages = append(wolfiBaseImages, fullPath)
-		}
-	}
-
-	// Rebuild all images
-	var baseImageOps *operations.Set
-	if len(wolfiBaseImages) > 0 {
-		baseImageOps, _ = WolfiBaseImagesOperations(
-			wolfiBaseImages,
-			c.Version,
-			false,
-		)
-	}
-
-	return baseImageOps
-}
-
-// wolfiGenerateBaseImagePR updates base image hashes and creates a PR in GitHub
-func wolfiGenerateBaseImagePR() *operations.Set {
-	ops := operations.NewNamedSet("Base Image Update PR")
+// wolfiBaseImageLockAndCreatePR updates base image hashes and creates a PR in GitHub
+func wolfiBaseImageLockAndCreatePR() *operations.Set {
+	ops := operations.NewNamedSet("Base Image Package Update PR")
 
 	ops.Append(
 		func(pipeline *bk.Pipeline) {
-			pipeline.AddStep(":whale::hash: Update Base Image Hashes",
-				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-hashes.sh"),
-				bk.Agent("queue", "bazel"),
-				bk.DependsOn("buildAllBaseImages"),
+			pipeline.AddStep(":whale::hash: Update Base Image Packages",
+				bk.Cmd("./dev/ci/scripts/wolfi/update-base-image-lockfiles.sh"),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
 				bk.Key("updateBaseImageHashes"),
+				bk.DependsOn("bazel-prechecks"),
+				bk.DependsOn("bazel-prechecks"),
+			)
+		},
+	)
+
+	return ops
+}
+
+// WolfiCheckApkoLocks checks that all apko YAML and Lockfiles are in sync
+// It should be run whenever a Wolfi YAML or lockfile is updated
+func WolfiCheckApkoLocks() *operations.Set {
+	ops := operations.NewNamedSet("Apko Lock")
+	cmd := "./dev/ci/scripts/wolfi/apko-check-lock.sh"
+
+	ops.Append(
+		func(pipeline *bk.Pipeline) {
+			pipeline.AddStep(":whale::lock: Check apko lockfiles",
+				bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{
+						Type:            bk.AnnotationTypeInfo,
+						IncludeNames:    false,
+						MultiJobContext: "apko-check-lock",
+					},
+				}),
+				bk.Agent("queue", AspectWorkflows.QueueDefault),
+				bk.Key("apko-check-lock"),
+				bk.SoftFail(222),
 			)
 		},
 	)

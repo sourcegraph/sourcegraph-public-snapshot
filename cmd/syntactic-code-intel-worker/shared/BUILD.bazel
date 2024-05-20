@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -8,17 +7,16 @@ go_library(
         "indexing_worker.go",
         "service.go",
         "shared.go",
-        "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/syntactic-code-intel-worker/shared",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/authz",
+        "//internal/codeintel/syntactic_indexing/jobstore",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/database/basestore",
         "//internal/database/connections/live",
-        "//internal/database/dbutil",
         "//internal/debugserver",
         "//internal/encryption/keyring",
         "//internal/env",
@@ -28,26 +26,7 @@ go_library(
         "//internal/service",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
-        "//internal/workerutil/dbworker/store",
         "//lib/errors",
-        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//:log",
-    ],
-)
-
-go_test(
-    name = "shared_test",
-    srcs = [
-        "store_helpers_test.go",
-        "store_test.go",
-    ],
-    embed = [":shared"],
-    tags = ["requires-network"],
-    deps = [
-        "//internal/database",
-        "//internal/database/dbtest",
-        "//internal/observation",
-        "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_stretchr_testify//require",
     ],
 )

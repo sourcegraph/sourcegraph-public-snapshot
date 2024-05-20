@@ -16,6 +16,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	commitgraph "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -385,9 +386,10 @@ type MockStore struct {
 	// DeleteOldAuditLogsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldAuditLogs.
 	DeleteOldAuditLogsFunc *StoreDeleteOldAuditLogsFunc
-	// DeleteOverlappingDumpsFunc is an instance of a mock function object
-	// controlling the behavior of the method DeleteOverlappingDumps.
-	DeleteOverlappingDumpsFunc *StoreDeleteOverlappingDumpsFunc
+	// DeleteOverlappingCompletedUploadsFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// DeleteOverlappingCompletedUploads.
+	DeleteOverlappingCompletedUploadsFunc *StoreDeleteOverlappingCompletedUploadsFunc
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *StoreDeleteUploadByIDFunc
@@ -405,13 +407,14 @@ type MockStore struct {
 	// ExpireFailedRecordsFunc is an instance of a mock function object
 	// controlling the behavior of the method ExpireFailedRecords.
 	ExpireFailedRecordsFunc *StoreExpireFailedRecordsFunc
-	// FindClosestDumpsFunc is an instance of a mock function object
-	// controlling the behavior of the method FindClosestDumps.
-	FindClosestDumpsFunc *StoreFindClosestDumpsFunc
-	// FindClosestDumpsFromGraphFragmentFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// FindClosestDumpsFromGraphFragment.
-	FindClosestDumpsFromGraphFragmentFunc *StoreFindClosestDumpsFromGraphFragmentFunc
+	// FindClosestCompletedUploadsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// FindClosestCompletedUploads.
+	FindClosestCompletedUploadsFunc *StoreFindClosestCompletedUploadsFunc
+	// FindClosestCompletedUploadsFromGraphFragmentFunc is an instance of a
+	// mock function object controlling the behavior of the method
+	// FindClosestCompletedUploadsFromGraphFragment.
+	FindClosestCompletedUploadsFromGraphFragmentFunc *StoreFindClosestCompletedUploadsFromGraphFragmentFunc
 	// GetAuditLogsForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAuditLogsForUpload.
 	GetAuditLogsForUploadFunc *StoreGetAuditLogsForUploadFunc
@@ -422,16 +425,16 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// GetCommitsVisibleToUpload.
 	GetCommitsVisibleToUploadFunc *StoreGetCommitsVisibleToUploadFunc
+	// GetCompletedUploadsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCompletedUploadsByIDs.
+	GetCompletedUploadsByIDsFunc *StoreGetCompletedUploadsByIDsFunc
+	// GetCompletedUploadsWithDefinitionsForMonikersFunc is an instance of a
+	// mock function object controlling the behavior of the method
+	// GetCompletedUploadsWithDefinitionsForMonikers.
+	GetCompletedUploadsWithDefinitionsForMonikersFunc *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc
 	// GetDirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDirtyRepositories.
 	GetDirtyRepositoriesFunc *StoreGetDirtyRepositoriesFunc
-	// GetDumpsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetDumpsByIDs.
-	GetDumpsByIDsFunc *StoreGetDumpsByIDsFunc
-	// GetDumpsWithDefinitionsForMonikersFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetDumpsWithDefinitionsForMonikers.
-	GetDumpsWithDefinitionsForMonikersFunc *StoreGetDumpsWithDefinitionsForMonikersFunc
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *StoreGetIndexByIDFunc
@@ -610,7 +613,7 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		DeleteOverlappingDumpsFunc: &StoreDeleteOverlappingDumpsFunc{
+		DeleteOverlappingCompletedUploadsFunc: &StoreDeleteOverlappingCompletedUploadsFunc{
 			defaultHook: func(context.Context, int, string, string, string) (r0 error) {
 				return
 			},
@@ -640,13 +643,13 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []shared1.Dump, r1 error) {
+		FindClosestCompletedUploadsFunc: &StoreFindClosestCompletedUploadsFunc{
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
-		FindClosestDumpsFromGraphFragmentFunc: &StoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) (r0 []shared1.Dump, r1 error) {
+		FindClosestCompletedUploadsFromGraphFragmentFunc: &StoreFindClosestCompletedUploadsFromGraphFragmentFunc{
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) (r0 []shared1.CompletedUpload, r1 error) {
 				return
 			},
 		},
@@ -665,18 +668,18 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) (r0 []shared1.CompletedUpload, r1 error) {
+				return
+			},
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.CompletedUpload, r1 error) {
+				return
+			},
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: func(context.Context) (r0 []shared1.DirtyRepository, r1 error) {
-				return
-			},
-		},
-		GetDumpsByIDsFunc: &StoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) (r0 []shared1.Dump, r1 error) {
-				return
-			},
-		},
-		GetDumpsWithDefinitionsForMonikersFunc: &StoreGetDumpsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared1.Dump, r1 error) {
 				return
 			},
 		},
@@ -891,7 +894,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
-			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) (r0 error) {
+			defaultHook: func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -937,9 +940,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteOldAuditLogs")
 			},
 		},
-		DeleteOverlappingDumpsFunc: &StoreDeleteOverlappingDumpsFunc{
+		DeleteOverlappingCompletedUploadsFunc: &StoreDeleteOverlappingCompletedUploadsFunc{
 			defaultHook: func(context.Context, int, string, string, string) error {
-				panic("unexpected invocation of MockStore.DeleteOverlappingDumps")
+				panic("unexpected invocation of MockStore.DeleteOverlappingCompletedUploads")
 			},
 		},
 		DeleteUploadByIDFunc: &StoreDeleteUploadByIDFunc{
@@ -967,14 +970,14 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.ExpireFailedRecords")
 			},
 		},
-		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
-				panic("unexpected invocation of MockStore.FindClosestDumps")
+		FindClosestCompletedUploadsFunc: &StoreFindClosestCompletedUploadsFunc{
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.FindClosestCompletedUploads")
 			},
 		},
-		FindClosestDumpsFromGraphFragmentFunc: &StoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
-				panic("unexpected invocation of MockStore.FindClosestDumpsFromGraphFragment")
+		FindClosestCompletedUploadsFromGraphFragmentFunc: &StoreFindClosestCompletedUploadsFromGraphFragmentFunc{
+			defaultHook: func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.FindClosestCompletedUploadsFromGraphFragment")
 			},
 		},
 		GetAuditLogsForUploadFunc: &StoreGetAuditLogsForUploadFunc{
@@ -992,19 +995,19 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetCommitsVisibleToUpload")
 			},
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.GetCompletedUploadsByIDs")
+			},
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+				panic("unexpected invocation of MockStore.GetCompletedUploadsWithDefinitionsForMonikers")
+			},
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: func(context.Context) ([]shared1.DirtyRepository, error) {
 				panic("unexpected invocation of MockStore.GetDirtyRepositories")
-			},
-		},
-		GetDumpsByIDsFunc: &StoreGetDumpsByIDsFunc{
-			defaultHook: func(context.Context, []int) ([]shared1.Dump, error) {
-				panic("unexpected invocation of MockStore.GetDumpsByIDs")
-			},
-		},
-		GetDumpsWithDefinitionsForMonikersFunc: &StoreGetDumpsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
-				panic("unexpected invocation of MockStore.GetDumpsWithDefinitionsForMonikers")
 			},
 		},
 		GetIndexByIDFunc: &StoreGetIndexByIDFunc{
@@ -1218,7 +1221,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
-			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
+			defaultHook: func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 				panic("unexpected invocation of MockStore.UpdateUploadsVisibleToCommits")
 			},
 		},
@@ -1254,8 +1257,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		DeleteOldAuditLogsFunc: &StoreDeleteOldAuditLogsFunc{
 			defaultHook: i.DeleteOldAuditLogs,
 		},
-		DeleteOverlappingDumpsFunc: &StoreDeleteOverlappingDumpsFunc{
-			defaultHook: i.DeleteOverlappingDumps,
+		DeleteOverlappingCompletedUploadsFunc: &StoreDeleteOverlappingCompletedUploadsFunc{
+			defaultHook: i.DeleteOverlappingCompletedUploads,
 		},
 		DeleteUploadByIDFunc: &StoreDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
@@ -1272,11 +1275,11 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		ExpireFailedRecordsFunc: &StoreExpireFailedRecordsFunc{
 			defaultHook: i.ExpireFailedRecords,
 		},
-		FindClosestDumpsFunc: &StoreFindClosestDumpsFunc{
-			defaultHook: i.FindClosestDumps,
+		FindClosestCompletedUploadsFunc: &StoreFindClosestCompletedUploadsFunc{
+			defaultHook: i.FindClosestCompletedUploads,
 		},
-		FindClosestDumpsFromGraphFragmentFunc: &StoreFindClosestDumpsFromGraphFragmentFunc{
-			defaultHook: i.FindClosestDumpsFromGraphFragment,
+		FindClosestCompletedUploadsFromGraphFragmentFunc: &StoreFindClosestCompletedUploadsFromGraphFragmentFunc{
+			defaultHook: i.FindClosestCompletedUploadsFromGraphFragment,
 		},
 		GetAuditLogsForUploadFunc: &StoreGetAuditLogsForUploadFunc{
 			defaultHook: i.GetAuditLogsForUpload,
@@ -1287,14 +1290,14 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetCommitsVisibleToUploadFunc: &StoreGetCommitsVisibleToUploadFunc{
 			defaultHook: i.GetCommitsVisibleToUpload,
 		},
+		GetCompletedUploadsByIDsFunc: &StoreGetCompletedUploadsByIDsFunc{
+			defaultHook: i.GetCompletedUploadsByIDs,
+		},
+		GetCompletedUploadsWithDefinitionsForMonikersFunc: &StoreGetCompletedUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: i.GetCompletedUploadsWithDefinitionsForMonikers,
+		},
 		GetDirtyRepositoriesFunc: &StoreGetDirtyRepositoriesFunc{
 			defaultHook: i.GetDirtyRepositories,
-		},
-		GetDumpsByIDsFunc: &StoreGetDumpsByIDsFunc{
-			defaultHook: i.GetDumpsByIDs,
-		},
-		GetDumpsWithDefinitionsForMonikersFunc: &StoreGetDumpsWithDefinitionsForMonikersFunc{
-			defaultHook: i.GetDumpsWithDefinitionsForMonikers,
 		},
 		GetIndexByIDFunc: &StoreGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
@@ -1981,36 +1984,37 @@ func (c StoreDeleteOldAuditLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// StoreDeleteOverlappingDumpsFunc describes the behavior when the
-// DeleteOverlappingDumps method of the parent MockStore instance is
-// invoked.
-type StoreDeleteOverlappingDumpsFunc struct {
+// StoreDeleteOverlappingCompletedUploadsFunc describes the behavior when
+// the DeleteOverlappingCompletedUploads method of the parent MockStore
+// instance is invoked.
+type StoreDeleteOverlappingCompletedUploadsFunc struct {
 	defaultHook func(context.Context, int, string, string, string) error
 	hooks       []func(context.Context, int, string, string, string) error
-	history     []StoreDeleteOverlappingDumpsFuncCall
+	history     []StoreDeleteOverlappingCompletedUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// DeleteOverlappingDumps delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockStore) DeleteOverlappingDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 string) error {
-	r0 := m.DeleteOverlappingDumpsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.DeleteOverlappingDumpsFunc.appendCall(StoreDeleteOverlappingDumpsFuncCall{v0, v1, v2, v3, v4, r0})
+// DeleteOverlappingCompletedUploads delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockStore) DeleteOverlappingCompletedUploads(v0 context.Context, v1 int, v2 string, v3 string, v4 string) error {
+	r0 := m.DeleteOverlappingCompletedUploadsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DeleteOverlappingCompletedUploadsFunc.appendCall(StoreDeleteOverlappingCompletedUploadsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// DeleteOverlappingDumps method of the parent MockStore instance is invoked
-// and the hook queue is empty.
-func (f *StoreDeleteOverlappingDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string) error) {
+// DeleteOverlappingCompletedUploads method of the parent MockStore instance
+// is invoked and the hook queue is empty.
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteOverlappingDumps method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreDeleteOverlappingDumpsFunc) PushHook(hook func(context.Context, int, string, string, string) error) {
+// DeleteOverlappingCompletedUploads method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) PushHook(hook func(context.Context, int, string, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2018,20 +2022,20 @@ func (f *StoreDeleteOverlappingDumpsFunc) PushHook(hook func(context.Context, in
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDeleteOverlappingDumpsFunc) SetDefaultReturn(r0 error) {
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int, string, string, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDeleteOverlappingDumpsFunc) PushReturn(r0 error) {
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int, string, string, string) error {
 		return r0
 	})
 }
 
-func (f *StoreDeleteOverlappingDumpsFunc) nextHook() func(context.Context, int, string, string, string) error {
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) nextHook() func(context.Context, int, string, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2044,26 +2048,28 @@ func (f *StoreDeleteOverlappingDumpsFunc) nextHook() func(context.Context, int, 
 	return hook
 }
 
-func (f *StoreDeleteOverlappingDumpsFunc) appendCall(r0 StoreDeleteOverlappingDumpsFuncCall) {
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) appendCall(r0 StoreDeleteOverlappingCompletedUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreDeleteOverlappingDumpsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreDeleteOverlappingDumpsFunc) History() []StoreDeleteOverlappingDumpsFuncCall {
+// History returns a sequence of
+// StoreDeleteOverlappingCompletedUploadsFuncCall objects describing the
+// invocations of this function.
+func (f *StoreDeleteOverlappingCompletedUploadsFunc) History() []StoreDeleteOverlappingCompletedUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreDeleteOverlappingDumpsFuncCall, len(f.history))
+	history := make([]StoreDeleteOverlappingCompletedUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreDeleteOverlappingDumpsFuncCall is an object that describes an
-// invocation of method DeleteOverlappingDumps on an instance of MockStore.
-type StoreDeleteOverlappingDumpsFuncCall struct {
+// StoreDeleteOverlappingCompletedUploadsFuncCall is an object that
+// describes an invocation of method DeleteOverlappingCompletedUploads on an
+// instance of MockStore.
+type StoreDeleteOverlappingCompletedUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -2086,13 +2092,13 @@ type StoreDeleteOverlappingDumpsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreDeleteOverlappingDumpsFuncCall) Args() []interface{} {
+func (c StoreDeleteOverlappingCompletedUploadsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreDeleteOverlappingDumpsFuncCall) Results() []interface{} {
+func (c StoreDeleteOverlappingCompletedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -2653,35 +2659,37 @@ func (c StoreExpireFailedRecordsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// StoreFindClosestDumpsFunc describes the behavior when the
-// FindClosestDumps method of the parent MockStore instance is invoked.
-type StoreFindClosestDumpsFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)
-	history     []StoreFindClosestDumpsFuncCall
+// StoreFindClosestCompletedUploadsFunc describes the behavior when the
+// FindClosestCompletedUploads method of the parent MockStore instance is
+// invoked.
+type StoreFindClosestCompletedUploadsFunc struct {
+	defaultHook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)
+	history     []StoreFindClosestCompletedUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// FindClosestDumps delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) FindClosestDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]shared1.Dump, error) {
-	r0, r1 := m.FindClosestDumpsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.FindClosestDumpsFunc.appendCall(StoreFindClosestDumpsFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+// FindClosestCompletedUploads delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) FindClosestCompletedUploads(v0 context.Context, v1 shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.FindClosestCompletedUploadsFunc.nextHook()(v0, v1)
+	m.FindClosestCompletedUploadsFunc.appendCall(StoreFindClosestCompletedUploadsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the FindClosestDumps
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreFindClosestDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
+// SetDefaultHook sets function that is called when the
+// FindClosestCompletedUploads method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreFindClosestCompletedUploadsFunc) SetDefaultHook(hook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// FindClosestDumps method of the parent MockStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error)) {
+// FindClosestCompletedUploads method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreFindClosestCompletedUploadsFunc) PushHook(hook func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2689,20 +2697,20 @@ func (f *StoreFindClosestDumpsFunc) PushHook(hook func(context.Context, int, str
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreFindClosestDumpsFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreFindClosestDumpsFunc) PushReturn(r0 []shared1.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFunc) nextHook() func(context.Context, shared1.UploadMatchingOptions) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2715,47 +2723,36 @@ func (f *StoreFindClosestDumpsFunc) nextHook() func(context.Context, int, string
 	return hook
 }
 
-func (f *StoreFindClosestDumpsFunc) appendCall(r0 StoreFindClosestDumpsFuncCall) {
+func (f *StoreFindClosestCompletedUploadsFunc) appendCall(r0 StoreFindClosestCompletedUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreFindClosestDumpsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreFindClosestDumpsFunc) History() []StoreFindClosestDumpsFuncCall {
+// History returns a sequence of StoreFindClosestCompletedUploadsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreFindClosestCompletedUploadsFunc) History() []StoreFindClosestCompletedUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreFindClosestDumpsFuncCall, len(f.history))
+	history := make([]StoreFindClosestCompletedUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreFindClosestDumpsFuncCall is an object that describes an invocation
-// of method FindClosestDumps on an instance of MockStore.
-type StoreFindClosestDumpsFuncCall struct {
+// StoreFindClosestCompletedUploadsFuncCall is an object that describes an
+// invocation of method FindClosestCompletedUploads on an instance of
+// MockStore.
+type StoreFindClosestCompletedUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
+	Arg1 shared1.UploadMatchingOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.Dump
+	Result0 []shared1.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2763,47 +2760,48 @@ type StoreFindClosestDumpsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreFindClosestDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+func (c StoreFindClosestCompletedUploadsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreFindClosestDumpsFuncCall) Results() []interface{} {
+func (c StoreFindClosestCompletedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreFindClosestDumpsFromGraphFragmentFunc describes the behavior when
-// the FindClosestDumpsFromGraphFragment method of the parent MockStore
-// instance is invoked.
-type StoreFindClosestDumpsFromGraphFragmentFunc struct {
-	defaultHook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)
-	hooks       []func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)
-	history     []StoreFindClosestDumpsFromGraphFragmentFuncCall
+// StoreFindClosestCompletedUploadsFromGraphFragmentFunc describes the
+// behavior when the FindClosestCompletedUploadsFromGraphFragment method of
+// the parent MockStore instance is invoked.
+type StoreFindClosestCompletedUploadsFromGraphFragmentFunc struct {
+	defaultHook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)
+	history     []StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall
 	mutex       sync.Mutex
 }
 
-// FindClosestDumpsFromGraphFragment delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) FindClosestDumpsFromGraphFragment(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string, v6 *gitdomain.CommitGraph) ([]shared1.Dump, error) {
-	r0, r1 := m.FindClosestDumpsFromGraphFragmentFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
-	m.FindClosestDumpsFromGraphFragmentFunc.appendCall(StoreFindClosestDumpsFromGraphFragmentFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
+// FindClosestCompletedUploadsFromGraphFragment delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockStore) FindClosestCompletedUploadsFromGraphFragment(v0 context.Context, v1 shared1.UploadMatchingOptions, v2 *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.FindClosestCompletedUploadsFromGraphFragmentFunc.nextHook()(v0, v1, v2)
+	m.FindClosestCompletedUploadsFromGraphFragmentFunc.appendCall(StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// FindClosestDumpsFromGraphFragment method of the parent MockStore instance
-// is invoked and the hook queue is empty.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)) {
+// FindClosestCompletedUploadsFromGraphFragment method of the parent
+// MockStore instance is invoked and the hook queue is empty.
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultHook(hook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// FindClosestDumpsFromGraphFragment method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error)) {
+// FindClosestCompletedUploadsFromGraphFragment method of the parent
+// MockStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushHook(hook func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2811,20 +2809,20 @@ func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) PushReturn(r0 []shared1.Dump, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Context, int, string, string, bool, string, *gitdomain.CommitGraph) ([]shared1.Dump, error) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) nextHook() func(context.Context, shared1.UploadMatchingOptions, *commitgraph.CommitGraph) ([]shared1.CompletedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2837,52 +2835,40 @@ func (f *StoreFindClosestDumpsFromGraphFragmentFunc) nextHook() func(context.Con
 	return hook
 }
 
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) appendCall(r0 StoreFindClosestDumpsFromGraphFragmentFuncCall) {
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) appendCall(r0 StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// StoreFindClosestDumpsFromGraphFragmentFuncCall objects describing the
-// invocations of this function.
-func (f *StoreFindClosestDumpsFromGraphFragmentFunc) History() []StoreFindClosestDumpsFromGraphFragmentFuncCall {
+// StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall objects
+// describing the invocations of this function.
+func (f *StoreFindClosestCompletedUploadsFromGraphFragmentFunc) History() []StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreFindClosestDumpsFromGraphFragmentFuncCall, len(f.history))
+	history := make([]StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreFindClosestDumpsFromGraphFragmentFuncCall is an object that
-// describes an invocation of method FindClosestDumpsFromGraphFragment on an
-// instance of MockStore.
-type StoreFindClosestDumpsFromGraphFragmentFuncCall struct {
+// StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall is an object
+// that describes an invocation of method
+// FindClosestCompletedUploadsFromGraphFragment on an instance of MockStore.
+type StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 shared1.UploadMatchingOptions
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 bool
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
-	// Arg6 is the value of the 7th argument passed to this method
-	// invocation.
-	Arg6 *gitdomain.CommitGraph
+	Arg2 *commitgraph.CommitGraph
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.Dump
+	Result0 []shared1.CompletedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -2890,13 +2876,13 @@ type StoreFindClosestDumpsFromGraphFragmentFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreFindClosestDumpsFromGraphFragmentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+func (c StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{} {
+func (c StoreFindClosestCompletedUploadsFromGraphFragmentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3239,6 +3225,230 @@ func (c StoreGetCommitsVisibleToUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// StoreGetCompletedUploadsByIDsFunc describes the behavior when the
+// GetCompletedUploadsByIDs method of the parent MockStore instance is
+// invoked.
+type StoreGetCompletedUploadsByIDsFunc struct {
+	defaultHook func(context.Context, []int) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, []int) ([]shared1.CompletedUpload, error)
+	history     []StoreGetCompletedUploadsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCompletedUploadsByIDs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) GetCompletedUploadsByIDs(v0 context.Context, v1 []int) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsByIDsFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsByIDsFunc.appendCall(StoreGetCompletedUploadsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCompletedUploadsByIDs method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCompletedUploadsByIDs method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreGetCompletedUploadsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.CompletedUpload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetCompletedUploadsByIDsFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetCompletedUploadsByIDsFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetCompletedUploadsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.CompletedUpload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetCompletedUploadsByIDsFunc) appendCall(r0 StoreGetCompletedUploadsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetCompletedUploadsByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreGetCompletedUploadsByIDsFunc) History() []StoreGetCompletedUploadsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetCompletedUploadsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetCompletedUploadsByIDsFuncCall is an object that describes an
+// invocation of method GetCompletedUploadsByIDs on an instance of
+// MockStore.
+type StoreGetCompletedUploadsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.CompletedUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetCompletedUploadsByIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetCompletedUploadsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFunc describes the
+// behavior when the GetCompletedUploadsWithDefinitionsForMonikers method of
+// the parent MockStore instance is invoked.
+type StoreGetCompletedUploadsWithDefinitionsForMonikersFunc struct {
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)
+	history     []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCompletedUploadsWithDefinitionsForMonikers delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockStore) GetCompletedUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+	r0, r1 := m.GetCompletedUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
+	m.GetCompletedUploadsWithDefinitionsForMonikersFunc.appendCall(StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
+// MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCompletedUploadsWithDefinitionsForMonikers method of the parent
+// MockStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.CompletedUpload, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.CompletedUpload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) appendCall(r0 StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetCompletedUploadsWithDefinitionsForMonikersFunc) History() []StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall is an object
+// that describes an invocation of method
+// GetCompletedUploadsWithDefinitionsForMonikers on an instance of
+// MockStore.
+type StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []precise.QualifiedMonikerData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.CompletedUpload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetCompletedUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreGetDirtyRepositoriesFunc describes the behavior when the
 // GetDirtyRepositories method of the parent MockStore instance is invoked.
 type StoreGetDirtyRepositoriesFunc struct {
@@ -3341,225 +3551,6 @@ func (c StoreGetDirtyRepositoriesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreGetDirtyRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetDumpsByIDsFunc describes the behavior when the GetDumpsByIDs
-// method of the parent MockStore instance is invoked.
-type StoreGetDumpsByIDsFunc struct {
-	defaultHook func(context.Context, []int) ([]shared1.Dump, error)
-	hooks       []func(context.Context, []int) ([]shared1.Dump, error)
-	history     []StoreGetDumpsByIDsFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDumpsByIDs delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) GetDumpsByIDs(v0 context.Context, v1 []int) ([]shared1.Dump, error) {
-	r0, r1 := m.GetDumpsByIDsFunc.nextHook()(v0, v1)
-	m.GetDumpsByIDsFunc.appendCall(StoreGetDumpsByIDsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetDumpsByIDs method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]shared1.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDumpsByIDs method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]shared1.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetDumpsByIDsFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]shared1.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDumpsByIDsFunc) PushReturn(r0 []shared1.Dump, r1 error) {
-	f.PushHook(func(context.Context, []int) ([]shared1.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]shared1.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetDumpsByIDsFunc) appendCall(r0 StoreGetDumpsByIDsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetDumpsByIDsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreGetDumpsByIDsFunc) History() []StoreGetDumpsByIDsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetDumpsByIDsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetDumpsByIDsFuncCall is an object that describes an invocation of
-// method GetDumpsByIDs on an instance of MockStore.
-type StoreGetDumpsByIDsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared1.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetDumpsByIDsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetDumpsByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetDumpsWithDefinitionsForMonikersFunc describes the behavior when
-// the GetDumpsWithDefinitionsForMonikers method of the parent MockStore
-// instance is invoked.
-type StoreGetDumpsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)
-	history     []StoreGetDumpsWithDefinitionsForMonikersFuncCall
-	mutex       sync.Mutex
-}
-
-// GetDumpsWithDefinitionsForMonikers delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) GetDumpsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
-	r0, r1 := m.GetDumpsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
-	m.GetDumpsWithDefinitionsForMonikersFunc.appendCall(StoreGetDumpsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetDumpsWithDefinitionsForMonikers method of the parent MockStore
-// instance is invoked and the hook queue is empty.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetDumpsWithDefinitionsForMonikers method of the parent MockStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared1.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared1.Dump, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared1.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) appendCall(r0 StoreGetDumpsWithDefinitionsForMonikersFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// StoreGetDumpsWithDefinitionsForMonikersFuncCall objects describing the
-// invocations of this function.
-func (f *StoreGetDumpsWithDefinitionsForMonikersFunc) History() []StoreGetDumpsWithDefinitionsForMonikersFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetDumpsWithDefinitionsForMonikersFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetDumpsWithDefinitionsForMonikersFuncCall is an object that
-// describes an invocation of method GetDumpsWithDefinitionsForMonikers on
-// an instance of MockStore.
-type StoreGetDumpsWithDefinitionsForMonikersFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []precise.QualifiedMonikerData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared1.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetDumpsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetDumpsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -8238,15 +8229,15 @@ func (c StoreUpdateUploadRetentionFuncCall) Results() []interface{} {
 // UpdateUploadsVisibleToCommits method of the parent MockStore instance is
 // invoked.
 type StoreUpdateUploadsVisibleToCommitsFunc struct {
-	defaultHook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error
-	hooks       []func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error
+	defaultHook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
+	hooks       []func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error
 	history     []StoreUpdateUploadsVisibleToCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateUploadsVisibleToCommits delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2 *gitdomain.CommitGraph, v3 map[string][]gitdomain.RefDescription, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
+func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2 *commitgraph.CommitGraph, v3 map[string][]gitdomain.Ref, v4 time.Duration, v5 time.Duration, v6 int, v7 time.Time) error {
 	r0 := m.UpdateUploadsVisibleToCommitsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
 	m.UpdateUploadsVisibleToCommitsFunc.appendCall(StoreUpdateUploadsVisibleToCommitsFuncCall{v0, v1, v2, v3, v4, v5, v6, v7, r0})
 	return r0
@@ -8255,7 +8246,7 @@ func (m *MockStore) UpdateUploadsVisibleToCommits(v0 context.Context, v1 int, v2
 // SetDefaultHook sets function that is called when the
 // UpdateUploadsVisibleToCommits method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -8264,7 +8255,7 @@ func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error) {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -8273,19 +8264,19 @@ func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreUpdateUploadsVisibleToCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
+	f.SetDefaultHook(func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreUpdateUploadsVisibleToCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
+	f.PushHook(func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 		return r0
 	})
 }
 
-func (f *StoreUpdateUploadsVisibleToCommitsFunc) nextHook() func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
+func (f *StoreUpdateUploadsVisibleToCommitsFunc) nextHook() func(context.Context, int, *commitgraph.CommitGraph, map[string][]gitdomain.Ref, time.Duration, time.Duration, int, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -8327,10 +8318,10 @@ type StoreUpdateUploadsVisibleToCommitsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *gitdomain.CommitGraph
+	Arg2 *commitgraph.CommitGraph
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 map[string][]gitdomain.RefDescription
+	Arg3 map[string][]gitdomain.Ref
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 time.Duration
@@ -8865,9 +8856,12 @@ type MockLSIFStore struct {
 	// InsertMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertMetadata.
 	InsertMetadataFunc *LSIFStoreInsertMetadataFunc
-	// NewSCIPWriterFunc is an instance of a mock function object
-	// controlling the behavior of the method NewSCIPWriter.
-	NewSCIPWriterFunc *LSIFStoreNewSCIPWriterFunc
+	// NewPreciseSCIPWriterFunc is an instance of a mock function object
+	// controlling the behavior of the method NewPreciseSCIPWriter.
+	NewPreciseSCIPWriterFunc *LSIFStoreNewPreciseSCIPWriterFunc
+	// NewSyntacticSCIPWriterFunc is an instance of a mock function object
+	// controlling the behavior of the method NewSyntacticSCIPWriter.
+	NewSyntacticSCIPWriterFunc *LSIFStoreNewSyntacticSCIPWriterFunc
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *LSIFStoreReconcileCandidatesFunc
@@ -8909,8 +8903,13 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return
 			},
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
 			defaultHook: func(context.Context, int) (r0 lsifstore.SCIPWriter, r1 error) {
+				return
+			},
+		},
+		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
+			defaultHook: func(int) (r0 lsifstore.SCIPWriter, r1 error) {
 				return
 			},
 		},
@@ -8961,9 +8960,14 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 				panic("unexpected invocation of MockLSIFStore.InsertMetadata")
 			},
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
 			defaultHook: func(context.Context, int) (lsifstore.SCIPWriter, error) {
-				panic("unexpected invocation of MockLSIFStore.NewSCIPWriter")
+				panic("unexpected invocation of MockLSIFStore.NewPreciseSCIPWriter")
+			},
+		},
+		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
+			defaultHook: func(int) (lsifstore.SCIPWriter, error) {
+				panic("unexpected invocation of MockLSIFStore.NewSyntacticSCIPWriter")
 			},
 		},
 		ReconcileCandidatesFunc: &LSIFStoreReconcileCandidatesFunc{
@@ -9003,8 +9007,11 @@ func NewMockLSIFStoreFrom(i lsifstore.Store) *MockLSIFStore {
 		InsertMetadataFunc: &LSIFStoreInsertMetadataFunc{
 			defaultHook: i.InsertMetadata,
 		},
-		NewSCIPWriterFunc: &LSIFStoreNewSCIPWriterFunc{
-			defaultHook: i.NewSCIPWriter,
+		NewPreciseSCIPWriterFunc: &LSIFStoreNewPreciseSCIPWriterFunc{
+			defaultHook: i.NewPreciseSCIPWriter,
+		},
+		NewSyntacticSCIPWriterFunc: &LSIFStoreNewSyntacticSCIPWriterFunc{
+			defaultHook: i.NewSyntacticSCIPWriter,
 		},
 		ReconcileCandidatesFunc: &LSIFStoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
@@ -9580,35 +9587,36 @@ func (c LSIFStoreInsertMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// LSIFStoreNewSCIPWriterFunc describes the behavior when the NewSCIPWriter
-// method of the parent MockLSIFStore instance is invoked.
-type LSIFStoreNewSCIPWriterFunc struct {
+// LSIFStoreNewPreciseSCIPWriterFunc describes the behavior when the
+// NewPreciseSCIPWriter method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreNewPreciseSCIPWriterFunc struct {
 	defaultHook func(context.Context, int) (lsifstore.SCIPWriter, error)
 	hooks       []func(context.Context, int) (lsifstore.SCIPWriter, error)
-	history     []LSIFStoreNewSCIPWriterFuncCall
+	history     []LSIFStoreNewPreciseSCIPWriterFuncCall
 	mutex       sync.Mutex
 }
 
-// NewSCIPWriter delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockLSIFStore) NewSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
-	r0, r1 := m.NewSCIPWriterFunc.nextHook()(v0, v1)
-	m.NewSCIPWriterFunc.appendCall(LSIFStoreNewSCIPWriterFuncCall{v0, v1, r0, r1})
+// NewPreciseSCIPWriter delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) NewPreciseSCIPWriter(v0 context.Context, v1 int) (lsifstore.SCIPWriter, error) {
+	r0, r1 := m.NewPreciseSCIPWriterFunc.nextHook()(v0, v1)
+	m.NewPreciseSCIPWriterFunc.appendCall(LSIFStoreNewPreciseSCIPWriterFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the NewSCIPWriter method
-// of the parent MockLSIFStore instance is invoked and the hook queue is
-// empty.
-func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+// SetDefaultHook sets function that is called when the NewPreciseSCIPWriter
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) SetDefaultHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NewSCIPWriter method of the parent MockLSIFStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *LSIFStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
+// NewPreciseSCIPWriter method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) PushHook(hook func(context.Context, int) (lsifstore.SCIPWriter, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -9616,20 +9624,20 @@ func (f *LSIFStoreNewSCIPWriterFunc) PushHook(hook func(context.Context, int) (l
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LSIFStoreNewSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
 	f.SetDefaultHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LSIFStoreNewSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
 	f.PushHook(func(context.Context, int) (lsifstore.SCIPWriter, error) {
 		return r0, r1
 	})
 }
 
-func (f *LSIFStoreNewSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) nextHook() func(context.Context, int) (lsifstore.SCIPWriter, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -9642,26 +9650,27 @@ func (f *LSIFStoreNewSCIPWriterFunc) nextHook() func(context.Context, int) (lsif
 	return hook
 }
 
-func (f *LSIFStoreNewSCIPWriterFunc) appendCall(r0 LSIFStoreNewSCIPWriterFuncCall) {
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) appendCall(r0 LSIFStoreNewPreciseSCIPWriterFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of LSIFStoreNewSCIPWriterFuncCall objects
-// describing the invocations of this function.
-func (f *LSIFStoreNewSCIPWriterFunc) History() []LSIFStoreNewSCIPWriterFuncCall {
+// History returns a sequence of LSIFStoreNewPreciseSCIPWriterFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreNewPreciseSCIPWriterFunc) History() []LSIFStoreNewPreciseSCIPWriterFuncCall {
 	f.mutex.Lock()
-	history := make([]LSIFStoreNewSCIPWriterFuncCall, len(f.history))
+	history := make([]LSIFStoreNewPreciseSCIPWriterFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// LSIFStoreNewSCIPWriterFuncCall is an object that describes an invocation
-// of method NewSCIPWriter on an instance of MockLSIFStore.
-type LSIFStoreNewSCIPWriterFuncCall struct {
+// LSIFStoreNewPreciseSCIPWriterFuncCall is an object that describes an
+// invocation of method NewPreciseSCIPWriter on an instance of
+// MockLSIFStore.
+type LSIFStoreNewPreciseSCIPWriterFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -9678,13 +9687,121 @@ type LSIFStoreNewSCIPWriterFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c LSIFStoreNewSCIPWriterFuncCall) Args() []interface{} {
+func (c LSIFStoreNewPreciseSCIPWriterFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c LSIFStoreNewSCIPWriterFuncCall) Results() []interface{} {
+func (c LSIFStoreNewPreciseSCIPWriterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LSIFStoreNewSyntacticSCIPWriterFunc describes the behavior when the
+// NewSyntacticSCIPWriter method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreNewSyntacticSCIPWriterFunc struct {
+	defaultHook func(int) (lsifstore.SCIPWriter, error)
+	hooks       []func(int) (lsifstore.SCIPWriter, error)
+	history     []LSIFStoreNewSyntacticSCIPWriterFuncCall
+	mutex       sync.Mutex
+}
+
+// NewSyntacticSCIPWriter delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) NewSyntacticSCIPWriter(v0 int) (lsifstore.SCIPWriter, error) {
+	r0, r1 := m.NewSyntacticSCIPWriterFunc.nextHook()(v0)
+	m.NewSyntacticSCIPWriterFunc.appendCall(LSIFStoreNewSyntacticSCIPWriterFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// NewSyntacticSCIPWriter method of the parent MockLSIFStore instance is
+// invoked and the hook queue is empty.
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultHook(hook func(int) (lsifstore.SCIPWriter, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewSyntacticSCIPWriter method of the parent MockLSIFStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushHook(hook func(int) (lsifstore.SCIPWriter, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) SetDefaultReturn(r0 lsifstore.SCIPWriter, r1 error) {
+	f.SetDefaultHook(func(int) (lsifstore.SCIPWriter, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) PushReturn(r0 lsifstore.SCIPWriter, r1 error) {
+	f.PushHook(func(int) (lsifstore.SCIPWriter, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) nextHook() func(int) (lsifstore.SCIPWriter, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) appendCall(r0 LSIFStoreNewSyntacticSCIPWriterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreNewSyntacticSCIPWriterFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreNewSyntacticSCIPWriterFunc) History() []LSIFStoreNewSyntacticSCIPWriterFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreNewSyntacticSCIPWriterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreNewSyntacticSCIPWriterFuncCall is an object that describes an
+// invocation of method NewSyntacticSCIPWriter on an instance of
+// MockLSIFStore.
+type LSIFStoreNewSyntacticSCIPWriterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 lsifstore.SCIPWriter
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreNewSyntacticSCIPWriterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreNewSyntacticSCIPWriterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

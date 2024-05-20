@@ -3,17 +3,17 @@ package inference
 import (
 	"context"
 	"io"
+	"io/fs"
 	"sort"
 	"testing"
 
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/unpack/unpacktest"
 )
@@ -30,18 +30,14 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 
 	// Fake deal
 	gitService := NewMockGitService()
-	gitService.LsFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-		var patterns []*paths.GlobPattern
-		for _, spec := range pathspecs {
-			pattern, err := paths.Compile(string(spec))
-			if err != nil {
-				return nil, err
-			}
-
-			patterns = append(patterns, pattern)
+	gitService.ReadDirFunc.SetDefaultHook(func(ctx context.Context, _ api.RepoName, _ api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+		var fds []fs.FileInfo
+		for _, repositoryPath := range repositoryPaths {
+			fds = append(fds, &fileutil.FileInfo{
+				Name_: repositoryPath,
+			})
 		}
-
-		return filterPaths(repositoryPaths, patterns, nil), nil
+		return fds, nil
 	})
 	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		files := map[string]string{}
@@ -54,5 +50,5 @@ func testService(t *testing.T, repositoryContents map[string]string) *Service {
 		return unpacktest.CreateTarArchive(t, files), nil
 	})
 
-	return newService(&observation.TestContext, sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
+	return newService(observation.TestContextTB(t), sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
 }

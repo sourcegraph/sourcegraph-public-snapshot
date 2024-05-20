@@ -5,13 +5,13 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
-import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
@@ -40,7 +40,7 @@ export interface SignInPageProps extends TelemetryV2Props {
 export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInPageProps>> = props => {
     const { context, authenticatedUser } = props
     useEffect(() => {
-        eventLogger.logViewEvent('SignIn', null, false)
+        EVENT_LOGGER.logViewEvent('SignIn', null, false)
         props.telemetryRecorder.recordEvent('auth.signIn', 'view')
     }, [props.telemetryRecorder])
 
@@ -60,21 +60,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
-        const isSourcegraphAccountsDev = (provider: AuthProvider): boolean => {
-            if (provider.serviceType !== 'openidconnect') {
-                return false
-            }
-            if (!provider.displayName.includes('Sourcegraph Accounts (dev)')) {
-                return false
-            }
-            return true
+        if (provider.noSignIn) {
+            return false
         }
 
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
-        if (isSourcegraphAccountsDev(provider)) {
-            return searchParams.has('sourcegraph-accounts-dev')
-        }
         if (provider.serviceType === 'sourcegraph-operator') {
             return searchParams.has('sourcegraph-operator')
         }
@@ -95,7 +86,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
-    // If there is only one auth provider that is going to be displayed on dotcom, we want to redirect to it directly.
+    // If there is only one auth provider that is going to be displayed, and request access is disabled, we want to redirect to the auth provider directly.
     if (context.sourcegraphDotComMode && thirdPartyAuthProviders.length === 1) {
         // Add '?returnTo=' + encodeURIComponent(returnTo) to thirdPartyAuthProviders[0].authenticationURL in a safe way.
         const redirectUrl = new URL(thirdPartyAuthProviders[0].authenticationURL, window.location.href)
@@ -255,7 +246,7 @@ const SignUpNotice: React.FunctionComponent<SignUpNoticeProps> = ({
             <Link
                 to="https://sourcegraph.com/get-started?t=enterprise"
                 onClick={() => {
-                    eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                    EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
                     telemetryRecorder.recordEvent('auth.enterpriseCTA', 'click')
                 }}
             >

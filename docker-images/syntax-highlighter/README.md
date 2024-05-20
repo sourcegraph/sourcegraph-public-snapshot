@@ -47,6 +47,12 @@ By default on startup, `syntect_server` will list all file types it supports. Th
 2. Use `cargo run --bin syntect_server` to run the server locally.
 3. You can change the `SRC_SYNTECT_SERVER` option in your `sg.config.yaml` to point to whatever port you're running on (usually 8000) and test against that without building the docker image.
 
+For formatting, run:
+
+```bash
+bazel run @rules_rust//:rustfmt
+```
+
 ### Testing syntect -> SCIP grammar mappings
 
 <!-- NOTE(id: only-flag) -->
@@ -57,6 +63,20 @@ Example:
 ```bash
 cd crates/syntax-analysis
 ONLY=.java cargo test test_all_files -- --nocapture
+```
+
+### Load Testing
+
+Start up the highlighter using:
+
+```bash
+cargo run --release --bin syntect_server
+```
+
+Use [wrk](https://github.com/wg/wrk) with a Lua script, such as [`load_test.lua`](./load_test.lua).
+
+```bash
+wrk --threads 4 --duration 5s --connections 100 --script load_test.lua http://127.0.0.1:8000/scip
 ```
 
 ## Building docker image

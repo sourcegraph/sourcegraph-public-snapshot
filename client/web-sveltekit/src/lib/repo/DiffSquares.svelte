@@ -33,24 +33,29 @@
 
 <span class="root">
     {#each squares as type}
-        <span
-            class="square"
-            class:bg-success={type === SquareType.Added}
-            class:bg-danger={type === SquareType.Deleted}
-        />
+        <span class="square" class:added={type === SquareType.Added} class:deleted={type === SquareType.Deleted} />
     {/each}
 </span>
 
 <style lang="scss">
     .root {
         display: inline-flex;
+        gap: 0.125rem;
+        margin-left: 0.25rem;
     }
 
     .square {
         display: inline-block;
         width: 0.5rem;
         height: 0.5rem;
-        background-color: var(--text-muted);
-        margin-left: 0.125rem;
+        background-color: var(--color-bg-3);
+    }
+
+    .added {
+        background-color: var(--success);
+    }
+
+    .deleted {
+        background-color: var(--danger);
     }
 </style>

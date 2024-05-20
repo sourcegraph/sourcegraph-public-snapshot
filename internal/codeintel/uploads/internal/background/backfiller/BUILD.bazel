@@ -9,6 +9,7 @@ go_library(
         "job_backfill.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -29,8 +30,10 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":backfiller"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
+        "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",

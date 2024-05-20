@@ -14,14 +14,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -256,7 +255,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	}
 
 	// bind the bindIDs to actual user IDs
-	mapping, err := h.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+	mapping, err := h.db.Perms().MapUsers(ctx, bindIDs, conf.PermissionsUserMapping())
 	if err != nil {
 		return errors.Wrap(err, "failed to map bind IDs to user IDs")
 	}
@@ -372,7 +371,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
-// See resetter documentation for more details. https://sourcegraph.com/docs/dev/background-information/workers#dequeueing-and-resetting-jobs
+// See resetter documentation for more details. https://docs-legacy.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
 func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter"), observationCtx)
 

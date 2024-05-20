@@ -8,7 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 import {
@@ -81,7 +81,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const onClick = (): void => {
         telemetryService.log('PermalinkClicked', { repoName, commitID })
-        telemetryRecorder.recordEvent('search.header.permalink', 'click')
+        telemetryRecorder.recordEvent('repo.header.permalink', 'click')
     }
 
     if (actionType === 'dropdown') {
@@ -95,7 +95,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyPermalink = (): void => {
         telemetryService.log('CopyPermalink')
-        telemetryRecorder.recordEvent('search.header.permalink', 'copy')
+        telemetryRecorder.recordEvent('repo.header.permalink', 'copy')
         copy(createUrl(rootUrl, permalinkURL))
         setCopiedPermalink(true)
         screenReaderAnnounce('Permalink copied to clipboard')
@@ -105,7 +105,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
 
     const copyLink = (): void => {
         telemetryService.log('CopyLink')
-        telemetryRecorder.recordEvent('search.header.link', 'click')
+        telemetryRecorder.recordEvent('repo.header.link', 'copy')
         copy(createUrl(rootUrl, linkURL))
         setCopiedLink(true)
         screenReaderAnnounce('Link copied to clipboard')

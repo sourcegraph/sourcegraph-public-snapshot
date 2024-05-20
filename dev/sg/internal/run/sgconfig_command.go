@@ -3,24 +3,24 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/rjeczalik/notify"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SGConfigCommand interface {
-	// Getters for common fields
-	GetName() string
-	GetContinueWatchOnExit() bool
-	GetIgnoreStdout() bool
-	GetIgnoreStderr() bool
-	GetPreamble() string
-	GetEnv() map[string]string
+	// Extracts common config and options, allowing the implementation any final overrides
+	GetConfig() SGConfigCommandOptions
 	GetBinaryLocation() (string, error)
-	GetExternalSecrets() map[string]secrets.ExternalSecret
 	GetExecCmd(context.Context) (*exec.Cmd, error)
+	UpdateConfig(func(*SGConfigCommandOptions)) SGConfigCommand
+
+	// Optionally returns a bazel target associated with this command
+	GetBazelTarget() string
 
 	// Start a file watcher on the relevant filesystem sub-tree for this command
 	StartWatch(context.Context) (<-chan struct{}, error)
@@ -42,8 +42,15 @@ func WatchPaths(ctx context.Context, paths []string, skipEvents ...notify.Event)
 	}
 
 	for _, path := range paths {
-		if err := notify.Watch(path+"/...", events, relevant); err != nil {
-			return nil, err
+		info, err := os.Stat(path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to stat path %q", path)
+		}
+		if info.IsDir() {
+			path = filepath.Join(path, "...")
+		}
+		if err := notify.Watch(path, events, relevant); err != nil {
+			return nil, errors.Wrapf(err, "failed to watch path %q", path)
 		}
 	}
 	// Start watching for changes to the source tree

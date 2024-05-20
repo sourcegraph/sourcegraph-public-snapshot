@@ -19,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -153,7 +153,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 
 	var preloadedAssets *[]PreloadedAsset
 	preloadedAssets = nil
-	if globals.Branding() == nil || (globals.Branding().Dark == nil && globals.Branding().Light == nil) {
+	br := conf.Branding()
+	if br == nil || (br.Dark == nil && br.Light == nil) {
 		preloadedAssets = &[]PreloadedAsset{
 			// sourcegraph-mark.svg is always loaded as part of the layout component unless a custom
 			// branding is defined
@@ -173,7 +174,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		Manifest:        manifest,
 		PreloadedAssets: preloadedAssets,
 		Metadata: &Metadata{
-			Title:       globals.Branding().BrandName,
+			Title:       br.BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
@@ -326,8 +327,8 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 		}
 		common.Title = title(common, r)
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -336,7 +337,7 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 
 func serveHome(db database.DB) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, globals.Branding().BrandName, index, serveError)
+		common, err := newCommon(w, r, db, conf.Branding().BrandName, index, serveError)
 		if err != nil {
 			return err
 		}
@@ -481,8 +482,8 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 
 		common.Title = title(common, r)
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -538,8 +539,8 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			return nil
 		}
 
-		if useSvelteKit(r) {
-			return renderSvelteKit(w)
+		if sveltekit.Enabled(r.Context()) {
+			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
@@ -587,9 +588,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
 		IsServerAdmin:          true,
 		AnonymousUserID:        anonymousUserId,
-		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
 		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
-		OriginalReferrer:       getCookie("originalReferrer"),
 		LastReferrer:           getCookie("sg_referrer"),
 		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
 		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),

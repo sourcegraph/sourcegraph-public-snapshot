@@ -8,13 +8,18 @@ go_library(
         "markdown.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs/internal/markdown",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform/operationdocs:__subpackages__"],
-    deps = ["@com_github_olekukonko_tablewriter//:tablewriter"],
+    deps = [
+        "//dev/managedservicesplatform/operationdocs/internal/markdown/headings",
+        "@com_github_olekukonko_tablewriter//:tablewriter",
+    ],
 )
 
 go_test(
     name = "markdown_test",
     srcs = ["inline_test.go"],
     embed = [":markdown"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

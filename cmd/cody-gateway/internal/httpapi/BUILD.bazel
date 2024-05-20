@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -5,8 +6,10 @@ go_library(
     srcs = [
         "diagnostics.go",
         "handler.go",
+        "maintenance.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
@@ -26,6 +29,7 @@ go_library(
         "//internal/httpcli",
         "//internal/instrumentation",
         "//internal/redispool",
+        "//internal/sams",
         "//internal/trace",
         "//internal/version",
         "//lib/errors",
@@ -38,5 +42,22 @@ go_library(
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//:metric",
+        "@org_golang_x_oauth2//clientcredentials",
+    ],
+)
+
+go_test(
+    name = "httpapi_test",
+    srcs = ["maintenance_test.go"],
+    embed = [":httpapi"],
+    tags = [TAG_CODY_PRIME],
+    deps = [
+        "//cmd/cody-gateway/shared/config",
+        "//internal/redispool",
+        "//internal/sams",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

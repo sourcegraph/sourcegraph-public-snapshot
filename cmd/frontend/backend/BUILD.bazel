@@ -23,6 +23,7 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
+        "//cmd/frontend/internal/inventory",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi",
@@ -50,7 +51,6 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
-        "//internal/inventory",
         "//internal/observation",
         "//internal/randstring",
         "//internal/rcache",
@@ -69,6 +69,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_sync//semaphore",
     ],
 )
 
@@ -86,8 +87,10 @@ go_test(
     tags = [
         # Test requires localhost database
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
     deps = [
+        "//cmd/frontend/internal/inventory",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -114,7 +117,6 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
-        "//internal/inventory",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
@@ -125,7 +127,7 @@ go_test(
         "//internal/types/typestest",
         "//lib/errors",
         "//schema",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_uuid//:uuid",
         "@com_github_sourcegraph_log//:log",

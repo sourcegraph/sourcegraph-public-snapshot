@@ -4,12 +4,12 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import type { BatchSpecFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { applyBatchChange, createBatchChange } from './backend'
@@ -121,10 +121,10 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                             )}
                             onClick={() => {
                                 if (batchChange) {
-                                    eventLogger.log('batch_change_execution_preview:apply_update:clicked')
+                                    EVENT_LOGGER.log('batch_change_execution_preview:apply_update:clicked')
                                     telemetryRecorder.recordEvent('batchChange.execution.updateAndApply', 'click')
                                 } else {
-                                    eventLogger.log('batch_change_execution_preview:apply:clicked')
+                                    EVENT_LOGGER.log('batch_change_execution_preview:apply:clicked')
                                     telemetryRecorder.recordEvent('batchChange.execution.createAndApply', 'click')
                                 }
                                 return onApply()

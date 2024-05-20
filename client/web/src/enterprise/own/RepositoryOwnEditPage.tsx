@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { mdiAccount } from '@mdi/js'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, Icon, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 

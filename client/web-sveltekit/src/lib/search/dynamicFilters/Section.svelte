@@ -12,6 +12,7 @@
     export let title: string
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
+    export let onFilterSelect: (kind: SectionItem['kind']) => void = () => {}
 
     let filterText = ''
     $: processedFilterText = filterText.trim().toLowerCase()
@@ -37,6 +38,7 @@
                     <a
                         href={updateFilterInURL($page.url, item, item.selected).toString()}
                         class:selected={item.selected}
+                        on:click={() => onFilterSelect(item.kind)}
                     >
                         <span class="label">
                             <slot name="label" label={item.label} value={item.value}>
@@ -53,7 +55,14 @@
                 </li>
             {/each}
         </ul>
-        {#if showMore}
+        {#if filteredItems.length === 0}
+            <small class="filter-message">
+                <div class="header"><strong>No matches in search results.</strong></div>
+                Try expanding your search using the
+                <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search bar</Button>
+                above.
+            </small>
+        {:else if showMore}
             {#if filteredItems.length > limitedItems.length}
                 <small class="filter-message">
                     {filteredItems.length - limitedItems.length} not shown. Use
@@ -64,17 +73,10 @@
             <footer class="show-more">
                 <Button variant="link" on:click={() => (showMore = false)}>Show less</Button>
             </footer>
-        {:else if !showMore && filteredItems.length > limitedItems.length}
+        {:else if filteredItems.length > limitedItems.length}
             <footer class="show-more">
                 <Button variant="link" on:click={() => (showMore = true)}>Show more</Button>
             </footer>
-        {:else if filteredItems.length === 0}
-            <small class="filter-message">
-                <div class="header"><strong>No matches in search results.</strong></div>
-                Try expanding your search using the
-                <Button variant="link" display="inline" on:click={() => filterInputRef.focus()}>search bar</Button>
-                above.
-            </small>
         {/if}
     </article>
 {/if}
@@ -84,7 +86,7 @@
         padding: 0 1rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.25rem;
     }
 
     input {
@@ -103,6 +105,9 @@
     }
 
     ul {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: 0.125rem;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -143,7 +148,7 @@
         white-space: nowrap;
         gap: 0.25rem;
 
-        padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+        padding: 0.25rem 0.5rem;
         margin: 0;
         font-weight: 400;
 
@@ -151,16 +156,25 @@
             flex: 1;
             text-overflow: ellipsis;
             overflow: hidden;
+            color: var(--text-body);
         }
 
         &:hover {
-            background-color: var(--secondary-4);
+            background-color: var(--color-bg-3);
+
+            .label {
+                color: var(--text-title);
+            }
         }
 
         &.selected {
             background-color: var(--primary);
-            color: var(--primary-4);
-            --color: var(--primary-4);
+            color: var(--light-text);
+            --color: var(--light-text);
+
+            .label {
+                color: var(--light-text);
+            }
         }
 
         .close {

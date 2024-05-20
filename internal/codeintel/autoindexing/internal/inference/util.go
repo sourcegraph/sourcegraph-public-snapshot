@@ -25,6 +25,8 @@ func filterPathsByPatterns(paths []string, rawPatterns []*luatypes.PathPattern) 
 }
 
 // flattenPatterns converts a tree of patterns into a flat list of compiled glob and pathspec patterns.
+//
+//nolint:unparam // pathspecs aren't used right now but we want to make use of them again to strip down the amount of paths we need to check agains the glob patterns.
 func flattenPatterns(patterns []*luatypes.PathPattern, inverted bool) ([]*paths.GlobPattern, []gitdomain.Pathspec, error) {
 	var globPatterns []string
 	var pathspecPatterns []string

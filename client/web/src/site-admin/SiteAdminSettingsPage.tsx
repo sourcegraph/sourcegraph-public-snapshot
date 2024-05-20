@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text } from '@sourcegraph/wildcard'
@@ -11,7 +12,7 @@ import { PageTitle } from '../components/PageTitle'
 import type { SiteResult } from '../graphql-operations'
 import { SettingsArea } from '../settings/SettingsArea'
 
-interface Props extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
+interface Props extends PlatformContextProps, SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     site: Pick<SiteResult['site'], '__typename' | 'id'>
 }

@@ -6,7 +6,7 @@ import { type Location, useLocation, useNavigate } from 'react-router-dom'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -103,7 +103,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 }) => {
     useEffect(() => {
         telemetryService.logPageView('CodeIntelRepoDashboard')
-        telemetryRecorder.recordEvent('codeIntel.repoDashboard', 'view')
+        telemetryRecorder.recordEvent('repo.codeIntel.dashboard', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const location = useLocation()

@@ -262,21 +262,10 @@ type usersQueryTest struct {
 
 func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 	t.Helper()
-
-	if want.dotcom {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			dotcom.MockSourcegraphDotComMode(orig)
-		})
-	}
+	dotcom.MockSourcegraphDotComMode(t, want.dotcom)
 
 	type node struct {
 		Username string `json:"username"`
-	}
-
-	type pageInfo struct {
-		HasNextPage bool `json:"hasNextPage"`
 	}
 
 	type users struct {

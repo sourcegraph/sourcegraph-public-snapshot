@@ -3,15 +3,35 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "release",
-    srcs = ["cve.go"],
+    srcs = [
+        "calendar.go",
+        "config.go",
+        "cut.go",
+        "cve.go",
+        "release.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/release",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/bk",
+        "//dev/sg/internal/category",
+        "//dev/sg/internal/execute",
+        "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
+        "//internal/jsonc",
         "//lib/errors",
         "//lib/output",
         "@com_github_grafana_regexp//:regexp",
+        "@com_github_masterminds_semver//:semver",
+        "@com_github_pkg_browser//:browser",
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_urfave_cli_v2//:cli",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@org_golang_google_api//calendar/v3:calendar",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
     ],
 )
 
@@ -19,5 +39,6 @@ go_test(
     name = "release_test",
     srcs = ["cve_test.go"],
     embed = [":release"],
+    tags = [TAG_INFRA_RELEASE],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

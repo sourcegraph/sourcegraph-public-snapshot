@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringuptimecheckconfig"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
@@ -18,11 +19,14 @@ func createServiceAlerts(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) ([]monitoringalertpolicy.MonitoringAlertPolicy, error) {
+	// Collect all alerts to aggregate in a dashboard
+	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
+
 	// Only provision if MaxCount is specified greater or equal 5 (the default).
 	// If nil, it doesn't matter
 	if vars.MaxInstanceCount != nil && *vars.MaxInstanceCount >= 5 {
-		if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+		instanceCountAlert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 			Service:       vars.Service,
 			EnvironmentID: vars.EnvironmentID,
 
@@ -45,12 +49,14 @@ func createServiceAlerts(
 				Comparison: alertpolicy.ComparisonGT,
 			},
 			NotificationChannels: channels,
-		}); err != nil {
-			return errors.Wrap(err, "instance_count")
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "instance_count")
 		}
+		alerts = append(alerts, instanceCountAlert.AlertPolicy)
 	}
 
-	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+	pendingRequestsAlert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 
@@ -72,23 +78,29 @@ func createServiceAlerts(
 			Comparison: alertpolicy.ComparisonGT,
 		},
 		NotificationChannels: channels,
-	}); err != nil {
-		return errors.Wrap(err, "cloud_run_pending_requests")
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "cloud_run_pending_requests")
 	}
+	alerts = append(alerts, pendingRequestsAlert.AlertPolicy)
 
 	// If an external DNS name is provisioned, use it to check service availability
 	// from outside Cloud Run. The service must not use IAM auth.
 	if vars.ServiceAuthentication == nil && vars.ExternalDomain.GetDNSName() != "" {
-		if err := createExternalHealthcheckAlert(stack, id, vars, channels); err != nil {
-			return errors.Wrap(err, "external_healthcheck")
+		externalHealthCheckAlert, err := createExternalHealthcheckAlert(stack, id, vars, channels)
+		if err != nil {
+			return nil, errors.Wrap(err, "external_healthcheck")
 		}
+		alerts = append(alerts, externalHealthCheckAlert)
 	}
 
-	if err := createCloudRunPreconditionFailedAlert(stack, id, vars, channels); err != nil {
-		return errors.Wrap(err, "CloudRunPreconditionFailedAlert")
+	cloudRunPreconditionFailedAlert, err := createCloudRunPreconditionFailedAlert(stack, id, vars, channels)
+	if err != nil {
+		return nil, errors.Wrap(err, "CloudRunPreconditionFailedAlert")
 	}
+	alerts = append(alerts, cloudRunPreconditionFailedAlert)
 
-	return nil
+	return alerts, nil
 }
 
 func createExternalHealthcheckAlert(
@@ -96,7 +108,7 @@ func createExternalHealthcheckAlert(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) (monitoringalertpolicy.MonitoringAlertPolicy, error) {
 	var (
 		healthcheckPath    = "/"
 		healthcheckHeaders = map[string]*string{}
@@ -142,14 +154,14 @@ func createExternalHealthcheckAlert(
 		},
 	})
 
-	if _, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+	alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 		ProjectID:     vars.ProjectID,
 
 		ID:          "external_health_check",
 		Name:        "External Uptime Check",
-		Description: fmt.Sprintf("Service is failing to repond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
+		Description: fmt.Sprintf("Service is failing to respond on https://%s - this may be expected if the service was recently provisioned or if its external domain has changed.", externalDNS),
 
 		// If a service is not reachable, it's definitely a problem.
 		Severity: alertpolicy.SeverityLevelCritical,
@@ -178,10 +190,11 @@ func createExternalHealthcheckAlert(
 			Comparison: alertpolicy.ComparisonLT,
 		},
 		NotificationChannels: channels,
-	}); err != nil {
-		return err
+	})
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	return alert.AlertPolicy, nil
 }
 
 func createCloudRunPreconditionFailedAlert(
@@ -189,7 +202,7 @@ func createCloudRunPreconditionFailedAlert(
 	id resourceid.ID,
 	vars Variables,
 	channels alertpolicy.NotificationChannels,
-) error {
+) (monitoringalertpolicy.MonitoringAlertPolicy, error) {
 	metric, err := logcountmetric.New(stack, id.Group("cloud_run_precondition_failed"), &logcountmetric.Config{
 		Name: "msp.sourcegraph.com/cloud_run_precondition_failed",
 		// Status 9 indicates 'precondition failed'
@@ -208,9 +221,9 @@ func createCloudRunPreconditionFailedAlert(
 		},
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if _, err := alertpolicy.New(stack, id.Group("cloud_run_precondition_failed_alert"), &alertpolicy.Config{
+	alert, err := alertpolicy.New(stack, id.Group("cloud_run_precondition_failed_alert"), &alertpolicy.Config{
 		Service:       vars.Service,
 		EnvironmentID: vars.EnvironmentID,
 		ProjectID:     vars.ProjectID,
@@ -235,9 +248,10 @@ This is unlikely to cause immediate downtime, and may auto-resolve if no new ins
 			Comparison: alertpolicy.ComparisonGT,
 		},
 		NotificationChannels: channels,
-	}); err != nil {
-		return err
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return alert.AlertPolicy, nil
 }

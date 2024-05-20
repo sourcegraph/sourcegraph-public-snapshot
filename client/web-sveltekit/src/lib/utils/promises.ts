@@ -28,9 +28,9 @@ interface ResultPending<T, E> {
     pending: true
 }
 
-type Result<T, E = Error> = ResultSuccess<T> | ResultError<E> | ResultPending<T, E>
+export type Loadable<T, E = Error> = ResultSuccess<T> | ResultError<E> | ResultPending<T, E>
 
-interface PromiseStore<D, E = Error> extends Readable<Result<D | null, E>> {
+interface PromiseStore<D, E = Error> extends Readable<Loadable<D | null, E>> {
     /**
      * Sets the passed promise as the current promise and tracks its status.
      * Does nothing if the same promise as the current one is passed. The argument
@@ -46,7 +46,7 @@ interface PromiseStore<D, E = Error> extends Readable<Result<D | null, E>> {
 export function createPromiseStore<D, E = Error>(): PromiseStore<D, E> {
     let currentPromise: PromiseLike<D> | null | undefined
 
-    const resultStore = writable<Result<D | null, E>>({ value: null, error: null, pending: true })
+    const resultStore = writable<Loadable<D | null, E>>({ value: null, error: null, pending: true })
 
     function resolve(promise?: PromiseLike<D> | null) {
         currentPromise = promise
@@ -80,4 +80,20 @@ export function createPromiseStore<D, E = Error>(): PromiseStore<D, E> {
             }
         },
     }
+}
+
+/**
+ * Returns a store that publishes updates when the promise is resolved or rejected.
+ */
+export function toReadable<D, E = Error>(promise: PromiseLike<D>): Readable<Loadable<D, E>> {
+    const { subscribe, set } = writable<Loadable<D, E>>({ value: null, error: null, pending: true })
+    promise.then(
+        result => {
+            set({ value: result, error: null, pending: false })
+        },
+        error => {
+            set({ value: null, error: error, pending: false })
+        }
+    )
+    return { subscribe }
 }

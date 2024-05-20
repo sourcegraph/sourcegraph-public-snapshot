@@ -32,10 +32,8 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 		// latency is not a priority of Search Jobs.
 		q = "index:no " + q
 
-		// TODO this hack is an ugly workaround to limit searches to type:file only.
-		// This is OK for the EAP but we should remove the limitation soon.
-		if !strings.Contains(q, "type:file") {
-			q = "type:file " + q
+		if strings.Contains(strings.ToLower(q), "patterntype:structural") {
+			return nil, errors.New("Structural search is not supported in Search Jobs")
 		}
 
 		inputs, err := client.Plan(
@@ -152,7 +150,11 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 
 	var revs []query.RevisionSpecifier
 	for _, revspec := range repoRevSpec.RevisionSpecifiers.Get() {
-		revs = append(revs, query.ParseRevisionSpecifier(revspec))
+		rs, err := query.ParseRevisionSpecifier(revspec)
+		if err != nil {
+			return repos.RepoRevSpecs{}, err
+		}
+		revs = append(revs, rs)
 	}
 
 	return repos.RepoRevSpecs{

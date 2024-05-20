@@ -48,7 +48,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	}
 	opts.Protected = args.Protected
 	opts.ForDataRetention = args.ForDataRetention
-	opts.ForIndexing = args.ForIndexing
+	opts.ForPreciseIndexing = args.ForIndexing
 	opts.ForEmbeddings = args.ForEmbeddings
 
 	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)

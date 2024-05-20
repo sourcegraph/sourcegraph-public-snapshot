@@ -4,6 +4,7 @@ go_library(
     name = "shared",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/migrator/shared",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/database/migration",

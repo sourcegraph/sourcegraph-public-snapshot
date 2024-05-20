@@ -7,7 +7,7 @@ import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -78,7 +78,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 action: 'click',
                 label: 'expand / collapse file tree view',
             })
-            props.telemetryRecorder.recordEvent('blobSidebar.fileTreeView', 'click')
+            props.telemetryRecorder.recordEvent('repoSidebar.fileTreeView', 'click')
             setPersistedIsVisible(value)
             setIsVisible(value)
         },
@@ -86,7 +86,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     )
     const handleSymbolClick = useCallback(() => {
         props.telemetryService.log('SymbolTreeViewClicked')
-        props.telemetryRecorder.recordEvent('blobSidebar.symbolTreeView', 'click')
+        props.telemetryRecorder.recordEvent('repoSidebar.symbolTreeView', 'click')
     }, [props.telemetryService, props.telemetryRecorder])
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
@@ -110,6 +110,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             <GettingStartedTour
                                 className="mr-3"
                                 telemetryService={props.telemetryService}
+                                telemetryRecorder={props.telemetryRecorder}
                                 authenticatedUser={props.authenticatedUser}
                             />
                         )}

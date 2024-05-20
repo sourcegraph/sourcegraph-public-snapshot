@@ -5,6 +5,7 @@ go_library(
     name = "codygateway",
     srcs = ["codygateway.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -12,10 +13,12 @@ go_library(
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
         "//internal/completions/client/openai",
+        "//internal/completions/tokenusage",
         "//internal/completions/types",
         "//internal/conf/conftypes",
         "//internal/httpcli",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
     ],
@@ -25,6 +28,7 @@ go_test(
     name = "codygateway_test",
     srcs = ["codygateway_test.go"],
     embed = [":codygateway"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/types",
         "//lib/errors",

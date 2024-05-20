@@ -11,6 +11,7 @@ go_library(
     ],
     embedsrcs = ["home.json.tmpl"],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//monitoring/monitoring:__subpackages__"],
     deps = [
         "//lib/errors",

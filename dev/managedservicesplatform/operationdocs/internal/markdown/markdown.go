@@ -5,7 +5,6 @@ package markdown
 import (
 	"fmt"
 	"strings"
-	"unicode"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -28,30 +27,6 @@ func (b *Builder) Headingf(level int, title string, vars ...any) (id string, lin
 	id, link, content = Headingf(level, title, vars...)
 	b.acc.WriteString(content)
 	return id, link
-}
-
-// sanitizeHeadingID returns a sanitized anchor name for the given text.
-// Taken from https://github.com/shurcooL/sanitized_anchor_name/blob/master/main.go#L14:1
-// copy from https://sourcegraph.com/github.com/gomarkdown/markdown@663e2500819c19ed2d3f4bf955931b16fa9adf63/-/blob/parser/block.go?L83-104
-func sanitizeHeadingID(text string) string {
-	var anchorName []rune
-	var futureDash = false
-	for _, r := range text {
-		switch {
-		case unicode.IsLetter(r) || unicode.IsNumber(r):
-			if futureDash && len(anchorName) > 0 {
-				anchorName = append(anchorName, '-')
-			}
-			futureDash = false
-			anchorName = append(anchorName, unicode.ToLower(r))
-		default:
-			futureDash = true
-		}
-	}
-	if len(anchorName) == 0 {
-		return "empty"
-	}
-	return string(anchorName)
 }
 
 type AdmonitionLevel string
@@ -80,7 +55,11 @@ func (b *Builder) Admonitionf(level AdmonitionLevel, content string, args ...any
 		panic(fmt.Sprintf("unknown admonition level %q", level))
 	}
 	for _, line := range strings.Split(strings.TrimSpace(fmt.Sprintf(content, args...)), "\n") {
-		b.acc.WriteString("> " + line)
+		if line == "" {
+			b.acc.WriteString(">") // don't write unnecessary whitespace
+		} else {
+			b.acc.WriteString("> " + line)
+		}
 		b.acc.WriteString("\n")
 	}
 }

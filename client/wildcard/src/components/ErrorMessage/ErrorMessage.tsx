@@ -2,8 +2,7 @@ import React from 'react'
 
 import { upperFirst } from 'lodash'
 
-import { asError, renderMarkdown } from '@sourcegraph/common'
-
+import { asError, renderMarkdown } from '../../utils'
 import { Markdown } from '../Markdown'
 
 export const renderError = (error: unknown): string =>

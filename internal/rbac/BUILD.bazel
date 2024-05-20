@@ -13,11 +13,13 @@ go_library(
     ],
     embedsrcs = ["schema.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/rbac/types",
         "//internal/types",
         "//lib/errors",
@@ -36,6 +38,7 @@ go_test(
     ],
     embed = [":rbac"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # requires localhost database
         "requires-network",
     ],
@@ -44,11 +47,13 @@ go_test(
         "//internal/auth",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/dotcom",
         "//internal/rbac/types",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )

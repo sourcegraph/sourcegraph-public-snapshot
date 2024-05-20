@@ -14,6 +14,7 @@ go_library(
         "runner.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/check",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/analytics",
@@ -23,6 +24,7 @@ go_library(
         "//dev/sg/root",
         "//internal/database/postgresdsn",
         "//internal/limiter",
+        "//lib/cliutil/exit",
         "//lib/errors",
         "//lib/output",
         "@com_github_gomodule_redigo//redis",
@@ -46,6 +48,7 @@ go_test(
         "runner_test.go",
     ],
     embed = [":check"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/internal/std",
         "//lib/errors",

@@ -5,15 +5,14 @@ import { type Observable, Subscription } from 'rxjs'
 
 import { type Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { PanelContent } from '@sourcegraph/branded/src/components/panel/views/PanelContent'
-import { isDefined, isErrorLike } from '@sourcegraph/common'
+import { SourcegraphURL, isDefined, isErrorLike } from '@sourcegraph/common'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { type AbsoluteRepoFile, type ModeSpec } from '@sourcegraph/shared/src/util/url'
 import { Text } from '@sourcegraph/wildcard'
 
 import type { CodeIntelligenceProps } from '../../../codeintel'
@@ -27,7 +26,6 @@ interface Props
     extends AbsoluteRepoFile,
         ModeSpec,
         SettingsCascadeProps,
-        ExtensionsControllerProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         OwnConfigProps,
@@ -47,7 +45,6 @@ export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' 
  * A React hook that registers panel views for the blob.
  */
 function useBlobPanelViews({
-    extensionsController,
     revision,
     filePath,
     repoID,
@@ -67,11 +64,9 @@ function useBlobPanelViews({
     const location = useLocation()
 
     const position = useMemo(() => {
-        const parsedHash = parseQueryAndHash(location.search, location.hash)
-        return parsedHash.line !== undefined
-            ? { line: parsedHash.line, character: parsedHash.character || 0 }
-            : undefined
-    }, [location.hash, location.search])
+        const lineRange = SourcegraphURL.from(location).lineRange
+        return lineRange.line !== undefined ? { line: lineRange.line, character: lineRange.character || 0 } : undefined
+    }, [location])
 
     const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
 
@@ -90,7 +85,6 @@ function useBlobPanelViews({
                               <ReferencesPanel
                                   settingsCascade={settingsCascade}
                                   platformContext={platformContext}
-                                  extensionsController={extensionsController}
                                   telemetryService={telemetryService}
                                   telemetryRecorder={telemetryRecorder}
                                   key="references"
@@ -123,6 +117,7 @@ function useBlobPanelViews({
                                       revision={revision}
                                       filePath={filePath}
                                       defaultPageSize={defaultPageSize}
+                                      telemetryRecorder={telemetryRecorder}
                                   />
                               </PanelContent>
                           ),
@@ -154,7 +149,6 @@ function useBlobPanelViews({
             position,
             settingsCascade,
             platformContext,
-            extensionsController,
             telemetryService,
             telemetryRecorder,
             fetchHighlightedFileLineRanges,

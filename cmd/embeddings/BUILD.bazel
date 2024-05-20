@@ -7,6 +7,7 @@ go_library(
     name = "embeddings_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/embeddings/shared",
@@ -18,11 +19,8 @@ go_library(
 go_binary(
     name = "embeddings",
     embed = [":embeddings_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )
 
 pkg_tar(
@@ -32,7 +30,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "//wolfi-images/sourcegraph-base:base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -56,6 +54,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_PLATFORM_SEARCH,
         "exclusive",
         "requires-network",
     ],

@@ -2,12 +2,8 @@ package squirrel
 
 import (
 	"context"
-	"fmt"
-	"io"
-	"sort"
 	"strings"
 
-	"github.com/fatih/color"
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -126,61 +122,4 @@ func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath typ
 	}
 
 	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
-}
-
-// Pretty prints the local code intel payload for debugging.
-func prettyPrintLocalCodeIntelPayload(w io.Writer, payload types.LocalCodeIntelPayload, contents string) {
-	lines := strings.Split(contents, "\n")
-
-	// Sort payload.Symbols by Def Row then Column.
-	sort.Slice(payload.Symbols, func(i, j int) bool {
-		return isLessRange(payload.Symbols[i].Def, payload.Symbols[j].Def)
-	})
-
-	// Print all symbols.
-	for _, symbol := range payload.Symbols {
-		defColor := color.New(color.FgMagenta)
-		refColor := color.New(color.FgCyan)
-		fmt.Fprintf(w, "Hover %q, %s, %s\n", symbol.Hover, defColor.Sprint("def"), refColor.Sprint("refs"))
-
-		// Convert each def and ref into a rangeColor.
-		type rangeColor struct {
-			rnge   types.Range
-			color_ *color.Color
-		}
-
-		rnges := []rangeColor{}
-		rnges = append(rnges, rangeColor{rnge: symbol.Def, color_: defColor})
-		for _, ref := range symbol.Refs {
-			rnges = append(rnges, rangeColor{rnge: ref, color_: refColor})
-		}
-
-		// How to print a range in color.
-		printRange := func(rnge types.Range, c *color.Color) {
-			line := lines[rnge.Row]
-			lineWithSpaces := tabsToSpaces(line)
-			column := lengthInSpaces(line[:rnge.Column])
-			length := lengthInSpaces(line[rnge.Column : rnge.Column+rnge.Length])
-			fmt.Fprint(w, color.New(color.FgBlack).Sprintf("%4d | ", rnge.Row))
-			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[:column]))
-			fmt.Fprint(w, c.Sprint(lineWithSpaces[column:column+length]))
-			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[column+length:]))
-			fmt.Fprintln(w)
-		}
-
-		// Sort ranges by row, then column.
-		sort.Slice(rnges, func(i, j int) bool {
-			if rnges[i].rnge.Row == rnges[j].rnge.Row {
-				return rnges[i].rnge.Column < rnges[j].rnge.Column
-			}
-			return rnges[i].rnge.Row < rnges[j].rnge.Row
-		})
-
-		// Print each range.
-		for _, rnge := range rnges {
-			printRange(rnge.rnge, rnge.color_)
-		}
-
-		fmt.Fprintln(w)
-	}
 }

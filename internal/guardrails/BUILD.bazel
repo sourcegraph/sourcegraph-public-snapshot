@@ -5,9 +5,11 @@ go_library(
     name = "guardrails",
     srcs = [
         "attribution_filter.go",
+        "attribution_filter2.go",
         "attribution_threshold.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/guardrails",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/types",
@@ -19,10 +21,10 @@ go_library(
 go_test(
     name = "guardrails_test",
     srcs = ["attribution_filter_test.go"],
+    tags = [TAG_CODY_CORE],
     deps = [
         ":guardrails",
         "//internal/completions/types",
-        "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],
 )

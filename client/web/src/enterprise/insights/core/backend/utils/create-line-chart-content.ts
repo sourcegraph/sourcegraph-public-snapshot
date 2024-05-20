@@ -32,9 +32,7 @@ export function createLineChartContent(input: LineChartContentInput): BackendIns
         data: line.points.map(point => ({
             dateTime: new Date(point.dateTime),
             value: point.value,
-            link: generateLinkURL({
-                diffQuery: point.diffQuery,
-            }),
+            link: generateLinkURL(point.pointInTimeQuery),
         })),
         name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
         color: seriesDefinitionMap[line.seriesId]?.stroke,
@@ -49,14 +47,9 @@ export function createLineChartContent(input: LineChartContentInput): BackendIns
  */
 export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
 
-interface GenerateLinkInput {
-    diffQuery: string | null
-}
-
-export function generateLinkURL(input: GenerateLinkInput): string | undefined {
-    const { diffQuery } = input
-    if (diffQuery) {
-        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
+export function generateLinkURL(query: string | null): string | undefined {
+    if (query) {
+        const searchQueryParameter = buildSearchURLQuery(query, SearchPatternType.literal, false)
         return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`
     }
 

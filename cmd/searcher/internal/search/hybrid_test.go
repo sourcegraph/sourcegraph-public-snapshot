@@ -16,6 +16,9 @@ import (
 	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
@@ -25,9 +28,9 @@ import (
 	"github.com/sourcegraph/zoekt/web"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -81,13 +84,6 @@ Hello world example in go`, typeFile},
 		delete(files, unchanged)
 	}
 
-	gitDiffOutput := strings.Join([]string{
-		"M", "changed.go",
-		"A", "added.md",
-		"D", "removed.md",
-		"", // trailing null
-	}, "\x00")
-
 	s := newStore(t, files)
 
 	// explictly remove FetchTar since we should only be using FetchTarByPath
@@ -115,14 +111,20 @@ Hello world example in go`, typeFile},
 
 	// we expect one command against git, lets just fake it.
 	service := &search.Service{
-		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+		GitChangedFiles: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (gitserver.ChangedFilesIterator, error) {
 			if commitA != "indexedfdeadbeefdeadbeefdeadbeefdeadbeef" {
 				return nil, errors.Errorf("expected first commit to be indexed, got: %s", commitA)
 			}
 			if commitB != "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" {
 				return nil, errors.Errorf("expected first commit to be unindexed, got: %s", commitB)
 			}
-			return []byte(gitDiffOutput), nil
+
+			return gitserver.NewChangedFilesIteratorFromSlice([]gitdomain.PathStatus{
+				{Status: gitdomain.StatusModified, Path: "changed.go"},
+				{Status: gitdomain.StatusAdded, Path: "added.md"},
+				{Status: gitdomain.StatusDeleted, Path: "removed.md"},
+				{Status: gitdomain.StatusTypeChanged, Path: "type_changed.md"},
+			}), nil
 		},
 		MaxTotalPathsLength: 100_000,
 
@@ -155,12 +157,14 @@ Hello world example in go`, typeFile},
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 changed.go:6:6:
 	fmt.Println("Hello world")
 unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "added",
@@ -171,6 +175,7 @@ Hello world example in go
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 `,
 	}, {
 		Name: "example",
@@ -180,6 +185,7 @@ hello world I am added
 		Want: `
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "boolean query",
@@ -199,6 +205,7 @@ Hello world example in go
 		Want: `
 added.md:1:1:
 hello world I am added
+// No newline at end of chunk
 changed.go:1:1:
 package main
 changed.go:6:6:
@@ -207,6 +214,7 @@ unchanged.md:1:1:
 # Hello World
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "negated-pattern-example",
@@ -268,6 +276,7 @@ unchanged.md
 changed.go
 unchanged.md:3:3:
 Hello world example in go
+// No newline at end of chunk
 `,
 	}, {
 		Name: "negated-pattern-path",

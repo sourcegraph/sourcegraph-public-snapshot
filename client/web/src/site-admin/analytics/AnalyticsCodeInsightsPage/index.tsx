@@ -3,10 +3,11 @@ import React, { useMemo, useEffect } from 'react'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Card, LoadingSpinner, Text, LineChart, type Series, H2 } from '@sourcegraph/wildcard'
 
 import type { InsightsStatisticsResult, InsightsStatisticsVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
@@ -36,8 +37,14 @@ export const calculateMinutesSaved = (data: typeof MinutesSaved): number =>
     data.LanguageSeries * MinutesSaved.LanguageSeries +
     data.ComputeSeries * MinutesSaved.ComputeSeries
 
-export const AnalyticsCodeInsightsPage: React.FunctionComponent = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Insights', aggregation: 'count' })
+interface Props extends TelemetryV2Props {}
+
+export const AnalyticsCodeInsightsPage: React.FunctionComponent<Props> = ({ telemetryRecorder }) => {
+    const { dateRange, aggregation, grouping } = useChartFilters({
+        name: 'Insights',
+        aggregation: 'count',
+        telemetryRecorder,
+    })
     const { data, error, loading } = useQuery<InsightsStatisticsResult, InsightsStatisticsVariables>(
         INSIGHTS_STATISTICS,
         {
@@ -48,8 +55,9 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent = () => {
         }
     )
     useEffect(() => {
-        eventLogger.logPageView('AdminAnalyticsCodeInsights')
-    }, [])
+        EVENT_LOGGER.logPageView('AdminAnalyticsCodeInsights')
+        telemetryRecorder.recordEvent('admin.analytics.codeInsights', 'view')
+    }, [telemetryRecorder])
 
     const legends = useMemo(() => {
         if (!data) {

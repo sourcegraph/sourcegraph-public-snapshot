@@ -2,8 +2,9 @@ import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Link, Text } from '@sourcegraph/wildcard'
 
@@ -11,7 +12,6 @@ import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
-import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
@@ -27,6 +27,7 @@ export interface SignUpPageProps extends TelemetryProps, TelemetryV2Props {
     context: Pick<
         SourcegraphContext,
         | 'allowSignup'
+        | 'externalURL'
         | 'authProviders'
         | 'sourcegraphDotComMode'
         | 'xhrHeaders'
@@ -49,7 +50,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => {
-        eventLogger.logViewEvent('SignUp', null, false)
+        EVENT_LOGGER.logViewEvent('SignUp', null, false)
         telemetryRecorder.recordEvent('auth.signUp', 'view', {
             metadata: { 'invited-by-user': invitedBy !== null ? 1 : 0 },
         })
@@ -59,7 +60,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 isAuthenticated: !!authenticatedUser,
                 allowSignup: context.allowSignup,
             }
-            eventLogger.log('SignUpInvitedByUser', parameters, parameters)
+            EVENT_LOGGER.log('SignUpInvitedByUser', parameters, parameters)
         }
     }, [invitedBy, authenticatedUser, context.allowSignup, telemetryRecorder])
 

@@ -5,12 +5,13 @@ go_library(
     name = "webhooks",
     srcs = ["handlers.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
+        "//cmd/frontend/internal/cloneurls",
         "//cmd/frontend/internal/repos/webhooks/resolvers",
         "//cmd/frontend/webhooks",
-        "//internal/cloneurls",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -34,6 +35,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

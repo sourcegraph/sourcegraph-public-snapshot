@@ -101,7 +101,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	c := New("some_prefix")
 	var aKeys, bKeys []string
 	var key string
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if i%2 == 0 {
 			key = "a:" + strconv.Itoa(i)
 			aKeys = append(aKeys, key)
@@ -185,6 +185,17 @@ func TestCache_KeyTTL(t *testing.T) {
 	_, ok = c.KeyTTL("c")
 	if ok {
 		t.Fatal("KeyTTL after setting invalid ttl should have found nothing")
+	}
+}
+func TestNewWithRedisStore(t *testing.T) {
+	SetupForTest(t)
+
+	// Create a Cache instance using NewWithRedisStore
+	c := NewWithRedisStore("test_prefix")
+
+	// Assert that the storeType field is RedisStore, indicating it uses the Redis store
+	if c.storeType != RedisStore {
+		t.Errorf("Expected storeType to be RedisStore, got %v", c.storeType)
 	}
 }
 

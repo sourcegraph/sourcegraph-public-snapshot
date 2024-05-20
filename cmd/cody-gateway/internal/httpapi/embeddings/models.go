@@ -13,7 +13,8 @@ import (
 type ModelName string
 
 const (
-	ModelNameOpenAIAda ModelName = "openai/text-embedding-ada-002"
+	ModelNameOpenAIAda            ModelName = "openai/text-embedding-ada-002"
+	ModelNameSourcegraphSTMultiQA ModelName = "sourcegraph/st-multi-qa-mpnet-base-dot-v1"
 )
 
 type EmbeddingsClient interface {
@@ -50,6 +51,12 @@ func NewListHandler() http.Handler {
 				Enabled:    modelEnabled(ModelNameOpenAIAda),
 				Name:       string(ModelNameOpenAIAda),
 				Dimensions: 1536,
+				Deprecated: false,
+			},
+			{
+				Enabled:    modelEnabled(ModelNameSourcegraphSTMultiQA),
+				Name:       string(ModelNameSourcegraphSTMultiQA),
+				Dimensions: 768,
 				Deprecated: false,
 			},
 		}

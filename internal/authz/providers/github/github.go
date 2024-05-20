@@ -427,11 +427,16 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
+	oauthContext := github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))
+	if oauthContext == nil {
+		return nil, errors.Newf("no matching GitHub OAuth provider found for service %q", p.ServiceID())
+	}
+
 	oauthToken := &auth.OAuthBearerToken{
 		Token:              tok.AccessToken,
 		RefreshToken:       tok.RefreshToken,
 		Expiry:             tok.Expiry,
-		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, oauthContext),
 		NeedsRefreshBuffer: 5,
 	}
 

@@ -9,6 +9,7 @@ go_library(
         "sub_repo_perms.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -30,6 +31,7 @@ go_test(
     timeout = "short",
     srcs = ["sub_repo_perms_test.go"],
     embed = [":subrepoperms"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/api",

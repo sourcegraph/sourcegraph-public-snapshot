@@ -5,10 +5,12 @@ go_library(
     name = "executil",
     srcs = ["executil.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/cacert",
         "//internal/conf",
+        "//internal/vcs",
         "//internal/wrexec",
         "//lib/errors",
         "//lib/process",
@@ -21,10 +23,13 @@ go_test(
     name = "executil_test",
     srcs = ["executil_test.go"],
     embed = [":executil"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/conf",
+        "//internal/vcs",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

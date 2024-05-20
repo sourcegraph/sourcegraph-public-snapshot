@@ -31,7 +31,14 @@ type Spec struct {
 	// Rollout can be configured to indicate how releases should roll out
 	// through a set of environments.
 	Rollout *RolloutSpec `yaml:"rollout,omitempty"`
+
+	// README is the contents of the README.md file adjacent to the service
+	// specification. May be a zero-length byte slice if a README file is not
+	// present, or nil if this spec was not opened with 'spec.Open(...)'.
+	README []byte `yaml:"-"`
 }
+
+var ErrServiceDoesNotExist = errors.New("service does not exist")
 
 // Open a specification file, validate it, unmarshal the data as a MSP spec,
 // and load any extraneous configuration. Callsites that return an error to the
@@ -48,7 +55,7 @@ func Open(specPath string) (*Spec, error) {
 	specData, err := os.ReadFile(specPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, errors.Wrap(err, "service does not exist")
+			return nil, ErrServiceDoesNotExist
 		}
 		return nil, errors.Wrap(err, "read service specification")
 	}
@@ -59,10 +66,13 @@ func Open(specPath string) (*Spec, error) {
 
 	// Load extraneous resources
 	configDir := filepath.Dir(specPath)
+	if err := spec.loadREADME(configDir); err != nil {
+		return spec, errors.Wrap(err, "spec.loadREADME")
+	}
 	for _, e := range spec.Environments {
 		if e.Resources != nil && e.Resources.BigQueryDataset != nil {
 			if err := e.Resources.BigQueryDataset.LoadSchemas(configDir); err != nil {
-				return spec, errors.Wrap(err, "BigQueryTable.LoadSchema")
+				return spec, errors.Wrapf(err, "spec.environments.[%s].Resources.BigQueryDataset.LoadSchema", e.ID)
 			}
 		}
 	}
@@ -240,4 +250,30 @@ func (s Spec) ListEnvironmentIDs() []string {
 // MarshalYAML marshals the spec to YAML using our YAML library of choice.
 func (s Spec) MarshalYAML() ([]byte, error) {
 	return yaml.Marshal(s)
+}
+
+// loadREADME populates s.readme by convention, looking for the `README.md` file
+// in dir. It expects a specific header format, and populates s.readme with the
+// specific header removed.
+//
+// It is called by spec.Open(...).
+func (s *Spec) loadREADME(dir string) error {
+	// Open by convention
+	readme, err := os.ReadFile(filepath.Join(dir, "README.md"))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return errors.Wrapf(err, "open README")
+	}
+
+	// Must have header as prefix
+	mustStartWith := "# " + s.Service.GetName()
+	if !bytes.HasPrefix(readme, []byte(mustStartWith)) {
+		return errors.Newf("README must start with an H1 header that matches the service name, i.e. %q", mustStartWith)
+	}
+
+	// Trim the prefix
+	s.README = bytes.TrimSpace(bytes.TrimPrefix(readme, append([]byte(mustStartWith), '\n')))
+	return nil
 }

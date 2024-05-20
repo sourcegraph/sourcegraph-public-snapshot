@@ -4,6 +4,7 @@ import sinon from 'sinon'
 import { describe, expect, it } from 'vitest'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -18,7 +19,7 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -73,6 +74,7 @@ describe('StreamingProgressSkippedPopover', () => {
                     query=""
                     progress={progress}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
                     onSearchAgain={sinon.spy()}
                 />
             ).asFragment()
@@ -86,7 +88,7 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -99,6 +101,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -112,7 +115,7 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -129,6 +132,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -145,7 +149,7 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -182,6 +186,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -203,7 +208,7 @@ describe('StreamingProgressSkippedPopover', () => {
             repositoriesCount: 2,
             skipped: [
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -240,6 +245,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={sinon.spy()}
             />
         )
@@ -273,7 +279,7 @@ describe('StreamingProgressSkippedPopover', () => {
                     },
                 },
                 {
-                    reason: 'excluded-fork',
+                    reason: 'repository-fork',
                     message: '10k forked repositories excluded',
                     severity: 'info',
                     title: '10k forked repositories excluded',
@@ -302,6 +308,7 @@ describe('StreamingProgressSkippedPopover', () => {
                 query=""
                 progress={progress}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
+                telemetryRecorder={noOpTelemetryRecorder}
                 onSearchAgain={searchAgain}
             />
         )

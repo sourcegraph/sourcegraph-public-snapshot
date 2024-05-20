@@ -14,8 +14,9 @@ import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
-import { URLQueryFilter, serializeURLQueryFilters, mergeQueryAndFilters } from '@sourcegraph/branded'
+import { type URLQueryFilter, serializeURLQueryFilters, mergeQueryAndFilters } from '@sourcegraph/branded'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
@@ -34,7 +35,7 @@ interface CachedResults {
 
 const SearchResultsCacheContext = createContext<MutableRefObject<CachedResults | null>>(createRef())
 
-interface CachedSearchResultsInput {
+interface CachedSearchResultsInput extends TelemetryV2Props {
     /** Search query */
     query: string
 
@@ -64,7 +65,7 @@ interface CachedSearchResultsInput {
  * (updated as new streaming results come in).
  */
 export function useCachedSearchResults(props: CachedSearchResultsInput): AggregateStreamingSearchResults | undefined {
-    const { query, urlFilters: selectedFilters, options, streamSearch, telemetryService } = props
+    const { query, urlFilters: selectedFilters, options, streamSearch, telemetryService, telemetryRecorder } = props
     const cachedResults = useContext(SearchResultsCacheContext)
 
     const location = useLocation()
@@ -125,6 +126,9 @@ export function useCachedSearchResults(props: CachedSearchResultsInput): Aggrega
 
         if (navigationType === 'POP') {
             telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
+            telemetryRecorder.recordEvent('search.results.cache', 'retrieve', {
+                metadata: { cacheHit: cacheExists ? 1 : 0 },
+            })
         }
         // Only log on first render
         // eslint-disable-next-line react-hooks/exhaustive-deps

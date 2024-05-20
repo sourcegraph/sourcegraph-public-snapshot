@@ -4,9 +4,15 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 
+KEYS_DIR="/etc/sourcegraph/keys/"
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
+echo "~~~ :aspect: :stethoscope: Agent Health check"
+/etc/aspect/workflows/bin/agent_health_check
+
+echo "~~~ :package: :hammer_and_pick: Package build setup"
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 # shellcheck disable=SC2317
@@ -43,6 +49,8 @@ trap cleanup EXIT
   mv bwrap bin/
 )
 
+echo "~~~ :package: :construction_worker: Package build"
+
 export PATH="$tmpdir/bin:$PATH"
 
 if [ $# -eq 0 ]; then
@@ -67,9 +75,9 @@ echo " * Building melange package '$name'"
 
 # Sign index, using separate keys from GCS for staging and prod repos
 if [[ "$IS_MAIN" == "true" ]]; then
-  key_path="/keys/sourcegraph-melange-prod.rsa"
+  key_path="$KEYS_DIR/sourcegraph-melange-prod.rsa"
 else
-  key_path="/keys/sourcegraph-melange-dev.rsa"
+  key_path="$KEYS_DIR/sourcegraph-melange-dev.rsa"
 fi
 
 # Build package

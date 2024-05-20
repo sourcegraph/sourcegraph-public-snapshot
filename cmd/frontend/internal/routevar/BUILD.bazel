@@ -12,6 +12,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/api",
@@ -28,6 +29,7 @@ go_test(
         "repo_test.go",
     ],
     embed = [":routevar"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "@com_github_gorilla_mux//:mux",
         "@com_github_grafana_regexp//:regexp",

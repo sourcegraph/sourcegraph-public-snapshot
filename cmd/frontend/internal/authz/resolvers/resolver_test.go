@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -97,9 +97,10 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 		},
 		gqlTests: func(db database.DB) []*graphqlbackend.Test {
-			return []*graphqlbackend.Test{{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
+			return []*graphqlbackend.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
 							mutation {
 								setRepositoryPermissionsForUsers(
 									repository: "UmVwb3NpdG9yeTox",
@@ -111,14 +112,14 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 								}
 							}
 						`,
-				ExpectedResult: `
+					ExpectedResult: `
 							{
 								"setRepositoryPermissionsForUsers": {
 									"alwaysNil": null
 								}
 							}
 						`,
-			},
+				},
 			}
 		},
 		expUserIDs: map[int32]struct{}{1: {}},
@@ -171,7 +172,15 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			globals.SetPermissionsUserMapping(test.config)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  test.config.BindID,
+					},
+				},
+			})
+			t.Cleanup(func() { conf.Mock(nil) })
 
 			users := dbmocks.NewStrictMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -478,7 +487,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -498,9 +507,6 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
 		}
-
-		// Reset the env var for other tests.
-		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
@@ -628,7 +634,6 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 			assert.NoError(t, err)
 			require.NotNil(t, result)
 			require.Equal(t, &graphqlbackend.EmptyResponse{}, result)
-
 		})
 
 		t.Run("unrestricted set to false", func(t *testing.T) {
@@ -1105,7 +1110,6 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 }
 
 func TestResolver_UsersWithPendingPermissions(t *testing.T) {
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -1197,6 +1201,7 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 
 		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		authz.SetProviders(false, []authz.Provider{ghProvider})
+		defer authz.SetProviders(true, nil)
 		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"github"}, result)
@@ -1817,7 +1822,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	t.Run("disabled on dotcom", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -1832,9 +1837,6 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 
 		require.ErrorIs(t, err, errDisabledSourcegraphDotCom)
 		require.Nil(t, result)
-
-		// Reset the env var for other tests.
-		dotcom.MockSourcegraphDotComMode(false)
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {

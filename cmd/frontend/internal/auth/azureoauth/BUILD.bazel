@@ -27,6 +27,7 @@ go_library(
         "//internal/extsvc/azuredevops",
         "//internal/httpcli",
         "//internal/licensing",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",
@@ -45,6 +46,7 @@ go_test(
     ],
     embed = [":azureoauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

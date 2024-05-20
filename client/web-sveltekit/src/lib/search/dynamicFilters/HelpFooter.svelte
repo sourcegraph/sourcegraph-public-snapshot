@@ -26,6 +26,10 @@
         }
 
         &:hover {
+            h4 {
+                color: var(--primary);
+            }
+
             &::before {
                 background: linear-gradient(91deg, var(--logo-blue) 3.11%, #c66fff 44.21%, #ff8578 83.64%);
             }
@@ -40,6 +44,11 @@
             }
 
             --icon-color: var(--primary);
+        }
+
+        h4 {
+            margin-bottom: 0.25rem;
+            color: var(--text-muted);
         }
 
         a {

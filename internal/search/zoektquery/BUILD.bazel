@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "zoektquery",
+    srcs = ["query.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/zoektquery",
+    tags = [TAG_PLATFORM_SEARCH],
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_github_sourcegraph_zoekt//query"],
+)

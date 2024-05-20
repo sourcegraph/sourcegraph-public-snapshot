@@ -3,15 +3,14 @@ package ci
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/gitops"
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -69,6 +68,9 @@ func NewConfig(now time.Time) Config {
 			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
+			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
+			"RELEASE_PUBLIC":     os.Getenv("RELEASE_PUBLIC"),
+			"CLOUD_EPHEMERAL":    os.Getenv("CLOUD_EPHEMERAL"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -84,40 +86,39 @@ func NewConfig(now time.Time) Config {
 
 	// detect changed files
 	var changedFiles []string
-	diffCommand := []string{"diff", "--name-only"}
+	var err error
 	if commit != "" {
 		if runType.Is(runtype.MainBranch) {
 			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
-			diffCommand = append(diffCommand, "@^")
+			changedFiles, err = gitops.GetHEADChangedFiles()
 		} else {
-			diffCommand = append(diffCommand, "origin/main..."+commit)
+			baseBranch := os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
+			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
+		changedFiles, err = gitops.GetBranchChangedFiles("main", commit)
 	}
-	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+
+	if err != nil {
 		panic(err)
-	} else {
-		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
 	diff, changedFilesByDiffType := changed.ParseDiff(changedFiles)
 
-	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tgit command: %v\n\tchanged files: %v\n\tdiff changes: %q\n",
-		append([]string{"git"}, diffCommand...),
+	fmt.Fprintf(os.Stderr, "Parsed diff:\n\tchanged files: %v\n\tdiff changes: %q\n",
 		changedFiles,
 		diff.String(),
 	)
-	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!")
+	fmt.Fprint(os.Stderr, "The generated build pipeline will now follow, see you next time!\n")
 
 	return Config{
 		RunType: runType,
 
 		Time:              now,
 		Branch:            branch,
-		Version:           versionFromTag(runType, tag, commit, buildNumber, branch, now),
+		Version:           inferVersion(runType, tag, commit, buildNumber, branch, now),
 		Commit:            commit,
 		MustIncludeCommit: mustIncludeCommits,
 		Diff:              diff,
@@ -134,8 +135,14 @@ func NewConfig(now time.Time) Config {
 	}
 }
 
-// versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+// inferVersion constructs the Sourcegraph version from the given build state.
+func inferVersion(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+	// If we're building a release, use the version that is being released regardless of
+	// all other build attributes, such as tag, commit, build number, etc ...
+	if runType.Is(runtype.InternalRelease, runtype.PromoteRelease) {
+		return os.Getenv("VERSION")
+	}
+
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//
@@ -143,8 +150,19 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 		return strings.TrimPrefix(tag, "v")
 	}
 
+	// need to determine the tag
+	latestTag, err := gitops.GetLatestTag()
+	if err != nil {
+		if errors.Is(err, gitops.ErrNoTags) {
+			// use empty string if no tags are present
+			fmt.Fprintf(os.Stderr, "no tags found, using empty string\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "error determining latest tag: %v\n", err)
+		}
+		latestTag = ""
+	}
 	// "main" branch is used for continuous deployment and has a special-case format
-	version := images.BranchImageTag(now, commit, buildNumber, sanitizeBranchForDockerTag(branch), tryGetLatestTag())
+	version := images.BranchImageTag(now, commit, buildNumber, branch, latestTag)
 
 	// Add additional patch suffix
 	if runType.Is(runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.ExecutorPatchNoTest) {
@@ -152,32 +170,6 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 	}
 
 	return version
-}
-
-func tryGetLatestTag() string {
-	output, err := exec.Command("git", "tag", "--list", "v*").CombinedOutput()
-	if err != nil {
-		return ""
-	}
-
-	tagMap := map[string]struct{}{}
-	for _, tag := range strings.Split(string(output), "\n") {
-		if version, ok := oobmigration.NewVersionFromString(tag); ok {
-			tagMap[version.String()] = struct{}{}
-		}
-	}
-	if len(tagMap) == 0 {
-		return ""
-	}
-
-	versions := make([]oobmigration.Version, 0, len(tagMap))
-	for tag := range tagMap {
-		version, _ := oobmigration.NewVersionFromString(tag)
-		versions = append(versions, version)
-	}
-	oobmigration.SortVersions(versions)
-
-	return versions[len(versions)-1].String()
 }
 
 func (c Config) shortCommit() string {
@@ -194,16 +186,8 @@ func (c Config) ensureCommit() error {
 		return nil
 	}
 
-	found := false
-	var errs error
-	for _, mustIncludeCommit := range c.MustIncludeCommit {
-		output, err := exec.Command("git", "merge-base", "--is-ancestor", mustIncludeCommit, "HEAD").CombinedOutput()
-		if err == nil {
-			found = true
-			break
-		}
-		errs = errors.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
-	}
+	found, errs := gitops.HasIncludedCommit(c.MustIncludeCommit...)
+
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.Branch, c.Commit, strings.Join(c.MustIncludeCommit, ", "))
 		fmt.Println("Rebase onto the latest main to get the latest CI fixes.")
@@ -248,10 +232,4 @@ func parseMessageFlags(msg string) MessageFlags {
 		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
 		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
 	}
-}
-
-func sanitizeBranchForDockerTag(branch string) string {
-	branch = strings.ReplaceAll(branch, "/", "-")
-	branch = strings.ReplaceAll(branch, "+", "-")
-	return branch
 }

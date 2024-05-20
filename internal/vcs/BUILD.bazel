@@ -9,6 +9,7 @@ go_library(
         "url_windows.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/vcs",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -21,4 +22,5 @@ go_test(
     timeout = "short",
     srcs = ["url_test.go"],
     embed = [":vcs"],
+    tags = [TAG_PLATFORM_SOURCE],
 )

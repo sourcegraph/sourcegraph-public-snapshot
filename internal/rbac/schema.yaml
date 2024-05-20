@@ -12,5 +12,16 @@ namespaces:
   - name: CODY
     actions:
       - ACCESS
-excludeFromUserRole:
-  - OWNERSHIP
+  - name: PRODUCT_SUBSCRIPTIONS
+    dotcom: true
+    actions:
+      - READ
+      - WRITE
+
+# 🚨 SECURITY: ALL PERMISSIONS defined above are granted by default to the base
+# SITE_ADMINISTRATOR role, unless specified in the below list.
+# Namespaces that should be granted by default to the USER role MUST be listed below.
+defaultNamespacesForUserRole:
+  - BATCH_CHANGES
+  - REPO_METADATA
+  - CODY

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gofrs/uuid"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
@@ -67,9 +66,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("users not invited or not a member cannot access on Sourcegraph.com", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTests(t, []*Test{
 			{
@@ -97,9 +94,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("org members can access on Sourcegraph.com", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -136,9 +131,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("invited users can access on Sourcegraph.com", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -180,9 +173,7 @@ func TestOrganization(t *testing.T) {
 	})
 
 	t.Run("invited users can access org by ID on Sourcegraph.com", func(t *testing.T) {
-		orig := dotcom.SourcegraphDotComMode()
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(orig)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -273,47 +264,8 @@ func TestCreateOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Creates organization and sets statistics", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
-
-		id, err := uuid.NewV4()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		orgs.UpdateOrgsOpenBetaStatsFunc.SetDefaultReturn(nil)
-		defer func() {
-			orgs.UpdateOrgsOpenBetaStatsFunc = nil
-		}()
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation CreateOrganization($name: String!, $displayName: String, $statsID: ID) {
-				createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
-					id
-                    name
-				}
-			}`,
-			ExpectedResult: fmt.Sprintf(`
-			{
-				"createOrganization": {
-					"id": "%s",
-					"name": "%s"
-				}
-			}
-			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]any{
-				"name":    "acme",
-				"statsID": id.String(),
-			},
-		})
-	})
-
 	t.Run("Fails for unauthenticated user", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -338,8 +290,7 @@ func TestCreateOrganization(t *testing.T) {
 	})
 
 	t.Run("Fails for suspicious organization name", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
+		dotcom.MockSourcegraphDotComMode(t, true)
 
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
@@ -399,70 +350,7 @@ func TestAddOrganizationMember(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	t.Run("Works for site admin if not on Cloud", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
-				}
-			}`,
-			ExpectedResult: `{
-				"addUserToOrganization": {
-					"alwaysNil": null
-				}
-			}`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
-			},
-		})
-	})
-
-	t.Run("Does not work for site admin on Cloud", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		defer dotcom.MockSourcegraphDotComMode(false)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
-				}
-			}`,
-			ExpectedResult: "null",
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []any{"addUserToOrganization"},
-				},
-			},
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
-			},
-		})
-	})
-
-	t.Run("Works on Cloud if site admin is org member", func(t *testing.T) {
-		dotcom.MockSourcegraphDotComMode(true)
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
-			if userID == 1 {
-				return &types.OrgMembership{OrgID: orgID, UserID: 1}, nil
-			} else if userID == 2 {
-				return nil, &database.ErrOrgMemberNotFound{}
-			}
-			t.Fatalf("Unexpected user ID received for OrgMembers.GetByOrgIDAndUserID: %d", userID)
-			return nil, nil
-		})
-
-		defer func() {
-			dotcom.MockSourcegraphDotComMode(false)
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
-		}()
-
+	t.Run("Works for site admin", func(t *testing.T) {
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -570,7 +458,7 @@ func TestMembersConnectionStore(t *testing.T) {
 	org, err := db.Orgs().Create(ctx, "test-org", nil)
 	require.NoError(t, err)
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		user, err := db.Users().Create(ctx, database.NewUser{
 			Username:        "test" + strconv.Itoa(i),
 			Email:           fmt.Sprintf("test%d@sourcegraph.com", i),

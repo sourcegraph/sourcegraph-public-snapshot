@@ -1,0 +1,289 @@
+meta:
+  productName: sourcegraph
+  repository: 'github.com/sourcegraph/sourcegraph'
+  owners:
+    - '@sourcegraph/release'
+
+requirements:
+  # We use wget here, because curl --fail-with-body was introduced in a version ulterior to what we can have on the CI agents.
+  - name: "wget"
+    cmd: "wget --help"
+  - name: "jq"
+    cmd: "jq --help"
+  - name: "Buidkite access token"
+    # `write_builds` permission is all that's needed here
+    # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
+    env: BUILDKITE_ACCESS_TOKEN
+    only: # We only need this to create CI builds.
+      - internal.create
+      - promoteToPublic.create
+
+internal:
+  create:
+    steps:
+      patch:
+        - name: 'buildkite'
+          cmd: |
+            echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" --post-data '{
+              "commit": "HEAD",
+              "branch": "{{git.branch}}",
+              "message": "Internal release build for {{version}}",
+              "env": {
+                    "RELEASE_INTERNAL": "true",
+                    "VERSION": "{{tag}}",
+                    "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
+              }
+            }' https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds)
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to create build on Buildkite, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
+  finalize:
+    steps:
+      - name: 'Register on release registry'
+        cmd: |
+          echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
+              "name": "sourcegraph",
+              "version": "{{version}}",
+              "git_sha": "'${COMMIT_SHA}'"
+            }' "https://releaseregistry.sourcegraph.com/v1/releases")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create release in release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release created, see:"
+            echo $body
+          fi
+      - name: 'notifications'
+        cmd: |
+          set -eu
+
+          # Post an annotation.
+          cat << EOF | buildkite-agent annotate --style info
+          Internal release is ready for promotion under the branch [\`{{git.branch}}\`](https://github.com/sourcegraph/sourcegraph/tree/$branch).
+          EOF
+
+test:
+  steps:
+    - name: 'check:git tag does not exist'
+      cmd: |
+        tags=$(git ls-remote --tags origin | sort -t '/' -k 3 | cut -f 2 | awk -F '/' '{gsub(/\^\{\}$/, "", $3); print $3}' | uniq)
+        if echo "${tags}" | grep -q "^{{version}}$"; then
+          echo "❌ Tag '{{version}}' already exists"
+          exit 1
+        fi
+    - name: 'check:migrator-schemas'
+      cmd: |
+        set -eu
+
+        REGISTRY="${PROD_REGISTRY:-''}"
+
+        # the reason this is not in the requirements check of the release yaml is because those checks also
+        # apply when running the release tooling locally, and the testing steps are supposed to run in CI
+        if [ -z ${REGISTRY} ]; then
+          echo "PROD_REGISTRY is not set - unable to check migrator image"
+          exit 1
+        fi
+
+        IMAGE="${REGISTRY}/migrator:{{tag}}"
+
+        # Pull the image so that we can inspect it
+        echo "pulling migrator image ${IMAGE}"
+        docker pull "${IMAGE}"
+
+        echo "checking migrator image for {{version}} schema description files"
+        # now we check that the schema description files exist
+        # we need to trim the result from docker since it has '\r' hence the use of tr
+        count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/{{version}}-*.json | wc -l" | tr -d '[:space:]')
+        if [[ "$count" -ne 3 ]]; then
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected 3 got ${count}"
+          exit 1
+        fi
+
+        echo "checking migrator image for older schema description files"
+        count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/*-internal_database_schema*json | wc -l" | tr -d '[:space:]')
+
+        # in our newer releases we have upwards of 300 schema descriptions, so we check that we have at least 300
+        if [[ "$count" -lt 300 ]]; then
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected more than 300 got ${count}"
+          exit 1
+        fi
+    - name: 'db:migration:coherence_test'
+      cmd: |
+        set -eu
+
+        aspectRC="/tmp/aspect-generated.bazelrc"
+        rosetta bazelrc > "$aspectRC"
+        bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
+        # The upgradetest are inferring the stamp-version flag based on the version, so we need to unset it here.
+        _VERSION=$VERSION
+        unset VERSION
+
+        # We purposely limit the concurrency to 6, because if we use the default, there are
+        # scenarios where we can exhaust available ports to the docker daemon and end up
+        # with an infrastructure flake.
+        max_routines=6
+        # Hardcoding version, as for now I just want to make sure this works in CI.
+        bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
+          --post-release-version={{tag}} \
+          --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
+          --max-routines $max_routines
+
+        # Restoring it to avoid creating a footgun if we add more test steps later on.
+        VERSION=$_VERSION
+
+promoteToPublic:
+  create:
+    steps:
+      #      - name: 'validate promotion criteria'
+      #        cmd: |
+      #          echo "validating promotion criteria"
+      #          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+      #          exit_code=$?
+      #
+      #          if [ $exit_code != 0 ]; then
+      #            echo "❌ Failed to fetch release on release registry, got:"
+      #            echo "--- raw body ---"
+      #            echo $body
+      #            echo "--- raw body ---"
+      #            exit $exit_code
+      #          fi
+      #
+      #          is_development=$(echo "$body" | jq -r '.is_development')
+      #          if [ "$is_development" = "true" ]; then
+      #            echo "cannot promote a development release"
+      #            exit 1
+      #          fi
+      - name: 'buildkite'
+        cmd: |
+          # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
+          # and we don't rely on AW at all.
+          echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" --post-data '{
+            "commit": "HEAD",
+            "branch": "{{git.branch}}",
+            "message": "Promoting internal release {{version}} to public",
+            "env": {
+              "DISABLE_ASPECT_WORKFLOWS": "true",
+              "RELEASE_PUBLIC": "true",
+              "VERSION": "{{tag}}",
+              "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
+            }
+          }' "https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create build on Buildkite, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Build created, see:"
+            echo $body | jq .web_url
+          fi
+  finalize:
+    steps:
+      - name: 'Promote on release registry'
+        cmd: |
+          echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to promote release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release promoted, see:"
+            echo $body
+          fi
+      - name: 'git:tag'
+        cmd: |
+          set -eu
+
+          # we need to first fetch the branch because the repo in CI is in a detached state
+          git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
+          git checkout {{git.branch}}
+          git tag {{version}}
+          git push origin {{git.branch}} --tags
+
+          # Annotate build
+          cat << EOF | buildkite-agent annotate --style info
+          Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
+          EOF
+
+      - name: "git:release:create"
+        cmd: |
+          tag="{{tag}}"
+          version="{{version}}"
+          changelog_version="${tag//./}"
+
+          current_month=$(date +"%m")
+          current_year=$(date +"%Y")
+
+          # Define an array of month names
+          months=("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+
+          # Get the month name from the array
+          month_name="${months[$(($current_month))]}"
+
+          # Capitalize the first letter of the month name
+          month_name="$(tr '[:lower:]' '[:upper:]' <<< ${month_name:0:1})${month_name:1}"
+
+          read -d '\n' releasepost << EndOfText
+            Sourcegraph $tag is now available!
+
+            _Note: we've updated our versioning conventions. Please see our [releases](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases) page for more information or reach out at [help.sourcegraph.com](https://help.sourcegraph.com)._
+
+            - [Changelog](https://sourcegraph.com/docs/CHANGELOG#${changelog_version})
+            - [Update](https://sourcegraph.com/docs/admin/updates)
+            - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
+          EndOfText
+
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+
+      # tag is usually in the format `5.3.2`
+      # while version is usually the tag prepended with a v, `v5.3.2`
+      - name: 'Slack notification (#announce-engineering, #team-cloud-ops)'
+        cmd: |
+          echo "Posting slack notification for release"
+          tag="{{tag}}"
+          changelog_version="${tag//./}"
+          webhooks=("$ANNOUNCE_ENG_SLACK_WEBHOOK_URL" "$CLOUD_OPS_SLACK_WEBHOOK_URL")
+          for webhook in "${webhooks[@]}"
+          do
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --post-data '{
+              "type": "mrkdwn",
+              "text": "*Sourcegraph {{tag}} has been published*\n\n• <https://sourcegraph.com/docs/CHANGELOG#${changelog_version} | Changelog>\n• <https://github.com/sourcegraph/sourcegraph/releases/tag/{{version}} | GitHub release>"
+            }' "$webhook")
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Unable to post message to slack, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Posted to slack."
+            fi
+          done

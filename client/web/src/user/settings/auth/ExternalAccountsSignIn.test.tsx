@@ -1,6 +1,8 @@
 import { render } from '@testing-library/react'
 import { describe, expect, test } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
 import type { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -39,6 +41,8 @@ const mockAuthProviders: AuthProvider[] = [
         clientID: '123',
         isBuiltin: false,
         authenticationURL: 'https://example.com',
+        noSignIn: false,
+        requiredForAuthz: false,
     },
 ]
 
@@ -51,6 +55,7 @@ describe('ExternalAccountsSignIn', () => {
                 onDidRemove={() => {}}
                 onDidAdd={() => {}}
                 onDidError={() => {}}
+                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
         expect(cmp.asFragment()).toMatchSnapshot()

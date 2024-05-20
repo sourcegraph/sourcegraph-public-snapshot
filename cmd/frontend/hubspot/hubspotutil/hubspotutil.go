@@ -84,7 +84,7 @@ func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 	// contact independent of the request lifecycle.
 	err := syncHubSpotContact(context.Background(), email, eventID, contactParams)
 	if err != nil {
-		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
+		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "eventID", eventID, "error", err)
 	}
 }
 
@@ -106,7 +106,7 @@ func SyncUserWithV3Event(email, eventName string, contactParams *hubspot.Contact
 	// contact independent of the request lifecycle.
 	err := syncHubSpotContact(context.Background(), email, "", contactParams)
 	if err != nil {
-		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
+		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "eventName", eventName, "error", err)
 	}
 
 	// Log the V3 event

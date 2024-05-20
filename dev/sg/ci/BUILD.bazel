@@ -8,12 +8,12 @@ go_library(
         "subcommands.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/ci",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/ci/runtype",
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",
-        "//dev/sg/internal/loki",
         "//dev/sg/internal/open",
         "//dev/sg/internal/repo",
         "//dev/sg/internal/run",

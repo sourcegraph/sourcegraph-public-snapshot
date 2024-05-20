@@ -1,0 +1,20 @@
+fragment DiffSummaryHeaderCommit on GitCommit {
+    id
+    abbreviatedOID
+    canonicalURL
+    ancestors(first: 2) {
+        nodes {
+            id
+            abbreviatedOID
+            canonicalURL
+        }
+    }
+    diff {
+        fileDiffs(paths: [$path]) {
+            diffStat {
+                added
+                deleted
+            }
+        }
+    }
+}

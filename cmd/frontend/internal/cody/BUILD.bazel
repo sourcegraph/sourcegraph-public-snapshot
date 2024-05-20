@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "cody",
+    srcs = [
+        "feature_flag.go",
+        "rate_limits.go",
+        "subscription.go",
+        "utils.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody",
+    tags = [TAG_CODY_PRIME],
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend",
+        "//cmd/frontend/internal/ssc",
+        "//internal/accesstoken",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/codygateway",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/dotcom",
+        "//internal/featureflag",
+        "//internal/hashutil",
+        "//internal/httpcli",
+        "//internal/licensing",
+        "//internal/rbac",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "cody_test",
+    srcs = [
+        "feature_flag_test.go",
+        "subscription_test.go",
+        "utils_test.go",
+    ],
+    embed = [":cody"],
+    tags = [TAG_CODY_PRIME],
+    deps = [
+        "//cmd/frontend/internal/ssc",
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/dotcom",
+        "//internal/extsvc",
+        "//internal/featureflag",
+        "//internal/licensing",
+        "//internal/rbac/types",
+        "//internal/types",
+        "//schema",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

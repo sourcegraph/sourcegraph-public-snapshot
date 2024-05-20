@@ -1,27 +1,31 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-var ErrInvalidToken = errors.New("buildkite token is invalid")
-var ErrInvalidHeader = errors.New("Header of request is invalid")
-var ErrUnwantedEvent = errors.New("Unwanted event received")
-
-var nowFunc = time.Now
 
 // CleanUpInterval determines how often the old build cleaner should run
 var CleanUpInterval = 5 * time.Minute
@@ -37,33 +41,64 @@ type Server struct {
 	store        *build.Store
 	config       *config.Config
 	notifyClient notify.NotificationClient
+	bkClient     *buildkite.Client
+	bqWriter     BigQueryWriter
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config.Config) *Server {
+func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQueryWriter) *Server {
 	logger = logger.Scoped("server")
+
+	if testutil.IsTest && c.BuildkiteToken == "" {
+		// buildkite.NewTokenConfig will complain even though we don't care
+		c.BuildkiteToken = " "
+	}
+
+	bk, err := buildkite.NewTokenConfig(c.BuildkiteToken, false)
+	if err != nil {
+		panic(err)
+	}
+
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
 		config:       &c,
-		notifyClient: notify.NewClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
+		notifyClient: notify.NewClient(logger, c.SlackToken, c.SlackChannel),
+		bqWriter:     bqWriter,
+		bkClient:     buildkite.NewClient(bk.Client()),
 	}
 
 	// Register routes the the server will be responding too
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
-	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
+	r.Path("/-/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
 
 	debug := r.PathPrefix("/-/debug").Subrouter()
 	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
 
 	server.http = &http.Server{
 		Handler: r,
-		Addr:    ":8080",
+		Addr:    addr,
 	}
 
 	return server
+}
+
+func (s *Server) Start() {
+	if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.logger.Error("error stopping server", log.Error(err))
+	}
+}
+
+func (s *Server) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := s.http.Shutdown(ctx); err != nil {
+		s.logger.Error("error shutting down server", log.Error(err))
+	} else {
+		s.logger.Info("server stopped")
+	}
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
@@ -125,7 +160,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	if !ok || len(h) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
-	} else if h[0] != s.config.BuildkiteToken {
+	} else if h[0] != s.config.BuildkiteWebhookToken {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -155,7 +190,11 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	go s.processEvent(&event)
+	if testutil.IsTest {
+		s.processEvent(&event)
+	} else {
+		go s.processEvent(&event)
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -192,60 +231,108 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 	return nil
 }
 
-func (s *Server) deleteOldBuilds(window time.Duration) {
-	oldBuilds := make([]int, 0)
-	now := nowFunc()
-	for _, b := range s.store.FinishedBuilds() {
-		finishedAt := *b.FinishedAt
-		delta := now.Sub(finishedAt.Time)
-		if delta >= window {
-			s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
-			oldBuilds = append(oldBuilds, *b.Number)
-		}
+func (s *Server) triggerMetricsPipeline(b *build.Build) error {
+	if *b.State == "cancelled" {
+		return nil
 	}
-	s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-	s.store.DelByBuildNumber(oldBuilds...)
-}
 
-func (s *Server) startCleaner(every, window time.Duration) func() {
-	ticker := time.NewTicker(every)
-	done := make(chan interface{})
+	repo := strings.TrimSuffix(*b.Pipeline.Repository, ".git")
+	var prBase string
+	var prNumber int
+	if b.PullRequest != nil {
+		prNumber, _ = strconv.Atoi(*b.PullRequest.ID)
+		prBase = *b.PullRequest.Base
+	}
 
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				s.deleteOldBuilds(window)
-			case <-done:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	devxServiceCommit, err := getDevxServiceLatestCommit(s.config.GithubToken)
+	if err != nil {
+		return err
+	}
 
-	return func() { done <- nil }
+	args := &buildkite.CreateBuild{
+		Commit:  devxServiceCommit,
+		Branch:  "main",
+		Message: b.GetMessage(),
+		Author:  b.GetCommitAuthor(),
+		// TODO: do we need to clone b.Env?
+		Env: map[string]string{
+			// can't use BUILDKITE_ prefixed keys as they're reserved
+			"DEVX_TRIGGERED_FROM_BUILD_ID":      pointers.DerefZero(b.ID),
+			"DEVX_TRIGGERED_FROM_BUILD_NUMBER":  strconv.Itoa(pointers.DerefZero(b.Number)),
+			"DEVX_TRIGGERED_FROM_PIPELINE_SLUG": pointers.DerefZero(b.Pipeline.Slug),
+			"DEVX_TRIGGERED_FROM_COMMIT":        b.GetCommit(),
+			"DEVX_TRIGGERED_FROM_COMMIT_URL":    fmt.Sprintf("%s/commit/%s", repo, b.GetCommit()),
+			"DEVX_TRIGGERED_FROM_BRANCH":        b.GetBranch(),
+			"DEVX_TRIGGERED_FROM_BRANCH_URL":    fmt.Sprintf("%s/tree/%s", repo, b.GetBranch()),
+		},
+		MetaData: map[string]string{},
+	}
+
+	if prNumber != 0 {
+		maps.Copy(args.Env, map[string]string{
+			"DEVX_TRIGGERED_FROM_PR_NUMBER":   strconv.Itoa(prNumber),
+			"DEVX_TRIGGERED_FROM_PR_URL":      fmt.Sprintf("%s/pull/%d", repo, prNumber),
+			"DEVX_TRIGGERED_FROM_BASE_BRANCH": prBase,
+		})
+	}
+
+	triggered, response, err := s.bkClient.Builds.Create("sourcegraph", "devx-build-metrics", args)
+	if err != nil {
+		return errors.Wrap(err, "error triggering job")
+	}
+
+	if response.StatusCode >= 0 && response.StatusCode <= 300 {
+		s.logger.Info("triggered job successfully", log.String("buildUrl", *triggered.WebURL), log.String("buildID", *triggered.ID), log.String("sourceBuildID", *b.ID))
+	} else {
+		s.logger.Warn("unexpected response for triggered job creation", log.Int("statusCode", response.StatusCode))
+	}
+
+	return nil
 }
 
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
 func (s *Server) processEvent(event *build.Event) {
-	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
-	s.store.Add(event)
-	b := s.store.GetByBuildNumber(event.GetBuildNumber())
-	if event.IsBuildFinished() {
-		if err := s.notifyIfFailed(b); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	if event.Build.Number != nil {
+		s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
+		s.store.Add(event)
+		b := s.store.GetByBuildNumber(event.GetBuildNumber())
+		if event.IsBuildFinished() {
+			if *event.Build.Branch == "main" {
+				if err := s.notifyIfFailed(b); err != nil {
+					s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+				}
+			}
+
+			if err := s.triggerMetricsPipeline(b); err != nil {
+				s.logger.Error("failed to trigger metrics pipeline for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+			}
+		}
+	} else if event.Agent.ID != nil {
+		if err := s.bqWriter.Write(context.Background(), &BuildkiteAgentEvent{
+			event: event.Name,
+			Agent: event.Agent,
+			// if using HMAC signature from Buildkite, we could get a timestamp from there.
+			// But we don't currently use that method, so we just use the current time.
+			timestamp: time.Now(),
+		}); err != nil {
+			s.logger.Error("failed to write agent event to BigQuery", log.String("event", event.Name), log.String("agentID", *event.Agent.ID), log.Error(err))
 		}
 	}
 }
 
 func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify.BuildNotification {
+	author := b.GetCommitAuthor()
+	isRelease := b.IsReleaseBuild()
+	// With a release build the person who made the last commit isn't the creator of the build
+	if isRelease {
+		author = b.GetBuildAuthor()
+	}
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
-		PipelineName:       b.Pipeline.GetName(),
-		AuthorEmail:        b.GetAuthorEmail(),
+		AuthorName:         author.Name,
 		Message:            b.GetMessage(),
 		Commit:             b.GetCommit(),
 		BuildStatus:        "",
@@ -254,6 +341,7 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 		Failed:             []notify.JobLine{},
 		Passed:             []notify.JobLine{},
 		TotalSteps:         len(b.Steps),
+		IsRelease:          isRelease,
 	}
 
 	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
@@ -285,33 +373,61 @@ func determineBuildStatusNotification(logger log.Logger, b *build.Build) *notify
 	return &info
 }
 
-// Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
-func main() {
-	sync := log.Init(log.Resource{
-		Name:      "BuildTracker",
-		Namespace: "CI",
-	})
-	defer sync.Sync()
-
-	logger := log.Scoped("BuildTracker")
-
-	serverConf, err := config.NewFromEnv()
+func getDevxServiceLatestCommit(token string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/sourcegraph/devx-service/branches/main", nil)
 	if err != nil {
-		logger.Fatal("failed to get config from env", log.Error(err))
+		return "", err
 	}
-	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
-	server := NewServer(logger, *serverConf)
+	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Accept", "application/vnd.github+json")
+	// I do as the docs command https://docs.github.com/en/rest/branches/branches#get-a-branch
+	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
-	stopFn := server.startCleaner(CleanUpInterval, BuildExpiryWindow)
-	defer stopFn()
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
 
-	if server.config.Production {
-		server.logger.Info("server is in production mode!")
-	} else {
-		server.logger.Info("server is in development mode!")
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Newf("unexpected response from GitHub: %d", resp.StatusCode)
 	}
 
-	if err := server.http.ListenAndServe(); err != nil {
-		logger.Fatal("server exited with error", log.Error(err))
+	var respData struct {
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
 	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return "", err
+	}
+
+	return respData.Commit.SHA, nil
 }
+
+func main() {
+	runtime.Start[config.Config](Service{})
+}
+
+type Service struct{}
+
+// Initialize implements runtime.Service.
+func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
+	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
+
+	bqWriter, err := contract.BigQuery.GetTableWriter(context.Background(), "agent_status")
+	if err != nil {
+		return nil, err
+	}
+
+	server := NewServer(fmt.Sprintf(":%d", contract.Port), logger, config, bqWriter)
+
+	return background.CombinedRoutine{
+		server,
+		deleteOldBuilds(logger, server.store, CleanUpInterval, BuildExpiryWindow),
+	}, nil
+}
+
+func (s Service) Name() string    { return "build-tracker" }
+func (s Service) Version() string { return version.Version() }

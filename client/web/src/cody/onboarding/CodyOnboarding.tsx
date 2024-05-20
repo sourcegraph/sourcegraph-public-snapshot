@@ -1,136 +1,43 @@
 import React, { useEffect, useState } from 'react'
 
-import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, H2, H5, Modal, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { Modal, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import { HubSpotForm } from '../../marketing/components/HubSpotForm'
-import { eventLogger } from '../../tracking/eventLogger'
-import { EventName } from '../../util/constants'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
-import { JetBrainsInstructions } from './instructions/JetBrains'
-import { NeoVimInstructions } from './instructions/NeoVim'
-import { VSCodeInstructions } from './instructions/VsCode'
+import { EditorStep } from './EditorStep'
+import { PurposeStep } from './PurposeStep'
+import { WelcomeStep } from './WelcomeStep'
 
 import styles from './CodyOnboarding.module.scss'
 
 export interface IEditor {
+    id: number // a unique number identifier for telemetry
     icon: string
     name: string
     publisher: string
     releaseStage: string
     docs?: string
-    instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
+    instructions?: React.FC<{
+        onBack?: () => void
+        onClose: () => void
+        showStep?: number
+        telemetryRecorder: TelemetryRecorder
+    }>
 }
 
-export const editorGroups: IEditor[][] = [
-    [
-        {
-            icon: 'VsCode',
-            name: 'VS Code',
-            publisher: 'Microsoft',
-            releaseStage: 'Stable',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
-            instructions: VSCodeInstructions,
-        },
-        {
-            icon: 'IntelliJ',
-            name: 'IntelliJ IDEA',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-        {
-            icon: 'PhpStorm',
-            name: 'PhpStorm ',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-        {
-            icon: 'PyCharm',
-            name: 'PyCharm',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-    ],
-    [
-        {
-            icon: 'WebStorm',
-            name: 'WebStorm',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-        {
-            icon: 'RubyMine',
-            name: 'RubyMine',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-        {
-            icon: 'GoLand',
-            name: 'GoLand',
-            publisher: 'JetBrains',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-        {
-            icon: 'AndroidStudio',
-            name: 'Android Studio',
-            publisher: 'Google',
-            releaseStage: 'Beta',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-jetbrains',
-            instructions: JetBrainsInstructions,
-        },
-    ],
-    [
-        {
-            icon: 'NeoVim',
-            name: 'Neovim',
-            publisher: 'Neovim Team',
-            releaseStage: 'Experimental',
-            docs: 'https://sourcegraph.com/docs/cody/clients/install-neovim',
-            instructions: NeoVimInstructions,
-        },
-        {
-            icon: 'Emacs',
-            name: 'Emacs',
-            publisher: 'GNU',
-            releaseStage: 'Coming Soon',
-        },
-    ],
-]
-
-function formatUseCase(action: { work: boolean; personal: boolean }): string {
-    const useCases = []
-    for (const [key, value] of Object.entries(action)) {
-        if (value) {
-            useCases.push(key)
-        }
-    }
-    return useCases.length === 0 ? 'none' : useCases.join(',')
-}
-
-export function CodyOnboarding({
-    authenticatedUser,
-}: {
+interface CodyOnboardingProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
-}): JSX.Element | null {
+}
+
+export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnboardingProps): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
+    const [showPurposeStep, status] = useFeatureFlag('ab-hubspot-form-workpersonal-to-handraiser')
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
 
@@ -160,6 +67,27 @@ export function CodyOnboarding({
         return null
     }
 
+    if (status !== 'loaded') {
+        return null
+    }
+
+    const handleShowLastStep = (): void => {
+        setOnboardingCompleted(true)
+        setShowEditorStep(true)
+    }
+
+    const handleWelcomeNext = (): void => {
+        if (showPurposeStep) {
+            onNext()
+            return
+        }
+        setOnboardingStep(currentsStep => (currentsStep || 0) + 2)
+        handleShowLastStep()
+        telemetryRecorder.recordEvent('cody.onboarding.hubspotForm.fromWorkPersonalToHandRaiserTest', 'enroll', {
+            metadata: { controlVariant: 1 },
+        })
+    }
+
     return (
         <Modal
             isOpen={true}
@@ -168,16 +96,18 @@ export function CodyOnboarding({
             className={styles.modal}
             containerClassName={styles.root}
         >
-            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
+            {step === 0 && (
+                <WelcomeStep onNext={handleWelcomeNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />
+            )}
             {step === 1 && (
                 <PurposeStep
                     authenticatedUser={authenticatedUser}
                     onNext={() => {
                         onNext()
-                        setOnboardingCompleted(true)
-                        setShowEditorStep(true)
+                        handleShowLastStep()
                     }}
                     pro={enrollPro}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
             {showEditorStep && (
@@ -186,239 +116,9 @@ export function CodyOnboarding({
                         setShowEditorStep(false)
                     }}
                     pro={enrollPro}
+                    telemetryRecorder={telemetryRecorder}
                 />
             )}
         </Modal>
-    )
-}
-
-function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
-    const [show, setShow] = useState(false)
-    const isLightTheme = useIsLightTheme()
-    useEffect(() => {
-        eventLogger.log(
-            EventName.CODY_ONBOARDING_WELCOME_VIEWED,
-            { tier: pro ? 'pro' : 'free' },
-            { tier: pro ? 'pro' : 'free' }
-        )
-    }, [pro])
-
-    useEffect(() => {
-        // theme is not ready on first render, it defaults to system theme.
-        // so we need to wait a bit before showing the welcome video.
-        setTimeout(() => {
-            setShow(true)
-        }, 500)
-    }, [])
-
-    return (
-        <div className={classNames('d-flex flex-column align-items-center p-5')}>
-            {show ? (
-                <>
-                    <video width="180" className={classNames('mb-5', styles.welcomeVideo)} autoPlay={true} muted={true}>
-                        <source
-                            src={
-                                isLightTheme
-                                    ? 'https://storage.googleapis.com/sourcegraph-assets/hiCodyWhite.mp4'
-                                    : 'https://storage.googleapis.com/sourcegraph-assets/hiCodyDark.mp4'
-                            }
-                            type="video/mp4"
-                        />
-                        Your browser does not support the video tag.
-                    </video>
-                    <Text className={classNames('mb-4 pb-4', styles.fadeIn, styles.fadeSecond, styles.welcomeSubtitle)}>
-                        Ready to breeze through the basics and get comfortable with Cody
-                        {pro ? ' Pro' : ''}?
-                    </Text>
-                    <Button
-                        onClick={onNext}
-                        variant="primary"
-                        size="lg"
-                        className={classNames(styles.fadeIn, styles.fadeThird)}
-                    >
-                        Sure, let's dive in!
-                    </Button>
-                </>
-            ) : (
-                <div className={styles.blankPlaceholder} />
-            )}
-        </div>
-    )
-}
-
-function PurposeStep({
-    onNext,
-    pro,
-    authenticatedUser,
-}: {
-    onNext: () => void
-    pro: boolean
-    authenticatedUser: AuthenticatedUser
-}): JSX.Element {
-    useEffect(() => {
-        eventLogger.log(
-            EventName.CODY_ONBOARDING_PURPOSE_VIEWED,
-            { tier: pro ? 'pro' : 'free' },
-            { tier: pro ? 'pro' : 'free' }
-        )
-    }, [pro])
-
-    const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
-
-    const handleFormSubmit = (form: HTMLFormElement): void => {
-        const workInput = form[0].querySelector('input[name="using_cody_for_work"]') as HTMLInputElement
-        const personalInput = form[0].querySelector('input[name="using_cody_for_personal"]') as HTMLInputElement
-
-        const useCase = formatUseCase({
-            work: workInput.checked,
-            personal: personalInput.checked,
-        })
-        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase }, { useCase })
-    }
-
-    return (
-        <>
-            <div className="border-bottom pb-3 mb-3">
-                <H2 className="mb-1">What are you using Cody for?</H2>
-                <Text className="mb-0 text-muted" size="small">
-                    This will allow us to understand our audience better and guide your journey
-                </Text>
-            </div>
-            <div className="d-flex align-items-center border-bottom mb-3 pb-3 justify-content-center">
-                <HubSpotForm
-                    formId="85548efc-a879-4553-9ef0-a8da8fdcf541"
-                    onFormSubmitted={() => {
-                        onNext()
-                    }}
-                    onFormLoadError={() => {
-                        onNext()
-                    }}
-                    userId={authenticatedUser.id}
-                    userEmail={primaryEmail}
-                    masterFormName="qualificationSurvey"
-                    onFormSubmit={handleFormSubmit}
-                />
-            </div>
-        </>
-    )
-}
-
-function EditorStep({ onCompleted, pro }: { onCompleted: () => void; pro: boolean }): JSX.Element {
-    useEffect(() => {
-        eventLogger.log(
-            EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED,
-            { tier: pro ? 'pro' : 'free' },
-            { tier: pro ? 'pro' : 'free' }
-        )
-    }, [pro])
-
-    const [editor, setEditor] = useState<null | IEditor>(null)
-
-    const onBack = (): void => setEditor(null)
-
-    if (editor?.instructions) {
-        const Instructions = editor.instructions
-
-        return <Instructions onBack={onBack} onClose={onCompleted} />
-    }
-
-    return (
-        <>
-            <div className="border-bottom pb-3 mb-3">
-                <H2 className="mb-1">Choose your editor</H2>
-                <Text className="mb-0 text-muted" size="small">
-                    Most of Cody experience happens in the IDE. Let's get that set up.
-                </Text>
-            </div>
-            <div className="mb-3 border-bottom pb-3">
-                {editorGroups.map((group, index) => (
-                    <div
-                        key={index}
-                        className={classNames('d-flex mt-3', styles.responsiveContainer, {
-                            'border-bottom pb-3': index < group.length - 1,
-                        })}
-                    >
-                        {group.map((editor, index) => (
-                            <div
-                                key={index}
-                                className={classNames('d-flex flex-column flex-1 p-3 cursor-pointer', styles.ideGrid, {
-                                    'border-left': index !== 0,
-                                })}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={() => {
-                                    setEditor(editor)
-
-                                    eventLogger.log(
-                                        EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED,
-                                        {
-                                            tier: pro ? 'pro' : 'free',
-                                            editor,
-                                        },
-                                        {
-                                            tier: pro ? 'pro' : 'free',
-                                            editor,
-                                        }
-                                    )
-                                }}
-                                onClick={() => {
-                                    eventLogger.log(
-                                        EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED,
-                                        {
-                                            tier: pro ? 'pro' : 'free',
-                                            editor,
-                                        },
-                                        {
-                                            tier: pro ? 'pro' : 'free',
-                                            editor,
-                                        }
-                                    )
-                                    setEditor(editor)
-                                }}
-                            >
-                                <div className="d-flex align-items-center">
-                                    <div>
-                                        <img
-                                            alt={editor.name}
-                                            src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
-                                            width={34}
-                                            className="mr-3"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Text className="text-muted mb-0 text-truncate" size="small">
-                                            {editor.publisher}
-                                        </Text>
-                                        <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
-                                        <H5 className={styles.releaseStage}>{editor.releaseStage}</H5>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {group.length < 4
-                            ? [...new Array(4 - group.length)].map((_, index) => (
-                                  <div key={index} className="flex-1 p-3" />
-                              ))
-                            : null}
-                    </div>
-                ))}
-            </div>
-            <div className="d-flex justify-content-end align-items-center">
-                <Text
-                    className="mb-0 text-muted cursor-pointer"
-                    size="small"
-                    onClick={() => {
-                        onCompleted()
-                        eventLogger.log(
-                            EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED,
-                            { tier: pro ? 'pro' : 'free' },
-                            { tier: pro ? 'pro' : 'free' }
-                        )
-                    }}
-                >
-                    Skip for now
-                </Text>
-            </div>
-        </>
     )
 }

@@ -4,13 +4,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "protocol",
     srcs = [
-        "gitolite_phabricator.go",
         "gitserver.go",
         "search.go",
         "search_reduce.go",
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -18,7 +18,6 @@ go_library(
         "//internal/gitserver/v1:gitserver",
         "//internal/search/result",
         "//lib/errors",
-        "@org_golang_google_protobuf//types/known/durationpb",
         "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
@@ -32,8 +31,10 @@ go_test(
         "util_test.go",
     ],
     embed = [":protocol"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
+        "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",

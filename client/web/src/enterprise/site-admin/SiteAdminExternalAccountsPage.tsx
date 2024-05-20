@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -17,7 +18,6 @@ import type {
     ExternalAccountsResult,
     ExternalAccountsVariables,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import {
     ExternalAccountNode,
     type ExternalAccountNodeProps,
@@ -41,7 +41,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
     private externalAccountUpdates = new Subject<void>()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminExternalAccounts')
+        EVENT_LOGGER.logViewEvent('SiteAdminExternalAccounts')
     }
 
     public componentWillUnmount(): void {

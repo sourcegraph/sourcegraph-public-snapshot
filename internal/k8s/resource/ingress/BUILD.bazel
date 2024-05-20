@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ingress",
+    srcs = ["ingress.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress",
+    tags = [TAG_INFRA_RELEASE],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@io_k8s_api//networking/v1:networking",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -70,7 +69,12 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		"echo abcd > file1",
 		"mkdir dir1",
 		"echo efgh > dir1/file2",
+		`echo ijkl > " file3"`,
+		`echo mnop > "dir1/file with spaces"`,
+		"echo qrst > 我的工作",
+		"git add 我的工作",
 		"git add file1",
+		`git add " file3"`,
 		"git add dir1",
 		"git commit -m commit --author='Foo Author <foo@sourcegraph.com>'",
 	)
@@ -123,6 +127,31 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		require.Equal(t, "efgh\n", contents)
 	})
 
+	t.Run("read file with space in name", func(t *testing.T) {
+		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{" file3", "dir1/file with spaces"})
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		tr := tar.NewReader(r)
+		contents := readFileContentsFromTar(t, tr, " file3")
+		require.Equal(t, "ijkl\n", contents)
+
+		r, err = backend.ArchiveReader(ctx, "tar", string(commitID), []string{" file3", "dir1/file with spaces"})
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		tr = tar.NewReader(r)
+		contents = readFileContentsFromTar(t, tr, "dir1/file with spaces")
+		require.Equal(t, "mnop\n", contents)
+	})
+
+	t.Run("read non-ascii filename", func(t *testing.T) {
+		r, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{" file3", "我的工作"})
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close() })
+		tr := tar.NewReader(r)
+		contents := readFileContentsFromTar(t, tr, "我的工作")
+		require.Equal(t, "qrst\n", contents)
+	})
+
 	t.Run("non existent commit", func(t *testing.T) {
 		_, err := backend.ArchiveReader(ctx, "tar", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
 		require.Error(t, err)
@@ -133,18 +162,6 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		_, err := backend.ArchiveReader(ctx, "tar", "head-2", nil)
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
-	})
-
-	t.Run("non existent file", func(t *testing.T) {
-		_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"no-file"})
-		require.Error(t, err)
-		require.True(t, os.IsNotExist(err))
-	})
-
-	t.Run("invalid path pattern", func(t *testing.T) {
-		_, err := backend.ArchiveReader(ctx, "tar", string(commitID), []string{"dir1/*"})
-		require.Error(t, err)
-		require.True(t, os.IsNotExist(err))
 	})
 
 	// Verify that if the context is canceled, the reader returns an error.
@@ -162,6 +179,6 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, errors.Is(err, context.Canceled), "unexpected error: %v", err)
 
-		require.NoError(t, r.Close())
+		require.True(t, errors.Is(r.Close(), context.Canceled), "unexpected error: %v", err)
 	})
 }

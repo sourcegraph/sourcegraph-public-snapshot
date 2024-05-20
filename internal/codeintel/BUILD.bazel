@@ -4,6 +4,7 @@ go_library(
     name = "codeintel",
     srcs = ["services.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/autoindexing",
@@ -12,7 +13,7 @@ go_library(
         "//internal/codeintel/dependencies",
         "//internal/codeintel/policies",
         "//internal/codeintel/ranking",
-        "//internal/codeintel/sentinel",
+        "//internal/codeintel/reposcheduler",
         "//internal/codeintel/shared",
         "//internal/codeintel/uploads",
         "//internal/database",

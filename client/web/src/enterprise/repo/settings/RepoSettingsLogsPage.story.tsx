@@ -1,11 +1,12 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import {
+import type {
     RepositoryRecordedCommandsResult,
     RepositoryRecordedCommandsVariables,
     SettingsAreaRepositoryFields,
@@ -142,7 +143,7 @@ export const WithLogs: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[REPOSITORY_RECORDED_COMMANDS_MOCK]}>
-                <RepoSettingsLogsPage repo={repo} />
+                <RepoSettingsLogsPage repo={repo} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -152,7 +153,7 @@ export const Disabled: StoryFn = args => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[REPOSITORY_RECORDED_COMMANDS_DISABLED_MOCK]}>
-                <RepoSettingsLogsPage repo={repo} />
+                <RepoSettingsLogsPage repo={repo} telemetryRecorder={noOpTelemetryRecorder} />
             </MockedTestProvider>
         )}
     </WebStory>

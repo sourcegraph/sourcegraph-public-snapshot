@@ -1,6 +1,7 @@
 <svelte:options immutable />
 
 <script lang="ts" context="module">
+    import type { Writable } from 'svelte/store'
     import { setContext as setContextSvelte, getContext as getContextSvelte } from 'svelte'
 
     import { updateTreeState, type TreeState, TreeStateUpdate } from './TreeView'
@@ -18,7 +19,6 @@
 
 <script lang="ts" generics="N">
     import { createEventDispatcher } from 'svelte'
-    import type { Writable } from 'svelte/store'
     import { Key } from 'ts-key-enum'
 
     import TreeNode from './TreeNode.svelte'
@@ -26,11 +26,16 @@
 
     export let treeProvider: TreeProvider<N>
 
-    export function scrollSelectedItemIntoView() {
-        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
+    /**
+     * Scrolls the selected item into view, either into the center or the nearest edge.
+     *
+     * @param position - The position to scroll the item to. Defaults to 'nearest'.
+     */
+    export function scrollSelectedItemIntoView(position: 'nearest' | 'center' = 'nearest') {
+        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: position })
     }
 
-    const dispatch = createEventDispatcher<{ select: HTMLElement }>()
+    const dispatch = createEventDispatcher<{ select: HTMLElement; 'scope-change': TreeProvider<N> }>()
 
     let treeState = getTreeContext()
     let treeRoot: HTMLElement
@@ -229,7 +234,8 @@
         }
     }
 
-    $: entries = treeProvider.getEntries()
+    $: entries = treeProvider.getEntries() ?? []
+    $: isFlatList = entries.find(entry => treeProvider.isExpandable(entry)) === undefined
 
     // Make first tree item focusable if none is selected/focused
     $: if (!$treeState.focused && entries.length > 0) {
@@ -237,9 +243,15 @@
     }
 </script>
 
-<ul bind:this={treeRoot} role="tree" on:keydown={handleKeydown} on:click={handleClick}>
+<ul
+    role="tree"
+    bind:this={treeRoot}
+    on:keydown={handleKeydown}
+    on:click={handleClick}
+    data-tree-view-flat-list={isFlatList}
+>
     {#each entries as entry (treeProvider.getNodeID(entry))}
-        <TreeNode {entry} {treeProvider}>
+        <TreeNode {entry} {treeProvider} on:scope-change>
             <svelte:fragment let:entry let:toggle let:expanded>
                 <slot {entry} {toggle} {expanded} />
             </svelte:fragment>
@@ -252,13 +264,13 @@
 
 <style lang="scss">
     ul {
-        // Padding ensures that focus rings of tree items are not cut off
-        padding: 0 0.25rem;
+        padding: 0;
 
         &,
         :global(ul[role='group']) {
-            list-style: none;
             margin: 0;
+            overflow: hidden;
+            list-style: none;
         }
 
         :global(ul[role='group']) {

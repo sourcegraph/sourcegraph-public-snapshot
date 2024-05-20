@@ -1,1 +1,38 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
 exports_files(glob(["*.patch"]))
+
+genrule(
+    name = "golist_grep",
+    testonly = True,
+    srcs = [
+        "//:go.mod",
+    ],
+    outs = [
+        "diff.patch",
+    ],
+    cmd = """
+        $(location @go_sdk//:bin/go) list -m github.com/sourcegraph/zoekt | awk '{print $$2}' > golist.txt
+        # implicit binary dependencies ooooh :ghost:
+        grep sourcegraph/zoekt go.mod | awk '{ print $$2 }' > grep.txt
+        set +e
+        diff --unified=0 golist.txt grep.txt > $(@D)/diff.patch
+        RESULT=$$?
+        set -e
+        if [ $$RESULT -ne 0 ]; then
+            >&2 echo "Difference in 'go list' and grepping go.mod"
+            >&2 cat $(@D)/diff.patch
+            exit $$RESULT
+        fi
+        exit 0
+    """,
+    tags = ["requires-network"],
+    tools = [
+        "@go_sdk//:bin/go",
+    ],
+)
+
+build_test(
+    name = "test_golist_grep",
+    targets = [":golist_grep"],
+)

@@ -3,6 +3,7 @@ package query
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -53,6 +54,53 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoContainsFilePredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}
+
+func TestRevAtTimePredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *RevAtTimePredicate
+		}
+
+		valid := []test{
+			{`date only`, `2024-01-01`, &RevAtTimePredicate{RevAtTime{RevSpec: "HEAD", Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}}},
+			{`timestamp`, `2024-01-01T00:00:00Z`, &RevAtTimePredicate{RevAtTime{RevSpec: "HEAD", Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}}},
+			{`weird spaces`, ` 2024-01-01`, &RevAtTimePredicate{RevAtTime{RevSpec: "HEAD", Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}}},
+			{`date and rev`, `2024-01-01, HEAD~12`, &RevAtTimePredicate{RevAtTime{RevSpec: "HEAD~12", Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}}},
+			{`date and rev with weird spaces`, ` 2024-01-01 , HEAD~12 `, &RevAtTimePredicate{RevAtTime{RevSpec: "HEAD~12", Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RevAtTimePredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`invalid date`, `2024-13-01`, nil},
+			{`too many commas`, `a, b, c`, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RevAtTimePredicate{}
 				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")

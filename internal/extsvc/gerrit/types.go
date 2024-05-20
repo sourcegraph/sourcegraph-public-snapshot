@@ -149,6 +149,11 @@ type Project struct {
 	State       string            `json:"state"`
 	Branches    map[string]string `json:"branches"`
 	Labels      map[string]Label  `json:"labels"`
+
+	// This field is not part of the API, and will be computed in repos.GerritSource.ListRepos.
+	HTTPURLToRepo string `json:"http_url_to_repo"`
+	// This field is not part of the API, and will be computed in repos.GerritSource.ListRepos.
+	SSHURLToRepo string `json:"ssh_url_to_repo"`
 }
 
 type Label struct {

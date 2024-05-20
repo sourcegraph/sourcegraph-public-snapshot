@@ -79,7 +79,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		doSearch := func(args *gitprotocol.SearchRequest) error {
 			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
-			statusMap, limitHit, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
+			statusMap, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -95,7 +95,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
 
 	for _, repoRev := range j.Repos {
 		repoRev := repoRev
@@ -270,10 +270,7 @@ func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gi
 }
 
 func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
-	patString := pattern.Value
-	if pattern.Annotation.Labels.IsSet(query.Literal) {
-		patString = regexp.QuoteMeta(pattern.Value)
-	}
+	patString := pattern.RegExpPattern()
 
 	var newPred gitprotocol.Node
 	if diff {

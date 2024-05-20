@@ -11,10 +11,11 @@ import (
 	"github.com/amit7itz/goset"
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,6 +26,15 @@ import (
 )
 
 func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
+	s.metrics.searchRunning.Inc()
+	defer func(start time.Time) {
+		s.metrics.searchRunning.Dec()
+		if err != nil {
+			s.metrics.searchFailed.Inc()
+		}
+		s.metrics.searchDuration.Observe(time.Since(start).Seconds())
+	}(time.Now())
+
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -194,7 +204,8 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 			repo:   rc.repo,
 			commit: rc.commit,
 		},
-		done: done}
+		dateAddedToQueue: time.Now(),
+		done:             done}
 
 	// Route the index request to the indexer associated with the repo.
 	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)
@@ -290,7 +301,12 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
 				if symbol.Line < 1 || symbol.Line > len(lines) {
-					log15.Warn("ctags returned an invalid line number", "path", path, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Name)
+					s.logger.Warn("ctags returned an invalid line number",
+						log.String("path", path),
+						log.Int("line", symbol.Line),
+						log.Int("len(lines)", len(lines)),
+						log.String("symbol", symbol.Name),
+					)
 					continue
 				}
 
@@ -564,7 +580,6 @@ func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf
 		return conditions.regexI(regex)
 	}
 
-	log15.Error("None of the conditions matched", "regex", regex)
 	return nil
 }
 

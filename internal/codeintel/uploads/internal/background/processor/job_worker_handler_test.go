@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sort"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -60,7 +62,7 @@ func TestHandle(t *testing.T) {
 
 	// Track writes to symbols table
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
 		return nil
@@ -70,7 +72,17 @@ func TestHandle(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
 
 	// Allowlist all files in dump
-	gitserverClient.ListDirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
+	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, path string, _ bool) (gitserver.ReadDirIterator, error) {
+		children, ok := scipDirectoryChildren[path]
+		if !ok {
+			return gitserver.NewReadDirIteratorFromSlice(nil), nil
+		}
+		fis := make([]fs.FileInfo, 0, len(children))
+		for _, c := range children {
+			fis = append(fis, &fileutil.FileInfo{Name_: c})
+		}
+		return gitserver.NewReadDirIteratorFromSlice(fis), nil
+	})
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
@@ -108,7 +120,7 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
 	}
 
-	expectedPackagesDumpID := 42
+	expectedPackagesUploadID := 42
 	expectedPackages := []precise.Package{
 		{
 			Scheme:  "scip-typescript",
@@ -119,13 +131,13 @@ func TestHandle(t *testing.T) {
 	}
 	if len(mockDBStore.UpdatePackagesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackagesDumpID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
+	} else if diff := cmp.Diff(expectedPackagesUploadID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	} else if diff := cmp.Diff(expectedPackages, mockDBStore.UpdatePackagesFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
 	}
 
-	expectedPackageReferencesDumpID := 42
+	expectedPackageReferencesUploadID := 42
 	expectedPackageReferences := []precise.PackageReference{
 		{Package: precise.Package{
 			Scheme:  "scip-typescript",
@@ -178,7 +190,7 @@ func TestHandle(t *testing.T) {
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackageReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackageReferencesDumpID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
+	} else if diff := cmp.Diff(expectedPackageReferencesUploadID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	} else {
 		sort.Slice(expectedPackageReferences, func(i, j int) bool {
@@ -196,16 +208,16 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
 	}
 
-	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
+	if len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlappingCompletedUploads calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()))
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2 != "deadbeef" {
+		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3 != "" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingCompletedUploadsFunc.History()[0].Arg4)
 	}
 
 	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
@@ -297,7 +309,7 @@ func TestHandleError(t *testing.T) {
 
 	// Track writes to symbols table
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
@@ -311,6 +323,8 @@ func TestHandleError(t *testing.T) {
 			},
 		}, nil
 	})
+
+	gitserverClient.ReadDirFunc.SetDefaultReturn(gitserver.NewReadDirIteratorFromSlice(nil), nil)
 
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
@@ -445,4 +459,91 @@ func defaultMockRepoStore() *dbmocks.MockRepoStore {
 		}, nil
 	})
 	return repoStore
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file(".github"),
+		file(".gitignore"),
+		file("LICENSE"),
+		file("README.md"),
+		file("cmd"),
+		file("go.mod"),
+		file("go.sum"),
+		file("internal"),
+		file("protocol"),
+	}
+
+	expected := map[string][]string{
+		"": {
+			".github",
+			".gitignore",
+			"LICENSE",
+			"README.md",
+			"cmd",
+			"go.mod",
+			"go.sum",
+			"internal",
+			"protocol",
+		},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file("cmd/lsif-go"),
+		file("protocol/protocol.go"),
+		file("protocol/writer.go"),
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	file := func(name string) fs.FileInfo {
+		return &fileutil.FileInfo{
+			Name_: name,
+		}
+	}
+	paths := []fs.FileInfo{
+		file("cmd/lsif-go"),
+		file("protocol/protocol.go"),
+		file("protocol/writer.go"),
+		file("cmd/protocol/main.go"),
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
 }

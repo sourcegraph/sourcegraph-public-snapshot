@@ -2,7 +2,7 @@
 
 ## Local development
 
-Use `sg` CLI tool to configure and start local development server. For more information check out [the `sg` documentation](https://sourcegraph.com/docs/dev/background-information/sg).
+Use `sg` CLI tool to configure and start local development server. For more information check out [the `sg` documentation](https://docs-legacy.sourcegraph.com/dev/background-information/sg).
 
 Our local development server runs by starting both a [Caddy](https://caddyserver.com/) HTTPS server and a Node HTTP server. We then can reverse proxy requests to the Node server to serve client assets under HTTPS.
 

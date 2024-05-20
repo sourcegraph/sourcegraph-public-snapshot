@@ -7,8 +7,9 @@ import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
@@ -36,7 +37,6 @@ import type {
     GetLicenseAndUsageInfoResult,
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -168,7 +168,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             to="https://sourcegraph.com"
                             variant="primary"
                             onClick={() => {
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })
+                                EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })
                                 telemetryRecorder.recordEvent('batchChanges.enterpriseCTA', 'click', {
                                     metadata: { location: 0 },
                                 })
@@ -375,7 +375,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                         to=""
                         onClick={event => {
                             onSelectGettingStarted(event)
-                            eventLogger.log('batch_change_homepage:getting_started:clicked')
+                            EVENT_LOGGER.log('batch_change_homepage:getting_started:clicked')
                             telemetryRecorder.recordEvent('batchChanges.gettingStarted', 'click')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}

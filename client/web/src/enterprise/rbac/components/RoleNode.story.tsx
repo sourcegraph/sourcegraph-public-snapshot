@@ -3,6 +3,7 @@ import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
@@ -45,7 +46,12 @@ export const SystemRole: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <RoleNode allPermissions={mockPermissionsMap} node={systemRole} refetch={noop} />
+                <RoleNode
+                    allPermissions={mockPermissionsMap}
+                    node={systemRole}
+                    refetch={noop}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -57,7 +63,12 @@ export const NonSystemRole: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <RoleNode node={nonSystemRole} refetch={noop} allPermissions={mockPermissionsMap} />
+                <RoleNode
+                    node={nonSystemRole}
+                    refetch={noop}
+                    allPermissions={mockPermissionsMap}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>

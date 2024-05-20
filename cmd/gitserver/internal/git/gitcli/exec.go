@@ -3,16 +3,10 @@ package gitcli
 import (
 	"context"
 	"io"
-	"os"
-	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 )
 
 func (g *gitCLIBackend) Exec(ctx context.Context, args ...string) (io.ReadCloser, error) {
@@ -23,25 +17,25 @@ var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
 	// checked by IsAllowedGitCmd
 	gitCmdAllowlist = map[string][]string{
-		"log":    append([]string{}, gitCommonAllowlist...),
-		"show":   append([]string{}, gitCommonAllowlist...),
-		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonAllowlist...),
-		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
+		"log":       append([]string{}, gitCommonAllowlist...),
+		"show":      append([]string{}, gitCommonAllowlist...),
+		"remote":    {"-v"},
+		"diff-tree": append([]string{"--root"}, gitCommonAllowlist...),
+		"blame":     {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
+		"branch":    {"-r", "-a", "--contains", "--merged", "--format"},
 
 		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
-		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
+		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right", "--timestamp", "--all"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
 		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--object-only", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
-		"for-each-ref": {"--format", "--points-at"},
+		"for-each-ref": {"--format", "--points-at", "--contains", "--sort", "-creatordate", "-refname", "-HEAD"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
+		"shortlog":     {"--summary", "--numbered", "--email", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p", "-t"},
 		"lfs":          {},
 
@@ -86,39 +80,6 @@ var (
 	}
 )
 
-var gitObjectHashRegex = regexp.MustCompile(`^[a-fA-F\d]*$`)
-
-// common revs used with diff
-var knownRevs = map[string]struct{}{
-	"master":     {},
-	"main":       {},
-	"head":       {},
-	"fetch_head": {},
-	"orig_head":  {},
-	"@":          {},
-}
-
-// isAllowedDiffArg checks if diff arg exists as a file. We do some preliminary checks
-// as well as OS calls are more expensive. The function checks for object hashes and
-// common revision names.
-func isAllowedDiffArg(arg string) bool {
-	// a hash is probably not a local file
-	if gitObjectHashRegex.MatchString(arg) {
-		return true
-	}
-
-	// check for parent and copy branch notations
-	for _, c := range []string{" ", "^", "~"} {
-		if _, ok := knownRevs[strings.ToLower(strings.Split(arg, c)[0])]; ok {
-			return true
-		}
-	}
-	// make sure that arg is not a local file
-	_, err := os.Stat(arg)
-
-	return os.IsNotExist(err)
-}
-
 // isAllowedGitArg checks if the arg is allowed.
 func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
@@ -138,38 +99,11 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	return false
 }
 
-// isAllowedDiffPathArg checks if the diff path arg is allowed.
-func isAllowedDiffPathArg(arg string, repoDir common.GitDir) bool {
-	// allows diff command path that requires (dot) as path
-	// example: diff --find-renames ... --no-prefix commit -- .
-	if arg == "." {
-		return true
-	}
-
-	arg = filepath.Clean(arg)
-	if !filepath.IsAbs(arg) {
-		arg = repoDir.Path(arg)
-	}
-
-	filePath, err := filepath.Abs(arg)
-	if err != nil {
-		return false
-	}
-
-	// Check if absolute path is a sub path of the repo dir
-	repoRoot, err := filepath.Abs(repoDir.Path())
-	if err != nil {
-		return false
-	}
-
-	return strings.HasPrefix(filePath, repoRoot)
-}
-
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
 //
 // TODO: This should be unexported and solely be a concern of the CLI package,
 // as other backends should do their own validation passes.
-func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
+func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -182,9 +116,13 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
 		return false
 	}
 
-	// I hate state machines, but I hate them less than complicated multi-argument checking
 	checkFileInput := false
-	for i, arg := range args[1:] {
+	for _, arg := range args[1:] {
+		// Everything past a `--` is interpreted literally by most git commands
+		// and we use it to pass user input to commands.
+		if arg == "--" {
+			break
+		}
 		if checkFileInput {
 			if arg == "-" {
 				checkFileInput = false
@@ -231,22 +169,17 @@ func IsAllowedGitCmd(logger log.Logger, args []string, dir common.GitDir) bool {
 				}
 			}
 
+			if cmd == "diff-tree" {
+				if arg == "-r" {
+					// Using -r tells diff-tree to recurse into subdirectories, this is allowed
+					//
+					// See https://git-scm.com/docs/git-diff-tree
+					continue
+				}
+			}
+
 			if !isAllowedGitArg(allowedArgs, arg) {
 				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
-				return false
-			}
-		}
-		// diff argument may contains file path and isAllowedDiffArg and isAllowedDiffPathArg
-		// helps verifying the file existence in disk
-		if cmd == "diff" {
-			dashIndex := slices.Index(args[1:], "--")
-			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
-				// verifies arguments before --
-				logger.Warn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("arg", arg))
-				return false
-			} else if (i > dashIndex && dashIndex >= 0) && !isAllowedDiffPathArg(arg, dir) {
-				// verifies arguments after --
-				logger.Warn("IsAllowedGitCmd.isAllowedDiffPathArg", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}

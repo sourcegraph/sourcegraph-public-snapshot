@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -22,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,6 +43,32 @@ type userClaims struct {
 	EmailVerified     *bool  `json:"email_verified"`
 }
 
+// getLogin returns the preferred username or email address from the user claims,
+// or the email address if the preferred username is not set.
+func getLogin(c *userClaims, i *oidc.UserInfo) string {
+	if c.PreferredUsername != "" {
+		return c.PreferredUsername
+	}
+
+	return i.Email
+}
+
+// getDisplayName returns a display name from the user claims in this order:
+// 1. GivenName
+// 2. Name
+// 3. provided defaultName
+func getDisplayName(c *userClaims, defaultName string) string {
+	if c.GivenName != "" {
+		return c.GivenName
+	}
+
+	if c.Name != "" {
+		return c.Name
+	}
+
+	return defaultName
+}
+
 // Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the
 // auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
 //
@@ -51,16 +82,16 @@ type userClaims struct {
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func Middleware(db database.DB) *auth.Middleware {
+func Middleware(logger log.Logger, db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, true)
+				handleOpenIDConnectAuth(logger, db, w, r, next, true)
 			})
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, false)
+				handleOpenIDConnectAuth(logger, db, w, r, next, false)
 			})
 		},
 	}
@@ -68,7 +99,7 @@ func Middleware(db database.DB) *auth.Middleware {
 
 // handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
 // both API requests and non-API requests.
-func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func handleOpenIDConnectAuth(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Fixup URL path. We use "/.auth/callback" as the redirect URI for OpenID Connect, but the rest
 	// of this middleware's handlers expect paths of "/.auth/openidconnect/...", so add the
 	// "openidconnect" path component. We can't change the redirect URI because it is hardcoded in
@@ -80,7 +111,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 
 	// Delegate to the OpenID Connect auth handler.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
-		authHandler(db)(w, r)
+		authHandler(logger, db)(w, r)
 		return
 	}
 
@@ -95,7 +126,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	ps := providers.Providers()
+	ps := providers.SignInProviders()
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
 	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
@@ -119,7 +150,7 @@ var MockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func authHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
@@ -148,7 +179,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := AuthCallback(db, r, "", GetProvider)
+			result, safeErrMsg, errStatus, err := AuthCallback(logger, db, r, "", GetProvider)
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
@@ -165,7 +196,6 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := db.SecurityEventLogs().LogSecurityEvent(r.Context(), database.SecurityEventOIDCLoginSucceeded, r.URL.Path, uint32(result.User.ID), "", "BACKEND", nil); err != nil {
 				log15.Warn("Error logging security event.", "error", err)
-
 			}
 
 			var exp time.Duration
@@ -213,7 +243,9 @@ type AuthCallbackResult struct {
 // In case of an error, it returns the internal error, an error message that is
 // safe to be passed back to the user, and a proper HTTP status code
 // corresponding to the error.
-func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getProvider func(id string) *Provider) (result *AuthCallbackResult, safeErrMsg string, errStatus int, err error) {
+func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePrefix string, getProvider func(id string) *Provider) (result *AuthCallbackResult, safeErrMsg string, errStatus int, err error) {
+	ctx := r.Context()
+
 	if authError := r.URL.Query().Get("error"); authError != "" {
 		errorDesc := r.URL.Query().Get("error_description")
 		return nil,
@@ -256,7 +288,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 			errors.Wrap(err, "state parameter was malformed")
 	}
 
-	p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), state.ProviderID, getProvider)
+	p, safeErrMsg, err := GetProviderAndRefresh(ctx, state.ProviderID, getProvider)
 	if err != nil {
 		return nil,
 			safeErrMsg,
@@ -265,7 +297,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(ctx, oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -287,7 +319,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 	if MockVerifyIDToken != nil {
 		idToken = MockVerifyIDToken(rawIDToken)
 	} else {
-		idToken, err = p.oidcVerifier().Verify(r.Context(), rawIDToken)
+		idToken, err = p.oidcVerifier().Verify(ctx, rawIDToken)
 		if err != nil {
 			return nil,
 				"Authentication failed. Try signing in again. The error was: OpenID Connect ID token could not be verified.",
@@ -306,7 +338,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), p.httpClient), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(ctx, p.httpClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),
@@ -334,11 +366,28 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 		return c.Value
 	}
 	anonymousId, _ := cookie.AnonymousUID(r)
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, &hubspot.ContactProperties{
+
+	// PLG: If the user has been created just now, we want to log an additional property on the event
+	// that indicates that the user has initiated the signup from the IDE extension.
+	userCreateEventProperties := telemetry.EventMetadata{}
+	if dotcom.SourcegraphDotComMode() {
+		u, err := url.Parse(state.Redirect)
+		if err != nil {
+			logger.Error("unable to parse redirect URL, not recording Cody PLG signup source", log.Error(err))
+		} else {
+			// requestFrom is a parameter set by the Cody IDE extensions to tell Sourcegraph
+			// that the access token request form should show the Cody auth flow.
+			// We can use it here to determine if the signup has been initiated
+			// by the IDE extension.
+			if strings.EqualFold(u.Query().Get("requestFrom"), "CODY") {
+				userCreateEventProperties["signup_source_is_cody"] = telemetry.Bool(true)
+			}
+		}
+	}
+
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(ctx, logger, db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, userCreateEventProperties, &hubspot.ContactProperties{
 		AnonymousUserID:        anonymousId,
-		FirstSourceURL:         getCookie("sourcegraphSourceUrl"),
 		LastSourceURL:          getCookie("sourcegraphRecentSourceUrl"),
-		OriginalReferrer:       getCookie("originalReferrer"),
 		LastReferrer:           getCookie("sg_referrer"),
 		SignupSessionSourceURL: getCookie("sourcegraphSignupSourceUrl"),
 		SignupSessionReferrer:  getCookie("sourcegraphSignupReferrer"),
@@ -360,7 +409,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 	// Add a ?signup= or ?signin= parameter to the redirect URL.
 	redirectURL := auth.AddPostAuthRedirectParametersToString(state.Redirect, newUserCreated, "OpenIDConnect")
 
-	user, err := db.Users().GetByID(r.Context(), actor.UID)
+	user, err := db.Users().GetByID(ctx, actor.UID)
 	if err != nil {
 		return nil,
 			"Failed to retrieve user from database",

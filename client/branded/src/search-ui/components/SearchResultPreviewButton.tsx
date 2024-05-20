@@ -1,16 +1,17 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { useSearchResultState, type SearchResultPreview } from '../stores/results-store'
 
-interface SearchResultPreviewButtonProps extends TelemetryProps {
+interface SearchResultPreviewButtonProps extends TelemetryProps, TelemetryV2Props {
     result: SearchResultPreview
 }
 
 export const SearchResultPreviewButton: FC<SearchResultPreviewButtonProps> = props => {
-    const { result, telemetryService } = props
+    const { result, telemetryService, telemetryRecorder } = props
     const { previewBlob, setPreviewBlob, clearPreview } = useSearchResultState()
 
     const isActive =
@@ -22,9 +23,11 @@ export const SearchResultPreviewButton: FC<SearchResultPreviewButtonProps> = pro
         if (isActive) {
             clearPreview()
             telemetryService.log('SearchFilePreviewOpen', {}, {})
+            telemetryRecorder.recordEvent('search.filePreview', 'open')
         } else {
             setPreviewBlob(result)
             telemetryService.log('SearchFilePreviewClose', {}, {})
+            telemetryRecorder.recordEvent('search.filePreview', 'close')
         }
     }
 

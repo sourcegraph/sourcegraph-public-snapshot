@@ -19,6 +19,8 @@ describe('SignInPage', () => {
             authenticationURL: '',
             serviceID: '',
             clientID: '1234',
+            noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'github',
@@ -27,6 +29,8 @@ describe('SignInPage', () => {
             authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
             serviceID: 'https://github.com',
             clientID: '1234',
+            noSignIn: false,
+            requiredForAuthz: false,
         },
         {
             serviceType: 'gitlab',
@@ -35,6 +39,18 @@ describe('SignInPage', () => {
             authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
             serviceID: 'https://gitlab.com',
             clientID: '1234',
+            noSignIn: false,
+            requiredForAuthz: false,
+        },
+        {
+            serviceType: 'gitlab',
+            displayName: 'GitLab 2',
+            isBuiltin: false,
+            authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
+            serviceID: 'https://gitlab.com',
+            clientID: '1234',
+            noSignIn: true,
+            requiredForAuthz: false,
         },
     ]
 
@@ -46,6 +62,7 @@ describe('SignInPage', () => {
             sourcegraphDotComMode?: SourcegraphContext['sourcegraphDotComMode']
             allowSignup?: SourcegraphContext['allowSignup']
             primaryLoginProvidersCount?: SourcegraphContext['primaryLoginProvidersCount']
+            authAccessRequest?: SourcegraphContext['authAccessRequest']
         }
     ) =>
         renderWithBrandedContext(
@@ -62,6 +79,7 @@ describe('SignInPage', () => {
                                 resetPasswordEnabled: true,
                                 xhrHeaders: {},
                                 primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
+                                authAccessRequest: props.authAccessRequest,
                             }}
                             telemetryRecorder={noOpTelemetryRecorder}
                         />
@@ -143,35 +161,6 @@ describe('SignInPage', () => {
         expect(rendered.asFragment()).toMatchSnapshot()
     })
 
-    describe('with Sourcegraph accounts (dev) auth provider', () => {
-        const samsProviderName = 'Sourcegraph Accounts (dev) [Testing Only]'
-        const withSourcegraphAccountsDev: SourcegraphContext['authProviders'] = [
-            ...authProviders,
-            {
-                displayName: samsProviderName,
-                isBuiltin: false,
-                serviceType: 'openidconnect',
-                authenticationURL: 'https://accounts.sgdev.org/.auth/openidconnect/',
-                serviceID: 'https://accounts.sgdev.org',
-                clientID: 'sams-dev_cid_xxxx',
-            },
-        ]
-
-        it('renders page with 2 providers', () => {
-            const rendered = render('/sign-in', { authProviders: withSourcegraphAccountsDev })
-            expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes(samsProviderName))
-            ).not.toBeInTheDocument()
-            expect(rendered.asFragment()).toMatchSnapshot()
-        })
-
-        it('renders page with 3 providers (url-param present)', () => {
-            const rendered = render('/sign-in?sourcegraph-accounts-dev', { authProviders: withSourcegraphAccountsDev })
-            expect(within(rendered.baseElement).queryByText(txt => txt.includes(samsProviderName))).toBeInTheDocument()
-            expect(rendered.asFragment()).toMatchSnapshot()
-        })
-    })
-
     describe('with Sourcegraph operator auth provider', () => {
         const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
             ...authProviders,
@@ -182,6 +171,8 @@ describe('SignInPage', () => {
                 authenticationURL: '',
                 serviceID: '',
                 clientID: '',
+                noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
 
@@ -212,6 +203,8 @@ describe('SignInPage', () => {
                 authenticationURL: '',
                 serviceID: '',
                 clientID: '',
+                noSignIn: false,
+                requiredForAuthz: false,
             },
         ]
         it('does not render the Gerrit provider', () => {
@@ -235,6 +228,30 @@ describe('SignInPage', () => {
         } as AuthenticatedUser
 
         expect(render('/sign-in', { authenticatedUser: mockUser }).asFragment()).toMatchSnapshot()
+    })
+
+    it('does not render redirect when there is only 1 auth provider with request access enabled', () => {
+        const withGitHubProvider: SourcegraphContext['authProviders'] = [
+            {
+                serviceType: 'github',
+                displayName: 'GitHub',
+                isBuiltin: false,
+                authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
+                serviceID: 'https://github.com',
+                clientID: '1234',
+                noSignIn: false,
+                requiredForAuthz: false,
+            },
+        ]
+
+        expect(
+            render('/sign-in', {
+                authProviders: withGitHubProvider,
+                authAccessRequest: { enabled: true },
+                allowSignup: false,
+                sourcegraphDotComMode: false,
+            }).asFragment()
+        ).toMatchSnapshot()
     })
 
     it('renders different prefix on provider buttons', () => {

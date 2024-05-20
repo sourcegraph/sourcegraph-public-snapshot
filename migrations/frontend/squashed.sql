@@ -1593,6 +1593,7 @@ CREATE TABLE cm_trigger_jobs (
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
+    logs json[],
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1721,7 +1722,8 @@ CREATE TABLE lsif_configuration_policies (
     protected boolean DEFAULT false NOT NULL,
     repository_patterns text[],
     last_resolved_at timestamp with time zone,
-    embeddings_enabled boolean DEFAULT false NOT NULL
+    embeddings_enabled boolean DEFAULT false NOT NULL,
+    syntactic_indexing_enabled boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
@@ -4684,6 +4686,15 @@ CREATE VIEW syntactic_scip_indexing_jobs_with_repository_name AS
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
 
+CREATE TABLE syntactic_scip_last_index_scan (
+    repository_id integer NOT NULL,
+    last_index_scan_at timestamp with time zone NOT NULL
+);
+
+COMMENT ON TABLE syntactic_scip_last_index_scan IS 'Tracks the last time repository was checked for syntactic indexing job scheduling.';
+
+COMMENT ON COLUMN syntactic_scip_last_index_scan.last_index_scan_at IS 'The last time uploads of this repository were considered for syntactic indexing job scheduling.';
+
 CREATE TABLE team_members (
     team_id integer NOT NULL,
     user_id integer NOT NULL,
@@ -5802,6 +5813,9 @@ ALTER TABLE ONLY survey_responses
 ALTER TABLE ONLY syntactic_scip_indexing_jobs
     ADD CONSTRAINT syntactic_scip_indexing_jobs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY syntactic_scip_last_index_scan
+    ADD CONSTRAINT syntactic_scip_last_index_scan_pkey PRIMARY KEY (repository_id);
+
 ALTER TABLE ONLY team_members
     ADD CONSTRAINT team_members_team_id_user_id_key PRIMARY KEY (team_id, user_id);
 
@@ -6062,6 +6076,12 @@ CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING
 CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE (namespace_org_id IS NOT NULL);
 
 CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE (namespace_user_id IS NOT NULL);
+
+CREATE INDEX exhaustive_search_jobs_state ON exhaustive_search_jobs USING btree (state);
+
+CREATE INDEX exhaustive_search_repo_jobs_state ON exhaustive_search_repo_jobs USING btree (state);
+
+CREATE INDEX exhaustive_search_repo_revision_jobs_state ON exhaustive_search_repo_revision_jobs USING btree (state);
 
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
 
@@ -6731,9 +6751,6 @@ ALTER TABLE ONLY external_services
     ADD CONSTRAINT external_services_last_updater_id_fkey FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY feature_flag_overrides
-    ADD CONSTRAINT feature_flag_overrides_flag_name_fkey FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY feature_flag_overrides
@@ -7045,9 +7062,9 @@ ALTER TABLE ONLY webhooks
 ALTER TABLE ONLY zoekt_repos
     ADD CONSTRAINT zoekt_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
-INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
-INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
-INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false);
+INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false, false);
+INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retention policy', 'GIT_TREE', '*', true, 168, true, false, 0, false, true, NULL, NULL, false, false);
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 

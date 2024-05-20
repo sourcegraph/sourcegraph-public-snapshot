@@ -11,6 +11,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -24,6 +25,7 @@ go_library(
         "//internal/codeintel/autoindexing/internal/store",
         "//internal/codeintel/autoindexing/shared",
         "//internal/codeintel/dependencies",
+        "//internal/codeintel/reposcheduler",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
         "//internal/gitserver",
@@ -46,6 +48,7 @@ go_test(
     ],
     embed = [":autoindexing"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         # requires localhost database
         "requires-network",
     ],

@@ -4,12 +4,12 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import type { BatchChangeFields } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
@@ -68,7 +68,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
         telemetryRecorder,
     }) {
         const onClick: () => void = () => {
-            eventLogger.log('batch_change_editor:download_for_src_cli:clicked')
+            EVENT_LOGGER.log('batch_change_editor:download_for_src_cli:clicked')
             telemetryRecorder.recordEvent('batchChange.editor.downloadForCLI', 'click')
         }
         const component = asButton ? (

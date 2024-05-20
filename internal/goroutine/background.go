@@ -13,7 +13,7 @@ var GracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT
 // running process with a graceful shutdown mechanism.
 //
 // See
-// https://sourcegraph.com/docs/dev/background-information/backgroundroutine
+// https://docs-legacy.sourcegraph.com/dev/background-information/backgroundroutine
 // for more information and a step-by-step guide on how to implement a
 // BackgroundRoutine.
 type BackgroundRoutine = background.Routine

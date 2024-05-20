@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"golang.org/x/exp/maps"
 
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringnotificationchannel"
 	opsgenieintegration "github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/apiintegration"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie/dataopsgenieteam"
@@ -120,6 +121,9 @@ type Variables struct {
 const StackName = "monitoring"
 
 const sharedAlertsSlackChannel = "#alerts-msp"
+
+// mspRolloutsBotSlackUserID  is the user ID of MSP Rollouts Slack bot.
+const mspRolloutsBotSlackUserID string = "U072KKSCLSJ"
 
 // nobl9ClientID user account (@jac) for trial
 const nobl9ClientID = "0oab428uphKZbY1jy417"
@@ -266,10 +270,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				vars.Service.GetName(), vars.EnvironmentID)
 			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
 			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
-				Name:      pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
-				Topic:     description,
-				Purpose:   description,
-				IsPrivate: pointers.Ptr(false),
+				Name:             pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
+				Topic:            description,
+				Purpose:          description,
+				IsPrivate:        pointers.Ptr(false),
+				PermanentMembers: pointers.Ptr(pointers.Slice([]string{mspRolloutsBotSlackUserID})),
+				// Do not kick out other users in the channel
+				ActionOnUpdatePermanentMembers: pointers.Ptr("none"),
 
 				// In case it already exists
 				AdoptExistingChannel: pointers.Ptr(true),
@@ -354,48 +361,69 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 	locals.Add("service_id", vars.Service.ID, "Service ID")
 	locals.Add("environment_id", vars.EnvironmentID, "Environment ID")
 	locals.Add("service_name", vars.Service.GetName(), "Human-readable service name")
-	locals.Add("alert_description_suffix", alertpolicy.DescriptionSuffix(vars.Service.ID, vars.EnvironmentID),
+	locals.Add("alert_description_suffix", alertpolicy.DescriptionSuffix(vars.Service, vars.EnvironmentID),
 		"Supplemental MSP help text intended to be added to alert descriptions")
 
+	// Group alerts by type for dashboard
+	alertGroups := make(map[string][]monitoringalertpolicy.MonitoringAlertPolicy)
+
 	// Set up alerts, configuring each with all our notification channels
-	err = createCommonAlerts(stack, id.Group("common"), vars, channels)
+	commonAlerts, err := createCommonAlerts(stack, id.Group("common"), vars, channels)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create common alerts")
 	}
 
+	alertGroups["Container Alerts"] = commonAlerts
+
 	switch vars.Service.GetKind() {
 	case spec.ServiceKindService:
-		if err = createServiceAlerts(stack, id.Group("service"), vars, channels); err != nil {
+		serviceAlerts, err := createServiceAlerts(stack, id.Group("service"), vars, channels)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to create service alerts")
 		}
+		alertGroups["Cloud Run Service Alerts"] = serviceAlerts
 
 		if vars.Monitoring.Alerts.ResponseCodeRatios != nil {
-			if err = createResponseCodeAlerts(stack, id.Group("response-code"), vars, channels); err != nil {
+			responseCodeRatioAlerts, err := createResponseCodeAlerts(stack, id.Group("response-code"), vars, channels)
+			if err != nil {
 				return nil, errors.Wrap(err, "failed to create response code metrics")
 			}
+			alertGroups["Response Code Ratio Alerts"] = responseCodeRatioAlerts
 		}
 	case spec.ServiceKindJob:
-		if err = createJobAlerts(stack, id.Group("job"), vars, channels); err != nil {
+		jobAlerts, err := createJobAlerts(stack, id.Group("job"), vars, channels)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to create job alerts")
 		}
+		alertGroups["Cloud Run Job Alerts"] = jobAlerts
 	default:
 		return nil, errors.New("unknown service kind")
 	}
 
 	if vars.RedisInstanceID != nil {
-		if err = createRedisAlerts(stack, id.Group("redis"), vars, channels); err != nil {
+		redisAlerts, err := createRedisAlerts(stack, id.Group("redis"), vars, channels)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to create redis alerts")
 		}
+		alertGroups["Redis Alerts"] = redisAlerts
 	}
 
 	if vars.CloudSQLInstanceID != nil {
-		if err := createCloudSQLAlerts(stack, id.Group("cloudsql"), vars, channels); err != nil {
+		cloudSQLAlerts, err := createCloudSQLAlerts(stack, id.Group("cloudsql"), vars, channels)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to create CloudSQL alerts")
 		}
+		alertGroups["Cloud SQL Alerts"] = cloudSQLAlerts
 	}
 
 	if pointers.DerefZero(vars.Monitoring.Nobl9) {
 		createNobl9Project(stack, id.Group("nobl9"), vars)
+	}
+
+	// Create a dashboard containing all MSP alerts
+	err = createMonitoringDashboard(stack, id.Group("dashboard"), vars, alertGroups)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dashboard")
 	}
 
 	return &CrossStackOutput{}, nil

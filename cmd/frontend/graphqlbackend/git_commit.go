@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -94,7 +95,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid))
 		if r.commitErr != nil && errors.HasType(r.commitErr, &gitdomain.RevisionNotFoundError{}) {
 			// If the commit is not found, attempt to do a ensure revision call.
-			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{})
+			_, err := r.gitserverClient.ResolveRevision(ctx, r.gitRepo, string(r.oid), gitserver.ResolveRevisionOptions{EnsureRevision: true})
 			if err != nil {
 				r.logger.Error("failed to resolve commit", log.Error(err), log.String("oid", string(r.oid)))
 			} else {
@@ -320,7 +321,29 @@ func (*rootTreeFileInfo) Size() int64        { return 0 }
 func (*rootTreeFileInfo) Sys() any           { return nil }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return r.gitserverClient.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
+	it, err := r.gitserverClient.ReadDir(ctx, r.gitRepo, api.CommitID(r.oid), "", true)
+	if err != nil {
+		return nil, err
+	}
+	defer it.Close()
+
+	names := make([]string, 0)
+
+	for {
+		entry, err := it.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if entry.IsDir() {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+
+	return names, nil
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -394,7 +417,7 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := r.gitserverClient.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := r.gitserverClient.BehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ go_library(
         "validate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/util",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/apiclient",
@@ -31,6 +32,7 @@ go_test(
         "tools_test.go",
         "validate_test.go",
     ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         ":util",
         "//cmd/executor/internal/apiclient",

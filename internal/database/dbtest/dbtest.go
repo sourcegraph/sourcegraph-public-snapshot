@@ -236,7 +236,7 @@ func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.S
 			t.Fatalf(`failed to connect to database %q: %s
 PROTIP: Ensure the below is part of the go_test rule in BUILD.bazel
   tags = ["requires-network"]
-See https://sourcegraph.com/docs/dev/background-information/bazel/faq#tests-fail-with-connection-refused`, cfg, err)
+See https://docs-legacy.sourcegraph.com/dev/background-information/bazel/faq#tests-fail-with-connection-refused`, cfg, err)
 		}
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

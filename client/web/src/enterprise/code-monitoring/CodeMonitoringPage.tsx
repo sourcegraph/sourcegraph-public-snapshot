@@ -9,7 +9,8 @@ import { catchError, map } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     PageHeader,
     LoadingSpinner,
@@ -24,7 +25,6 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
@@ -127,17 +127,17 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
                 case 'getting-started': {
-                    eventLogger.logPageView('CodeMonitoringGettingStartedPage')
+                    EVENT_LOGGER.logPageView('CodeMonitoringGettingStartedPage')
                     telemetryRecorder.recordEvent('codeMonitor.gettingStarted', 'view')
                     break
                 }
                 case 'logs': {
-                    eventLogger.logPageView('CodeMonitoringLogsPage')
+                    EVENT_LOGGER.logPageView('CodeMonitoringLogsPage')
                     telemetryRecorder.recordEvent('codeMonitor.logs', 'view')
                     break
                 }
                 case 'list': {
-                    eventLogger.logPageView('CodeMonitoringPage')
+                    EVENT_LOGGER.logPageView('CodeMonitoringPage')
                     telemetryRecorder.recordEvent('codeMonitor.list', 'view')
                 }
             }

@@ -9,10 +9,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -174,6 +174,48 @@ func BatchChangesRestrictedToAdmins() bool {
 		return *restricted
 	}
 	return false
+}
+
+func init() {
+	ContributeValidator(func(querier conftypes.SiteConfigQuerier) (problems Problems) {
+		cm := querier.SiteConfig().CodeMonitors
+		if cm == nil {
+			return nil
+		}
+		if cm.Concurrency < 0 {
+			problems = append(problems, NewSiteProblem("codeMonitors.concurrency must be greater than zero"))
+		}
+		if cm.PollInterval != "" {
+			if _, err := time.ParseDuration(cm.PollInterval); err != nil {
+				problems = append(problems, NewSiteProblem("codeMonitors.pollInterval must be parseable as a duration"))
+			}
+		}
+		return problems
+	})
+}
+
+type ComputedCodeMonitors struct {
+	Concurrency  int
+	PollInterval time.Duration
+}
+
+func CodeMonitors() ComputedCodeMonitors {
+	// Start with default values and override if set
+	res := ComputedCodeMonitors{
+		Concurrency:  4,
+		PollInterval: 5 * time.Minute,
+	}
+	if cm := Get().CodeMonitors; cm != nil {
+		if cm.Concurrency != 0 {
+			res.Concurrency = cm.Concurrency
+		}
+		if cm.PollInterval != "" {
+			// ignore err since it's validated above
+			dur, _ := time.ParseDuration(cm.PollInterval)
+			res.PollInterval = dur
+		}
+	}
+	return res
 }
 
 // CodyEnabled returns whether Cody is enabled on this instance.
@@ -434,13 +476,13 @@ func RankingMaxQueueSizeBytes() int {
 
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
-func SearchFlushWallTime(keywordScoring bool) time.Duration {
+func SearchFlushWallTime(bm25Scoring bool) time.Duration {
 	ranking := ExperimentalFeatures().Ranking
 	if ranking != nil && ranking.FlushWallTimeMS > 0 {
 		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
 	} else {
-		if keywordScoring {
-			// Keyword scoring takes longer than standard searches, so use a higher FlushWallTime
+		if bm25Scoring {
+			// BM25 scoring takes longer than standard searches, so use a higher FlushWallTime
 			// to help ensure ranking is stable
 			return 2 * time.Second
 		} else {
@@ -640,9 +682,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2.0",
-			FastChatModel:   "anthropic/claude-instant-1",
-			CompletionModel: "anthropic/claude-instant-1",
+			ChatModel:       "anthropic/" + anthropic.Claude3Sonnet,
+			FastChatModel:   "anthropic/" + anthropic.Claude3Haiku,
+			CompletionModel: "fireworks/starcoder",
 		}
 	}
 
@@ -664,6 +706,11 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.ChatModel = completionsConfig.Model
 	}
 
+	// This records if the modelIDs have been canonicalized by the provider
+	// specific configuration. By default a ToLower will be applied the modelIDs
+	// if no other canonicalization has already been applied. In particular this
+	// is because BedrockModelRefs need different canonicalization
+	canonicalized := false
 	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
@@ -680,17 +727,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-2.0"
+			completionsConfig.ChatModel = "anthropic/" + anthropic.Claude3Sonnet
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
+			completionsConfig.FastChatModel = "anthropic/" + anthropic.Claude3Haiku
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
+			completionsConfig.CompletionModel = "fireworks/starcoder"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -720,7 +767,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.anthropic.com/v1/complete"
+			completionsConfig.Endpoint = "https://api.anthropic.com/v1/messages"
 		}
 
 		// If not access token is set, we cannot talk to Anthropic. Bail.
@@ -730,17 +777,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-2.0"
+			completionsConfig.ChatModel = anthropic.Claude3Sonnet
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-1"
+			completionsConfig.FastChatModel = anthropic.Claude3Haiku
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-1"
+			completionsConfig.CompletionModel = anthropic.Claude3Haiku
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
@@ -796,24 +843,39 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic.claude-v2"
+			completionsConfig.ChatModel = "anthropic.claude-v2" // this modelID in Bedrock refers to claude-2.0
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic.claude-instant-v1" // this modelID in Bedrock refers to claude-instant-1.x it is not possible to specify the minor version
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
 		}
+
+		// We apply BedrockModelRef specific canonicalization
+		// Make sure models are always treated case-insensitive.
+		chatModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.ChatModel)
+		completionsConfig.ChatModel = chatModelRef.CanonicalizedModelID()
+
+		fastChatModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.FastChatModel)
+		completionsConfig.FastChatModel = fastChatModelRef.CanonicalizedModelID()
+
+		completionsModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.CompletionModel)
+		completionsConfig.CompletionModel = completionsModelRef.CanonicalizedModelID()
+		canonicalized = true
 	}
 
-	// Make sure models are always treated case-insensitive.
-	completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
-	completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
-	completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
+	// only apply canonicalization if not already applied. Not all model IDs can simply be lowercased
+	if !canonicalized {
+		// Make sure models are always treated case-insensitive.
+		completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
+		completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
+		completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
+	}
 
 	// If after trying to set default we still have not all models configured, completions are
 	// not available.
@@ -915,8 +977,8 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
-	// Only allow embeddings on dotcom
-	if !dotcom.SourcegraphDotComMode() {
+	// Only allow embeddings as part of evaluating context quality.
+	if !ForceAllowEmbeddings() {
 		return nil
 	}
 
@@ -1059,59 +1121,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
-	// Default values should match the documented defaults in site.schema.json.
-	computedQdrantConfig := conftypes.QdrantConfig{
-		Enabled: false,
-		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
-			EfConstruct:       nil,
-			FullScanThreshold: nil,
-			M:                 nil,
-			OnDisk:            true,
-			PayloadM:          nil,
-		},
-		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
-			IndexingThreshold: 0,
-			MemmapThreshold:   100,
-		},
-		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
-			Enabled:  true,
-			Quantile: 0.98,
-		},
-	}
-	if embeddingsConfig.Qdrant != nil {
-		qc := embeddingsConfig.Qdrant
-		computedQdrantConfig.Enabled = qc.Enabled
-
-		if qc.Hnsw != nil {
-			computedQdrantConfig.QdrantHNSWConfig.EfConstruct = toUint64(qc.Hnsw.EfConstruct)
-			computedQdrantConfig.QdrantHNSWConfig.FullScanThreshold = toUint64(qc.Hnsw.FullScanThreshold)
-			computedQdrantConfig.QdrantHNSWConfig.M = toUint64(qc.Hnsw.M)
-			computedQdrantConfig.QdrantHNSWConfig.PayloadM = toUint64(qc.Hnsw.PayloadM)
-			if qc.Hnsw.OnDisk != nil {
-				computedQdrantConfig.QdrantHNSWConfig.OnDisk = *qc.Hnsw.OnDisk
-			}
-		}
-
-		if qc.Optimizers != nil {
-			if qc.Optimizers.IndexingThreshold != nil {
-				computedQdrantConfig.QdrantOptimizersConfig.IndexingThreshold = uint64(*qc.Optimizers.IndexingThreshold)
-			}
-			if qc.Optimizers.MemmapThreshold != nil {
-				computedQdrantConfig.QdrantOptimizersConfig.MemmapThreshold = uint64(*qc.Optimizers.MemmapThreshold)
-			}
-		}
-
-		if qc.Quantization != nil {
-			if qc.Quantization.Enabled != nil {
-				computedQdrantConfig.QdrantQuantizationConfig.Enabled = *qc.Quantization.Enabled
-			}
-
-			if qc.Quantization.Quantile != nil {
-				computedQdrantConfig.QdrantQuantizationConfig.Quantile = float32(*qc.Quantization.Quantile)
-			}
-		}
-	}
-
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -1125,7 +1134,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxTextEmbeddingsPerRepo:               embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit:             embeddingsConfig.PolicyRepositoryMatchLimit,
 		ExcludeChunkOnError:                    pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
-		Qdrant:                                 computedQdrantConfig,
 		PerCommunityUserEmbeddingsMonthlyLimit: embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
 		PerProUserEmbeddingsMonthlyLimit:       embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}
@@ -1197,8 +1205,9 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		// this is a sane default for GPT in general.
 		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
-		if strings.HasPrefix(model, "anthropic.") {
-			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
+		parsed := conftypes.NewBedrockModelRefFromModelID(model)
+		if strings.HasPrefix(parsed.Model, "anthropic.") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(parsed.Model, "anthropic."))
 		}
 		// Fallback for weird values.
 		return 9_000
@@ -1209,13 +1218,15 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 }
 
 func anthropicDefaultMaxPromptTokens(model string) int {
+	// TODO: this doesn't nearly cover all the ways that token size can be specified.
+	// See: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" {
-		// TODO: Technically, v2 also uses a 100k window, but we should validate
-		// that returning 100k here is the right thing to do.
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet {
+		// TODO: Technically, v2 and v3 also uses a 100k/200k window respectively, but we should
+		// validate that returning 100k here is the right thing to do.
 		return 12_000
 	}
 	// For now, all other claude models have a 9k token window.
@@ -1228,9 +1239,16 @@ func openaiDefaultMaxPromptTokens(model string) int {
 		return 7_000
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
+	case "gpt-3.5-turbo-instruct":
 		return 4_000
-	case "gpt-3.5-turbo-16k":
+	case "gpt-3.5-turbo-16k",
+		"gpt-3.5-turbo":
+		return 16_000
+	case "gpt-4-turbo-preview",
+		"gpt-4o",
+		"gpt-4-turbo":
+		// TODO: Technically, GPT 4 Turbo uses a 128k window, but we should validate
+		// that returning 128k here is the right thing to do.
 		return 16_000
 	default:
 		return 4_000
@@ -1271,4 +1289,32 @@ func RepoConcurrentExternalServiceSyncers() int {
 		return 3
 	}
 	return v
+}
+
+// PermissionsUserMapping returns the last valid value of permissions user mapping in the site configuration.
+// Callers must not mutate the returned pointer.
+func PermissionsUserMapping() *schema.PermissionsUserMapping {
+	c := Get().PermissionsUserMapping
+	if c == nil {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	// Invalid config.
+	if c.BindID != "email" && c.BindID != "username" {
+		return &schema.PermissionsUserMapping{Enabled: false, BindID: "email"}
+	}
+	return c
+}
+
+func Branding() *schema.Branding {
+	br := Get().Branding
+	if br == nil {
+		br = &schema.Branding{
+			BrandName: "Sourcegraph",
+		}
+	} else if br.BrandName == "" {
+		bcopy := *br
+		bcopy.BrandName = "Sourcegraph"
+		br = &bcopy
+	}
+	return br
 }

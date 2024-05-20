@@ -4,9 +4,12 @@ go_library(
     name = "config",
     srcs = ["config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/cody-gateway/internal/httpapi/embeddings",
         "//internal/codygateway",
+        "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
         "//internal/env",
         "//internal/trace/policy",

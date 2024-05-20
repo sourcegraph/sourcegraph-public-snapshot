@@ -18,9 +18,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -208,7 +208,7 @@ func nthIndex(in []byte, sep byte, n int) (idx int) {
 	}
 
 	start := 0
-	for i := 0; i < n; i++ {
+	for range n {
 		idx := bytes.IndexByte(in[start:], sep)
 		if idx == -1 {
 			return idx
@@ -237,13 +237,11 @@ func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	return binary.IsBinary(r.fullContentBytes), nil
 }
 
-var (
-	syntaxHighlightFileBlocklist = []string{
-		"yarn.lock",
-		"pnpm-lock.yaml",
-		"package-lock.json",
-	}
-)
+var syntaxHighlightFileBlocklist = []string{
+	"yarn.lock",
+	"pnpm-lock.yaml",
+	"package-lock.json",
+}
 
 func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
@@ -433,12 +431,25 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context) (bool, error) 
 		return false, nil
 	}
 
-	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	it, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
+	defer it.Close()
 
-	return len(entries) == 1, nil
+	// Read the entry for the file we are interested in.
+	_, err = it.Next()
+	if err == nil {
+		return false, err
+	}
+
+	// Read one more entry. If that fails with io.EOF then we know we have a single child.
+	_, err = it.Next()
+	if err != io.EOF {
+		return false, err
+	}
+
+	return err == io.EOF, nil
 }
 
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (resolverstubs.GitBlobLSIFDataResolver, error) {

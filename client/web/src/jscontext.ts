@@ -29,6 +29,8 @@ export interface AuthProvider {
     authenticationURL: string
     serviceID: string
     clientID: string
+    noSignIn: boolean
+    requiredForAuthz: boolean
 }
 
 /**
@@ -293,6 +295,18 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    /** Metadata related to the SvelteKit app. */
+    svelteKit?: {
+        enabledRoutes: number[]
+        knownRoutes: string[]
+        showToggle: boolean
+    }
+
+    /** Configuration for Cody Pro-tier functionality, if applicable. */
+    frontendCodyProConfig?: {
+        stripePublishableKey: string
+    }
 }
 
 export interface BrandAssets {

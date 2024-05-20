@@ -23,7 +23,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -38,7 +38,7 @@ import resultStyles from './ResultContainer.module.scss'
 
 const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
 
-interface Props extends SettingsCascadeProps, TelemetryProps {
+interface Props extends SettingsCascadeProps, TelemetryProps, TelemetryV2Props {
     /**
      * The file match search result.
      */
@@ -95,6 +95,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
     showAllMatches,
     openInNewTab,
     telemetryService,
+    telemetryRecorder,
     fetchHighlightedFileLineRanges,
     onSelect,
 }) => {
@@ -202,8 +203,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                     className={resultStyles.copyButton}
                     filePath={result.path}
                     telemetryService={telemetryService}
-                    // TODO (dadlerj): update to use a real telemetry recorder
-                    telemetryRecorder={noOpTelemetryRecorder}
+                    telemetryRecorder={telemetryRecorder}
                 />
             </span>
         </>
@@ -243,7 +243,13 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
-            actions={<SearchResultPreviewButton result={result} telemetryService={telemetryService} />}
+            actions={
+                <SearchResultPreviewButton
+                    result={result}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                />
+            }
         >
             <VisibilitySensor
                 onChange={(visible: boolean) => visible && onVisible()}
@@ -256,6 +262,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                         grouped={expanded ? expandedGroups : collapsedGroups}
                         settingsCascade={settingsCascade}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                         openInNewTab={openInNewTab}
                     />
                     {collapsible && (
@@ -299,7 +306,7 @@ function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
         endLine: range.end.line,
         endCharacter: range.end.column,
     }))
-    const plaintextLines = chunk.content.split(/\r?\n/)
+    const plaintextLines = chunk.content.replace(/\r?\n$/, '').split(/\r?\n/)
     return {
         plaintextLines,
         highlightedHTMLRows: undefined, // populated lazily

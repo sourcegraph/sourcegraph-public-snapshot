@@ -14,10 +14,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -45,7 +44,7 @@ func NewRepoStateSyncer(
 	db database.DB,
 	locker RepositoryLocker,
 	shardID string,
-	reposDir string,
+	fs gitserverfs.FS,
 	interval time.Duration,
 	batchSize int,
 	perSecond int,
@@ -57,7 +56,7 @@ func NewRepoStateSyncer(
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			gitServerAddrs := connection.NewGitserverAddresses(conf.Get())
 			addrs := gitServerAddrs.Addresses
 			// We turn addrs into a string here for easy comparison and storage of previous
 			// addresses since we'd need to take a copy of the slice anyway.
@@ -78,7 +77,7 @@ func NewRepoStateSyncer(
 			fullSync = fullSync || currentPinned != previousPinned
 			previousPinned = currentPinned
 
-			if err := syncRepoState(ctx, logger, db, locker, shardID, reposDir, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
+			if err := syncRepoState(ctx, logger, db, locker, shardID, fs, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 				// after a failed full sync, we should attempt it again in the next
 				// invocation.
 				fullSync = true
@@ -102,8 +101,8 @@ func syncRepoState(
 	db database.DB,
 	locker RepositoryLocker,
 	shardID string,
-	reposDir string,
-	gitServerAddrs gitserver.GitserverAddresses,
+	fs gitserverfs.FS,
+	gitServerAddrs connection.GitserverAddresses,
 	batchSize int,
 	perSecond int,
 	fullSync bool,
@@ -189,11 +188,6 @@ func syncRepoState(
 		for _, repo := range repos {
 			repoSyncStateCounter.WithLabelValues("check").Inc()
 
-			// We may have a deleted repo, we need to extract the original name both to
-			// ensure that the shard check is correct and also so that we can find the
-			// directory.
-			repo.Name = api.UndeletedRepoName(repo.Name)
-
 			// Ensure we're only dealing with repos we are responsible for.
 			addr := gitServerAddrs.AddrForRepo(ctx, repo.Name)
 			if !hostnameMatch(shardID, addr) {
@@ -202,16 +196,19 @@ func syncRepoState(
 			}
 			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-			dir := gitserverfs.RepoDirFromName(reposDir, repo.Name)
-			cloned := repoCloned(dir)
-			_, cloning := locker.Status(dir)
+			cloned, err := fs.RepoCloned(repo.Name)
+			if err != nil {
+				// Failed to determine cloned state, we have to skip this record for now.
+				continue
+			}
+			_, locked := locker.Status(repo.Name)
 
 			var shouldUpdate bool
 			if repo.ShardID != shardID {
 				repo.ShardID = shardID
 				shouldUpdate = true
 			}
-			cloneStatus := cloneStatus(cloned, cloning)
+			cloneStatus := cloneStatus(cloned, locked)
 			if repo.CloneStatus != cloneStatus {
 				repo.CloneStatus = cloneStatus
 				// Since the repo has been recloned or is being cloned

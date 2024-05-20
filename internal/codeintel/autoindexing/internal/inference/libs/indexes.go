@@ -26,9 +26,9 @@ var defaultIndexers = map[string]string{
 
 // To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
 var defaultIndexerSHAs = map[string]string{
-	"sourcegraph/scip-go":         "sha256:39c1495d4c7381c553f44d979c3f301f9bedbd6f25fbab0f92d6e90a555391cc",
+	"sourcegraph/scip-go":         "sha256:56414010d8917d6952c051dd5fcc0901fdf5c12031d352cc0b26778f040dddcc",
 	"sourcegraph/scip-rust":       "sha256:adf0047fc3050ba4f7be71302b42c74b49901f38fb40916d94ac5fc9181ac078",
-	"sourcegraph/scip-java":       "sha256:808b063b7376cfc0a4937d89ddc3d4dd9652d10609865fae3f3b34302132737a",
+	"sourcegraph/scip-java":       "sha256:a2b3828145cd38758a43363f06d786f9e620c97979a9291463c6544f7f17c68f",
 	"sourcegraph/scip-python":     "sha256:e3c13f0cadca78098439c541d19a72c21672a3263e22aa706760d941581e068d",
 	"sourcegraph/scip-typescript": "sha256:3df8b36a2ad4e073415bfbeaedf38b3cfff3e697614c8f578299f470d140c2c8",
 	"sourcegraph/scip-ruby":       "sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319",

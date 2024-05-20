@@ -5,6 +5,7 @@ go_library(
     name = "sourcegraph",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codygateway",
@@ -19,6 +20,7 @@ go_test(
     name = "sourcegraph_test",
     srcs = ["client_test.go"],
     embed = [":sourcegraph"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/codygateway",
         "//internal/conf/conftypes",

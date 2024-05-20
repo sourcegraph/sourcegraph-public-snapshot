@@ -313,7 +313,6 @@ func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesAr
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
-	StatsID     *string
 },
 ) (*OrgResolver, error) {
 	a := sgactor.FromContext(ctx)
@@ -334,14 +333,6 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameOrgCreated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", args); err != nil {
 			r.logger.Warn("Error logging security event", log.Error(err))
 
-		}
-	}
-	// Write the org_id into orgs open beta stats table on Cloud
-	if dotcom.SourcegraphDotComMode() && args.StatsID != nil {
-		// we do not throw errors here as this is best effort
-		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
-		if err != nil {
-			r.logger.Warn("Cannot update orgs open beta stats", log.String("id", *args.StatsID), log.Int32("orgID", newOrg.ID), log.Error(err))
 		}
 	}
 
@@ -443,12 +434,6 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, errors.Errorf("Must be a member of the organization to add members", err)
-		}
-	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

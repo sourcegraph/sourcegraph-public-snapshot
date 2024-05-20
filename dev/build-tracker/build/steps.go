@@ -5,7 +5,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type JobStatus string
@@ -26,19 +26,19 @@ type Job struct {
 }
 
 func (j *Job) GetID() string {
-	return util.Strp(j.ID)
+	return pointers.DerefZero(j.ID)
 }
 
 func (j *Job) GetName() string {
-	return util.Strp(j.Name)
+	return pointers.DerefZero(j.Name)
 }
 
 func (j *Job) exitStatus() int {
-	return util.Intp(j.ExitStatus)
+	return pointers.DerefZero(j.ExitStatus)
 }
 
 func (j *Job) GetState() string {
-	return util.Strp(j.State)
+	return pointers.DerefZero(j.State)
 }
 
 func (j *Job) status() JobStatus {

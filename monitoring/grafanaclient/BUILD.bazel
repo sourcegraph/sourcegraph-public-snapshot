@@ -4,6 +4,7 @@ go_library(
     name = "grafanaclient",
     srcs = ["grafanaclient.go"],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/grafanaclient",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",

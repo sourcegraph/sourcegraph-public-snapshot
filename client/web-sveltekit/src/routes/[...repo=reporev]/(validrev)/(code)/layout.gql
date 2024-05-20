@@ -10,8 +10,75 @@ query GitHistoryQuery($repoName: String!, $revspec: String!, $first: Int, $after
     }
 }
 
+query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!) {
+    repository(name: $repoName) {
+        lastCommit: commit(rev: $revspec) {
+            id
+            ancestors(first: 1, path: $filePath) {
+                nodes {
+                    ...LastCommitFragment
+                }
+            }
+        }
+    }
+}
+
+query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) {
+    repository(name: $repoName) {
+        ...RepositoryGitRefs
+    }
+}
+
+query RepositoryGitCommits($repoName: String!, $query: String!, $revision: String!) {
+    repository(name: $repoName) {
+        commitByHash: commit(rev: $query) {
+            ...RevPickerGitCommit
+        }
+        ancestorCommits: commit(rev: $revision) {
+            ancestors(first: 15, query: $query) {
+                nodes {
+                    ...RevPickerGitCommit
+                }
+            }
+        }
+    }
+}
+
 fragment GitHistory_HistoryConnection on GitCommitConnection {
     ...HistoryPanel_HistoryConnection
+    pageInfo {
+        hasNextPage
+        endCursor
+    }
+}
+
+query RepoPage_PreciseCodeIntel(
+    $repoName: String!
+    $revspec: String!
+    $filePath: String!
+    $line: Int!
+    $character: Int!
+    $first: Int
+    $afterCursor: String
+) {
+    repository(name: $repoName) {
+        id
+        commit(rev: $revspec) {
+            id
+            blob(path: $filePath) {
+                canonicalURL
+                lsif {
+                    references(line: $line, character: $character, first: $first, after: $afterCursor) {
+                        ...RepoPage_ReferencesLocationConnection
+                    }
+                }
+            }
+        }
+    }
+}
+
+fragment RepoPage_ReferencesLocationConnection on LocationConnection {
+    ...ReferencePanel_LocationConnection
     pageInfo {
         hasNextPage
         endCursor

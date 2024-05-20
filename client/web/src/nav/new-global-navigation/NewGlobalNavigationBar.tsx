@@ -10,6 +10,7 @@ import shallow from 'zustand/shallow'
 import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
@@ -30,10 +31,9 @@ import { UserNavItem } from '../UserNavItem'
 
 import styles from './NewGlobalNavigationBar.module.scss'
 
-interface NewGlobalNavigationBar extends TelemetryProps {
+interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    ownEnabled: boolean
     notebooksEnabled: boolean
     searchContextsEnabled: boolean
     codeMonitoringEnabled: boolean
@@ -52,7 +52,6 @@ interface NewGlobalNavigationBar extends TelemetryProps {
 export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
     const {
         isSourcegraphDotCom,
-        ownEnabled,
         notebooksEnabled,
         searchContextsEnabled,
         codeMonitoringEnabled,
@@ -63,6 +62,7 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         showSearchBox,
         showFeedbackModal,
         telemetryService,
+        telemetryRecorder,
     } = props
 
     const isLightTheme = useIsLightTheme()
@@ -72,7 +72,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
     // Features enablement flags and conditions
     const isLicensed = !!window.context?.licenseInfo
-    const showOwn = ownEnabled
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const [showCodySearch] = useFeatureFlag('cody-web-search')
     const showSearchJobs = isSearchJobsEnabled()
@@ -108,11 +107,11 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                         authenticatedUser={authenticatedUser}
                         selectedSearchContextSpec={selectedSearchContextSpec}
                         telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
                     />
                 ) : (
                     <InlineNavigationPanel
                         showSearchContext={showSearchContext}
-                        showOwn={showOwn}
                         showCodySearch={showCodySearch}
                         authenticatedUser={authenticatedUser}
                         showSearchJobs={showSearchJobs}
@@ -143,7 +142,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
             {isSideMenuOpen && (
                 <SidebarNavigation
                     showSearchContext={showSearchContext}
-                    showOwn={showOwn}
                     showCodySearch={showCodySearch}
                     showSearchJobs={showSearchJobs}
                     showSearchNotebook={showSearchNotebook}
@@ -178,7 +176,7 @@ const selectQueryState = (state: SearchQueryState): NavigationSearchBoxState => 
     searchMode: state.searchMode,
 })
 
-interface NavigationSearchBoxProps extends TelemetryProps {
+interface NavigationSearchBoxProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     selectedSearchContextSpec?: string
@@ -189,7 +187,8 @@ interface NavigationSearchBoxProps extends TelemetryProps {
  * search box gets focus.
  */
 const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
-    const { authenticatedUser, isSourcegraphDotCom, selectedSearchContextSpec, telemetryService } = props
+    const { authenticatedUser, isSourcegraphDotCom, selectedSearchContextSpec, telemetryService, telemetryRecorder } =
+        props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -205,10 +204,11 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 source: 'nav',
                 historyOrNavigate: navigate,
                 selectedSearchContextSpec,
+                telemetryRecorder,
                 ...parameters,
             })
         },
-        [submitSearch, navigate, location, selectedSearchContextSpec]
+        [submitSearch, navigate, location, selectedSearchContextSpec, telemetryRecorder]
     )
 
     // TODO: Move this check outside of navigation component and share it via context
@@ -225,6 +225,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
             authenticatedUser={authenticatedUser}
             selectedSearchContextSpec={selectedSearchContextSpec}
             telemetryService={telemetryService}
+            telemetryRecorder={telemetryRecorder}
             className={styles.searchBar}
             onChange={setQueryState}
             onSubmit={submitSearchOnChange}
@@ -241,6 +242,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                     setSearchMode={setSearchMode}
                     submitSearch={submitSearchOnChange}
                     telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
                 />
             ) : (
                 <LegacyToggles
@@ -291,7 +293,6 @@ const SignInUpButtons: FC<SignInUpButtonsProps> = props => {
 interface SidebarNavigationProps {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
-    showOwn: boolean
     showCodySearch: boolean
     showSearchJobs: boolean
     showSearchNotebook: boolean
@@ -305,7 +306,6 @@ interface SidebarNavigationProps {
 const SidebarNavigation: FC<SidebarNavigationProps> = props => {
     const {
         showSearchContext,
-        showOwn,
         showCodySearch,
         showSearchJobs,
         showSearchNotebook,
@@ -354,13 +354,11 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                                     Context
                                 </NavItemLink>
                             )}
-                            {showOwn && <NavItemLink url={PageRoutes.Own}>Code ownership</NavItemLink>}
                             {showSearchNotebook && (
                                 <NavItemLink url={PageRoutes.Notebooks} onClick={handleNavigationClick}>
                                     Notebooks
                                 </NavItemLink>
                             )}
-
                             {showCodeMonitoring && (
                                 <NavItemLink url="/code-monitoring" onClick={handleNavigationClick}>
                                     Code Monitoring

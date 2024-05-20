@@ -10,7 +10,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +17,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,7 +32,7 @@ import (
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "", false)
@@ -62,7 +63,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	insertRepo(t, db, 50, "should not be dirty", false)
 	deleteRepo(t, db, 50, time.Now())
@@ -95,7 +96,7 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -104,17 +105,17 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		// Set dirty token to 3
 		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 			t.Fatalf("unexpected error marking repository as dirty: %s", err)
@@ -122,7 +123,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 	}
 
 	// This test is mainly a syntax check against `transaction_timestamp()`
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 3, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }
@@ -130,7 +131,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -156,37 +157,37 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
-		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
-		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
-		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
-		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(12), makeCommit(11)),
+		gitCommit(makeCommit(11), makeCommit(10)),
+		gitCommit(makeCommit(10), makeCommit(3)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4), makeCommit(9)),
+		gitCommit(makeCommit(9), makeCommit(8)),
+		gitCommit(makeCommit(8), makeCommit(2)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
+	refs := map[string][]gitdomain.Ref{
 		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsHead: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -223,7 +224,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -266,37 +267,37 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		t.Fatalf("unexpected error inserting retention configuration: %s", err)
 	}
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
-		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
-		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
-		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
-		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(12), makeCommit(11)),
+		gitCommit(makeCommit(11), makeCommit(10)),
+		gitCommit(makeCommit(10), makeCommit(3)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4), makeCommit(9)),
+		gitCommit(makeCommit(9), makeCommit(8)),
+		gitCommit(makeCommit(8), makeCommit(2)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
+	refs := map[string][]gitdomain.Ref{
 		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsHead: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Second, time.Second, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -333,7 +334,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -348,22 +349,22 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(8), makeCommit(6)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(2), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(1)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(8): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(8): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -392,7 +393,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -407,22 +408,22 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(8), makeCommit(7)),
+		gitCommit(makeCommit(7), makeCommit(4)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -445,7 +446,7 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -457,16 +458,16 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(2): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(2): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -488,7 +489,7 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -496,7 +497,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	//          |       |
 	//          +-- 4 --+
 	//
-	// With the following LSIF dumps:
+	// With the following LSIF uploads:
 	//
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
@@ -523,20 +524,20 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(3), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(2)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(6): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(6): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -563,7 +564,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -581,19 +582,19 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(5): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(5): {{IsHead: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 
@@ -619,7 +620,7 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	uploads := []shared.Upload{
 		{ID: 1, Commit: makeCommit(1)},
@@ -628,17 +629,17 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		// Set dirty token to 3
 		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 			t.Fatalf("unexpected error marking repository as dirty: %s", err)
@@ -648,7 +649,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	// Non-latest dirty token - should not clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
@@ -660,7 +661,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 
 	// Latest dirty token - should clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 3, now); err != nil {
 		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
@@ -683,10 +684,10 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	}
 }
 
-func TestFindClosestDumps(t *testing.T) {
+func TestFindClosestCompletedUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -701,33 +702,33 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(8), makeCommit(6)),
+		gitCommit(makeCommit(7), makeCommit(6)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(2), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(1)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 1, Distance: 3}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1, Distance: 0}},
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 1}},
+		api.CommitID(makeCommit(3)): {{UploadID: 2, Distance: 0}},
+		api.CommitID(makeCommit(4)): {{UploadID: 2, Distance: 1}},
+		api.CommitID(makeCommit(5)): {{UploadID: 1, Distance: 2}},
+		api.CommitID(makeCommit(6)): {{UploadID: 1, Distance: 3}},
+		api.CommitID(makeCommit(7)): {{UploadID: 3, Distance: 0}},
+		api.CommitID(makeCommit(8)): {{UploadID: 1, Distance: 4}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -737,7 +738,7 @@ func TestFindClosestDumps(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
 		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
 		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
@@ -749,10 +750,10 @@ func TestFindClosestDumps(t *testing.T) {
 	})
 }
 
-func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
+func TestFindClosestCompletedUploadsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -767,28 +768,28 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(8), makeCommit(7)),
+		gitCommit(makeCommit(7), makeCommit(4)),
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 0}},
+		api.CommitID(makeCommit(3)): {{UploadID: 1, Distance: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -798,7 +799,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(4), graph: graph},
@@ -809,10 +810,10 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	})
 }
 
-func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
+func TestFindClosestCompletedUploadsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -824,27 +825,27 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 0}},
+		api.CommitID(makeCommit(3)): {{UploadID: 1, Distance: 1}},
+		api.CommitID(makeCommit(4)): {{UploadID: 1, Distance: 2}},
+		api.CommitID(makeCommit(5)): {{UploadID: 2, Distance: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -854,7 +855,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(4), graph: graph, allOfIDs: []int{1}},
@@ -862,10 +863,10 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	})
 }
 
-func TestFindClosestDumpsDistinctRoots(t *testing.T) {
+func TestFindClosestCompletedUploadsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -877,22 +878,22 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{
-		makeCommit(2): {Commit: makeCommit(2), AncestorCommit: makeCommit(1), Distance: 1},
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{
+		api.CommitID(makeCommit(2)): {Commit: api.CommitID(makeCommit(2)), AncestorCommit: api.CommitID(makeCommit(1)), Distance: 1},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
@@ -903,7 +904,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true, graph: graph},
 		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
@@ -912,10 +913,10 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	})
 }
 
-func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
+func TestFindClosestCompletedUploadsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -923,7 +924,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	//          |       |
 	//          +-- 4 --+
 	//
-	// With the following LSIF dumps:
+	// With the following LSIF uploads:
 	//
 	// | UploadID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
@@ -950,30 +951,30 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(3), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(2)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
+		api.CommitID(makeCommit(3)): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
+		api.CommitID(makeCommit(4)): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
+		api.CommitID(makeCommit(5)): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
+		api.CommitID(makeCommit(6)): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -983,7 +984,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{7, 3}},
 		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{8, 7}},
 		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{5, 1}},
@@ -992,10 +993,10 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	})
 }
 
-func TestFindClosestDumpsIndexerName(t *testing.T) {
+func TestFindClosestCompletedUploadsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1010,31 +1011,32 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
 		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
 		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+		{ID: 9, Commit: makeCommit(4), Root: "root4/", Indexer: shared.SyntacticIndexer},
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(5), makeCommit(4)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {
 			{UploadID: 1, Distance: 0},
 			{UploadID: 5, Distance: 0},
 		},
-		makeCommit(2): {
+		api.CommitID(makeCommit(2)): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 0},
 			{UploadID: 5, Distance: 1},
 			{UploadID: 6, Distance: 0},
 		},
-		makeCommit(3): {
+		api.CommitID(makeCommit(3)): {
 			{UploadID: 1, Distance: 2},
 			{UploadID: 2, Distance: 1},
 			{UploadID: 3, Distance: 0},
@@ -1042,7 +1044,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 			{UploadID: 6, Distance: 1},
 			{UploadID: 7, Distance: 0},
 		},
-		makeCommit(4): {
+		api.CommitID(makeCommit(4)): {
 			{UploadID: 1, Distance: 3},
 			{UploadID: 2, Distance: 2},
 			{UploadID: 3, Distance: 1},
@@ -1051,14 +1053,15 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 			{UploadID: 6, Distance: 2},
 			{UploadID: 7, Distance: 1},
 			{UploadID: 8, Distance: 0},
+			{UploadID: 9, Distance: 0},
 		},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{
-		makeCommit(5): {Commit: makeCommit(5), AncestorCommit: makeCommit(4), Distance: 1},
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{
+		api.CommitID(makeCommit(5)): {Commit: api.CommitID(makeCommit(5)), AncestorCommit: api.CommitID(makeCommit(4)), Distance: 1},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
@@ -1069,7 +1072,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{2}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{3}},
@@ -1078,13 +1081,16 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
 		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
 		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
+		// Searching for visible uploads with indexer == "" yields all non-syntactic indexes
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: "", graph: graph, allOfIDs: []int{4, 8}},
+		{commit: makeCommit(5), file: "root4/file.ts", indexer: shared.SyntacticIndexer, graph: graph, allOfIDs: []int{9}},
 	})
 }
 
-func TestFindClosestDumpsIntersectingPath(t *testing.T) {
+func TestFindClosestCompletedUploadsIntersectingPath(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1095,20 +1101,20 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(1)}, " "),
+	graph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -1118,17 +1124,17 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
 	})
 }
 
-func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
+func TestFindClosestCompletedUploadsFromGraphFragment(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	// This database has the following commit graph:
 	//
@@ -1144,28 +1150,28 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	currentGraph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	currentGraph := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(6), makeCommit(5)),
+		gitCommit(makeCommit(5), makeCommit(1)),
+		gitCommit(makeCommit(3), makeCommit(2)),
+		gitCommit(makeCommit(2), makeCommit(1)),
+		gitCommit(makeCommit(1)),
 	})
 
 	visibleUploads, links := commitgraph.NewGraph(currentGraph, toCommitGraphView(uploads)).Gather()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
-		makeCommit(6): {{UploadID: 2, Distance: 1}},
+	expectedVisibleUploads := map[api.CommitID][]commitgraph.UploadMeta{
+		api.CommitID(makeCommit(1)): {{UploadID: 1, Distance: 0}},
+		api.CommitID(makeCommit(2)): {{UploadID: 1, Distance: 1}},
+		api.CommitID(makeCommit(3)): {{UploadID: 1, Distance: 2}},
+		api.CommitID(makeCommit(5)): {{UploadID: 2, Distance: 0}},
+		api.CommitID(makeCommit(6)): {{UploadID: 2, Distance: 1}},
 	}
 	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := map[api.CommitID]commitgraph.LinkRelationship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
 		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
 	}
@@ -1175,14 +1181,14 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	graphFragment := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(7), makeCommit(4), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(3)}, " "),
+	graphFragment := commitgraph.ParseCommitGraph([]*gitdomain.Commit{
+		gitCommit(makeCommit(7), makeCommit(4), makeCommit(6)),
+		gitCommit(makeCommit(4), makeCommit(3)),
+		gitCommit(makeCommit(6)),
+		gitCommit(makeCommit(3)),
 	})
 
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
+	testFindClosestCompletedUploads(t, store, []FindClosestCompletedUploadsTestCase{
 		// Note: Can't query anything outside of the graph fragment
 		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{1}},
 		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{2}},
@@ -1194,7 +1200,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "", false)
@@ -1228,7 +1234,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 func TestCommitGraphMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(t), db)
 
 	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
 		t.Errorf("unexpected error marking repository as dirty: %s", err)
@@ -1272,18 +1278,26 @@ func TestCommitGraphMetadata(t *testing.T) {
 //
 //
 
-type FindClosestDumpsTestCase struct {
+type FindClosestCompletedUploadsTestCase struct {
 	commit              string
 	file                string
 	rootMustEnclosePath bool
 	indexer             string
-	graph               *gitdomain.CommitGraph
+	graph               *commitgraph.CommitGraph
 	graphFragmentOnly   bool
 	anyOfIDs            []int
 	allOfIDs            []int
 }
 
-func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDumpsTestCase) {
+func (t *FindClosestCompletedUploadsTestCase) uploadMatchingOptions() shared.UploadMatchingOptions {
+	matching := shared.RootMustEnclosePath
+	if !t.rootMustEnclosePath {
+		matching = shared.RootEnclosesPathOrPathEnclosesRoot
+	}
+	return shared.UploadMatchingOptions{50, t.commit, t.file, matching, t.indexer}
+}
+
+func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []FindClosestCompletedUploadsTestCase) {
 	for _, testCase := range testCases {
 		name := fmt.Sprintf(
 			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",
@@ -1293,55 +1307,55 @@ func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDump
 			testCase.indexer,
 		)
 
-		assertDumpIDs := func(t *testing.T, dumps []shared.Dump) {
+		assertUploadIDs := func(t *testing.T, uploads []shared.CompletedUpload) {
 			if len(testCase.anyOfIDs) > 0 {
-				testAnyOf(t, dumps, testCase.anyOfIDs)
+				testAnyOf(t, uploads, testCase.anyOfIDs)
 				return
 			}
 
 			if len(testCase.allOfIDs) > 0 {
-				testAllOf(t, dumps, testCase.allOfIDs)
+				testAllOf(t, uploads, testCase.allOfIDs)
 				return
 			}
 
-			if len(dumps) != 0 {
-				t.Errorf("unexpected nearest dump length. want=%d have=%d", 0, len(dumps))
+			if len(uploads) != 0 {
+				t.Errorf("unexpected nearest upload length. want=%d have=%d", 0, len(uploads))
 				return
 			}
 		}
 
 		if !testCase.graphFragmentOnly {
 			t.Run(name, func(t *testing.T) {
-				dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+				uploads, err := store.FindClosestCompletedUploads(context.Background(), testCase.uploadMatchingOptions())
 				if err != nil {
-					t.Fatalf("unexpected error finding closest dumps: %s", err)
+					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
 
-				assertDumpIDs(t, dumps)
+				assertUploadIDs(t, uploads)
 			})
 		}
 
 		if testCase.graph != nil {
 			t.Run(name+" [graph-fragment]", func(t *testing.T) {
-				dumps, err := store.FindClosestDumpsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
+				uploads, err := store.FindClosestCompletedUploadsFromGraphFragment(context.Background(), testCase.uploadMatchingOptions(), testCase.graph)
 				if err != nil {
-					t.Fatalf("unexpected error finding closest dumps: %s", err)
+					t.Fatalf("unexpected error finding closest uploads: %s", err)
 				}
 
-				assertDumpIDs(t, dumps)
+				assertUploadIDs(t, uploads)
 			})
 		}
 	}
 }
 
-func testAnyOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
-	if len(dumps) != 1 {
-		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
+func testAnyOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int) {
+	if len(uploads) != 1 {
+		t.Errorf("unexpected nearest upload length. want=%d have=%d", 1, len(uploads))
 		return
 	}
 
-	if !testPresence(dumps[0].ID, expectedIDs) {
-		t.Errorf("unexpected nearest dump ids. want one of %v have=%v", expectedIDs, dumps[0].ID)
+	if !testPresence(uploads[0].ID, expectedIDs) {
+		t.Errorf("unexpected nearest dump ids. want one of %v have=%v", expectedIDs, uploads[0].ID)
 	}
 }
 
@@ -1355,19 +1369,19 @@ func testPresence(needle int, haystack []int) bool {
 	return false
 }
 
-func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
-	if len(dumps) != len(expectedIDs) {
-		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
+func testAllOf(t *testing.T, uploads []shared.CompletedUpload, expectedIDs []int) {
+	if len(uploads) != len(expectedIDs) {
+		t.Errorf("unexpected nearest upload length. want=%d have=%d", 1, len(uploads))
 	}
 
-	var dumpIDs []int
-	for _, dump := range dumps {
-		dumpIDs = append(dumpIDs, dump.ID)
+	var uploadIDs []int
+	for _, upload := range uploads {
+		uploadIDs = append(uploadIDs, upload.ID)
 	}
 
 	for _, expectedID := range expectedIDs {
-		if !testPresence(expectedID, dumpIDs) {
-			t.Errorf("unexpected nearest dump ids. want all of %v have=%v", expectedIDs, dumpIDs)
+		if !testPresence(expectedID, uploadIDs) {
+			t.Errorf("unexpected nearest dump ids. want all of %v have=%v", expectedIDs, uploadIDs)
 			return
 		}
 	}
@@ -1392,13 +1406,13 @@ func deleteRepo(t testing.TB, db database.DB, id int, deleted_at time.Time) {
 func toCommitGraphView(uploads []shared.Upload) *commitgraph.CommitGraphView {
 	commitGraphView := commitgraph.NewCommitGraphView()
 	for _, upload := range uploads {
-		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
+		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, api.CommitID(upload.Commit), fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
 	}
 
 	return commitGraphView
 }
 
-func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
+func normalizeVisibleUploads(uploadMetas map[api.CommitID][]commitgraph.UploadMeta) map[api.CommitID][]commitgraph.UploadMeta {
 	for _, uploads := range uploadMetas {
 		sort.Slice(uploads, func(i, j int) bool {
 			return uploads[i].UploadID-uploads[j].UploadID < 0
@@ -1408,7 +1422,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
+func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[api.CommitID]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return
 	}
@@ -1535,15 +1549,15 @@ func keysOf(m map[string][]int) (keys []string) {
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	logger := logtest.Scoped(b)
 	db := database.NewDB(logger, dbtest.NewDB(b))
-	store := New(&observation.TestContext, db)
+	store := New(observation.TestContextTB(b), db)
 
 	graph, err := readBenchmarkCommitGraph()
 	if err != nil {
 		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refs := map[string][]gitdomain.Ref{
+		makeCommit(3): {{IsHead: true}},
 	}
 
 	uploads, err := readBenchmarkCommitGraphView()
@@ -1555,18 +1569,32 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refs, time.Hour, time.Hour, 0, time.Now()); err != nil {
 		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
 	}
 }
 
-func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
+func readBenchmarkCommitGraph() (*commitgraph.CommitGraph, error) {
 	contents, err := readBenchmarkFile("../../../commitgraph/testdata/customer1/commits.txt.gz")
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	commits := []*gitdomain.Commit{}
+	lr := byteutils.NewLineReader(contents)
+	for lr.Scan() {
+		line := lr.Line()
+		parts := bytes.Split(line, []byte(" "))
+		commit := &gitdomain.Commit{
+			ID: api.CommitID(parts[0]),
+		}
+		for _, parent := range parts[1:] {
+			commit.Parents = append(commit.Parents, api.CommitID(parent))
+		}
+		commits = append(commits, commit)
+	}
+
+	return commitgraph.ParseCommitGraph(commits), nil
 }
 
 func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
@@ -1623,4 +1651,15 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+func gitCommit(id string, parents ...string) *gitdomain.Commit {
+	parentIDs := make([]api.CommitID, len(parents))
+	for i, parent := range parents {
+		parentIDs[i] = api.CommitID(parent)
+	}
+	return &gitdomain.Commit{
+		ID:      api.CommitID(id),
+		Parents: parentIDs,
+	}
 }

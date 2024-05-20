@@ -3,6 +3,7 @@ package bitbucketcloudoauth
 import (
 	"bytes"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -62,14 +63,24 @@ func TestMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, sign-out cookie present, access requests enabled -> sg sign-in", func(t *testing.T) {
 		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
 		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("unauthenticated homepage visit, no sign-out cookie -> bitbucket cloud oauth flow", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie, access requests disabled -> bitbucket cloud oauth flow", func(t *testing.T) {
+		falseVal := false
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthAccessRequest: &schema.AuthAccessRequest{
+					Enabled: &falseVal,
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
+
 		resp := doRequest("GET", "http://example.com/", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -85,7 +96,17 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got return-to URL %v, want %v", got, want)
 		}
 	})
-	t.Run("unauthenticated subpage visit -> bitbucket cloud oauth flow", func(t *testing.T) {
+	t.Run("unauthenticated subpage visit, access requests disabled -> bitbucket cloud oauth flow", func(t *testing.T) {
+		falseVal := false
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthAccessRequest: &schema.AuthAccessRequest{
+					Enabled: &falseVal,
+				},
+			},
+		})
+		t.Cleanup(func() { conf.Mock(nil) })
+
 		resp := doRequest("GET", "http://example.com/page", "", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)

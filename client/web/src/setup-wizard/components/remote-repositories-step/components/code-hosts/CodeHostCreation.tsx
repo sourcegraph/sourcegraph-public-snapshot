@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, type FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -61,7 +61,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         }
 
         telemetryService.log('SetupWizardCodeHostCreation', { kind: codeHostKind }, { kind: codeHostKind })
-        telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'view', {
+        telemetryRecorder.recordEvent('setupWizard.addRemoteRepos.create', 'view', {
             metadata: { kind: v2CodeHostKind[codeHostKind] },
         })
     }, [telemetryService, codeHostKind, telemetryRecorder])
@@ -192,7 +192,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             }
 
             telemetryService.log('SetupWizardConnectRemoteCodeHost', eventProperties, eventProperties)
-            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
+            telemetryRecorder.recordEvent('setupWizard.addRemoteRepos.create', 'connect', {
                 metadata: {
                     kind: v2CodeHostKind[codeHostKind],
                     isAffiliatedRepositories: isAffiliatedRepositories ? 1 : 0,
@@ -206,7 +206,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
                 { code_host: codeHostKind },
                 { code_host: codeHostKind }
             )
-            telemetryRecorder.recordEvent('setupWizard.codeHost.creation', 'connect', {
+            telemetryRecorder.recordEvent('setupWizard.addRemoteRepos.create', 'connect', {
                 metadata: {
                     kind: v2CodeHostKind[codeHostKind],
                 },
@@ -224,6 +224,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
             <GithubConnectView
                 initialValues={localValues}
                 telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
                 onChange={handleFormChange}
                 onSubmit={handleFormSubmit}
             >

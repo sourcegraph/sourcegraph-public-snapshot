@@ -9,6 +9,7 @@ go_library(
         "users.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -33,6 +34,7 @@ go_test(
         "users_test.go",
     ],
     embed = [":enforcement"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/auth",
@@ -43,7 +45,7 @@ go_test(
         "//internal/license",
         "//internal/licensing",
         "//internal/types",
-        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_stretchr_testify//assert",
     ],

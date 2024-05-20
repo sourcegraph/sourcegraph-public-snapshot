@@ -3,12 +3,17 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "awsbedrock",
-    srcs = ["bedrock.go"],
+    srcs = [
+        "bedrock.go",
+        "prompt.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/completions/client/anthropic",
+        "//internal/completions/tokenusage",
         "//internal/completions/types",
+        "//internal/conf/conftypes",
         "//internal/httpcli",
         "//lib/errors",
         "@com_github_aws_aws_sdk_go_v2//aws",
@@ -16,14 +21,20 @@ go_library(
         "@com_github_aws_aws_sdk_go_v2_aws_protocol_eventstream//:eventstream",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "awsbedrock_test",
-    srcs = ["bedrock_test.go"],
+    srcs = [
+        "bedrock_test.go",
+        "prompt_test.go",
+    ],
     embed = [":awsbedrock"],
+    tags = [TAG_CODY_CORE],
     deps = [
+        "//internal/completions/types",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_stretchr_testify//require",
     ],

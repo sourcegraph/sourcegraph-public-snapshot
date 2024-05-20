@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
@@ -66,7 +66,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
-        telemetryRecorder.recordEvent('admin.externalService', 'view')
+        telemetryRecorder.recordEvent('admin.codeHostConnection', 'view')
     }, [telemetryService, telemetryRecorder])
 
     const [syncInProgress, setSyncInProgress] = useState<boolean>(false)

@@ -30,6 +30,7 @@ go_library(
         "//internal/extsvc/github/githubconvert",
         "//internal/lazyregexp",
         "//internal/licensing",
+        "//internal/telemetry/telemetryrecorder",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin_v2//:gologin",
@@ -53,6 +54,7 @@ go_test(
     ],
     embed = [":githuboauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

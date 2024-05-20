@@ -2,12 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 exports_files([
     "bazel-configure.sh",
+    "msp_deploy.sh",
 ])
 
 go_library(
     name = "ci_lib",
     srcs = ["gen-pipeline.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/ci/internal/buildkite",
@@ -24,5 +26,6 @@ go_library(
 go_binary(
     name = "ci",
     embed = [":ci_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

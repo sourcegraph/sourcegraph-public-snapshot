@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
@@ -186,7 +185,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 				p := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
 				repoErrors := map[int32]error{}
 				startPage := time.Now()
-				for i := 0; i < len(repoIds); i++ {
+				for i := range len(repoIds) {
 					repoId := repoIds[i]
 					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
@@ -388,7 +387,7 @@ func getInterruptAfter() time.Duration {
 func getPageSize() int {
 	val := conf.Get().InsightsBackfillRepositoryGroupSize
 	if val > 0 {
-		return int(math.Min(float64(val), 100))
+		return min(val, 100)
 	}
 	return 10
 }
@@ -396,7 +395,7 @@ func getPageSize() int {
 func getRepoConcurrency() int {
 	val := conf.Get().InsightsBackfillRepositoryConcurrency
 	if val > 0 {
-		return int(math.Min(float64(val), 10))
+		return min(val, 10)
 	}
 	return 3
 }

@@ -13,6 +13,7 @@ go_library(
         "upload_handler_state.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/uploadhandler",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/metrics",
@@ -33,11 +34,9 @@ go_test(
         "upload_handler_test.go",
     ],
     embed = [":uploadhandler"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
-        "//cmd/frontend/backend",
-        "//internal/api",
         "//internal/observation",
-        "//internal/types",
         "//internal/uploadstore",
         "//internal/uploadstore/mocks",
         "@com_github_google_go_cmp//cmp",

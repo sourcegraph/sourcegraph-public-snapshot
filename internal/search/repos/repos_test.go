@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
@@ -74,7 +74,7 @@ func TestRevisionValidation(t *testing.T) {
 		}
 		return "", &gitdomain.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
 	})
-	mockGitserver.ListRefsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName) ([]gitdomain.Ref, error) {
+	mockGitserver.ListRefsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 		return []gitdomain.Ref{{
 			Name: "refs/heads/revBar",
 		}, {
@@ -258,7 +258,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("2 conflicting", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@123456", "foo@234567")
 		_, pats := findPatternRevs(repoRevs)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
@@ -266,7 +266,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	b.Run("multiple overlapping", func(b *testing.B) {
 		repoRevs := toParsedRepoFilters(".*o@a:b:c:d", "foo@b:c:d:e", "foo@c:d:e:f")
 		_, pats := findPatternRevs(repoRevs)
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
@@ -799,16 +799,16 @@ func TestRepoHasCommitAfter(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ string, _ string) (bool, error) {
+	mockGitserver.CommitsFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 		switch repoName {
 		case repoA.Name:
-			return true, nil
+			return []*gitdomain.Commit{{ID: "1"}}, nil
 		case repoB.Name:
-			return true, nil
+			return []*gitdomain.Commit{{ID: "1"}}, nil
 		case repoC.Name:
-			return false, nil
+			return []*gitdomain.Commit{}, nil
 		case repoD.Name:
-			return false, &gitdomain.RevisionNotFoundError{}
+			return []*gitdomain.Commit{}, &gitdomain.RevisionNotFoundError{}
 		default:
 			panic("unreachable")
 		}

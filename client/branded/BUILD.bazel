@@ -2,10 +2,9 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
-
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -62,6 +61,7 @@ ts_project(
         "src/search-ui/components/FileMatchChildren.tsx",
         "src/search-ui/components/FilePathSearchResult.tsx",
         "src/search-ui/components/LastSyncedIcon.tsx",
+        "src/search-ui/components/LegacyResultContainer.tsx",
         "src/search-ui/components/OwnerSearchResult.tsx",
         "src/search-ui/components/QueryExamples.constants.ts",
         "src/search-ui/components/QueryExamples.tsx",
@@ -75,6 +75,7 @@ ts_project(
         "src/search-ui/components/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/components/codeLinkNavigation.ts",
         "src/search-ui/components/index.ts",
+        "src/search-ui/components/old-result-container/OldResultContainer.tsx",
         "src/search-ui/components/useQueryExamples.tsx",
         "src/search-ui/documentation/ModalVideo.tsx",
         "src/search-ui/experimental.ts",
@@ -154,6 +155,7 @@ ts_project(
         "src/search-ui/util/query.ts",
         "src/search-ui/util/stars.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",
@@ -222,6 +224,7 @@ ts_project(
         "src/search-ui/results/use-items-to-show.test.ts",
         "src/testSetup.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":branded_lib",
@@ -270,6 +273,7 @@ vitest_test(
         ":module_styles",
         ":snapshots",
     ],
+    tags = [TAG_SEARCHSUITE],
 )
 
 ts_project(
@@ -288,6 +292,7 @@ ts_project(
         "src/search-ui/results/progress/StreamingProgress.story.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedPopover.story.tsx",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":branded_lib",

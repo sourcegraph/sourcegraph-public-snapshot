@@ -4,6 +4,7 @@ go_library(
     name = "clone-and-index_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/clone-and-index",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
@@ -17,13 +18,6 @@ go_library(
 go_binary(
     name = "clone-and-index",
     embed = [":clone-and-index_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
-)
-
-go_cross_binary(
-    name = "clone-and-index-darwin-arm64",
-    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
-    tags = ["manual"],
-    target = ":clone-and-index",
-    visibility = ["//testing:__pkg__"],
 )

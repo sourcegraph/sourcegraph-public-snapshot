@@ -50,7 +50,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		// ID: 2 (because first time we create a config an initial config will be created first)
 		{
 			Contents: `{
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 3
@@ -59,7 +63,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// A new line is added.
 			Contents: `{
   "disableAutoGitUpdates": true,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 4
@@ -68,7 +76,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// Existing line is changed.
 			Contents: `{
   "disableAutoGitUpdates": false,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 5
@@ -80,7 +92,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			// any query that lists the diffs.
 			Contents: `{
   "disableAutoGitUpdates": false,
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 		// ID: 6
@@ -88,7 +104,11 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 			AuthorUserID: 3, // This user no longer exists
 			// Existing line is removed.
 			Contents: `{
-  "auth.Providers": []
+  "auth.providers": [
+    {
+      "type": "builtin"
+    }
+  ],
 }`,
 		},
 	}
@@ -115,38 +135,38 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		// 6 and 5.
 		6: `--- ID: 4
 +++ ID: 6
-@@ -1,4 +1,3 @@
+@@ -1,5 +1,4 @@
  {
 -  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		4: `--- ID: 3
 +++ ID: 4
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
  {
 -  "disableAutoGitUpdates": true,
 +  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		3: `--- ID: 2
 +++ ID: 3
-@@ -1,3 +1,4 @@
+@@ -1,4 +1,5 @@
  {
 +  "disableAutoGitUpdates": true,
-   "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		2: `--- ID: 1
 +++ ID: 2
-@@ -1,17 +1,3 @@
+@@ -1,14 +1,4 @@
  {
 -  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 -  // This is required to be configured for Sourcegraph to work correctly.
@@ -158,14 +178,9 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 -  // after the initial site admin signs in, all other users must be invited.
 -  //
 -  // Other providers are documented at https://sourcegraph.com/docs/admin/auth.
--  "auth.providers": [
--    {
--      "type": "builtin"
--    }
--  ],
-+  "auth.Providers": []
- }
-\ No newline at end of file
+   "auth.providers": [
+     {
+       "type": "builtin"
 `,
 
 		1: `--- ID: 0
