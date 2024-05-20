@@ -1208,9 +1208,6 @@ importers:
 
   client/client-api:
     dependencies:
-      '@sourcegraph/telemetry':
-        specifier: ^0.16.0
-        version: 0.16.0
       '@sourcegraph/template-parser':
         specifier: workspace:*
         version: link:../template-parser

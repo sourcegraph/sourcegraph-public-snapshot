@@ -64,7 +64,12 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' }, active: true }]}
+                    actionsOrError={[
+                        {
+                            action: { id: 'a', command: 'c', title: 'Some title', telemetryProps: { feature: 'test' } },
+                            active: true,
+                        },
+                    ]}
                 />
             ).asFragment()
         ).toMatchSnapshot()
@@ -102,7 +107,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             ).asFragment()
@@ -114,7 +121,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError="loading"
                 />
             ).asFragment()
@@ -174,7 +183,9 @@ describe('HoverOverlay', () => {
             render(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                    actionsOrError={[
+                        { action: { id: 'a', command: 'c', telemetryProps: { feature: 'a' } }, active: true },
+                    ]}
                     hoverOrError={{ message: 'm', name: 'c' }}
                 />
             ).asFragment()

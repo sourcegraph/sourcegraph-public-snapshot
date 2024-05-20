@@ -32,7 +32,6 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/extension-api-types",
-        ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/template-parser",
         ":node_modules/sourcegraph",
         "//:node_modules/@sourcegraph/extension-api-classes",

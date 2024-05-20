@@ -1,6 +1,5 @@
 import type { Primitive } from 'utility-types'
 
-import type { KnownString } from '@sourcegraph/telemetry'
 import type { Expression, TemplateExpression } from '@sourcegraph/template-parser'
 
 /**
@@ -132,7 +131,7 @@ export interface ActionContribution {
      * Properties to enable event telemetry to be recorded when an action is executed.
      */
     telemetryProps: {
-        feature: KnownString<string>
+        feature: string
 
         // No `action` prop is provided, because action items only log telemetry when executed (and thus use an
         // 'executed' action.

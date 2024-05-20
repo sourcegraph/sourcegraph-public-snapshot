@@ -8,6 +8,7 @@ import { catchError, map, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import type { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, type ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import { KnownString } from '@sourcegraph/telemetry'
 import {
     LoadingSpinner,
     Button,
@@ -342,7 +343,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         )
     }
 
-    public runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
+    public runAction = <Feature extends string>(
+        event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
+    ): void => {
         const action = (isAltEvent(event) && this.props.altAction) || this.props.action
 
         if (!action.command) {
@@ -358,9 +361,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
         if (action.telemetryProps) {
-            this.props.telemetryRecorder.recordEvent(action.telemetryProps.feature, 'executed', {
-                privateMetadata: { action: action.id, ...action.telemetryProps.privateMetadata },
-            })
+            this.props.telemetryRecorder.recordEvent(
+                action.telemetryProps.feature as KnownString<Feature>,
+                'executed',
+                {
+                    privateMetadata: { action: action.id, ...action.telemetryProps.privateMetadata },
+                }
+            )
         } else {
             this.props.telemetryRecorder.recordEvent('blob.action', 'executed', {
                 privateMetadata: { action: action.id },
