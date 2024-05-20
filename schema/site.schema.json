@@ -2277,6 +2277,11 @@
               "default": "",
               "description": "Origin of the Self-serve Cody backend.",
               "examples": ["https://accounts.sourcegraph.com"]
+            },
+            "sscBaseUrl": {
+              "type": "string",
+              "default": "https://accounts.sourcegraph.com/cody",
+              "description": "The base URL of the Self-Serve Cody site."
             }
           }
         }
