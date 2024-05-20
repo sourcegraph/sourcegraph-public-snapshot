@@ -193,7 +193,11 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                 </div>
                             </div>
                             <div className="align-content-center">
-                                {member.role === 'admin' && <Badge variant="primary" className="text-uppercase">admin</Badge>}
+                                {member.role === 'admin' && (
+                                    <Badge variant="primary" className="text-uppercase">
+                                        admin
+                                    </Badge>
+                                )}
                             </div>
                             <div />
                             {isAdmin ? (
@@ -259,7 +263,11 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     <Badge variant="secondary" className="mr-2 text-uppercase">
                                         invited
                                     </Badge>
-                                    {invite.role === 'admin' && <Badge variant="primary" className="text-uppercase">admin</Badge>}
+                                    {invite.role === 'admin' && (
+                                        <Badge variant="primary" className="text-uppercase">
+                                            admin
+                                        </Badge>
+                                    )}
                                 </div>
                                 <div className="align-content-center">
                                     <em>Invite sent {invite.sentAt /* TODO format this */}</em>
