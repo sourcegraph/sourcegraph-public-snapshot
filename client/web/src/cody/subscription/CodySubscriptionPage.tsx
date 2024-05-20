@@ -229,7 +229,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL // TODO: Use team link or argument
+                                                const url = new URL(manageSubscriptionRedirectURL);
+                                                url.searchParams.append('team', '1');
+                                                window.location.href = url.toString()
                                             }}
                                         >
                                             <span className={classNames(styles.proBadge, 'mr-1')} />
