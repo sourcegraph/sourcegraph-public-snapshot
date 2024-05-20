@@ -91,7 +91,7 @@ export class CodyProApiCaller implements Caller {
                 // On a related note, the `fetch` API does NOT include the "origin" header for GET
                 // or HEAD requests by spec. (See https://fetch.spec.whatwg.org/#origin-header.)
                 'x-requested-with': 'Sourcegraph/CodyProApiClient',
-            }
+            },
         })
 
         if (fetchResponse.status >= 200 && fetchResponse.status <= 299) {
