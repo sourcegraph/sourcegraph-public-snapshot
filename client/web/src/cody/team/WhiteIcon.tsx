@@ -1,11 +1,14 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import styles from './WhiteIcon.module.scss'
 
 export const ICON_NAMES = ['mdi-account-multiple-plus-gradient'] as const
 
 interface WhiteIconProps {
     name: typeof ICON_NAMES[number]
+    className?: string
 }
 
 const nameToUrl = {
@@ -14,12 +17,13 @@ const nameToUrl = {
 }
 
 export const WhiteIcon: React.FunctionComponent<WhiteIconProps> = ({ name, ...attributes }) => {
+    const { className, ...otherAttributes } = attributes
     if (!name || !ICON_NAMES.includes(name)) {
         return null
     }
 
     return (
-        <div className={styles.whiteBox} {...attributes}>
+        <div className={classNames(styles.whiteBox, className)} {...otherAttributes}>
             <img className={styles.whiteBoxContent} src={nameToUrl[name]} alt={name} />
             <svg
                 className={styles.whiteBoxBackground}
