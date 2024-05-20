@@ -69,7 +69,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 		completion += content.Text
 	}
 
-	parsedModelId := conftypes.ParseBedrockModelId(requestParams.Model)
+	parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				parsedModelId := conftypes.ParseBedrockModelId(requestParams.Model)
+				parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
 				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 				if err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
@@ -285,21 +285,24 @@ func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion stri
 		}
 	}
 
-	parsedModelId := conftypes.ParseBedrockModelId(model)
+	bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(model)
 
-	if parsedModelId.ProvisionedCapacity != "" {
+	if bedrockModelRef.ProvisionedCapacity != nil {
+		// We need to Query escape the provisioned capacity ARN, since otherwise
+		// the AWS API Gateway interprets the path as a path and doesn't route
+		// to the Bedrock service. This would results in abstract Coral errors
 		if stream {
-			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(parsedModelId.ProvisionedCapacity))
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.ProvisionedCapacity)
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", *bedrockModelRef.ProvisionedCapacity)
 		} else {
-			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(parsedModelId.ProvisionedCapacity))
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.ProvisionedCapacity)
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", *bedrockModelRef.ProvisionedCapacity)
 		}
 	} else {
 		if stream {
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", parsedModelId.Model)
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", bedrockModelRef.Model)
 		} else {
-			apiURL.Path = fmt.Sprintf("/model/%s/invoke", parsedModelId.Model)
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", bedrockModelRef.Model)
 		}
 	}
 

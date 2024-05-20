@@ -706,6 +706,11 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.ChatModel = completionsConfig.Model
 	}
 
+	// This records if the modelIDs have been canonicalized by the provider
+	// specific configuration. By default a ToLower will be applied the modelIDs
+	// if no other canonicalization has already been applied. In particular this
+	// is because BedrockModelRefs need different canonicalization
+	canonicalized := false
 	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
@@ -850,12 +855,27 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
 		}
+
+		// We apply BedrockModelRef specific canonicalization
+		// Make sure models are always treated case-insensitive.
+		chatModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.ChatModel)
+		completionsConfig.ChatModel = chatModelRef.CanonicalizedModelID()
+
+		fastChatModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.FastChatModel)
+		completionsConfig.FastChatModel = fastChatModelRef.CanonicalizedModelID()
+
+		completionsModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.CompletionModel)
+		completionsConfig.CompletionModel = completionsModelRef.CanonicalizedModelID()
+		canonicalized = true
 	}
 
-	// Make sure models are always treated case-insensitive.
-	completionsConfig.ChatModel = conftypes.CasefoldBedrockModelId(completionsConfig.ChatModel)
-	completionsConfig.FastChatModel = conftypes.CasefoldBedrockModelId(completionsConfig.FastChatModel)
-	completionsConfig.CompletionModel = conftypes.CasefoldBedrockModelId(completionsConfig.CompletionModel)
+	// only apply canonicalization if not already applied. Not all model IDs can simply be lowercased
+	if !canonicalized {
+		// Make sure models are always treated case-insensitive.
+		completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
+		completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
+		completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
+	}
 
 	// If after trying to set default we still have not all models configured, completions are
 	// not available.
@@ -1185,7 +1205,7 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		// this is a sane default for GPT in general.
 		return 7_000
 	case conftypes.CompletionsProviderNameAWSBedrock:
-		parsed := conftypes.ParseBedrockModelId(model)
+		parsed := conftypes.NewBedrockModelRefFromModelID(model)
 		if strings.HasPrefix(parsed.Model, "anthropic.") {
 			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(parsed.Model, "anthropic."))
 		}
@@ -1198,8 +1218,8 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 }
 
 func anthropicDefaultMaxPromptTokens(model string) int {
-	//TODO: this doesn't nearly cover all the ways that token size can be specified. https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
-	//Almost better to not infer these and instead require explicit configuration to avoid confusion
+	// TODO: this doesn't nearly cover all the ways that token size can be specified.
+	// See: https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 

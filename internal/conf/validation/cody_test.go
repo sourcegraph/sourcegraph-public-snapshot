@@ -15,17 +15,34 @@ func Test_completionsConfigValidator(t *testing.T) {
 		expectedProblems conf.Problems
 	}{
 		{
+			name: "valid configuration",
+			config: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					Completions: &schema.Completions{
+						Provider:        "aws-bedrock",
+						ChatModel:       "anthropic.claude-v1/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+						FastChatModel:   "anthropic.claude-v1",
+						CompletionModel: "anthropic.claude-3-sonnet-20240229-v1:0:200k/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/mnopqrstuvwxyz",
+					},
+				},
+			},
+			expectedProblems: conf.NewSiteProblems(),
+		},
+		{
 			name: "bedrock arn's are not valid",
 			config: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					Completions: &schema.Completions{
-						Provider:  "aws-bedrock",
-						ChatModel: "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+						Provider:        "aws-bedrock",
+						ChatModel:       "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
+						FastChatModel:   "anthropic.claude-v1",
+						CompletionModel: "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/mnopqrstuvwxyz",
 					},
 				},
 			},
 			expectedProblems: conf.NewSiteProblems(
 				fmt.Sprintf(bedrockArnMessageTemplate, "chatModel", "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl"),
+				fmt.Sprintf(bedrockArnMessageTemplate, "completionModel", "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/mnopqrstuvwxyz"),
 			),
 		},
 	}

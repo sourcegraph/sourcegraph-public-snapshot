@@ -103,32 +103,49 @@ func (r RawUnified) Equal(other RawUnified) bool {
 	return r.Site == other.Site && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
 }
 
-// Bedrock ModelIDs can either be just a <model_id> string as specified in https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html. Or when using provisioned capacity a string like `<model_id>/<provisioned_capacity>` where the <provisioned_capacity> refers to the arn in https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateProvisionedModelThroughput.html#API_CreateProvisionedModelThroughput_RequestSyntax
-type BedrockModelIdParts struct {
-	Model               string
-	ProvisionedCapacity string
+// Bedrock Model IDs can be in one of two forms:
+//   - A static model ID, e.g. "anthropic.claude-v2".
+//   - A model ID and ARN for provisioned capacity, e.g.
+//     "anthropic.claude-v2/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/xxxxxxxx"
+//
+// See the AWS docs for more information:
+// https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
+// https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateProvisionedModelThroughput.html
+type BedrockModelRef struct {
+	// Model is the underlying LLM model Bedrock is serving, e.g. "anthropic.claude-3-haiku-20240307-v1:0
+	Model string
+	// If the configuration is using provisioned capacity, this will
+	// contain the ARN of the model to use for making API calls.
+	// e.g. "anthropic.claude-v2/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/xxxxxxxx"
+	ProvisionedCapacity *string
 }
 
-func ParseBedrockModelId(modelId string) BedrockModelIdParts {
-	parts := strings.SplitN(modelId, "/", 2)
+func NewBedrockModelRefFromModelID(modelID string) BedrockModelRef {
+	parts := strings.SplitN(modelID, "/", 2)
 
-	parsed := BedrockModelIdParts{
+	if parts == nil { // this shouldn't really happen
+		return BedrockModelRef{Model: modelID}
+	}
+
+	parsed := BedrockModelRef{
 		Model: parts[0],
 	}
+
 	if len(parts) == 2 {
-		parsed.ProvisionedCapacity = parts[1]
+		parsed.ProvisionedCapacity = &parts[1]
 	}
 	return parsed
 }
 
-func CasefoldBedrockModelId(modelId string) string {
+// Ensures that all case insensitive parts of the model ID are lowercased so
+// that they can be compared.
+func (bmr BedrockModelRef) CanonicalizedModelID() string {
 	// Bedrock models are case sensitive if they contain a ARN
 	// make sure to only lowercase the non ARN part
-	parsed := ParseBedrockModelId(modelId)
-	parsed.Model = strings.ToLower(parsed.Model)
+	model := strings.ToLower(bmr.Model)
 
-	if parsed.ProvisionedCapacity != "" {
-		return strings.Join([]string{parsed.Model, parsed.ProvisionedCapacity}, "/")
+	if bmr.ProvisionedCapacity != nil {
+		return strings.Join([]string{model, *bmr.ProvisionedCapacity}, "/")
 	}
-	return parsed.Model
+	return model
 }
