@@ -1,4 +1,4 @@
-export type TeamRole = 'none' | 'member' | 'admin'
+import { TeamRole } from './teamMembers'
 
 // BillingInterval is the subscription's billing cycle. 'daily' is only
 // available in the dev environment.
