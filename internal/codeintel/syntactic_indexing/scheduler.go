@@ -3,15 +3,16 @@ package syntactic_indexing
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,19 +38,20 @@ type syntacticJobScheduler struct {
 
 var _ SyntacticJobScheduler = &syntacticJobScheduler{}
 
-
 func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB, config *SchedulerConfig) (SyntacticJobScheduler, error) {
+	database := database.NewDB(observationCtx.Logger, db)
 
-	services, err := codeintel.InitServices(observationCtx)
-	if err != nil {
-		return nil, err
-	}
+	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
+
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
+
+	uploadsSvc := uploads.NewService(observationCtx, database, codeIntelDB, gitserverClient.Scoped("uploads"))
+	policiesSvc := policies.NewService(observationCtx, database, uploadsSvc, gitserverClient.Scoped("policies"))
 
 	schedulerConfig.Load()
 
-	database := database.NewDB(observationCtx.Logger, db)
 	matcher := policies.NewMatcher(
-		services.GitserverClient,
+		gitserverClient,
 		policies.IndexingExtractor,
 		true,
 		true,
@@ -65,12 +67,12 @@ func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB, c
 
 	repoStore := database.Repos()
 
-	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, services.GitserverClient)
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
 	return &syntacticJobScheduler{
 		RepositorySchedulingService: repoSchedulingSvc,
 		PolicyMatcher:               matcher,
-		PoliciesService:             *services.PoliciesService,
+		PoliciesService:             *policiesSvc,
 		RepoStore:                   repoStore,
 		Enqueuer:                    enqueuer,
 		Config:                      schedulerConfig,
@@ -92,8 +94,6 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 		return err
 	}
 
-	fmt.Printf("Num scheduled repos: %d", len(repos))
-
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
 		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, schedulerConfig.PolicyBatchSize)
@@ -101,7 +101,6 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 		err := policyIterator.ForEachPoliciesBatch(ctx, func(policies []policiesshared.ConfigurationPolicy) error {
 
 			commitMap, err := s.PolicyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, currentTime)
-			fmt.Println(commitMap)
 
 			if err != nil {
 				return err

@@ -15,16 +15,12 @@ import (
 )
 
 func TestSyntacticIndexingScheduler(t *testing.T) {
-	/*
-		The purpose of this test is to verify that methods InsertIndexes and IsQueued
-		correctly interact with each other, and that the records inserted using those methods
-		are valid from the point of view of the DB worker interface
-	*/
 	observationCtx := observation.TestContextTB(t)
 	sqlDB := dbtest.NewDB(t)
 
 	config := &SchedulerConfig{
-		PolicyBatchSize: 100,
+		PolicyBatchSize:     100,
+		RepositoryBatchSize: 2500,
 	}
 
 	scheduler, err := NewSyntacticJobScheduler(observationCtx, sqlDB, config)
@@ -78,8 +74,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	// // cannot schedule same repo+revision twice
 	// result, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
 	// require.Empty(t, result)
-	// require.NoError(t, err)
-
+	// require.NoError(t, err
 	// // cannot schedule for non existent repositories
 	// _, err = enqueuer.QueueIndexes(ctx, 250, tacosCommit, EnqueueOptions{})
 	// require.Error(t, err)
@@ -91,6 +86,10 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 }
 
 func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
+
+	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
 
 	// store :=
 	query := `
@@ -130,16 +129,18 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	// for policyID, patterns := range map[int][]string{
-	// 106: {"gitlab.com/*"},
-	// 107: {"gitlab.com/*1"},
-	// 108: {"gitlab.com/*2"},
-	// 109: {"github.com/*"},
-	// 110: {"github.com/*"},
-	// } {
-	// if err := store.UpdateReposMatchingPatterns(ctx, patterns, policyID, nil); err != nil {
-	// 	t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
-	// }
-	// }
+	rows, _ := db.QueryContext(ctx, "select name from lsif_configuration_policies")
 
+	target := make([]interface{}, 1)
+
+	fmt.Println("LETSGO")
+	for rows.Next() {
+		err := rows.Scan(target...)
+		if err != nil {
+			fmt.Println("Failed to scan row", err)
+			return
+		}
+
+		fmt.Printf("%#v\n", target)
+	}
 }

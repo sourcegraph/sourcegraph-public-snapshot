@@ -8,6 +8,7 @@ import (
 )
 
 type PolicyType int
+
 const (
 	SyntacticIndexing PolicyType = 0
 	PreciseIndexing   PolicyType = 1
@@ -29,25 +30,33 @@ type policyIterator struct {
 }
 
 func (p policyIterator) ForEachPoliciesBatch(ctx context.Context, handle func([]policiesshared.ConfigurationPolicy) error) error {
-	forSyntacticIndexing := false
-	forPreciseIndexing := false
+	f := false
+	t := true
+
+	forSyntacticIndexing := &f
+	forPreciseIndexing := &f
 
 	if p.PolicyType == SyntacticIndexing {
-		forSyntacticIndexing = true
+		forSyntacticIndexing = &t
+		forPreciseIndexing = nil
 	} else {
-		forPreciseIndexing = true
+		forPreciseIndexing = &t
+		forSyntacticIndexing = nil
 	}
 
 	offset := 0
 
 	for {
-		policies, totalCount, err := p.Service.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+
+		options := policiesshared.GetConfigurationPoliciesOptions{
 			RepositoryID:         p.RepositoryID,
-			ForSyntacticIndexing: &forSyntacticIndexing,
-			ForPreciseIndexing:   &forPreciseIndexing,
+			ForSyntacticIndexing: forSyntacticIndexing,
+			ForPreciseIndexing:   forPreciseIndexing,
 			Limit:                p.BatchSize,
 			Offset:               offset,
-		})
+		}
+
+		policies, totalCount, err := p.Service.GetConfigurationPolicies(ctx, options)
 
 		if err != nil {
 			return err
