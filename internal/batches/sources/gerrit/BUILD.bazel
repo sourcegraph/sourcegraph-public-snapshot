@@ -4,6 +4,7 @@ go_library(
     name = "gerrit",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/extsvc/gerrit"],
 )

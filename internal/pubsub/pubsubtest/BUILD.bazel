@@ -4,6 +4,7 @@ go_library(
     name = "pubsubtest",
     srcs = ["pubsubtest.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubtest",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/pubsub"],
 )

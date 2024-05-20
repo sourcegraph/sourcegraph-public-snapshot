@@ -17,6 +17,7 @@ go_library(
         "user_count.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -47,6 +48,7 @@ go_test(
     ],
     embed = [":licensing"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

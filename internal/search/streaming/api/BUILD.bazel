@@ -8,6 +8,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming/api",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/api"],
 )
@@ -18,6 +19,7 @@ go_test(
     srcs = ["progress_test.go"],
     data = glob(["testdata/**"]),
     embed = [":api"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/testutil",

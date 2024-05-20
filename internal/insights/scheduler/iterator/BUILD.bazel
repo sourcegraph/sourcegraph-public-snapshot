@@ -5,6 +5,7 @@ go_library(
     name = "iterator",
     srcs = ["repo_iterator.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/scheduler/iterator",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -23,6 +24,7 @@ go_test(
     srcs = ["repo_iterator_test.go"],
     embed = [":iterator"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

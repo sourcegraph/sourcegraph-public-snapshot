@@ -9,6 +9,7 @@ go_library(
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/server",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/grpc/example/server/service",
@@ -25,6 +26,7 @@ go_library(
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -32,6 +34,7 @@ go_test(
     name = "server_test",
     srcs = ["conversion_test.go"],
     embed = [":server_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/grpc/example/server/service",
         "@com_github_google_go_cmp//cmp",

@@ -49,6 +49,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":store"],
     tags = [
+        TAG_INFRA_RELEASE,
         # Test requires localhost database
         "requires-network",
     ],

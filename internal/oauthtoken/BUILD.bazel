@@ -5,6 +5,7 @@ go_library(
     name = "oauthtoken",
     srcs = ["oauth_token_helper.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oauthtoken",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -21,6 +22,7 @@ go_test(
     name = "oauthtoken_test",
     srcs = ["oauth_token_helper_test.go"],
     embed = [":oauthtoken"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//internal/extsvc",

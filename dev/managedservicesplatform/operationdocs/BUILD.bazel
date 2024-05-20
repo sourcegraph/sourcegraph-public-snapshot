@@ -10,6 +10,7 @@ go_library(
         "operationdocs.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/operationdocs",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/operationdocs/internal/markdown",
@@ -32,6 +33,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":operationdocs"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//dev/managedservicesplatform/operationdocs/terraform",
         "//dev/managedservicesplatform/spec",

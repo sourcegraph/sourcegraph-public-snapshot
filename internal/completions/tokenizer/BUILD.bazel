@@ -5,6 +5,7 @@ go_library(
     name = "tokenizer",
     srcs = ["tokenizer.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/tokenizer",
+    tags = [TAG_CODY_CORE],
     visibility = [
         "//cmd/cody-gateway:__subpackages__",
         "//internal/completions/client/anthropic:__pkg__",
@@ -23,6 +24,7 @@ go_library(
 go_test(
     name = "tokenizer_test",
     srcs = ["tokenizer_test.go"],
+    tags = [TAG_CODY_CORE],
     deps = [
         ":tokenizer",
         "@com_github_hexops_autogold_v2//:autogold",

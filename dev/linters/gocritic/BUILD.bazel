@@ -4,6 +4,7 @@ go_library(
     name = "gocritic",
     srcs = ["gocritic.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/gocritic",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

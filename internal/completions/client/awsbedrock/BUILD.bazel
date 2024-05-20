@@ -8,6 +8,7 @@ go_library(
         "prompt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenusage",
@@ -31,6 +32,7 @@ go_test(
         "prompt_test.go",
     ],
     embed = [":awsbedrock"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/types",
         "@com_github_aws_aws_sdk_go_v2_config//:config",

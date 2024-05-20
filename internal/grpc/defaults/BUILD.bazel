@@ -9,6 +9,7 @@ go_library(
         "retry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/defaults",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -44,6 +45,7 @@ go_test(
         "retry_test.go",
     ],
     embed = [":defaults"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

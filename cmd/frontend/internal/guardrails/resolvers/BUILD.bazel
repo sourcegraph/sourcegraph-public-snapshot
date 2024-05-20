@@ -5,6 +5,7 @@ go_library(
     name = "resolvers",
     srcs = ["resolver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/resolvers",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -18,6 +19,7 @@ go_test(
     name = "resolvers_test",
     srcs = ["resolver_test.go"],
     embed = [":resolvers"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/guardrails/attribution",

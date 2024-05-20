@@ -7,6 +7,7 @@ go_library(
     name = "linearhooks_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/linearhooks/internal/service",
@@ -17,6 +18,7 @@ go_library(
 go_binary(
     name = "linearhooks",
     embed = [":linearhooks_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -50,6 +52,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_DEVINFRA,
         "exclusive",
         "requires-network",
     ],

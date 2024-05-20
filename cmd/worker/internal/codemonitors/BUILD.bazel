@@ -4,6 +4,7 @@ go_library(
     name = "codemonitors",
     srcs = ["codemonitor_job.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",

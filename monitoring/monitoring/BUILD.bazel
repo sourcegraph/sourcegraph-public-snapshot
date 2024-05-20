@@ -20,6 +20,7 @@ go_library(
         "variables.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -48,6 +49,7 @@ go_test(
     ],
     embed = [":monitoring"],
     tags = [
+        TAG_INFRA_DEVINFRA,
         # We validate that external resources are valid
         "requires-network",
     ],

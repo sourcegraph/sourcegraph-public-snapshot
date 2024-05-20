@@ -53,6 +53,7 @@ go_test(
         "user_test.go",
     ],
     embed = [":openidconnect"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",

@@ -12,6 +12,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//dev/codeintel-qa:__subpackages__"],
     deps = [
         "//internal/env",

@@ -272,7 +272,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
-				"client-version": []string{"5.5.10"},
+				"client-version": []string{"5.5.8"},
 			},
 			want:              nil,
 			isClientsTestMode: true,
@@ -283,10 +283,10 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
-				"client-version": []string{"5.5.9-nightly"},
+				"client-version": []string{"5.5.7-nightly"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"5.5.9-nightly\" doesn't match version constraint \">= 5.5.10-0\". Please upgrade your client.", types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("Cody for %s version \"5.5.7-nightly\" doesn't match version constraint \">= 5.5.8-0\". Please upgrade your client.", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
 			isClientsTestMode: true,
@@ -297,7 +297,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
-				"client-version": []string{"6.0.0"},
+				"client-version": []string{"5.5.8-nightly"},
 			},
 			want:              nil,
 			isClientsTestMode: true,
@@ -316,12 +316,11 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			},
 		},
 		{
-			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
 			name: "vscode: lower version matches constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
-				"client-version": []string{"1.17.1715730510"},
+				"client-version": []string{"1.16.0"},
 			},
 			want:              nil,
 			isClientsTestMode: true,
@@ -332,10 +331,10 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
-				"client-version": []string{"1.16.0-alpha"},
+				"client-version": []string{"1.15.1815730510"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.16.0-alpha\" doesn't match version constraint \">= 1.17.0-0\". Please upgrade your client.", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"1.15.1815730510\" doesn't match version constraint \">= 1.16.0-0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 			isClientsTestMode: true,
@@ -346,7 +345,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
-				"client-version": []string{"1.17.0-localbuild"},
+				"client-version": []string{"1.16.1815730510"},
 			},
 			want:              nil,
 			isClientsTestMode: true,

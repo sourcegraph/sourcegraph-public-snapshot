@@ -18,7 +18,7 @@ Up migrations will happen automatically in development on service startup. In pr
 
 ## Adding a migration
 
-**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://sourcegraph.com/docs/dev/background-information/sql/migrations) in our developer documentation for additional context.
+**IMPORTANT:** All migrations must be backwards-compatible, meaning that _existing_ code must be able to operate successfully against the _new_ (post-migration) database schema. Consult [_Writing database migrations_](https://docs-legacy.sourcegraph.com/dev/background-information/sql/migrations) in our developer documentation for additional context.
 
 To create a new migration file, run the following command.
 

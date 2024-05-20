@@ -11,6 +11,7 @@ go_library(
         "ubuntu.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/dependencies",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/sg/internal/check",
@@ -35,6 +36,7 @@ go_test(
         "ubuntu_test.go",
     ],
     embed = [":dependencies"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/internal/check",
         "//dev/sg/internal/std",

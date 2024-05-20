@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
@@ -552,18 +553,27 @@ func httpLogError(logFunc func(string, ...log.Field), w http.ResponseWriter, msg
 // Usernames that could not be converted return an error.
 //
 // Note: Do not forget to change database constraints on "users" and "orgs" tables.
+// WARNING: The current implementation of repo permission syncing for Bitbucket Server
+// depends on matching usernames on the code host and Sourcegraph, so we should try
+// our best to not make any unnecessary transformations here, as every transformation
+// increases the risk of some usernames not matching up with Bitbucket usernames
+// and those will need manual fixup.
 func NormalizeUsername(name string) (string, error) {
 	origName := name
 
 	// If the username is an email address, extract the username part.
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
+		name = name[:i]
+
 		// NOTE: When we derive the username from the email address, it is high chance
-		// that the username is not unique, so we always append a random suffix to the
-		// username.
-		var err error
-		name, err = AddRandomSuffix(name[:i])
-		if err != nil {
-			return "", errors.Wrap(err, "add random suffix")
+		// that the username is not unique on dotcom, because many emails, are of formats
+		// like me@XX.com. So we always append a random suffix to the username in dotcom.
+		if dotcom.SourcegraphDotComMode() {
+			var err error
+			name, err = AddRandomSuffix(name)
+			if err != nil {
+				return "", errors.Wrap(err, "add random suffix")
+			}
 		}
 	}
 

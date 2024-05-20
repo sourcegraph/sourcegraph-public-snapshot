@@ -1,13 +1,16 @@
 <script lang="ts">
-    import { getSuggestionsState, type Option, type Group, type Action } from '$lib/branded'
     import { EditorView } from '@codemirror/view'
-    import SuggestionOption from './SuggestionOption.svelte'
-    import { createEventDispatcher, tick } from 'svelte'
-    import { isSafari } from '@sourcegraph/common/src/util'
-    import Icon from '$lib/Icon.svelte'
     import { mdiInformationOutline } from '@mdi/js'
-    import ActionInfo from './ActionInfo.svelte'
+    import { createEventDispatcher, tick } from 'svelte'
+
+    import { isSafari } from '@sourcegraph/common/src/util'
+
+    import { getSuggestionsState, type Option, type Group, type Action } from '$lib/branded'
     import { restrictToViewport } from '$lib/dom'
+    import Icon from '$lib/Icon.svelte'
+
+    import ActionInfo from './ActionInfo.svelte'
+    import SuggestionOption from './SuggestionOption.svelte'
 
     const dispatch = createEventDispatcher<{ select: { option: Option; action: Action } }>()
 
@@ -146,7 +149,7 @@
                 // group header
                 [role='presentation'] {
                     color: var(--text-muted);
-                    font-size: 0.75rem;
+                    font-size: var(--code-font-size);
                     font-weight: 500;
                     margin-bottom: 0.25rem;
                     padding: 0 0.5rem;

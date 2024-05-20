@@ -11,6 +11,7 @@ go_library(
         "paths.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
@@ -25,5 +26,6 @@ go_test(
         "paths_test.go",
     ],
     embed = [":pathexistence"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

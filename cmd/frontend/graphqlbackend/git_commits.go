@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"cmp"
 	"context"
 	"strconv"
 	"sync"
@@ -89,7 +90,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		}
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
-			Range:        r.revisionRange,
+			Ranges:       []string{cmp.Or(r.revisionRange, "HEAD")},
 			N:            uint(n),
 			MessageQuery: pointers.DerefZero(r.query),
 			Author:       pointers.DerefZero(r.author),

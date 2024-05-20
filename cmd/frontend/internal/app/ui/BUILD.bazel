@@ -20,6 +20,7 @@ go_library(
         "error.html",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
@@ -82,6 +83,7 @@ go_test(
         "templ_test.go",
     ],
     embed = [":ui"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/globals",

@@ -4,6 +4,7 @@ go_library(
     name = "nobl9provider",
     srcs = ["nobl9provider.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/nobl9provider",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resource/gsmsecret",

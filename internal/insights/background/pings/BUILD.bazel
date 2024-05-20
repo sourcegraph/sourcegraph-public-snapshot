@@ -7,6 +7,7 @@ go_library(
         "insights_ping_emitter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/pings",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",

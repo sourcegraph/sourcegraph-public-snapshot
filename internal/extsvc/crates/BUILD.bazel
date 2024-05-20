@@ -4,6 +4,7 @@ go_library(
     name = "crates",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/crates",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/httpcli",

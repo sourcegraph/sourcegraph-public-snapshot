@@ -14,6 +14,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codehost_testing",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/codehost_testing/config",
@@ -27,4 +28,5 @@ go_test(
     name = "codehost_testing_test",
     srcs = ["scenario_test.go"],
     embed = [":codehost_testing"],
+    tags = [TAG_INFRA_DEVINFRA],
 )

@@ -10,6 +10,7 @@ go_library(
         "job_reconciler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/janitor",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -30,6 +31,7 @@ go_test(
     name = "janitor_test",
     srcs = ["job_cleanup_test.go"],
     embed = [":janitor"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/gitserver",

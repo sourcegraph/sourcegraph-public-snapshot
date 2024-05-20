@@ -4,6 +4,7 @@ go_library(
     name = "grpcserver",
     srcs = ["grpcserver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/grpcserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/goroutine",

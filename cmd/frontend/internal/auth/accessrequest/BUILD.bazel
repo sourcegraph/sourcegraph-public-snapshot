@@ -24,7 +24,10 @@ go_test(
     name = "accessrequest_test",
     srcs = ["handlers_test.go"],
     embed = [":accessrequest"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_SOURCE,
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",
