@@ -8,10 +8,14 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
-import { ChatUI, ScrollDownButton } from '../components/ChatUI'
+import { ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
 
 import { useCodySidebar } from './Provider'
+
+import { CodyWebChat } from '@sourcegraph/cody-web'
+
+import '@sourcegraph/cody-web/dist/style.css'
 
 import styles from './CodySidebar.module.scss'
 
@@ -146,10 +150,9 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticated
                         deleteHistoryItem={deleteHistoryItem}
                     />
                 ) : (
-                    <ChatUI
-                        codyChatStore={codySidebarStore}
-                        authenticatedUser={authenticatedUser}
-                        telemetryRecorder={telemetryRecorder}
+                    <CodyWebChat
+                        accessToken='sgp_a0d7ccb4f752ea73_fa526bc1d42785f2898b3f82c24dbd231b10e247'
+                        serverEndpoint='https://sourcegraph.com'
                     />
                 )}
             </div>
