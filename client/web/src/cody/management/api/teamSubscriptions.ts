@@ -40,14 +40,14 @@ export interface DiscountInfo {
 }
 
 export interface Invoice {
-    date: Date
+    date: string
 
     amountDue: UsdCents
     amountPaid: UsdCents
     status: InvoiceStatus
 
-    periodStart: Date
-    periodEnd: Date
+    periodStart: string
+    periodEnd: string
 
     hostedInvoiceUrl?: string
     pdfUrl?: string
@@ -65,8 +65,8 @@ export interface SubscriptionSummary {
 }
 
 export interface Subscription {
-    createdAt: Date
-    endedAt?: Date
+    createdAt: string
+    endedAt?: string
 
     primaryEmail: string
     name: string
@@ -78,8 +78,8 @@ export interface Subscription {
 
     discountInfo?: DiscountInfo
 
-    currentPeriodStart: Date
-    currentPeriodEnd: Date
+    currentPeriodStart: string
+    currentPeriodEnd: string
 
     paymentMethod?: PaymentMethod
     nextInvoice?: PreviewResult

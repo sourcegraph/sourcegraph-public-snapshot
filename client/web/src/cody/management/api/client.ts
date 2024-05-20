@@ -5,7 +5,7 @@ import type * as types from './types'
 // This doesn't _do_ anything, it just returns the metadata for what needs to be done.
 // It is used in conjunction with a Caller implementation for actually fetching data.
 // eslint-disable-next-line @typescript-eslint/prefer-namespace-keyword, @typescript-eslint/no-namespace
-export module Client {
+export namespace Client {
     // Subscriptions
 
     export function getCurrentSubscription(): Call<types.Subscription> {

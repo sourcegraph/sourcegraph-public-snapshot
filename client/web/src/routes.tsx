@@ -80,7 +80,7 @@ const CodySubscriptionPage = lazyComponent(
     'CodySubscriptionPage'
 )
 const CodySubscriptionManagePage = lazyComponent(
-    () => import('./cody/subscription/CodySubscriptionManagePage'),
+    () => import('./cody/management/subscription/manage/CodySubscriptionManagePage'),
     'CodySubscriptionManagePage'
 )
 const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
@@ -479,7 +479,7 @@ export const routes: RouteObject[] = [
             <LegacyRoute
                 render={props => (
                     <CodySubscriptionManagePage
-                        {...props}
+                        authenticatedUser={props.authenticatedUser}
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}

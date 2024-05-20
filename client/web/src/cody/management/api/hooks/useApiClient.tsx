@@ -1,6 +1,6 @@
 import { useEffect, useState, useContext } from 'react'
 
-import { Call } from '../client'
+import type { Call } from '../client'
 import { CodyProApiClientContext } from '../components/CodyProApiClient'
 
 export interface ReactFriendlyApiResponse<T> {

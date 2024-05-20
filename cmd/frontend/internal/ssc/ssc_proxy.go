@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -152,7 +153,16 @@ func (p *APIProxyHandler) getSAMSCredentialsForUser(ctx context.Context, userID 
 }
 
 func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	var info struct {
+		Actor *actor.Actor `json:"actor"`
+	}
+	if err := session.GetData(r, "actor", &info); err != nil {
+		p.Logger.Error("failed to get actor from session", log.Error(err))
+	}
+	// TODO: we should set actor to context in another way,
+	// see: https://github.com/sourcegraph/sourcegraph/blob/24c0b99b65161297c41b9836bbd80f7811daae20/cmd/frontend/internal/httpapi/httpapi.go#L217-L229
+	ctx := actor.WithActor(r.Context(), info.Actor)
+
 	p.Logger.Info("proxying SSC API request", log.String("url", r.URL.String()))
 
 	sgUserID, err := p.getUserIDFromContext(ctx)
