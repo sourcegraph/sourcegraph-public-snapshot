@@ -17,7 +17,7 @@ instead.
 
 Steps:
 
-1. Request ["CI Secrets Read Access"](https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6Ijg2NDAwIiwianVzdGlmaWNhdGlvbiI6IlJ1bm5pbmcgYmFja2VuZCBpbnRlZ3JhdGlvbiB0ZXN0cyBsb2NhbGx5IiwiYnVuZGxlSWRzIjpbIjA2ZmRkZTIwLWY1Y2MtNDdlMS1iZGYxLWZkZTUwYjhhNDE3MCJdfQ%3D%3D) in Entitle
+1. Request "CI Secrets Read Access" in Entitle
 2. Run `sg test bazel-backend-integration`
 
 ## How to add new tests
