@@ -227,15 +227,13 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                             </Link>
                                         </div>
                                         <div className="align-content-center text-center">
-                                            <ButtonLink
+                                            <Link
                                                 to="#"
-                                                variant="danger"
-                                                size="sm"
                                                 onClick={() => removeMember(member.accountId)}
                                                 className="ml-2"
                                             >
                                                 Remove
-                                            </ButtonLink>
+                                            </Link>
                                         </div>
                                     </>
                                 )
