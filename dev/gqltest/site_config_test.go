@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -13,10 +15,9 @@ func TestSiteConfig(t *testing.T) {
 	t.Run("builtin auth provider: allowSignup", func(t *testing.T) {
 		// Sign up a new user is allowed by default.
 		const testUsername1 = "gqltest-auth-user-1"
-		testClient1, err := gqltestutil.SignUp(*baseURL, testUsername1+"@sourcegraph.com", testUsername1, "mysecurepassword")
-		if err != nil {
-			t.Fatal(err)
-		}
+		testClient1, err := gqltestutil.NewClient(*baseURL)
+		require.NoError(t, err)
+		require.NoError(t, testClient1.SignUp(testUsername1+"@sourcegraph.com", testUsername1, "mysecurepassword"))
 		removeTestUserAfterTest(t, testClient1.AuthenticatedUserID())
 
 		// Update site configuration to not allow sign up for builtin auth provider.
@@ -54,8 +55,9 @@ func TestSiteConfig(t *testing.T) {
 		err = gqltestutil.Retry(5*time.Second, func() error {
 			// Sign up a new user should fail.
 			const testUsername2 = "gqltest-auth-user-2"
-			testClient2, err := gqltestutil.SignUp(*baseURL, testUsername2+"@sourcegraph.com", testUsername2, "mysecurepassword")
-			if err != nil {
+			testClient2, err := gqltestutil.NewClient(*baseURL)
+			require.NoError(t, err)
+			if err := testClient2.SignUp(testUsername2+"@sourcegraph.com", testUsername2, "mysecurepassword"); err != nil {
 				if strings.Contains(err.Error(), "Signup is not enabled") {
 					return nil
 				}

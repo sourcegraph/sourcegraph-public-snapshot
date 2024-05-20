@@ -21,10 +21,9 @@ func TestCodeIntelEndpoints(t *testing.T) {
 	// user should receive access denied for LSIF endpoints of repositories the user
 	// does not have access to.
 	const testUsername = "authtest-user-code-intel"
-	userClient, err := gqltestutil.SignUp(*baseURL, testUsername+"@sourcegraph.com", testUsername, "mysecurepassword")
-	if err != nil {
-		t.Fatal(err)
-	}
+	userClient, err := gqltestutil.NewClient(*baseURL)
+	require.NoError(t, err)
+	require.NoError(t, userClient.SignUp(testUsername+"@sourcegraph.com", testUsername, "mysecurepassword"))
 	defer func() {
 		err := client.DeleteUser(userClient.AuthenticatedUserID(), true)
 		if err != nil {
