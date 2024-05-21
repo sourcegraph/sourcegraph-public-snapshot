@@ -62,7 +62,7 @@
 
     <div class="lang-and-file section">
         {#if entry.__typename === 'GitBlob'}
-            <FileIcon file={entry} inline={false} size="1.5rem" />
+            <FileIcon file={entry} inline={false} --icon-size="1.5rem" />
             <div class="file mono">
                 <div>{baseName}</div>
                 <small>
