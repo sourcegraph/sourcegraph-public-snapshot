@@ -227,6 +227,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
+                                                // We add ?team=1 to the URL to indicate that the user is creating a team.
+                                                // We can use this info to initialize the UI differently,
+                                                // or even display an entirely different UI.
                                                 const url = new URL(manageSubscriptionRedirectURL)
                                                 url.searchParams.append('team', '1')
                                                 window.location.href = url.toString()
