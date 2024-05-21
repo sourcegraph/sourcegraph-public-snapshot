@@ -27,11 +27,20 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62695](https://github.com/sourcegraph/sourcegraph/pull/62695) ~~[#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)~~
 - Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
-- Fixed an issue where code graph configuration policies would miscategorize lightweight tags as branches. [#62671](https://github.com/sourcegraph/sourcegraph/pull/62671)
 - Providing an access token via the [`SRC_ACCESS_TOKEN`](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token) environment variable is now mandatory for uploading SCIP indexes using [src-cli](https://sourcegraph.com/docs/cli). [#62573](https://github.com/sourcegraph/sourcegraph/pull/62573)
+
+## 5.4.2198
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62695](https://github.com/sourcegraph/sourcegraph/pull/62695) ~~[#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)~~
 - Fixed an issue where usernames were too eagerly suffixed with a random ID to prevent duplicates which could cause issues with Bitbucket Server permissions syncing where exact username matches are required. [#62747](https://github.com/sourcegraph/sourcegraph/pull/62747)
+- Fixed an issue where code graph configuration policies would miscategorize lightweight tags as branches. [#62671](https://github.com/sourcegraph/sourcegraph/pull/62671)
 
 ## 5.4.0
 
