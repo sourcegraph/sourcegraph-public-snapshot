@@ -190,7 +190,13 @@
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
                 <div class="sidebar-action-row">
-                    <Button variant="secondary" outline size="sm" on:click={toggleFileSidePanel}>
+                    <Button
+                        variant="secondary"
+                        outline
+                        size="sm"
+                        on:click={toggleFileSidePanel}
+                        aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
+                    >
                         <Icon svgPath={!isCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight} inline />
                     </Button>
 
