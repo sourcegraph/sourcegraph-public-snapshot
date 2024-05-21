@@ -520,6 +520,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
 	}
 
+	// Set a separate timeout for post repo fetch actions, otherwise git commands
+	// that are run as part of that will have the default timeout of 1 minute,
+	// and we want this to succeed rather than be super fast.
+	ctx, cancel = context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 	if err := postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(common.GitDir(tmpPath), repo), s.hostname, repo, common.GitDir(tmpPath), syncer); err != nil {
 		return err
 	}
@@ -737,6 +742,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, output.String())
 		}
 
+		// Set a separate timeout for post repo fetch actions, otherwise git commands
+		// that are run as part of that will have the default timeout of 1 minute,
+		// and we want this to succeed rather than be super fast.
+		ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+		defer cancel()
 		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(dir, repo), s.hostname, repo, dir, syncer)
 	}(ctx)
 
