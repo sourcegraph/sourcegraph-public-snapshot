@@ -11,6 +11,7 @@ P4_FUSION_VERSION = "v1.13.2-sg.04a293a"
 GH_VERSION = "2.45.0"
 PGUTILS_VERSION = "ad082497"
 LINEAR_SDK_VERSION = "21.1.0"
+SCIP_GO_VERSION = "v0.1.14"
 
 GH_BUILDFILE = """
 filegroup(
@@ -339,4 +340,28 @@ def tool_deps():
         name = "linear-sdk-graphql-schema",
         url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
         integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
+    )
+
+    http_archive(
+        name = "scip-go_darwin-arm64",
+        url = "https://github.com/sourcegraph/scip-go/releases/download/v0.1.14/scip-go_0.1.14_darwin_arm64.tar.gz",
+        integrity = "sha256-wzFsXZiMnvp1yU4sJDFVYFD6Okf70w3a2jfjCDSxlqM=",
+        build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["scip-go"])
+        """,
+    )
+
+    http_archive(
+        name = "go-diff",
+        url = "https://github.com/sgtest/go-diff/archive/f935979a5d70d2f3034edc6de94c77be621ce500.zip",
+        integrity = "sha256-dEGXFKOQXUq32RBKaw9AMCpdSZRJDul+wl66Ktdu1PI=",
+        build_file_content = """
+filegroup(
+    name = "src",
+    srcs = glob(["*/**"]),
+    visibility = ["//visibility:public"],
+)
+        """,
     )
