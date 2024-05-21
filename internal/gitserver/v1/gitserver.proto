@@ -818,7 +818,7 @@ message ExecRequest {
   bytes ensure_revision = 2 [deprecated = true];
   repeated bytes args = 3;
   bytes stdin = 4 [deprecated = true];
-  bool no_timeout = 5;
+  bool no_timeout = 5 [deprecated = true];
 }
 
 message ExecResponse {
