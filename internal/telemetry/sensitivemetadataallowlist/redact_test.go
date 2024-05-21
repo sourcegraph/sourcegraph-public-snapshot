@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -16,7 +17,8 @@ func TestRedactEvent(t *testing.T) {
 			Parameters: &telemetrygatewayv1.EventParameters{
 				PrivateMetadata: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"testField": structpb.NewBoolValue(true),
+						"testField":    structpb.NewStringValue("TestValue"),
+						"notTestField": structpb.NewStringValue("notTestValue"),
 					},
 				},
 			},
@@ -27,10 +29,11 @@ func TestRedactEvent(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		mode   redactMode
-		event  *telemetrygatewayv1.Event
-		assert func(t *testing.T, got *telemetrygatewayv1.Event)
+		name        string
+		mode        redactMode
+		event       *telemetrygatewayv1.Event
+		allowedKeys []string
+		assert      func(t *testing.T, got *telemetrygatewayv1.Event)
 	}{
 		{
 			name:  "redact all sensitive",
@@ -52,11 +55,16 @@ func TestRedactEvent(t *testing.T) {
 		},
 		{
 			name:  "redact marketing",
-			mode:  redactMarketing,
+			mode:  redactMarketingAndUnallowedPrivateMetadataKeys,
 			event: makeFullEvent(),
+			allowedKeys: []string{
+				"testField",
+			},
 			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
-				assert.NotNil(t, got.Parameters.PrivateMetadata)
 				assert.Nil(t, got.MarketingTracking)
+				require.NotNil(t, got.Parameters.PrivateMetadata)
+				assert.NotNil(t, got.Parameters.PrivateMetadata.Fields["testField"])
+				assert.Nil(t, got.Parameters.PrivateMetadata.Fields["notTestField"])
 			},
 		},
 		{
@@ -72,7 +80,7 @@ func TestRedactEvent(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ev := makeFullEvent()
-			redactEvent(ev, tc.mode)
+			redactEvent(ev, tc.mode, tc.allowedKeys)
 			tc.assert(t, ev)
 		})
 	}
