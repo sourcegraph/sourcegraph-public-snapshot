@@ -23,7 +23,7 @@
     import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
-    import { getIconPathForCodeHost } from '../shared/codehost'
+    import { getHumanNameForCodeHost, getIconPathForCodeHost } from '../shared/codehost'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
@@ -32,7 +32,6 @@
 
     $: commit = data.commit
     $: author = commit?.author
-    $: codeHostKind = data.externalServices.nodes[0].kind
 </script>
 
 <div class="root">
@@ -46,8 +45,12 @@
                 </Badge>
             </div>
             <div class="right">
-                <Icon svgPath={getIconPathForCodeHost(codeHostKind)} --icon-fill-color="var(--text-body)" --size={24} />
-                <small>{capitalize(codeHostKind)}</small>
+                <Icon
+                    svgPath={getIconPathForCodeHost(data.externalRepository.serviceType)}
+                    --icon-fill-color="var(--text-body)"
+                    --size={24}
+                />
+                <small>{getHumanNameForCodeHost(data.externalRepository.serviceType)}</small>
             </div>
         </div>
     {/if}
