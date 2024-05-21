@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -116,9 +117,6 @@ const (
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = 2 * day
-	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
-	// corrupt on disk.
-	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
 	// The name of the log file placed by sg maintenance in case it encountered an
 	// error.
 	sgmLog = "sgm.log"
@@ -349,20 +347,24 @@ func cleanupRepos(
 	}
 
 	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
-		corrupt, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
+		corrupt, shouldLog, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
 		if !corrupt || err != nil {
 			return false, err
 		}
 
-		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
-		if err != nil {
-			logger.Warn("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
+		if shouldLog {
+			err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
+			if err != nil {
+				logger.Error("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
+			}
 		}
 
-		logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
+		logger.Warn("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
+
 		if err := fs.RemoveRepo(repoName); err != nil {
 			return true, err
 		}
+
 		reposRemoved.WithLabelValues(reason).Inc()
 
 		// Set as not_cloned in the database.
@@ -410,21 +412,7 @@ func cleanupRepos(
 	}
 
 	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
-		const maybeCorrupt = "maybeCorrupt"
-
-		if maybeCorrupt, _ := backend.Config().Get(ctx, gitConfigMaybeCorrupt); maybeCorrupt != "" {
-			// Set the reason so that the repo cleaned up
-			reason = maybeCorrupt
-			// We don't log the corruption here, since the corruption *should* have already been
-			// logged when this config setting was set in the repo.
-			// When the repo is recloned, the corrupted_at status should be cleared, which means
-			// the repo is not considered corrupted anymore.
-			//
-			// unset flag to stop constantly re-cloning if it fails.
-			_ = backend.Config().Unset(ctx, gitConfigMaybeCorrupt)
-		}
 
 		// Check if we marked GC as failed and if so, if it's been too long.
 		gcFailedAt, err := backend.Config().Get(ctx, gitConfigGCFailed)
@@ -450,20 +438,18 @@ func cleanupRepos(
 			}
 		}
 
+		if reason == "" {
+			return false, nil
+		}
+
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
-		if reason != maybeCorrupt {
-			repoType, err := git.GetRepositoryType(ctx, backend.Config())
-			if err != nil {
-				return false, err
-			}
-			if repoType == "perforce" {
-				reason = ""
-			}
+		repoType, err := git.GetRepositoryType(ctx, backend.Config())
+		if err != nil {
+			return false, err
 		}
-
-		if reason == "" {
+		if repoType == "perforce" {
 			return false, nil
 		}
 
@@ -472,7 +458,7 @@ func cleanupRepos(
 			log.String("reason", reason),
 		)
 
-		recloneLogger.Info("re-cloning potentially broken repo")
+		recloneLogger.Info("re-cloning repo after GC failures")
 
 		// We trigger a reclone by removing the repo from disk and marking it as
 		// uncloned in the DB. The reclone will then be performed as if this repo
@@ -683,13 +669,13 @@ func cleanupRepos(
 	logger.Info("Janitor run finished", log.String("duration", time.Since(start).String()))
 }
 
-func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) (bool, string, error) {
+func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) (corrupt, shouldLog bool, description string, err error) {
 	// We treat repositories missing HEAD to be corrupt. Both our cloning
 	// and fetching ensure there is a HEAD file.
 	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-		return true, "missing-head", nil
+		return true, true, "missing-head", nil
 	} else if err != nil {
-		return false, "", err
+		return false, false, "", err
 	}
 
 	// We have seen repository corruption fail in such a way that the git
@@ -699,10 +685,38 @@ func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoN
 	// leads to most commands failing against the repository. It is safer
 	// to remove now than try a safe reclone.
 	if gitIsNonBareBestEffort(rcf, repoName, dir) {
-		return true, "non-bare", nil
+		return true, true, "non-bare", nil
 	}
 
-	return false, "", nil
+	if maybeCorrupt, err := checkRepoFlaggedForCorruption(dir); err != nil {
+		return false, false, "", err
+	} else if maybeCorrupt {
+		// Repo corruption has already been logged on the git CLI side, we don't
+		// need to log it again.
+		return true, false, "failed-odb-read", nil
+	}
+
+	return false, false, "", nil
+}
+
+func checkRepoFlaggedForCorruption(gitDir common.GitDir) (bool, error) {
+	p := gitDir.Path(gitcli.RepoMaybeCorruptFlagFilepath)
+
+	_, err := os.Stat(p)
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+
+	// Nothing logged, the repo isn't corrupted.
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	// Best effort remove the flag, since we will now attempt to recover from it.
+	// If that doesn't work, the next run will flag it again, and we can try to
+	// repair it again.
+	_ = os.Remove(p)
+
+	return true, nil
 }
 
 // howManyBytesToFree returns the number of bytes that should be freed to make sure
