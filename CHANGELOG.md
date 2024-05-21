@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Basic support for rendering Jupyter notebooks in the Sourcegraph web app. ([#59685](https://github.com/sourcegraph/sourcegraph/pull/59685))
 - Mermaid diagrams in Markdown are now rendered in the Sourcegraph web app ([#62678](https://github.com/sourcegraph/sourcegraph/pull/62678))
+- A feature flag for Cody, `completions.smartContext` is added and set to "enabled" by default. It allows clients to adjust the context window based on the name of the chat model. When smartContext is enabled, the `completions.chatModelMaxTokens` value is ignored. ([#62802](https://github.com/sourcegraph/sourcegraph/pull/62802))
 
 ### Changed
 
