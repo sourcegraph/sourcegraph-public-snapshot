@@ -112,15 +112,7 @@
         flex-direction: column;
     }
 
-    // Ensure that any content in the global header has
-    // more layout priority over any content in the content (main) area
-    :global([data-global-header]) {
-        z-index: 1;
-        isolation: isolate;
-    }
-
     main {
-        z-index: 0;
         isolation: isolate;
         flex: 1;
         display: flex;

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func Test_BedrockProvisionedThroughputModel(t *testing.T) {
 	tests := []struct {
 		want           string

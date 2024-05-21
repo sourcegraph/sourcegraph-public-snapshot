@@ -151,11 +151,6 @@
         align-self: stretch;
         min-width: 0;
 
-        // Ensure that any content inside navigation portal block
-        // can't overlap any static content like sidebar navigation
-        // in the global header layout.
-        isolation: isolate;
-
         &-list {
             display: flex;
             gap: 1rem;
