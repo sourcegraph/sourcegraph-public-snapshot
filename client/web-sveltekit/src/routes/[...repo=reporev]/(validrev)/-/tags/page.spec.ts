@@ -22,6 +22,10 @@ test('list tags', async ({ sg, page }) => {
             repository: {
                 gitRefs: {
                     nodes: [{ displayName: 'v1.0.0', url: `/${repoName}@v1.0.0` }, { displayName: 'v1.0.1' }],
+                    pageInfo: {
+                        // Needed to prevent infinity scroll from trying to load more pages
+                        hasNextPage: false,
+                    },
                     totalCount: 42,
                 },
             },
