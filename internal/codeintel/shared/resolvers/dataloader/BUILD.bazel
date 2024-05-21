@@ -11,5 +11,6 @@ go_library(
         "loader_factory.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/dataloader",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
 )

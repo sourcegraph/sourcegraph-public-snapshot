@@ -23,6 +23,7 @@ go_library(
         "validate_custom.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi",
@@ -64,6 +65,7 @@ go_test(
         "validate_test.go",
     ],
     embed = [":conf"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api/internalapi",
         "//internal/conf/conftypes",

@@ -53,6 +53,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_GRAPH,
     ],
 )
 

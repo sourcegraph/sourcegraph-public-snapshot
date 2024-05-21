@@ -3,6 +3,7 @@
 This directory contains API-based integration tests in the form of standard Go tests. It is called gqltest since most of our API is GraphQL. However, the test suite has been extended to test other endpoints such as streaming search.
 
 To run these tests against a local change, use `sg` to spin up a job in Buildkite:
+
 ```
 sg ci bazel test //testing:backend_integration_test
 ```
@@ -15,6 +16,7 @@ You can also run integration tests locally. Note: this is not a well-trodden pat
 instead.
 
 Steps:
+
 1. Request "CI Secrets Read Access" in Entitle
 2. Run `sg test bazel-backend-integration`
 

@@ -128,6 +128,7 @@ generate_graphql_operations(
 ts_project(
     name = "graphql_operations",
     srcs = ["src/graphql-operations.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/shared",
@@ -228,6 +229,14 @@ ts_project(
         "src/cody/management/CodyManagementPage.tsx",
         "src/cody/management/SubscriptionStats.tsx",
         "src/cody/management/UseCodyInEditorSection.tsx",
+        "src/cody/management/api/client.ts",
+        "src/cody/management/api/components/CodyProApiClient.ts",
+        "src/cody/management/api/hooks/useApiClient.tsx",
+        "src/cody/management/api/stripeCheckout.ts",
+        "src/cody/management/api/teamInvites.ts",
+        "src/cody/management/api/teamMembers.ts",
+        "src/cody/management/api/teamSubscriptions.ts",
+        "src/cody/management/api/types.ts",
         "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
         "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
@@ -1739,6 +1748,7 @@ ts_project(
     data = [
         ":enterprise-yaml",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":code_intel_schema",
@@ -1756,6 +1766,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/mermaid",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
         "//:node_modules/@codemirror/lang-json",
@@ -1885,6 +1896,7 @@ ts_project(
         "src/backend/persistenceMapper.test.ts",
         "src/codeintel/ReferencesPanel.mocks.ts",
         "src/codeintel/ReferencesPanel.test.tsx",
+        "src/cody/management/api/hooks/useApiClient.test.tsx",
         "src/cody/useCodyIgnore.test.ts",
         "src/components/ErrorBoundary.test.tsx",
         "src/components/FilteredConnection/FilteredConnection.test.tsx",
@@ -2015,6 +2027,7 @@ ts_project(
         "src/util/time.test.ts",
         "src/util/url.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":graphql_operations",
@@ -2091,6 +2104,7 @@ vitest_test(
         ":snapshots",
         ":web_tests",
     ],
+    tags = [TAG_SEARCHSUITE],
 )
 
 # esbuild dev environment -------------------
@@ -2427,6 +2441,7 @@ ts_project(
         "src/user/profile/UserProfile.story.tsx",
         "src/user/settings/aboutOrganization/AboutOrganizationPage.story.tsx",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":graphql_operations",

@@ -9,6 +9,7 @@ go_library(
         "telemetrytest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -23,6 +24,7 @@ go_test(
     name = "telemetrytest_test",
     srcs = ["telemetrytest_test.go"],
     embed = [":telemetrytest"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//internal/telemetry",
         "//lib/telemetrygateway/v1:telemetrygateway",

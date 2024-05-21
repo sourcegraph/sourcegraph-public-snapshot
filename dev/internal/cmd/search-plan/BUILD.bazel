@@ -5,6 +5,7 @@ go_library(
     name = "search-plan_lib",
     srcs = ["search-plan.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/search-plan",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/conf",
@@ -23,6 +24,7 @@ go_library(
 go_binary(
     name = "search-plan",
     embed = [":search-plan_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//dev:__subpackages__"],
 )
 
@@ -30,4 +32,5 @@ go_test(
     name = "search-plan_test",
     srcs = ["search-plan_test.go"],
     embed = [":search-plan_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
 )

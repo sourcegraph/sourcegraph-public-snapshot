@@ -13,6 +13,7 @@ go_library(
         "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/config",
@@ -40,6 +41,7 @@ go_test(
         "skip_test.go",
     ],
     embed = [":runner"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/worker/cmdlogger",
         "//cmd/executor/internal/worker/command",

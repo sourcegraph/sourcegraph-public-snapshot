@@ -79,8 +79,10 @@ go_test(
     ],
     embed = [":app"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
+        TAG_SEARCHSUITE,
     ],
     deps = [
         "//cmd/frontend/backend",

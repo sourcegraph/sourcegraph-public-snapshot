@@ -10,6 +10,7 @@ go_library(
         "protects.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -41,6 +42,7 @@ go_test(
     ],
     data = ["//internal/authz/providers/perforce/testdata:data"],
     embed = [":perforce"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/api",

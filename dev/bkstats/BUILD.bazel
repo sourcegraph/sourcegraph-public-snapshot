@@ -4,6 +4,7 @@ go_library(
     name = "bkstats_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/bkstats",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -14,5 +15,6 @@ go_library(
 go_binary(
     name = "bkstats",
     embed = [":bkstats_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

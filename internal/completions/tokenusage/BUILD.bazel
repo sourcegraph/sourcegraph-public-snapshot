@@ -5,6 +5,7 @@ go_library(
     name = "tokenusage",
     srcs = ["tokenusage.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/tokenusage",
+    tags = [TAG_CODY_CORE],
     visibility = [
         "//cmd/cody-gateway:__subpackages__",
         "//cmd/frontend/internal/bg:__pkg__",
@@ -28,6 +29,7 @@ go_test(
     name = "tokenusage_test",
     srcs = ["tokenusage_test.go"],
     tags = [
+        TAG_CODY_CORE,
         # Test requires localhost database
         "requires-network",
     ],

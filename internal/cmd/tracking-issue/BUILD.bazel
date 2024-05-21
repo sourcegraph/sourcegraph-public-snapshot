@@ -22,6 +22,7 @@ go_library(
         "update.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/tracking-issue",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -34,6 +35,7 @@ go_library(
 go_binary(
     name = "tracking-issue",
     embed = [":tracking-issue_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//:__subpackages__"],
 )
 
@@ -43,6 +45,7 @@ go_test(
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
     embed = [":tracking-issue_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//internal/testutil",
         "//lib/errors",

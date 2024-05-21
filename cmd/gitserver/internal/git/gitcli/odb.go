@@ -50,7 +50,7 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		return nil, err
 	}
 
-	c, err := parseCommitLogOutput(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
+	c, err := parseCommitFromLog(bytes.TrimPrefix(rawCommit, []byte{'\x1e'}))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse commit log output")
 	}
@@ -88,19 +88,15 @@ const (
 	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
-func parseCommitLogOutput(rawCommit []byte) (*git.GitCommitWithFiles, error) {
+// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
+// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
+// logFormatFlag.
+func parseCommitFromLog(rawCommit []byte) (*git.GitCommitWithFiles, error) {
 	parts := bytes.Split(rawCommit, []byte{'\x00'})
 	if len(parts) != partsPerCommit {
 		return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
 	}
 
-	return parseCommitFromLog(parts)
-}
-
-// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
-// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
-// logFormatFlag.
-func parseCommitFromLog(parts [][]byte) (*git.GitCommitWithFiles, error) {
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})

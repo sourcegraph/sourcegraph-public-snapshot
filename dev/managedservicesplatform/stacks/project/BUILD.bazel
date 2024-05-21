@@ -4,6 +4,7 @@ go_library(
     name = "project",
     srcs = ["project.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/project",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//dev/managedservicesplatform:__subpackages__",
         "//dev/sg/msp:__pkg__",

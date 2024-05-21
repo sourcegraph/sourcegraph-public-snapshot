@@ -138,7 +138,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 				// Configuration for the single service container.
 				Containers: []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainers{{
 					Name:  pointers.Ptr(vars.Service.ID),
-					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
+					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ImageTag)),
 
 					Resources: &cloudrunv2job.CloudRunV2JobTemplateTemplateContainersResources{
 						Limits: &vars.ResourceLimits,

@@ -1,7 +1,7 @@
 // The URL to direct users in order to manage their Cody Pro subscription.
 import { useState, useEffect } from 'react'
 
-export const manageSubscriptionRedirectURL = 'https://accounts.sourcegraph.com/cody/subscription'
+export const manageSubscriptionRedirectURL = `${window.context.frontendCodyProConfig?.sscBaseUrl}/subscription`
 
 /**
  * useEmbeddedCodyProUi returns if we expect the Cody Pro UI to be served from sourcegraph.com. Meaning

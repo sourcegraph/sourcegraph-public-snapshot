@@ -8,6 +8,7 @@ go_library(
         "ticker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/scheduler",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/store",
@@ -24,6 +25,7 @@ go_test(
     timeout = "short",
     srcs = ["ticker_test.go"],
     embed = [":scheduler"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/types/scheduler/window",
         "//schema",

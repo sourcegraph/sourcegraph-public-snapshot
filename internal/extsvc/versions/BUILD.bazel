@@ -10,6 +10,7 @@ go_library(
         "sync.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/versions",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -35,6 +36,7 @@ go_test(
     timeout = "short",
     srcs = ["sync_test.go"],
     embed = [":versions"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//internal/extsvc",

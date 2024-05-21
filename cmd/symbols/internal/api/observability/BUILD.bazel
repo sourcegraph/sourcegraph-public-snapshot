@@ -4,5 +4,6 @@ go_library(
     name = "observability",
     srcs = ["parse_observation.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
 )

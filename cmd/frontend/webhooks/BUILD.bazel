@@ -13,6 +13,7 @@ go_library(
         "webhooks.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/actor",
@@ -47,6 +48,7 @@ go_test(
     ],
     embed = [":webhooks"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

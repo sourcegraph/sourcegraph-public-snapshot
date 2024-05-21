@@ -11,6 +11,7 @@ go_library(
         "site_admin.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/auth",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -30,6 +31,7 @@ go_test(
         "site_admin_test.go",
     ],
     embed = [":auth"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/conf",

@@ -5,6 +5,7 @@ go_library(
     name = "azureopenai",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
@@ -21,6 +22,7 @@ go_test(
     name = "azureopenai_test",
     srcs = ["client_test.go"],
     embed = [":azureopenai"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/conf/conftypes",
         "//lib/errors",

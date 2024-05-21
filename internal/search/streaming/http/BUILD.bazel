@@ -12,6 +12,7 @@ go_library(
         "writer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming/http",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/streaming/api",
@@ -27,6 +28,7 @@ go_test(
         "decoder_test.go",
     ],
     embed = [":http"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/search/streaming/api",
         "@com_github_google_go_cmp//cmp",

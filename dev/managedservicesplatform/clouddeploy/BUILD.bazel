@@ -6,6 +6,7 @@ go_library(
     srcs = ["clouddeploy.go"],
     embedsrcs = ["skaffold.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/clouddeploy",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
 )
@@ -14,5 +15,6 @@ go_test(
     name = "clouddeploy_test",
     srcs = ["clouddeploy_test.go"],
     embed = [":clouddeploy"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = ["@com_github_stretchr_testify//require"],
 )

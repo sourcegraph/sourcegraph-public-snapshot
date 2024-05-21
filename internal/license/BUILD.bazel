@@ -8,6 +8,7 @@ go_library(
         "license.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/license",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/hashutil",
@@ -24,6 +25,7 @@ go_test(
         "license_test.go",
     ],
     embed = [":license"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/license/licensetest",
         "@com_github_hexops_autogold_v2//:autogold",

@@ -17,6 +17,7 @@ go_library(
         "validator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights/resolvers",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -72,6 +73,7 @@ go_test(
     ],
     embed = [":resolvers"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

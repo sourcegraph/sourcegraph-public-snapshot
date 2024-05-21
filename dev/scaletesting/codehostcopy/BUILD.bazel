@@ -13,6 +13,7 @@ go_library(
     ],
     embedsrcs = ["config.example.cue"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/scaletesting/codehostcopy/bitbucket",
@@ -35,5 +36,6 @@ go_library(
 go_binary(
     name = "codehostcopy",
     embed = [":codehostcopy_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

@@ -9,6 +9,7 @@ go_library(
         "users.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -33,6 +34,7 @@ go_test(
         "users_test.go",
     ],
     embed = [":enforcement"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/auth",

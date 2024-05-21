@@ -15,6 +15,7 @@ go_library(
 go_test(
     name = "log_test",
     srcs = ["log_test.go"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         ":log",
         "//lib/batches",

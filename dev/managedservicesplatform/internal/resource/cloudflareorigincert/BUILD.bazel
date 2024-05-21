@@ -4,6 +4,7 @@ go_library(
     name = "cloudflareorigincert",
     srcs = ["cloudflareorigincert.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflareorigincert",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/googlesecretsmanager",

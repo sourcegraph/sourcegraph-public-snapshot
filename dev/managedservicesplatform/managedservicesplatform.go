@@ -111,7 +111,7 @@ func (r *Renderer) RenderEnvironment(
 		SecretVolumes:   env.SecretVolumes,
 		PreventDestroys: preventDestroys,
 
-		IsFinalStageOfRollout: rolloutPipeline != nil,
+		IsFinalStageOfRollout: rolloutPipeline.IsFinalStage(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create IAM stack")

@@ -369,4 +369,21 @@ func (r *errorTranslatingReadDirClient) Recv() (*proto.ReadDirResponse, error) {
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 
+func (r *errorTranslatingClient) CommitLog(ctx context.Context, in *proto.CommitLogRequest, opts ...grpc.CallOption) (proto.GitserverService_CommitLogClient, error) {
+	cc, err := r.base.CommitLog(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingCommitLogClient{cc}, nil
+}
+
+type errorTranslatingCommitLogClient struct {
+	proto.GitserverService_CommitLogClient
+}
+
+func (r *errorTranslatingCommitLogClient) Recv() (*proto.CommitLogResponse, error) {
+	res, err := r.GitserverService_CommitLogClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
 var _ proto.GitserverServiceClient = &errorTranslatingClient{}

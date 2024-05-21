@@ -5,6 +5,7 @@ go_library(
     name = "compression",
     srcs = ["compression.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/compression",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -22,6 +23,7 @@ go_test(
     srcs = ["compression_test.go"],
     data = glob(["testdata/**"]),
     embed = [":compression"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/gitserver/gitdomain",

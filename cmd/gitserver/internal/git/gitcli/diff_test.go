@@ -55,6 +55,14 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		require.NoError(t, r.Close())
 		require.Equal(t, string(f1Diff), string(diff))
 	})
+	t.Run("streams diff intersection", func(t *testing.T) {
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeIntersection)
+		require.NoError(t, err)
+		diff, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		require.Equal(t, string(f1Diff), string(diff))
+	})
 	t.Run("streams diff for path", func(t *testing.T) {
 		// Prepare repo state:
 		backend := BackendWithRepoCommands(t,
@@ -91,6 +99,16 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		_, err = backend.RawDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead)
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+	t.Run("files outside repository", func(t *testing.T) {
+		// We use git-diff-tree, but with git-diff you can diff any files on disk
+		// which is dangerous. So we have this safeguard test here in place to
+		// make sure we don't regress on that.
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "/dev/null", "/etc/hosts")
+		require.NoError(t, err)
+		_, err = io.ReadAll(r)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "is outside repository at")
 	})
 	// Verify that if the context is canceled, the reader returns an error.
 	t.Run("context cancelation", func(t *testing.T) {

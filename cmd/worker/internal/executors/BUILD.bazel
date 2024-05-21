@@ -11,6 +11,7 @@ go_library(
         "multiqueue_cache_cleaner.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -34,7 +35,10 @@ go_test(
     name = "executors_test",
     srcs = ["multiqueue_cache_cleaner_test.go"],
     embed = [":executors"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_SEARCHSUITE,
+        "requires-network",
+    ],
     deps = [
         "//internal/executor/types",
         "//internal/rcache",

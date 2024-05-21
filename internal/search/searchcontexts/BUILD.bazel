@@ -5,6 +5,7 @@ go_library(
     name = "searchcontexts",
     srcs = ["search_contexts.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/searchcontexts",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -32,6 +33,7 @@ go_test(
     srcs = ["search_contexts_test.go"],
     embed = [":searchcontexts"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],

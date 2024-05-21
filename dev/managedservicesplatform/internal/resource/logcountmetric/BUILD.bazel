@@ -4,6 +4,7 @@ go_library(
     name = "logcountmetric",
     srcs = ["logcountmetric.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/logcountmetric",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",
