@@ -32,7 +32,6 @@
 
     $: commit = data.commit
     $: author = commit?.author
-    $: avatar = author?.person
     $: codeHostKind = data.externalServices.nodes[0].kind
 </script>
 
@@ -74,10 +73,10 @@
 
             <div class="commit-info">
                 <small class="subject"><a href={commit.canonicalURL}>{commit.subject}</a></small>
-                {#if author && avatar}
+                {#if author?.person}
                     <div class="author">
-                        <Avatar {avatar} --avatar-size="1.0rem" />
-                        <small>{avatar.displayName} · <Timestamp date={author?.date} /></small>
+                        <Avatar avatar={author.person} --avatar-size="1.0rem" />
+                        <small>{author.person.displayName} · <Timestamp date={author?.date} /></small>
                     </div>
                 {/if}
             </div>
