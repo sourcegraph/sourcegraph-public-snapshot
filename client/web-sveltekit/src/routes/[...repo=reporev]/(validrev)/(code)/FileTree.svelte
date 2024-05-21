@@ -124,7 +124,15 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover let:registerTrigger placement="right-start" showOnHover>
+                <Popover
+                    let:registerTrigger
+                    placement="right-start"
+                    offset={{
+                        // A number which visually offsets popover header so the file names line up
+                        crossAxis: -37,
+                    }}
+                    showOnHover
+                >
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
                         on:click|preventDefault={() => {}}
