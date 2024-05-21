@@ -458,9 +458,6 @@ type Client interface {
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
-
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
 

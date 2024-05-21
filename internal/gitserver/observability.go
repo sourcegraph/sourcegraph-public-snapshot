@@ -45,7 +45,6 @@ type operations struct {
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
 	getDefaultBranch         *observation.Operation
-	logReverseEach           *observation.Operation
 	diff                     *observation.Operation
 	changedFiles             *observation.Operation
 }
@@ -128,7 +127,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
 		getDefaultBranch:         op("GetDefaultBranch"),
-		logReverseEach:           op("LogReverseEach"),
 		diff:                     op("Diff"),
 		changedFiles:             op("ChangedFiles"),
 	}
