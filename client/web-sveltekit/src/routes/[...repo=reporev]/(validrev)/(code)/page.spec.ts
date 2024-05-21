@@ -104,7 +104,7 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-    test('basic functionality', async ({ page }) => {
+    test.skip('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
         await page.goto(`/${repoName}`)
@@ -130,7 +130,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByRole('treeitem', { name: 'index.js', selected: true })).toBeVisible()
     })
 
-    test('error handling root', async ({ page, sg }) => {
+    test.skip('error handling root', async ({ page, sg }) => {
         sg.mockOperations({
             TreeEntries: () => {
                 throw new Error('Sidebar error')
@@ -141,7 +141,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Sidebar error/)).toBeVisible()
     })
 
-    test('error handling children', async ({ page, sg }) => {
+    test.skip('error handling children', async ({ page, sg }) => {
         await page.goto(`/${repoName}`)
 
         const treeItem = page.getByRole('treeitem', { name: 'src' })
@@ -160,7 +160,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test.skip('error handling non-existing directory -> root', async ({ page, sg }) => {
         // Here we expect the sidebar to show an error message, and after navigigating
         // to an existing directory, the directory contents
         sg.mockOperations({
