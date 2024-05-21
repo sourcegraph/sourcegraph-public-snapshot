@@ -238,10 +238,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                            to={manageSubscriptionRedirectURL}
                                             target="_blank"
                                             rel="noreferrer noopener"
-                                            onClick={() => {
+                                            onClick={event => {
+                                                event.preventDefault()
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
