@@ -480,6 +480,61 @@ func (b *observableBackend) RefHash(ctx context.Context) (_ []byte, err error) {
 	return b.backend.RefHash(ctx)
 }
 
+func (b *observableBackend) CommitLog(ctx context.Context, opt CommitLogOpts) (_ CommitLogIterator, err error) {
+	ctx, errCollector, endObservation := b.operations.commitLog.WithErrors(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.StringSlice("ranges", opt.Ranges),
+			attribute.Bool("allRefs", opt.AllRefs),
+			attribute.Stringer("after", opt.After),
+			attribute.Stringer("before", opt.Before),
+			attribute.Int("maxCommits", int(opt.MaxCommits)),
+			attribute.Int("skip", int(opt.Skip)),
+			attribute.Bool("followOnlyFirstParent", opt.FollowOnlyFirstParent),
+			attribute.Bool("includeModifiedFiles", opt.IncludeModifiedFiles),
+			attribute.Int("order", int(opt.Order)),
+			attribute.String("messageQuery", opt.MessageQuery),
+			attribute.String("authorQuery", opt.AuthorQuery),
+			attribute.Bool("followPathRenames", opt.FollowPathRenames),
+			attribute.String("path", opt.Path),
+		},
+	})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("CommitLog").Inc()
+
+	it, err := b.backend.CommitLog(ctx, opt)
+	if err != nil {
+		concurrentOps.WithLabelValues("CommitLog").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableCommitLogIterator{
+		inner: it,
+		onClose: func(err error) {
+			concurrentOps.WithLabelValues("CommitLog").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+type observableCommitLogIterator struct {
+	inner   CommitLogIterator
+	onClose func(err error)
+}
+
+func (hr *observableCommitLogIterator) Next() (*GitCommitWithFiles, error) {
+	return hr.inner.Next()
+}
+
+func (hr *observableCommitLogIterator) Close() error {
+	err := hr.inner.Close()
+	hr.onClose(err)
+	return err
+}
+
 type operations struct {
 	configGet             *observation.Operation
 	configSet             *observation.Operation
@@ -505,6 +560,7 @@ type operations struct {
 	readDir               *observation.Operation
 	latestCommitTimestamp *observation.Operation
 	refHash               *observation.Operation
+	commitLog             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -557,6 +613,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		readDir:               op("read-dir"),
 		latestCommitTimestamp: op("latest-commit-timestamp"),
 		refHash:               op("ref-hash"),
+		commitLog:             op("commit-log"),
 	}
 }
 

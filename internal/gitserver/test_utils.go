@@ -1,7 +1,6 @@
 package gitserver
 
 import (
-	"bytes"
 	"os"
 	"os/exec"
 	"path"
@@ -117,46 +116,4 @@ func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
 		c.Env = append(c.Env, "PATH="+systemPath)
 	}
 	return c
-}
-
-func appleTime(t string) string {
-	ti, _ := time.Parse(time.RFC3339, t)
-	return ti.Local().Format("200601021504.05")
-}
-
-var times = []string{
-	appleTime("2006-01-02T15:04:05Z"),
-	appleTime("2014-05-06T19:20:21Z"),
-}
-
-// ComputeCommitHash Computes hash of last commit in a given repo dir
-// On Windows, content of a "link file" differs based on the tool that produced it.
-// For example:
-// - Cygwin may create four different link types, see https://cygwin.com/cygwin-ug-net/using.html#pathnames-symlinks,
-// - MSYS's ln copies target file
-// Such behavior makes impossible precalculation of SHA hashes to be used in TestRepository_FileSystem_Symlinks
-// because for example Git for Windows (http://git-scm.com) is not aware of symlinks and computes link file's SHA which
-// may differ from original file content's SHA.
-// As a temporary workaround, we calculating SHA hash by asking git/hg to compute it
-func ComputeCommitHash(repoDir string, git bool) string {
-	buf := &bytes.Buffer{}
-
-	if git {
-		// git cat-file tree "master^{commit}" | git hash-object -t commit --stdin
-		cat := exec.Command("git", "cat-file", "commit", "master^{commit}")
-		cat.Dir = repoDir
-		hash := exec.Command("git", "hash-object", "-t", "commit", "--stdin")
-		hash.Stdin, _ = cat.StdoutPipe()
-		hash.Stdout = buf
-		hash.Dir = repoDir
-		_ = hash.Start()
-		_ = cat.Run()
-		_ = hash.Wait()
-	} else {
-		hash := exec.Command("hg", "--debug", "id", "-i")
-		hash.Dir = repoDir
-		hash.Stdout = buf
-		_ = hash.Run()
-	}
-	return strings.TrimSpace(buf.String())
 }

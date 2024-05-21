@@ -2,6 +2,7 @@ package rockskip
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/stretchr/testify/require"
@@ -170,12 +172,27 @@ func (g *subprocessGit) RevList(ctx context.Context, repo string, commit string,
 }
 
 func (g *subprocessGit) paginatedRevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, _ error) {
-	commits, err := g.gs.Commits(ctx, repo, gitserver.CommitsOptions{
-		N:           uint(count + 1),
-		Ranges:      []string{commit},
-		FirstParent: true,
-	})
+	cmd := exec.Command("git", "log", logFormatWithoutRefs, "--first-parent", "-n", strconv.Itoa(count), commit)
+	cmd.Dir = g.gitDir
+
+	stdout, err := cmd.Output()
 	if err != nil {
+		return nil, "", err
+	}
+
+	commitScanner := bufio.NewScanner(bytes.NewReader(stdout))
+	commitScanner.Split(commitSplitFunc)
+
+	var commits []*gitdomain.Commit
+	for commitScanner.Scan() {
+		rawCommit := commitScanner.Bytes()
+		commit, err := parseCommitFromLog(rawCommit)
+		if err != nil {
+			return nil, "", err
+		}
+		commits = append(commits, commit)
+	}
+	if err := commitScanner.Err(); err != nil {
 		return nil, "", err
 	}
 
@@ -269,4 +286,94 @@ func (f *mockRepositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo
 	}()
 
 	return ch
+}
+
+const (
+	partsPerCommit = 10 // number of \x00-separated fields per commit
+
+	// This format string has 10 parts:
+	//  1) oid
+	//  2) author name
+	//  3) author email
+	//  4) author time
+	//  5) committer name
+	//  6) committer email
+	//  7) committer time
+	//  8) message body
+	//  9) parent hashes
+	// 10) modified files (optional)
+	//
+	// Each commit starts with an ASCII record separator byte (0x1E), and
+	// each field of the commit is separated by a null byte (0x00).
+	//
+	// Refs are slow, and are intentionally not included because they are usually not needed.
+	logFormatWithoutRefs = "--format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+)
+
+func commitSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if len(data) == 0 {
+		// Request more data
+		return 0, nil, nil
+	}
+
+	// Safety check: ensure we are always starting with a record separator
+	if data[0] != '\x1e' {
+		return 0, nil, errors.New("internal error: data should always start with an ASCII record separator")
+	}
+
+	loc := bytes.IndexByte(data[1:], '\x1e')
+	if loc < 0 {
+		// We can't find the start of the next record
+		if atEOF {
+			// If we're at the end of the stream, just return the rest as the last record
+			return len(data), data[1:], bufio.ErrFinalToken
+		} else {
+			// If we're not at the end of the stream, request more data
+			return 0, nil, nil
+		}
+	}
+	nextStart := loc + 1 // correct for searching at an offset
+
+	return nextStart, data[1:nextStart], nil
+}
+
+// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
+// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
+// logFormatFlag.
+func parseCommitFromLog(rawCommit []byte) (*gitdomain.Commit, error) {
+	parts := bytes.Split(rawCommit, []byte{'\x00'})
+	if len(parts) != partsPerCommit {
+		return nil, errors.Newf("internal error: expected %d parts, got %d", partsPerCommit, len(parts))
+	}
+
+	// log outputs are newline separated, so all but the 1st commit ID part
+	// has an erroneous leading newline.
+	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
+	commitID := api.CommitID(parts[0])
+
+	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
+	if err != nil {
+		return nil, errors.Errorf("parsing git commit author time: %s", err)
+	}
+	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
+	if err != nil {
+		return nil, errors.Errorf("parsing git commit committer time: %s", err)
+	}
+
+	var parents []api.CommitID
+	if parentPart := parts[8]; len(parentPart) > 0 {
+		parentIDs := bytes.Split(parentPart, []byte{' '})
+		parents = make([]api.CommitID, len(parentIDs))
+		for i, id := range parentIDs {
+			parents[i] = api.CommitID(id)
+		}
+	}
+
+	return &gitdomain.Commit{
+		ID:        commitID,
+		Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
+		Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
+		Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
+		Parents:   parents,
+	}, nil
 }

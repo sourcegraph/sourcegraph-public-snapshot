@@ -152,6 +152,7 @@ type LicenseInfo struct {
 // to the frontend.
 type FrontendCodyProConfig struct {
 	StripePublishableKey string `json:"stripePublishableKey"`
+	SscBaseUrl           string `json:"sscBaseUrl"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -708,5 +709,6 @@ func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProCon
 	}
 	return &FrontendCodyProConfig{
 		StripePublishableKey: config.StripePublishableKey,
+		SscBaseUrl:           config.SscBaseUrl,
 	}
 }

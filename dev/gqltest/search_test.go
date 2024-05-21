@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -26,13 +25,8 @@ func TestSearch(t *testing.T) {
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
+		Config: mustMarshalJSONString(&schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -102,9 +96,6 @@ type searchClient interface {
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
-
-	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
-	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -739,30 +730,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
-		// Enable structural search.
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		enableStructuralSearch(t)
 
 		tests := []struct {
 			name       string

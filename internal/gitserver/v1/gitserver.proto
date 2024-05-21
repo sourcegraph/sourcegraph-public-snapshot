@@ -278,11 +278,11 @@ service GitserverService {
   //  For the example, given the graph below, BehindAhead("A", "B") would return
   //  {Behind: 3, Ahead: 2}.
   //
-  //	     y---b---b  branch B
-  //	    / \ /
-  //	   /   .
-  //	  /   / \
-  //	 o---x---a---a---a  branch A
+  //       y---b---b  branch B
+  //      / \ /
+  //     /   .
+  //    /   / \
+  //   o---x---a---a---a  branch A
   //
   // If either left or right are the empty string (""), the HEAD commit is
   // implicitly used.
@@ -339,6 +339,73 @@ service GitserverService {
   rpc ReadDir(ReadDirRequest) returns (stream ReadDirResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // CommitLog returns all commits matching the options. The commits are gathered
+  // with `git-log`.
+  // If one of the given ranges doesn't exist, an error with a ReversionNotFoundPayload
+  // is returned.
+  rpc CommitLog(CommitLogRequest) returns (stream CommitLogResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message CommitLogRequest {
+  // repo_name is the name of the repo to run the blame operation in.
+  // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
+  string repo_name = 2;
+  // Ranges to include in the git log (revspec, "A..B", "A...B", etc.).
+  // At least one range, or all_refs must be specified.
+  repeated bytes ranges = 3;
+  // If true, all refs are searched for commits.
+  // Must not be true when ranges are given.
+  bool all_refs = 4;
+  // After is an optional parameter to specify the earliest commit to consider.
+  google.protobuf.Timestamp after = 5;
+  // Before is an optional parameter to specify the latest commit to consider.
+  google.protobuf.Timestamp before = 6;
+  // MaxCommits is an optional parameter to specify the maximum number of commits
+  // to return. If max_commits is 0, all commits that match the criteria will be
+  // returned.
+  uint32 max_commits = 7;
+  // Skip is an optional parameter to specify the number of commits to skip.
+  // This can be used to implement a poor mans pagination.
+  uint32 skip = 8;
+  // When finding commits to include, follow only the first parent commit upon
+  // seeing a merge commit. This option can give a better overview when viewing
+  // the evolution of a particular topic branch, because merges into a topic
+  // branch tend to be only about adjusting to updated upstream from time to time,
+  // and this option allows you to ignore the individual commits brought in to
+  // your history by such a merge.
+  bool follow_only_first_parent = 9;
+  // If true, the modified_files field in the GetCommitResponse will be
+  // populated.
+  bool include_modified_files = 10;
+  enum CommitLogOrder {
+    // Uses the default ordering of git log: in reverse chronological order.
+    // See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+    COMMIT_LOG_ORDER_UNSPECIFIED = 0;
+    // Show no parents before all of its children are shown, but otherwise show commits
+    // in the commit timestamp order.
+    // See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+    COMMIT_LOG_ORDER_COMMIT_DATE = 1;
+    // Show no parents before all of its children are shown, and avoid showing commits
+    // on multiple lines of history intermixed.
+    // See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+    COMMIT_LOG_ORDER_TOPO_DATE = 2;
+  }
+  CommitLogOrder order = 11;
+  // Include only commits whose commit message contains this substring.
+  bytes message_query = 12;
+  // include only commits whose author matches this.
+  bytes author_query = 13;
+  // include only commits that touch this file path.
+  bytes path = 14;
+  // Follow the history of the path beyond renames, only effective when used with
+  // `path`.
+  bool follow_path_renames = 15;
+}
+
+message CommitLogResponse {
+  repeated GetCommitResponse commits = 1;
 }
 
 message ContributorCountsRequest {

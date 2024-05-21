@@ -8,6 +8,7 @@ import (
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -223,7 +224,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isValidGitDate := func() error {
-		_, err := ParseGitDate(value, time.Now)
+		_, err := gitdomain.ParseGitDate(value, time.Now)
 		return err
 	}
 

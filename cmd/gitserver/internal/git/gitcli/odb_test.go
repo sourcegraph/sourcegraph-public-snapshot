@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -822,4 +823,8 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		}, fis, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fis[3].IsDir())
 	})
+}
+
+func TestLogPartsPerCommitInSync(t *testing.T) {
+	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }

@@ -1,8 +1,8 @@
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
+    import type { Action } from 'svelte/action'
 
     import { popover, onClickOutside, portal } from './dom'
-    import type { Action } from 'svelte/action'
 
     export let placement: Placement = 'bottom'
     /**
@@ -105,9 +105,19 @@
         font-size: 0.875rem;
         background-clip: padding-box;
         background-color: var(--dropdown-bg);
-        border: 1px solid var(--dropdown-border-color);
-        border-radius: var(--popover-border-radius);
         color: var(--body-color);
         box-shadow: var(--popover-shadow);
+
+        border: 1px solid var(--dropdown-border-color);
+        border-radius: var(--popover-border-radius);
+        // Ensure child elements do not overflow the border radius
+        overflow: hidden;
+
+        // We always display the popover on hover, but there may not be anything
+        // inside until something we load something. This ensures we do not
+        // render an empty border if there is nothing to show.
+        &:empty {
+            display: none;
+        }
     }
 </style>

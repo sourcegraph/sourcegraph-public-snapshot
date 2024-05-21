@@ -14,7 +14,7 @@ import {
     EditSettings,
     LatestSettingsQuery,
 } from './layout.gql'
-import { mainNavigation, dotcomMainNavigation } from './navigation'
+import { dotcomMainNavigation, mainNavigation } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false

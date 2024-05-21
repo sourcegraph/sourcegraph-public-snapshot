@@ -2140,6 +2140,7 @@ dependencies = [
  "futures",
  "futures-task",
  "futures-util",
+ "insta",
  "protobuf",
  "rocket",
  "rustix",

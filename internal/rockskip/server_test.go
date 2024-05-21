@@ -18,8 +18,6 @@ import (
 )
 
 func TestIndex(t *testing.T) {
-	gitserver.ClientMocks.LocalGitserver = true
-	t.Cleanup(gitserver.ResetClientMocks)
 	repo, repoDir := gitserver.MakeGitRepositoryAndReturnDir(t)
 	// Needed in CI
 	gitRun(t, repoDir, "config", "user.email", "test@sourcegraph.com")
