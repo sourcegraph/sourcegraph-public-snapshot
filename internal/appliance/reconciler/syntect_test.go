@@ -1,13 +1,13 @@
-package appliance
+package reconciler
 
 import "time"
 
-func (suite *ApplianceTestSuite) TestDeployRedis() {
+func (suite *ApplianceTestSuite) TestDeploySyntect() {
 	for _, tc := range []struct {
 		name string
 	}{
-		{name: "redis/default"},
-		{name: "redis/with-storage"},
+		{name: "syntect/default"},
+		{name: "syntect/with-replicas"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

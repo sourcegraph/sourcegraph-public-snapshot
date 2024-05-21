@@ -28,8 +28,8 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'ab-hubspot-form-workpersonal-to-handraiser',
     'external-accounts-modal',
+    'ab-shortened-install-first-signup-flow-cody-2024-04',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

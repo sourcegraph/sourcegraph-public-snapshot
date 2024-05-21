@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcileRedis(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileRedis(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileRedisInstance(ctx, sg, owner, "cache", sg.Spec.RedisCache); err != nil {
 		return errors.Wrap(err, "reconciling redis-cache")
 	}
@@ -30,7 +30,7 @@ func (r *Reconciler) reconcileRedis(ctx context.Context, sg *Sourcegraph, owner 
 	return nil
 }
 
-func (r *Reconciler) reconcileRedisInstance(ctx context.Context, sg *Sourcegraph, owner client.Object, kind string, cfg RedisSpec) error {
+func (r *Reconciler) reconcileRedisInstance(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	if err := r.reconcileRedisDeployment(ctx, sg, owner, kind, cfg); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
 	}
@@ -46,10 +46,10 @@ func (r *Reconciler) reconcileRedisInstance(ctx context.Context, sg *Sourcegraph
 	return nil
 }
 
-func (r *Reconciler) reconcileRedisDeployment(ctx context.Context, sg *Sourcegraph, owner client.Object, kind string, cfg RedisSpec) error {
+func (r *Reconciler) reconcileRedisDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ fi
 	ctr.SecurityContext.RunAsUser = pointers.Ptr(int64(999))
 	ctr.SecurityContext.RunAsGroup = pointers.Ptr(int64(1000))
 
-	exporterImage, err := getDefaultImage(sg, "redis-exporter")
+	exporterImage, err := config.GetDefaultImage(sg, "redis-exporter")
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ fi
 	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileRedisService(ctx context.Context, sg *Sourcegraph, owner client.Object, kind string, cfg RedisSpec) error {
+func (r *Reconciler) reconcileRedisService(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
 	svc := service.NewService(name, sg.Namespace, cfg)
 	svc.Spec.Ports = []corev1.ServicePort{
@@ -158,7 +158,7 @@ func (r *Reconciler) reconcileRedisService(ctx context.Context, sg *Sourcegraph,
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileRedisPVC(ctx context.Context, sg *Sourcegraph, owner client.Object, kind string, cfg RedisSpec) error {
+func (r *Reconciler) reconcileRedisPVC(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
 	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
 	if err != nil {
@@ -168,7 +168,7 @@ func (r *Reconciler) reconcileRedisPVC(ctx context.Context, sg *Sourcegraph, own
 	return reconcileObject(ctx, r, cfg, &pvc, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
-func (r *Reconciler) reconcileRedisSecret(ctx context.Context, sg *Sourcegraph, owner client.Object, kind string, cfg RedisSpec) error {
+func (r *Reconciler) reconcileRedisSecret(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
 	secret := secret.NewSecret(name, sg.Namespace, sg.Spec.RequestedVersion)
 	secret.StringData = map[string]string{

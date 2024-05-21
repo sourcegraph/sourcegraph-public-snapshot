@@ -1,15 +1,13 @@
-package appliance
+package reconciler
 
 import "time"
 
-func (suite *ApplianceTestSuite) TestDeployPreciseCodeIntel() {
+func (suite *ApplianceTestSuite) TestDeployRedis() {
 	for _, tc := range []struct {
 		name string
 	}{
-		{name: "precise-code-intel/default"},
-		{name: "precise-code-intel/with-blobstore"},
-		{name: "precise-code-intel/with-num-workers"},
-		{name: "precise-code-intel/with-replicas"},
+		{name: "redis/default"},
+		{name: "redis/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

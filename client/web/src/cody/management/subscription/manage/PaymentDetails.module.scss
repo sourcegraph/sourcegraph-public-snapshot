@@ -1,0 +1,58 @@
+.grid {
+    &-item {
+        padding-top: 1.125rem;
+        padding-bottom: 1.125rem;
+        padding-left: 1.125rem;
+
+        &:first-child {
+            border-right: 1px solid var(--border-color);
+            padding-left: 0;
+            padding-right: 1.125rem;
+        }
+    }
+}
+
+.credit-card {
+    &-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        &-button {
+            margin-right: -0.75rem;
+        }
+    }
+
+    &-content {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+
+    &-number {
+        font-size: 1rem;
+    }
+
+    &-form {
+        margin-top: 1.5rem;
+
+        &-label {
+            display: block;
+        }
+
+        &-row {
+            display: flex;
+        }
+
+        &-button-container {
+            display: flex;
+            justify-content: end;
+        }
+
+        &-submit-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    }
+}

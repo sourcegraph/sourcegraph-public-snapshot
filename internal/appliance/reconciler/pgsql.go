@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcilePGSQL(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQL(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcilePGSQLStatefulSet(ctx, sg, owner); err != nil {
 		return err
 	}
@@ -44,11 +44,11 @@ func (r *Reconciler) reconcilePGSQL(ctx context.Context, sg *Sourcegraph, owner 
 	return nil
 }
 
-func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PGSQL
 	name := "pgsql"
 
-	ctrImage, err := getDefaultImage(sg, name)
+	ctrImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 		{Name: "lockdir", MountPath: "/var/run/postgresql"},
 	}
 
-	initCtrImage, err := getDefaultImage(sg, "alpine")
+	initCtrImage, err := config.GetDefaultImage(sg, "alpine")
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 	initCtr.VolumeMounts = []corev1.VolumeMount{{Name: "disk", MountPath: "/data"}}
 	initCtr.Command = []string{"sh", "-c", "if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi"}
 
-	pgExpCtrImage, err := getDefaultImage(sg, "pgsql-exporter")
+	pgExpCtrImage, err := config.GetDefaultImage(sg, "pgsql-exporter")
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *Sourcegr
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PGSQL
 	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
 	if err != nil {
@@ -214,14 +214,14 @@ func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cm := configmap.NewConfigMap("pgsql-conf", sg.Namespace)
 	cm.Data = map[string]string{"postgresql.conf": config.DefaultPGSQLConfig()}
 
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &cm, &corev1.ConfigMap{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	scrt := secret.NewSecret("pgsql-auth", sg.Namespace, sg.Spec.RequestedVersion)
 
 	cn := sg.Spec.PGSQL.DatabaseConnection
@@ -236,7 +236,7 @@ func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *Sourcegraph, 
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &scrt, &corev1.Secret{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLService(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	svc := service.NewService("pgsql", sg.Namespace, sg.Spec.PGSQL)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{Name: "pgsql", TargetPort: intstr.FromString("pgsql"), Port: 5432},
@@ -246,7 +246,7 @@ func (r *Reconciler) reconcilePGSQLService(ctx context.Context, sg *Sourcegraph,
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLServiceAccount(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcilePGSQLServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PGSQL
 	sa := serviceaccount.NewServiceAccount("pgsql", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &sa, &corev1.ServiceAccount{}, sg, owner)

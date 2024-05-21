@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func reconcileObject[T client.Object](
 	ctx context.Context, r *Reconciler,
 	cfg config.Disableable,
 	obj, objKind T,
-	sg *Sourcegraph, owner client.Object,
+	sg *config.Sourcegraph, owner client.Object,
 ) error {
 	if cfg.IsDisabled() {
 		return r.ensureObjectDeleted(ctx, obj)
@@ -72,7 +72,7 @@ func createOrUpdateObject[R client.Object](
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[annotationKeyConfigHash] = cfgHash
+	annotations[config.AnnotationKeyConfigHash] = cfgHash
 	obj.SetAnnotations(annotations)
 
 	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
@@ -94,7 +94,7 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
-	if cfgHash != existingRes.GetAnnotations()[annotationKeyConfigHash] {
+	if cfgHash != existingRes.GetAnnotations()[config.AnnotationKeyConfigHash] {
 		logger.Info("Found existing object with spec that does not match desired state. Clobbering it.")
 		if err := r.Client.Update(ctx, obj); err != nil {
 			logger.Error(err, "error updating object")

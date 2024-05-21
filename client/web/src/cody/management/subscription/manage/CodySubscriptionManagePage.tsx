@@ -40,9 +40,12 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         data: userCodyPlanData,
     } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
-    useEffect(() => {
-        telemetryRecorder.recordEvent('cody.manage-subscription', 'view')
-    }, [telemetryRecorder])
+    useEffect(
+        function recordViewEvent() {
+            telemetryRecorder.recordEvent('cody.manage-subscription', 'view')
+        },
+        [telemetryRecorder]
+    )
 
     if (userCodyPlanLoading) {
         return <LoadingSpinner />
@@ -127,11 +130,9 @@ const PageContent: React.FC = () => {
             </div>
 
             <Card className={classNames('p-4', styles.card)}>
-                <div className="mb-3">
-                    <SubscriptionDetails subscription={subscription} />
-                </div>
+                <SubscriptionDetails subscription={subscription} />
 
-                <hr className="w-100 my-2" />
+                <hr className={styles.divider} />
 
                 <PaymentDetails subscription={subscription} />
             </Card>

@@ -37,7 +37,7 @@ interface CodyOnboardingProps extends TelemetryV2Props {
 export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnboardingProps): JSX.Element | null {
     const [showEditorStep, setShowEditorStep] = useState(false)
     const [completed = false, setOnboardingCompleted] = useTemporarySetting('cody.onboarding.completed', false)
-    const [showPurposeStep, status] = useFeatureFlag('ab-hubspot-form-workpersonal-to-handraiser')
+    const [signUpFlowEnabled, signUpFlowStatus] = useFeatureFlag('ab-shortened-install-first-signup-flow-cody-2024-04')
     // steps start from 0
     const [step = -1, setOnboardingStep] = useTemporarySetting('cody.onboarding.step', 0)
 
@@ -46,6 +46,7 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
     const returnToURL = parameters.get('returnTo')
+    const isCody = parameters.get('requestFrom') === 'CODY'
 
     const navigate = useNavigate()
 
@@ -54,6 +55,20 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
             navigate(returnToURL)
         }
     }, [completed, returnToURL, navigate])
+
+    useEffect(() => {
+        if (signUpFlowStatus === 'loaded' && signUpFlowEnabled && isCody) {
+            setOnboardingStep(currentsStep => (currentsStep || 0) + 2)
+            setOnboardingCompleted(true)
+            setShowEditorStep(true)
+        }
+        if (signUpFlowStatus === 'loaded' && isCody) {
+            const metadataKey = signUpFlowEnabled ? 'treatmentVariant' : 'controlVariant'
+            telemetryRecorder.recordEvent('cody.onboarding.ABShortenedSignupFlowForInstalls202404', 'enroll', {
+                metadata: { [metadataKey]: 1 },
+            })
+        }
+    }, [signUpFlowEnabled, signUpFlowStatus, isCody, setOnboardingStep, setOnboardingCompleted, telemetryRecorder])
 
     if (completed && returnToURL) {
         return null
@@ -67,22 +82,13 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
         return null
     }
 
-    if (status !== 'loaded') {
+    if (signUpFlowStatus !== 'loaded') {
         return null
     }
 
     const handleShowLastStep = (): void => {
         setOnboardingCompleted(true)
         setShowEditorStep(true)
-    }
-
-    const handleWelcomeNext = (): void => {
-        if (showPurposeStep) {
-            onNext()
-            return
-        }
-        setOnboardingStep(currentsStep => (currentsStep || 0) + 2)
-        handleShowLastStep()
         telemetryRecorder.recordEvent('cody.onboarding.hubspotForm.fromWorkPersonalToHandRaiserTest', 'enroll', {
             metadata: { controlVariant: 1 },
         })
@@ -96,9 +102,7 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
             className={styles.modal}
             containerClassName={styles.root}
         >
-            {step === 0 && (
-                <WelcomeStep onNext={handleWelcomeNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />
-            )}
+            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} telemetryRecorder={telemetryRecorder} />}
             {step === 1 && (
                 <PurposeStep
                     authenticatedUser={authenticatedUser}

@@ -1,13 +1,13 @@
-package appliance
+package reconciler
 
 import "time"
 
-func (suite *ApplianceTestSuite) TestDeploySymbols() {
+func (suite *ApplianceTestSuite) TestDeployPGSQL() {
 	for _, tc := range []struct {
 		name string
 	}{
-		{name: "symbols/default"},
-		{name: "symbols/with-storage"},
+		{name: "pgsql/default"},
+		{name: "pgsql/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

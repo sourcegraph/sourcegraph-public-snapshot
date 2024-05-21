@@ -20,7 +20,9 @@ const CloudEmoji = "☁️"
 
 func sanitizeInstanceName(name string) string {
 	name = strings.ToLower(name)
-	return strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, "_", "-")
+	return name
 }
 
 func inferInstanceNameFromBranch(ctx context.Context) (string, error) {

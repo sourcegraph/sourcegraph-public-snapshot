@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { mdiCancel } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, H1, Icon, Text } from '@sourcegraph/wildcard'
+import { Button, H1, H3, Icon, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { Subscription } from '../../api/teamSubscriptions'
 
@@ -29,40 +29,20 @@ export const SubscriptionDetails: React.FC<{ subscription: Subscription }> = ({ 
     const [confirmCancelModalVisible, setConfirmCancelModalVisible] = useState(false)
     const [changingCancellationStatus, setChangingCancellationStatus] = useState(false)
 
-    const setCancelAtPeriodEnd = async (value: 'cancel' | 'renew') => {
-        setConfirmCancelModalVisible(false)
-        setChangingCancellationStatus(true)
-        try {
-            // await client.mutate({
-            //     mutation: MUTATE_TEAM_SUBSCRIPTION_CANCEL_AT_PERIOD_END,
-            //     variables: {
-            //         teamId: subscriptionDetails.teamId,
-            //         cancelAtPeriodEnd: value === 'cancel',
-            //     },
-            // })
-
-            // onChange()
-            console.log('calling onChange callback')
-        } catch (error) {
-            // TODO[accounts.sourcegraph.com#353]: Send error to Sentry
-            // eslint-disable-next-line no-console
-            console.error(error)
-            setErrorMessage(
-                'An error occurred while canceling/resuming the subscription. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
-            )
-        }
-        setChangingCancellationStatus(false)
-    }
-
-    // Auto-hide error message.
-
-    useEffect(() => {
-        if (errorMessage) {
-            setTimeout(() => {
-                setErrorMessage('')
-            }, 5000)
-        }
-    }, [errorMessage])
+    useEffect(
+        function clearErrorMessageAfterTimeout() {
+            let timeout: NodeJS.Timeout
+            if (errorMessage) {
+                timeout = setTimeout(() => setErrorMessage(''), 5000)
+            }
+            return () => {
+                if (timeout) {
+                    clearTimeout(timeout)
+                }
+            }
+        },
+        [errorMessage]
+    )
 
     return (
         <>
@@ -86,21 +66,8 @@ export const SubscriptionDetails: React.FC<{ subscription: Subscription }> = ({ 
                         .
                     </Text>
                 </div>
-                <Button
-                    variant="secondary"
-                    // disabled={changingCancellationStatus}
-                    onClick={() => {
-                        console.log('cancelAtPeriodEnd', subscription.cancelAtPeriodEnd)
-                        // if (subscriptionDetails.cancelAtPeriodEnd) {
-                        //     void setCancelAtPeriodEnd('renew')
-                        // } else {
-                        //     setConfirmCancelModalVisible(true)
-                        // }
-                    }}
-                >
-                    {changingCancellationStatus && (
-                        <div className="spinner w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mr-2" />
-                    )}
+                <Button variant="secondary" onClick={() => setConfirmCancelModalVisible(true)}>
+                    {changingCancellationStatus && <LoadingSpinner />}
                     {subscription.cancelAtPeriodEnd ? (
                         'Resume Subscription'
                     ) : (
@@ -112,58 +79,28 @@ export const SubscriptionDetails: React.FC<{ subscription: Subscription }> = ({ 
                 </Button>
             </div>
 
-            {errorMessage && <p className="bg-red-100 text-red-700 p-4 rounded">{errorMessage}</p>}
+            {errorMessage && <Text className="mt-3 text-danger">{errorMessage}</Text>}
 
-            <OkCancelModal
-                isOpen={confirmCancelModalVisible}
-                cancelText="No, I've changed my mind"
-                okText="Yes, cancel"
-                onCancel={() => {
-                    setConfirmCancelModalVisible(false)
-                }}
-                onOk={() => {
-                    void setCancelAtPeriodEnd('cancel')
-                }}
-            >
-                <p>
-                    <strong>Are you sure?</strong>
-                </p>
-                <p>
-                    Canceling you subscription now means that you won't be able to use Cody with Pro features after{' '}
-                    {/* eslint-disable-next-line @typescript-eslint/no-unsafe-argument */}
-                    {humanizeDate(subscription.currentPeriodEnd)}
-                </p>
-                <p>
-                    <strong>Do you want to proceed?</strong>
-                </p>
-            </OkCancelModal>
+            {confirmCancelModalVisible && (
+                <Modal aria-label="Confirmation modal" onDismiss={() => setConfirmCancelModalVisible(false)}>
+                    <div>
+                        <H3>Are you sure?</H3>
+                        <Text className="mt-4">
+                            Canceling you subscription now means that you won't be able to use Cody with Pro features
+                            after {humanizeDate(subscription.currentPeriodEnd)}.
+                        </Text>
+                        <Text className={classNames('mt-4 mb-3', styles.bold)}>Do you want to procceed?</Text>
+                    </div>
+                    <div className={classNames('d-flex mt-4', styles.buttonContainer)}>
+                        <Button variant="secondary" outline={true} onClick={() => setConfirmCancelModalVisible(false)}>
+                            No, I've changed my mind
+                        </Button>
+                        <Button variant="primary" onClick={() => setConfirmCancelModalVisible(false)}>
+                            Yes, cancel
+                        </Button>
+                    </div>
+                </Modal>
+            )}
         </>
-    )
-}
-
-const OkCancelModal: React.FC<{
-    isOpen: boolean
-    cancelText: string
-    okText: string
-    onCancel: () => void
-    onOk: () => void
-    children: React.ReactNode
-}> = ({ isOpen, cancelText, onCancel, okText, onOk, children }) => {
-    if (!isOpen) {
-        return null
-    }
-
-    return (
-        <div className="d-flex">
-            <div className="">{children}</div>
-            <div className="">
-                <button type="button" className="" onClick={onCancel}>
-                    {cancelText}
-                </button>
-                <button type="button" className="" onClick={onOk}>
-                    {okText}
-                </button>
-            </div>
-        </div>
     )
 }

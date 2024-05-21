@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus } from '@mdi/js'
 import {
     AddressElement,
     CardCvcElement,
@@ -12,7 +13,11 @@ import {
 import { type Appearance, loadStripe, type StripeCardElementOptions } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
+import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+
 import type { Subscription } from '../../api/teamSubscriptions'
+
+import styles from './PaymentDetails.module.scss'
 
 const publishableKey = window.context.frontendCodyProConfig?.stripePublishableKey
 if (!publishableKey) {
@@ -33,8 +38,10 @@ const noop = (): void => {}
 
 export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
     <Elements stripe={stripePromise} options={{ appearance }}>
-        <PaymentMethod subscription={subscription} onChange={noop} />
-        <BillingAddress subscription={subscription} onChange={noop} />
+        <Grid columnCount={2} spacing={0} className={styles.grid}>
+            <PaymentMethod subscription={subscription} className={styles.gridItem} onChange={noop} />
+            <BillingAddress subscription={subscription} className={styles.gridItem} onChange={noop} />
+        </Grid>
     </Elements>
 )
 
@@ -43,86 +50,126 @@ const cardElementOptions: StripeCardElementOptions = {
     disableLink: true,
     // Since it is supplied by the AddressElement.
     hidePostalCode: true,
-    style: {
-        base: {
-            fontSize: '16px',
-            color: '#374151',
-            fontFamily:
-                'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
-            backgroundColor: 'white',
-        },
+
+    // apply default wildcard input classes
+    classes: {
+        base: 'form-control',
+        focus: 'focus-visible',
+        invalid: 'is-invalid',
     },
 }
 
 const PaymentMethod: React.FC<{
     subscription: Subscription
+    className?: string
     onChange: () => unknown
-}> = ({ subscription, onChange }) => {
+}> = ({ subscription: { paymentMethod }, className, onChange }) => {
+    const [isEditMode, setIsEditMode] = useState(false)
+
+    // // It shouldn't be possible to have a subscription without a payment method.
+    // // But this can still happen in some situations.
+    // //
+    // // For the blank slate experience, we just have a button that toggles the
+    // // "editing" state. (After which point, everything will work just like
+    // // the "add new payment method" scenario.
+    // if (!subscription.paymentMethod && !isEditMode) {
+    //     return (
+    //         <>
+    //             <p>No payment method is available.</p>
+    //             <div className="flex justify-end mt-6">
+    //                 <button
+    //                     type="button"
+    //                     className="bg-blue-600 text-white hover:bg-blue-700 py-2 px-4 rounded inline-flex items-center justify-center"
+    //                     onClick={() => {
+    //                         setEditing(true)
+    //                     }}
+    //                 >
+    //                     Add
+    //                 </button>
+    //             </div>
+    //         </>
+    //     )
+    // }
+
+    return (
+        <div className={className}>
+            {paymentMethod ? (
+                isEditMode ? (
+                    <CreditCardForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
+                ) : (
+                    <ActiveCreditCard paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
+                )
+            ) : (
+                <CreditCardMissing onAddButtonClick={() => setIsEditMode(true)} />
+            )}
+        </div>
+    )
+}
+
+const CreditCardMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
+    <div className={styles.creditCardTitle}>
+        <H3>No payment method is available</H3>
+        <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onAddButtonClick}>
+            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
+        </Button>
+    </div>
+)
+
+const ActiveCreditCard: React.FC<{
+    paymentMethod: Subscription['paymentMethod']
+    onEditButtonClick: () => void
+}> = props => (
+    <>
+        <div className={styles.creditCardTitle}>
+            <H3>Active credit card</H3>
+            <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onEditButtonClick}>
+                <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
+            </Button>
+        </div>
+        <div className={styles.creditCardContent}>
+            <Text as="span" className={classNames('text-muted', styles.creditCardNumber)}>
+                <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod?.last4}
+            </Text>
+            <Text as="span" className="text-muted">
+                Expires {props.paymentMethod?.expMonth.toString().padStart(2, '0')}/
+                {props.paymentMethod?.expYear.toString().slice(-2)}
+            </Text>
+        </div>
+    </>
+)
+
+const CreditCardForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = props => {
     const stripe = useStripe()
     const elements = useElements()
-    const [editing, setEditing] = useState(false)
+
+    const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
-    const [isSaving, setIsSaving] = useState(false)
 
-    // It shouldn't be possible to have a subscription without a payment method.
-    // But this can still happen in some situations.
-    //
-    // For the blank slate experience, we just have a button that toggles the
-    // "editing" state. (After which point, everything will work just like
-    // the "add new payment method" scenario.
-    if (!subscription.paymentMethod && !editing) {
-        return (
-            <>
-                <p>No payment method is available.</p>
-                <div className="flex justify-end mt-6">
-                    <button
-                        type="button"
-                        className="bg-blue-600 text-white hover:bg-blue-700 py-2 px-4 rounded inline-flex items-center justify-center"
-                        onClick={() => {
-                            setEditing(true)
-                        }}
-                    >
-                        Add
-                    </button>
-                </div>
-            </>
-        )
-    }
-
-    const handleSubmit = async () => {
+    const handleSubmit = async (): Promise<void> => {
         if (!stripe || !elements) {
-            setErrorMessage('Stripe or Stripe Elements libraries not available.')
-            return
+            return setErrorMessage('Stripe or Stripe Elements libraries not available.')
         }
+
         const cardNumberElement = elements.getElement(CardNumberElement)
         if (!cardNumberElement) {
-            setErrorMessage('CardNumber element was not found.')
-            return
+            return setErrorMessage('CardNumber element was not found.')
         }
 
         const tokenResult = await stripe.createToken(cardNumberElement)
         if (tokenResult.error) {
-            setErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
-            return
+            return setErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
         }
 
-        setIsSaving(true)
+        setIsLoading(true)
         try {
-            // await client.mutate({
-            //     mutation: MUTATE_TEAM_SUBSCRIPTION_CREDIT_CARD_TOKEN,
-            //     variables: {
-            //         teamId: subscriptionDetails.teamId,
-            //         creditCardToken: tokenResult.token.id,
-            //     },
-            // })
-            // onChange()
-            console.log('TODO: Change credit card token and call on change handler')
+            // TODO: call SSC API
+            props.onSubmit()
         } catch (error) {
             // TODO[accounts.sourcegraph.com#353]: Send error to Sentry
             // eslint-disable-next-line no-console
             console.error(error)
 
-            // If there is a human-friendly error in the GraphQL response, surface that to the user.
+            // // If there is a human-friendly error in the GraphQL response, surface that to the user.
             // const apolloError = error as ApolloError
             // if (apolloError.name === 'ApolloError') {
             //     if (apolloError.message !== 'Internal Server Error') {
@@ -132,169 +179,57 @@ const PaymentMethod: React.FC<{
             //         return
             //     }
             // }
-            // TODO: handle error
             setErrorMessage(
                 'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
             )
+        } finally {
+            setIsLoading(false)
         }
-        setIsSaving(false)
-        setEditing(false)
     }
 
-    /**
-     * Here we are using the lower level `CardElement`, rather than the recommended `PaymentElement`.
-     * The reason for this is that we _only_ want to get the Stripe Token to refer to the user's
-     * credit card, and not bundle up the whole "Stripe Link" product functionality. (Which would just
-     * add additional complexity without a lot of benefit.)
-     */
     return (
-        <div className="pt-4">
-            {errorMessage && <p className="bg-red-100 text-red-700 p-4 rounded">{errorMessage}</p>}
-            {!editing && (
-                <a
-                    className="float-right cursor-pointer inline-flex items-center"
-                    onClick={() => {
-                        setEditing(true)
-                    }}
-                >
-                    <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 13 13"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="mr-2"
-                    >
-                        <path
-                            d="M7.87333 4.20001L8.5 4.82668L2.44667 10.8667H1.83333V10.2533L7.87333 4.20001ZM10.2733 0.200012C10.1067 0.200012 9.93333 0.266679 9.80667 0.393346L8.58667 1.61335L11.0867 4.11335L12.3067 2.89335C12.5667 2.63335 12.5667 2.20001 12.3067 1.95335L10.7467 0.393346C10.6133 0.260012 10.4467 0.200012 10.2733 0.200012ZM7.87333 2.32668L0.5 9.70001V12.2H3L10.3733 4.82668L7.87333 2.32668Z"
-                            fill="#0B70DB"
-                        />
-                    </svg>
-                    Edit
-                </a>
-            )}
-            <h2 className="text-lg font-semibold mb-6 text-slate-950">
-                {editing ? 'Edit credit card' : 'Active credit card'}
-            </h2>
+        <>
+            <H3>Edit credit card</H3>
+            <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.creditCardForm}>
+                <div>
+                    <Label className={styles.creditCardFormLabel}>
+                        <Text className="mb-2">Card number</Text>
+                        <CardNumberElement options={cardElementOptions} onFocus={() => {}} />
+                    </Label>
+                </div>
 
-            <div className="relative">
-                {editing ? (
-                    <>
-                        <div className="mb-4">
-                            <label htmlFor="card-number" className="block text-sm font-medium mb-2">
-                                Card number
-                            </label>
-                            <div
-                                className={classNames('border border-separator-gray rounded p-1', {
-                                    'bg-disabled-gray': !editing,
-                                })}
-                                aria-disabled={!editing}
-                            >
-                                <div className="p-2" style={{ paddingTop: '10px', paddingBottom: '10px' }}>
-                                    <CardNumberElement
-                                        options={cardElementOptions}
-                                        onFocus={() => {
-                                            setErrorMessage('')
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                <Grid columnCount={2} className="mt-3 mb-0 pb-3">
+                    <Label className={styles.creditCardFormLabel}>
+                        <Text className="mb-2">Expiry date</Text>
+                        <CardExpiryElement options={cardElementOptions} onFocus={() => {}} />
+                    </Label>
 
-                        <div className="flex mb-4 -mx-2">
-                            <div className="px-2 w-1/2">
-                                <label htmlFor="expiry-date" className="block text-sm font-medium mb-2 ">
-                                    Expiry date
-                                </label>
-                                <div
-                                    className={classNames('border border-separator-gray rounded p-1', {
-                                        'bg-disabled-gray': !editing,
-                                    })}
-                                    aria-disabled={!editing}
-                                >
-                                    <div className="p-2" style={{ paddingTop: '10px', paddingBottom: '10px' }}>
-                                        <CardExpiryElement
-                                            options={cardElementOptions}
-                                            onFocus={() => {
-                                                setErrorMessage('')
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="px-2 w-1/2">
-                                <label htmlFor="cvc" className="block text-sm font-medium mb-2">
-                                    CVC
-                                </label>
-                                <div
-                                    className={classNames('border border-separator-gray rounded p-1', {
-                                        'bg-disabled-gray': !editing,
-                                    })}
-                                    aria-disabled={!editing}
-                                >
-                                    <div className="p-2" style={{ paddingTop: '10px', paddingBottom: '10px' }}>
-                                        <CardCvcElement
-                                            options={cardElementOptions}
-                                            onFocus={() => {
-                                                setErrorMessage('')
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <Label className={styles.creditCardFormLabel}>
+                        <Text className="mb-2">CVC</Text>
+                        <CardCvcElement options={cardElementOptions} onFocus={() => {}} />
+                    </Label>
+                </Grid>
 
-                        <div className="flex justify-end mt-6">
-                            <button
-                                type="button"
-                                className="bg-gray-200 text-gray-700 hover:bg-gray-300 py-2 px-4 rounded mr-2"
-                                onClick={() => {
-                                    setEditing(false)
-                                    setErrorMessage('')
-                                }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="bg-blue-600 text-white hover:bg-blue-700 py-2 px-4 rounded inline-flex items-center justify-center"
-                                onClick={event => {
-                                    event.preventDefault()
-                                    void handleSubmit()
-                                }}
-                                disabled={isSaving}
-                            >
-                                {isSaving && (
-                                    <div className="spinner w-4 h-4 border-2 border-blue-700 border-t-transparent rounded-full animate-spin mr-2" />
-                                )}
-                                Submit
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <div>
-                        <p className="m-0 text-xs text-muted">Card number</p>
-                        <p className="m-0 mb-4">{'···· ···· ···· ' + subscription.paymentMethod?.last4}</p>
+                {errorMessage && <Text className="text-danger">{errorMessage}</Text>}
 
-                        <p className="m-0 text-xs text-muted">Expiry date</p>
-                        <p className="m-0 mb-4">
-                            {subscription.paymentMethod?.expMonth.toString().padStart(2, '0')}/
-                            {subscription.paymentMethod?.expYear.toString().slice(-2)}
-                        </p>
-
-                        <p className="m-0 text-xs text-muted">CVC</p>
-                        <p className="m-0 mb-4">···</p>
-                    </div>
-                )}
-            </div>
-        </div>
+                <div className={classNames('mt-4', styles.creditCardFormButtonContainer)}>
+                    <Button type="reset" variant="secondary" outline={true}>
+                        Cancel
+                    </Button>
+                    <Button disabled={isLoading} type="submit" variant="primary" className="ml-2">
+                        Save
+                    </Button>
+                </div>
+            </Form>
+        </>
     )
 }
 
 const BillingAddress: React.FC<{
     subscription: Subscription
+    className?: string
     onChange: () => unknown
-}> = ({ subscription, onChange }) => {
+}> = ({ subscription, className, onChange }) => {
     const stripe = useStripe()
     const elements = useElements()
     const [editing, setEditing] = useState(false)
@@ -395,7 +330,7 @@ const BillingAddress: React.FC<{
     )
 
     return (
-        <div className="pt-4">
+        <div className={className}>
             {!editing && (
                 <a
                     className="float-right cursor-pointer inline-flex items-center"
