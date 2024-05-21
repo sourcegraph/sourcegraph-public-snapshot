@@ -1,4 +1,4 @@
-package query
+package gitdomain
 
 import (
 	"testing"

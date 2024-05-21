@@ -79,6 +79,7 @@ go_test(
         "//internal/grpc",
         "//lib/errors",
         "//schema",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_go_diff//diff",
