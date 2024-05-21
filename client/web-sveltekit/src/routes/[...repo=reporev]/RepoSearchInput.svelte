@@ -15,7 +15,7 @@
     /**
      * The revision to search in. If not provided, the default branch is used.
      */
-    export let revision: { commitID: string; revision: string } | undefined
+    export let revision: string
 
     const {
         elements: { trigger, overlay, content, portalled },
@@ -37,24 +37,7 @@
         )
     }
 
-    function formatRevision(revision: string, commitID: string): string {
-        // Do not append revison for the default branch
-        if (!revision) {
-            return ''
-        }
-
-        // If the (URL) revision is or starts with the commit ID, use the abbreviated commit ID
-        if (commitID.startsWith(revision)) {
-            return '@' + commitID.slice(0, 7)
-        }
-
-        // Otherwise, use the revision as is
-        return '@' + revision
-    }
-
-    $: query = `repo:${repositoryInsertText({ repository: repoName })}${
-        revision ? formatRevision(revision.revision, revision.commitID) : ''
-    } `
+    $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''}`
     $: queryState = queryStateStore({ query }, $settings)
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the

@@ -96,15 +96,7 @@
                 </MenuLink>
             {/each}
         </DropdownMenu>
-        <RepoSearchInput
-            repoName={data.repoName}
-            revision={data.resolvedRevision
-                ? {
-                      commitID: data.resolvedRevision.commitID,
-                      revision: data.revision,
-                  }
-                : undefined}
-        />
+        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
     </nav>
 </GlobalHeaderPortal>
 

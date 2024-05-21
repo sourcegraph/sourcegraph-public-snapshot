@@ -63,10 +63,40 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         repoURL: '/' + params.repo,
         repoName,
         displayRepoName: displayRepoName(repoName),
+        /**
+         * Revision from URL
+         */
         revision,
+        /**
+         * A friendly display form of the revision. This can be:
+         * - an empty string which signifies the default branch
+         * - an abbreviated commit SHA
+         * - a symbolic revision (e.g. a branch or tag name)
+         */
+        displayRevision: displayRevision(revision, resolvedRevision),
         resolvedRevisionOrError,
         resolvedRevision,
     }
+}
+
+/**
+ * Returns a friendly display form of the revision. If the resolved revision's commit ID starts with the revision,
+ * the first 7 characters of the commit ID are returned. Otherwise, the revision is returned as is.
+ *
+ * @param revision The revision from the URL
+ * @param resolvedRevision The resolved revision
+ * @returns A human readable revision string
+ */
+function displayRevision(revision: string, resolvedRevision: ResolvedRevision | undefined): string {
+    if (!resolvedRevision) {
+        return revision
+    }
+
+    if (resolvedRevision.commitID.startsWith(revision)) {
+        return resolvedRevision.commitID.slice(0, 7)
+    }
+
+    return revision
 }
 
 function redirectToExternalHost(externalRedirectURL: string, currentURL: URL): never {
