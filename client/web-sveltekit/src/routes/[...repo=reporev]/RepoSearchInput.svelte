@@ -37,7 +37,7 @@
         )
     }
 
-    $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''}`
+    $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the
