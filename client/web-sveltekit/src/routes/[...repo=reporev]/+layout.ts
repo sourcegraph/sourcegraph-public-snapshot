@@ -33,12 +33,15 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     // inside markdown is loaded.
     loadMarkdownSyntaxHighlighting()
 
-    const { repoName, revision } = parseRepoRevision(params.repo)
+    // An empty revision means we are at the default branch
+    const { repoName, revision = '' } = parseRepoRevision(params.repo)
 
     let resolvedRevisionOrError: ResolvedRevision | ErrorLike
+    let resolvedRevision: ResolvedRevision | undefined
 
     try {
         resolvedRevisionOrError = await resolveRepoRevision({ client, repoName, revision })
+        resolvedRevision = resolvedRevisionOrError
     } catch (repoError: unknown) {
         const redirect = isRepoSeeOtherErrorLike(repoError)
 
@@ -46,7 +49,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
             redirectToExternalHost(redirect, url)
         }
 
-        // TODO: use differenr error codes for different types of errors
+        // TODO: use different error codes for different types of errors
         // Let revision errors be handled by the nested layout so that we can
         // still render the main repo navigation and header
         if (!isRevisionNotFoundErrorLike(repoError)) {
@@ -62,6 +65,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
         displayRepoName: displayRepoName(repoName),
         revision,
         resolvedRevisionOrError,
+        resolvedRevision,
     }
 }
 

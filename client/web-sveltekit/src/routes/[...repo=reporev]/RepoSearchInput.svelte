@@ -12,6 +12,10 @@
     import { registerHotkey } from '$lib/Hotkey'
 
     export let repoName: string
+    /**
+     * The revision to search in. If not provided, the default branch is used.
+     */
+    export let revision: { commitID: string; revision: string } | undefined
 
     const {
         elements: { trigger, overlay, content, portalled },
@@ -19,7 +23,6 @@
     } = createDialog()
 
     let searchInput: SearchInput | undefined
-    let queryState = queryStateStore({ query: `repo:${repositoryInsertText({ repository: repoName })} ` }, $settings)
 
     registerHotkey({
         keys: { key: '/' },
@@ -34,6 +37,25 @@
         )
     }
 
+    function formatRevision(revision: string, commitID: string): string {
+        // Do not append revison for the default branch
+        if (!revision) {
+            return ''
+        }
+
+        // If the (URL) revision is or starts with the commit ID, use the abbreviated commit ID
+        if (commitID.startsWith(revision)) {
+            return '@' + commitID.slice(0, 7)
+        }
+
+        // Otherwise, use the revision as is
+        return '@' + revision
+    }
+
+    $: query = `repo:${repositoryInsertText({ repository: repoName })}${
+        revision ? formatRevision(revision.revision, revision.commitID) : ''
+    } `
+    $: queryState = queryStateStore({ query }, $settings)
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the
         // start of the input. We can move the cursor to the end by calling focus(), but we need
