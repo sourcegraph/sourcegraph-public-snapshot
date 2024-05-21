@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -36,23 +35,6 @@ func CreateRepoDirWithName(t *testing.T, name string) string {
 	return root
 }
 
-func MustParseTime(layout, value string) time.Time {
-	tm, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err.Error())
-	}
-	return tm
-}
-
-// MakeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
-// it.
-func MakeGitRepository(t *testing.T, cmds ...string) api.RepoName {
-	t.Helper()
-	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir))
-	return repo
-}
-
 // MakeGitRepositoryAndReturnDir calls initGitRepository to create a new Git repository and returns
 // the repo name and directory.
 func MakeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (api.RepoName, string) {
@@ -60,16 +42,6 @@ func MakeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (api.RepoName, 
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
 	return repo, dir
-}
-
-func GetHeadCommitFromGitDir(t *testing.T, gitDir string) string {
-	t.Helper()
-	cmd := CreateGitCommand(gitDir, "bash", []string{"-c", "git rev-parse HEAD"}...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Command %q failed. Output was: %s, Error: %+v\n ", cmd, out, err)
-	}
-	return strings.Trim(string(out), "\n")
 }
 
 // InitGitRepository initializes a new Git repository and runs commands in a new
@@ -86,9 +58,6 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// setting git repo which is needed for successful run of git command against local file system
-	ClientMocks.LocalGitCommandReposDir = remotes
 
 	cmds = append([]string{"git init --initial-branch=master"}, cmds...)
 	for _, cmd := range cmds {

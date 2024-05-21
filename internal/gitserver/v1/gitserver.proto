@@ -77,7 +77,9 @@ service GitserverService {
   rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc Exec(ExecRequest) returns (stream ExecResponse) {
+    option deprecated = true;
+  }
 
   // GetObject returns the object with the given OID in the given repository.
   //
@@ -814,15 +816,15 @@ message CreateCommitFromPatchBinaryResponse {
 }
 
 message ExecRequest {
-  string repo = 1;
+  string repo = 1 [deprecated = true];
   bytes ensure_revision = 2 [deprecated = true];
-  repeated bytes args = 3;
+  repeated bytes args = 3 [deprecated = true];
   bytes stdin = 4 [deprecated = true];
   bool no_timeout = 5 [deprecated = true];
 }
 
 message ExecResponse {
-  bytes data = 1;
+  bytes data = 1 [deprecated = true];
 }
 
 message RepoNotFoundPayload {
