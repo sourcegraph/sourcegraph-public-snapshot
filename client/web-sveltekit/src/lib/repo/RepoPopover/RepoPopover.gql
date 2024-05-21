@@ -1,4 +1,4 @@
-query RepoPopoverQuery($repoName: String!){
+query RepoPopoverQuery($repoName: String!) {
     repository(name: $repoName) {
         ...RepoPopoverFragment
     }
@@ -19,14 +19,14 @@ fragment RepoPopoverFragment on Repository {
 
     commit(rev: "HEAD") {
         id
-            oid
-            subject
-            canonicalURL
-            author {
-                date
-                    person {
-                        ...Avatar_Person
-                    }
+        oid
+        subject
+        canonicalURL
+        author {
+            date
+            person {
+                ...Avatar_Person
             }
+        }
     }
 }
