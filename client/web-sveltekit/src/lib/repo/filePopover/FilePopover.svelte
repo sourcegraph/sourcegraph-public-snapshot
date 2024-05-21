@@ -38,16 +38,14 @@
     import NodeLine from './NodeLine.svelte'
 
     export let repoName: string
-    export let filePath: string
     export let entry: FilePopoverFragment | DirPopoverFragment
 
     function splitPath(filePath: string): [string, string] {
         let parts = filePath.split('/')
-        console.log({ parts })
         return [parts.slice(0, parts.length - 1).join('/'), parts[parts.length - 1]]
     }
 
-    $: [dirName, baseName] = splitPath(filePath)
+    $: [dirName, baseName] = splitPath(entry.path)
     $: lastCommit = entry.history.nodes[0].commit
 </script>
 
