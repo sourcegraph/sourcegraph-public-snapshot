@@ -652,6 +652,8 @@ type CodyProConfig struct {
 	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
 	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
 	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
+	// SscBaseUrl description: The base URL of the Self-Serve Cody site.
+	SscBaseUrl string `json:"sscBaseUrl,omitempty"`
 	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
 	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
 }
