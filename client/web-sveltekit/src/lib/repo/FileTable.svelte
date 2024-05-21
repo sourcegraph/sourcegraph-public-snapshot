@@ -2,12 +2,11 @@
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
+    import type { TreeEntryWithCommitInfo } from './FileTable.gql'
     import { replaceRevisionInURL } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
-
     import { isFileEntry, type TreeEntry } from './api/tree'
     import FileIcon from './FileIcon.svelte'
-    import type { TreeEntryWithCommitInfo } from './FileTable.gql'
 
     export let entries: readonly TreeEntry[]
     export let commitInfo: readonly TreeEntryWithCommitInfo[]
