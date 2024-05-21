@@ -163,34 +163,38 @@ func Init() {
 				return
 			}
 
-			if config.SyntaxHighlighting == nil {
+			highlightingConfig := config.SyntaxHighlighting
+			if highlightingConfig == nil {
 				return
 			}
 
-			if defaultEngine, ok := EngineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
-				engineConfig.Default = defaultEngine
-			}
-
-			// Set overrides from configuration
-			//
-			// We populate the confuration with base again, because we need to
-			// create a brand new map to not take any values that were
-			// previously in the table from the last configuration.
-			//
-			// After that, we set the values from the new configuration
-			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
-				if overrideEngine, ok := EngineNameToEngineType(engine); ok {
-					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
+			if highlightingConfig.Engine != nil {
+				if defaultEngine, ok := EngineNameToEngineType(highlightingConfig.Engine.Default); ok {
+					engineConfig.Default = defaultEngine
+				}
+				// Set overrides from configuration
+				//
+				// We populate the confuration with base again, because we need to
+				// create a brand new map to not take any values that were
+				// previously in the table from the last configuration.
+				//
+				// After that, we set the values from the new configuration
+				for name, engine := range highlightingConfig.Engine.Overrides {
+					if overrideEngine, ok := EngineNameToEngineType(engine); ok {
+						engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
+					}
 				}
 			}
 
-			for extension, language := range config.SyntaxHighlighting.Languages.Extensions {
-				highlightConfig.Extensions[extension] = language
-			}
-			highlightConfig.Patterns = []languagePattern{}
-			for _, pattern := range config.SyntaxHighlighting.Languages.Patterns {
-				if re, err := regexp.Compile(pattern.Pattern); err == nil {
-					highlightConfig.Patterns = append(highlightConfig.Patterns, languagePattern{pattern: re, language: pattern.Language})
+			if highlightingConfig.Languages != nil {
+				for extension, language := range highlightingConfig.Languages.Extensions {
+					highlightConfig.Extensions[extension] = language
+				}
+				highlightConfig.Patterns = []languagePattern{}
+				for _, pattern := range highlightingConfig.Languages.Patterns {
+					if re, err := regexp.Compile(pattern.Pattern); err == nil {
+						highlightConfig.Patterns = append(highlightConfig.Patterns, languagePattern{pattern: re, language: pattern.Language})
+					}
 				}
 			}
 		})

@@ -959,12 +959,10 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
           "type": "object",
-          "required": ["default"],
           "properties": {
             "default": {
               "description": "The default syntax highlighting engine to use",
@@ -984,7 +982,6 @@
         "languages": {
           "title": "SyntaxHighlightingLanguage",
           "type": "object",
-          "required": ["extensions", "patterns"],
           "properties": {
             "extensions": {
               "description": "Map of extension to language",
