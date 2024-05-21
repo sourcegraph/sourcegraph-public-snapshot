@@ -6,6 +6,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
     import { delay } from '$lib/utils'
+    import Alert from '$lib/wildcard/Alert.svelte'
 
     export let repoName: string
     export let rev: string | undefined
@@ -37,6 +38,8 @@
             <svelte:fragment slot="content">
                 {#await delay(fetchRepoPopoverData(client, repoName), 200) then data}
                     <RepoPopover {data} withHeader />
+                {:catch error}
+                    <Alert variant="danger" size="slim">{error}</Alert>
                 {/await}
             </svelte:fragment>
         </Popover>
