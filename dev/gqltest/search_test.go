@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
