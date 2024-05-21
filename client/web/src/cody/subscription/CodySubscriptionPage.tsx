@@ -27,7 +27,7 @@ import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { isEmbeddedCodyProUIEnabled } from '../util'
+import { isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -37,8 +37,6 @@ interface CodySubscriptionPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
-
-const manageSubscriptionRedirectURL = window.context.frontendCodyProConfig?.sscBaseUrl + '/subscription'
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     isSourcegraphDotCom,

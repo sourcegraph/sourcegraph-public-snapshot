@@ -22,6 +22,7 @@ import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { manageSubscriptionRedirectURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -32,8 +33,6 @@ interface CodyManagementPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
-
-const manageSubscriptionRedirectURL = window.context.frontendCodyProConfig?.sscBaseUrl + '/subscription'
 
 export enum EditorStep {
     SetupInstructions = 0,
