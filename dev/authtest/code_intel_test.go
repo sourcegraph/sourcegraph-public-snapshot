@@ -74,31 +74,15 @@ func TestCodeIntelEndpoints(t *testing.T) {
 	}
 
 	t.Run("SCIP upload", func(t *testing.T) {
-		// Update site configuration to enable "lsifEnforceAuth".
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
+		reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+			siteConfig.LsifEnforceAuth = true
+		})
+		require.NoError(t, err)
+		if reset != nil {
+			t.Cleanup(func() {
+				require.NoError(t, reset())
+			})
 		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.LsifEnforceAuth = true
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
 		err = gqltestutil.Retry(15*time.Second, func() error {
@@ -172,25 +156,13 @@ func TestCodeIntelEndpoints(t *testing.T) {
 }
 
 func setExecutorAccessToken(t *testing.T, token string) func() {
-	siteConfig, lastID, err := client.SiteConfiguration()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	oldSiteConfig := new(schema.SiteConfiguration)
-	*oldSiteConfig = *siteConfig
-	siteConfig.ExecutorsAccessToken = token
-
-	if err := client.UpdateSiteConfiguration(siteConfig, lastID); err != nil {
-		t.Fatal(err)
-	}
+	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+		siteConfig.ExecutorsAccessToken = token
+	})
+	require.NoError(t, err)
 	return func() {
-		_, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := client.UpdateSiteConfiguration(oldSiteConfig, lastID); err != nil {
-			t.Fatal(err)
+		if reset != nil {
+			require.NoError(t, reset())
 		}
 	}
 }

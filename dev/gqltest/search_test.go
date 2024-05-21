@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -97,9 +96,6 @@ type searchClient interface {
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
-
-	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
-	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -734,30 +730,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
-		// Enable structural search.
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		enableStructuralSearch(t)
 
 		tests := []struct {
 			name       string
