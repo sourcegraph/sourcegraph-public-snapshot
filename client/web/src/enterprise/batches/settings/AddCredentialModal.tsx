@@ -292,7 +292,7 @@ const AddToken: FC<AddTokenProps> = ({
 }) => {
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
-    const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(externalServiceURL)}`
+    const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(externalServiceURL)}&kind=credential`
 
     if (step === 'add-token') {
         return (

@@ -104,6 +104,15 @@ const (
 	BatchesGitHubAppDomain GitHubAppDomain = "batches"
 )
 
+type GitHubAppKind string
+
+func (s GitHubAppKind) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	UserCredentialGitHubAppKind GitHubAppKind = "USER_CREDENTIAL"
+	CommitSigningGitHubAppKind  GitHubAppKind = "COMMIT_SIGNING"
+)
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64

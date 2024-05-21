@@ -17,7 +17,7 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { GitHubAppDomain } from '../../graphql-operations'
+import { GitHubAppDomain, GitHubAppKind } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
@@ -51,6 +51,8 @@ export interface CreateGitHubAppPageProps extends TelemetryV2Props {
     headerAnnotation?: React.ReactNode
     /** The domain the new GitHub App is meant to be used for in Sourcegraph. */
     appDomain: GitHubAppDomain
+    /** The purpose of the GitHub App to be created. This is only applicable when the appDomain is BATCHES. */
+    appKind: GitHubAppKind
     /** The name to use for the new GitHub App. Defaults to "Sourcegraph". */
     defaultAppName?: string
     /*
@@ -79,6 +81,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     baseURL,
     validateURL,
     telemetryRecorder,
+    appKind,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -144,7 +147,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
+                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}&kind=${appKind}`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {

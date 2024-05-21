@@ -42,6 +42,20 @@ enum GitHubAppDomain {
 }
 
 """
+GitHubAppKind enumerates the domains in which GitHub Apps can be used.
+"""
+enum GitHubAppKind {
+    """
+    GitHub Apps that are configured for commit signing.
+    """
+    COMMIT_SIGNING
+    """
+    GitHub Apps that are configured for a user's batch changes credential.
+    """
+    USER_CREDENTIAL
+}
+
+"""
 A list of GitHub Apps.
 """
 type GitHubAppConnection {

@@ -123,6 +123,7 @@ type gitHubAppStateDetails struct {
 	Domain      string `json:"domain"`
 	AppID       int    `json:"app_id,omitempty"`
 	BaseURL     string `json:"base_url,omitempty"`
+	Kind        string `json:"kind,omitempty"`
 }
 
 func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request) {
@@ -174,6 +175,8 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 	appName := r.URL.Query().Get("appName")
 	domain := r.URL.Query().Get("domain")
 	baseURL := r.URL.Query().Get("baseURL")
+	kind := r.URL.Query().Get("kind")
+
 	var webhookUUID string
 	if webhookURN != "" {
 		ws := backend.NewWebhookService(srv.db, keyring.Default())
@@ -195,6 +198,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		WebhookUUID: webhookUUID,
 		Domain:      domain,
 		BaseURL:     baseURL,
+		Kind:        kind,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
@@ -271,6 +275,12 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	kind, err := parseKind(&stateDetails.Kind)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to parse kind: %v", err), http.StatusBadRequest)
+		return
+	}
+
 	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
@@ -281,6 +291,10 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB: %s", err.Error()), http.StatusInternalServerError)
 		return
+	}
+
+	if kind == itypes.UserCredentialGitHubAppKind {
+		//srv.db.UserCredentials()
 	}
 
 	webhookDB := srv.db.Webhooks(keyring.Default().WebhookKey)
@@ -305,6 +319,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 	newStateDetails, err := json.Marshal(gitHubAppStateDetails{
 		Domain: stateDetails.Domain,
 		AppID:  id,
+		Kind:   stateDetails.Kind,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)

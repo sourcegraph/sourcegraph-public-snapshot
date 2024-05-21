@@ -1,14 +1,14 @@
-import { useCallback } from 'react'
+import {useCallback} from 'react'
 
-import { useLocation } from 'react-router-dom'
+import {useLocation} from 'react-router-dom'
 
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
-import { FeedbackBadge, Link } from '@sourcegraph/wildcard'
+import {noOpTelemetryRecorder} from '@sourcegraph/shared/src/telemetry'
+import {FeedbackBadge, Link} from '@sourcegraph/wildcard'
 
-import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
-import { GitHubAppDomain } from '../../../graphql-operations'
+import {CreateGitHubAppPage} from '../../../components/gitHubApps/CreateGitHubAppPage'
+import {GitHubAppDomain, GitHubAppKind} from '../../../graphql-operations'
 
-import { useGlobalBatchChangesCodeHostConnection } from './backend'
+import {useGlobalBatchChangesCodeHostConnection} from './backend'
 
 const DEFAULT_EVENTS: string[] = []
 
@@ -17,9 +17,22 @@ const DEFAULT_PERMISSIONS = {
     metadata: 'read',
 }
 
+const computeGitHubAppKind = (kind: string): GitHubAppKind => {
+    if (kind === 'USER_CREDENTIAL') {
+        return GitHubAppKind.USER_CREDENTIAL
+    }
+
+    // We default to commit signing always, since this was initially built for that.
+    return GitHubAppKind.COMMIT_SIGNING
+}
+
 export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
     const location = useLocation()
-    const baseURL = new URLSearchParams(location.search).get('baseURL')
+    const searchParams = new URLSearchParams(location.search)
+    const baseURL = searchParams.get('baseURL')
+
+    const kind = computeGitHubAppKind(searchParams.get('kind') || '')
+    const isKindCredential = kind !== GitHubAppKind.COMMIT_SIGNING
 
     const { connection } = useGlobalBatchChangesCodeHostConnection()
     // validateURL compares a provided URL against the URLs of existing commit signing
@@ -35,26 +48,30 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
             // assume this call will succeed.
             const asURL = new URL(url)
             const isDuplicate = connection.nodes.some(node => {
-                const existingURL = node.commitSigningConfiguration?.baseURL
+                const existingURL = isKindCredential ? node.externalServiceURL : node.commitSigningConfiguration?.baseURL
                 if (!existingURL) {
                     return false
                 }
 
                 return new URL(existingURL).hostname === asURL.hostname
             })
-            return isDuplicate ? 'A commit signing integration for the code host at this URL already exists.' : true
+            const errorMsg = `A ${isKindCredential ? 'GitHub App' : 'commit signing'} integration for the code host at this URL already exists.`
+            return isDuplicate ? errorMsg : true
         },
-        [connection]
+        [connection, isKindCredential]
     )
+    const pageTitle = isKindCredential ? 'Create GitHub App for Batch Changes Credential' : 'Create GitHub App for commit signing'
+    const defaultAppName = isKindCredential ? 'Batch Changes GitHub App' : 'Sourcegraph Commit Signing'
     return (
         <CreateGitHubAppPage
             defaultEvents={DEFAULT_EVENTS}
             defaultPermissions={DEFAULT_PERMISSIONS}
-            pageTitle="Create GitHub App for commit signing"
+            pageTitle={pageTitle}
             headerDescription={
                 <>
-                    Register a GitHub App to enable Sourcegraph to sign commits for Batch Change changesets on your
+                    Register a GitHub App to enable Sourcegraph {isKindCredential ? 'create' : 'sign commits for'} Batch Change changesets on your
                     behalf.
+                    {/* TODO (@BolajiOlajide) update link here for credential github app */}
                     <Link to="/help/admin/config/batch_changes#commit-signing-for-github" className="ml-1">
                         See how GitHub App configuration works.
                     </Link>
@@ -62,7 +79,8 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
             }
             headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             appDomain={GitHubAppDomain.BATCHES}
-            defaultAppName="Sourcegraph Commit Signing"
+            appKind={kind}
+            defaultAppName={defaultAppName}
             baseURL={baseURL?.length ? baseURL : undefined}
             validateURL={validateURL}
             telemetryRecorder={noOpTelemetryRecorder}
