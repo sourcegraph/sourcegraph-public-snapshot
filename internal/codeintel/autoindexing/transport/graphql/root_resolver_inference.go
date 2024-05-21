@@ -15,7 +15,6 @@ import (
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -84,7 +83,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](args.Repository)
 	if err != nil {
-		return nil, errors.Wrap(err, "malformed repository ID")
+		return nil, err
 	}
 
 	rev := "HEAD"
