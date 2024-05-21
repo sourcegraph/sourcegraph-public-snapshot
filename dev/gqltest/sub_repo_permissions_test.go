@@ -338,10 +338,9 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 	// Alice doesn't have access to Security directory. (there is a .sh file)
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	userClient, err := gqltestutil.SignUpOrSignIn(*baseURL, aliceEmail, aliceUsername, alicePassword)
-	if err != nil {
-		t.Fatal(err)
-	}
+	userClient, err := gqltestutil.NewClient(*baseURL)
+	require.NoError(t, err)
+	require.NoError(t, userClient.SignUp(aliceEmail, aliceUsername, alicePassword))
 
 	aliceID := userClient.AuthenticatedUserID()
 	removeTestUserAfterTest(t, aliceID)
