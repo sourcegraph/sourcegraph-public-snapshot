@@ -6,7 +6,7 @@ import type { Settings } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 import { Init, EvaluatedFeatureFlagsQuery, GlobalAlertsSiteFlags, DisableSveltePrototype } from './layout.gql'
-import { mainNavigation, dotcomMainNavigation } from './navigation'
+import { dotcomMainNavigation, mainNavigation } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false

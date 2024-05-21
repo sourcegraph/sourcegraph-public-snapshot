@@ -1,11 +1,17 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
+    import { getGraphQLClient } from '$lib/graphql'
+    import Popover from '$lib/Popover.svelte'
+    import { default as RepoPopover, fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
+    import { delay } from '$lib/utils'
 
     export let repoName: string
     export let rev: string | undefined
     export let highlights: [number, number][] = []
+
+    const client = getGraphQLClient()
 
     $: href = `/${repoName}${rev ? `@${rev}` : ''}`
     $: displayName = displayRepoName(repoName)
@@ -21,12 +27,19 @@
     <CodeHostIcon repository={repoName} />
     <!-- #key is needed here to recreate the link because use:highlightRanges changes the DOM -->
     {#key highlights}
-        <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }}>
-            {displayRepoName(repoName)}
-            {#if rev}
-                <small class="rev"> @ {rev}</small>
-            {/if}
-        </a>
+        <Popover showOnHover let:registerTrigger placement="bottom-start">
+            <a class="repo-link" {href} use:highlightRanges={{ ranges: highlights }} use:registerTrigger>
+                {displayRepoName(repoName)}
+                {#if rev}
+                    <small class="rev"> @ {rev}</small>
+                {/if}
+            </a>
+            <svelte:fragment slot="content">
+                {#await delay(fetchRepoPopoverData(client, repoName), 200) then data}
+                    <RepoPopover {data} withHeader />
+                {/await}
+            </svelte:fragment>
+        </Popover>
     {/key}
 </span>
 
