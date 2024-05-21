@@ -108,6 +108,7 @@
                         iconPath={mdiSourceBranch}
                         label={value.displayName}
                         author={value.target.commit?.author}
+                        isDefaultBranch={value.displayName === resolvedRevision.defaultBranch}
                     />
                 </Picker>
             </TabPanel>
