@@ -36,6 +36,7 @@ go_test(
         "operators_test.go",
     ],
     embed = [":filter"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_elimity_com_scim//schema",
         "@com_github_scim2_filter_parser_v2//:filter-parser",

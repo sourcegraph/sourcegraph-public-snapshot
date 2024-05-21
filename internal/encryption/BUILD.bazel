@@ -12,6 +12,7 @@ go_library(
         "rsa.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/trace",
@@ -31,4 +32,5 @@ go_test(
         "utils_test.go",
     ],
     embed = [":encryption"],
+    tags = [TAG_PLATFORM_SOURCE],
 )

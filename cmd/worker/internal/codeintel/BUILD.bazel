@@ -17,6 +17,7 @@ go_library(
         "uploads_janitor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/internal/executorqueue",

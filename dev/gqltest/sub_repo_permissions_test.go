@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -337,10 +338,9 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, er
 	// Alice doesn't have access to Security directory. (there is a .sh file)
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	userClient, err := gqltestutil.SignUpOrSignIn(*baseURL, aliceEmail, aliceUsername, alicePassword)
-	if err != nil {
-		t.Fatal(err)
-	}
+	userClient, err := gqltestutil.NewClient(*baseURL)
+	require.NoError(t, err)
+	require.NoError(t, userClient.SignUp(aliceEmail, aliceUsername, alicePassword))
 
 	aliceID := userClient.AuthenticatedUserID()
 	removeTestUserAfterTest(t, aliceID)
@@ -431,32 +431,18 @@ func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
 	t.Log("Enabling sub-repo permissions")
 
-	siteConfig, lastID, err := client.SiteConfiguration()
-	if err != nil {
-		t.Fatal(err)
-	}
-	oldSiteConfig := new(schema.SiteConfiguration)
-	*oldSiteConfig = *siteConfig
-	t.Cleanup(func() {
-		_, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
+	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+		if siteConfig.ExperimentalFeatures == nil {
+			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
-		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		siteConfig.ExperimentalFeatures.Perforce = "enabled"
+		siteConfig.ExperimentalFeatures.SubRepoPermissions = &schema.SubRepoPermissions{Enabled: true}
 	})
-
-	siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{
-		Perforce: "enabled",
-		SubRepoPermissions: &schema.SubRepoPermissions{
-			Enabled: true,
-		},
-	}
-	err = client.UpdateSiteConfiguration(siteConfig, lastID)
-	if err != nil {
-		t.Fatal(err)
+	require.NoError(t, err)
+	if reset != nil {
+		t.Cleanup(func() {
+			require.NoError(t, reset())
+		})
 	}
 }
 
@@ -464,31 +450,16 @@ func enableStructuralSearch(t *testing.T) {
 	t.Helper()
 	t.Log("Enabling structural search")
 
-	// Enable structural search.
-	siteConfig, lastID, err := client.SiteConfiguration()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	oldSiteConfig := new(schema.SiteConfiguration)
-	*oldSiteConfig = *siteConfig
-	t.Cleanup(func() {
-		_, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
+	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+		if siteConfig.ExperimentalFeatures == nil {
+			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
-		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		siteConfig.ExperimentalFeatures.StructuralSearch = "enabled"
 	})
-
-	if siteConfig.ExperimentalFeatures == nil {
-		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-	}
-	siteConfig.ExperimentalFeatures.StructuralSearch = "enabled"
-	err = client.UpdateSiteConfiguration(siteConfig, lastID)
-	if err != nil {
-		t.Fatal(err)
+	require.NoError(t, err)
+	if reset != nil {
+		t.Cleanup(func() {
+			require.NoError(t, reset())
+		})
 	}
 }

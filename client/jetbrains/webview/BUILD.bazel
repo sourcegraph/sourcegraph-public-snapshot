@@ -65,6 +65,7 @@ generate_graphql_operations(
 ts_project(
     name = "graphql_operations",
     srcs = ["src/graphql-operations.ts"],
+    tags = [TAG_CODY_CORE],
     tsconfig = "//client/jetbrains:tsconfig",
     deps = [
         "//client/jetbrains:node_modules/@sourcegraph/shared",
@@ -112,6 +113,7 @@ ts_project(
     data = [
         ":package_styles",
     ],
+    tags = [TAG_CODY_CORE],
     tsconfig = "//client/jetbrains:tsconfig",
     deps = [
         ":graphql_operations",

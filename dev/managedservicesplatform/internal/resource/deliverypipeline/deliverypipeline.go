@@ -36,6 +36,9 @@ type Config struct {
 	// TargetStages lists targets in the order they should appear in the pipeline.
 	TargetStages []Target
 
+	// Repository is the source code repository for the images delivered to this pipeline.
+	Repository string
+
 	// Suspended prevents releases and rollouts from being created, rolled back,
 	// etc using this pipeline: https://cloud.google.com/deploy/docs/suspend-pipeline
 	Suspended bool
@@ -89,6 +92,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				Stages: pointers.Ptr(newStages(config)),
 			},
 
+			Annotations: &map[string]*string{
+				"source.repository": pointers.Ptr(config.Repository),
+			},
+
 			DependsOn: pointers.Ptr(append(config.DependsOn, targetType)),
 		})
 
@@ -98,7 +105,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Name:     &target.ID,
 			Location: &config.Location,
 			CustomTarget: &clouddeploytarget.ClouddeployTargetCustomTarget{
-				CustomTargetType: targetType.Name(),
+				CustomTargetType: targetType.Id(),
 			},
 			DeployParameters: &map[string]*string{
 				"customTarget/serviceID": &config.ServiceID,

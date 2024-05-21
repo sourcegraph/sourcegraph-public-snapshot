@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBedrockProvisionedThroughputModel(t *testing.T) {
+
+func Test_BedrockProvisionedThroughputModel(t *testing.T) {
 	tests := []struct {
 		want           string
 		endpoint       string
@@ -25,9 +26,16 @@ func TestBedrockProvisionedThroughputModel(t *testing.T) {
 			stream:         false,
 		},
 		{
-			want:           "https://vpce-12345678910.bedrock-runtime.us-west-2.vpce.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-west-2%3A637423580134%3Aprovisioned-model%2Fphvyvm2hlzws/invoke-with-response-stream",
+			want:           "https://bedrock-runtime.us-west-2.amazonaws.com/model/anthropic.claude-3-sonnet-20240229-v1:0:200k/invoke",
+			endpoint:       "",
+			model:          "anthropic.claude-3-sonnet-20240229-v1:0:200k",
+			fallbackRegion: "us-west-2",
+			stream:         false,
+		},
+		{
+			want:           "https://vpce-12345678910.bedrock-runtime.us-west-2.vpce.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-west-2%3A012345678901%3Aprovisioned-model%2Fabcdefghijkl/invoke-with-response-stream",
 			endpoint:       "https://vpce-12345678910.bedrock-runtime.us-west-2.vpce.amazonaws.com",
-			model:          "arn:aws:bedrock:us-west-2:637423580134:provisioned-model/phvyvm2hlzws",
+			model:          "anthropic.claude-instant-v1/arn:aws:bedrock:us-west-2:012345678901:provisioned-model/abcdefghijkl",
 			fallbackRegion: "us-east-1",
 			stream:         true,
 		},
@@ -44,7 +52,7 @@ func TestBedrockProvisionedThroughputModel(t *testing.T) {
 	}
 }
 
-func TestAwsConfigOptsForKeyConfig(t *testing.T) {
+func Test_AwsConfigOptsForKeyConfig(t *testing.T) {
 
 	t.Run("With endpoint as URL", func(t *testing.T) {
 		endpoint := "https://example.com"

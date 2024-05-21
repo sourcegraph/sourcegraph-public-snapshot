@@ -5,6 +5,7 @@ go_library(
     name = "mounted",
     srcs = ["key.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/mounted",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
@@ -21,6 +22,7 @@ go_test(
     timeout = "short",
     srcs = ["key_test.go"],
     embed = [":mounted"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/errors",
         "//schema",

@@ -4,6 +4,7 @@ go_library(
     name = "migrations",
     srcs = ["migrations.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/database/basestore"],
 )

@@ -11,6 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/appliance",
+        "//internal/appliance/reconciler",
         "//internal/appliance/v1:appliance",
         "//internal/debugserver",
         "//internal/env",

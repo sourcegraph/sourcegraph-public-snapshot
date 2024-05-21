@@ -10,6 +10,7 @@ go_library(
         "spec_expire.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches/janitor",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//internal/batches/store",

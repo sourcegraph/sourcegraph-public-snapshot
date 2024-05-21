@@ -9,7 +9,6 @@ go_library(
         "client.go",
         "commands.go",
         "errwrap.go",
-        "git_command.go",
         "mock.go",
         "mocks_temp.go",
         "observability.go",
@@ -18,6 +17,7 @@ go_library(
         "test_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -64,6 +64,7 @@ go_test(
     # This test loads coursier as a side effect, so we ensure the
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/actor",
         "//internal/api",
@@ -77,6 +78,7 @@ go_test(
         "//internal/grpc",
         "//lib/errors",
         "//schema",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_go_diff//diff",

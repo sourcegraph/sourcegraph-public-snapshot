@@ -12,6 +12,7 @@ go_library(
         "s3_types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//cmd/blobstore:__subpackages__"],
     deps = [
         "//internal/observation",
@@ -28,6 +29,7 @@ go_test(
     timeout = "moderate",
     srcs = ["blobstore_test.go"],
     data = glob(["testdata/**"]),
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         ":blobstore",
         "//internal/observation",

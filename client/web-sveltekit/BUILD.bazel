@@ -93,6 +93,7 @@ BUILD_DEPS = [
     ":node_modules/fzf",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
+    ":node_modules/mermaid",
     ":node_modules/prismjs",
     ":node_modules/sass",
     ":node_modules/signale",
@@ -166,6 +167,7 @@ vitest_test(
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
+    tags = [TAG_SEARCHSUITE],
     with_vitest_config = False,
 )
 

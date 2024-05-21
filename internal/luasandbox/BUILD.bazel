@@ -20,6 +20,7 @@ go_library(
         "lua/path.lua",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/luasandbox",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/luasandbox/libs",
@@ -39,6 +40,7 @@ go_test(
     timeout = "short",
     srcs = ["sandbox_test.go"],
     embed = [":luasandbox"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/luasandbox/util",
         "//internal/observation",

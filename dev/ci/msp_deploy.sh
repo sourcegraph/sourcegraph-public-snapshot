@@ -42,4 +42,5 @@ gcloud=$2
     --delivery-pipeline="${GCP_DELIVERY_PIPELINE}" \
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
     --labels="commit=${BUILDKITE_COMMIT}" \
-    --deploy-parameters="customTarget/tag=${TAG}"
+    --deploy-parameters="customTarget/tag=${TAG}" \
+    --annotations="commit=${BUILDKITE_COMMIT}"

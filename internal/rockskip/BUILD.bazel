@@ -13,6 +13,7 @@ go_library(
         "status.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rockskip",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/symbols/fetcher",
@@ -22,6 +23,7 @@ go_library(
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",
@@ -52,12 +54,14 @@ go_test(
     ],
     embed = [":rockskip"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],
     deps = [
         "//cmd/symbols/fetcher",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/database/dbtest",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

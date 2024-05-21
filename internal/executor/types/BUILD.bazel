@@ -11,6 +11,7 @@ go_library(
         "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/executor/types",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/executor",
@@ -27,6 +28,7 @@ go_test(
         "job_test.go",
     ],
     embed = [":types"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",

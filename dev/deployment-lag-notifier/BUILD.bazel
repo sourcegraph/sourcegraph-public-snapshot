@@ -9,6 +9,7 @@ go_library(
         "slack.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-lag-notifier",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "deployment-lag-notifier",
     embed = [":deployment-lag-notifier_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -27,4 +29,5 @@ go_test(
     timeout = "short",
     srcs = ["main_test.go"],
     embed = [":deployment-lag-notifier_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
 )

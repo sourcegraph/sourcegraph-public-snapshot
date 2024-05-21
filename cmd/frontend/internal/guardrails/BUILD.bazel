@@ -4,6 +4,7 @@ go_library(
     name = "guardrails",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

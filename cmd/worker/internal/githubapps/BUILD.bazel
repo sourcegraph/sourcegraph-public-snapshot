@@ -4,6 +4,7 @@ go_library(
     name = "githubapps",
     srcs = ["job.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/internal/githubapps/worker",

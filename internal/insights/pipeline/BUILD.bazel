@@ -5,6 +5,7 @@ go_library(
     name = "pipeline",
     srcs = ["backfill.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/pipeline",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -34,6 +35,7 @@ go_test(
     timeout = "short",
     srcs = ["backfill_test.go"],
     embed = [":pipeline"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/gitserver",

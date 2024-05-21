@@ -10,6 +10,7 @@ go_library(
         "reconciler_worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches/workers",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -47,6 +48,7 @@ go_test(
     ],
     embed = [":workers"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

@@ -59,6 +59,7 @@ go_library(
         "generated.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/linearhooks:__subpackages__"],
     deps = [
         "@com_github_khan_genqlient//graphql",

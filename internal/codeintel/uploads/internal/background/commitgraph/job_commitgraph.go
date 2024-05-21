@@ -155,7 +155,7 @@ func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID in
 	commits, err := s.gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
 		AllRefs: true,
 		Order:   gitserver.CommitsOrderTopoDate,
-		After:   commitDate.Format(time.RFC3339),
+		After:   commitDate,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.Commits")

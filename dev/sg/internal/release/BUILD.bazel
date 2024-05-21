@@ -11,6 +11,7 @@ go_library(
         "release.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/release",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/bk",
@@ -38,5 +39,6 @@ go_test(
     name = "release_test",
     srcs = ["cve_test.go"],
     embed = [":release"],
+    tags = [TAG_INFRA_RELEASE],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

@@ -9,6 +9,7 @@ go_library(
         "source.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/limiter",
@@ -37,6 +38,7 @@ go_test(
     ],
     embed = [":actor"],
     tags = [
+        TAG_CODY_PRIME,
         # Test requires localhost database
         "requires-network",
     ],

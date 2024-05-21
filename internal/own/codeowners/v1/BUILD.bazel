@@ -23,6 +23,7 @@ go_library(
     name = "codeowners",
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -36,5 +37,6 @@ go_library(
 buf_lint_test(
     name = "v1_proto_lint",
     timeout = "short",
+    tags = [TAG_SEARCHSUITE],
     targets = [":v1_proto"],
 )

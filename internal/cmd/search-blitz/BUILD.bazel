@@ -22,6 +22,7 @@ go_library(
         "search.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/search-blitz",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/search/streaming/api",
@@ -38,6 +39,7 @@ go_library(
 go_binary(
     name = "search-blitz",
     embed = [":search-blitz_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
 )
 
@@ -46,4 +48,5 @@ go_test(
     timeout = "short",
     srcs = ["config_test.go"],
     embed = [":search-blitz_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
 )

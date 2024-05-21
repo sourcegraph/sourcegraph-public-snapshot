@@ -4,6 +4,7 @@ go_library(
     name = "schema",
     srcs = ["schema.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/schema",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/spec",

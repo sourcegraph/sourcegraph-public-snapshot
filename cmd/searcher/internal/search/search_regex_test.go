@@ -14,10 +14,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {

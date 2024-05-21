@@ -67,3 +67,9 @@
 .avatar-placeholder {
     border: 1px solid var(--border-color);
 }
+
+.team-member-list {
+    display: grid;
+    grid-template-columns: 1fr fit-content(10rem) 1fr fit-content(10rem) fit-content(10rem);
+    gap: 1rem;
+}

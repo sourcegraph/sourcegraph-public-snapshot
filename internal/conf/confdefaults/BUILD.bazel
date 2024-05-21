@@ -4,6 +4,7 @@ go_library(
     name = "confdefaults",
     srcs = ["confdefaults.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/confdefaults",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = ["//internal/conf/conftypes"],
 )

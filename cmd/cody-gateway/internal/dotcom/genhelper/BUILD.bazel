@@ -4,5 +4,6 @@ go_library(
     name = "genhelper",
     srcs = ["genhelper.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom/genhelper",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
 )

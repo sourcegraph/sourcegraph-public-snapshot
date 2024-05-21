@@ -35,7 +35,6 @@ type FileChunkContext struct {
 	CommitID  api.CommitID
 	Path      string
 	StartLine int
-	EndLine   int
 }
 
 func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, gitserverClient gitserver.Client) *CodyContextClient {
@@ -233,7 +232,6 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			CommitID:  result.Revision,
 			Path:      result.FileName,
 			StartLine: result.StartLine,
-			EndLine:   result.EndLine,
 		})
 	}
 
@@ -356,7 +354,6 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 			CommitID:  fm.CommitID,
 			Path:      fm.Path,
 			StartLine: 0,
-			EndLine:   20,
 		}}
 	}
 
@@ -365,8 +362,6 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 
 	// 5 lines of leading context, clamped to zero
 	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-5)
-	// depend on content fetching to trim to the end of the file
-	endLine := startLine + 20
 
 	return []FileChunkContext{{
 		RepoName:  fm.Repo.Name,
@@ -374,6 +369,5 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 		CommitID:  fm.CommitID,
 		Path:      fm.Path,
 		StartLine: startLine,
-		EndLine:   endLine,
 	}}
 }

@@ -8,6 +8,7 @@ go_library(
         "processrestart.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/processrestart",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = ["//lib/errors"],
 )

@@ -8,6 +8,7 @@ go_library(
         "teestore.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/teestore",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -27,6 +28,7 @@ go_test(
     srcs = ["teestore_test.go"],
     embed = [":teestore"],
     tags = [
+        TAG_INFRA_CORESERVICES,
         # Test requires localhost database
         "requires-network",
     ],

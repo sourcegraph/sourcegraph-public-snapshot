@@ -102,7 +102,7 @@ Image count           : %d`, tag, image.UploadTime.AsTime().Format(time.DateTime
 					break
 				}
 			}
-			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag ouput use the --raw format or filter the tags by using --filter")
+			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag output use the --raw format or filter the tags by using --filter")
 		}
 	}
 	return nil
