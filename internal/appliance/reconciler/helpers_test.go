@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"bytes"
@@ -23,6 +23,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
 
 // Test helpers
@@ -175,7 +177,7 @@ func (suite *ApplianceTestSuite) newConfigMap(namespace, fixtureFileName string)
 			Name:      "sg",
 			Namespace: namespace,
 			Annotations: map[string]string{
-				annotationKeyManaged: "true",
+				config.AnnotationKeyManaged: "true",
 			},
 		},
 		Data: map[string]string{"spec": string(cfgBytes)},

@@ -1,4 +1,4 @@
-package appliance
+package reconciler
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileBlobstorePersistentVolumeClaims(ctx, sg, owner); err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *Sourcegraph, ow
 	return nil
 }
 
-func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolumeClaim, error) {
+func buildBlobstorePersistentVolumeClaim(sg *config.Sourcegraph) (corev1.PersistentVolumeClaim, error) {
 	storage := sg.Spec.Blobstore.StorageSize
 	if _, err := resource.ParseQuantity(storage); err != nil {
 		return corev1.PersistentVolumeClaim{}, errors.Errorf("invalid blobstore storage size: %s", storage)
@@ -45,7 +45,7 @@ func buildBlobstorePersistentVolumeClaim(sg *Sourcegraph) (corev1.PersistentVolu
 	return p, nil
 }
 
-func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	p, err := buildBlobstorePersistentVolumeClaim(sg)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Contex
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
-func buildBlobstoreService(sg *Sourcegraph) corev1.Service {
+func buildBlobstoreService(sg *config.Sourcegraph) corev1.Service {
 	name := "blobstore"
 
 	s := service.NewService(name, sg.Namespace, sg.Spec.Blobstore)
@@ -72,12 +72,12 @@ func buildBlobstoreService(sg *Sourcegraph) corev1.Service {
 	return s
 }
 
-func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	s := buildBlobstoreService(sg)
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &s, &corev1.Service{}, sg, owner)
 }
 
-func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
+func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error) {
 	name := "blobstore"
 
 	containerPorts := []corev1.ContainerPort{{
@@ -96,7 +96,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 		},
 	}
 
-	defaultImage, err := getDefaultImage(sg, name)
+	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
 		return appsv1.Deployment{}, err
 	}
@@ -148,7 +148,7 @@ func buildBlobstoreDeployment(sg *Sourcegraph) (appsv1.Deployment, error) {
 	return defaultDeployment, nil
 }
 
-func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *Sourcegraph, owner client.Object) error {
+func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	d, err := buildBlobstoreDeployment(sg)
 	if err != nil {
 		return err
