@@ -32,14 +32,17 @@
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import Tooltip from '$lib/Tooltip.svelte'
+    import { delay } from '$lib/utils'
     import Button from '$lib/wildcard/Button.svelte'
 
     import HelpFooter from './HelpFooter.svelte'
@@ -120,12 +123,17 @@
             onFilterSelect={handleFilterSelect}
         >
             <svelte:fragment slot="label" let:label>
-                <Tooltip tooltip={label} placement="right">
-                    <span>
+                <Popover showOnHover let:registerTrigger placement="right-start">
+                    <span use:registerTrigger>
                         <CodeHostIcon disableTooltip repository={label} />
                         <span>{displayRepoName(label)}</span>
                     </span>
-                </Tooltip>
+                    <svelte:fragment slot="content">
+                        {#await delay(fetchRepoPopoverData(getGraphQLClient(), label), 200) then data}
+                            <RepoPopover {data} withHeader />
+                        {/await}
+                    </svelte:fragment>
+                </Popover>
             </svelte:fragment>
         </Section>
         <Section
