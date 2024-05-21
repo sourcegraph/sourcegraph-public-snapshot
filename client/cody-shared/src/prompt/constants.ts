@@ -1,5 +1,5 @@
 export const DEFAULT_MAX_TOKENS = 7000
-export const ANSWER_TOKENS = 1000
+export const ANSWER_TOKENS = 4000
 export const MAX_HUMAN_INPUT_TOKENS = 1000
 export const MAX_RECIPE_INPUT_TOKENS = 2000
 export const MAX_CURRENT_FILE_TOKENS = 1000

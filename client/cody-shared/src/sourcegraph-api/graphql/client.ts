@@ -144,11 +144,26 @@ export interface SearchAttributionResults {
 
 export interface CodyLLMSiteConfiguration {
     chatModel?: string
+    /**
+     * @deprecated Use `chatModelMaxInputTokens` instead.
+     */
     chatModelMaxTokens?: number
+    chatModelMaxInputTokens?: number
+    chatModelMaxOutputTokens?: number
     fastChatModel?: string
+    /**
+     * @deprecated Use `fastChatModelMaxInputTokens` instead.
+     */
     fastChatModelMaxTokens?: number
+    fastChatModelMaxInputTokens?: number
+    fastChatModelMaxOutputTokens?: number
     completionModel?: string
+    /**
+     * @deprecated Use `completionModelMaxInputTokens` instead.
+     */
     completionModelMaxTokens?: number
+    completionModelMaxInputTokens?: number
+    completionModelMaxOutputTokens?: number
     provider?: string
 }
 

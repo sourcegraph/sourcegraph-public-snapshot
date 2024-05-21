@@ -7567,25 +7567,62 @@ type CodyLLMConfiguration {
     """
     chatModel: String!
     """
-    Maximum number of tokens client should use when talking to the chatModel.
+    Maximum number of tokens the client can use when talking to the chatModel.
     """
     chatModelMaxTokens: Int
+        @deprecated(
+            reason: "Use chatModelMaxInputTokens instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+    """
+    Maximum number of tokens the client can use when talking to the chatModel.
+    """
+    chatModelMaxInputTokens: Int
+    """
+    Maximum number of tokens the client can use when talking to the chatModel.
+    """
+    chatModelMaxInputTokens: Int
+    """
+    Maximum number of tokens the client can request as output from the chatModel.
+    """
+    chatModelMaxOutputTokens: Int
     """
     Name of the model being used for fast chat.
     """
     fastChatModel: String!
     """
-    Maximum number of tokens client should use when talking to the fastChatModel.
+    Maximum number of tokens the client can use when talking to the fastChatModel.
     """
     fastChatModelMaxTokens: Int
+        @deprecated(
+            reason: "Use fastChatModelMaxInputTokens instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+    """
+    Maximum number of tokens the client can use when talking to the fastChatModel.
+    """
+    fastChatModelMaxInputTokens: Int
+    """
+    Maximum number of tokens the client can request as output from the fastChatModel.
+    """
+    fastChatModelMaxOutputTokens: Int
     """
     Name of the model being used for code completions.
     """
     completionModel: String!
     """
-    Maximum number of tokens client should use when talking to the completionModel.
+    Maximum number of tokens the client can use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
+        @deprecated(
+            reason: "Use completionModelMaxInputTokens instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+    """
+    Maximum number of tokens the client can use when talking to the completionModel.
+    """
+    completionModelMaxInputTokens: Int
+    """
+    Maximum number of tokens the client can request as output from the completionModel.
+    """
+    completionModelMaxOutputTokens: Int
     """
     Name of the provider being used for LLM interactions.
     """
