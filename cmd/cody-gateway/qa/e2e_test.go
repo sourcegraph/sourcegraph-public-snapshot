@@ -95,16 +95,18 @@ func Test_Embeddings_OpenAI(t *testing.T) {
 func Test_Finetuned_Fireworks_Completions(t *testing.T) {
 	gatewayURL, gatewayToken := parseBackendData(t)
 	t.Parallel()
-	testConfig := map[string][]string{
-		fireworks.FineTunedFIMVariant1: {""},
-		fireworks.FineTunedFIMVariant2: {"typescript", "typescriptreact", "javascript", "php", "python", "badlanguage", ""},
-		fireworks.FineTunedFIMVariant3: {""},
-		fireworks.FineTunedFIMVariant4: {"typescript", "typescriptreact", "javascript", "php", "python", "badlanguage", ""},
+	testConfig := map[string][]struct{ language, model string }{
+		fireworks.FineTunedFIMVariant1: {{"", fireworks.FineTunedMixtralAll}},
+		fireworks.FineTunedFIMVariant2: {{"typescript", fireworks.FineTunedMixtralTypescript}, {"typescriptreact",
+			fireworks.FineTunedMixtralTypescript}, {"javascript", fireworks.FineTunedMixtralJavascript}, {"php", fireworks.FineTunedMixtralPhp}, {"python", fireworks.FineTunedMixtralPython}, {"badlanguage", fireworks.FineTunedMixtralAll}, {"", fireworks.FineTunedMixtralAll}},
+		fireworks.FineTunedFIMVariant3: {{"", fireworks.FineTunedLlamaAll}},
+		fireworks.FineTunedFIMVariant4: {{"typescript", fireworks.FineTunedLlamaTypescript}, {"typescriptreact",
+			fireworks.FineTunedLlamaTypescript}, {"javascript", fireworks.FineTunedLlamaJavascript}, {"php", fireworks.FineTunedLlamaPhp}, {"python", fireworks.FineTunedLlamaPython}, {"badlanguage", fireworks.FineTunedLlamaAll}, {"", fireworks.FineTunedLlamaAll}},
 	}
-	for model, lang := range testConfig {
+	for model, languageModel := range testConfig {
 		t.Run(model, func(t *testing.T) {
-			for _, l := range lang {
-				t.Run(l, func(t *testing.T) {
+			for _, l := range languageModel {
+				t.Run(l.language, func(t *testing.T) {
 					u := *gatewayURL
 					req := &http.Request{URL: &u, Header: make(http.Header)}
 					req.Header.Set("X-Sourcegraph-Feature", string(codygateway.FeatureCodeCompletions))
@@ -117,7 +119,7 @@ func Test_Finetuned_Fireworks_Completions(t *testing.T) {
 			"topP":0.95,
 			"stream":true,
 			"languageId": "%s"
-			}`, model, l)
+			}`, model, l.language)
 					req.Method = "POST"
 					req.URL.Path = "/v1/completions/fireworks"
 					req.Body = io.NopCloser(strings.NewReader(reqBody))
@@ -129,6 +131,7 @@ func Test_Finetuned_Fireworks_Completions(t *testing.T) {
 					assert.NoError(t, err)
 					assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
 					assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
+					assert.Equal(t, resp.Header.Get("X-Cody-Resolved-Model"), "fireworks/"+l.model)
 				})
 			}
 		})
