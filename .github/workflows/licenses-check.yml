@@ -38,11 +38,11 @@ jobs:
 
       - name: Install license_finder
         id: installLicenseFinder
-        run: exit 1 # gem install license_finder:7.1.0 # sync with licenses-update.yml
+        run: gem install license_finder:7.1.0 # sync with licenses-update.yml
 
       - name: Check dependencies
         id: checkDepedencies
-        run: LICENSE_CHECK=true ./dev/licenses.sh
+        run: exit 1 # LICENSE_CHECK=true ./dev/licenses.sh
 
       # If we detect a failure on the two above steps, we post a comment pointing toward the associated How-to in the handbook.
       - uses: actions/github-script@v6
@@ -53,5 +53,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "> [!TIP] \n> License checking failed, please see [How to deal with third parties licensing](https://www.notion.so/sourcegraph/Dealing-with-third-parties-licensing-2d8247b243d44eaea2c6003f2efae4ef)"
+              body: "> [!CONSULT] \n> License checking failed, please consult: [How to deal with third parties licensing](https://www.notion.so/sourcegraph/Dealing-with-third-parties-licensing-2d8247b243d44eaea2c6003f2efae4ef)."
             })
