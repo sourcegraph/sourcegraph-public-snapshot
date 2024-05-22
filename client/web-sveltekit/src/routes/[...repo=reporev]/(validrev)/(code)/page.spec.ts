@@ -240,14 +240,64 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page }) => {
+test('file popover', async ({ page, sg }) => {
     await page.goto(`/${repoName}`)
 
+    // Open the sidebar
     await page.locator('#sidebar-panel').getByRole('button').click()
 
+    // Hover a tree entry, expect the popover to be visible
     await page.getByRole('link', { name: 'index.js' }).hover()
     await expect(page.getByText('Last Changed')).toBeVisible()
 
+    // Hover outside the popover (the Sourcegraph logo), expect the popover to be hidden
     await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
     await expect(page.getByText('Last Changed')).toBeHidden()
+
+    sg.mockOperations({
+        TreeEntries: () => ({
+            repository: {
+                id: '1',
+                commit: {
+                    tree: {
+                        entries: [
+                            {
+                                path: 'src/notes.txt',
+                                name: 'notes.txt',
+                                isDirectory: false,
+                                canonicalURL: `/${repoName}/-/blob/src/notes.txt`,
+                            },
+                        ],
+                    },
+                },
+            },
+        }),
+        FileOrDirPopoverQuery: () => ({
+            repository: {
+                commit: {
+                    path: {
+                        path: 'src/notes.txt',
+                        languages: ['Text'],
+                        byteSize: 32,
+                        totalLines: 42,
+                        name: 'notes.txt',
+                    },
+                },
+            },
+        }),
+    })
+
+    // Open a subdirectory so we get an entry with a clickable parent dir
+    await page.getByRole('link', { name: 'src' }).click()
+
+    // Hover the file to get a popover
+    await page.getByRole('treeitem', { name: 'notes.txt' }).getByRole('link').click()
+    await page.getByRole('treeitem', { name: 'notes.txt' }).getByRole('link').hover()
+
+    // Expect the popover to show up
+    await expect(page.getByText('Last Changed')).toBeVisible()
+
+    // Click the parent dir in the popover and expect to navigate to that page
+    await page.locator('span').filter({ hasText: /^src$/ }).getByRole('link').click()
+    await page.waitForURL(/src$/)
 })

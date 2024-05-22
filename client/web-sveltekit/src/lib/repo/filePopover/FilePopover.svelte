@@ -67,17 +67,17 @@
             Ideally we'd be able to use `break-after: avoid;`, but that's not widely supported.
         -->
         {#each displayRepoName(repoName).split('/') as repoFragment, i}
-            <div>
-                {#if i > 0}<div>/</div>{/if}
-                <div>{repoFragment}</div>
-            </div>
+            <span>
+                {#if i > 0}<span>/</span>{/if}
+                <span>{repoFragment}</span>
+            </span>
         {/each}
-        {#if dirNameBreadcrumbs.length}<div>·</div>{/if}
+        {#if dirNameBreadcrumbs.length}<span>·</span>{/if}
         {#each dirNameBreadcrumbs as [name, href], i}
-            <div>
-                {#if i > 0}<div>/</div>{/if}
-                <div><a {href}>{name}</a></div>
-            </div>
+            <span>
+                {#if i > 0}<span>/</span>{/if}
+                <span><a {href}>{name}</a></span>
+            </span>
         {/each}
     </div>
 
@@ -105,7 +105,7 @@
         {/if}
     </div>
 
-    <div class="last-changed section">Last Changed @</div>
+    <div class="last-changed section">Last Changed</div>
 
     <div class="commit">
         <div class="node-line"><NodeLine /></div>
@@ -139,7 +139,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.375em;
-            div {
+            span {
                 display: flex;
                 flex-wrap: nowrap;
                 gap: inherit;
