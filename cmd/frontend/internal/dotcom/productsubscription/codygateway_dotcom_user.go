@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -279,7 +280,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
 
-	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	models := allowedModels(scope, true)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -343,6 +344,18 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
+var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Claude3Haiku,
+	"anthropic/claude-instant-v1",
+	"anthropic/claude-instant-1",
+	"anthropic/claude-instant-1.2-cyan",
+	"anthropic/claude-instant-1.2",
+	"fireworks/starcoder",
+	"fireworks/" + fireworks.Llama213bCode,
+	"fireworks/" + fireworks.StarcoderTwo15b,
+	"fireworks/" + fireworks.StarcoderTwo7b},
+	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
+	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
+
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
@@ -381,24 +394,18 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1",
 		}
 	case types.CompletionsFeatureCode:
-		return []string{
-			"anthropic/" + anthropic.Claude3Haiku,
-			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"anthropic/claude-instant-1.2-cyan",
-			"anthropic/claude-instant-1.2",
-			"fireworks/starcoder",
-			"fireworks/" + fireworks.Llama213bCode,
-			"fireworks/" + fireworks.StarcoderTwo15b,
-			"fireworks/" + fireworks.StarcoderTwo7b,
-			"fireworks/" + fireworks.FireworksFineTunedFIMVariant1,
-			"fireworks/" + fireworks.FireworksFineTunedFIMVariant2,
-			"fireworks/" + fireworks.FireworksFineTunedFIMVariant3,
-			"fireworks/" + fireworks.FireworksFineTunedFIMVariant4,
-		}
+		return allCodeCompletionModels
 	default:
 		return []string{}
 	}
+}
+
+func prefix(prefix string, models []string) []string {
+	result := make([]string, len(models))
+	for i := range models {
+		result[i] = prefix + models[i]
+	}
+	return result
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {
