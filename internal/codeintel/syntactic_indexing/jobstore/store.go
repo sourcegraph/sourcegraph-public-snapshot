@@ -3,7 +3,6 @@ package jobstore
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
@@ -107,8 +106,6 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 			return err
 		}
 		// TODO: add operations and record this operation
-		fmt.Println("Inserting indices", ids)
-
 		// s.operations.indexesInserted.Add(float64(len(ids)))
 
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))

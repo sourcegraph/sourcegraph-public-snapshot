@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal/testutils"
@@ -36,6 +38,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	}
 	gitserverClient := gitserver.NewMockClient()
 	scheduler, jobStore := bootstrapScheduler(t, observationCtx, sqlDB, gitserverClient, config)
+	policyStore := policiesstore.New(observationCtx, db)
 
 	ctx := context.Background()
 
@@ -47,7 +50,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
-	setupRepoPolicies(t, ctx, db)
+	setupRepoPolicies(t, ctx, db, policyStore)
 
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
@@ -62,14 +65,21 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 
 	gitserverClient.ListRefsFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 
-		fmt.Println(repoName)
-
 		if string(repoName) == empanadasRepoName {
 			return []gitdomain.Ref{
 				{
 					Name:     "refs/head/main",
 					Type:     gitdomain.RefTypeBranch,
 					CommitID: api.CommitID(empanadasCommit),
+					IsHead:   true,
+				},
+			}, nil
+		} else if string(repoName) == tacosRepoName {
+			return []gitdomain.Ref{
+				{
+					Name:     "refs/head/main",
+					Type:     gitdomain.RefTypeBranch,
+					CommitID: api.CommitID(tacosCommit),
 					IsHead:   true,
 				},
 			}, nil
@@ -83,6 +93,41 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().QueuedCount(ctx, false))(t))
+
+	job1, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
+
+	require.NoError(t, err)
+	require.True(t, recordReturned)
+
+	job2, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
+	require.NoError(t, err)
+	require.True(t, recordReturned)
+
+	// There are only two records because in our policies setup we have
+	// explicitly disabled syntactic indexing for the last remaining repository
+	job3, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
+	require.Nil(t, job3)
+	require.False(t, recordReturned)
+	require.NoError(t, err)
+
+	// Ensure the test is resilient to order changes
+	tacosJob := &jobstore.SyntacticIndexingJob{}
+	empanadasJob := &jobstore.SyntacticIndexingJob{}
+
+	if job1.RepositoryName == tacosRepoName {
+		tacosJob = job1
+		empanadasJob = job2
+	} else {
+		tacosJob = job2
+		empanadasJob = job1
+	}
+
+	require.Equal(t, tacosRepoName, tacosJob.RepositoryName)
+	require.Equal(t, tacosCommit, tacosJob.Commit)
+
+	require.Equal(t, empanadasRepoName, empanadasJob.RepositoryName)
+	require.Equal(t, empanadasCommit, empanadasJob.Commit)
+
 }
 
 func unwrap[T any](v T, err error) func(*testing.T) T {
@@ -128,7 +173,7 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 	return scheduler, jobStore
 }
 
-func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
+func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, store policiesstore.Store) {
 
 	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -171,4 +216,13 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
+
+	for policyID, patterns := range map[int][]string{
+		1100: {"github.com/*"},
+	} {
+		if err := store.UpdateReposMatchingPatterns(ctx, patterns, policyID, nil); err != nil {
+			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
+		}
+	}
+
 }
