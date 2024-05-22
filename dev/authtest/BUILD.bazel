@@ -10,14 +10,17 @@ go_test(
         "repository_test.go",
         "site_admin_test.go",
     ],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//testing:__subpackages__"],
     deps = [
         "//internal/auth",
         "//internal/extsvc",
         "//internal/gqltestutil",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_json_iterator_go//:go",
+        "@com_github_stretchr_testify//require",
     ],
 )

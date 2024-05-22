@@ -50,7 +50,7 @@ func (s *fakeEventLogStore) loggedEventNames() []string {
 func TestOwnSearchEventNames(t *testing.T) {
 	type wantEvents struct {
 		legacy []string // we retain manual instrumentation of existing events
-		new    []string // https://sourcegraph.com/docs/dev/background-information/telemetry
+		new    []string // https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 	}
 	for literal, wantEventNames := range map[string]wantEvents{
 		"file:has.owner(one@example.com)": {

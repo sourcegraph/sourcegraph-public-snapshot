@@ -4,6 +4,7 @@ go_library(
     name = "golang",
     srcs = ["golang.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/generate",

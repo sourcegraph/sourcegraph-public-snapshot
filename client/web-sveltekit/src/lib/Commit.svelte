@@ -7,14 +7,13 @@
     import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import Badge from '$lib/wildcard/Badge.svelte'
 
     import type { Commit } from './Commit.gql'
 
     export let commit: Commit
     export let alwaysExpanded: boolean = false
 
-    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']>['person'] | null {
+    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']> | null {
         if (!committer) {
             return null
         }
@@ -22,31 +21,32 @@
         if (committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
             return null
         }
-        return committer.person
+        return committer
     }
 
-    $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
-    $: author = commit.author.person
-    $: committer = getCommitter(commit)
-    $: authorAvatarTooltip = author.name + (committer ? ' (author)' : '')
+    $: author = commit.author
+    $: committer = getCommitter(commit) ?? author
+    $: committerIsAuthor = committer.person.email === author.person.email
+    $: commitDate = new Date(committer.date)
+    $: authorAvatarTooltip = author.person.name + (committer ? ' (author)' : '')
     let expanded = alwaysExpanded
 </script>
 
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <Avatar avatar={author} />
+            <Avatar avatar={author.person} />
         </Tooltip>
     </div>
-    {#if committer && committer.name !== author.name}
+    {#if !committerIsAuthor}
         <div class="avatar">
-            <Tooltip tooltip="{committer.name} (committer)">
-                <Avatar avatar={committer} />
+            <Tooltip tooltip="{committer.person.name} (committer)">
+                <Avatar avatar={committer.person} />
             </Tooltip>
         </div>
     {/if}
     <div class="info">
-        <span class="d-flex">
+        <span class="title">
             <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
             {#if !alwaysExpanded && commit.body}
                 <button type="button" on:click={() => (expanded = !expanded)}>
@@ -54,16 +54,15 @@
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
+        <span>
+            {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
+            committed by <strong>{committer.person.name}</strong>
+            <Timestamp date={commitDate} />
+        </span>
         {#if expanded && commit.body}
             <pre>{commit.body}</pre>
         {/if}
     </div>
-    {#if !alwaysExpanded}
-        <div class="buttons">
-            <Badge variant="link"><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></Badge>
-        </div>
-    {/if}
 </div>
 
 <style lang="scss">
@@ -79,15 +78,22 @@
         min-width: 0;
     }
 
-    .subject {
-        font-weight: 600;
-        flex: 0 1 auto;
-        padding-right: 0.5rem;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        color: var(--body-color);
-        min-width: 0;
+    .title {
+        display: flex;
+        gap: 0.5rem;
+
+        .subject {
+            font-weight: 600;
+            flex: 0 1 auto;
+            color: var(--body-color);
+            min-width: 0;
+
+            @media (--sm-breakpoint-up) {
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+        }
     }
 
     .avatar {
@@ -106,7 +112,12 @@
         color: var(--body-color);
         border: 1px solid var(--secondary);
         cursor: pointer;
+
+        @media (--xs-breakpoint-down) {
+            align-self: flex-start;
+        }
     }
+
     pre {
         margin-top: 0.5rem;
         margin-bottom: 1.5rem;
@@ -115,9 +126,5 @@
         max-width: 100%;
         word-wrap: break-word;
         white-space: pre-wrap;
-    }
-
-    .buttons {
-        align-self: center;
     }
 </style>

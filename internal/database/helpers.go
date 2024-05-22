@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is
@@ -194,4 +196,28 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	}
 
 	return queryArgs
+}
+
+func OffsetBasedCursorSlice[T any](nodes []T, args *PaginationArgs) ([]T, int, error) {
+	start := 0
+	end := 0
+	total := len(nodes)
+	if args.First != nil {
+		if len(args.After) > 0 {
+			start = min(args.After[0].(int)+1, total)
+		}
+		end = min(start+*args.First, total)
+	} else if args.Last != nil {
+		end = total
+		if len(args.Before) > 0 {
+			end = max(args.Before[0].(int), 0)
+		}
+		start = max(end-*args.Last, 0)
+	} else {
+		return nil, 0, errors.New(`args.First and args.Last are nil`)
+	}
+
+	nodes = nodes[start:end]
+
+	return nodes, start, nil
 }

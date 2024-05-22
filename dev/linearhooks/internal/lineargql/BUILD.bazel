@@ -1,0 +1,70 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+# How to update?
+# 1. Go to https://github.com/linear/linear/blob/%40linear/sdk%4021.1.0/packages/sdk/src/schema.graphql
+# 2. Switch to the latest relase of sdk release, e.g., @linear/sdk@21.1.0
+# 3. Update 'LINEAR_SDK_VERSION' in dev/tool_deps.bzl, e.g., '21.1.0'
+# 4. Run 'bazel run //dev/linearhooks/internal/lineargql:write_genql_yaml'
+genrule(
+    name = "generate_schema_graphql",
+    srcs = [
+        "@linear-sdk-graphql-schema//file:file",
+    ],
+    outs = [
+        "_schema.graphql",
+    ],
+    cmd = """\
+cp $(location @linear-sdk-graphql-schema//file:file) $@
+""",
+)
+
+write_generated_to_source_files(
+    name = "write_schema_graphql",
+    output_files = {
+        # why not reference '@linear-sdk-graphql-schema//file:file' directly?
+        # the 'write_generated_to_source_files' macro seems to make some weird assumptions and
+        # inputs have to be in the same directory as the BUILD file
+        "schema.graphql": "_schema.graphql",
+    },
+    tags = ["go_generate"],
+    target = ":generate_schema_graphql",
+)
+
+genrule(
+    name = "generate_genql_yaml",
+    srcs = [
+        "genqlient.yaml",
+        "operations.graphql",
+        "schema.graphql",
+        "_schema.graphql",
+    ],
+    outs = ["_generated.go"],
+    cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genqlient.yaml) && mv dev/linearhooks/internal/lineargql/generated.go $@",
+    tools = ["@com_github_khan_genqlient//:genqlient"],
+)
+
+write_generated_to_source_files(
+    name = "write_genql_yaml",
+    output_files = {"generated.go": "_generated.go"},
+    tags = ["go_generate"],
+    target = ":generate_genql_yaml",
+)
+
+go_library(
+    name = "lineargql",
+    srcs = [
+        "client.go",
+        "gen.go",
+        "generated.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//dev/linearhooks:__subpackages__"],
+    deps = [
+        "@com_github_khan_genqlient//graphql",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

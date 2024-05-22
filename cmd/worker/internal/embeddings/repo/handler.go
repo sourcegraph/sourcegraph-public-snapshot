@@ -6,7 +6,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
@@ -209,13 +210,22 @@ func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, er
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
-	fileInfos, err := r.gitserver.ReadDir(ctx, r.repo, r.revision, "", true)
+	it, err := r.gitserver.ReadDir(ctx, r.repo, r.revision, "", true)
 	if err != nil {
 		return nil, err
 	}
+	defer it.Close()
 
-	entries := make([]embed.FileEntry, 0, len(fileInfos))
-	for _, fileInfo := range fileInfos {
+	entries := make([]embed.FileEntry, 0)
+	for {
+		fileInfo, err := it.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
+
 		if !fileInfo.IsDir() {
 			entries = append(entries, embed.FileEntry{
 				Name: fileInfo.Name(),
@@ -228,18 +238,43 @@ func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
 
 func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	toIndex []embed.FileEntry,
-	toRemove []string,
+	filesToRemove []string,
 	err error,
 ) {
 	ctx = actor.WithInternalActor(ctx)
-	b, err := r.gitserver.DiffSymbols(ctx, r.repo, oldCommit, r.revision)
+	changedFilesIterator, err := r.gitserver.ChangedFiles(ctx, r.repo, string(oldCommit), string(r.revision))
 	if err != nil {
 		return nil, nil, err
 	}
+	defer changedFilesIterator.Close()
 
-	toRemove, changedNew, err := diff.ParseGitDiffNameStatus(b)
-	if err != nil {
-		return nil, nil, err
+	var toRemove []string
+	var changedNew []string
+
+	for {
+		f, err := changedFilesIterator.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "iterating over changed files in git diff")
+		}
+
+		switch f.Status {
+		case gitdomain.StatusDeleted:
+			// Deleted since "oldCommit"
+			toRemove = append(toRemove, f.Path)
+		case gitdomain.StatusModified:
+			// Modified in "r.revision"
+			toRemove = append(toRemove, f.Path)
+			changedNew = append(changedNew, f.Path)
+		case gitdomain.StatusAdded:
+			// Added in "r.revision"
+			changedNew = append(changedNew, f.Path)
+		case gitdomain.StatusTypeChanged:
+			// a type change does not change the contents of a file,
+			// so this is safe to ignore.
+		}
 	}
 
 	// toRemove only contains file names, but we also need the file sizes. We could
@@ -262,7 +297,7 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		}
 	}
 
-	return
+	return toIndex, toRemove, nil
 }
 
 // validateRevision returns an error if the revision provided to this job is empty.

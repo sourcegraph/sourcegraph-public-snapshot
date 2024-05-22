@@ -5,6 +5,7 @@ go_library(
     name = "mockjob",
     srcs = ["mocks_temp.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/job/mockjob",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search",

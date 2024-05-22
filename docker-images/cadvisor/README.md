@@ -1,6 +1,6 @@
 # Sourcegraph cAdvisor
 
-Learn more about the Sourcegraph cAdvisor distribution in the [cAdvisor documentation](https://sourcegraph.com/docs/dev/background-information/observability/cadvisor).
+Learn more about the Sourcegraph cAdvisor distribution in the [cAdvisor documentation](https://docs-legacy.sourcegraph.com/dev/background-information/observability/cadvisor).
 
 ## Updating the image
 

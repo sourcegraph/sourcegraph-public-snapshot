@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg EnableRollout
     import { get } from 'svelte/store'
 
     import { navigating } from '$app/stores'
@@ -14,7 +15,6 @@
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
     import type { PageData, Snapshot } from './$types'
-    import type { CommitPage_DiffConnection } from './page.gql'
 
     interface Capture {
         scroll: ScrollerCapture
@@ -44,14 +44,9 @@
 
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
-    let diffs: CommitPage_DiffConnection | null = null
 
     $: diffQuery = data.diff
-    // We conditionally check for the ancestors field to be able to show
-    // previously loaded commits when an error occurs while fetching more commits.
-    $: if ($diffQuery?.data?.repository) {
-        diffs = $diffQuery.data.repository.comparison.fileDiffs
-    }
+    $: diffs = $diffQuery?.data?.repository?.comparison.fileDiffs ?? null
 </script>
 
 <svelte:head>
@@ -114,7 +109,7 @@
             {#if $diffQuery?.fetching || $diffQuery?.restoring}
                 <LoadingSpinner />
             {:else if $diffQuery?.error}
-                <div class="m-4">
+                <div class="error">
                     <Alert variant="danger">
                         Unable to fetch file diffs: {$diffQuery.error.message}
                     </Alert>
@@ -156,11 +151,17 @@
         font-size: inherit;
     }
 
+    .error,
     ul.diffs {
-        list-style: none;
         padding: 1rem;
+    }
 
-        li {
+    ul.diffs {
+        // Removes globally set margin
+        margin: 0;
+        list-style: none;
+
+        li:not(:last-child) {
             margin-bottom: 1rem;
         }
     }

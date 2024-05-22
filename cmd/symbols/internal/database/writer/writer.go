@@ -2,6 +2,7 @@ package writer
 
 import (
 	"context"
+	"io"
 	"path/filepath"
 
 	"golang.org/x/sync/semaphore"
@@ -10,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -111,16 +112,39 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args search.SymbolsPar
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args search.SymbolsParameters, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
-	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
+	changedFilesIterator, err := w.gitserverClient.ChangedFiles(ctx, args.Repo, oldCommit, string(args.CommitID))
 	if err != nil {
-		return false, errors.Wrap(err, "gitserverClient.GitDiff")
+		return false, errors.Wrap(err, "gitserverClient.ChangedFiles")
 	}
+	defer changedFilesIterator.Close()
 
 	// Paths to re-parse
-	addedOrModifiedPaths := append(changes.Added, changes.Modified...)
+	var addedOrModifiedPaths []string
 
 	// Paths to modify in the database
-	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
+	var addedModifiedOrDeletedPaths []string
+
+	for {
+		c, err := changedFilesIterator.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return false, errors.Wrap(err, "iterating over changed files in git diff")
+		}
+
+		switch c.Status {
+		case gitdomain.StatusAdded, gitdomain.StatusModified:
+			addedOrModifiedPaths = append(addedOrModifiedPaths, c.Path)
+			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
+		case gitdomain.StatusDeleted:
+			addedModifiedOrDeletedPaths = append(addedModifiedOrDeletedPaths, c.Path)
+		case gitdomain.StatusTypeChanged:
+			// a type change does not change the contents of a file,
+			// so this is safe to ignore.
+		}
+	}
 
 	if err := copyFile(newestDBFile, dbFile); err != nil {
 		return false, err

@@ -30,8 +30,8 @@ func NeedsSiteInit(baseURL string) (bool, string, error) {
 
 // SiteAdminInit initializes the instance with given admin account.
 // It returns an authenticated client as the admin for doing testing.
-func SiteAdminInit(baseURL, email, username, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/site-init", map[string]string{
+func (c *Client) SiteAdminInit(email, username, password string) error {
+	return c.authenticate("/-/site-init", map[string]string{
 		"email":    email,
 		"username": username,
 		"password": password,
@@ -40,44 +40,28 @@ func SiteAdminInit(baseURL, email, username, password string) (*Client, error) {
 
 // SignUp signs up a new user with given credentials.
 // It returns an authenticated client as the user for doing testing.
-func SignUp(baseURL, email, username, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/sign-up", map[string]string{
+func (c *Client) SignUp(email, username, password string) error {
+	return c.authenticate("/-/sign-up", map[string]string{
 		"email":    email,
 		"username": username,
 		"password": password,
 	})
 }
 
-func SignUpOrSignIn(baseURL, email, username, password string) (*Client, error) {
-	client, err := SignUp(baseURL, email, username, password)
-	if err != nil {
-		return SignIn(baseURL, email, password)
+func (c *Client) SignUpOrSignIn(email, username, password string) error {
+	if err := c.SignUp(email, username, password); err != nil {
+		return c.SignIn(email, password)
 	}
-	return client, err
+	return nil
 }
 
 // SignIn performs the sign in with given user credentials.
 // It returns an authenticated client as the user for doing testing.
-func SignIn(baseURL, email, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/sign-in", map[string]string{
+func (c *Client) SignIn(email, password string) error {
+	return c.authenticate("/-/sign-in", map[string]string{
 		"email":    email,
 		"password": password,
 	})
-}
-
-// authenticate initializes an authenticated client with given request body.
-func authenticate(baseURL, path string, body any) (*Client, error) {
-	client, err := NewClient(baseURL, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "new client")
-	}
-
-	err = client.authenticate(path, body)
-	if err != nil {
-		return nil, errors.Wrap(err, "authenticate")
-	}
-
-	return client, nil
 }
 
 // extractCSRFToken extracts CSRF token from HTML response body.
@@ -114,16 +98,25 @@ type LogFunc func(payload []byte)
 
 func noopLog(payload []byte) {}
 
+type ClientOption struct {
+	GraphQLRequestLogger  LogFunc
+	GraphQLResponseLogger LogFunc
+}
+
 // NewClient instantiates a new client by performing a GET request then obtains the
 // CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only).
-// If request- or responseLogger are provided, the request and response bodies, respectively,
+// If loggers are provided via options, the request and response bodies, respectively,
 // will be written to them for any GraphQL requests only.
-func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, error) {
-	if requestLogger == nil {
-		requestLogger = noopLog
-	}
-	if responseLogger == nil {
-		responseLogger = noopLog
+func NewClient(baseURL string, options ...ClientOption) (*Client, error) {
+	requestLogger := noopLog
+	responseLogger := noopLog
+	for _, opt := range options {
+		if opt.GraphQLRequestLogger != nil {
+			requestLogger = opt.GraphQLRequestLogger
+		}
+		if opt.GraphQLResponseLogger != nil {
+			responseLogger = opt.GraphQLResponseLogger
+		}
 	}
 
 	resp, err := http.Get(baseURL)
@@ -292,7 +285,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
 	} else {
 		// NOTE: This header is required to authenticate our session with a session cookie, see:
-		// https://sourcegraph.com/docs/dev/security/csrf_security_model#authentication-in-api-endpoints
+		// https://docs-legacy.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
 		req.Header.Set("X-Requested-With", "Sourcegraph")
 		req.AddCookie(c.sessionCookie)
 
@@ -374,12 +367,22 @@ func (c *Client) GetWithHeaders(url string, header http.Header) (*http.Response,
 
 // Post performs a POST request to the URL with authenticated user.
 func (c *Client) Post(url string, body io.Reader) (*http.Response, error) {
+	return c.PostWithHeader(url, body, nil)
+}
+
+func (c *Client) PostWithHeader(url string, body io.Reader, header http.Header) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 
 	c.addCookies(req)
+
+	for name, values := range header {
+		for _, value := range values {
+			req.Header.Add(name, value)
+		}
+	}
 
 	return http.DefaultClient.Do(req)
 }

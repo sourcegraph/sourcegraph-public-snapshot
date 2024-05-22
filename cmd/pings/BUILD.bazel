@@ -8,6 +8,7 @@ go_library(
     name = "pings_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/pings",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/pings/service",
@@ -18,6 +19,7 @@ go_library(
 go_binary(
     name = "pings",
     embed = [":pings_lib"],
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//visibility:public"],
 )
 
@@ -53,6 +55,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_DATA_ANALYTICS,
     ],
 )
 

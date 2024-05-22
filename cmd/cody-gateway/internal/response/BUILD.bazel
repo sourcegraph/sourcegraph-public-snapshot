@@ -5,6 +5,7 @@ go_library(
     name = "response",
     srcs = ["response.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -16,6 +17,7 @@ go_test(
     name = "response_test",
     srcs = ["response_test.go"],
     embed = [":response"],
+    tags = [TAG_CODY_PRIME],
     deps = [
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

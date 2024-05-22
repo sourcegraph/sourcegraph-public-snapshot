@@ -8,6 +8,7 @@ go_library(
         "metrics.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/cache",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["cache_test.go"],
     embed = [":cache"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/encryption",
         "@com_github_stretchr_testify//assert",

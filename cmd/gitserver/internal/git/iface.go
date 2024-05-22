@@ -3,11 +3,16 @@ package git
 import (
 	"context"
 	"io"
+	"io/fs"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
+
+// GitBackendSource is a function that returns a GitBackend for a given repository.
+type GitBackendSource func(dir common.GitDir, repoName api.RepoName) GitBackend
 
 // GitBackend is the interface through which operations on a git repository can
 // be performed. It encapsulates the underlying git implementation and allows
@@ -18,6 +23,8 @@ type GitBackend interface {
 	// Config returns a backend for interacting with git configuration at .git/config.
 	Config() GitConfigBackend
 	// GetObject allows to read a git object from the git object database.
+	//
+	// If the object specified by objectName does not exist, a RevisionNotFoundError is returned.
 	GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error)
 	// MergeBase finds the merge base commit for the given base and head revspecs.
 	// Returns an empty string and no error if no common merge-base was found.
@@ -90,6 +97,25 @@ type GitBackend interface {
 	// Aggregations are done by email address.
 	// If range does not exist, a RevisionNotFoundError is returned.
 	ContributorCounts(ctx context.Context, opt ContributorCountsOpts) ([]*gitdomain.ContributorCount, error)
+	// Stat returns the file info for the given path at the given commit.
+	// If the file does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// Stat supports submodules, symlinks, directories and files.
+	Stat(ctx context.Context, commit api.CommitID, path string) (fs.FileInfo, error)
+	// ReadDir returns the list of files and directories in the given path at the given commit.
+	// Path can be used to read subdirectories.
+	// If the path does not exist, a os.PathError is returned.
+	// If the commit does not exist, a RevisionNotFoundError is returned.
+	// ReadDir supports submodules, symlinks, directories and files.
+	// If recursive is true, ReadDir will return the contents of all subdirectories.
+	// The caller must call Close on the returned ReadDirIterator when done.
+	ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (ReadDirIterator, error)
+
+	// CommitLog returns a list of commits in the given boundaries specified by opt.
+	// If the range does not exist, a RevisionNotFoundError is returned from the
+	// iterator.
+	// Empty branches return an iterator that emits zero commits, not an error.
+	CommitLog(ctx context.Context, opt CommitLogOpts) (CommitLogIterator, error)
 
 	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
 	// No new usages of it should be introduced and once the migration is done we will
@@ -121,6 +147,96 @@ type GitBackend interface {
 	// If one of the two given revspecs does not exist, a RevisionNotFoundError
 	// is returned.
 	BehindAhead(ctx context.Context, left, right string) (*gitdomain.BehindAhead, error)
+
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	//
+	// Renamed files are considered as a deletion and an addition.
+	//
+	// If base is omitted, the parent of head is used as the base.
+	//
+	// If either the base or head <tree-ish> id does not exist, a RevisionNotFoundError is returned.
+	ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error)
+
+	// LatestCommitTimestamp returns the timestamp of the most recent commit, if any.
+	// If there are no commits or the latest commit is in the future, time.Now is returned.
+	LatestCommitTimestamp(ctx context.Context) (time.Time, error)
+
+	// RefHash computes a hash of all the refs. The hash only changes if the set
+	// of refs and the commits they point to change.
+	// This value can be used to determine if a repository changed since the last
+	// time the hash has been computed.
+	RefHash(ctx context.Context) ([]byte, error)
+}
+
+// CommitLogOrder is the order of the commits returned by CommitLog.
+type CommitLogOrder int
+
+const (
+	// Uses the default ordering of git log: in reverse chronological order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitLogOrderDefault CommitLogOrder = iota
+	// Show no parents before all of its children are shown, but otherwise show commits
+	// in the commit timestamp order.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitLogOrderCommitDate
+	// Show no parents before all of its children are shown, and avoid showing commits
+	// on multiple lines of history intermixed.
+	// See https://git-scm.com/docs/git-log#_commit_ordering for more details.
+	CommitLogOrderTopoDate
+)
+
+// CommitLogOpts defines the options for the CommitLog method.
+type CommitLogOpts struct {
+	// Ranges to include in the git log (revspec, "A..B", "A...B", etc.).
+	// At least one range, or all_refs must be specified.
+	Ranges []string
+	// If true, all refs are searched for commits.
+	// Must not be true when ranges are given.
+	AllRefs bool
+	// After is an optional parameter to specify the earliest commit to consider.
+	After time.Time
+	// Before is an optional parameter to specify the latest commit to consider
+	Before time.Time
+	// MaxCommits is an optional parameter to specify the maximum number of commits
+	// to return. If max_commits is 0, all commits that match the criteria will be
+	// returned.
+	MaxCommits uint32
+	// Skip is an optional parameter to specify the number of commits to skip.
+	// This can be used to implement a poor mans pagination.
+	// TODO: We want to switch to more proper gRPC pagination here later.
+	Skip uint32
+	// When finding commits to include, follow only the first parent commit upon
+	// seeing a merge commit. This option can give a better overview when viewing
+	// the evolution of a particular topic branch, because merges into a topic
+	// branch tend to be only about adjusting to updated upstream from time to time,
+	// and this option allows you to ignore the individual commits brought in to
+	// your history by such a merge.
+	FollowOnlyFirstParent bool
+	// If true, the modified_files field in the GetCommitResponse will be
+	// populated.
+	IncludeModifiedFiles bool
+	Order                CommitLogOrder
+	// Include only commits whose commit message contains this substring.
+	MessageQuery string
+	// include only commits whose author matches this.
+	AuthorQuery string
+	// include only commits that touch this file path.
+	Path string
+	// Follow the history of the path beyond renames, only effective when used with
+	// `path`.
+	FollowPathRenames bool
+}
+
+// CommitLogIterator iterates over commits. The iterator ends with Next returning
+// io.EOF.
+// Callers must make sure to Close() the iterator.
+type CommitLogIterator interface {
+	// Next returns the next commit and the files it modifies, if requested.
+	// If a given revision was not found, a RevisionNotFoundError is returned.
+	Next() (*GitCommitWithFiles, error)
+	// Close releases resources associated with the iterator.
+	Close() error
 }
 
 type GitDiffComparisonType int
@@ -198,6 +314,20 @@ type ListRefsOpts struct {
 	Contains []api.CommitID
 }
 
+// ChangedFilesIterator iterates over changed files. The iterator must be closed
+// via Close() when the caller is done with it.
+type ChangedFilesIterator interface {
+	// Next returns the next changed file, or an error. The iterator must be closed
+	// via Close() when the caller is done with it.
+	//
+	// If there are no more files, io.EOF is returned.
+	Next() (gitdomain.PathStatus, error)
+	// Close releases resources associated with the iterator.
+	//
+	// After Close() is called, Next() will always return io.EOF.
+	Close() error
+}
+
 // RefIterator iterates over refs.
 type RefIterator interface {
 	// Next returns the next ref.
@@ -218,4 +348,15 @@ type ContributorCountsOpts struct {
 	// If set, only count commits that are in the given path. Can be a pathspec
 	// (e.g., "foo/bar/").
 	Path string
+}
+
+// ReadDirIterator is an iterator for the contents of a directory.
+// The caller MUST Close() this iterator when done, regardless of whether an error
+// was returned from Next().
+type ReadDirIterator interface {
+	// Next returns the next file in the directory. io.EOF is returned at the end
+	// of the stream.
+	Next() (fs.FileInfo, error)
+	// Close closes the iterator.
+	Close() error
 }

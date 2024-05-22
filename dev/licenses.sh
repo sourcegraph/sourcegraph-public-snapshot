@@ -3,7 +3,7 @@
 # This script either generates a report of third-party dependencies, or runs a check that fails
 # if there are any unapproved dependencies ('action items').
 #
-# Please refer to the handbook entry for more details: https://sourcegraph.com/docs/dev/background-information/ci#third-party-licenses
+# Please refer to the handbook entry for more details: https://docs-legacy.sourcegraph.com/dev/background-information/ci#third-party-licenses
 
 set -euf -o pipefail
 
@@ -40,5 +40,5 @@ license_finder ignored_dependencies list
 license_finder dependencies list
 
 # run license check
-echo "Running license_finder - if this fails, refer to our handbook: https://sourcegraph.com/docs/dev/background-information/ci#third-party-licenses"
+echo "Running license_finder - if this fails, refer to our handbook: https://docs-legacy.sourcegraph.com/dev/background-information/ci#third-party-licenses"
 license_finder "${COMMAND}" --columns=package_manager name version licenses homepage approved

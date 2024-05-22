@@ -8,11 +8,11 @@ go_library(
         "personal_access_token.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/accesstoken",
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/hashutil",
-        "//internal/lazyregexp",
-        "//lib/errors",
+        "//lib/accesstoken",
     ],
 )
 
@@ -23,4 +23,5 @@ go_test(
         "personal_access_token_test.go",
     ],
     embed = [":accesstoken"],
+    tags = [TAG_SECURITY],
 )

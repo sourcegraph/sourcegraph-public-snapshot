@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @sg EnableRollout
     import { get } from 'svelte/store'
 
     import { navigating } from '$app/stores'

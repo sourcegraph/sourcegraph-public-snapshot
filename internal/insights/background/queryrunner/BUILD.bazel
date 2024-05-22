@@ -11,6 +11,7 @@ go_library(
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -56,6 +57,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":queryrunner"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

@@ -8,6 +8,7 @@ go_library(
     name = "repo-updater_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/repo-updater/shared",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "repo-updater",
     embed = [":repo-updater_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
 )
 
@@ -54,6 +56,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
 )
 

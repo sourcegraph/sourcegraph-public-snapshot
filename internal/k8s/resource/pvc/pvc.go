@@ -7,21 +7,15 @@ import (
 )
 
 // NewPersistentVolumeClaim creates a new k8s PVC with some default values set.
-func NewPersistentVolumeClaim(name, namespace string, storage resource.Quantity, storageClassName string) corev1.PersistentVolumeClaim {
-	pvc := NewPersistentVolumeClaimSpecOnly(storage, storageClassName)
-	pvc.ObjectMeta = metav1.ObjectMeta{
-		Name:      name,
-		Namespace: namespace,
-		Labels: map[string]string{
-			"deploy": "sourcegraph",
-		},
-	}
-	return pvc
-}
-
-// Useful for statefulsets, that do not require metadata
-func NewPersistentVolumeClaimSpecOnly(storage resource.Quantity, storageClassName string) corev1.PersistentVolumeClaim {
+func NewPersistentVolumeClaim(name, namespace string, storage resource.Quantity, storageClassName *string) corev1.PersistentVolumeClaim {
 	return corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"deploy": "sourcegraph",
+			},
+		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOnce,
@@ -31,7 +25,7 @@ func NewPersistentVolumeClaimSpecOnly(storage resource.Quantity, storageClassNam
 					corev1.ResourceStorage: storage,
 				},
 			},
-			StorageClassName: &storageClassName,
+			StorageClassName: storageClassName,
 		},
 	}
 }

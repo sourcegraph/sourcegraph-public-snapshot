@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -30,19 +31,25 @@ type jsonInstancePrinter struct {
 func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 	valueFunc := func(inst *Instance) []any {
 		name := inst.Name
-		if len(name) > 20 {
-			name = name[:20]
+		if len(name) > 37 {
+			name = name[:37] + "..."
 		}
 
-		status := inst.Status
-		createdAt := inst.CreatedAt.String()
+		actionURL := "n/a"
+		if inst.Status.ActionURL != "" {
+			actionURL = inst.Status.ActionURL
+		}
+		expiresAt := "n/a"
+		if !inst.ExpiresAt.IsZero() {
+			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
+		}
 
 		return []any{
-			name, status, createdAt,
+			name, expiresAt, actionURL,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-20s %-11s %s", "Name", "Status", "Created At")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %s", "Name", "Expires At", "ActionURL")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -63,9 +70,11 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 	std.Out.WriteLine(output.Line("", output.StyleBold, heading))
 	for _, inst := range items {
 		values := p.valueFunc(inst)
-		line := fmt.Sprintf("%-20s %-11s %s", values...)
+		line := fmt.Sprintf("%-40s %-20s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
+
+	std.Out.WriteSuggestionf("Some names may be truncated. To see the full names use the --raw format")
 	return nil
 }
 

@@ -46,6 +46,7 @@ go_test(
     ],
     embed = [":azureoauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

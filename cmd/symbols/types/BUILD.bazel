@@ -4,6 +4,7 @@ go_library(
     name = "types",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/types",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/env",

@@ -1,0 +1,43 @@
+:root {
+    --dropdown-inner-border-radius: 0.1875rem;
+    --dropdown-padding-y: 0.5rem;
+    --dropdown-item-padding-y: 0.25rem;
+    --dropdown-item-padding-x: 0.5rem;
+    --dropdown-item-padding: var(--dropdown-item-padding-y) var(--dropdown-item-padding-x);
+    --dropdown-min-width: 10rem;
+    --dropdown-spacer: 0.125rem;
+    --dropdown-border-width: 0.06rem;
+    --dropdown-header-font-size: 0.765625rem;
+    --dropdown-header-padding: var(--dropdown-padding-y) var(--dropdown-item-padding-x);
+    --caret-width: 0.3em;
+    --caret-spacing: calc(var(--caret-spacing) * 0.85);
+    --caret-vertical-align: var(--caret-spacing);
+}
+
+.theme-light {
+    --dropdown-header-color: var(--text-muted);
+    --dropdown-border-color: var(--input-border-color);
+    --dropdown-bg: var(--color-bg-1);
+    --dropdown-color: var(--body-color);
+    --dropdown-link-color: var(--body-color);
+    --dropdown-link-hover-bg: var(--color-bg-2);
+    --dropdown-link-hover-color: var(--body-color);
+    --dropdown-link-active-bg: var(--primary);
+    --dropdown-link-active-color: var(--white);
+    --dropdown-link-disabled-color: var(--text-muted);
+    --dropdown-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
+}
+
+.theme-dark {
+    --dropdown-header-color: var(--text-muted);
+    --dropdown-border-color: var(--input-border-color);
+    --dropdown-bg: var(--color-bg-1);
+    --dropdown-color: var(--body-color);
+    --dropdown-link-color: var(--body-color);
+    --dropdown-link-hover-bg: var(--color-bg-3);
+    --dropdown-link-hover-color: var(--body-color);
+    --dropdown-link-active-bg: var(--primary);
+    --dropdown-link-active-color: var(--white);
+    --dropdown-link-disabled-color: var(--text-muted);
+    --dropdown-shadow: 0 4px 16px -6px rgba(11, 12, 15, 0.8);
+}

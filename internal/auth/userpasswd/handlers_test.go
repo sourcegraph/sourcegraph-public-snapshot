@@ -456,7 +456,8 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+		telemetryRecorder, telemetryStore := telemetrytest.NewRecorder()
+		h := HandleSignUp(logger, db, telemetryRecorder)
 
 		body := strings.NewReader(`{
 			"email": "test@test.com",
@@ -475,6 +476,13 @@ func TestHandleSignUp(t *testing.T) {
 
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
+
+		// Signup success event should be recorded, with user
+		events := telemetryStore.CollectStoredEvents()
+		require.Len(t, events, 1)
+		assert.Equal(t, events[0].Feature, "signUp")
+		assert.Equal(t, events[0].Action, string(telemetry.ActionSucceeded))
+		assert.NotEmpty(t, events[0].GetUser().GetUserId())
 	})
 }
 

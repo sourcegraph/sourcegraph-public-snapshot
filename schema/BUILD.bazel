@@ -96,6 +96,7 @@ go_library(
         "opencodegraph-protocol.schema.json",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/schema",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
     deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
 )
@@ -115,6 +116,7 @@ go_test(
     name = "schema_test",
     srcs = ["validation_test.go"],
     embed = [":schema"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/jsonc",
         "//lib/errors",

@@ -200,6 +200,15 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 							subLogger.Error("error updating repo", log.Error(err), log.String("uri", string(repo.Name)))
 						}
 					}
+				} else {
+					// If the update succeeded, store the latest values for last_fetched
+					// and last_changed in the database.
+					if err := s.db.GitserverRepos().SetLastFetched(ctx, repo.Name, database.GitserverFetchData{
+						LastFetched: lastFetched,
+						LastChanged: lastChanged,
+					}); err != nil {
+						subLogger.Error("failed to store repo update timestamps", log.Error(err))
+					}
 				}
 
 				if interval := getCustomInterval(subLogger, conf.Get(), string(repo.Name)); interval > 0 {

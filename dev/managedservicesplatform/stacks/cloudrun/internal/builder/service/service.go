@@ -86,11 +86,9 @@ func (b *serviceBuilder) AddDependency(dep cdktf.ITerraformDependable) {
 
 func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
-	var launchStage *string
 	if vars.PrivateNetwork != nil {
 		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#example-usage---cloudrunv2-service-directvpc
 		// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc
-		launchStage = pointers.Ptr("BETA") // Direct VPC is still in beta.
 		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
 			NetworkInterfaces: &[]*cloudrunv2service.CloudRunV2ServiceTemplateVpcAccessNetworkInterfaces{{
 				Network:    vars.PrivateNetwork.Network.Id(),
@@ -139,8 +137,6 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
 		Lifecycle: lifecycle,
-
-		LaunchStage: launchStage,
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
@@ -196,7 +192,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
 				Name:  pointers.Ptr(vars.Service.ID),
-				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
+				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ImageTag)),
 
 				Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
 					Limits: &vars.ResourceLimits,

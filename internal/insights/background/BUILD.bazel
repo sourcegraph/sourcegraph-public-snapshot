@@ -12,6 +12,7 @@ go_library(
         "retention_enqueuer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -59,6 +60,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":background"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

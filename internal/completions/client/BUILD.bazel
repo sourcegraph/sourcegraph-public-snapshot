@@ -7,6 +7,7 @@ go_library(
         "observe.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/client/anthropic",

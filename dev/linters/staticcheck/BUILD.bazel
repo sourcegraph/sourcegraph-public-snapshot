@@ -36,6 +36,7 @@ go_library(
     name = "staticcheck",
     srcs = ["staticcheck.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

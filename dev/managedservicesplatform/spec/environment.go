@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -51,8 +52,14 @@ type EnvironmentSpec struct {
 	// configured.
 	Category EnvironmentCategory `yaml:"category"`
 
-	// Deploy specifies how to deploy revisions.
+	// Deploy specifies how to deploy revisions of the service image.
 	Deploy EnvironmentDeploySpec `yaml:"deploy"`
+
+	// Locations specifies details for the desired geographical location of
+	// resources provisioned for this environment. If omitted, default
+	// locations are used (namely, the GCP region 'us-central1'). If provided,
+	// all fields must be specified.
+	Locations *EnvironmentLocationsSpec `yaml:"locations,omitempty"`
 
 	// EnvironmentServiceSpec carries service-specific configuration.
 	*EnvironmentServiceSpec `yaml:",inline"`
@@ -123,6 +130,7 @@ func (s EnvironmentSpec) Validate() []error {
 
 	// Validate other shared sub-specs
 	errs = append(errs, s.Deploy.Validate()...)
+	errs = append(errs, s.GetLocationSpec().Validate()...)
 	errs = append(errs, s.Resources.Validate()...)
 	errs = append(errs, s.Instances.Validate()...)
 	for k, v := range s.SecretVolumes {
@@ -163,6 +171,10 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeployType string
 
 const (
@@ -170,10 +182,6 @@ const (
 	EnvironmentDeployTypeSubscription = "subscription"
 	EnvironmentDeployTypeRollout      = "rollout"
 )
-
-func (c EnvironmentCategory) IsProduction() bool {
-	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
-}
 
 type EnvironmentDeploySpec struct {
 	// Type specifies the deployment method for the environment. There are
@@ -189,7 +197,12 @@ type EnvironmentDeploySpec struct {
 
 func (s EnvironmentDeploySpec) Validate() []error {
 	var errs []error
-	if s.Type == EnvironmentDeployTypeSubscription {
+	switch s.Type {
+	case EnvironmentDeployTypeManual:
+		if s.Subscription != nil {
+			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
+		}
+	case EnvironmentDeployTypeSubscription:
 		if s.Manual != nil {
 			errs = append(errs, errors.New("manual deploy spec provided when type is subscription"))
 		} else if s.Subscription == nil {
@@ -197,39 +210,12 @@ func (s EnvironmentDeploySpec) Validate() []error {
 		} else if s.Subscription.Tag == "" {
 			errs = append(errs, errors.New("no tag in image subscription specified"))
 		}
-	} else if s.Type == EnvironmentDeployTypeManual {
-		if s.Subscription != nil {
-			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
-		}
+	case EnvironmentDeployTypeRollout:
+		// no validation
+	default:
+		errs = append(errs, errors.Newf("invalid deploy type %q", s.Type))
 	}
 	return errs
-}
-
-// ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
-	switch d.Type {
-	case EnvironmentDeployTypeManual:
-		if d.Manual == nil {
-			return "insiders", nil
-		}
-		return d.Manual.Tag, nil
-	case EnvironmentDeployTypeSubscription:
-		// we already validated in Validate(), hence it's fine to assume this won't panic
-		updater, err := imageupdater.New()
-		if err != nil {
-			return "", errors.Wrapf(err, "create image updater")
-		}
-		tagAndDigest, err := updater.ResolveTagAndDigest(repo, d.Subscription.Tag)
-		if err != nil {
-			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
-		}
-		return tagAndDigest, nil
-	case EnvironmentDeployTypeRollout:
-		// Enforce convention
-		return "insiders", nil
-	default:
-		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
-	}
 }
 
 type EnvironmentDeployManualSpec struct {
@@ -237,10 +223,32 @@ type EnvironmentDeployManualSpec struct {
 	Tag string `yaml:"tag,omitempty"`
 }
 
+// GetTag returns the tag to deploy. If empty, defaults to "insiders".
+func (s *EnvironmentDeployManualSpec) GetTag() string {
+	if s == nil {
+		return "insiders"
+	}
+	return s.Tag
+}
+
 type EnvironmentDeployTypeSubscriptionSpec struct {
 	// Tag is the tag to subscribe to.
 	Tag string `yaml:"tag,omitempty"`
 	// TODO: In the future, we may support subscribing by semver constraints.
+}
+
+// ResolveTag fetches the latest digest for the target imageRepo and configured
+// subscription tag, and returns it.
+func (s EnvironmentDeployTypeSubscriptionSpec) ResolveTag(imageRepo string) (string, error) {
+	updater, err := imageupdater.New()
+	if err != nil {
+		return "", errors.Wrapf(err, "create image updater")
+	}
+	tagAndDigest, err := updater.ResolveTagAndDigest(imageRepo, s.Tag)
+	if err != nil {
+		return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
+	}
+	return tagAndDigest, nil
 }
 
 type EnvironmentServiceSpec struct {
@@ -833,9 +841,6 @@ type EnvironmentResourceBigQueryDatasetSpec struct {
 	// project for BigQuery resources. If not provided, resources are created
 	// within the service's project.
 	ProjectID *string `yaml:"projectID,omitempty"`
-	// Location defaults to "US". Do not configure unless you know what you are
-	// doing, as BigQuery locations are not the same as standard GCP regions.
-	Location *string `yaml:"region,omitempty"`
 }
 
 func (EnvironmentResourceBigQueryDatasetSpec) ResourceKind() string { return "BigQuery dataset" }
@@ -897,4 +902,73 @@ type EnvironmentAlertingSpec struct {
 	// of alerts that are considered high-signal indicators that something is
 	// definitely wrong with your service.
 	Opsgenie *bool `yaml:"opsgenie,omitempty"`
+}
+
+type EnvironmentLocationsSpec struct {
+	// GCPRegion is the GCP region where all regional resources resources should
+	// be deployed for this environment, for example:
+	//
+	// - https://cloud.google.com/about/locations#americas
+	// - https://cloud.google.com/about/locations#asia-pacific
+	GCPRegion string `yaml:"gcpRegion"`
+	// GCPLocation is the GCP location where all multi-regional resources should
+	// be deployed for this environment, e.g. BigQuery:
+	// https://cloud.google.com/about/locations#multi-region
+	//
+	// Note that the names of valid locations are not consistent across GCP
+	// products, callsites should check that the allowed values in
+	// 'EnvironmentLocationsSpec.Validate()' match the actual values supported
+	// by the relevant GCP product.
+	GCPLocation string `yaml:"gcpLocation"`
+}
+
+// GetLocationSpec returns the appropriate location spec for the environment,
+// returning defaults if none is configured.
+func (s EnvironmentSpec) GetLocationSpec() EnvironmentLocationsSpec {
+	if s.Locations == nil {
+		// Provide our defaults
+		return EnvironmentLocationsSpec{
+			GCPRegion:   "us-central1",
+			GCPLocation: "US", // original default for BigQuery
+		}
+	}
+	return *s.Locations
+}
+
+func (s EnvironmentLocationsSpec) Validate() []error {
+	var (
+		allowedRegions = []string{
+			// Starter list, same as Cloud controller
+			"us-central1",
+			"us-west1",
+			"asia-northeast1",
+			"australia-southeast1",
+			"europe-west2",
+			"europe-west3",
+			"northamerica-northeast1",
+		}
+		allowedLocations = []string{
+			// Only support locations that have BigQuery (i.e. not APAC)
+			"us",
+			"europe",
+		}
+	)
+
+	var errs []error
+
+	if s.GCPRegion == "" {
+		errs = append(errs, errors.New("locations.gcpRegion must be non-empty"))
+	} else if !slices.Contains(allowedRegions, s.GCPRegion) {
+		errs = append(errs, errors.Newf("locations.gcpRegion %q is not valid, allowed: [%s]",
+			s.GCPRegion, strings.Join(allowedRegions, ", ")))
+	}
+
+	if s.GCPLocation == "" {
+		errs = append(errs, errors.New("locations.gcpLocation must be non-empty"))
+	} else if !slices.Contains(allowedLocations, strings.ToLower(s.GCPLocation)) {
+		errs = append(errs, errors.Newf("locations.gcpLocation %q is not valid, allowed: [%s]",
+			s.GCPLocation, strings.Join(allowedLocations, ", ")))
+	}
+
+	return errs
 }

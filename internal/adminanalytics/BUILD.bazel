@@ -19,6 +19,7 @@ go_library(
         "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/adminanalytics",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -40,6 +41,7 @@ go_test(
     embed = [":adminanalytics"],
     flaky = True,
     tags = [
+        TAG_DATA_ANALYTICS,
         # Test requires localhost for database
         "requires-network",
     ],

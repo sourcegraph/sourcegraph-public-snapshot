@@ -31,8 +31,8 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			t.Errorf("unexpected policy matches (-want +got):\n%s", diff)
 		}
 
-		for i, call := range gitserverClient.CommitsUniqueToBranchFunc.History() {
-			if call.Arg4 != nil {
+		for i, call := range gitserverClient.CommitsFunc.History() {
+			if !call.Arg2.After.IsZero() {
 				t.Errorf("unexpected restriction of git results by date: call #%d", i)
 			}
 		}

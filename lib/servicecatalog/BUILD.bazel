@@ -6,6 +6,7 @@ go_library(
     srcs = ["servicecatalog.go"],
     embedsrcs = ["service-catalog.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/servicecatalog",
+    tags = [TAG_INFRA_CLOUDOPS],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -18,6 +19,7 @@ go_test(
     timeout = "short",
     srcs = ["servicecatalog_test.go"],
     embed = [":servicecatalog"],
+    tags = [TAG_INFRA_CLOUDOPS],
     deps = [
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

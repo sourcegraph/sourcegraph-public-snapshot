@@ -4,7 +4,7 @@
     import { preloadData } from '$app/navigation'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { Alert, Button } from '$lib/wildcard'
-    import FilePage from './-/blob/[...path]/+page.svelte'
+    import FileView from './-/blob/[...path]/FileView.svelte'
     import type { PageData } from './-/blob/[...path]/$types'
     import Icon from '$lib/Icon.svelte'
     import { mdiClose } from '@mdi/js'
@@ -36,14 +36,14 @@
             <br />
             <a {href}>Open file directly</a>
         </Alert>
-    {:else if $filePageData.value}
-        <FilePage data={$filePageData.value} embedded>
+    {:else if $filePageData.value?.type === 'FileView'}
+        <FileView data={$filePageData.value} embedded disableCodeIntel>
             <svelte:fragment slot="actions">
                 <Button variant="icon" aria-label="Close preview" on:click={() => dispatch('close')}>
                     <Icon svgPath={mdiClose} aria-hidden inline />
                 </Button>
             </svelte:fragment>
-        </FilePage>
+        </FileView>
     {/if}
 </div>
 

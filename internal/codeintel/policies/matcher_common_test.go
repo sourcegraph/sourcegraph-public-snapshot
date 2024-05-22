@@ -3,6 +3,7 @@ package policies
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -99,21 +100,31 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		return refs, nil
 	}
 
-	commitsUniqueToBranch := func(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error) {
-		branches := map[string]time.Time{}
-		for _, commit := range branchMembers[branchName] {
-			if maxAge == nil || !createdAt[commit].Before(*maxAge) {
-				branches[commit] = createdAt[commit]
+	commits := func(ctx context.Context, repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		commits := []*gitdomain.Commit{}
+		for _, commit := range branchMembers[opts.Ranges[0][strings.Index(opts.Ranges[0], "..")+2:]] {
+			c := &gitdomain.Commit{
+				ID: api.CommitID(commit),
+				Committer: &gitdomain.Signature{
+					Date: createdAt[commit],
+				},
+			}
+			if opts.After.IsZero() {
+				commits = append(commits, c)
+			} else {
+				if !createdAt[commit].Before(opts.After) {
+					commits = append(commits, c)
+				}
 			}
 		}
 
-		return branches, nil
+		return commits, nil
 	}
 
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.GetCommitFunc.SetDefaultHook(getCommit)
 	gitserverClient.ListRefsFunc.SetDefaultHook(refs)
-	gitserverClient.CommitsUniqueToBranchFunc.SetDefaultHook(commitsUniqueToBranch)
+	gitserverClient.CommitsFunc.SetDefaultHook(commits)
 
 	return gitserverClient
 }

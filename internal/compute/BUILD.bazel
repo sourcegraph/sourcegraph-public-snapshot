@@ -15,6 +15,7 @@ go_library(
         "text_result.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/compute",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/comby",
@@ -43,6 +44,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":compute"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/comby",
         "//internal/gitserver",

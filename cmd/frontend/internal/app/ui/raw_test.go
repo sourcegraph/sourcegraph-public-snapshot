@@ -281,12 +281,12 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 
 		gsClient := gitserver.NewMockClient()
 		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
-		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
-			return []fs.FileInfo{
+		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (gitserver.ReadDirIterator, error) {
+			return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
 				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
-			}, nil
+			}), nil
 		})
 
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)

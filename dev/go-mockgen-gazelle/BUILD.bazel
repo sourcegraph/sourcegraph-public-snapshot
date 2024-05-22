@@ -4,6 +4,7 @@ go_library(
     name = "go-mockgen-gazelle",
     srcs = ["go-mockgen.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/go-mockgen-gazelle",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/go-mockgen-transformer/config",

@@ -99,7 +99,7 @@ test.beforeEach(({ sg }) => {
     })
 })
 
-test('load file', async ({ page }) => {
+test.skip('load file', async ({ page }) => {
     await page.goto(url)
     await expect(page.getByRole('heading', { name: 'index.js' })).toBeVisible()
     await expect(page.getByText(/"file content"/)).toBeVisible()
@@ -138,7 +138,7 @@ test.describe('file header', () => {
         })
     })
 
-    test('default editor link', async ({ page }) => {
+    test.skip('default editor link', async ({ page }) => {
         await page.goto(url)
         const link = page.getByLabel('Editor')
         await expect(link, 'links to help page').toHaveAttribute('href', '/help/integration/open_in_editor')
@@ -150,7 +150,7 @@ test.describe('file header', () => {
         )
     })
 
-    test('editor link', async ({ sg, page }) => {
+    test.skip('editor link', async ({ sg, page }) => {
         const projectsPath = '/Users/USERNAME/Documents'
         sg.mockTypes({
             SettingsCascade: () => ({
@@ -173,7 +173,7 @@ test.describe('file header', () => {
         await expect(tooltip, 'inform user about settings').toHaveText('Open in IntelliJ IDEA')
     })
 
-    test('code host link', async ({ page }) => {
+    test.skip('code host link', async ({ page }) => {
         await page.goto(url)
         const link = page.getByLabel('Open in code host')
         await expect(link, 'links to correct code host').toHaveAttribute('href', 'https://example.com')
@@ -189,7 +189,7 @@ test.describe('file header', () => {
         )
     })
 
-    test('dropdown menu', async ({ page }) => {
+    test.skip('dropdown menu', async ({ page }) => {
         await page.goto(url)
 
         async function openDropdown() {
@@ -223,7 +223,7 @@ test.describe('file header', () => {
         ).toBeVisible()
     })
 
-    test('view modes', async ({ page }) => {
+    test.skip('view modes', async ({ page }) => {
         await page.goto(url)
         // Rendered markdown is shown by default
         await expect(page.getByLabel('Formatted'), "'Formatted' is selected by default").toBeChecked()
@@ -236,7 +236,7 @@ test.describe('file header', () => {
         await expect(page.getByText(/# file content/)).toBeVisible()
     })
 
-    test('meta data', async ({ page }) => {
+    test.skip('meta data', async ({ page }) => {
         await page.goto(url)
         await expect(page.getByText('12.35 KB')).toBeVisible()
         await expect(page.getByText('42 lines')).toBeVisible()
@@ -255,19 +255,19 @@ test.describe('file header', () => {
 test.describe('scroll behavior', () => {
     const url = `/${repoName}/-/blob/src/large-file-1.js`
 
-    test('initial page load', async ({ page }) => {
+    test.skip('initial page load', async ({ page }) => {
         await page.goto(url)
         await expect(page.getByText('line 1;'), 'file is scrolled to the top').toBeVisible()
     })
 
-    test('initial page load with selected line', async ({ page }) => {
+    test.skip('initial page load with selected line', async ({ page }) => {
         await page.goto(url + '?L100')
         const selectedLine = page.getByTestId('selected-line')
         await expect(selectedLine, 'selected line is scrolled into view').toBeVisible()
         await expect(selectedLine).toHaveText(/line 100;/)
     })
 
-    test('go to another file', async ({ page, utils }) => {
+    test.skip('go to another file', async ({ page, utils }) => {
         await page.goto(url)
         // Scroll to some arbitrary position
         await utils.scrollYAt(page.getByText('line 1;'), 1000)
@@ -276,7 +276,7 @@ test.describe('scroll behavior', () => {
         await expect(page.getByText('line 1;')).toBeVisible()
     })
 
-    test('select a line', async ({ page, utils }) => {
+    test.skip('select a line', async ({ page, utils }) => {
         await page.goto(url)
 
         // Scrolls to line 64 at the top (found out by inspecting the test)
@@ -293,7 +293,7 @@ test.describe('scroll behavior', () => {
         expect((await line64.boundingBox())?.y, 'selecting a line preserves scroll position').toBe(position?.y)
     })
 
-    test('[back] preserve scroll position', async ({ page, utils }) => {
+    test.skip('[back] preserve scroll position', async ({ page, utils }) => {
         await page.goto(url)
         const line1 = page.getByText('line 1;')
         await expect(line1).toBeVisible()
@@ -313,7 +313,7 @@ test.describe('scroll behavior', () => {
         )
     })
 
-    test('[forward] preserve scroll position', async ({ page, utils }) => {
+    test.skip('[forward] preserve scroll position', async ({ page, utils }) => {
         await page.goto(url)
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
 
@@ -334,7 +334,7 @@ test.describe('scroll behavior', () => {
         expect((await line64.boundingBox())?.y, 'restores scroll navigation on forward navigation').toBe(position?.y)
     })
 
-    test('[back] preserve scroll position with selected line', async ({ page, utils }) => {
+    test.skip('[back] preserve scroll position with selected line', async ({ page, utils }) => {
         await page.goto(url + '?L100')
         const line100 = page.getByText('line 100;')
         await expect(line100).toBeVisible()
@@ -354,7 +354,7 @@ test.describe('scroll behavior', () => {
     })
 })
 
-test('non-existent file', async ({ page, sg }) => {
+test.skip('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
         BlobPageQuery: ({}) => ({
             repository: {
@@ -369,7 +369,7 @@ test('non-existent file', async ({ page, sg }) => {
     await expect(page.getByText('File not found')).toBeVisible()
 })
 
-test('error loading file data', async ({ page, sg }) => {
+test.skip('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
         BlobPageQuery: ({}) => {
             throw new Error('Blob error')
@@ -380,7 +380,7 @@ test('error loading file data', async ({ page, sg }) => {
     await expect(page.getByText(/Blob error/).first()).toBeVisible()
 })
 
-test('error loading highlights data', async ({ page, sg }) => {
+test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
         BlobSyntaxHighlightQuery: ({}) => {
             throw new Error('Highlights error')

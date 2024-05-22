@@ -7,6 +7,7 @@ go_library(
         "associate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator",
+    tags = [TAG_INFRA_CLOUDOPS],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/auth",

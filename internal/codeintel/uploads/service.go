@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -91,7 +92,7 @@ func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Durati
 // TODO(efritz) - make adjustable via site configuration
 const numAncestors = 100
 
-// inferClosestUploads will return the set of visible uploads for the given commit. If this commit is
+// InferClosestUploads will return the set of visible uploads for the given commit. If this commit is
 // newer than our last refresh of the lsif_nearest_uploads table for this repository, then we will mark
 // the repository as dirty and quickly approximate the correct set of visible uploads.
 //
@@ -140,13 +141,16 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := s.gitserverClient.CommitGraph(ctx, repo.Name, gitserver.CommitGraphOptions{
-		Commit: opts.Commit,
-		Limit:  numAncestors,
+	commits, err := s.gitserverClient.Commits(ctx, repo.Name, gitserver.CommitsOptions{
+		Ranges: []string{opts.Commit},
+		N:      numAncestors,
+		Order:  gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserverClient.CommitGraph")
+		return nil, errors.Wrap(err, "gitserverClient.Commits")
 	}
+
+	graph := commitgraph.ParseCommitGraph(commits)
 
 	uploads, err := s.store.FindClosestCompletedUploadsFromGraphFragment(ctx, opts, graph)
 	if err != nil {

@@ -24,6 +24,7 @@ ts_project(
         "utils/cloneRepos.ts",
         "utils/initEndToEndTest.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/mocha",
@@ -42,6 +43,7 @@ ts_project(
         "frontend-platform/site-admin.test.ts",
         "frontend-platform/theme-switcher.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":end-to-end",

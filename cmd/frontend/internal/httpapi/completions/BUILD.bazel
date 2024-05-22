@@ -11,6 +11,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/cody",
@@ -53,6 +54,8 @@ go_test(
     deps = [
         "//internal/completions/types",
         "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/featureflag",
         "//schema",
         "@com_github_stretchr_testify//require",
     ],

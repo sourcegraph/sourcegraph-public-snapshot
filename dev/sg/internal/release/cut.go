@@ -30,14 +30,9 @@ func cutReleaseBranch(cctx *cli.Context) error {
 	}
 
 	releaseBranch := v.String()
-	if v.Patch() == 0 {
-		releaseBranch = fmt.Sprintf("%d.%d", v.Major(), v.Minor()) // 5.3 not 5.3.0
-	}
-
 	defaultBranch := cctx.String("branch")
 
 	ctx := cctx.Context
-	fmt.Println("releaseBranch", releaseBranch)
 	releaseGitRepoBranch := repo.NewGitRepo(releaseBranch, releaseBranch)
 	defaultGitRepoBranch := repo.NewGitRepo(defaultBranch, defaultBranch)
 

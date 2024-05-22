@@ -1,9 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "config",
-    srcs = ["config.go"],
+    srcs = [
+        "annotations.go",
+        "config.go",
+        "defaults.go",
+        "dev_mode.go",
+        "embed.go",
+        "spec.go",
+    ],
+    embedsrcs = ["pgsql/postgresql.conf"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
     visibility = ["//:__subpackages__"],
-    deps = ["@io_k8s_api//core/v1:core"],
+    deps = [
+        "//lib/errors",
+        "//lib/pointers",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)
+
+go_test(
+    name = "config_test",
+    srcs = ["dev_mode_test.go"],
+    embed = [":config"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

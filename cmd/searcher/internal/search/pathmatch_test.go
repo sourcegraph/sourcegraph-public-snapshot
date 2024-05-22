@@ -3,7 +3,7 @@ package search
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 func TestCompilePathPatterns(t *testing.T) {

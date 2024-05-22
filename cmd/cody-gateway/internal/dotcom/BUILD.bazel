@@ -11,6 +11,7 @@ go_library(
         "operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/dotcom/genhelper",
@@ -47,6 +48,7 @@ go_test(
     name = "dotcom_test",
     srcs = ["dotcom_test.go"],
     embed = [":dotcom"],
+    tags = [TAG_CODY_PRIME],
     deps = ["@com_github_stretchr_testify//assert"],
 )
 

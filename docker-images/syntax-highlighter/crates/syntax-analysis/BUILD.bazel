@@ -17,6 +17,7 @@ rust_library(
         allow_empty = False,
     ),
     proc_macro_deps = all_crate_deps(proc_macro = True),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,
@@ -46,6 +47,7 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     deps = all_crate_deps(
         normal_dev = True,
     ),

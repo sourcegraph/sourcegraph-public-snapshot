@@ -6,6 +6,8 @@ type CompletionsConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
 
+	SmartContext string
+
 	FastChatModel          string
 	FastChatModelMaxTokens int
 

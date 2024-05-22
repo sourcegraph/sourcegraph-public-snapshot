@@ -104,7 +104,8 @@ type OpenAIConfig struct {
 }
 
 type SourcegraphConfig struct {
-	EmbeddingsAPIURL string
+	EmbeddingsAPIURL   string
+	EmbeddingsAPIToken string
 }
 
 // FlaggingConfig defines common parameters for filtering and flagging requests,
@@ -206,7 +207,13 @@ func (c *Config) Load() {
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS",
-		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-turbo", "gpt-4-turbo-preview"}, ","),
+		strings.Join([]string{
+			"gpt-4",
+			"gpt-3.5-turbo",
+			"gpt-4o",
+			"gpt-4-turbo",
+			"gpt-4-turbo-preview",
+		}, ","),
 		"OpenAI models that can to be used."),
 	)
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {
@@ -289,7 +296,8 @@ func (c *Config) Load() {
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
-	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the Triton server.")
+	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the SMEGA API.")
+	c.Sourcegraph.EmbeddingsAPIToken = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN", "", "Token to use for the SMEGA API.")
 
 	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")

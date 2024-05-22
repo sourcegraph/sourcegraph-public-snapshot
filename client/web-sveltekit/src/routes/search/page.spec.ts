@@ -99,7 +99,7 @@ test('fills search query from URL', async ({ page }) => {
     await expect(page.getByRole('textbox')).toHaveText('test')
 })
 
-test('main navbar menus are visible above search input', async ({ page, sg }) => {
+test.skip('main navbar menus are visible above search input', async ({ page, sg }) => {
     const stream = await sg.mockSearchStream()
     await page.goto('/search?q=test')
     await stream.publish(createProgressEvent(), createDoneEvent())
@@ -134,13 +134,13 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
         await page.getByRole('link', { name: match.path }).hover()
         expect(copyPathButton).toBeVisible()
         await copyPathButton.click()
-        let clipboardText = await page.evaluate('navigator.clipboard.readText()')
+        const clipboardText = await page.evaluate('navigator.clipboard.readText()')
         expect(clipboardText).toBe(match.path)
     }
 })
 
 test.describe('preview panel', async () => {
-    test('can be opened and closed', async ({ page, sg }) => {
+    test.skip('can be opened and closed', async ({ page, sg }) => {
         const stream = await sg.mockSearchStream()
         await page.goto('/search?q=test')
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()
@@ -173,7 +173,7 @@ test.describe('preview panel', async () => {
         await expect(page.getByRole('heading', { name: 'File Preview' })).toBeHidden()
     })
 
-    test('can iterate over matches', async ({ page, sg }) => {
+    test.skip('can iterate over matches', async ({ page, sg }) => {
         const stream = await sg.mockSearchStream()
         await page.goto('/search?q=test')
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()

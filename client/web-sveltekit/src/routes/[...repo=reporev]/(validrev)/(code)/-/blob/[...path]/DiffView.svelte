@@ -68,7 +68,7 @@
         padding: 0.5rem 1rem;
         color: var(--text-muted);
         background-color: var(--code-bg);
-        box-shadow: var(--blame-header-shadow);
+        box-shadow: var(--file-header-shadow);
 
         // Allows for its shadow to cascade over the code panel
         z-index: 1;

@@ -9,15 +9,15 @@
         mdiTag,
         mdiDotsHorizontal,
     } from '@mdi/js'
-
     import { writable } from 'svelte/store'
-    import { page } from '$app/stores'
+
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
+    import { page } from '$app/stores'
     import { computeFit } from '$lib/dom'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
     import RepoSearchInput from './RepoSearchInput.svelte'
@@ -58,10 +58,6 @@
     $: ({ repoName, displayRepoName } = data)
 </script>
 
-<svelte:head>
-    <title>{data.displayRepoName} - Sourcegraph</title>
-</svelte:head>
-
 <GlobalHeaderPortal>
     <nav aria-label="repository">
         <h1><a href="/{repoName}">{displayRepoName}</a></h1>
@@ -74,7 +70,7 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </a>
                 </li>
             {/each}
@@ -95,12 +91,12 @@
                         {#if entry.icon}
                             <Icon svgPath={entry.icon} inline />
                         {/if}
-                        <span class="ml-1">{entry.title}</span>
+                        <span>{entry.title}</span>
                     </span>
                 </MenuLink>
             {/each}
         </DropdownMenu>
-        <RepoSearchInput repoName={data.repoName} />
+        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
     </nav>
 </GlobalHeaderPortal>
 
@@ -155,6 +151,7 @@
             padding: 0.25rem 0.5rem;
             border-radius: var(--border-radius);
             white-space: nowrap;
+            gap: 0.25rem;
 
             &:hover {
                 background-color: var(--color-bg-2);

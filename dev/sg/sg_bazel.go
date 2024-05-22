@@ -92,7 +92,7 @@ var bazelCommand = &cli.Command{
 			}
 			newArgs := make([]string, 0, len(args)+1)
 			// Bazelrc flags must be added before the actual command (build, run, test ...)
-			newArgs = append(newArgs, fmt.Sprintf("--bazelrc=%s", filepath.Join(rootDir, ".aspect/bazelrc/remote_cache_for_local.bazelrc")))
+			newArgs = append(newArgs, fmt.Sprintf("--bazelrc=%s", filepath.Join(rootDir, ".aspect/bazelrc/local.bazelrc")))
 			newArgs = append(newArgs, args...)
 			args = newArgs
 		}

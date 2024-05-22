@@ -5,6 +5,7 @@ go_library(
     name = "chunk",
     srcs = ["chunker.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/chunk",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = ["@org_golang_google_protobuf//proto"],
 )
@@ -13,6 +14,7 @@ go_test(
     name = "chunk_test",
     srcs = ["chunker_test.go"],
     embed = [":chunk"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_dustin_go_humanize//:go-humanize",
         "@com_github_stretchr_testify//require",

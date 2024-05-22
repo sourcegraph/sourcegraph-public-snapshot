@@ -68,7 +68,8 @@ function userAccountConnected(authProvider: AuthProvider, userExternalAccounts: 
         userExternalAccounts.find(
             userExternalAccount =>
                 userExternalAccount.serviceType === authProvider.serviceType &&
-                userExternalAccount.serviceID === authProvider.serviceID
+                userExternalAccount.serviceID === authProvider.serviceID &&
+                userExternalAccount.clientID === authProvider.clientID
         ) !== undefined
     )
 }

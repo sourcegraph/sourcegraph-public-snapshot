@@ -9,6 +9,7 @@ go_library(
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/retention",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -34,6 +35,7 @@ go_test(
     srcs = ["worker_test.go"],
     embed = [":retention"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

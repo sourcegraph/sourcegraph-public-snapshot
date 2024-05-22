@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gqltest",
+    srcs = [
+        "fake_client.go",
+        "gqltest.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql/gqltest",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//dev/linearhooks:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_stretchr_testify//require",
+    ],
+)

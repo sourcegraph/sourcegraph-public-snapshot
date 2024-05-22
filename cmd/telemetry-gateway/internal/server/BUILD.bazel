@@ -10,6 +10,7 @@ go_library(
         "server.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/telemetry-gateway:__subpackages__"],
     deps = [
         "//cmd/telemetry-gateway/internal/events",
@@ -37,6 +38,7 @@ go_test(
         "publish_events_test.go",
     ],
     embed = [":server"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//cmd/telemetry-gateway/internal/events",
         "//lib/errors",

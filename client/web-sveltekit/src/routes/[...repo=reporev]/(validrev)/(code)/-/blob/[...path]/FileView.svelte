@@ -17,10 +17,11 @@
     import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
-    import { settings } from '$lib/stores'
+    import { isLightTheme, settings } from '$lib/stores'
     import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -32,9 +33,9 @@
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
 
-    export let embedded: boolean
-    export let disableCodeIntel: boolean
     export let data: Extract<PageData, { type: 'FileView' }>
+    export let embedded: boolean = false
+    export let disableCodeIntel: boolean = false
 
     export function capture(): ScrollSnapshot | null {
         return cmblob?.getScrollSnapshot() ?? null
@@ -139,7 +140,7 @@
 </script>
 
 {#if embedded}
-    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision} hideSidebarToggle>
+    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <slot name="actions" />
@@ -233,9 +234,16 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <div class={`rich ${markdownStyles.markdown}`}>
-            {@html blob.richHTML}
-        </div>
+        <!-- key on the HTML content so renderMermaid gets re-run -->
+        {#key blob.richHTML}
+            <!-- jupyter is a global style -->
+            <div
+                use:renderMermaid={{ selector: 'pre:has(code.language-mermaid)', isLightTheme: $isLightTheme }}
+                class={`rich jupyter ${markdownStyles.markdown}`}
+            >
+                {@html blob.richHTML}
+            </div>
+        {/key}
     {:else if blob}
         <!--
             This ensures that a new CodeMirror instance is created when the file changes.
@@ -279,7 +287,6 @@
         overflow: auto;
         flex: 1;
         background-color: var(--code-bg);
-        padding: 0.25rem 0;
 
         &.center {
             display: flex;
@@ -293,14 +300,13 @@
         display: flex;
         align-items: baseline;
         gap: 1rem;
-        padding: 0.75rem 1rem;
+        padding: 0.5rem;
         color: var(--text-muted);
-        background-color: var(--code-bg);
-        box-shadow: var(--blame-header-shadow);
+        background-color: var(--color-bg-1);
+        box-shadow: var(--fileheader-shadow);
 
         // Allows for its shadow to cascade over the code panel
         z-index: 1;
-        border-top: 1px solid var(--border-color);
     }
 
     .revision-info {

@@ -8,6 +8,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/basestore",
@@ -26,7 +27,10 @@ go_test(
         "store_test.go",
     ],
     embed = [":jobstore"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

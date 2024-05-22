@@ -4,6 +4,7 @@ go_library(
     name = "download_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/download",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
@@ -18,5 +19,6 @@ go_library(
 go_binary(
     name = "download",
     embed = [":download_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

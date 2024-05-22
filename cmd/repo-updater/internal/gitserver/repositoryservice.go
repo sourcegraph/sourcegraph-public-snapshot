@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 )
 
 type RepositoryServiceClient interface {
@@ -27,7 +28,7 @@ func (c *repositoryServiceClient) DeleteRepository(ctx context.Context, repo api
 	}
 	_, err = cc.DeleteRepository(ctx, &proto.DeleteRepositoryRequest{
 		RepoName: string(repo),
-	})
+	}, defaults.RetryPolicy...)
 	return err
 }
 
@@ -38,7 +39,7 @@ func (c *repositoryServiceClient) FetchRepository(ctx context.Context, repo api.
 	}
 	resp, err := cc.FetchRepository(ctx, &proto.FetchRepositoryRequest{
 		RepoName: string(repo),
-	})
+	}, defaults.RetryPolicy...)
 	if err != nil {
 		return lastFetched, lastChanged, err
 	}

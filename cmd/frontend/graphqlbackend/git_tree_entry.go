@@ -431,12 +431,25 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context) (bool, error) 
 		return false, nil
 	}
 
-	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	it, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
+	defer it.Close()
 
-	return len(entries) == 1, nil
+	// Read the entry for the file we are interested in.
+	_, err = it.Next()
+	if err == nil {
+		return false, err
+	}
+
+	// Read one more entry. If that fails with io.EOF then we know we have a single child.
+	_, err = it.Next()
+	if err != io.EOF {
+		return false, err
+	}
+
+	return err == io.EOF, nil
 }
 
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (resolverstubs.GitBlobLSIFDataResolver, error) {

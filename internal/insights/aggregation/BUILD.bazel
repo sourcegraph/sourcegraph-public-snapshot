@@ -9,6 +9,7 @@ go_library(
         "limited_aggregator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/aggregation",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -36,6 +37,7 @@ go_test(
         "limited_aggregator_test.go",
     ],
     embed = [":aggregation"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/database",

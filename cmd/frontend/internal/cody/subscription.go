@@ -41,9 +41,24 @@ type UserSubscription struct {
 	CancelAtPeriodEnd bool
 }
 
+// shouldHaveCodyPro returns whether or not the user should have access to Cody Pro functionality
+// based on their subscription status.
+func shouldHaveCodyPro(status ssc.SubscriptionStatus) bool {
+	switch status {
+	case ssc.SubscriptionStatusActive, ssc.SubscriptionStatusPastDue, ssc.SubscriptionStatusTrialing:
+		// Active is the regular state for a valid subscription.
+		// PastDue is when there is some form of payment problem, but is within the grace period before
+		//     the subscription gets canceled.
+		// Trialing is when the user is on a free trial of Cody Pro.
+		return true
+	default:
+		return false
+	}
+}
+
 // consolidateSubscriptionDetails handles the raw subscription data from SSC.
 func consolidateSubscriptionDetails(ctx context.Context, user types.User, subscription *ssc.Subscription) (*UserSubscription, error) {
-	if subscription != nil && (subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue) {
+	if subscription != nil && shouldHaveCodyPro(subscription.Status) {
 		currentPeriodStart, err := time.Parse(time.RFC3339, subscription.CurrentPeriodStart)
 		if err != nil {
 			return nil, err
@@ -141,7 +156,8 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 		if subscription != nil {
 			subscriptions = append(subscriptions, subscription)
 
-			if subscription.Status == ssc.SubscriptionStatusActive || subscription.Status == ssc.SubscriptionStatusPastDue {
+			// Pick the first one we find in a good state, enabling the user to access Cody Pro features.
+			if shouldHaveCodyPro(subscription.Status) {
 				return consolidateSubscriptionDetails(ctx, user, subscription)
 			}
 		}
@@ -150,7 +166,9 @@ func SubscriptionForUser(ctx context.Context, db database.DB, user types.User) (
 	if len(subscriptions) == 0 {
 		return consolidateSubscriptionDetails(ctx, user, nil)
 	}
-
+	// If we didn't find an "working" subscription, then we just return the details
+	// of the first one we found. (For this to be stable, we require the list of external
+	// accounts to be returned from the database in a sorted order, which it is.)
 	return consolidateSubscriptionDetails(ctx, user, subscriptions[0])
 }
 

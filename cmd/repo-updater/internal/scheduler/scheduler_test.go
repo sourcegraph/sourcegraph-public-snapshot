@@ -1422,6 +1422,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 
 			contexts := make(chan context.Context, expectedRequestCount)
 			db := dbmocks.NewMockDB()
+			db.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
 			gs := gitserver.NewMockRepositoryServiceClient()
 			gs.FetchRepositoryFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (time.Time, time.Time, error) {
 				select {

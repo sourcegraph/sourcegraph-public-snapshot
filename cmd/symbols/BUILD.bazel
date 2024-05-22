@@ -8,6 +8,7 @@ go_library(
     name = "symbols_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/symbols/shared",
@@ -19,6 +20,7 @@ go_library(
 go_binary(
     name = "symbols",
     embed = [":symbols_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
 )
 
@@ -65,6 +67,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_SEARCH,
     ],
 )
 

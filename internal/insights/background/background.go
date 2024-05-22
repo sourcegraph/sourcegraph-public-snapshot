@@ -133,12 +133,12 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationCtx, "query_runner_worker")
 
 	workerStore := queryrunner.CreateDBWorkerStore(observationCtx, workerBaseStore)
-	seachQueryLimiter := limiter.SearchQueryRate()
+	searchQueryLimiter := limiter.SearchQueryRate()
 
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker"), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, seachQueryLimiter),
+		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker"), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, searchQueryLimiter),
 		queryrunner.NewResetter(ctx, logger.Scoped("queryrunner.Resetter"), workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, observationCtx, workerBaseStore),
 	}

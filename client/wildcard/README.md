@@ -12,4 +12,4 @@ The Wildcard component library is a collection of design-approved reusable compo
   - `hooks/`
     Reusable React hooks. Typically utilities or headless components
 
-See [Wildcard documentation](https://sourcegraph.com/docs/dev/background-information/web/wildcard) for more information.
+See [Wildcard documentation](https://docs-legacy.sourcegraph.com/dev/background-information/web/wildcard) for more information.

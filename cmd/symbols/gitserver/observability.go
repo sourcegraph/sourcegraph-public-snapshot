@@ -30,6 +30,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		fetchTar: op("FetchTar"),
-		gitDiff:  op("GitDiff"),
+		gitDiff:  op("ChangedFiles"),
 	}
 }

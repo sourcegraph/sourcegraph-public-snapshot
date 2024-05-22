@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -30,19 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const git = "git"
-
-var ClientMocks, emptyClientMocks struct {
-	LocalGitserver          bool
-	LocalGitCommandReposDir string
-}
-
-// ResetClientMocks clears the mock functions set on Mocks (so that subsequent
-// tests don't inadvertently use them).
-func ResetClientMocks() {
-	ClientMocks = emptyClientMocks
-}
 
 var _ Client = &clientImplementor{}
 
@@ -252,14 +240,6 @@ func (o *BlameRange) Attrs() []attribute.KeyValue {
 	}
 }
 
-type CommitLog struct {
-	AuthorEmail  string
-	AuthorName   string
-	Timestamp    time.Time
-	SHA          string
-	ChangedFiles []string
-}
-
 // ListRefsOpts are additional options passed to ListRefs.
 type ListRefsOpts struct {
 	// If true, only heads are returned. Can be combined with TagsOnly.
@@ -378,10 +358,6 @@ type Client interface {
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
-	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error)
-
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
@@ -422,7 +398,7 @@ type Client interface {
 	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (ReadDirIterator, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
@@ -439,8 +415,13 @@ type Client interface {
 	// If the specified commit does not exist, a RevisionNotFoundError is returned.
 	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
-	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+	// ChangedFiles returns the list of files that have been added, modified, or
+	// deleted in the entire repository between the two given <tree-ish> identifiers (e.g., commit, branch, tag).
+	//
+	// If base is omitted, the parent of head is used as the base.
+	//
+	// If either the base or head <tree-ish> id does not exist, a gitdomain.RevisionNotFoundError is returned.
+	ChangedFiles(ctx context.Context, repo api.RepoName, base, head string) (ChangedFilesIterator, error)
 
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
@@ -448,37 +429,10 @@ type Client interface {
 	// FirstEverCommit returns the first commit ever made to the repository.
 	FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error)
 
-	// ListDirectoryChildren fetches the list of children under the given directory
-	// names. The result is a map keyed by the directory names with the list of files
-	// under each.
-	ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
-
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
 	Diff(ctx context.Context, repo api.RepoName, opts DiffOptions) (*DiffFileIterator, error)
-
-	// CommitGraph returns the commit graph for the given repository as a mapping
-	// from a commit to its parents. If a commit is supplied, the returned graph will
-	// be rooted at the given commit. If a non-zero limit is supplied, at most that
-	// many commits will be returned.
-	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
-
-	// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-	// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-	// into component parts separately.
-	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
-
-	// CommitsUniqueToBranch returns a map from commits that exist on a particular
-	// branch in the given repository to their committer date. This set of commits is
-	// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-	// commits on {branchName} not also on the tip of the default branch. If the
-	// supplied branch name is the default branch, then this method instead returns
-	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-
-	// LsFiles returns the output of `git ls-files`.
-	LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommit returns the commit with the given commit ID, or RevisionNotFoundError if no such commit
 	// exists.
@@ -490,14 +444,6 @@ type Client interface {
 
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
-
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
-
-	// RevList makes a git rev-list call and returns up to count commits. if nextCursor
-	// is non-empty, it is used as the starting point for the next call, use it to iterate
-	// to iterate over the whole history.
-	RevList(ctx context.Context, repo api.RepoName, commit string, count int) (_ []api.CommitID, nextCursor string, err error)
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
@@ -616,66 +562,6 @@ func clientForConn(conn *grpc.ClientConn) proto.GitserverServiceClient {
 	}
 }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			c.repo.Attr(),
-			attribute.StringSlice("args", c.args[1:]),
-		},
-	})
-	done := func() {
-		cancel()
-		endObservation(1, observation.Args{})
-	}
-	defer func() {
-		if err != nil {
-			done()
-		}
-	}()
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	client, err := c.execer.ClientForRepo(ctx, c.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
-		Args:      stringsToByteSlices(c.args[1:]),
-		NoTimeout: c.noTimeout,
-	}
-
-	stream, err := client.Exec(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	r := streamio.NewReader(func() ([]byte, error) {
-		msg, err := stream.Recv()
-		if err != nil {
-			return nil, err
-		}
-		return msg.GetData(), nil
-	})
-
-	return &readCloseWrapper{Reader: r, closeFn: done}, nil
-}
-
-type readCloseWrapper struct {
-	io.Reader
-	closeFn func()
-}
-
-func (r *readCloseWrapper) Close() error {
-	r.closeFn()
-	return nil
-}
-
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -716,23 +602,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		default:
 			return false, errors.Newf("unknown message type %T", m)
 		}
-	}
-}
-
-func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
-	if ClientMocks.LocalGitserver {
-		cmd := NewLocalGitCommand(repo, arg...)
-		if ClientMocks.LocalGitCommandReposDir != "" {
-			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
-		}
-		return cmd
-	}
-	return &RemoteGitCommand{
-		repo:   repo,
-		execer: c.clientSource,
-		args:   append([]string{git}, arg...),
-		execOp: c.operations.exec,
-		scope:  c.scope,
 	}
 }
 
@@ -1201,3 +1070,118 @@ func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost 
 
 	return list, nil
 }
+
+// ReadDirIterator is an iterator for retrieving the file descriptors of files/dirs
+// in a Git repository.
+//
+// The caller must ensure that they call Close() when the iterator is no longer
+// needed to release any associated resources.
+type ReadDirIterator interface {
+	// Next returns the next file descriptor.
+	//
+	// If there are no more files, Next returns an io.EOF error.
+	// If an error occurs during iteration, Next returns the error that occurred.
+	Next() (fs.FileInfo, error)
+
+	// Close closes the iterator and releases any associated resources.
+	//
+	// It is important to call Close when the iterator is no longer needed to avoid resource leaks.
+	// After calling Close, any subsequent calls to Next will return an io.EOF error.
+	Close()
+}
+
+// ChangedFilesIterator is an iterator for retrieving the status of changed files in a Git repository.
+// It allows iterating over the changed files and retrieving their paths and statuses.
+//
+// The caller must ensure that they call Close() when the iterator is no longer needed to release any associated resources.
+type ChangedFilesIterator interface {
+	// Next returns the next changed file's path and status.
+	//
+	// If there are no more changed files, Next returns an io.EOF error.
+	// If an error occurs during iteration, Next returns the error that occurred.
+	Next() (gitdomain.PathStatus, error)
+
+	// Close closes the iterator and releases any associated resources.
+	//
+	// It is important to call Close when the iterator is no longer needed to avoid resource leaks.
+	// After calling Close, any subsequent calls to Next will return an io.EOF error.
+	Close()
+}
+
+// NewChangedFilesIteratorFromSlice returns a new ChangedFilesIterator that iterates over the given slice of changed files (in order),
+// which is useful for testing.
+func NewChangedFilesIteratorFromSlice(files []gitdomain.PathStatus) ChangedFilesIterator {
+	return &changedFilesSliceIterator{files: files}
+}
+
+type changedFilesSliceIterator struct {
+	mu     sync.Mutex
+	files  []gitdomain.PathStatus
+	closed bool
+}
+
+func (c *changedFilesSliceIterator) Next() (gitdomain.PathStatus, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return gitdomain.PathStatus{}, io.EOF
+	}
+
+	if len(c.files) == 0 {
+		return gitdomain.PathStatus{}, io.EOF
+	}
+
+	file := c.files[0]
+	c.files = c.files[1:]
+
+	return file, nil
+}
+
+func (c *changedFilesSliceIterator) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.closed = true
+}
+
+var _ ChangedFilesIterator = &changedFilesSliceIterator{}
+
+// NewReadDirIteratorFromSlice returns a new ReadDirIterator that iterates over
+// the given slice which is useful for testing.
+func NewReadDirIteratorFromSlice(fds []fs.FileInfo) ReadDirIterator {
+	return &readDirSliceIterator{fds: fds}
+}
+
+type readDirSliceIterator struct {
+	mu     sync.Mutex
+	fds    []fs.FileInfo
+	closed bool
+}
+
+func (c *readDirSliceIterator) Next() (fs.FileInfo, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return nil, io.EOF
+	}
+
+	if len(c.fds) == 0 {
+		return nil, io.EOF
+	}
+
+	fd := c.fds[0]
+	c.fds = c.fds[1:]
+
+	return fd, nil
+}
+
+func (c *readDirSliceIterator) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.closed = true
+}
+
+var _ ReadDirIterator = &readDirSliceIterator{}

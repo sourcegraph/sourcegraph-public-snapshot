@@ -1,6 +1,6 @@
 // Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
 //
-// To learn more, refer to "How to add observability": https://sourcegraph.com/docs/dev/how-to/add_observability
+// To learn more, refer to "How to add observability": https://docs-legacy.sourcegraph.com/dev/how-to/add_observability
 package observation
 
 import (
@@ -188,6 +188,13 @@ func (e *ErrCollector) Error() string {
 		return ""
 	}
 	return e.errs.Error()
+}
+
+func (e *ErrCollector) Unwrap() error {
+	// ErrCollector wraps collected errors, for compatibility with errors.HasType,
+	// errors.Is etc it has to implement Unwrap to return the inner errors the
+	// collector stores.
+	return e.errs
 }
 
 // Args configures the observation behavior of an invocation of an operation.

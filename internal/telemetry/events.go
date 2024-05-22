@@ -16,12 +16,6 @@ type eventFeature string
 const (
 	// FeatureExample is a value for testing - do not use.
 	FeatureExample eventFeature = "exampleFeature"
-
-	// FeatureSignIn, FeatureSignOut, and FeatureSignUp are added here as telemetry
-	// examples - most callsites can directly provide the relevant feature.
-	FeatureSignIn  eventFeature = "signIn"
-	FeatureSignOut eventFeature = "signOut"
-	FeatureSignUp  eventFeature = "signUp"
 )
 
 // eventAction defines the action associated with an event. Values should

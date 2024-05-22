@@ -4,6 +4,7 @@ go_library(
     name = "cloudrun",
     srcs = ["cloudrun.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/cloudrun",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//dev/managedservicesplatform:__subpackages__",
         "//dev/sg/msp:__pkg__",
@@ -36,6 +37,8 @@ go_library(
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiamcustomrole",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiammember",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//pubsubsubscription",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//pubsubtopic",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//serviceaccountiammember",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//storagebucket",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//storagebucketiammember",

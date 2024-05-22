@@ -16,6 +16,7 @@ go_library(
         "workspace.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/util",
@@ -37,6 +38,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":workspace"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/util",
         "//cmd/executor/internal/worker/cmdlogger",

@@ -4,6 +4,7 @@ go_library(
     name = "nolint",
     srcs = ["nolint.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/nolint",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "@co_honnef_go_tools//analysis/report",

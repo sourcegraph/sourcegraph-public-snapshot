@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -97,7 +98,7 @@ func newCompletionsHandler(
 		// To ensure Cody clients respect these restrictions, we enforce the minimum supported client version.
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
-			if err := checkClientCodyIgnoreCompatibility(r); err != nil {
+			if err := checkClientCodyIgnoreCompatibility(ctx, db, r); err != nil {
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
@@ -468,7 +469,7 @@ func (e *codyIgnoreCompatibilityError) Error() string {
 // checkClientCodyIgnoreCompatibility checks if the client version respects Cody context filters (aka Cody Ignore) defined in the site config.
 // A non-nil codyIgnoreCompatibilityError implies that the HTTP request should be rejected with the error text and code from the returned error.
 // Error text is safe to be surfaced to end user.
-func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilityError {
+func checkClientCodyIgnoreCompatibility(ctx context.Context, db database.DB, r *http.Request) *codyIgnoreCompatibilityError {
 	// If Cody context filters are not defined on the instance, we do not restrict client version.
 	// Because the site hasn't configured Cody Ignore, no need to enforce it.
 	if conf.SiteConfig().CodyContextFilters == nil {
@@ -483,6 +484,17 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilit
 		}
 	}
 
+	// Intended for development use only.
+	// TODO: remove after `CodyContextFilters` support is added to the IDE clients.
+	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "cody-context-filters-clients-test-mode")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return &codyIgnoreCompatibilityError{
+			reason:     "Failed to get feature flag value.",
+			statusCode: http.StatusInternalServerError,
+		}
+	}
+	isClientsTestMode := flag != nil && flag.Bool.Value
+
 	// clientVersionConstraint defines the minimum client version required to support Cody Ignore.
 	type clientVersionConstraint struct {
 		client     types.CodyClientName
@@ -495,8 +507,16 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilit
 		return nil
 	case types.CodyClientVscode:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 1.20.0"}
+		if isClientsTestMode {
+			// set the constraint to a lower pre-release version to enable testing
+			cvc.constraint = ">= 1.16.0-0"
+		}
 	case types.CodyClientJetbrains:
 		cvc = clientVersionConstraint{client: clientName, constraint: ">= 6.0.0"}
+		if isClientsTestMode {
+			// set the constraint to a lower pre-release version to enable testing
+			cvc.constraint = ">= 5.5.8-0"
+		}
 	default:
 		return &codyIgnoreCompatibilityError{
 			reason:     fmt.Sprintf("please use one of the supported clients: %s, %s, %s.", types.CodyClientVscode, types.CodyClientJetbrains, types.CodyClientWeb),
@@ -531,7 +551,7 @@ func checkClientCodyIgnoreCompatibility(r *http.Request) *codyIgnoreCompatibilit
 	ok := c.Check(v)
 	if !ok {
 		return &codyIgnoreCompatibilityError{
-			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q", cvc.client, clientVersion, cvc.constraint),
+			reason:     fmt.Sprintf("Cody for %s version %q doesn't match version constraint %q. Please upgrade your client.", cvc.client, clientVersion, cvc.constraint),
 			statusCode: http.StatusNotAcceptable,
 		}
 	}

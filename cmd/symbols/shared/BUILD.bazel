@@ -10,6 +10,7 @@ go_library(
         "sqlite.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/shared",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/symbols/fetcher",

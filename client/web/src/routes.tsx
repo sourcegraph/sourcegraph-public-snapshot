@@ -5,6 +5,7 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { isEmbeddedCodyProUIEnabled } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
@@ -65,9 +66,14 @@ const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodyManageTeamPage = lazyComponent(() => import('./cody/team/CodyManageTeamPage'), 'CodyManageTeamPage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
+)
+const NewCodyProSubscriptionPage = lazyComponent(
+    () => import('./cody/management/subscription/new/NewCodyProSubscriptionPage'),
+    'NewCodyProSubscriptionPage'
 )
 const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
@@ -96,7 +102,7 @@ const PassThroughToServer: React.FC = () => {
 export const routes: RouteObject[] = [
     {
         path: PageRoutes.GetCody,
-        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} />} />,
     },
     {
         path: PageRoutes.PostSignUp,
@@ -277,7 +283,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.Teams,
-        element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <TeamsArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />}
+            />
+        ),
     },
     {
         path: PageRoutes.Organizations,
@@ -416,6 +426,35 @@ export const routes: RouteObject[] = [
                     <CodyManagementPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyManageTeam,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodyManageTeamPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyNewProSubscription,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <NewCodyProSubscriptionPage
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
             />
         ),
     },

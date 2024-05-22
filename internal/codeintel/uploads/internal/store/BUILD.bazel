@@ -19,8 +19,10 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
         "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
@@ -63,10 +65,13 @@ go_test(
     ],
     embed = [":store"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],
     deps = [
+        "//internal/api",
+        "//internal/byteutils",
         "//internal/codeintel/uploads/internal/commitgraph",
         "//internal/codeintel/uploads/shared",
         "//internal/conf",

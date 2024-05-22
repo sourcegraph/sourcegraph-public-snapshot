@@ -12,6 +12,7 @@ go_library(
         "validate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/scaletesting/syntheticgithubdata",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/output",
@@ -25,5 +26,6 @@ go_library(
 go_binary(
     name = "syntheticgithubdata",
     embed = [":syntheticgithubdata_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

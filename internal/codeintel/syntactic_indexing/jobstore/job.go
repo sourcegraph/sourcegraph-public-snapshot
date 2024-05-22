@@ -21,7 +21,7 @@ const (
 // record have a special meaning assigned to them by
 // the queries dbworker performs. You can read more
 // about the different fields and what they do here:
-// https://sourcegraph.com/docs/dev/background-information/workers#database-backed-stores
+// https://docs-legacy.sourcegraph.com/dev/background-information/workers#database-backed-stores
 type SyntacticIndexingJob struct {
 	ID             int         `json:"id"`
 	State          recordState `json:"state"`

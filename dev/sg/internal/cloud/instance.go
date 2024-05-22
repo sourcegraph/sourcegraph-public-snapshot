@@ -2,11 +2,32 @@ package cloud
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+)
+
+var ErrLeaseTimeNotSet error = errors.New("lease time not set")
+
+const (
+	// EphemeralInstanceType is the instance type for ephemeral instances. An instance is considered ephemeral if it
+	// contains "ephemeral_instance": "true" in its Instance Features
+	EphemeralInstanceType = "ephemeral"
+
+	// InternalInstanceType is the instance type for internal instances. An instance is considered internal if it it is
+	// in the Dev cloud environment and does not contain "ephemeral_instance": "true" in its Instance Features
+	InternalInstanceType = "internal"
+
+	InstanceStatusUnspecified = "unspecified"
+	InstanceStatusCompleted   = "completed"
+	InstanceStatusInProgress  = "in-progress"
+	InstanceStatusFailed      = "failed"
+	InstanceStatusUnknown     = "unknown"
 )
 
 type Instance struct {
@@ -15,72 +36,231 @@ type Instance struct {
 	InstanceType string `json:"instanceType"`
 	Environment  string `json:"environment"`
 	Version      string `json:"version"`
-	Hostname     string `json:"hostname"`
+	URL          string `json:"hostname"`
 	AdminEmail   string `json:"adminEmail"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	DeletedAt time.Time `json:"deletedAt"`
+	ExpiresAt time.Time `json:"ExpiresAt"`
 
-	Project string `json:"project"`
-	Region  string `json:"region"`
-	Status  string `json:"status"`
+	Project string         `json:"project"`
+	Region  string         `json:"region"`
+	Status  InstanceStatus `json:"status"`
+	// contains various key value pairs that are specific to the instance type
+	features *InstanceFeatures
 }
 
 func (i *Instance) String() string {
-	// TODO(burmudar): use formatting spacing
+	// Protobuf returns the unix zero epoch if the time is nil, so we check for that
+	// and we also check if we do have a valid time that it is not zero
+	fmtTime := func(t time.Time) string {
+		if isUnixEpochZero(t) || t.IsZero() {
+			return "n/a"
+		}
+		return i.CreatedAt.Format(time.RFC3339)
+	}
 	return fmt.Sprintf(`ID           : %s
 Name         : %s
 InstanceType : %s
 Environment  : %s
 Version      : %s
-Hostname     : %s
+URL          : %s
 AdminEmail   : %s
 CreatedAt    : %s
+DeletetAt    : %s
+ExpiresAt    : %s
 Project      : %s
 Region       : %s
-DeletetAt    : %s
 Status       : %s
-`, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.Hostname, i.AdminEmail,
-		i.CreatedAt, i.Project, i.Region, i.DeletedAt,
-		i.Status)
+ActionURL    : %s
+Error        : %s
+`, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
+		fmtTime(i.CreatedAt), fmtTime(i.DeletedAt), fmtTime(i.ExpiresAt), i.Project, i.Region,
+		i.Status.Status, i.Status.ActionURL, i.Status.Error)
 }
-func newInstance(src *cloudapiv1.Instance) *Instance {
+
+func (i *Instance) IsEphemeral() bool {
+	return i.InstanceType == EphemeralInstanceType
+}
+
+func (i *Instance) IsInternal() bool {
+	return i.InstanceType == InternalInstanceType
+}
+
+func (i *Instance) IsExpired() bool {
+	if i.ExpiresAt.IsZero() {
+		return false
+	}
+
+	return time.Now().After(i.ExpiresAt)
+}
+
+func (i *Instance) HasStatus(status string) bool {
+	return i.Status.Status == status
+}
+
+type InstanceStatus struct {
+	Status    string `json:"status"`
+	ActionURL string `json:"actionUrl"`
+	Error     string `json:"error"`
+}
+
+type InstanceFeatures struct {
+	features map[string]string
+}
+
+func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
+	fmt.Printf("Status: %v\n", src.GetInstanceStatus())
+	fmt.Printf("Reason: %v\n", src.GetReason())
+	fmt.Printf("Status: %v\n", src.GetInstanceStatus())
+	fmt.Printf("Reason: %v\n", src.GetReason())
+	url, reason, err := parseStatusReason(src.GetReason())
+	if err != nil {
+		return nil, err
+	}
+
+	status := InstanceStatus{
+		ActionURL: url,
+	}
+	switch src.GetInstanceStatus() {
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
+		status.Status = InstanceStatusUnspecified
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK:
+		status.Status = InstanceStatusCompleted
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING:
+		status.Status = InstanceStatusInProgress
+	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
+		status.Status = InstanceStatusFailed
+		status.Error = reason
+	default:
+		status.Status = InstanceStatusUnknown
+	}
+
+	return &status, nil
+}
+
+func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	details := src.GetInstanceDetails()
 	platform := src.GetPlatformDetails()
+	status, err := newInstanceStatus(src.GetInstanceState())
+	if err != nil {
+		return nil, err
+	}
+	features := newInstanceFeaturesFrom(details.GetInstanceFeatures())
+	expiresAt, err := features.GetEphemeralLeaseTime()
+	if err != nil && !errors.Is(err, ErrLeaseTimeNotSet) {
+		return nil, err
+	}
+
+	instanceType := InternalInstanceType
+	if features.IsEphemeralInstance() {
+		instanceType = EphemeralInstanceType
+	}
+
 	return &Instance{
 		ID:           src.GetId(),
 		Name:         details.Name,
-		InstanceType: EphemeralInstanceType,
+		InstanceType: instanceType,
 		Version:      details.Version,
-		Hostname:     pointers.DerefZero(details.Hostname),
+		URL:          pointers.DerefZero(details.Url),
 		AdminEmail:   pointers.DerefZero(details.AdminEmail),
 		CreatedAt:    platform.GetCreatedAt().AsTime(),
 		DeletedAt:    platform.GetDeletedAt().AsTime(),
+		ExpiresAt:    expiresAt,
 		Project:      platform.GetGcpProjectId(),
 		Region:       platform.GetGcpRegion(),
-		Status:       resolveStatus(src.GetInstanceState()),
-	}
+		Status:       *status,
+		features:     features,
+	}, nil
 }
 
-func resolveStatus(i *cloudapiv1.InstanceState) string {
-	switch i.InstanceStatus {
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
-		return "unspecified"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK:
-		return "ok"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING:
-		return "in progress"
-	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
-		return "failed"
-	default:
-		return "unknown"
-	}
+func isUnixEpochZero(t time.Time) bool {
+	return t.Unix() == 0
 }
 
-func toInstances(items ...*cloudapiv1.Instance) []*Instance {
+func parseStatusReason(reason string) (string, string, error) {
+	if reason == "" {
+		return "", "", nil
+	}
+	parts := strings.Split(reason, ",")
+	if len(parts) != 2 {
+		return "", "", errors.Newf("invalid status reason format: %q", reason)
+	}
+	fieldValue := func(s string) (string, error) {
+		colonIdx := strings.Index(s, ":")
+		if colonIdx == -1 {
+			return "", errors.Newf("invalid field format %q", s)
+		}
+		return s[colonIdx+1:], nil
+	}
+
+	url, err := fieldValue(parts[0])
+	if err != nil {
+		return "", "", errors.Wrapf(err, "field error at pos 0")
+	}
+	status, err := fieldValue(parts[1])
+	if err != nil {
+		return "", "", errors.Wrapf(err, "field error at pos 1")
+	}
+
+	return url, status, nil
+}
+
+func toInstances(items ...*cloudapiv1.Instance) ([]*Instance, error) {
 	converted := []*Instance{}
 	for _, item := range items {
-		converted = append(converted, newInstance(item))
+		inst, err := newInstance(item)
+		if err != nil {
+			return nil, err
+		}
+		converted = append(converted, inst)
 	}
-	return converted
+	return converted, nil
+}
+
+func newInstanceFeaturesFrom(src map[string]string) *InstanceFeatures {
+	return &InstanceFeatures{
+		features: src,
+	}
+}
+func newInstanceFeatures() *InstanceFeatures {
+	return &InstanceFeatures{features: make(map[string]string)}
+}
+
+func (f *InstanceFeatures) IsEphemeralInstance() bool {
+	v, ok := f.features["ephemeral_instance"]
+	if !ok {
+		return false
+	}
+	val, err := strconv.ParseBool(v)
+	if err != nil {
+		return false
+	}
+
+	return val
+}
+
+func (f *InstanceFeatures) SetEphemeralInstance(v bool) {
+	f.features["ephemeral"] = strconv.FormatBool(v)
+}
+
+func (f *InstanceFeatures) SetEphemeralLeaseTime(expiresAt time.Time) {
+	f.features["ephemeral_instance_lease_time"] = strconv.FormatInt(expiresAt.Unix(), 10)
+}
+
+func (f *InstanceFeatures) GetEphemeralLeaseTime() (time.Time, error) {
+	seconds, ok := f.features["ephemeral_instance_lease_time"]
+	if !ok {
+		return time.Time{}, ErrLeaseTimeNotSet
+	}
+	secondsInt, err := strconv.ParseInt(seconds, 10, 64)
+	if err != nil {
+		return time.Time{}, errors.Newf("failed to convert 'ephemeral_instance_lease_time' value %q to int64: %v", seconds, err)
+	}
+	leaseTime := time.Unix(secondsInt, 0)
+	return leaseTime, nil
+}
+
+func (f *InstanceFeatures) Value() map[string]string {
+	return f.features
 }
