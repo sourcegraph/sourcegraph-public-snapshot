@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,15 +21,12 @@ type GitserverClient interface {
 	FetchTar(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error)
 
 	// ChangedFiles returns an iterator that yields the paths that have changed between two commits.
-	ChangedFiles(context.Context, api.RepoName, api.CommitID, api.CommitID) (gitserver.ChangedFilesIterator, error)
+	ChangedFiles(context.Context, api.RepoName, string, string) (gitserver.ChangedFilesIterator, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
 	// (If you just need to check a file's existence, use Stat, not a file reader.)
 	NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error)
-
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
 
 	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
 	// onCommit function for each.
@@ -74,23 +70,19 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	return c.innerClient.ArchiveReader(ctx, repo, opts)
 }
 
-func (c *gitserverClient) ChangedFiles(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (iterator gitserver.ChangedFilesIterator, err error) {
+func (c *gitserverClient) ChangedFiles(ctx context.Context, repo api.RepoName, commitA, commitB string) (iterator gitserver.ChangedFilesIterator, err error) {
 	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commitA", string(commitA)),
-		attribute.String("commitB", string(commitB)),
+		attribute.String("commitA", commitA),
+		attribute.String("commitB", commitB),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return c.innerClient.ChangedFiles(ctx, repo, string(commitA), string(commitB))
+	return c.innerClient.ChangedFiles(ctx, repo, commitA, commitB)
 }
 
 func (c *gitserverClient) NewFileReader(ctx context.Context, repoCommitPath types.RepoCommitPath) (io.ReadCloser, error) {
 	return c.innerClient.NewFileReader(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
-}
-
-func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
 const revListPageSize = 100
@@ -143,5 +135,3 @@ func (c *gitserverClient) paginatedRevList(ctx context.Context, repo api.RepoNam
 
 	return commitIDs, nextCursor, nil
 }
-
-var NUL = []byte{0}

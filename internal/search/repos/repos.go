@@ -600,6 +600,11 @@ func (r *Resolver) filterHasCommitAfter(
 		return repoRevs, nil
 	}
 
+	timeRef, err := gitdomain.ParseGitDate(op.CommitAfter.TimeRef, time.Now)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid time ref")
+	}
+
 	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 
 	for _, repoRev := range repoRevs {
@@ -613,7 +618,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			p.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := hasCommitAfter(ctx, r.gitserver, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
+				if hasCommitAfter, err := hasCommitAfter(ctx, r.gitserver, repoRev.Repo.Name, timeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -652,7 +657,7 @@ func (r *Resolver) filterHasCommitAfter(
 
 // hasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, timeRef string, revspec string) (bool, error) {
+func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, timeRef time.Time, revspec string) (bool, error) {
 	if revspec == "" {
 		revspec = "HEAD"
 	}

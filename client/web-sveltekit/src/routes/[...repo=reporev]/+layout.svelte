@@ -9,15 +9,15 @@
         mdiTag,
         mdiDotsHorizontal,
     } from '@mdi/js'
-
     import { writable } from 'svelte/store'
-    import { page } from '$app/stores'
+
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
+    import { page } from '$app/stores'
     import { computeFit } from '$lib/dom'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
     import RepoSearchInput from './RepoSearchInput.svelte'
@@ -96,7 +96,7 @@
                 </MenuLink>
             {/each}
         </DropdownMenu>
-        <RepoSearchInput repoName={data.repoName} />
+        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
     </nav>
 </GlobalHeaderPortal>
 

@@ -109,14 +109,10 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 					Date: createdAt[commit],
 				},
 			}
-			if opts.After == "" {
+			if opts.After.IsZero() {
 				commits = append(commits, c)
 			} else {
-				after, err := time.Parse(time.RFC3339, opts.After)
-				if err != nil {
-					return nil, err
-				}
-				if !createdAt[commit].Before(after) {
+				if !createdAt[commit].Before(opts.After) {
 					commits = append(commits, c)
 				}
 			}
