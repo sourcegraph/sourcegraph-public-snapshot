@@ -12,9 +12,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,8 +23,7 @@ import (
 // EnterprisePortalScope returns the Enterprise Portal service scope for the
 // given permission and action.
 func EnterprisePortalScope(permission scopes.Permission, action scopes.Action) scopes.Scope {
-	return scopes.ToScope("enterprise_portal", // TODO use scopes.ServiceEnterprisePortal
-		permission, action)
+	return scopes.ToScope(scopes.ServiceEnterprisePortal, permission, action)
 }
 
 var tracer = otel.GetTracerProvider().Tracer("telemetry-gateway/samsm2m")
