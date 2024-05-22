@@ -280,7 +280,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
 
-	models := allowedModels(scope, true)
+	models := allowedModels(scope, subscription.ApplyProRateLimits)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
