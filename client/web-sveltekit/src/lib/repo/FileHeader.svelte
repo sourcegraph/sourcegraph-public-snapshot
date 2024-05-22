@@ -6,6 +6,7 @@
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
     const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
     const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
@@ -63,6 +64,7 @@
                 {/if}
             </span>
         {/each}
+        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     </h2>
     <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
         <slot name="actions" />
@@ -95,6 +97,14 @@
     }
 
     h2 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375em;
+        span {
+            display: flex;
+            gap: inherit;
+        }
+
         font-weight: 400;
         font-size: var(--code-font-size);
         font-family: var(--code-font-family);
@@ -118,6 +128,14 @@
 
         .last {
             color: var(--text-title);
+        }
+
+        .copy-button {
+            visibility: hidden;
+            margin-left: 0.5em;
+        }
+        &:hover .copy-button {
+            visibility: visible;
         }
     }
 
