@@ -92,6 +92,8 @@ resources:
           fsGroupChangePolicy: OnRootMismatch
           runAsGroup: 101
           runAsUser: 100
+        serviceAccount: syntect-server
+        serviceAccountName: syntect-server
         terminationGracePeriodSeconds: 30
   status: {}
 - apiVersion: v1

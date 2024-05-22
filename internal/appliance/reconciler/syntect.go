@@ -76,6 +76,7 @@ func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *config.
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
+	podTemplate.Template.Spec.ServiceAccountName = name
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = pointers.Ptr(cfg.Replicas)
