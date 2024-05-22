@@ -23,6 +23,7 @@ go_library(
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",
@@ -60,6 +61,7 @@ go_test(
     deps = [
         "//cmd/symbols/fetcher",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/database/dbtest",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

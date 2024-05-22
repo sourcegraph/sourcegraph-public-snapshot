@@ -1,5 +1,5 @@
 {
-  "checksum": "7711f7224695bdbac88df9721a590cbc57131f32c8b1be7988cd69705b3f8726",
+  "checksum": "ded68987bc3cdeee7c131497792f8d24ca36556f8f5b853fe8d315e6beca8008",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -11804,6 +11804,10 @@
             {
               "id": "criterion 0.4.0",
               "target": "criterion"
+            },
+            {
+              "id": "insta 1.34.0",
+              "target": "insta"
             }
           ],
           "selects": {}

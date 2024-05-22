@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { mdiPlusThick, mdiOpenInNew } from '@mdi/js'
+import { mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -91,19 +91,11 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                     }
                                 >
                                     Manage subscription
-                                    <Icon
-                                        svgPath={mdiOpenInNew}
-                                        inline={false}
-                                        aria-hidden={true}
-                                        height="1rem"
-                                        width="1rem"
-                                        className="ml-2"
-                                    />
                                 </Link>
                                 <Button
                                     as={Link}
                                     to="/cody/manage/subscription/new"
-                                    variant="primary"
+                                    variant="success"
                                     className="text-nowrap"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiPlusThick} /> Add seats
@@ -114,7 +106,8 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <WhiteIcon name="mdi-account-multiple-plus-gradient" />
+                            <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
+                            Manage team
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>

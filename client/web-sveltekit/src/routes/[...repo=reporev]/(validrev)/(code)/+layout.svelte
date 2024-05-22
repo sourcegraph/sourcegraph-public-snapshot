@@ -96,9 +96,9 @@
     }
 
     $: if (!!lastCommitQuery) {
-        // Reset commit history when the query observable changes. Without
-        // this we are showing the commit history of the previously selected
-        // file/folder until the new commit history is loaded.
+        // Reset last commit when the query observable changes. Without
+        // this we are showing the last commit of the previously selected
+        // file/folder until the last commit is loaded.
         lastCommit = null
     }
 
