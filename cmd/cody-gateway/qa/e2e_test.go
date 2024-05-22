@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -88,6 +89,49 @@ func Test_Embeddings_OpenAI(t *testing.T) {
 		assert.Equal(t, 1, len(response.Embeddings))
 		assert.Equal(t, model.dimensions, len(response.Embeddings[0].Data))
 		assert.Equal(t, model.firstValue, response.Embeddings[0].Data[0])
+	}
+}
+
+func Test_Finetuned_Fireworks_Completions(t *testing.T) {
+	gatewayURL, gatewayToken := parseBackendData(t)
+	t.Parallel()
+	testConfig := map[string][]string{
+		fireworks.FineTunedFIMVariant1: {""},
+		fireworks.FineTunedFIMVariant2: {"typescript", "typescriptreact", "javascript", "php", "python", "badlanguage", ""},
+		fireworks.FineTunedFIMVariant3: {""},
+		fireworks.FineTunedFIMVariant4: {"typescript", "typescriptreact", "javascript", "php", "python", "badlanguage", ""},
+	}
+	for model, lang := range testConfig {
+		t.Run(model, func(t *testing.T) {
+			for _, l := range lang {
+				t.Run(l, func(t *testing.T) {
+					u := *gatewayURL
+					req := &http.Request{URL: &u, Header: make(http.Header)}
+					req.Header.Set("X-Sourcegraph-Feature", string(codygateway.FeatureCodeCompletions))
+					req.Header.Set("Authorization", "Bearer "+gatewayToken)
+					reqBody := fmt.Sprintf(`{
+			"prompt":"def bubble_sort(arr):\n>",
+			"maxTokensToSample":30,
+			"model": "%s",
+			"temperature":0.2,
+			"topP":0.95,
+			"stream":true,
+			"languageId": "%s"
+			}`, model, l)
+					req.Method = "POST"
+					req.URL.Path = "/v1/completions/fireworks"
+					req.Body = io.NopCloser(strings.NewReader(reqBody))
+
+					resp, err := http.DefaultClient.Do(req)
+
+					assert.NoError(t, err)
+					body, err := io.ReadAll(resp.Body)
+					assert.NoError(t, err)
+					assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+					assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
+				})
+			}
+		})
 	}
 }
 

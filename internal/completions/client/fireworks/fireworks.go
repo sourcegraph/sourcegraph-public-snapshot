@@ -32,10 +32,26 @@ const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
 
-const FireworksFineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
-const FireworksFineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"
-const FireworksFineTunedFIMVariant3 = "fim-fine-tuned-model-variant-3"
-const FireworksFineTunedFIMVariant4 = "fim-fine-tuned-model-variant-4"
+const FineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
+const FineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"
+const FineTunedFIMVariant3 = "fim-fine-tuned-model-variant-3"
+const FineTunedFIMVariant4 = "fim-fine-tuned-model-variant-4"
+
+const FineTunedMixtralTypescript = "accounts/sourcegraph/models/typescript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+const FineTunedMixtralJavascript = "accounts/sourcegraph/models/javascript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+const FineTunedMixtralPhp = "accounts/sourcegraph/models/php-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+const FineTunedMixtralPython = "accounts/sourcegraph/models/python-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+const FineTunedMixtralAll = "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+
+var FineTunedMixtralModelVariants = []string{FineTunedMixtralTypescript, FineTunedMixtralJavascript, FineTunedMixtralPhp, FineTunedMixtralPython, FineTunedMixtralAll}
+
+const FineTunedLlamaTypescript = "accounts/sourcegraph/models/lang-typescript-context-fim-meta-llama-3-8b-instruct-e-1"
+const FineTunedLlamaJavascript = "accounts/sourcegraph/models/lang-javascript-context-fim-meta-llama-3-8b-instruct-e-1"
+const FineTunedLlamaPhp = "accounts/sourcegraph/models/lang-php-context-fim-meta-llama-3-8b-instruct-e-1"
+const FineTunedLlamaPython = "accounts/sourcegraph/models/lang-python-context-fim-meta-llama-3-8b-instruct-e-1"
+const FineTunedLlamaAll = "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
+
+var FineTunedLlamaModelVariants = []string{FineTunedLlamaTypescript, FineTunedLlamaJavascript, FineTunedLlamaPhp, FineTunedLlamaPython, FineTunedLlamaAll}
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
@@ -158,11 +174,11 @@ func (c *fireworksClient) Stream(
 func (c *fireworksClient) updateModelStringIfFinetunedModelId(languageId string, model string) string {
 	switch model {
 	// 1. Fine-tuned models Mixtral variant
-	case FireworksFineTunedFIMVariant1:
+	case FineTunedFIMVariant1:
 		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
 
 	// 2. Fine-tuned model Language specific mixtral variant
-	case FireworksFineTunedFIMVariant2:
+	case FineTunedFIMVariant2:
 		{
 			switch languageId {
 			case "typescript", "typescriptreact":
@@ -177,9 +193,9 @@ func (c *fireworksClient) updateModelStringIfFinetunedModelId(languageId string,
 				return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
 			}
 		}
-	case FireworksFineTunedFIMVariant3:
+	case FineTunedFIMVariant3:
 		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
-	case FireworksFineTunedFIMVariant4:
+	case FineTunedFIMVariant4:
 		{
 			switch languageId {
 			case "typescript", "typescriptreact":
