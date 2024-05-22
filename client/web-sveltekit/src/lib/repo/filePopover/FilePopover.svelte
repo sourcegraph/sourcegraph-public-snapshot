@@ -64,7 +64,7 @@
     <div class="repo-and-path section mono">
         <small>
             {displayRepoName(repoName).replace('/', ' / ')}
-            {#if dirNameBreadcrumbs}·{/if}
+            {#if dirNameBreadcrumbs.length}·{/if}
             {#each dirNameBreadcrumbs as [name, href], i}
                 {' '}
                 <span>
