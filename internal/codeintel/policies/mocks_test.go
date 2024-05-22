@@ -10,7 +10,7 @@ import (
 	"context"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 )
 
