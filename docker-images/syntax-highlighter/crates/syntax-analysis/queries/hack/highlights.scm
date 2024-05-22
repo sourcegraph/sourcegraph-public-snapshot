@@ -3,8 +3,6 @@
 ((variable) @variable.builtin
   (#eq? @variable.builtin "$this"))
 
-(braced_expression) @none
-
 [
   (comment)
   (xhp_comment)
@@ -79,7 +77,6 @@
   (inout_modifier)
 ] @keyword.modifier
 
-(shape_type_specifier (open_modifier)) @type.builtin
 
 [
   "shape"
@@ -96,6 +93,9 @@
   "dynamic"
   "noreturn"
 ] @type.builtin
+
+
+(shape_type_specifier (open_modifier)) @type.builtin
 
 (null) @constant.builtin
 
@@ -388,7 +388,10 @@
   (xhp_close)
 ] @tag
 
+
 (type_specifier (qualified_identifier (identifier) @type))
 (type_specifier) @type
 
 (variable) @variable
+
+(braced_expression) @none
