@@ -13,7 +13,7 @@ import {
 import { type Appearance, loadStripe, type StripeCardElementOptions } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
-import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import type { Subscription } from '../../api/teamSubscriptions'
 
@@ -39,10 +39,61 @@ const noop = (): void => {}
 export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
     <Elements stripe={stripePromise} options={{ appearance }}>
         <Grid columnCount={2} spacing={0} className={styles.grid}>
-            <PaymentMethod subscription={subscription} className={styles.gridItem} onChange={noop} />
-            <BillingAddress subscription={subscription} className={styles.gridItem} onChange={noop} />
+            <div className={styles.gridItem}>
+                <PaymentMethod subscription={subscription} onChange={noop} />
+            </div>
+            <div className={styles.gridItem}>
+                <BillingAddress subscription={subscription} onChange={noop} />
+            </div>
         </Grid>
     </Elements>
+)
+
+const PaymentMethod: React.FC<{
+    subscription: Subscription
+    onChange: () => unknown
+}> = ({ subscription: { paymentMethod }, onChange }) => {
+    const [isEditMode, setIsEditMode] = useState(false)
+
+    if (!paymentMethod) {
+        return <PaymentMethodMissing onAddButtonClick={() => setIsEditMode(true)} />
+    }
+
+    if (isEditMode) {
+        return <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
+    }
+
+    return <ActivePaymentMethod paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
+}
+
+const PaymentMethodMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
+    <div className={styles.creditCardTitle}>
+        <H3>No payment method is available</H3>
+        <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onAddButtonClick}>
+            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
+        </Button>
+    </div>
+)
+
+const ActivePaymentMethod: React.FC<
+    Required<Pick<Subscription, 'paymentMethod'>> & { onEditButtonClick: () => void }
+> = props => (
+    <>
+        <div className={styles.creditCardTitle}>
+            <H3>Active credit card</H3>
+            <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onEditButtonClick}>
+                <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
+            </Button>
+        </div>
+        <div className={styles.creditCardContent}>
+            <Text as="span" className={classNames('text-muted', styles.creditCardNumber)}>
+                <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod.last4}
+            </Text>
+            <Text as="span" className="text-muted">
+                Expires {props.paymentMethod.expMonth}/{props.paymentMethod.expYear}
+            </Text>
+        </div>
+    </>
 )
 
 const cardElementOptions: StripeCardElementOptions = {
@@ -59,86 +110,7 @@ const cardElementOptions: StripeCardElementOptions = {
     },
 }
 
-const PaymentMethod: React.FC<{
-    subscription: Subscription
-    className?: string
-    onChange: () => unknown
-}> = ({ subscription: { paymentMethod }, className, onChange }) => {
-    const [isEditMode, setIsEditMode] = useState(false)
-
-    // // It shouldn't be possible to have a subscription without a payment method.
-    // // But this can still happen in some situations.
-    // //
-    // // For the blank slate experience, we just have a button that toggles the
-    // // "editing" state. (After which point, everything will work just like
-    // // the "add new payment method" scenario.
-    // if (!subscription.paymentMethod && !isEditMode) {
-    //     return (
-    //         <>
-    //             <p>No payment method is available.</p>
-    //             <div className="flex justify-end mt-6">
-    //                 <button
-    //                     type="button"
-    //                     className="bg-blue-600 text-white hover:bg-blue-700 py-2 px-4 rounded inline-flex items-center justify-center"
-    //                     onClick={() => {
-    //                         setEditing(true)
-    //                     }}
-    //                 >
-    //                     Add
-    //                 </button>
-    //             </div>
-    //         </>
-    //     )
-    // }
-
-    return (
-        <div className={className}>
-            {paymentMethod ? (
-                isEditMode ? (
-                    <CreditCardForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
-                ) : (
-                    <ActiveCreditCard paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
-                )
-            ) : (
-                <CreditCardMissing onAddButtonClick={() => setIsEditMode(true)} />
-            )}
-        </div>
-    )
-}
-
-const CreditCardMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
-    <div className={styles.creditCardTitle}>
-        <H3>No payment method is available</H3>
-        <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onAddButtonClick}>
-            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
-        </Button>
-    </div>
-)
-
-const ActiveCreditCard: React.FC<{
-    paymentMethod: Subscription['paymentMethod']
-    onEditButtonClick: () => void
-}> = props => (
-    <>
-        <div className={styles.creditCardTitle}>
-            <H3>Active credit card</H3>
-            <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onEditButtonClick}>
-                <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
-            </Button>
-        </div>
-        <div className={styles.creditCardContent}>
-            <Text as="span" className={classNames('text-muted', styles.creditCardNumber)}>
-                <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod?.last4}
-            </Text>
-            <Text as="span" className="text-muted">
-                Expires {props.paymentMethod?.expMonth.toString().padStart(2, '0')}/
-                {props.paymentMethod?.expYear.toString().slice(-2)}
-            </Text>
-        </div>
-    </>
-)
-
-const CreditCardForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = props => {
+const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = props => {
     const stripe = useStripe()
     const elements = useElements()
 
@@ -227,9 +199,8 @@ const CreditCardForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = 
 
 const BillingAddress: React.FC<{
     subscription: Subscription
-    className?: string
     onChange: () => unknown
-}> = ({ subscription, className, onChange }) => {
+}> = ({ subscription, onChange }) => {
     const stripe = useStripe()
     const elements = useElements()
     const [editing, setEditing] = useState(false)
@@ -330,7 +301,7 @@ const BillingAddress: React.FC<{
     )
 
     return (
-        <div className={className}>
+        <div>
             {!editing && (
                 <a
                     className="float-right cursor-pointer inline-flex items-center"
