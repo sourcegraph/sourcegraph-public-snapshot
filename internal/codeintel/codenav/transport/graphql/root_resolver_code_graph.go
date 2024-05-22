@@ -116,7 +116,11 @@ func (o *occurrenceConnectionStore) ComputeNodes(ctx context.Context, pagination
 }
 
 func (o *occurrenceConnectionStore) MarshalCursor(n resolverstubs.SCIPOccurrenceResolver, _ database.OrderBy) (*string, error) {
-	buf, err := json.Marshal(n.(scipOccurrence).cursor)
+	return marshalCursor(n.(scipOccurrence).cursor)
+}
+
+func marshalCursor(c cursor) (*string, error) {
+	buf, err := json.Marshal(c)
 	if err != nil {
 		return nil, err
 	}

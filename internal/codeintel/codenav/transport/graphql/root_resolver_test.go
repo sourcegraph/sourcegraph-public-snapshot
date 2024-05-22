@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestRanges(t *testing.T) {
@@ -437,7 +438,7 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 	}
 }
 
-func TestOccurrences(t *testing.T) {
+func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	codeNavSvc := NewStrictMockCodeNavService()
 	index := unwrap(repro.Index("", "testpkg", sampleSourceFiles(), nil))(t)
 	errUploadNotFound := errors.New("upload not found")
@@ -455,11 +456,39 @@ func TestOccurrences(t *testing.T) {
 		return nil, errDocumentNotFound
 	})
 
-	resolver := newCodeGraphDataResolver(
+	return newCodeGraphDataResolver(
 		codeNavSvc, testUpload,
 		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: "locals.repro"},
 		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
+}
 
+func TestOccurrences_BadArgs(t *testing.T) {
+	resolver := makeTestResolver(t)
+	bgCtx := context.Background()
+
+	t.Run("fetching with undeserializable 'after'", func(t *testing.T) {
+		badArgs := resolverstubs.OccurrencesArgs{After: pointers.Ptr("not-a-cursor")}
+		badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		_, err := occs.Nodes(bgCtx)
+		require.Error(t, err)
+	})
+
+	t.Run("fetching with out-of-bounds 'after'", func(t *testing.T) {
+		oobCursor := unwrap(marshalCursor(cursor{100}))(t)
+		badArgs := resolverstubs.OccurrencesArgs{After: oobCursor}
+		badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		nodes, err := occs.Nodes(bgCtx)
+		// TODO: I think this should be an out-of-bounds error, Slack discussion:
+		// https://sourcegraph.slack.com/archives/C02UC4WUX1Q/p1716378462737019
+		require.NoError(t, err)
+		require.Equal(t, 0, len(nodes))
+	})
+}
+
+func TestOccurrences_Pages(t *testing.T) {
+	resolver := makeTestResolver(t)
 	bgCtx := context.Background()
 
 	type TestCase struct {
