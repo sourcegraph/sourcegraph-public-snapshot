@@ -253,7 +253,10 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
 			// Finetuned models
-			fireworks.Mixtral8x7bFineTunedModel,
+			fireworks.FireworksFineTunedFIMVariant1,
+			fireworks.FireworksFineTunedFIMVariant2,
+			fireworks.FireworksFineTunedFIMVariant3,
+			fireworks.FireworksFineTunedFIMVariant4,
 		}, ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {

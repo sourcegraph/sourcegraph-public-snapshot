@@ -32,7 +32,10 @@ const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
 
-const Mixtral8x7bFineTunedModel = "accounts/sourcegraph/models/codecompletion-mixtral-rust-152k-005e"
+const FireworksFineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
+const FireworksFineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"
+const FireworksFineTunedFIMVariant3 = "fim-fine-tuned-model-variant-3"
+const FireworksFineTunedFIMVariant4 = "fim-fine-tuned-model-variant-4"
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
@@ -152,6 +155,21 @@ func (c *fireworksClient) Stream(
 	return dec.Err()
 }
 
+func (c *fireworksClient) updateModelStringIfFinetunedModelId(model string) string {
+	switch model {
+	case FireworksFineTunedFIMVariant1:
+		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+	case FireworksFineTunedFIMVariant2:
+		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+	case FireworksFineTunedFIMVariant3:
+		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
+	case FireworksFineTunedFIMVariant4:
+		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
+	default:
+		return model
+	}
+}
+
 func (c *fireworksClient) makeRequest(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopP < 0 {
 		requestParams.TopP = 0
@@ -170,7 +188,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 		}
 
 		payload := fireworksRequest{
-			Model:       requestParams.Model,
+			Model:       c.updateModelStringIfFinetunedModelId(requestParams.Model),
 			Temperature: requestParams.Temperature,
 			TopP:        requestParams.TopP,
 			N:           1,
