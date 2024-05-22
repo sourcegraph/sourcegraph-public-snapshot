@@ -94,6 +94,14 @@
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
         gap: 0.5rem;
+
+        .copy-button {
+            visibility: hidden;
+            margin-left: 0.5em;
+        }
+        &:hover .copy-button {
+            visibility: visible;
+        }
     }
 
     h2 {
@@ -128,14 +136,6 @@
 
         .last {
             color: var(--text-title);
-        }
-
-        .copy-button {
-            visibility: hidden;
-            margin-left: 0.5em;
-        }
-        &:hover .copy-button {
-            visibility: visible;
         }
     }
 
