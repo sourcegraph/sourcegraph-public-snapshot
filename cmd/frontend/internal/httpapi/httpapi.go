@@ -240,7 +240,7 @@ func NewHandler(
 			sscBackendProxy := ssc.APIProxyHandler{
 				CodyProConfig:    conf.Get().Dotcom.CodyProConfig,
 				DB:               db,
-				Logger:           logger.Scoped("SSC Proxy"),
+				Logger:           logger.Scoped("sscProxy"),
 				URLPrefix:        "/.api/ssc/proxy",
 				SAMSOAuthContext: samsOAuthConfig,
 			}
