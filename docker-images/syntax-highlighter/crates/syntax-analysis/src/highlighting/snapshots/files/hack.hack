@@ -2,18 +2,24 @@
 use namespace HH\Lib\{C, Vec};
 use const Space\Const\C;
 use type Space\Type\T;
+use function UseNS\f;
+use T;
 
 // NOTE: Tree-sitter grammar seems to not support module
 module foo.bar.baz;
 
-// Functions
-function f(dynamic $d): void {}
-function g(arraykey $a): void {}
+namespace Hack\Example\namespace {
 
-// Shape constructor
-function foo(int $arg): shape(...){
-  return shape();
+    // Functions
+    function f(dynamic $d): void {}
+    function g(arraykey $a): void {}
+
+    // Shape constructor
+    function foo(int $arg): shape(...){
+    return shape();
+    }
 }
+
 
 /**
  * A doc comment starts with two asterisks.
