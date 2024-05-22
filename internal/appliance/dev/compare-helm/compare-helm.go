@@ -14,7 +14,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	k8syamlapi "k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/yaml"
+	k8syaml "sigs.k8s.io/yaml"
+
+	"github.com/sourcegraph/sourcegraph/internal/yaml"
 )
 
 func main() {
@@ -63,8 +65,7 @@ func main() {
 		fmt.Fprintln(sortedGoldenFile, "---")
 
 		fmt.Fprintf(sortedHelmResourceFile, "# helm: %s/%s\n", helmObj.GetKind(), helmObj.GetName())
-		helmObjBytes, err := yaml.Marshal(helmObj)
-		must(err)
+		helmObjBytes := marshalYAMLNormalized(helmObj)
 		_, err = sortedHelmResourceFile.Write(helmObjBytes)
 		must(err)
 
@@ -74,8 +75,7 @@ func main() {
 				helmObj.GetKind() == goldenObj.GetKind() {
 
 				fmt.Fprintf(sortedGoldenFile, "# golden: %s/%s\n", helmObj.GetKind(), helmObj.GetName())
-				goldenBytes, err := yaml.Marshal(goldenObj)
-				must(err)
+				goldenBytes := marshalYAMLNormalized(goldenObj)
 				_, err = sortedGoldenFile.Write(goldenBytes)
 				must(err)
 
@@ -93,8 +93,7 @@ func main() {
 	for _, unmatchedGolden := range goldenResources.Resources {
 		fmt.Fprintln(sortedGoldenFile, "---")
 		fmt.Fprintf(sortedGoldenFile, "# golden: %s/%s\n", unmatchedGolden.GetKind(), unmatchedGolden.GetName())
-		goldenBytes, err := yaml.Marshal(unmatchedGolden)
-		must(err)
+		goldenBytes := marshalYAMLNormalized(unmatchedGolden)
 		_, err = sortedGoldenFile.Write(goldenBytes)
 		must(err)
 	}
@@ -111,6 +110,19 @@ func main() {
 	diffCmd.Stdout = os.Stdout
 	diffCmd.Stderr = os.Stderr
 	must(diffCmd.Run())
+}
+
+// First, marshal a k8s object using the k8s yaml library. We have to use this
+// library because it uses jsonToYaml under the hood, and the k8s client-go
+// objects are json-tagged, not yaml-tagged. Then, convert multiline strings to
+// literals (so that large nested documents can be diffed line-by-line), and
+// normalize the indentation used (to avoid spurious whitespace diffs).
+func marshalYAMLNormalized(obj any) []byte {
+	yml, err := k8syaml.Marshal(obj)
+	must(err)
+	yml, err = yaml.ConvertYAMLStringsToMultilineLiterals(yml)
+	must(err)
+	return yml
 }
 
 func parseHelmResources(helmTemplateExtraArgs, helmRepoRoot string, components []string) []*unstructured.Unstructured {
