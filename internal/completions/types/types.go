@@ -65,7 +65,6 @@ type CompletionRequestParameters struct {
 	Model             string    `json:"model,omitempty"`
 	Stream            *bool     `json:"stream,omitempty"`
 	Logprobs          *uint8    `json:"logprobs"`
-	LanguageId        string    `json:"languageId,omitempty"`
 }
 
 // IsStream returns whether a streaming response is requested. For backwards
