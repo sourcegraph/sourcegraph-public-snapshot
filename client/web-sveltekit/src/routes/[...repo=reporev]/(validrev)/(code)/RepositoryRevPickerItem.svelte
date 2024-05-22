@@ -1,24 +1,19 @@
 <script lang="ts">
+    import { Badge } from '$lib/wildcard'
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
-    import { Badge } from '$lib/wildcard'
-
     import type { RepositoryGitRevAuthor } from './RepositoryRevPicker.gql'
 
     export let iconPath: string
     export let label: string
     export let author: RepositoryGitRevAuthor['author'] | null | undefined
-    export let isDefaultBranch = false
 </script>
 
 <span class="title">
     <slot name="title">
         <Icon svgPath={iconPath} inline />
         <Badge variant="link">{label}</Badge>
-        {#if isDefaultBranch}
-            <Badge variant="secondary" small>DEFAULT</Badge>
-        {/if}
     </slot>
 </span>
 <span class="author">
