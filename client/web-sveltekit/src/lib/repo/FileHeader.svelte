@@ -64,8 +64,8 @@
                 {/if}
             </span>
         {/each}
-        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     </h2>
+        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
         <slot name="actions" />
         {#if $$slots.actionmenu}
@@ -97,7 +97,6 @@
 
         .copy-button {
             visibility: hidden;
-            margin-left: 0.5em;
         }
         &:hover .copy-button {
             visibility: visible;
