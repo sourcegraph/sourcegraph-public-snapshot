@@ -37,12 +37,12 @@ export function EditorStep({
 
         return <Instructions onBack={onBack} onClose={onCompleted} telemetryRecorder={telemetryRecorder} />
     }
-    const handleEventLog = (id: number, editor?: IEditor): void => {
-        if (editor) {
+    const handleEventLog = (editor: IEditor, canSetEditor?: boolean): void => {
+        if (canSetEditor) {
             setEditor(editor)
         }
         telemetryRecorder.recordEvent('cody.onboarding.chooseEditor', 'select', {
-            metadata: { tier: pro ? 1 : 0, editor: id },
+            metadata: { tier: pro ? 1 : 0, editor: editor.id },
         })
     }
     const handleEventSkip = (): void => {
@@ -78,8 +78,8 @@ export function EditorStep({
                                         className={classNames('d-flex flex-column', styles.ideMainLogo)}
                                         role="button"
                                         tabIndex={0}
-                                        onKeyDown={() => handleEventLog(editor.id)}
-                                        onClick={() => handleEventLog(editor.id)}
+                                        onKeyDown={() => handleEventLog(editor)}
+                                        onClick={() => handleEventLog(editor)}
                                     >
                                         <div className="d-flex flex-row align-items-center">
                                             <div>
@@ -154,8 +154,8 @@ export function EditorStep({
                                         )}
                                         role="button"
                                         tabIndex={0}
-                                        onKeyDown={() => handleEventLog(editor.id, editor)}
-                                        onClick={() => handleEventLog(editor.id, editor)}
+                                        onKeyDown={() => handleEventLog(editor, true)}
+                                        onClick={() => handleEventLog(editor, true)}
                                     >
                                         <div className="d-flex align-items-center">
                                             <div>

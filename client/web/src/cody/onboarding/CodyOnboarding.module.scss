@@ -8,6 +8,7 @@
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 244, 244, 0.9) 100%);
         backdrop-filter: blur(7px);
     }
+
     --cody-padding-size: 1.125rem;
     --cody-border-size: 0.375rem;
     --cody-letter-spacing: -0.016rem;
@@ -106,7 +107,7 @@
 .ide-container {
     padding: 0.688rem;
     padding-right: 0;
-    border: 0.063rem solid var(--border-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--cody-border-size);
     margin-top: 1.5rem;
     width: 100%;
@@ -169,6 +170,7 @@
     @extend %release-stage-common;
     background-color: #f59f00;
 }
+
 /* Step section on instructions */
 .step {
     background: #343a4d;
@@ -215,7 +217,7 @@
     margin-bottom: 1.063rem;
 }
 .ide-border-color {
-    border-bottom: 0.063rem solid var(--border-color-2);
+    border-bottom: 1px solid var(--border-color-2);
 }
 .ide-header-alt {
     letter-spacing: var(--cody-letter-spacing) !important;
@@ -263,6 +265,7 @@
 .editor-button-container {
     padding-top: 0.125rem;
 }
+
 /* Initial welcome */
 .welcome-title {
     font-size: 2.5rem;
