@@ -895,11 +895,16 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
 	}
 
+	if completionsConfig.SmartContext == "" {
+		completionsConfig.SmartContext = "enabled"
+	}
+
 	computedConfig := &conftypes.CompletionsConfig{
 		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:                      completionsConfig.AccessToken,
 		ChatModel:                        completionsConfig.ChatModel,
 		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
+		SmartContext:                     completionsConfig.SmartContext,
 		FastChatModel:                    completionsConfig.FastChatModel,
 		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
 		CompletionModel:                  completionsConfig.CompletionModel,

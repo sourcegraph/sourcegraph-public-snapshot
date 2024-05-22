@@ -239,3 +239,15 @@ test('history panel', async ({ page, sg }) => {
     await page.getByRole('tab', { name: 'History' }).click()
     await expect(page.getByText('Test commit')).toBeHidden()
 })
+
+test('file popover', async ({ page }) => {
+    await page.goto(`/${repoName}`)
+
+    await page.locator('#sidebar-panel').getByRole('button').click()
+
+    await page.getByRole('link', { name: 'index.js' }).hover()
+    await expect(page.getByText('Last Changed')).toBeVisible()
+
+    await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
+    await expect(page.getByText('Last Changed')).toBeHidden()
+})

@@ -61,7 +61,6 @@ go_test(
         "//internal/diskcache",
         "//internal/endpoint",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
         "//internal/observation",
         "//internal/search",

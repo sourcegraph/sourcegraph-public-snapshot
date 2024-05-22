@@ -35,7 +35,6 @@ go_test(
         "//cmd/symbols/gitserver",
         "//internal/api",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/search",
         "//internal/types",

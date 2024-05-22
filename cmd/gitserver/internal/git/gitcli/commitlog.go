@@ -81,7 +81,6 @@ func buildCommitLogArgs(opt git.CommitLogOpts) ([]string, error) {
 		args = append(args, "--first-parent")
 	}
 
-	args = append(args, opt.Ranges...)
 	if opt.AllRefs {
 		args = append(args, "--all")
 	}
@@ -92,6 +91,9 @@ func buildCommitLogArgs(opt git.CommitLogOpts) ([]string, error) {
 	if opt.FollowPathRenames {
 		args = append(args, "--follow")
 	}
+
+	args = append(args, opt.Ranges...)
+
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
