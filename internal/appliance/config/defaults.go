@@ -93,6 +93,9 @@ func NewDefaultConfig() Sourcegraph {
 					Database: "sg",
 				},
 			},
+			Prometheus: PrometheusSpec{
+				StorageSize: "200Gi",
+			},
 		},
 	}
 }
@@ -112,6 +115,7 @@ var defaultImagesForVersion_5_3_9104 = map[string]string{
 	"pgsql":                     "postgres-12-alpine:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79",
 	"pgsql-exporter":            "postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0",
 	"precise-code-intel-worker": "precise-code-intel-worker:5.3.2@sha256:6142093097f5757afe772cffd131c1be54bb77335232011254733f51ffb2d6c6",
+	"prometheus":                "prometheus:5.3.2@sha256:1b5c003fb39628f79e7655ba33f9ca119ddc4be021602ede3cc1674ef99fcdad",
 	"redis-cache":               "redis-cache:5.3.2@sha256:ed79dada4d1a2bd85fb8450dffe227283ab6ae0e7ce56dc5056fbb8202d95624",
 	"redis-exporter":            "redis_exporter:5.3.2@sha256:21a9dd9214483a42b11d58bf99e4f268f44257a4f67acd436d458797a31b7786",
 	"redis-store":               "redis-store:5.3.2@sha256:0e3270a5eb293c158093f41145810eb5a154f61a74c9a896690dfdecd1b98b39",

@@ -3,6 +3,7 @@ package reconciler
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,8 @@ import (
 
 // creationTimestamp and uid need to be normalized
 var magicTime = metav1.NewTime(time.Date(2024, time.April, 19, 0, 0, 0, 0, time.UTC))
+
+var namespaceRegexp = regexp.MustCompile(`test\-appliance\-\w+`)
 
 const normalizedString = "NORMALIZED_FOR_TESTING"
 
@@ -75,10 +78,21 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}
+
+	// TODO do we have to do something weird to handle ClusterRoles and
+	// ClusterRoleBindings, since these are not namespaced?
+
 	cmaps, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range cmaps.Items {
 		obj := obj
+
+		// Find and replace all instances of the randomly-namd namespace in
+		// configmap data. Crude, but necessary for Prometheus config.
+		for file, content := range obj.Data {
+			obj.Data[file] = namespaceRegexp.ReplaceAllString(content, normalizedString)
+		}
+
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -99,6 +113,22 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	for _, obj := range pods.Items {
 		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	roles, err := suite.k8sClient.RbacV1().Roles(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range roles.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "Role"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	roleBindings, err := suite.k8sClient.RbacV1().RoleBindings(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range roleBindings.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "RoleBinding"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}

@@ -7,7 +7,8 @@ spec:
   codeInsights:
     disabled: true
 
-  codeIntel: {}
+  codeIntel:
+    disabled: true
 
   frontend:
     disabled: true
@@ -33,9 +34,6 @@ spec:
   redisCache:
     disabled: true
 
-  redisExporter:
-    disabled: true
-
   redisStore:
     disabled: true
 
@@ -55,4 +53,4 @@ spec:
     disabled: true
 
   prometheus:
-    disabled: true
+    storageSize: 123Gi
