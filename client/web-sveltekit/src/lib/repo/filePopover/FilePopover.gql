@@ -2,10 +2,10 @@ query FileOrDirPopoverQuery($repoName: String!, $revision: String!, $filePath: S
     repository(name: $repoName) {
         commit(rev: $revision) {
             path(path: $filePath) {
-                ...on GitBlob {
+                ... on GitBlob {
                     ...FilePopoverFragment
                 }
-                ...on GitTree {
+                ... on GitTree {
                     ...DirPopoverFragment
                 }
             }
@@ -49,7 +49,7 @@ fragment DirPopoverFragment on GitTree {
     }
 }
 
-fragment FilePopoverLastCommitFragment  on GitCommit {
+fragment FilePopoverLastCommitFragment on GitCommit {
     abbreviatedOID
     oid
     subject
