@@ -172,10 +172,14 @@ func (r LIFOStopRoutine) Stop(ctx context.Context) error {
 	return stopErr
 }
 
-// NoopRoutine does nothing for start or stop.
-func NoopRoutine() Routine {
+// NoopRoutine return a background routine that does nothing for start or stop.
+// If the name is empty, it will default to "noop".
+func NoopRoutine(name string) Routine {
+	if name == "" {
+		name = "noop"
+	}
 	return CallbackRoutine{
-		NameFunc: func() string { return "noop" },
+		NameFunc: func() string { return name },
 	}
 }
 
