@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -125,7 +126,11 @@ func exitAfterSignals(signals <-chan os.Signal, numSignals int) {
 type CombinedRoutine []Routine
 
 func (rs CombinedRoutine) Name() string {
-	return "combined"
+	names := make([]string, 0, len(rs))
+	for _, r := range rs {
+		names = append(names, r.Name())
+	}
+	return fmt.Sprintf("combined%q", names) // [a b c] -> combined["one" "two" "three"]
 }
 
 // Start starts all routines, it does not wait for the routines to finish

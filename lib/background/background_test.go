@@ -75,6 +75,15 @@ func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
 	}
 }
 
+func TestCombinedRoutine_Name(t *testing.T) {
+	r1 := NewMockRoutine()
+	r1.NameFunc.SetDefaultReturn("r1")
+	r2 := NewMockRoutine()
+	r2.NameFunc.SetDefaultReturn("r2")
+	rs := CombinedRoutine{r1, r2}
+	assert.Equal(t, `combined["r1" "r2"]`, rs.Name())
+}
+
 func TestCombinedRoutines(t *testing.T) {
 	t.Run("successful stop", func(t *testing.T) {
 		r1 := NewMockRoutine()
