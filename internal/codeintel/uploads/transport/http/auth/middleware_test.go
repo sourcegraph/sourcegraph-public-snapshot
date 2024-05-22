@@ -18,6 +18,7 @@ import (
 func TestUploadAuthMiddleware(t *testing.T) {
 	type testCase struct {
 		description        string
+		isLoggedIn         bool
 		isSiteAdmin        bool
 		lsifEnforceAuth    bool
 		authzForSiteAdmin  bool
@@ -41,7 +42,17 @@ func TestUploadAuthMiddleware(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			"conf.lsifEnforceAuth = false",
+			"!isLoggedIn",
+			false,
+			false,
+			false,
+			false,
+			true,
+			http.StatusUnauthorized,
+		},
+		{
+			"isLoggedIn && !conf.lsifEnforceAuth",
+			true,
 			false,
 			false,
 			false,
@@ -49,7 +60,8 @@ func TestUploadAuthMiddleware(t *testing.T) {
 			http.StatusOK,
 		},
 		{
-			"conf.lsifEnforceAuth = false && !hasRepoAccess",
+			"isLoggedIn && !conf.lsifEnforceAuth && !hasRepoAccess",
+			true,
 			false,
 			false,
 			false,
@@ -57,7 +69,8 @@ func TestUploadAuthMiddleware(t *testing.T) {
 			http.StatusNotFound,
 		},
 		{
-			"conf.lsifEnforceAuth = true",
+			"isLoggedIn && conf.lsifEnforceAuth",
+			true,
 			false,
 			true,
 			false,
@@ -65,7 +78,8 @@ func TestUploadAuthMiddleware(t *testing.T) {
 			http.StatusUnprocessableEntity,
 		},
 		{
-			"isSiteAdmin = true",
+			"isLoggedIn && isSiteAdmin",
+			true,
 			true,
 			true,
 			false,
@@ -73,7 +87,8 @@ func TestUploadAuthMiddleware(t *testing.T) {
 			http.StatusOK,
 		},
 		{
-			"isSiteAdmin = true && authzEnforcedForSiteAdmin",
+			"isLoggedIn && isSiteAdmin && authzEnforcedForSiteAdmin",
+			true,
 			true,
 			true,
 			true,
@@ -93,9 +108,13 @@ func TestUploadAuthMiddleware(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(
-				&types.User{SiteAdmin: testCase.isSiteAdmin}, nil,
-			)
+			if testCase.isLoggedIn {
+				userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(
+					&types.User{SiteAdmin: testCase.isSiteAdmin}, nil,
+				)
+			} else {
+				userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
+			}
 
 			if testCase.hasRepoAccess {
 				repoStore.GetByNameFunc.SetDefaultReturn(nil, nil)

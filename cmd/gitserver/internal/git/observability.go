@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"sync"
 	"time"
@@ -389,26 +390,177 @@ func (b *observableBackend) FirstEverCommit(ctx context.Context) (_ api.CommitID
 	return b.backend.FirstEverCommit(ctx)
 }
 
+func (b *observableBackend) ChangedFiles(ctx context.Context, base, head string) (ChangedFilesIterator, error) {
+	ctx, _, endObservation := b.operations.changedFiles.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ChangedFiles").Inc()
+	defer concurrentOps.WithLabelValues("ChangedFiles").Dec()
+
+	return b.backend.ChangedFiles(ctx, base, head)
+}
+
+func (b *observableBackend) Stat(ctx context.Context, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservation := b.operations.stat.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("Stat").Inc()
+	defer concurrentOps.WithLabelValues("Stat").Dec()
+
+	return b.backend.Stat(ctx, commit, path)
+}
+
+func (b *observableBackend) ReadDir(ctx context.Context, commit api.CommitID, path string, recursive bool) (_ ReadDirIterator, err error) {
+	ctx, errCollector, endObservation := b.operations.readDir.WithErrors(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.String("commit", string(commit)),
+			attribute.String("path", path),
+			attribute.Bool("recursive", recursive),
+		},
+	})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("ReadDir").Inc()
+
+	it, err := b.backend.ReadDir(ctx, commit, path, recursive)
+	if err != nil {
+		concurrentOps.WithLabelValues("ReadDir").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableReadDirIterator{
+		inner: it,
+		onClose: func(err error) {
+			concurrentOps.WithLabelValues("ReadDir").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+type observableReadDirIterator struct {
+	inner   ReadDirIterator
+	onClose func(err error)
+}
+
+func (hr *observableReadDirIterator) Next() (fs.FileInfo, error) {
+	return hr.inner.Next()
+}
+
+func (hr *observableReadDirIterator) Close() error {
+	err := hr.inner.Close()
+	hr.onClose(err)
+	return err
+}
+
+func (b *observableBackend) LatestCommitTimestamp(ctx context.Context) (_ time.Time, err error) {
+	ctx, _, endObservation := b.operations.latestCommitTimestamp.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("LatestCommitTimestamp").Inc()
+	defer concurrentOps.WithLabelValues("LatestCommitTimestamp").Dec()
+
+	return b.backend.LatestCommitTimestamp(ctx)
+}
+
+func (b *observableBackend) RefHash(ctx context.Context) (_ []byte, err error) {
+	ctx, _, endObservation := b.operations.refHash.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	concurrentOps.WithLabelValues("RefHash").Inc()
+	defer concurrentOps.WithLabelValues("RefHash").Dec()
+
+	return b.backend.RefHash(ctx)
+}
+
+func (b *observableBackend) CommitLog(ctx context.Context, opt CommitLogOpts) (_ CommitLogIterator, err error) {
+	ctx, errCollector, endObservation := b.operations.commitLog.WithErrors(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.StringSlice("ranges", opt.Ranges),
+			attribute.Bool("allRefs", opt.AllRefs),
+			attribute.Stringer("after", opt.After),
+			attribute.Stringer("before", opt.Before),
+			attribute.Int("maxCommits", int(opt.MaxCommits)),
+			attribute.Int("skip", int(opt.Skip)),
+			attribute.Bool("followOnlyFirstParent", opt.FollowOnlyFirstParent),
+			attribute.Bool("includeModifiedFiles", opt.IncludeModifiedFiles),
+			attribute.Int("order", int(opt.Order)),
+			attribute.String("messageQuery", opt.MessageQuery),
+			attribute.String("authorQuery", opt.AuthorQuery),
+			attribute.Bool("followPathRenames", opt.FollowPathRenames),
+			attribute.String("path", opt.Path),
+		},
+	})
+	ctx, cancel := context.WithCancel(ctx)
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	concurrentOps.WithLabelValues("CommitLog").Inc()
+
+	it, err := b.backend.CommitLog(ctx, opt)
+	if err != nil {
+		concurrentOps.WithLabelValues("CommitLog").Dec()
+		cancel()
+		return nil, err
+	}
+
+	return &observableCommitLogIterator{
+		inner: it,
+		onClose: func(err error) {
+			concurrentOps.WithLabelValues("CommitLog").Dec()
+			errCollector.Collect(&err)
+			cancel()
+		},
+	}, nil
+}
+
+type observableCommitLogIterator struct {
+	inner   CommitLogIterator
+	onClose func(err error)
+}
+
+func (hr *observableCommitLogIterator) Next() (*GitCommitWithFiles, error) {
+	return hr.inner.Next()
+}
+
+func (hr *observableCommitLogIterator) Close() error {
+	err := hr.inner.Close()
+	hr.onClose(err)
+	return err
+}
+
 type operations struct {
-	configGet         *observation.Operation
-	configSet         *observation.Operation
-	configUnset       *observation.Operation
-	getObject         *observation.Operation
-	mergeBase         *observation.Operation
-	blame             *observation.Operation
-	symbolicRefHead   *observation.Operation
-	revParseHead      *observation.Operation
-	readFile          *observation.Operation
-	exec              *observation.Operation
-	getCommit         *observation.Operation
-	archiveReader     *observation.Operation
-	resolveRevision   *observation.Operation
-	listRefs          *observation.Operation
-	revAtTime         *observation.Operation
-	rawDiff           *observation.Operation
-	contributorCounts *observation.Operation
-	firstEverCommit   *observation.Operation
-	getBehindAhead    *observation.Operation
+	configGet             *observation.Operation
+	configSet             *observation.Operation
+	configUnset           *observation.Operation
+	getObject             *observation.Operation
+	mergeBase             *observation.Operation
+	blame                 *observation.Operation
+	symbolicRefHead       *observation.Operation
+	revParseHead          *observation.Operation
+	readFile              *observation.Operation
+	exec                  *observation.Operation
+	getCommit             *observation.Operation
+	archiveReader         *observation.Operation
+	resolveRevision       *observation.Operation
+	listRefs              *observation.Operation
+	revAtTime             *observation.Operation
+	rawDiff               *observation.Operation
+	contributorCounts     *observation.Operation
+	firstEverCommit       *observation.Operation
+	getBehindAhead        *observation.Operation
+	changedFiles          *observation.Operation
+	stat                  *observation.Operation
+	readDir               *observation.Operation
+	latestCommitTimestamp *observation.Operation
+	refHash               *observation.Operation
+	commitLog             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -426,10 +578,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					return observation.EmitForNone
+					return observation.EmitForHoney | observation.EmitForTraces
 				}
-				if os.IsNotExist(err) {
-					return observation.EmitForNone
+				if errors.Is(err, os.ErrNotExist) {
+					return observation.EmitForHoney | observation.EmitForTraces
 				}
 				return observation.EmitForDefault
 			},
@@ -437,25 +589,31 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		configGet:         op("config-get"),
-		configSet:         op("config-set"),
-		configUnset:       op("config-unset"),
-		getObject:         op("get-object"),
-		mergeBase:         op("merge-base"),
-		blame:             op("blame"),
-		symbolicRefHead:   op("symbolic-ref-head"),
-		revParseHead:      op("rev-parse-head"),
-		readFile:          op("read-file"),
-		exec:              op("exec"),
-		getCommit:         op("get-commit"),
-		archiveReader:     op("archive-reader"),
-		resolveRevision:   op("resolve-revision"),
-		listRefs:          op("list-refs"),
-		revAtTime:         op("rev-at-time"),
-		rawDiff:           op("raw-diff"),
-		contributorCounts: op("contributor-counts"),
-		firstEverCommit:   op("first-ever-commit"),
-		getBehindAhead:    op("get-behind-ahead"),
+		configGet:             op("config-get"),
+		configSet:             op("config-set"),
+		configUnset:           op("config-unset"),
+		getObject:             op("get-object"),
+		mergeBase:             op("merge-base"),
+		blame:                 op("blame"),
+		symbolicRefHead:       op("symbolic-ref-head"),
+		revParseHead:          op("rev-parse-head"),
+		readFile:              op("read-file"),
+		exec:                  op("exec"),
+		getCommit:             op("get-commit"),
+		archiveReader:         op("archive-reader"),
+		resolveRevision:       op("resolve-revision"),
+		listRefs:              op("list-refs"),
+		revAtTime:             op("rev-at-time"),
+		rawDiff:               op("raw-diff"),
+		contributorCounts:     op("contributor-counts"),
+		firstEverCommit:       op("first-ever-commit"),
+		getBehindAhead:        op("get-behind-ahead"),
+		changedFiles:          op("changed-files"),
+		stat:                  op("stat"),
+		readDir:               op("read-dir"),
+		latestCommitTimestamp: op("latest-commit-timestamp"),
+		refHash:               op("ref-hash"),
+		commitLog:             op("commit-log"),
 	}
 }
 

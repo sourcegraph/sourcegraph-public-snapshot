@@ -9,6 +9,7 @@ go_library(
         "txemail.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/txemail",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -30,6 +31,7 @@ go_test(
         "txemail_test.go",
     ],
     embed = [":txemail"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/txemail/txtypes",
         "@com_github_google_go_cmp//cmp",

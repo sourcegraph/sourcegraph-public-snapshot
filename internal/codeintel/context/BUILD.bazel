@@ -11,6 +11,7 @@ go_library(
         "split.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/context",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/context/internal/store",
@@ -28,5 +29,6 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":context"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

@@ -10,6 +10,7 @@ go_library(
         "job.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/search",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -39,6 +40,7 @@ go_test(
     srcs = ["exhaustive_search_test.go"],
     embed = [":search"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],

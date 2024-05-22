@@ -16,6 +16,8 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubsubscription"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/pubsubtopic"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccountiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
@@ -63,13 +65,15 @@ type Variables struct {
 
 	IAM iam.CrossStackOutput
 
-	Service     spec.ServiceSpec
+	Service spec.ServiceSpec
+	// Repository is the source code repository for the image to deploy
+	Repository  string
 	Image       string
 	Environment spec.EnvironmentSpec
 
-	// RolloutPipeline is only non-nil if this environment is the final
-	// environment of a rollout spec - the final environment is where the Cloud
-	// Deploy pipeline lives.
+	// RolloutPipeline is only non-nil if this environment is part of rollout
+	// pipeline. The final environment (IsFinalStage) is where the Cloud Deploy
+	// pipeline lives.
 	RolloutPipeline *spec.RolloutPipelineConfiguration
 
 	StableGenerate bool
@@ -89,12 +93,6 @@ const (
 	ScaffoldSourceFile = "skaffoldsource.tar.gz"
 )
 
-// Hardcoded variables.
-var (
-	// GCPRegion is currently hardcoded.
-	GCPRegion = "us-central1"
-)
-
 const tfVarKeyResolvedImageTag = "resolved_image_tag"
 
 const SentryOrganization = "sourcegraph"
@@ -111,8 +109,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		}),
 		randomprovider.With(),
 		dynamicvariables.With(vars.StableGenerate, func() (stack.TFVars, error) {
-			resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
-			return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+			if d := vars.Environment.Deploy; d.Type == spec.EnvironmentDeployTypeSubscription {
+				resolvedImageTag, err := d.Subscription.ResolveTag(vars.Image)
+				return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+			}
+			return nil, nil
 		}),
 		sentryprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSentryAuthToken,
@@ -121,6 +122,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	if err != nil {
 		return nil, err
 	}
+
+	// Resource locationSpec configuration
+	locationSpec := vars.Environment.GetLocationSpec()
 
 	diagnosticsSecret := random.New(stack, resourceid.New("diagnostics-secret"), random.Config{
 		ByteLength: 8,
@@ -164,11 +168,24 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// Add user-configured secret volumes
 	addContainerSecretVolumes(cloudRunBuilder, vars.Environment.SecretVolumes)
 
-	// Load image tag from tfvars.
-	imageTag := tfvar.New(stack, id, tfvar.Config{
-		VariableKey: tfVarKeyResolvedImageTag,
-		Description: "Resolved image tag to deploy",
-	})
+	// Determine where to source the image tag from, based on the deploy type.
+	var imageTag string
+	switch d := vars.Environment.Deploy; d.Type {
+	case spec.EnvironmentDeployTypeManual:
+		imageTag = d.Manual.GetTag()
+
+	case spec.EnvironmentDeployTypeRollout:
+		imageTag = vars.RolloutPipeline.OriginalSpec.GetInitialImageTag()
+
+	case spec.EnvironmentDeployTypeSubscription:
+		imageTag = *tfvar.New(stack, id, tfvar.Config{
+			VariableKey: tfVarKeyResolvedImageTag,
+			Description: "Image tag resolved from subscription to deploy",
+		}).StringValue
+
+	default:
+		return nil, errors.Newf("unsupported deploy type %q", d.Type)
+	}
 
 	// privateNetworkEnabled indicates if privateNetwork has been instantiated
 	// before.
@@ -180,7 +197,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return privatenetwork.New(stack, resourceid.New("privatenetwork"), privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
-			Region:    GCPRegion,
+			Region:    locationSpec.GCPRegion,
 		})
 	})
 
@@ -200,7 +217,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			resourceid.New("redis"),
 			redis.Config{
 				ProjectID: vars.ProjectID,
-				Region:    GCPRegion,
+				Region:    locationSpec.GCPRegion,
 				Spec:      *vars.Environment.Resources.Redis,
 				Network:   privateNetwork().Network,
 			})
@@ -233,7 +250,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		pgSpec := *vars.Environment.Resources.PostgreSQL
 		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
 			ProjectID: vars.ProjectID,
-			Region:    GCPRegion,
+			Region:    locationSpec.GCPRegion,
 			Spec:      pgSpec,
 			Network:   privateNetwork().Network,
 
@@ -288,6 +305,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ServiceID:              vars.Service.ID,
 			WorkloadServiceAccount: vars.IAM.CloudRunWorkloadServiceAccount,
 			Spec:                   *vars.Environment.Resources.BigQueryDataset,
+			Locations:              locationSpec,
 			PreventDestroys:        vars.PreventDestroys,
 		})
 		if err != nil {
@@ -347,10 +365,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	cloudRunResource, err := cloudRunBuilder.Build(stack, builder.Variables{
 		Service:           vars.Service,
 		Image:             vars.Image,
-		ResolvedImageTag:  *imageTag.StringValue,
+		ImageTag:          imageTag,
 		Environment:       vars.Environment,
 		GCPProjectID:      vars.ProjectID,
-		GCPRegion:         GCPRegion,
+		GCPRegion:         locationSpec.GCPRegion,
 		ServiceAccount:    vars.IAM.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
@@ -365,8 +383,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
-	// We have a rollout pipeline to configure.
-	if vars.RolloutPipeline != nil {
+	// We have a rollout pipeline to configure - Cloud Deploy pipeline lives in
+	// the final stage of the pipeline.
+	if vars.RolloutPipeline.IsFinalStage() {
 		id := id.Group("rolloutpipeline")
 
 		// For now, we only use 1 region everywhere, but also note that ALL
@@ -375,12 +394,16 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// pipelines for each. In particular, see https://registry.terraform.io/providers/hashicorp/google/5.10.0/docs/resources/clouddeploy_delivery_pipeline#target_id:
 		//
 		// > The location of the Target is inferred to be the same as the location of the DeliveryPipeline that contains this Stage.
-		var rolloutLocation = GCPRegion
+		//
+		// Updated note: in theory we can change this since we now use a custom
+		// rollout target, but in may be good practice to keep separate regions
+		// separated.
+		var rolloutLocation = locationSpec.GCPRegion
 
 		// stageTargets enumerate stages in order. Cloud Deploy targets are
 		// created separately because the TF provider doesn't support Custom
 		// Targets yet - TODO document
-		var stageTargets []string
+		var stageTargets []deliverypipeline.Target
 		for _, stage := range vars.RolloutPipeline.Stages {
 			id := id.Group("stage").Group(stage.EnvironmentID)
 
@@ -401,23 +424,31 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 					Member:  &vars.IAM.CloudDeployExecutionServiceAccount.Member,
 				})
 
-			// Name targets with environment+location - this is expected by
-			// our Cloud Deploy Custom Target
-			stageTargets = append(stageTargets,
-				fmt.Sprintf("%s-%s", stage.EnvironmentID, rolloutLocation))
+			stageTargets = append(stageTargets, deliverypipeline.Target{
+				// Name targets with environment+location - this is expected by
+				// our Cloud Deploy Custom Target
+				ID:        fmt.Sprintf("%s-%s", stage.EnvironmentID, rolloutLocation),
+				ProjectID: stage.ProjectID,
+			})
 		}
 
 		// Now, apply each target in a rollout pipeline. The targets don't need
 		// to exist at this point yet, though attempting to use the pipeline
 		// before creating targets will fail.
 		deliveryPipeline, _ := deliverypipeline.New(stack, id.Group("pipeline"), deliverypipeline.Config{
-			Location: rolloutLocation,
-
 			Name: fmt.Sprintf("%s-%s-rollout", vars.Service.ID, rolloutLocation),
 			Description: fmt.Sprintf("Rollout delivery pipeline for %s",
 				vars.Service.GetName()),
+			Location: rolloutLocation,
 
-			Stages:    stageTargets,
+			ServiceID:    vars.Service.ID,
+			ServiceImage: vars.Image,
+			ExecutionSA:  vars.IAM.CloudDeployExecutionServiceAccount,
+
+			TargetStages: stageTargets,
+
+			Repository: vars.Repository,
+
 			Suspended: pointers.DerefZero(vars.RolloutPipeline.OriginalSpec.Suspended),
 
 			// Make it so that our Cloud Run service is up before we
@@ -433,7 +464,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// locally.
 		skaffoldBucket := storagebucket.NewStorageBucket(stack, id.Group("skaffold").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
 			Name:     pointers.Stringf("%s-cloudrun-skaffold", vars.ProjectID),
-			Location: &GCPRegion,
+			Location: &rolloutLocation,
 		})
 		_ = storagebucketobject.NewStorageBucketObject(stack, id.Group("skaffold").TerraformID("object"), &storagebucketobject.StorageBucketObjectConfig{
 			Name:        pointers.Ptr("source.tar.gz"),
@@ -446,7 +477,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// We manually create it so we can provision IAM access
 		pipelineBucket := storagebucket.NewStorageBucket(stack, id.Group("pipeline").TerraformID("bucket"), &storagebucket.StorageBucketConfig{
 			Name:     pointers.Stringf("%s_clouddeploy", deliveryPipeline.PipelineID),
-			Location: &GCPRegion,
+			Location: &rolloutLocation,
 		})
 
 		// Provision Service Account IAM to create releases
@@ -461,6 +492,35 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			skaffoldBucketName: skaffoldBucket.Name(),
 			pipelineBucketName: pipelineBucket.Name(),
 		})
+
+		// Create the Pub/Sub topic that receives notifications for Cloud Deploy events,
+		// see https://cloud.google.com/deploy/docs/subscribe-deploy-notifications#available_topics for topic info.
+		topic := pubsubtopic.NewPubsubTopic(stack, id.TerraformID("clouddeploy-operations-topic"), &pubsubtopic.PubsubTopicConfig{
+			Name: pointers.Ptr("clouddeploy-operations"),
+		})
+
+		// Get cloud-relay endpoint from GSM.
+		endpoint := gsmsecret.Get(stack, id.Group("cloudrelay-endpoint"), gsmsecret.DataConfig{
+			ProjectID: googlesecretsmanager.SharedSecretsProjectID,
+			Secret:    googlesecretsmanager.SecretMSPDeployNotificationEndpoint,
+		})
+
+		_ = pubsubsubscription.NewPubsubSubscription(stack, id.TerraformID("clouddeploy-operations-sub"), &pubsubsubscription.PubsubSubscriptionConfig{
+			Name:  pointers.Ptr("clouddeploy-operations"),
+			Topic: topic.Id(),
+			PushConfig: &pubsubsubscription.PubsubSubscriptionPushConfig{
+				PushEndpoint: &endpoint.Value,
+			},
+			// Only retain un-acked messages for 1 hour
+			// the notifications aren't critical so they can be dropped after
+			// a reasonable amount of time.
+			MessageRetentionDuration: pointers.Ptr("3600s"),
+			// We don't want the subscription to expire if there hasn't been a rollout in 31 days.
+			ExpirationPolicy: &pubsubsubscription.PubsubSubscriptionExpirationPolicy{
+				Ttl: pointers.Ptr(""),
+			},
+		})
+
 	}
 
 	// Collect outputs
@@ -468,8 +528,6 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource name")
 	locals.Add("cloud_run_location", *cloudRunResource.Location(),
 		"Cloud Run resource location")
-	locals.Add("image_tag", *imageTag.StringValue,
-		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
 		DiagnosticsSecret:  diagnosticsSecret,
 		RedisInstanceID:    redisInstanceID,

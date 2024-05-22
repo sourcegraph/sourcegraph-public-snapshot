@@ -26,6 +26,7 @@ go_library(
         "type_definition.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )
 

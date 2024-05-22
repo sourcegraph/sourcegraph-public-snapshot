@@ -10,6 +10,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/precise",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/lsif/protocol",
@@ -25,5 +26,6 @@ go_test(
         "util_test.go",
     ],
     embed = [":precise"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["@com_github_google_go_cmp//cmp"],
 )

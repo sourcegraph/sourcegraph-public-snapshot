@@ -2,12 +2,10 @@ package gitserver_test
 
 import (
 	"context"
+	"io"
 	"math/rand"
-	"os/exec"
-	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"testing/quick"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 )
@@ -148,46 +147,6 @@ func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
 
 	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("ListGitoliteRepo proto roundtrip failed (-want +got):\n%s", diff)
-	}
-}
-
-func TestLocalGitCommand(t *testing.T) {
-	// creating a repo with 1 committed file
-	root := gitserver.CreateRepoDir(t)
-
-	for _, cmd := range []string{
-		"git init",
-		"echo -n infile1 > file1",
-		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	} {
-		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
-		c.Dir = root
-		out, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
-		}
-	}
-
-	ctx := context.Background()
-	command := gitserver.NewLocalGitCommand(api.RepoName(filepath.Base(root)), "log")
-	command.ReposDir = filepath.Dir(root)
-
-	stdout, stderr, err := command.DividedOutput(ctx)
-	if err != nil {
-		t.Fatalf("Local git command run failed. Command: %q Error:\n\n%s", command, err)
-	}
-	if len(stderr) > 0 {
-		t.Fatalf("Local git command run failed. Command: %q Error:\n\n%s", command, stderr)
-	}
-
-	stringOutput := string(stdout)
-	if !strings.Contains(stringOutput, "commit1") {
-		t.Fatalf("No commit message in git log output. Output: %s", stringOutput)
-	}
-	if command.ExitStatus() != 0 {
-		t.Fatalf("Local git command finished with non-zero status. Status: %d", command.ExitStatus())
 	}
 }
 
@@ -397,3 +356,48 @@ func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
 }
 
 var _ quick.Generator = fuzzTime{}
+
+func TestNewChangedFilesIteratorFromSlice(t *testing.T) {
+	t.Run("IterateThroughFiles", func(t *testing.T) {
+		files := []gitdomain.PathStatus{
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+			{Path: "file2.txt", Status: gitdomain.StatusModified},
+			{Path: "file3.txt", Status: gitdomain.StatusDeleted},
+		}
+
+		iter := gitserver.NewChangedFilesIteratorFromSlice(files)
+		defer iter.Close()
+
+		for i := 0; i < len(files); i++ {
+			file, err := iter.Next()
+			require.NoError(t, err)
+			require.Equal(t, files[i], file)
+		}
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("EmptySlice", func(t *testing.T) {
+		iter := gitserver.NewChangedFilesIteratorFromSlice(nil)
+		defer iter.Close()
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		files := []gitdomain.PathStatus{
+			{Path: "file1.txt", Status: gitdomain.StatusAdded},
+		}
+
+		iter := gitserver.NewChangedFilesIteratorFromSlice(files)
+
+		// Close should be idempotent
+		iter.Close()
+		iter.Close()
+
+		_, err := iter.Next()
+		require.Equal(t, io.EOF, err)
+	})
+}

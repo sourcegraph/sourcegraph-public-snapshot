@@ -63,12 +63,6 @@ func (a AlertConfig) Validate() error {
 		return errors.New("ActionMatch is required")
 	}
 
-	// TODO(jac): allow Conditions to be nil after provider issue is fixed
-	// https://github.com/jianyuan/terraform-provider-sentry/issues/366
-	if len(a.Conditions) == 0 {
-		return errors.New("Conditions is required with at least one condition specified")
-	}
-
 	if len(a.Actions) == 0 {
 		return errors.New("Actions is required with at least one action specified")
 	}

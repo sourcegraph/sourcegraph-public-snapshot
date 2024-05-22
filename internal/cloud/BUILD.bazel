@@ -5,6 +5,7 @@ go_library(
     name = "cloud",
     srcs = ["site_config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cloud",
+    tags = [TAG_INFRA_CLOUDOPS],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
@@ -18,6 +19,7 @@ go_test(
     timeout = "short",
     srcs = ["site_config_test.go"],
     embed = [":cloud"],
+    tags = [TAG_INFRA_CLOUDOPS],
     deps = [
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

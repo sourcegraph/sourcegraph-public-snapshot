@@ -35,11 +35,11 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                          string
-		ccf                           *schema.CodyContextFilters
-		q                             url.Values
-		want                          *codyIgnoreCompatibilityError
-		allowPreReleaseClientVersions bool
+		name              string
+		ccf               *schema.CodyContextFilters
+		q                 url.Values
+		want              *codyIgnoreCompatibilityError
+		isClientsTestMode bool
 	}{
 		{
 			name: "Cody context filters not defined in the site config",
@@ -156,7 +156,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"0.1"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"0.1\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"0.1\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -168,7 +168,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.2"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.2\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"1.2\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -180,7 +180,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.19.0"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.19.0\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"1.19.0\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -229,7 +229,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"2.3.11-alpha"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-alpha\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-alpha\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -242,7 +242,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"2.3.11-beta+exp.sha.5114f85a"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-beta+exp.sha.5114f85a\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"2.3.11-beta+exp.sha.5114f85a\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -254,7 +254,7 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				"client-version": []string{"1.14.0"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \">= 6.0.0\"", types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("Cody for %s version \"1.14.0\" doesn't match version constraint \">= 6.0.0\". Please upgrade your client.", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
@@ -268,56 +268,100 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 			want: nil,
 		},
 		{
-			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
-			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled",
+			name: "jetbrains: lower version matches constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
-				"client-version": []string{"5.9-localbuild"},
+				"client-version": []string{"5.5.8"},
+			},
+			want:              nil,
+			isClientsTestMode: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientJetbrains)},
+				"client-version": []string{"5.5.7-nightly"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"5.9-localbuild\" doesn't match version constraint \">= 6.0.0-0\"", types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("Cody for %s version \"5.5.7-nightly\" doesn't match version constraint \">= 5.5.8-0\". Please upgrade your client.", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
-			allowPreReleaseClientVersions: true,
+			isClientsTestMode: true,
 		},
 		{
 			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
-			name: "jetbrains: pre-release version matches constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled",
+			name: "jetbrains: pre-release version matches constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
-				"client-version": []string{"6.0.0"},
+				"client-version": []string{"5.5.8-nightly"},
 			},
-			want:                          nil,
-			allowPreReleaseClientVersions: true,
+			want:              nil,
+			isClientsTestMode: true,
 		},
 		{
 			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
-			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is not enabled",
+			name: "jetbrains: pre-release version doesn't match constraint if \"cody-context-filters-clients-test-mode\" feature flag is not enabled",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientJetbrains)},
 				"client-version": []string{"6.0-localbuild"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"6.0-localbuild\" doesn't match version constraint \">= 6.0.0\"", types.CodyClientJetbrains),
+				reason:     fmt.Sprintf("Cody for %s version \"6.0-localbuild\" doesn't match version constraint \">= 6.0.0\". Please upgrade your client.", types.CodyClientJetbrains),
 				statusCode: http.StatusNotAcceptable,
 			},
 		},
 		{
-			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
-			name: "vscode: pre-release version doesn't match constraint if \"cody-context-filters-allow-pre-release-client-versions\" feature flag is enabled (feature flag should work only for jetbrains client)",
+			name: "vscode: lower version matches constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
 			ccf:  ccf,
 			q: url.Values{
 				"client-name":    []string{string(types.CodyClientVscode)},
-				"client-version": []string{"1.22.0-alpha"},
+				"client-version": []string{"1.16.0"},
+			},
+			want:              nil,
+			isClientsTestMode: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: pre-release version doesn't match constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.15.1815730510"},
 			},
 			want: &codyIgnoreCompatibilityError{
-				reason:     fmt.Sprintf("Cody for %s version \"1.22.0-alpha\" doesn't match version constraint \">= 1.20.0\"", types.CodyClientVscode),
+				reason:     fmt.Sprintf("Cody for %s version \"1.15.1815730510\" doesn't match version constraint \">= 1.16.0-0\". Please upgrade your client.", types.CodyClientVscode),
 				statusCode: http.StatusNotAcceptable,
 			},
-			allowPreReleaseClientVersions: true,
+			isClientsTestMode: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: pre-release version matches constraint if \"cody-context-filters-clients-test-mode\" feature flag is enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.16.1815730510"},
+			},
+			want:              nil,
+			isClientsTestMode: true,
+		},
+		{
+			// See https://pkg.go.dev/github.com/Masterminds/semver#readme-working-with-pre-release-versions
+			name: "vscode: pre-release version doesn't match constraint if \"cody-context-filters-clients-test-mode\" feature flag is not enabled",
+			ccf:  ccf,
+			q: url.Values{
+				"client-name":    []string{string(types.CodyClientVscode)},
+				"client-version": []string{"1.17.1"},
+			},
+			want: &codyIgnoreCompatibilityError{
+				reason:     fmt.Sprintf("Cody for %s version \"1.17.1\" doesn't match version constraint \">= 1.20.0\". Please upgrade your client.", types.CodyClientVscode),
+				statusCode: http.StatusNotAcceptable,
+			},
 		},
 		{
 			name: "web: version param not required",
@@ -341,9 +385,9 @@ func TestCheckClientCodyIgnoreCompatibility(t *testing.T) {
 				})
 			}
 
-			if tt.allowPreReleaseClientVersions {
+			if tt.isClientsTestMode {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{
-					Name:      "cody-context-filters-allow-pre-release-client-versions",
+					Name:      "cody-context-filters-clients-test-mode",
 					Bool:      &featureflag.FeatureFlagBool{Value: true},
 					Rollout:   nil,
 					CreatedAt: time.Now(),

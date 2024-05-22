@@ -4,6 +4,7 @@ go_library(
     name = "resolvers",
     srcs = ["resolver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions/resolvers",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",

@@ -8,6 +8,7 @@ go_library(
         "upload.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/upload",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
@@ -18,5 +19,6 @@ go_library(
 go_binary(
     name = "upload",
     embed = [":upload_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

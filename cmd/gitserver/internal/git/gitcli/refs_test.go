@@ -10,9 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,8 +25,10 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		"echo 'hello\nworld\nfrom\nblame\n' > foo.txt",
 		"git add foo.txt",
 		"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
-		// Add a tag.
+		// Add an annotated tag.
 		"git tag -a foo-tag -m foo-tag",
+		// Add a lightweight tag.
+		"git tag light-tag",
 		// Add a second commit on a different branch.
 		"git checkout -b foo",
 		"echo 'hello\nworld\nfrom\nthe best blame\n' > foo.txt",
@@ -56,6 +61,20 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			RefOID:      commit,
 			IsHead:      true,
 			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/light-tag",
+			ShortName: "light-tag",
+			CommitID:  commit,
+			// for lightweight tags, the RefOID is the same as the CommitID.
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
 			CreatedDate: ref.CreatedDate,
 		}, ref)
 
@@ -127,6 +146,20 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/light-tag",
+			ShortName: "light-tag",
+			CommitID:  commit,
+			// for lightweight tags, the RefOID is the same as the CommitID.
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
 			Name:      "refs/tags/foo-tag",
 			ShortName: "foo-tag",
 			CommitID:  commit,
@@ -161,6 +194,20 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		require.NoError(t, err)
 
 		ref, err := it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/light-tag",
+			ShortName: "light-tag",
+			CommitID:  commit,
+			// for lightweight tags, the RefOID is the same as the CommitID.
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
@@ -239,6 +286,20 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/light-tag",
+			ShortName: "light-tag",
+			CommitID:  commit,
+			// for lightweight tags, the RefOID is the same as the CommitID.
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
 			Name:      "refs/tags/foo-tag",
 			ShortName: "foo-tag",
 			CommitID:  commit,
@@ -283,6 +344,20 @@ func TestGitCLIBackend_ListRefs(t *testing.T) {
 			RefOID:      commit,
 			IsHead:      true,
 			Type:        gitdomain.RefTypeBranch,
+			CreatedDate: ref.CreatedDate,
+		}, ref)
+
+		ref, err = it.Next()
+		require.NoError(t, err)
+
+		assert.Equal(t, &gitdomain.Ref{
+			Name:      "refs/tags/light-tag",
+			ShortName: "light-tag",
+			CommitID:  commit,
+			// for lightweight tags, the RefOID is the same as the CommitID.
+			RefOID:      commit,
+			IsHead:      false,
+			Type:        gitdomain.RefTypeTag,
 			CreatedDate: ref.CreatedDate,
 		}, ref)
 
@@ -457,4 +532,47 @@ func TestBuildListRefsArgs(t *testing.T) {
 			args,
 		)
 	})
+}
+
+func TestGitCLIBackend_RefHash(t *testing.T) {
+	ctx := context.Background()
+	rcf := wrexec.NewNoOpRecordingCommandFactory()
+
+	// Prepare repo state:
+
+	dir := RepoWithCommands(t,
+		"echo line1 > f",
+		"git add f",
+		`GIT_COMMITTER_DATE="2015-01-01 00:00 Z" git commit -m foo --author='Foo Author <foo@sourcegraph.com>'`,
+		"git checkout -b branch",
+		"echo line1 > f2",
+		"git add f2",
+		`GIT_COMMITTER_DATE="2015-01-01 00:00 Z" git commit -m foo --author='Foo Author <foo@sourcegraph.com>'`,
+	)
+	backend := NewBackend(logtest.Scoped(t), rcf, dir, api.RepoName(t.Name()))
+
+	first, err := backend.RefHash(ctx)
+	require.NoError(t, err)
+
+	second, err := backend.RefHash(ctx)
+	require.NoError(t, err)
+
+	// The hash should be stable across runs.
+	require.Equal(t, first, second)
+
+	// The hash should also be stable for a reclone of the same repo:
+	dir = RepoWithCommands(t,
+		"echo line1 > f",
+		"git add f",
+		`GIT_COMMITTER_DATE="2015-01-01 00:00 Z" git commit -m foo --author='Foo Author <foo@sourcegraph.com>'`,
+		"git checkout -b branch",
+		"echo line1 > f2",
+		"git add f2",
+		`GIT_COMMITTER_DATE="2015-01-01 00:00 Z" git commit -m foo --author='Foo Author <foo@sourcegraph.com>'`,
+	)
+	backend = NewBackend(logtest.Scoped(t), rcf, dir, api.RepoName(t.Name()))
+
+	third, err := backend.RefHash(ctx)
+	require.NoError(t, err)
+	require.Equal(t, first, third)
 }

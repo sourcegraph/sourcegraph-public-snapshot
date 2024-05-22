@@ -16,11 +16,9 @@ type operations struct {
 	archiveReader            *observation.Operation
 	commits                  *observation.Operation
 	contributorCount         *observation.Operation
-	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
 	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
-	hasCommitAfter           *observation.Operation
 	listRefs                 *observation.Operation
 	lstat                    *observation.Operation
 	mergeBase                *observation.Operation
@@ -45,14 +43,9 @@ type operations struct {
 	perforceGetChangelist    *observation.Operation
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
-	commitsUniqueToBranch    *observation.Operation
 	getDefaultBranch         *observation.Operation
-	listDirectoryChildren    *observation.Operation
-	lsFiles                  *observation.Operation
-	logReverseEach           *observation.Operation
-	diffSymbols              *observation.Operation
-	commitLog                *observation.Operation
 	diff                     *observation.Operation
+	changedFiles             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -104,11 +97,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		archiveReader:            op("ArchiveReader"),
 		commits:                  op("Commits"),
 		contributorCount:         op("ContributorCount"),
-		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
 		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),
-		hasCommitAfter:           op("HasCommitAfter"),
 		listRefs:                 op("ListRefs"),
 		lstat:                    subOp("lStat"),
 		mergeBase:                op("MergeBase"),
@@ -133,14 +124,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		perforceGetChangelist:    op("PerforceGetChangelist"),
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
-		commitsUniqueToBranch:    op("CommitsUniqueToBranch"),
 		getDefaultBranch:         op("GetDefaultBranch"),
-		listDirectoryChildren:    op("ListDirectoryChildren"),
-		lsFiles:                  op("LsFiles"),
-		logReverseEach:           op("LogReverseEach"),
-		diffSymbols:              op("DiffSymbols"),
-		commitLog:                op("CommitLog"),
 		diff:                     op("Diff"),
+		changedFiles:             op("ChangedFiles"),
 	}
 }
 

@@ -25,6 +25,7 @@ go_library(
     ],
     embedsrcs = ["sg_maintenance.sh"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal",
+    tags = [TAG_PLATFORM_SOURCE],
     # visibility = ["//cmd/gitserver:__subpackages__"],
     visibility = ["//visibility:public"],
     deps = [
@@ -94,7 +95,7 @@ go_test(
         "list_gitolite_test.go",
         "main_test.go",
         "mocks_test.go",
-        "repo_info_test.go",
+        "repositoryservice_test.go",
         "server_grpc_test.go",
         "server_test.go",
     ],
@@ -103,6 +104,7 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],
@@ -120,6 +122,7 @@ go_test(
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc/gitolite",
+        "//internal/fileutil",
         "//internal/gitserver",
         "//internal/gitserver/connection",
         "//internal/gitserver/gitdomain",

@@ -217,10 +217,11 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 			maxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(
+		commitDates, err := commitsUniqueToBranch(
 			ctx,
+			m.gitserverClient,
 			context.repo,
-			branchRequestMeta.commitID,
+			api.CommitID(branchRequestMeta.commitID),
 			branchRequestMeta.isDefaultBranch,
 			maxCommitAge,
 		)
@@ -231,7 +232,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 		for commit, commitDate := range commitDates {
 		policyLoop:
 			for policyID, policyDuration := range branchRequestMeta.policyDurationByIDs {
-				for _, match := range context.commitMap[commit] {
+				for _, match := range context.commitMap[string(commit)] {
 					if match.PolicyID != nil && *match.PolicyID == policyID {
 						// Skip duplicates (can happen at head of branch)
 						continue policyLoop
@@ -243,7 +244,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 					continue policyLoop
 				}
 
-				context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
+				context.commitMap[string(commit)] = append(context.commitMap[string(commit)], PolicyMatch{
 					Name:           branchName,
 					PolicyID:       &policyID,
 					PolicyDuration: policyDuration,
@@ -254,6 +255,40 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 	}
 
 	return nil
+}
+
+// commitsUniqueToBranch returns a map from commits that exist on a particular
+// branch in the given repository to their committer date. This set of commits is
+// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+// commits on {branchName} not also on the tip of the default branch. If the
+// supplied branch name is the default branch, then this method instead returns
+// all commits reachable from HEAD.
+func commitsUniqueToBranch(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, commitID api.CommitID, isDefaultBranch bool, maxCommitAge *time.Time) (map[api.CommitID]time.Time, error) {
+	rng := "HEAD"
+	if !isDefaultBranch {
+		rng = fmt.Sprintf("HEAD..%s", commitID)
+	}
+
+	var after time.Time
+	if maxCommitAge != nil {
+		after = *maxCommitAge
+	}
+
+	commits, err := gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
+		Ranges: []string{rng},
+		After:  after,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	commitMap := make(map[api.CommitID]time.Time)
+	for _, commit := range commits {
+		commitMap[commit.ID] = commit.Committer.Date
+	}
+
+	return commitMap, nil
+
 }
 
 // matchCommitPolicies compares the each commit-type policy pattern as a rev-like against the target

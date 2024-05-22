@@ -9,6 +9,7 @@ go_library(
         "prompt.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/types",
@@ -25,6 +26,7 @@ go_test(
         "fireworks_test.go",
     ],
     embed = [":fireworks"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/types",
         "@com_github_hexops_autogold_v2//:autogold",

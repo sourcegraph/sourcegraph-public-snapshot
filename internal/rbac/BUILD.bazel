@@ -13,6 +13,7 @@ go_library(
     ],
     embedsrcs = ["schema.yaml"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -37,6 +38,7 @@ go_test(
     ],
     embed = [":rbac"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # requires localhost database
         "requires-network",
     ],

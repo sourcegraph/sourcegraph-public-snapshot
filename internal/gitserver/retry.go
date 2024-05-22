@@ -175,4 +175,24 @@ func (r *automaticRetryClient) BehindAhead(ctx context.Context, in *proto.Behind
 	return r.base.BehindAhead(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) ChangedFiles(ctx context.Context, in *proto.ChangedFilesRequest, opts ...grpc.CallOption) (proto.GitserverService_ChangedFilesClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ChangedFiles(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) Stat(ctx context.Context, in *proto.StatRequest, opts ...grpc.CallOption) (*proto.StatResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.Stat(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) ReadDir(ctx context.Context, in *proto.ReadDirRequest, opts ...grpc.CallOption) (proto.GitserverService_ReadDirClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.ReadDir(ctx, in, opts...)
+}
+
+func (r *automaticRetryClient) CommitLog(ctx context.Context, in *proto.CommitLogRequest, opts ...grpc.CallOption) (proto.GitserverService_CommitLogClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.CommitLog(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

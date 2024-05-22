@@ -4,6 +4,7 @@ go_library(
     name = "background",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/policies/internal/background/repository_matcher",

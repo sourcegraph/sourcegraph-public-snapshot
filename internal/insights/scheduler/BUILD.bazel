@@ -11,6 +11,7 @@ go_library(
         "scheduler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/scheduler",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -59,6 +60,7 @@ go_test(
     ],
     embed = [":scheduler"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

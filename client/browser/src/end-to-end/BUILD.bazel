@@ -18,6 +18,7 @@ ts_config(
 ts_project(
     name = "end-to-end",
     srcs = ["shared.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/mocha",
@@ -40,6 +41,7 @@ ts_project(
         "gitlab.test.ts",
         "phabricator.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":end-to-end",

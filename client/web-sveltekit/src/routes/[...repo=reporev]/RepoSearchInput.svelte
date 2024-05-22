@@ -12,14 +12,17 @@
     import { registerHotkey } from '$lib/Hotkey'
 
     export let repoName: string
+    /**
+     * The revision to search in. If not provided, the default branch is used.
+     */
+    export let revision: string
 
     const {
-        elements: { trigger, overlay, content },
+        elements: { trigger, overlay, content, portalled },
         states: { open },
     } = createDialog()
 
     let searchInput: SearchInput | undefined
-    let queryState = queryStateStore({ query: `repo:${repositoryInsertText({ repository: repoName })} ` }, $settings)
 
     registerHotkey({
         keys: { key: '/' },
@@ -34,6 +37,8 @@
         )
     }
 
+    $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
+    $: queryState = queryStateStore({ query }, $settings)
     $: if ($open) {
         // @melt-ui automatically focuses the search input but that positions the cursor at the
         // start of the input. We can move the cursor to the end by calling focus(), but we need
@@ -43,29 +48,25 @@
 </script>
 
 {#if $open}
-    <div class="wrapper">
+    <div class="wrapper" {...$portalled} use:portalled>
         <div {...$overlay} use:overlay class="overlay" />
         <div {...$content} use:content>
             <SearchInput bind:this={searchInput} {queryState} onSubmit={handleSearchSubmit} />
         </div>
     </div>
-{:else}
-    <button {...$trigger} use:trigger>
-        <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
-        Type <kbd>/</kbd> to search
-    </button>
 {/if}
+<button {...$trigger} use:trigger class:hidden={$open}>
+    <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
+    Type <kbd>/</kbd> to search
+</button>
 
 <style lang="scss">
     .wrapper {
         flex: 1;
         position: absolute;
+        top: 1rem;
         left: 1rem;
         right: 1rem;
-        // This seems needed to prevent the file headers (which are position: sticky) from overlaying
-        // the search input. Alternatively we could portal the search input with melt, but then
-        // it would be more difficult to position it over the repo header.
-        z-index: 2;
 
         .overlay {
             position: fixed;
@@ -75,6 +76,10 @@
             bottom: 0;
             background-color: rgba(0, 0, 0, 0.3);
         }
+    }
+
+    .hidden {
+        visibility: hidden;
     }
 
     button {

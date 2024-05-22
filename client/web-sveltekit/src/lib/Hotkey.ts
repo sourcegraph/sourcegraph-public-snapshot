@@ -3,6 +3,57 @@ import { onDestroy } from 'svelte'
 
 import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from './common'
 
+const LINUX_KEYNAME_MAP: Record<string, string> = {
+    ctrl: 'Ctrl',
+    shift: 'Shift',
+    alt: 'Alt',
+}
+const WINDOWS_KEYNAME_MAP: Record<string, string> = LINUX_KEYNAME_MAP
+const MAC_KEYNAME_MAP: Record<string, string> = {
+    ctrl: '⌃',
+    shift: '⇧',
+    alt: '⌥',
+    cmd: '⌘',
+}
+
+/**
+ * Formats a key combination for display, properly replacing the key names with their platform-specific
+ * counterparts.
+ *
+ * @param keys The key combination to format.
+ * @returns A platform-specific string representing the key combination.
+ */
+export function formatShortcut(keys: Keys): string {
+    return formatShortcutParts(keys).join(isMacPlatform() ? '' : '+')
+}
+
+/**
+ * Formats a key combination for display, properly replacing the key names with their platform-specific
+ * counterparts. Returns an array of strings, each representing a part of the key combination.
+ *
+ * @param keys The key combination to format.
+ * @returns An array of strings, each representing a part of the key combination.
+ */
+export function formatShortcutParts(keys: Keys): string[] {
+    const key = evaluateKey(keys)
+
+    const parts = key.split('+')
+    const out: string[] = []
+
+    const keymap = isMacPlatform() ? MAC_KEYNAME_MAP : isLinuxPlatform() ? LINUX_KEYNAME_MAP : WINDOWS_KEYNAME_MAP
+
+    for (const part of parts) {
+        const lower = part.toLowerCase()
+        if (keymap[lower]) {
+            out.push(keymap[lower])
+        } else {
+            out.push(part.toUpperCase())
+        }
+    }
+
+    return out
+}
+
 export function evaluateKey(keys: { mac?: string; linux?: string; windows?: string; key: string }): string {
     if (keys.mac && isMacPlatform()) {
         return keys.mac
@@ -71,7 +122,7 @@ function wrapHandler(handler: KeyHandler, allowDefault: boolean = false, ignoreI
     }
 }
 
-interface Keys {
+export interface Keys {
     /**
      * The default key which should trigger the action.
      */

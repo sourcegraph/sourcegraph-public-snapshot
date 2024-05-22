@@ -1,3 +1,11 @@
+"""
+Provide a custom repository_rule to fetch database migrations from previous versions from
+a GCS bucket.
+
+The "updated_at" attribute allows to manually invalidate the cache, because the rule itself
+cannot know when to do so, as it will simply skip listing the bucket otherwise.
+"""
+
 def _schema_migrations(rctx):
     """
     This repository is used to download the schema migrations from GCS.
@@ -54,4 +62,7 @@ filegroup(
 
 schema_migrations = repository_rule(
     implementation = _schema_migrations,
+    attrs = {
+        "updated_at": attr.string(mandatory = True),
+    },
 )

@@ -97,3 +97,11 @@ export function toReadable<D, E = Error>(promise: PromiseLike<D>): Readable<Load
     )
     return { subscribe }
 }
+
+// Returns a promise that is guaranteed to take at least `delayMillis` milliseconds to resolve.
+// If the wrapped promise resolves before then, the returned promise will wait until `delayMillis`
+// has elapsed before resolving.
+export async function delay<T>(promise: Promise<T>, delayMillis: number): Promise<T> {
+    const [awaited] = await Promise.all([promise, new Promise(resolve => setTimeout(resolve, delayMillis))])
+    return awaited
+}

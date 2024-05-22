@@ -9,6 +9,7 @@ go_library(
         "repos.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",

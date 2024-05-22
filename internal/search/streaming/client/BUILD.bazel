@@ -7,6 +7,7 @@ go_library(
         "progress.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/streaming/client",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",

@@ -4,6 +4,7 @@ go_library(
     name = "go-mockgen-transformer_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/go-mockgen-transformer",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/go-mockgen-transformer/config",
@@ -14,5 +15,6 @@ go_library(
 go_binary(
     name = "go-mockgen-transformer",
     embed = [":go-mockgen-transformer_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

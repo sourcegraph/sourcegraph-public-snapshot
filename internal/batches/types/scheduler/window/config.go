@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -37,7 +38,7 @@ func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 	// would include the given entry. If we hit a week in the future, we'll
 	// bail, because a lot can happen in a week.
 	rem := n
-	at := now
+	at := now.UTC() // we _should_ always be using UTC, but don't trust the caller
 	until := at.Add(7 * 24 * time.Hour)
 	for at.Before(until) {
 		schedule := cfg.scheduleAt(at)
@@ -50,7 +51,15 @@ func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 
 		total := schedule.total()
 		if total == 0 {
-			at = schedule.ValidUntil()
+			nextAt := schedule.ValidUntil()
+			if nextAt == at {
+				// This loop has a complex end condition, and we've hit infinite loops here before.
+				// As a protective measure, if we make no progress, do not continue looping
+				// and just return an unknown estimate.
+				log.Scoped("changeset scheduler").Error("infinite loop calculating estimate")
+				return nil
+			}
+			at = nextAt
 			continue
 		}
 

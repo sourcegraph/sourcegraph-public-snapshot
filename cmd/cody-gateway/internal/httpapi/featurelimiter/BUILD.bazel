@@ -4,6 +4,7 @@ go_library(
     name = "featurelimiter",
     srcs = ["featurelimiter.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",

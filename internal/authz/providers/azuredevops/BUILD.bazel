@@ -5,6 +5,7 @@ go_library(
     name = "azuredevops",
     srcs = ["provider.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/azuredevops",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -27,6 +28,7 @@ go_test(
     srcs = ["provider_test.go"],
     embed = [":azuredevops"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

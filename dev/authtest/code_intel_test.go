@@ -2,6 +2,7 @@ package authtest
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCodeIntelEndpoints(t *testing.T) {
@@ -18,16 +21,18 @@ func TestCodeIntelEndpoints(t *testing.T) {
 	// user should receive access denied for LSIF endpoints of repositories the user
 	// does not have access to.
 	const testUsername = "authtest-user-code-intel"
-	userClient, err := gqltestutil.SignUp(*baseURL, testUsername+"@sourcegraph.com", testUsername, "mysecurepassword")
-	if err != nil {
-		t.Fatal(err)
-	}
+	userClient, err := gqltestutil.NewClient(*baseURL)
+	require.NoError(t, err)
+	require.NoError(t, userClient.SignUp(testUsername+"@sourcegraph.com", testUsername, "mysecurepassword"))
 	defer func() {
 		err := client.DeleteUser(userClient.AuthenticatedUserID(), true)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}()
+
+	token, err := userClient.CreateAccessToken("code-intel-endpoint-test", []string{"user:all"}, pointers.Ptr(7500))
+	require.NoError(t, err)
 
 	// Set up external service
 	esID, err := client.AddExternalService(
@@ -68,35 +73,20 @@ func TestCodeIntelEndpoints(t *testing.T) {
 	}
 
 	t.Run("SCIP upload", func(t *testing.T) {
-		// Update site configuration to enable "lsifEnforceAuth".
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
+		reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+			siteConfig.LsifEnforceAuth = true
+		})
+		require.NoError(t, err)
+		if reset != nil {
+			t.Cleanup(func() {
+				require.NoError(t, reset())
+			})
 		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.LsifEnforceAuth = true
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
 		err = gqltestutil.Retry(15*time.Second, func() error {
-			resp, err := userClient.Post(*baseURL+"/.api/scip/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
+			resp, err := userClient.PostWithHeader(*baseURL+"/.api/scip/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil,
+				map[string][]string{"Authorization": {fmt.Sprintf("token %s", token)}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -165,25 +155,13 @@ func TestCodeIntelEndpoints(t *testing.T) {
 }
 
 func setExecutorAccessToken(t *testing.T, token string) func() {
-	siteConfig, lastID, err := client.SiteConfiguration()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	oldSiteConfig := new(schema.SiteConfiguration)
-	*oldSiteConfig = *siteConfig
-	siteConfig.ExecutorsAccessToken = token
-
-	if err := client.UpdateSiteConfiguration(siteConfig, lastID); err != nil {
-		t.Fatal(err)
-	}
+	reset, err := client.ModifySiteConfiguration(func(siteConfig *schema.SiteConfiguration) {
+		siteConfig.ExecutorsAccessToken = token
+	})
+	require.NoError(t, err)
 	return func() {
-		_, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := client.UpdateSiteConfiguration(oldSiteConfig, lastID); err != nil {
-			t.Fatal(err)
+		if reset != nil {
+			require.NoError(t, reset())
 		}
 	}
 }

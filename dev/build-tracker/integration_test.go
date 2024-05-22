@@ -436,7 +436,7 @@ func TestServerNotify(t *testing.T) {
 		SlackChannel:          os.Getenv("SLACK_CHANNEL"),
 	}
 
-	server := NewServer(":8080", logger, conf)
+	server := NewServer(":8080", logger, conf, nil)
 
 	num := 160000
 	url := "http://www.google.com"

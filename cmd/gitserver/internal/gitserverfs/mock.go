@@ -18,6 +18,9 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs)
 // used for unit testing.
 type MockFS struct {
+	// CanonicalPathFunc is an instance of a mock function object
+	// controlling the behavior of the method CanonicalPath.
+	CanonicalPathFunc *FSCanonicalPathFunc
 	// DirSizeFunc is an instance of a mock function object controlling the
 	// behavior of the method DirSize.
 	DirSizeFunc *FSDirSizeFunc
@@ -60,6 +63,11 @@ type MockFS struct {
 // values for all results, unless overwritten.
 func NewMockFS() *MockFS {
 	return &MockFS{
+		CanonicalPathFunc: &FSCanonicalPathFunc{
+			defaultHook: func(common.GitDir) (r0 string) {
+				return
+			},
+		},
 		DirSizeFunc: &FSDirSizeFunc{
 			defaultHook: func(string) (r0 int64, r1 error) {
 				return
@@ -127,6 +135,11 @@ func NewMockFS() *MockFS {
 // on invocation, unless overwritten.
 func NewStrictMockFS() *MockFS {
 	return &MockFS{
+		CanonicalPathFunc: &FSCanonicalPathFunc{
+			defaultHook: func(common.GitDir) string {
+				panic("unexpected invocation of MockFS.CanonicalPath")
+			},
+		},
 		DirSizeFunc: &FSDirSizeFunc{
 			defaultHook: func(string) (int64, error) {
 				panic("unexpected invocation of MockFS.DirSize")
@@ -194,6 +207,9 @@ func NewStrictMockFS() *MockFS {
 // delegate to the given implementation, unless overwritten.
 func NewMockFSFrom(i FS) *MockFS {
 	return &MockFS{
+		CanonicalPathFunc: &FSCanonicalPathFunc{
+			defaultHook: i.CanonicalPath,
+		},
 		DirSizeFunc: &FSDirSizeFunc{
 			defaultHook: i.DirSize,
 		},
@@ -231,6 +247,107 @@ func NewMockFSFrom(i FS) *MockFS {
 			defaultHook: i.VisitRepos,
 		},
 	}
+}
+
+// FSCanonicalPathFunc describes the behavior when the CanonicalPath method
+// of the parent MockFS instance is invoked.
+type FSCanonicalPathFunc struct {
+	defaultHook func(common.GitDir) string
+	hooks       []func(common.GitDir) string
+	history     []FSCanonicalPathFuncCall
+	mutex       sync.Mutex
+}
+
+// CanonicalPath delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockFS) CanonicalPath(v0 common.GitDir) string {
+	r0 := m.CanonicalPathFunc.nextHook()(v0)
+	m.CanonicalPathFunc.appendCall(FSCanonicalPathFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CanonicalPath method
+// of the parent MockFS instance is invoked and the hook queue is empty.
+func (f *FSCanonicalPathFunc) SetDefaultHook(hook func(common.GitDir) string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CanonicalPath method of the parent MockFS instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *FSCanonicalPathFunc) PushHook(hook func(common.GitDir) string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FSCanonicalPathFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func(common.GitDir) string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FSCanonicalPathFunc) PushReturn(r0 string) {
+	f.PushHook(func(common.GitDir) string {
+		return r0
+	})
+}
+
+func (f *FSCanonicalPathFunc) nextHook() func(common.GitDir) string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FSCanonicalPathFunc) appendCall(r0 FSCanonicalPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FSCanonicalPathFuncCall objects describing
+// the invocations of this function.
+func (f *FSCanonicalPathFunc) History() []FSCanonicalPathFuncCall {
+	f.mutex.Lock()
+	history := make([]FSCanonicalPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FSCanonicalPathFuncCall is an object that describes an invocation of
+// method CanonicalPath on an instance of MockFS.
+type FSCanonicalPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 common.GitDir
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FSCanonicalPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FSCanonicalPathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // FSDirSizeFunc describes the behavior when the DirSize method of the

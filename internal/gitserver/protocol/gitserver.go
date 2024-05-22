@@ -219,9 +219,8 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 // internal proxy route and any major change to this structure will need to
 // be reconciled in both places.
 type ExecRequest struct {
-	Repo      api.RepoName `json:"repo"`
-	Args      []string     `json:"args"`
-	NoTimeout bool         `json:"noTimeout"`
+	Repo api.RepoName `json:"repo"`
+	Args []string     `json:"args"`
 }
 
 // IsRepoCloneableRequest is a request to determine if a repo is cloneable.
@@ -543,7 +542,6 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 	*r = GetObjectResponse{
 		Object: gitObj,
 	}
-
 }
 
 // IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.

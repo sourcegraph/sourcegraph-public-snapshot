@@ -367,6 +367,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
 			"openai/gpt-3.5-turbo",
+			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
 

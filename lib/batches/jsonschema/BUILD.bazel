@@ -4,6 +4,7 @@ go_library(
     name = "jsonschema",
     srcs = ["jsonschema.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/jsonschema",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",

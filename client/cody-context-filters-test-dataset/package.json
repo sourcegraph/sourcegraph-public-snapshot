@@ -1,0 +1,17 @@
+{
+  "name": "@sourcegraph/cody-context-filters-test-dataset",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "description": "Cody context filters test dataset",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sourcegraph/sourcegraph.git",
+    "directory": "client/cody-context-filters-test-dataset"
+  },
+  "scripts": {
+    "prepublishOnly": "node scripts/generate.js"
+  },
+  "files": [
+    "dataset.json"
+  ]
+}

@@ -5,6 +5,7 @@ go_library(
     name = "envelope",
     srcs = ["envelope.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/envelope",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption/aeshelper",
@@ -16,5 +17,6 @@ go_test(
     name = "envelope_test",
     srcs = ["envelope_test.go"],
     embed = [":envelope"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_stretchr_testify//require"],
 )

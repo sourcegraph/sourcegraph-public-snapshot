@@ -10,6 +10,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -49,6 +50,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":service"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/actor",
         "//internal/api",

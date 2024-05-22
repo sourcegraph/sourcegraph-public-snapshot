@@ -35,7 +35,7 @@ GCP_PROJECT="aspect-dev"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}"
-if [ "${RELEASE_INTERNAL:-}" != "true" ]; then
+if [ "${RELEASE_INTERNAL:-}" == "true" ]; then
   PKR_VAR_name="${PKR_VAR_name}-${BUILDKITE_BUILD_NUMBER}"
 fi
 export PKR_VAR_image_family="${IMAGE_FAMILY}"

@@ -4,6 +4,7 @@ go_library(
     name = "database",
     srcs = ["database.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/database",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",

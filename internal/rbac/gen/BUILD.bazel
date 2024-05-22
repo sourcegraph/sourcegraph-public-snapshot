@@ -4,6 +4,7 @@ go_library(
     name = "gen_lib",
     srcs = ["yamldata.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/gen",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
 )
@@ -11,5 +12,6 @@ go_library(
 go_binary(
     name = "type_gen",
     embed = [":gen_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
 )

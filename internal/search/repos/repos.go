@@ -19,7 +19,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -600,6 +600,11 @@ func (r *Resolver) filterHasCommitAfter(
 		return repoRevs, nil
 	}
 
+	timeRef, err := gitdomain.ParseGitDate(op.CommitAfter.TimeRef, time.Now)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid time ref")
+	}
+
 	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
 
 	for _, repoRev := range repoRevs {
@@ -613,7 +618,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			p.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
+				if hasCommitAfter, err := hasCommitAfter(ctx, r.gitserver, repoRev.Repo.Name, timeRef, rev); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -648,6 +653,25 @@ func (r *Resolver) filterHasCommitAfter(
 	}
 
 	return filteredRepoRevs, nil
+}
+
+// hasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
+// contains a commit past a specified date.
+func hasCommitAfter(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName, timeRef time.Time, revspec string) (bool, error) {
+	if revspec == "" {
+		revspec = "HEAD"
+	}
+
+	// TODO: Because N: 1 currently has a special meaning because of `isRequestForSingleCommit`,
+	// we ask for two commits here, but the second one we never actually need.
+	// One we figure out why `isRequestForSingleCommit` exists in the first place,
+	// we should update this.
+	commits, err := gitserverClient.Commits(ctx, repoName, gitserver.CommitsOptions{N: 2, After: timeRef, Ranges: []string{revspec}})
+	if err != nil {
+		return false, err
+	}
+
+	return len(commits) > 0, nil
 }
 
 // filterRepoHasFileContent filters a page of repos to only those that match the

@@ -3,6 +3,7 @@
 
 export { parseSearchURL, type ParsedSearchURL } from '@sourcegraph/web/src/search/index'
 export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/suggestions'
+export { CachedAsyncCompletionSource, type CompletionResult } from '@sourcegraph/web/src/search/autocompletion/source'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
 export { linkify } from '@sourcegraph/web/src/repo/blob/codemirror/links'

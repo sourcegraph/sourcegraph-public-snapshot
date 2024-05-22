@@ -25,6 +25,7 @@ go_library(
         "versioned_package.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/reposource",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -58,6 +59,7 @@ go_test(
         "other_test.go",
     ],
     embed = [":reposource"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//lib/errors",

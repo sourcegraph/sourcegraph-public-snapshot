@@ -9,6 +9,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/github_apps/store",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/basestore",
@@ -32,6 +33,7 @@ go_test(
     srcs = ["store_test.go"],
     embed = [":store"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

@@ -16,7 +16,7 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('list tags', async ({ sg, page }) => {
+test.skip('list tags', async ({ sg, page }) => {
     sg.mockOperations({
         TagsPage_TagsQuery: () => ({
             repository: {

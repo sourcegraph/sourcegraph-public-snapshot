@@ -11,6 +11,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/comby",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
@@ -106,6 +107,7 @@ go_test(
         "translate_test.go",
     ],
     embed = [":comby"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

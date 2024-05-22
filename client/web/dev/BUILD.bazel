@@ -36,6 +36,7 @@ ts_project(
         "utils/should-compress-response.ts",
         "utils/success-banner.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     visibility = ["//client/web:__subpackages__"],
     deps = [
@@ -105,6 +106,7 @@ ts_project(
     name = "dev_tests",
     testonly = True,
     srcs = ["esbuild/webmanifest.test.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":dev",
@@ -117,4 +119,5 @@ vitest_test(
     data = [
         ":dev_tests",
     ],
+    tags = [TAG_SEARCHSUITE],
 )

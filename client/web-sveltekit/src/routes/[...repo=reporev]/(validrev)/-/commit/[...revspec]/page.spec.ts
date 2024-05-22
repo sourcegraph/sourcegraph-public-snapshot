@@ -56,3 +56,37 @@ test('error loading diff information', async ({ page, sg }) => {
     await page.goto(url)
     await expect(page.getByText(/Test error/)).toBeVisible()
 })
+
+test('shows previous diffs when error occurs', async ({ page, sg }) => {
+    let callCount = 0
+    sg.mockOperations({
+        CommitPage_DiffQuery: () => {
+            if (callCount === 1) {
+                throw new Error('Test error')
+            }
+            callCount++
+            return {
+                repository: {
+                    comparison: {
+                        fileDiffs: {
+                            nodes: [
+                                {
+                                    __typename: 'FileDiff',
+                                    oldPath: null,
+                                    newPath: '<new path>',
+                                },
+                            ],
+                            pageInfo: {
+                                hasNextPage: true,
+                                endCursor: 'cursor',
+                            },
+                        },
+                    },
+                },
+            }
+        },
+    })
+    await page.goto(url)
+    await expect(page.getByText('<new path>')).toBeVisible()
+    await expect(page.getByText('Test error')).toBeVisible()
+})

@@ -11,15 +11,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var DeleteEphemeralCommand = cli.Command{
+var deleteEphemeralCommand = cli.Command{
 	Name:        "delete",
-	Usage:       "sg could delete <name/slug>",
-	Description: "delete ephemeral cloud instance identified either by the current branch or provided as a cli arg",
-	Action:      wipAction(deleteCloudEphemeral),
+	Usage:       "Delete an ephemeral instance",
+	Description: "Delete ephemeral instance identified either by the current branch or by name",
+	Action:      deleteCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "name",
-			Usage: "name or slug of the cloud ephemeral instance to delete",
+			Name:        "name",
+			Usage:       "name of the instance to update the lease expiry time for",
+			DefaultText: "current branch name will be used",
 		},
 	},
 }

@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -57,9 +58,13 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	if err != nil {
 		return errors.Wrap(err, "repoStore.Get")
 	}
-	commitLog, err := r.client.CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
+	commits, err := r.client.Commits(ctx, repo.Name, gitserver.CommitsOptions{
+		Order:  gitserver.CommitsOrderTopoDate,
+		After:  time.Now().AddDate(0, 0, -90),
+		Ranges: []string{"HEAD"},
+	})
 	if err != nil {
-		return errors.Wrap(err, "CommitLog")
+		return errors.Wrap(err, "Commits")
 	}
 
 	store := r.db.RecentContributionSignals()
@@ -68,20 +73,40 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 		return errors.Wrap(err, "ClearSignals")
 	}
 
-	for _, commit := range commitLog {
-		err := store.AddCommit(ctx, database.Commit{
+	inserted := 0
+	for _, commit := range commits {
+		if len(commit.Parents) > 1 { // We don't care about merge commits.
+			continue
+		}
+		it, err := r.client.ChangedFiles(ctx, repo.Name, "", string(commit.ID))
+		if err != nil {
+			return errors.Wrap(err, "ChangedFiles")
+		}
+		changedFiles := []string{}
+		for {
+			ps, err := it.Next()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return errors.Wrap(err, "ChangedFilesIterator")
+			}
+			changedFiles = append(changedFiles, ps.Path)
+		}
+		err = store.AddCommit(ctx, database.Commit{
 			RepoID:       repoId,
-			AuthorName:   commit.AuthorName,
-			AuthorEmail:  commit.AuthorEmail,
-			Timestamp:    commit.Timestamp,
-			CommitSHA:    commit.SHA,
-			FilesChanged: commit.ChangedFiles,
+			AuthorName:   commit.Author.Name,
+			AuthorEmail:  commit.Author.Email,
+			Timestamp:    commit.Author.Date,
+			CommitSHA:    string(commit.ID),
+			FilesChanged: changedFiles,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "AddCommit %v", commit)
 		}
+		inserted++
 	}
-	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
-	commitCounter.Add(float64(len(commitLog)))
+	r.logger.Info("commits inserted", logger.Int("count", inserted), logger.Int("repo_id", int(repoId)))
+	commitCounter.Add(float64(inserted))
 	return nil
 }

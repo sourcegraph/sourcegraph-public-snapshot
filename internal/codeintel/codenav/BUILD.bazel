@@ -17,6 +17,7 @@ go_library(
         "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -49,6 +50,7 @@ go_test(
     srcs = [
         "gittree_translator_test.go",
         "mocks_test.go",
+        "service_closest_uploads_test.go",
         "service_definitions_test.go",
         "service_diagnostics_test.go",
         "service_hover_test.go",
@@ -60,6 +62,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":codenav"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/actor",
         "//internal/api",
@@ -67,6 +70,7 @@ go_test(
         "//internal/codeintel/codenav/internal/lsifstore",
         "//internal/codeintel/codenav/shared",
         "//internal/codeintel/uploads/shared",
+        "//internal/collections",
         "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
@@ -76,6 +80,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@com_github_stretchr_testify//require",
     ],
 )
 

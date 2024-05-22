@@ -33,6 +33,14 @@ type SrcSpec struct {
 
 type DstSpec struct {
 	TeamID string `json:"teamId,omitempty"`
+	// Modifier is an optional field that allows for additional configuration when moving the issue.
+	// Any errors encountered while applying the modifier will be logged, but the issue will still be moved regardless.
+	Modifier *DstModifierSpec `json:"modifier,omitempty"`
+}
+
+type DstModifierSpec struct {
+	// ProjectName is the name of the project that the issue will be moved to. The project must exist in the destination team.
+	ProjectName string `json:"projectName,omitempty"`
 }
 
 func (c *Config) Validate() error {
