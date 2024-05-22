@@ -460,33 +460,6 @@ func (i *readDirIterator) Close() {
 	i.onClose()
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (err error) {
-	ctx, _, endObservation := c.operations.logReverseEach.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			api.RepoName(repo).Attr(),
-			attribute.String("commit", commit),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
-
-	// We run a single `git log` command and stream the output while the repo is being processed, which
-	// can take much longer than 1 minute (the default timeout).
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
-}
-
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{

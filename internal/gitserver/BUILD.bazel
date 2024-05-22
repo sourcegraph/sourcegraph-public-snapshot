@@ -9,7 +9,6 @@ go_library(
         "client.go",
         "commands.go",
         "errwrap.go",
-        "git_command.go",
         "mock.go",
         "mocks_temp.go",
         "observability.go",

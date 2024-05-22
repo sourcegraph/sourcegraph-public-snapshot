@@ -106,6 +106,7 @@ func (r *errorTranslatingCreateCommitFromPatchBinaryClient) CloseAndRecv() (*pro
 }
 
 func (r *errorTranslatingClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	cc, err := r.base.Exec(ctx, in, opts...)
 	if err != nil {
 		return nil, convertGRPCErrorToGitDomainError(err)

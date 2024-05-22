@@ -166,17 +166,18 @@ func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.Gitser
 			execRequestToLogFields(request)...)
 	}()
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	return l.base.Exec(request, server)
 }
 
 func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
 	return []log.Field{
+		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 		log.String("repo", req.GetRepo()),
 		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 		log.String("ensureRevision", string(req.GetEnsureRevision())),
+		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 		log.Strings("args", byteSlicesToStrings(req.GetArgs())),
-		log.Bool("noTimeout", req.GetNoTimeout()),
-
 		// 🚨SECURITY: We don't log the stdin field because it could 1) contain sensitive data 2) be very large.
 	}
 }

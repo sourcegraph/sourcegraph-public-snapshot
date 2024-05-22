@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/bytesize"
@@ -171,7 +170,7 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 		stderr:    stderrBuf,
 		repoName:  g.repoName,
 		logger:    logger,
-		git:       g,
+		gitDir:    g.dir,
 		tr:        tr,
 	}
 
@@ -219,7 +218,7 @@ type cmdReader struct {
 	cmd       wrexec.Cmder
 	stderr    *bytes.Buffer
 	logger    log.Logger
-	git       git.GitBackend
+	gitDir    common.GitDir
 	repoName  api.RepoName
 	mu        sync.Mutex
 	tr        trace.Trace
@@ -258,7 +257,7 @@ func (rc *cmdReader) waitCmd() error {
 		rc.err = rc.cmd.Wait()
 
 		if rc.err != nil {
-			if checkMaybeCorruptRepo(rc.logger, rc.git, rc.repoName, rc.stderr.String()) {
+			if checkMaybeCorruptRepo(rc.logger, rc.gitDir, rc.repoName, rc.stderr.String()) {
 				rc.err = common.ErrRepoCorrupted{Reason: rc.stderr.String()}
 			} else {
 				rc.err = commandFailedError(rc.ctx, rc.err, rc.cmd, rc.stderr.Bytes())
@@ -390,7 +389,7 @@ func (l *limitWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, git git.GitBackend, repo api.RepoName, stderr string) bool {
+func checkMaybeCorruptRepo(logger log.Logger, girDir common.GitDir, repo api.RepoName, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
 		return false
 	}
@@ -402,17 +401,31 @@ func checkMaybeCorruptRepo(logger log.Logger, git git.GitBackend, repo api.RepoN
 	// runs every minute.
 	// We use a background context here to record corruption events even when the
 	// context has since been cancelled.
-	err := git.Config().Set(context.Background(), gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
+	err := markRepoMaybeCorrupt(girDir)
 	if err != nil {
-		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
+		logger.Error("failed to set maybeCorruptRepo flag", log.Error(err))
 	}
 
 	return true
 }
 
-// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
-// corrupt on disk.
-const gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
+// markRepoMaybeCorrupt ensures a file called sourcegraph.maybeCorruptRepo exists
+// in the repo root, and makes sure the files mtime set to the current time.
+func markRepoMaybeCorrupt(gitDir common.GitDir) error {
+	p := gitDir.Path(RepoMaybeCorruptFlagFilepath)
+
+	f, err := os.Create(p)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+	_ = f.Close()
+	return os.Chtimes(p, time.Time{}, time.Now())
+}
+
+// RepoMaybeCorruptFlagFilepath is a magic file we add to the root of a git repo
+// to signal that a repo may be corrupt on disk, when the git stderr output indicates
+// potential corruption.
+const RepoMaybeCorruptFlagFilepath = ".sourcegraph-maybe-corrupt-repo"
 
 var (
 	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate

@@ -32,19 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const git = "git"
-
-var ClientMocks, emptyClientMocks struct {
-	LocalGitserver          bool
-	LocalGitCommandReposDir string
-}
-
-// ResetClientMocks clears the mock functions set on Mocks (so that subsequent
-// tests don't inadvertently use them).
-func ResetClientMocks() {
-	ClientMocks = emptyClientMocks
-}
-
 var _ Client = &clientImplementor{}
 
 // ClientSource is a source of gitserver.Client instances.
@@ -458,9 +445,6 @@ type Client interface {
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
-
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
 
@@ -578,66 +562,6 @@ func clientForConn(conn *grpc.ClientConn) proto.GitserverServiceClient {
 	}
 }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			c.repo.Attr(),
-			attribute.StringSlice("args", c.args[1:]),
-		},
-	})
-	done := func() {
-		cancel()
-		endObservation(1, observation.Args{})
-	}
-	defer func() {
-		if err != nil {
-			done()
-		}
-	}()
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	client, err := c.execer.ClientForRepo(ctx, c.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
-		Args:      stringsToByteSlices(c.args[1:]),
-		NoTimeout: c.noTimeout,
-	}
-
-	stream, err := client.Exec(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	r := streamio.NewReader(func() ([]byte, error) {
-		msg, err := stream.Recv()
-		if err != nil {
-			return nil, err
-		}
-		return msg.GetData(), nil
-	})
-
-	return &readCloseWrapper{Reader: r, closeFn: done}, nil
-}
-
-type readCloseWrapper struct {
-	io.Reader
-	closeFn func()
-}
-
-func (r *readCloseWrapper) Close() error {
-	r.closeFn()
-	return nil
-}
-
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -678,23 +602,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		default:
 			return false, errors.Newf("unknown message type %T", m)
 		}
-	}
-}
-
-func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
-	if ClientMocks.LocalGitserver {
-		cmd := NewLocalGitCommand(repo, arg...)
-		if ClientMocks.LocalGitCommandReposDir != "" {
-			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
-		}
-		return cmd
-	}
-	return &RemoteGitCommand{
-		repo:   repo,
-		execer: c.clientSource,
-		args:   append([]string{git}, arg...),
-		execOp: c.operations.exec,
-		scope:  c.scope,
 	}
 }
 

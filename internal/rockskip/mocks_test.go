@@ -12,6 +12,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -125,26 +127,44 @@ func (g subprocessGit) Close() error {
 	return g.catFileCmd.Wait()
 }
 
-func (g subprocessGit) LogReverseEach(_ context.Context, _ string, givenCommit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) (returnError error) {
-	log := exec.Command("git", gitdomain.LogReverseArgs(n, givenCommit)...)
-	log.Dir = g.gitDir
-	output, err := log.StdoutPipe()
+func (g *subprocessGit) ChangedFiles(ctx context.Context, repo api.RepoName, base string, head string) (gitserver.ChangedFilesIterator, error) {
+	cmd := exec.CommandContext(ctx, "git",
+		"diff-tree",
+		"-r",
+		"--root",
+		"--format=format:",
+		"--no-prefix",
+		"--name-status",
+		"--no-renames",
+		"-z",
+		head,
+	)
+	cmd.Dir = g.gitDir
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
 	}
 
-	err = log.Start()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = log.Wait()
-		if err != nil {
-			returnError = err
-		}
-	}()
+	scanner := bufio.NewScanner(stdout)
+	scanner.Split(byteutils.ScanNullLines)
 
-	return gitdomain.ParseLogReverseEach(output, onLogEntry)
+	closeChan := make(chan struct{})
+	closer := sync.OnceFunc(func() {
+		_ = stdout.Close()
+		_ = cmd.Wait()
+		close(closeChan)
+	})
+
+	return &gitDiffIterator{
+		rc:             stdout,
+		scanner:        scanner,
+		closeChan:      closeChan,
+		onceFuncCloser: closer,
+	}, nil
 }
 
 func (g *subprocessGit) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
@@ -376,4 +396,61 @@ func parseCommitFromLog(rawCommit []byte) (*gitdomain.Commit, error) {
 		Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 		Parents:   parents,
 	}, nil
+}
+
+type gitDiffIterator struct {
+	rc      io.ReadCloser
+	scanner *bufio.Scanner
+
+	closeChan      chan struct{}
+	onceFuncCloser func()
+}
+
+func (i *gitDiffIterator) Next() (gitdomain.PathStatus, error) {
+	select {
+	case <-i.closeChan:
+		return gitdomain.PathStatus{}, io.EOF
+	default:
+	}
+
+	for i.scanner.Scan() {
+		select {
+		case <-i.closeChan:
+			return gitdomain.PathStatus{}, io.EOF
+		default:
+		}
+
+		status := i.scanner.Text()
+		if len(status) == 0 {
+			continue
+		}
+
+		if !i.scanner.Scan() {
+			return gitdomain.PathStatus{}, errors.New("uneven pairs")
+		}
+		path := i.scanner.Text()
+
+		switch status[0] {
+		case 'A':
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusAdded}, nil
+		case 'M':
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusModified}, nil
+		case 'D':
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusDeleted}, nil
+		case 'T':
+			return gitdomain.PathStatus{Path: path, Status: gitdomain.StatusTypeChanged}, nil
+		default:
+			return gitdomain.PathStatus{}, errors.Errorf("encountered unexpected file status %q for file %q", status, path)
+		}
+	}
+
+	if err := i.scanner.Err(); err != nil {
+		return gitdomain.PathStatus{}, errors.Wrap(err, "failed to scan git diff output")
+	}
+
+	return gitdomain.PathStatus{}, io.EOF
+}
+
+func (i *gitDiffIterator) Close() {
+	i.onceFuncCloser()
 }
