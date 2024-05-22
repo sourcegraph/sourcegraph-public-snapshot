@@ -155,16 +155,45 @@ func (c *fireworksClient) Stream(
 	return dec.Err()
 }
 
-func (c *fireworksClient) updateModelStringIfFinetunedModelId(model string) string {
+func (c *fireworksClient) updateModelStringIfFinetunedModelId(languageId string, model string) string {
 	switch model {
+	// 1. Fine-tuned models Mixtral variant
 	case FireworksFineTunedFIMVariant1:
 		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+
+	// 2. Fine-tuned model Language specific mixtral variant
 	case FireworksFineTunedFIMVariant2:
-		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+		{
+			switch languageId {
+			case "typescript", "typescriptreact":
+				return "accounts/sourcegraph/models/typescript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+			case "javascript":
+				return "accounts/sourcegraph/models/javascript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+			case "php":
+				return "accounts/sourcegraph/models/php-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+			case "python":
+				return "accounts/sourcegraph/models/python-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+			default:
+				return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
+			}
+		}
 	case FireworksFineTunedFIMVariant3:
 		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
 	case FireworksFineTunedFIMVariant4:
-		return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
+		{
+			switch languageId {
+			case "typescript", "typescriptreact":
+				return "accounts/sourcegraph/models/lang-typescript-context-fim-meta-llama-3-8b-instruct-e-1"
+			case "javascript":
+				return "accounts/sourcegraph/models/lang-javascript-context-fim-meta-llama-3-8b-instruct-e-1"
+			case "php":
+				return "accounts/sourcegraph/models/lang-php-context-fim-meta-llama-3-8b-instruct-e-1"
+			case "python":
+				return "accounts/sourcegraph/models/lang-python-context-fim-meta-llama-3-8b-instruct-e-1"
+			default:
+				return "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
+			}
+		}
 	default:
 		return model
 	}
@@ -188,7 +217,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 		}
 
 		payload := fireworksRequest{
-			Model:       c.updateModelStringIfFinetunedModelId(requestParams.Model),
+			Model:       c.updateModelStringIfFinetunedModelId(requestParams.LanguageId, requestParams.Model),
 			Temperature: requestParams.Temperature,
 			TopP:        requestParams.TopP,
 			N:           1,
