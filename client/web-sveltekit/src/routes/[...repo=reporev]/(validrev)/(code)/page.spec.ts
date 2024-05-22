@@ -104,7 +104,6 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-
     async function openSidebar(page: Page): Promise<void> {
         return page.getByLabel('Open sidebar').click()
     }
