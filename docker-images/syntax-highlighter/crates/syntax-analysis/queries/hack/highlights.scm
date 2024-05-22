@@ -234,6 +234,9 @@
   .
   (_))
 
+(namespace_declaration
+    name:  (qualified_identifier (identifier) @variable.module))
+
 (use_statement
   (qualified_identifier
     (_) @variable.module .)
