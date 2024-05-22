@@ -45,8 +45,8 @@ func (p Plan) HasFeature(target Feature) bool {
 
 const planTagPrefix = "plan:"
 
-// tag is the representation of the plan as a tag in a license key.
-func (p Plan) tag() string { return planTagPrefix + string(p) }
+// Tag is the representation of the plan as a Tag in a license key.
+func (p Plan) Tag() string { return planTagPrefix + string(p) }
 
 // isKnown reports whether the plan is a known plan.
 func (p Plan) isKnown() bool {

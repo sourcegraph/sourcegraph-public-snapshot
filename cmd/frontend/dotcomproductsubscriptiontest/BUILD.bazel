@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcomproductsubscriptiontest",
+    srcs = ["dotcomproductsubscriptiontest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/dotcomproductsubscriptiontest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/dotcom/productsubscription",
+        "//internal/actor",
+        "//internal/database",
+        "//internal/license",
+        "//internal/types",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

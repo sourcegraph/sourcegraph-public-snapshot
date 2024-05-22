@@ -10,5 +10,9 @@ go_library(
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_google_cloud_go_cloudsqlconn//:cloudsqlconn",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
