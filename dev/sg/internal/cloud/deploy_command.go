@@ -222,7 +222,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		}
 
 		build = b
-		version, err = determineVersion(build, ctx.String("tag"))
+		version, err = determineVersion(build, "")
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,8 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		return err
 	}
 
-	deploymentName := createDeploymentName(ctx.String("name"), version, email, currRepo.Branch)
+	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
+	deploymentName := createDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {

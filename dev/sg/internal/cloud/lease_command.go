@@ -95,6 +95,11 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 	}
 	pending.Complete(output.Linef(CloudEmoji, output.StyleSuccess, "Fetched instance with name %q", name))
 
+	// Do various checks before upgrading the instance
+	if !inst.HasStatus(InstanceStatusCompleted) {
+		std.Out.WriteWarningf("Cannot update lease time of instance with status %q - if this issue persists, please reach out to #discuss-dev-infra", inst.Status.Status)
+		return ErrInstanceStatusNotComplete
+	}
 	if !inst.IsEphemeral() {
 		std.Out.WriteWarningf("Cannot update lease time of non-ephemeral instance %q", name)
 		return ErrNotEphemeralInstance
@@ -104,6 +109,7 @@ func leaseCloudEphemeral(ctx *cli.Context) error {
 		return ErrExpiredInstance
 	}
 
+	// All the checks passed, we can try to extend the lease
 	currentLeaseTime := inst.ExpiresAt
 	var leaseEndTime time.Time
 	if ctx.Bool("expire-now") {

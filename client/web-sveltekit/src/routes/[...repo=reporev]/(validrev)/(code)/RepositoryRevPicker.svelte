@@ -108,7 +108,15 @@
                         iconPath={mdiSourceBranch}
                         label={value.displayName}
                         author={value.target.commit?.author}
-                    />
+                    >
+                        <svelte:fragment slot="title">
+                            <Icon svgPath={mdiSourceBranch} inline />
+                            <Badge variant="link">{value.displayName}</Badge>
+                            {#if value.displayName === resolvedRevision.defaultBranch}
+                                <Badge variant="secondary" small>DEFAULT</Badge>
+                            {/if}
+                        </svelte:fragment>
+                    </RepositoryRevPickerItem>
                 </Picker>
             </TabPanel>
             <TabPanel title="Tags">
