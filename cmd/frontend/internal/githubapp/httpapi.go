@@ -293,9 +293,10 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if kind == itypes.UserCredentialGitHubAppKind {
-		//srv.db.UserCredentials()
-	}
+	fmt.Println("kind ===> ", kind)
+	// if kind == itypes.UserCredentialGitHubAppKind {
+	// 	//srv.db.UserCredentials()
+	// }
 
 	webhookDB := srv.db.Webhooks(keyring.Default().WebhookKey)
 	hook, err := webhookDB.GetByUUID(r.Context(), webhookUUID)

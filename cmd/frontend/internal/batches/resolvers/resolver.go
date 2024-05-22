@@ -28,11 +28,9 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -1121,145 +1119,21 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		return nil, errors.New("empty credential not allowed")
 	}
 
-	if userID != 0 {
-		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
-	}
-
-	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
-}
-
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	// 🚨 SECURITY: Check that the requesting user can create the credential.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
-		return nil, err
-	}
-
-	// Throw error documented in schema.graphql.
-	userCredentialScope := database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainBatches,
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
-		UserID:              userID,
-	}
-	existing, err := r.store.UserCredentials().GetByScope(ctx, userCredentialScope)
-	if err != nil && !errcode.IsNotFound(err) {
-		return nil, err
-	}
-	if existing != nil {
-		return nil, ErrDuplicateCredential{}
-	}
-
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
-	if err != nil {
-		return nil, err
-	}
-	cred, err := r.store.UserCredentials().Create(ctx, userCredentialScope, a)
-	if err != nil {
-		return nil, err
-	}
-
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
-}
-
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	// 🚨 SECURITY: Check that a site credential can only be created
-	// by a site-admin.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		return nil, err
-	}
-
-	// Throw error documented in schema.graphql.
-	existing, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceURL,
-	})
-	if err != nil && err != store.ErrNoResults {
-		return nil, err
-	}
-	if existing != nil {
-		return nil, ErrDuplicateCredential{}
-	}
-
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
-	if err != nil {
-		return nil, err
-	}
-	cred := &btypes.SiteCredential{
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
-	}
-	if err := r.store.CreateSiteCredential(ctx, cred, a); err != nil {
-		return nil, err
-	}
-
-	return &batchChangesSiteCredentialResolver{credential: cred}, nil
-}
-
-func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (extsvcauth.Authenticator, error) {
 	svc := service.New(r.store)
 
-	var a extsvcauth.Authenticator
-	keypair, err := encryption.GenerateRSAKey()
+	if userID != 0 {
+		cred, err := svc.CreateBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
+		if err != nil {
+			return nil, err
+		}
+		return &batchChangesUserCredentialResolver{credential: cred}, nil
+	}
+
+	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
 	if err != nil {
 		return nil, err
 	}
-	if externalServiceType == extsvc.TypeBitbucketServer {
-		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
-		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, externalServiceURL, externalServiceType, credential)
-		if err != nil {
-			if bitbucketserver.IsUnauthorized(err) {
-				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
-			}
-			return nil, err
-		}
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else if externalServiceType == extsvc.TypeBitbucketCloud {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else if externalServiceType == extsvc.TypeAzureDevOps {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else if externalServiceType == extsvc.TypeGerrit {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else if externalServiceType == extsvc.TypePerforce {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else {
-		a = &extsvcauth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},
-			PrivateKey:       keypair.PrivateKey,
-			PublicKey:        keypair.PublicKey,
-			Passphrase:       keypair.Passphrase,
-		}
-	}
-
-	// Validate the newly created authenticator.
-	if err := svc.ValidateAuthenticator(ctx, externalServiceURL, externalServiceType, a); err != nil {
-		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
-	}
-	return a, nil
+	return &batchChangesSiteCredentialResolver{credential: cred}, nil
 }
 
 func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -2064,7 +1938,7 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 
 	svc := service.New(r.store)
 	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
-		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+		return nil, &service.ErrVerifyCredentialFailed{SourceErr: err}
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
