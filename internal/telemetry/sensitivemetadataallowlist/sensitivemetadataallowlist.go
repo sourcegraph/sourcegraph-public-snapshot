@@ -99,7 +99,10 @@ func (e EventTypes) validate() error {
 type EventType struct {
 	Feature string
 	Action  string
-	// AllowedPrivateMetadataKeys is the list of field names permitted to be exported from the `privateMetadata` object.
+	// AllowedPrivateMetadataKeys is a slice of strings representing the top-level field names
+	// from the `privateMetadata` object that ARE allowed to be exported for ALL users. Any field not present
+	// in this slice will be considered sensitive and redacted during the export process.
+	// ONLY STRING fields at the top-level of the `privateMetadata` object are permitted.
 	AllowedPrivateMetadataKeys []string
 }
 

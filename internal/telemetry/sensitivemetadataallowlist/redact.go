@@ -1,6 +1,7 @@
 package sensitivemetadataallowlist
 
 import (
+	"fmt"
 	"slices"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -24,7 +25,7 @@ const (
 // 🚨 SECURITY: Be very careful with the redaction mechanisms here, as it impacts
 // what data we export from customer Sourcegraph instances.
 func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivateMetadataKeys []string) {
-	// redactNothing (generally in dotcom)
+	// redactNothing (generally only in dotcom)
 	if mode >= redactNothing {
 		return
 	}
@@ -36,12 +37,14 @@ func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivat
 		// everything
 		for key, value := range event.Parameters.PrivateMetadata.Fields {
 			if !slices.Contains(allowedPrivateMetadataKeys, key) {
-				// Strip all keys that are NOT in the allowlist
+				// Strip all keys that are NOT in the allowlist, as they are considered sensitive.
+				// No need to check data types, since we're only dealing with keys.
 				delete(event.Parameters.PrivateMetadata.Fields, key)
 			} else if _, isString := value.Kind.(*structpb.Value_StringValue); !isString {
-				// Strip all values that are not strings, even if they ARE in the allowlist
+				// Strip all non-string values,even if they are in the allowlist
+				// 🚨 This prevents exporting arbitrary data types with deep values, which could lead to uncontrolled data exposure.
 				event.Parameters.PrivateMetadata.Fields[key] =
-					structpb.NewStringValue("ERROR: value of allowlisted key was not a string")
+					structpb.NewStringValue(fmt.Sprintf("ERROR: value of allowlisted key was not a string, got: %T", value.Kind))
 			}
 		}
 		return
