@@ -8,6 +8,7 @@ import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 import { requestSSC } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
+import { intlFormatDistance } from 'date-fns'
 
 export interface TeamMember {
     accountId: string
@@ -33,6 +34,10 @@ export interface TeamInvite {
     sentAt: string | null
     acceptedAt: string | null
 }
+
+// This little function is extracted to make it testable.
+// Same for the "now" parameter.
+export const formatInviteDate = (sentAt: string | null, now?: Date): string => intlFormatDistance(sentAt ?? '', now ?? new Date())
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     teamId,
@@ -266,7 +271,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     )}
                                 </div>
                                 <div className="align-content-center">
-                                    <em>Invite sent {invite.sentAt /* TODO format this */}</em>
+                                    <em>Invite sent {formatInviteDate(invite.sentAt)}</em>
                                 </div>
                                 {isAdmin && (
                                     <>
