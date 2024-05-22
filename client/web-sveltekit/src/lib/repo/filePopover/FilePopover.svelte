@@ -109,7 +109,7 @@
                     {lastCommit.abbreviatedOID}
                 </a>
             </Badge>
-            <div class="body">{lastCommit.subject}</div>
+            <div class="body"><a href={lastCommit.canonicalURL}>{lastCommit.subject}</a></div>
             <div class="author">
                 <Avatar avatar={lastCommit.author.person} --avatar-size="1.0rem" />
                 {lastCommit.author.person.displayName}
@@ -204,5 +204,8 @@
 
     .body {
         color: var(--text-body);
+        a {
+            color: unset;
+        }
     }
 </style>
