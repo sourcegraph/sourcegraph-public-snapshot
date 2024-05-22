@@ -143,6 +143,9 @@ resources:
 
         worker:
           disabled: true
+
+        prometheus:
+          disabled: true
   kind: ConfigMap
   metadata:
     annotations:

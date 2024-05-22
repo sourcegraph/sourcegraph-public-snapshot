@@ -146,6 +146,9 @@ resources:
 
         storageClass:
           name: sourcegraph
+
+        prometheus:
+          disabled: true
   kind: ConfigMap
   metadata:
     annotations:
