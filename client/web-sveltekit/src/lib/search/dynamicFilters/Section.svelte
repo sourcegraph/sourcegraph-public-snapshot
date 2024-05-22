@@ -30,7 +30,13 @@
         {/if}
         <ul>
             {#each limitedItems as item}
-                <li><slot name="item" {item}><SectionItem {item} {onFilterSelect} /></slot></li>
+                <li>
+                    <slot name="item" {item}>
+                        <SectionItem {item} {onFilterSelect}>
+                            <slot name="label" slot="label" let:label let:value {label} {value} />
+                        </SectionItem>
+                    </slot>
+                </li>
             {/each}
         </ul>
         {#if filteredItems.length === 0}

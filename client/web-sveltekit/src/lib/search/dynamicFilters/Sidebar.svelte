@@ -111,13 +111,9 @@
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
-                <svelte:fragment slot="item" let:item>
-                    <SectionItem {item}>
-                        <svelte:fragment slot="label" let:label>
-                            <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
-                            {label}
-                        </svelte:fragment>
-                    </SectionItem>
+                <svelte:fragment slot="label" let:label>
+                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                    {label}
                 </svelte:fragment>
             </Section>
         {/if}
@@ -154,13 +150,9 @@
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="item" let:item>
-                <SectionItem {item}>
-                    <svelte:fragment slot="label" let:label>
-                        <LanguageIcon class="icon" language={label} inline />&nbsp;
-                        {label}
-                    </svelte:fragment>
-                </SectionItem>
+            <svelte:fragment slot="label" let:label>
+                <LanguageIcon class="icon" language={label} inline />&nbsp;
+                {label}
             </svelte:fragment>
         </Section>
         <Section
@@ -169,15 +161,11 @@
             filterPlaceholder="Filter symbol types"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="item" let:item>
-                <SectionItem {item}>
-                    <svelte:fragment slot="label" let:label>
-                        <div class="symbol-label">
-                            <SymbolKindIcon symbolKind={label.toUpperCase()} />
-                            {label}
-                        </div>
-                    </svelte:fragment>
-                </SectionItem>
+            <svelte:fragment slot="label" let:label>
+                <div class="symbol-label">
+                    <SymbolKindIcon symbolKind={label.toUpperCase()} />
+                    {label}
+                </div>
             </svelte:fragment>
         </Section>
         <Section
@@ -187,14 +175,10 @@
             onFilterSelect={handleFilterSelect}
         />
         <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
-            <svelte:fragment slot="item" let:item>
-                <SectionItem {item}>
-                    <span class="commit-date-label" slot="label" let:label let:value>
-                        {label}
-                        <small><pre>{value}</pre></small>
-                    </span>
-                </SectionItem>
-            </svelte:fragment>
+            <span class="commit-date-label" slot="label" let:label let:value>
+                {label}
+                <small><pre>{value}</pre></small>
+            </span>
         </Section>
         <Section items={groupedFilters.file} title="By file" showAll onFilterSelect={handleFilterSelect} />
         <Section items={groupedFilters.utility} title="Utility" showAll onFilterSelect={handleFilterSelect} />
