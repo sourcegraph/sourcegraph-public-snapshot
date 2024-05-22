@@ -65,11 +65,11 @@
         <small>
             {displayRepoName(repoName).replace('/', ' / ')}
             {#if dirNameBreadcrumbs}·{/if}
-            {#each dirNameBreadcrumbs as [name, path], i}
+            {#each dirNameBreadcrumbs as [name, href], i}
                 {' '}
                 <span>
                     {#if i > 0}/{/if}
-                    <a href={path}>{name}</a>
+                    <a {href}>{name}</a>
                 </span>
             {/each}
         </small>
@@ -131,9 +131,12 @@
 
         .repo-and-path {
             border-bottom: 1px solid var(--border-color);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            a {
+                color: unset;
+                &:hover {
+                    color: var(--text-body);
+                }
+            }
         }
 
         .lang-and-file {
