@@ -62,17 +62,23 @@
 
 <div class="root section muted">
     <div class="repo-and-path section mono">
-        <small>
-            {displayRepoName(repoName).replace('/', ' / ')}
-            {#if dirNameBreadcrumbs.length}·{/if}
-            {#each dirNameBreadcrumbs as [name, href], i}
-                {' '}
-                <span>
-                    {#if i > 0}/{/if}
-                    <a {href}>{name}</a>
-                </span>
-            {/each}
-        </small>
+        <!--
+            Extra layer of divs to allow customizing the gap, but wrap before the slashes.
+            Ideally we'd be able to use `break-after: avoid;`, but that's not widely supported.
+        -->
+        {#each displayRepoName(repoName).split('/') as repoFragment, i}
+            <div>
+                {#if i > 0}<div>/</div>{/if}
+                <div>{repoFragment}</div>
+            </div>
+        {/each}
+        {#if dirNameBreadcrumbs.length}<div>·</div>{/if}
+        {#each dirNameBreadcrumbs as [name, href], i}
+            <div>
+                {#if i > 0}<div>/</div>{/if}
+                <div><a {href}>{name}</a></div>
+            </div>
+        {/each}
     </div>
 
     <div class="lang-and-file section">
@@ -130,7 +136,18 @@
         }
 
         .repo-and-path {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375em;
+            div {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: inherit;
+            }
+
             border-bottom: 1px solid var(--border-color);
+
+            font-size: var(--font-size-tiny);
             a {
                 color: unset;
                 &:hover {
