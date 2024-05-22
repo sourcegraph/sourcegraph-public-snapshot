@@ -37,7 +37,13 @@ export interface TeamInvite {
 
 // This little function is extracted to make it testable.
 // Same for the "now" parameter.
-export const formatInviteDate = (sentAt: string | null, now?: Date): string => intlFormatDistance(sentAt ?? '', now ?? new Date())
+export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
+    try {
+        return sentAt ? intlFormatDistance(sentAt || '', now ?? new Date()) : ''
+    } catch {
+        return ''
+    }
+}
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     teamId,

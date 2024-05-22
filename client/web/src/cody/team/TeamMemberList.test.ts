@@ -26,4 +26,27 @@ describe('getFilterFnsFromCodyContextFilters', () => {
 
         expect(outputDates).toEqual(expectedOutput)
     })
+
+    it('does not fail too badly with atypical input', async () => {
+        // These are in the format of the normal output of our Go back end
+        const inputDates = [
+            null,
+            '',
+            '1T14:17:55.000000+00:00',
+            '2024-05-15T14:17:55',
+            ]
+
+        const now = new Date('2024-05-22T16:00:00.000000+00:00')
+
+        const expectedOutput = [
+            '',
+            '',
+            '',
+            'last week',
+        ]
+
+        const outputDates = inputDates.map(date => formatInviteDate(date, now))
+
+        expect(outputDates).toEqual(expectedOutput)
+    })
 })
