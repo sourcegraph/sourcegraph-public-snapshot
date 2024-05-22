@@ -60,6 +60,7 @@
   "clone"
   "as"
   "concurrent"
+  ; "nameof" This is missing in the grammar
 ] @keyword.operator
 
 "return" @keyword.return
@@ -308,9 +309,6 @@
 (method_declaration
   name: (identifier) @function.method)
 
-(identifier) @variable
-(pipe_variable) @variable
-
 (type_arguments
   [
     "<"
@@ -396,5 +394,7 @@
 (type_specifier) @type
 
 (variable) @variable
+(identifier) @variable
+(pipe_variable) @variable
 
 (braced_expression) @none
