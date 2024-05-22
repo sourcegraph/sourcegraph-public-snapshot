@@ -6,14 +6,17 @@ import (
 
 	"github.com/fullstorydev/grpcui/standalone"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var envEnableGRPCWebUI = env.MustGetBool("GRPC_WEB_UI_ENABLED", false, "Enable the gRPC Web UI to debug and explore gRPC services")
+// GRPCWebUIEnabled is an additional environment variable that must be true to
+// enable the gRPC Web UI.
+var GRPCWebUIEnabled = env.MustGetBool("GRPC_WEB_UI_ENABLED", false, "Enable the gRPC Web UI to debug and explore gRPC services")
 
 const gRPCWebUIPath = "/debug/grpcui"
 
@@ -53,7 +56,7 @@ type grpcHandler struct {
 }
 
 func (g *grpcHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !envEnableGRPCWebUI {
+	if !GRPCWebUIEnabled {
 		http.Error(w, "gRPC Web UI is disabled", http.StatusNotFound)
 		return
 	}

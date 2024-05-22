@@ -8,6 +8,8 @@ import (
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
 )
 
+const Name = subscriptionsv1connect.SubscriptionsServiceName
+
 func RegisterV1(logger log.Logger, mux *http.ServeMux) {
 	mux.Handle(subscriptionsv1connect.NewSubscriptionsServiceHandler(&handlerV1{
 		logger: logger.Scoped("subscriptions.v1"),

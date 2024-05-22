@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/grpcreflect"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
@@ -17,6 +18,7 @@ import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -77,8 +79,22 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
 	subscriptionsservice.RegisterV1(logger, httpServer)
 
-	// Initialize server
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
+	if !contract.MSP && debugserver.GRPCWebUIEnabled {
+		// Enable reflection for the web UI
+		reflector := grpcreflect.NewStaticReflector(
+			codyaccessservice.Name,
+			subscriptionsservice.Name,
+		)
+		httpServer.Handle(grpcreflect.NewHandlerV1(reflector))
+		httpServer.Handle(grpcreflect.NewHandlerV1Alpha(reflector)) // web UI still requires old API
+		// Enable the web UI
+		grpcUI := debugserver.NewGRPCWebUIEndpoint("enterprise-portal", listenAddr)
+		httpServer.Handle(grpcUI.Path, grpcUI.Handler)
+		logger.Warn("gRPC web UI enabled", log.String("url", fmt.Sprintf("%s%s", listenAddr, grpcUI.Path)))
+	}
+
+	// Initialize server
 	server := httpserver.NewFromAddr(
 		listenAddr,
 		&http.Server{
