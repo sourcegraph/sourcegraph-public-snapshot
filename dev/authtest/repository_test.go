@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -84,10 +85,9 @@ func TestRepository(t *testing.T) {
 	// Create a test user (authtest-user-repository) which is not a site admin, the
 	// user should only have access to non-private repositories.
 	const testUsername = "authtest-user-repository"
-	userClient, err := gqltestutil.SignUp(*baseURL, testUsername+"@sourcegraph.com", testUsername, "mysecurepassword")
-	if err != nil {
-		t.Fatal(err)
-	}
+	userClient, err := gqltestutil.NewClient(*baseURL)
+	require.NoError(t, err)
+	require.NoError(t, userClient.SignUp(testUsername+"@sourcegraph.com", testUsername, "mysecurepassword"))
 	defer func() {
 		err := client.DeleteUser(userClient.AuthenticatedUserID(), true)
 		if err != nil {

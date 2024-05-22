@@ -16,6 +16,7 @@ type SandboxService interface {
 }
 
 type GitService interface {
+	ResolveRevision(ctx context.Context, repo api.RepoName, spec string) (api.CommitID, error)
 	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
 	Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error)
 }
@@ -53,4 +54,10 @@ func (s *gitService) ReadDir(ctx context.Context, repo api.RepoName, commit api.
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	return s.client.ArchiveReader(ctx, repo, opts)
+}
+
+func (s *gitService) ResolveRevision(ctx context.Context, repo api.RepoName, spec string) (api.CommitID, error) {
+	return s.client.ResolveRevision(ctx, repo, spec, gitserver.ResolveRevisionOptions{
+		EnsureRevision: false,
+	})
 }

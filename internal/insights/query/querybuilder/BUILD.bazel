@@ -9,6 +9,7 @@ go_library(
         "regexp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/compute",
@@ -31,6 +32,7 @@ go_test(
         "regexp_test.go",
     ],
     embed = [":querybuilder"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/gitserver",
         "//internal/search/query",

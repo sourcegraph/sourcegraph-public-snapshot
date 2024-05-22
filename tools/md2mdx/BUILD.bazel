@@ -5,12 +5,14 @@ go_library(
     name = "md2mdx_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/tools/md2mdx",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
 )
 
 go_binary(
     name = "md2mdx",
     embed = [":md2mdx_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -18,5 +20,6 @@ go_test(
     name = "md2mdx_test",
     srcs = ["main_test.go"],
     embed = [":md2mdx_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = ["@com_github_stretchr_testify//assert"],
 )

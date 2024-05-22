@@ -1,6 +1,6 @@
 // Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
 //
-// To learn more, refer to "How to add observability": https://sourcegraph.com/docs/dev/how-to/add_observability
+// To learn more, refer to "How to add observability": https://docs-legacy.sourcegraph.com/dev/how-to/add_observability
 package observation
 
 import (

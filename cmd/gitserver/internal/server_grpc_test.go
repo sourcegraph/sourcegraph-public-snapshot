@@ -1449,6 +1449,127 @@ func TestGRPCServer_ReadDir(t *testing.T) {
 	})
 }
 
+func TestGRPCServer_CommitLog(t *testing.T) {
+	ctx := context.Background()
+	mockSS := gitserver.NewMockGitserverService_CommitLogServer()
+	mockSS.ContextFunc.SetDefaultReturn(ctx)
+	t.Run("argument validation", func(t *testing.T) {
+		gs := &grpcServer{}
+		err := gs.CommitLog(&v1.CommitLogRequest{RepoName: ""}, mockSS)
+		require.ErrorContains(t, err, "repo must be specified")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
+		err = gs.CommitLog(&v1.CommitLogRequest{RepoName: "repo"}, mockSS)
+		require.ErrorContains(t, err, "must specify ranges or all_refs")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
+		err = gs.CommitLog(&v1.CommitLogRequest{RepoName: "repo", Ranges: [][]byte{[]byte("range")}, AllRefs: true}, mockSS)
+		require.ErrorContains(t, err, "cannot specify both ranges and all_refs")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+
+		err = gs.CommitLog(&v1.CommitLogRequest{RepoName: "repo", AllRefs: true, Order: 42}, mockSS)
+		require.ErrorContains(t, err, "unknown order")
+		assertGRPCStatusCode(t, err, codes.InvalidArgument)
+	})
+	t.Run("checks for uncloned repo", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		fs.RepoClonedFunc.SetDefaultReturn(false, nil)
+		locker := NewMockRepositoryLocker()
+		locker.StatusFunc.SetDefaultReturn("cloning", true)
+		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
+		err := gs.CommitLog(&v1.CommitLogRequest{RepoName: "therepo", AllRefs: true}, mockSS)
+		require.Error(t, err)
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
+		require.Contains(t, err.Error(), "repo not found")
+		mockassert.Called(t, fs.RepoClonedFunc)
+		mockassert.Called(t, locker.StatusFunc)
+	})
+	t.Run("e2e", func(t *testing.T) {
+		fs := gitserverfs.NewMockFS()
+		// Repo is cloned, proceed!
+		fs.RepoClonedFunc.SetDefaultReturn(true, nil)
+		b := git.NewMockGitBackend()
+		it := git.NewMockCommitLogIterator()
+		it.NextFunc.PushReturn(&git.GitCommitWithFiles{Commit: &gitdomain.Commit{
+			ID:        "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+			Author:    gitdomain.Signature{Name: "Bar Author", Email: "bar@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Message:   "bar",
+			Parents:   []api.CommitID{"5fab3adc1e398e749749271d14ab843759b192cf"},
+		}, ModifiedFiles: []string{"file"}}, nil)
+		it.NextFunc.PushReturn(&git.GitCommitWithFiles{Commit: &gitdomain.Commit{
+			ID:        "5fab3adc1e398e749749271d14ab843759b192cf",
+			Author:    gitdomain.Signature{Name: "Foo Author", Email: "foo@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message:   "foo",
+			Parents:   nil,
+		}, ModifiedFiles: []string{"otherfile"}}, nil)
+		it.NextFunc.PushReturn(nil, io.EOF)
+		b.CommitLogFunc.SetDefaultReturn(it, nil)
+		gs := &grpcServer{
+			svc: NewMockService(),
+			fs:  fs,
+			gitBackendSource: func(common.GitDir, api.RepoName) git.GitBackend {
+				return b
+			},
+		}
+
+		cli := spawnServer(t, gs)
+		cc, err := cli.CommitLog(ctx, &v1.CommitLogRequest{
+			RepoName: "therepo",
+			AllRefs:  true,
+		})
+		require.NoError(t, err)
+		res := []*v1.GetCommitResponse{}
+		for {
+			resp, err := cc.Recv()
+			if err == io.EOF {
+				break
+			}
+			require.NoError(t, err)
+			res = append(res, resp.GetCommits()...)
+		}
+		if diff := cmp.Diff([]*v1.GetCommitResponse{
+			{
+				Commit: &v1.GitCommit{
+					Oid:       "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+					Author:    &v1.GitSignature{Name: []byte("Bar Author"), Email: []byte("bar@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z"))},
+					Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z"))},
+					Message:   []byte("bar"),
+					Parents:   []string{"5fab3adc1e398e749749271d14ab843759b192cf"},
+				},
+				ModifiedFiles: [][]byte{[]byte("file")},
+			},
+			{
+				Commit: &v1.GitCommit{
+					Oid:       "5fab3adc1e398e749749271d14ab843759b192cf",
+					Author:    &v1.GitSignature{Name: []byte("Foo Author"), Email: []byte("foo@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+					Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+					Message:   []byte("foo"),
+					Parents:   nil,
+				},
+				ModifiedFiles: [][]byte{[]byte("otherfile")},
+			},
+		}, res, cmpopts.IgnoreUnexported(v1.GetCommitResponse{}, v1.GitCommit{}, v1.GitSignature{}, timestamppb.Timestamp{})); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+
+		it = git.NewMockCommitLogIterator()
+		it.NextFunc.SetDefaultReturn(nil, &gitdomain.RevisionNotFoundError{})
+		it.CloseFunc.SetDefaultReturn(&gitdomain.RevisionNotFoundError{})
+		b.CommitLogFunc.SetDefaultReturn(it, nil)
+		cc, err = cli.CommitLog(context.Background(), &v1.CommitLogRequest{
+			RepoName: "therepo",
+			AllRefs:  true,
+		})
+		require.NoError(t, err)
+		_, err = cc.Recv()
+		assertGRPCStatusCode(t, err, codes.NotFound)
+		assertHasGRPCErrorDetailOfType(t, err, &proto.RevisionNotFoundPayload{})
+	})
+}
+
 func assertGRPCStatusCode(t *testing.T, err error, want codes.Code) {
 	t.Helper()
 	s, ok := status.FromError(err)
@@ -1503,4 +1624,12 @@ func (t *testChangedFilesIterator) Next() (gitdomain.PathStatus, error) {
 
 func (t *testChangedFilesIterator) Close() error {
 	return nil
+}
+
+func mustParseTime(layout, value string) time.Time {
+	tm, err := time.Parse(layout, value)
+	if err != nil {
+		panic(err.Error())
+	}
+	return tm
 }

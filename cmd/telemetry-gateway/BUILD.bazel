@@ -7,6 +7,7 @@ load("//dev:msp_delivery.bzl", "msp_delivery")
 go_binary(
     name = "telemetry-gateway",
     embed = [":telemetry-gateway_lib"],
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )
 
@@ -42,6 +43,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_INFRA_CORESERVICES,
     ],
 )
 
@@ -55,6 +57,7 @@ go_library(
     name = "telemetry-gateway_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/telemetry-gateway/service",

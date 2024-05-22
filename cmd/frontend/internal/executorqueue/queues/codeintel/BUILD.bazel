@@ -8,6 +8,7 @@ go_library(
         "transform.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/codeintel",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/executorqueue/handler",
@@ -30,6 +31,7 @@ go_test(
     timeout = "short",
     srcs = ["transform_test.go"],
     embed = [":codeintel"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/frontend/internal/executorqueue/handler",
         "//internal/codeintel/uploads/shared",

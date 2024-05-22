@@ -10,6 +10,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -33,6 +34,7 @@ go_test(
     srcs = ["store_test.go"],
     embed = [":repo"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],

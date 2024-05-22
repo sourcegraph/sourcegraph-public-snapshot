@@ -19,7 +19,7 @@ import (
 var monitoringCommand = &cli.Command{
 	Name:  "monitoring",
 	Usage: "Sourcegraph's monitoring generator (dashboards, alerts, etc)",
-	Description: `Learn more about the Sourcegraph monitoring generator here: https://sourcegraph.com/docs/dev/background-information/observability/monitoring-generator
+	Description: `Learn more about the Sourcegraph monitoring generator here: https://docs-legacy.sourcegraph.com/dev/background-information/observability/monitoring-generator
 
 Also refer to the generated reference documentation available for site admins:
 

@@ -8,6 +8,7 @@ go_library(
     ],
     embedsrcs = ["sun.svg"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/example/client",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/grpc/defaults",
@@ -24,5 +25,6 @@ go_library(
 go_binary(
     name = "client",
     embed = [":client_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )

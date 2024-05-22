@@ -8,6 +8,7 @@ go_library(
         "rfc_create.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/open",
@@ -31,6 +32,7 @@ go_test(
     srcs = ["rfc_test.go"],
     embed = [":rfc"],
     tags = [
+        TAG_INFRA_DEVINFRA,
         # Test requires localhost database
         "requires-network",
     ],

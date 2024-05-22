@@ -8,6 +8,7 @@ go_library(
         "match_context_client.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/compute/client",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/compute",
@@ -25,6 +26,7 @@ go_test(
         "match_context_client_test.go",
     ],
     embed = [":client"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/compute",
         "//internal/search/streaming/api",

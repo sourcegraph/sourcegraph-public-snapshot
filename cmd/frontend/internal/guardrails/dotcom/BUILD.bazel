@@ -8,6 +8,7 @@ go_library(
         "operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/httpcli",

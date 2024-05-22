@@ -8,6 +8,7 @@ go_library(
         "scanner.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/app/errorutil",
@@ -34,6 +35,7 @@ go_test(
         "scanner_test.go",
     ],
     embed = [":debugproxies"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/frontend/internal/app/router",
         "//internal/actor",

@@ -9,6 +9,7 @@ go_library(
         "gerrit.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/gerrit",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -31,6 +32,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":gerrit"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/authz",
         "//internal/extsvc",

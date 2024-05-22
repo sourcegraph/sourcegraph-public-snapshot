@@ -9,6 +9,7 @@ go_library(
         "syncer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -32,6 +33,7 @@ go_test(
     srcs = ["handler_test.go"],
     embed = [":ratelimit"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

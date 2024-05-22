@@ -37,6 +37,7 @@ go_test(
         "validate_test.go",
     ],
     embed = [":runner"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/database/migration/definition",
         "//internal/database/migration/runner/testdata",

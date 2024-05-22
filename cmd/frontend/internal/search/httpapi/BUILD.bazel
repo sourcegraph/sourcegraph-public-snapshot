@@ -5,6 +5,7 @@ go_library(
     name = "httpapi",
     srcs = ["export.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/httpapi",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/auth",
@@ -20,7 +21,10 @@ go_test(
     name = "httpapi_test",
     srcs = ["export_test.go"],
     embed = [":httpapi"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_PLATFORM_SEARCH,
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/conf",

@@ -8,6 +8,7 @@ go_library(
         "janitor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -27,6 +28,7 @@ go_test(
     timeout = "short",
     srcs = ["handler_test.go"],
     embed = [":webhooks"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//lib/errors",

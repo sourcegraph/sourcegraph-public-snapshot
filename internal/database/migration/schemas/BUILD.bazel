@@ -29,4 +29,5 @@ go_test(
     name = "schemas_test",
     srcs = ["description_test.go"],
     embed = [":schemas"],
+    tags = [TAG_INFRA_RELEASE],
 )

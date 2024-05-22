@@ -48,7 +48,7 @@ Wolfi image configuration and apko lockfiles are not in sync. Fix by running:
 sg wolfi lock
 \`\`\`
 
-Check the <a href="https://sourcegraph.com/docs/dev/how-to/wolfi/add_update_images#modify-an-existing-base-image">Wolfi documentation</a> for more information.
+Check the <a href="https://docs-legacy.sourcegraph.com/dev/how-to/wolfi/add_update_images#modify-an-existing-base-image">Wolfi documentation</a> for more information.
 EOF
   fi
 fi

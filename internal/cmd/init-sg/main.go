@@ -75,15 +75,17 @@ func initSourcegraph() {
 		log.Fatal("Failed to check if site needs init: ", err)
 	}
 
+	client, err = gqltestutil.NewClient(*baseURL)
+	if err != nil {
+		log.Fatal("Failed to create gql client: ", err)
+	}
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
-		if err != nil {
+		if err := client.SiteAdminInit(*email, *username, *password); err != nil {
 			log.Fatal("Failed to create site admin: ", err)
 		}
 		log.Println("Site admin has been created:", *username)
 	} else {
-		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
-		if err != nil {
+		if err := client.SignIn(*email, *password); err != nil {
 			log.Fatal("Failed to sign in:", err)
 		}
 		log.Println("Site admin authenticated:", *username)
@@ -140,8 +142,11 @@ func addReposCommand() {
 		log.Fatal("Environment variable GITHUB_TOKEN is not set")
 	}
 
-	client, err := gqltestutil.SignIn(*baseURL, *email, *password)
+	client, err := gqltestutil.NewClient(*baseURL)
 	if err != nil {
+		log.Fatal("Failed to create gql client: ", err)
+	}
+	if err := client.SignIn(*email, *password); err != nil {
 		log.Fatal("Failed to sign in:", err)
 	}
 	log.Println("Site admin authenticated:", *username)
@@ -214,8 +219,11 @@ func oobmigrationCommand() {
 	id := *migrationID
 	up := !*migrationDownFlag
 
-	client, err := gqltestutil.SignIn(*baseURL, *email, *password)
+	client, err := gqltestutil.NewClient(*baseURL)
 	if err != nil {
+		log.Fatal("Failed to create gql client: ", err)
+	}
+	if err := client.SignIn(*email, *password); err != nil {
 		log.Fatal("Failed to sign in:", err)
 	}
 	log.Println("Site admin authenticated:", *username)

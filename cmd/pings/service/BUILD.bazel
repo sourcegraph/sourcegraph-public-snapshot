@@ -8,6 +8,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/pings/service",
+    tags = [TAG_DATA_ANALYTICS],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/hubspot/hubspotutil",

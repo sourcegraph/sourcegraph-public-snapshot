@@ -4,6 +4,7 @@ go_library(
     name = "tfeprovider",
     srcs = ["tfeprovider.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfeprovider",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resource/gsmsecret",

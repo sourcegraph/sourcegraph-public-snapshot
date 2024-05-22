@@ -4,6 +4,7 @@ go_library(
     name = "testing",
     srcs = ["fake.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/sources/testing",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/sources",

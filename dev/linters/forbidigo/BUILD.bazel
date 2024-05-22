@@ -4,6 +4,7 @@ go_library(
     name = "forbidigo",
     srcs = ["forbidigo.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/forbidigo",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

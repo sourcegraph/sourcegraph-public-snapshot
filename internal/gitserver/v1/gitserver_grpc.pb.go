@@ -226,6 +226,7 @@ const (
 	GitserverService_ChangedFiles_FullMethodName                = "/gitserver.v1.GitserverService/ChangedFiles"
 	GitserverService_Stat_FullMethodName                        = "/gitserver.v1.GitserverService/Stat"
 	GitserverService_ReadDir_FullMethodName                     = "/gitserver.v1.GitserverService/ReadDir"
+	GitserverService_CommitLog_FullMethodName                   = "/gitserver.v1.GitserverService/CommitLog"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -234,6 +235,7 @@ const (
 type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
+	// Deprecated: Do not use.
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	// GetObject returns the object with the given OID in the given repository.
 	//
@@ -380,14 +382,14 @@ type GitserverServiceClient interface {
 	// "right". Ahead is the number of commits that are solely reachable in
 	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return
-	//	 {Behind: 3, Ahead: 2}.
+	//	For the example, given the graph below, BehindAhead("A", "B") would return
+	//	{Behind: 3, Ahead: 2}.
 	//
-	//		     y---b---b  branch B
-	//		    / \ /
-	//		   /   .
-	//		  /   / \
-	//		 o---x---a---a---a  branch A
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
 	//
 	// If either left or right are the empty string (""), the HEAD commit is
 	// implicitly used.
@@ -435,6 +437,11 @@ type GitserverServiceClient interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error)
+	// CommitLog returns all commits matching the options. The commits are gathered
+	// with `git-log`.
+	// If one of the given ranges doesn't exist, an error with a ReversionNotFoundPayload
+	// is returned.
+	CommitLog(ctx context.Context, in *CommitLogRequest, opts ...grpc.CallOption) (GitserverService_CommitLogClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -488,6 +495,7 @@ func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoReque
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
 	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Exec_FullMethodName, opts...)
 	if err != nil {
@@ -965,12 +973,45 @@ func (x *gitserverServiceReadDirClient) Recv() (*ReadDirResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) CommitLog(ctx context.Context, in *CommitLogRequest, opts ...grpc.CallOption) (GitserverService_CommitLogClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[10], GitserverService_CommitLog_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceCommitLogClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_CommitLogClient interface {
+	Recv() (*CommitLogResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceCommitLogClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceCommitLogClient) Recv() (*CommitLogResponse, error) {
+	m := new(CommitLogResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
+	// Deprecated: Do not use.
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	// GetObject returns the object with the given OID in the given repository.
 	//
@@ -1117,14 +1158,14 @@ type GitserverServiceServer interface {
 	// "right". Ahead is the number of commits that are solely reachable in
 	// "right" but not "left".
 	//
-	//	 For the example, given the graph below, BehindAhead("A", "B") would return
-	//	 {Behind: 3, Ahead: 2}.
+	//	For the example, given the graph below, BehindAhead("A", "B") would return
+	//	{Behind: 3, Ahead: 2}.
 	//
-	//		     y---b---b  branch B
-	//		    / \ /
-	//		   /   .
-	//		  /   / \
-	//		 o---x---a---a---a  branch A
+	//	     y---b---b  branch B
+	//	    / \ /
+	//	   /   .
+	//	  /   / \
+	//	 o---x---a---a---a  branch A
 	//
 	// If either left or right are the empty string (""), the HEAD commit is
 	// implicitly used.
@@ -1172,6 +1213,11 @@ type GitserverServiceServer interface {
 	// If the given repo is not cloned, it will be enqueued for cloning and a NotFound
 	// error will be returned, with a RepoNotFoundPayload in the details.
 	ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error
+	// CommitLog returns all commits matching the options. The commits are gathered
+	// with `git-log`.
+	// If one of the given ranges doesn't exist, an error with a ReversionNotFoundPayload
+	// is returned.
+	CommitLog(*CommitLogRequest, GitserverService_CommitLogServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -1274,6 +1320,9 @@ func (UnimplementedGitserverServiceServer) Stat(context.Context, *StatRequest) (
 }
 func (UnimplementedGitserverServiceServer) ReadDir(*ReadDirRequest, GitserverService_ReadDirServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadDir not implemented")
+}
+func (UnimplementedGitserverServiceServer) CommitLog(*CommitLogRequest, GitserverService_CommitLogServer) error {
+	return status.Errorf(codes.Unimplemented, "method CommitLog not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1899,6 +1948,27 @@ func (x *gitserverServiceReadDirServer) Send(m *ReadDirResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_CommitLog_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CommitLogRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).CommitLog(m, &gitserverServiceCommitLogServer{stream})
+}
+
+type GitserverService_CommitLogServer interface {
+	Send(*CommitLogResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceCommitLogServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceCommitLogServer) Send(m *CommitLogResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2044,6 +2114,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ReadDir",
 			Handler:       _GitserverService_ReadDir_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CommitLog",
+			Handler:       _GitserverService_CommitLog_Handler,
 			ServerStreams: true,
 		},
 	},

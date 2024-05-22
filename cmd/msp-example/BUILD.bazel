@@ -8,6 +8,7 @@ go_library(
     name = "msp-example_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/msp-example/internal/example",
@@ -18,6 +19,7 @@ go_library(
 go_binary(
     name = "msp-example",
     embed = [":msp-example_lib"],
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )
 
@@ -51,6 +53,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_CORESERVICES,
         "exclusive",
         "requires-network",
     ],

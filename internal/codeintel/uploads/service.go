@@ -142,9 +142,9 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 	// graph as dirty so it's updated for subsequent requests.
 
 	commits, err := s.gitserverClient.Commits(ctx, repo.Name, gitserver.CommitsOptions{
-		Range: opts.Commit,
-		N:     numAncestors,
-		Order: gitserver.CommitsOrderTopoDate,
+		Ranges: []string{opts.Commit},
+		N:      numAncestors,
+		Order:  gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserverClient.Commits")

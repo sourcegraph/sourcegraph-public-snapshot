@@ -5,6 +5,7 @@ go_library(
     name = "notify",
     srcs = ["slack.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/build-tracker/notify",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/team",
@@ -20,5 +21,6 @@ go_test(
     timeout = "short",
     srcs = ["slack_test.go"],
     embed = [":notify"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )

@@ -34,6 +34,7 @@ go_library(
         "workerutil_resetter.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions/shared",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//monitoring/monitoring",

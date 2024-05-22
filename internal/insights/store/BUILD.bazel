@@ -14,6 +14,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/store",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -48,6 +49,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":store"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

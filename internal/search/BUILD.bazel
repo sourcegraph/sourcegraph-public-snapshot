@@ -13,9 +13,9 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/collections",
         "//internal/conf",
@@ -31,6 +31,7 @@ go_library(
         "//internal/search/query",
         "//internal/search/result",
         "//internal/search/streaming/http",
+        "//internal/searcher/protocol",
         "//internal/trace",
         "//internal/trace/policy",
         "//internal/types",
@@ -55,6 +56,7 @@ go_test(
         "types_test.go",
     ],
     embed = [":search"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/conf",

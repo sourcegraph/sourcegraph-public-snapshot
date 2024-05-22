@@ -15,11 +15,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -53,6 +55,21 @@ func newMockClientWithTokenMock() *MockClient {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthProviders: []schema.AuthProviders{
+				{
+					Github: &schema.GitHubAuthProvider{
+						Url: "https://github.com",
+					},
+				},
+			},
+		},
+	})
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
+
 	db := dbmocks.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
@@ -610,6 +627,37 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				t.Fatal("expected users not to be updated")
 			}
 		})
+	})
+
+	t.Run("no matching auth provider", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						Github: &schema.GitHubAuthProvider{
+							// Not for the same host, i.e., no auth provider found:
+							Url: "https://github.sgdev.org",
+						},
+					},
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
+		_, err := p.FetchUserPerms(context.Background(), &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			AccountData: extsvc.AccountData{AuthData: extsvc.NewUnencryptedData(json.RawMessage(`{}`))},
+		}, authz.FetchPermsOptions{})
+		want := "no matching GitHub OAuth provider found for service \"https://github.com/\""
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
 	})
 }
 

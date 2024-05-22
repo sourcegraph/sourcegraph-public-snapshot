@@ -71,9 +71,9 @@ type Variables struct {
 	Image       string
 	Environment spec.EnvironmentSpec
 
-	// RolloutPipeline is only non-nil if this environment is the final
-	// environment of a rollout spec - the final environment is where the Cloud
-	// Deploy pipeline lives.
+	// RolloutPipeline is only non-nil if this environment is part of rollout
+	// pipeline. The final environment (IsFinalStage) is where the Cloud Deploy
+	// pipeline lives.
 	RolloutPipeline *spec.RolloutPipelineConfiguration
 
 	StableGenerate bool
@@ -109,8 +109,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		}),
 		randomprovider.With(),
 		dynamicvariables.With(vars.StableGenerate, func() (stack.TFVars, error) {
-			resolvedImageTag, err := vars.Environment.Deploy.ResolveTag(vars.Image)
-			return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+			if d := vars.Environment.Deploy; d.Type == spec.EnvironmentDeployTypeSubscription {
+				resolvedImageTag, err := d.Subscription.ResolveTag(vars.Image)
+				return stack.TFVars{tfVarKeyResolvedImageTag: resolvedImageTag}, err
+			}
+			return nil, nil
 		}),
 		sentryprovider.With(gsmsecret.DataConfig{
 			Secret:    googlesecretsmanager.SecretSentryAuthToken,
@@ -165,11 +168,24 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// Add user-configured secret volumes
 	addContainerSecretVolumes(cloudRunBuilder, vars.Environment.SecretVolumes)
 
-	// Load image tag from tfvars.
-	imageTag := tfvar.New(stack, id, tfvar.Config{
-		VariableKey: tfVarKeyResolvedImageTag,
-		Description: "Resolved image tag to deploy",
-	})
+	// Determine where to source the image tag from, based on the deploy type.
+	var imageTag string
+	switch d := vars.Environment.Deploy; d.Type {
+	case spec.EnvironmentDeployTypeManual:
+		imageTag = d.Manual.GetTag()
+
+	case spec.EnvironmentDeployTypeRollout:
+		imageTag = vars.RolloutPipeline.OriginalSpec.GetInitialImageTag()
+
+	case spec.EnvironmentDeployTypeSubscription:
+		imageTag = *tfvar.New(stack, id, tfvar.Config{
+			VariableKey: tfVarKeyResolvedImageTag,
+			Description: "Image tag resolved from subscription to deploy",
+		}).StringValue
+
+	default:
+		return nil, errors.Newf("unsupported deploy type %q", d.Type)
+	}
 
 	// privateNetworkEnabled indicates if privateNetwork has been instantiated
 	// before.
@@ -349,7 +365,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	cloudRunResource, err := cloudRunBuilder.Build(stack, builder.Variables{
 		Service:           vars.Service,
 		Image:             vars.Image,
-		ResolvedImageTag:  *imageTag.StringValue,
+		ImageTag:          imageTag,
 		Environment:       vars.Environment,
 		GCPProjectID:      vars.ProjectID,
 		GCPRegion:         locationSpec.GCPRegion,
@@ -367,8 +383,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
-	// We have a rollout pipeline to configure.
-	if vars.RolloutPipeline != nil {
+	// We have a rollout pipeline to configure - Cloud Deploy pipeline lives in
+	// the final stage of the pipeline.
+	if vars.RolloutPipeline.IsFinalStage() {
 		id := id.Group("rolloutpipeline")
 
 		// For now, we only use 1 region everywhere, but also note that ALL
@@ -511,8 +528,6 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		"Cloud Run resource name")
 	locals.Add("cloud_run_location", *cloudRunResource.Location(),
 		"Cloud Run resource location")
-	locals.Add("image_tag", *imageTag.StringValue,
-		"Resolved tag of service image to deploy")
 	return &CrossStackOutput{
 		DiagnosticsSecret:  diagnosticsSecret,
 		RedisInstanceID:    redisInstanceID,

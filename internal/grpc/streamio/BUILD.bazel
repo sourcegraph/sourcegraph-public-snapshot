@@ -5,6 +5,7 @@ go_library(
     name = "streamio",
     srcs = ["streamio.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/streamio",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 
@@ -13,6 +14,7 @@ go_test(
     timeout = "short",
     srcs = ["streamio_test.go"],
     embed = [":streamio"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/errors",
         "@com_github_stretchr_testify//require",

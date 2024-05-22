@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -113,7 +112,7 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args search.SymbolsPar
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args search.SymbolsParameters, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
-	changedFilesIterator, err := w.gitserverClient.ChangedFiles(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
+	changedFilesIterator, err := w.gitserverClient.ChangedFiles(ctx, args.Repo, oldCommit, string(args.CommitID))
 	if err != nil {
 		return false, errors.Wrap(err, "gitserverClient.ChangedFiles")
 	}

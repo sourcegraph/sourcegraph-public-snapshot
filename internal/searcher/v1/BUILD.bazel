@@ -28,6 +28,7 @@ go_library(
     name = "searcher",
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/searcher/v1",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
 )
 
@@ -42,5 +43,6 @@ buf_lint_test(
     name = "v1_proto_lint",
     timeout = "short",
     config = "//internal:buf.yaml",
+    tags = [TAG_PLATFORM_SEARCH],
     targets = [":v1_proto"],
 )

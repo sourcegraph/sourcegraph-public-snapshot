@@ -5,6 +5,7 @@ go_library(
     name = "stack",
     srcs = ["stacks.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
@@ -20,5 +21,6 @@ go_test(
     name = "stack_test",
     srcs = ["stacks_test.go"],
     embed = [":stack"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = ["@com_github_stretchr_testify//assert"],
 )

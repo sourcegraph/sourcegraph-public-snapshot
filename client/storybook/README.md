@@ -1,6 +1,6 @@
 # Storybook configuration
 
-Check out the [Storybook section](https://sourcegraph.com/docs/dev/background-information/web/web_app#storybook) in the [Developing the Sourcegraph web app](https://docs.sourcegraph.com/dev/background-information/web/web_app) docs.
+Check out the [Storybook section](https://docs-legacy.sourcegraph.com/dev/background-information/web/web_app#storybook) in the [Developing the Sourcegraph web app](https://docs.sourcegraph.com/dev/background-information/web/web_app) docs.
 
 ## Usage
 

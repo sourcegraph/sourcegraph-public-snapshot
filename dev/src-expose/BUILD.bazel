@@ -9,6 +9,7 @@ go_library(
         "snapshot.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/src-expose",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:private"],
     deps = [
         "//lib/errors",
@@ -20,6 +21,7 @@ go_library(
 go_binary(
     name = "src-expose",
     embed = [":src-expose_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],
 )
 
@@ -31,6 +33,7 @@ go_test(
         "serve_test.go",
     ],
     embed = [":src-expose_lib"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",

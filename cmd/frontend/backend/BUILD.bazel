@@ -87,6 +87,7 @@ go_test(
     tags = [
         # Test requires localhost database
         "requires-network",
+        TAG_PLATFORM_SOURCE,
     ],
     deps = [
         "//cmd/frontend/internal/inventory",
