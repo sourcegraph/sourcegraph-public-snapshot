@@ -12,24 +12,27 @@ import (
 
 func init() {
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		highlights := c.SiteConfig().SyntaxHighlighting
-		if highlights == nil {
+		highlightingConfig := c.SiteConfig().SyntaxHighlighting
+		if highlightingConfig == nil {
 			return
 		}
 
-		if _, ok := highlight.EngineNameToEngineType(highlights.Engine.Default); !ok {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
-		}
-
-		for _, engine := range highlights.Engine.Overrides {
-			if _, ok := highlight.EngineNameToEngineType(engine); !ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", engine)))
+		if highlightingConfig.Engine != nil {
+			if _, ok := highlight.EngineNameToEngineType(highlightingConfig.Engine.Default); !ok {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlightingConfig.Engine.Default)))
+			}
+			for _, engine := range highlightingConfig.Engine.Overrides {
+				if _, ok := highlight.EngineNameToEngineType(engine); !ok {
+					problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Override: `%s`.", engine)))
+				}
 			}
 		}
 
-		for _, pattern := range highlights.Languages.Patterns {
-			if _, err := regexp.Compile(pattern.Pattern); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
+		if highlightingConfig.Languages != nil {
+			for _, pattern := range highlightingConfig.Languages.Patterns {
+				if _, err := regexp.Compile(pattern.Pattern); err != nil {
+					problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
+				}
 			}
 		}
 

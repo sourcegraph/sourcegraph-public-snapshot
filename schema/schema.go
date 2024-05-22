@@ -3217,22 +3217,22 @@ type SymbolConfiguration struct {
 
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
-	Engine    SyntaxHighlightingEngine   `json:"engine"`
-	Languages SyntaxHighlightingLanguage `json:"languages"`
+	Engine    *SyntaxHighlightingEngine   `json:"engine,omitempty"`
+	Languages *SyntaxHighlightingLanguage `json:"languages,omitempty"`
 	// Symbols description: Configure symbol generation
 	Symbols *SymbolConfiguration `json:"symbols,omitempty"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use
-	Default string `json:"default"`
+	Default string `json:"default,omitempty"`
 	// Overrides description: Manually specify overrides for syntax highlighting engine per language
 	Overrides map[string]string `json:"overrides,omitempty"`
 }
 type SyntaxHighlightingLanguage struct {
 	// Extensions description: Map of extension to language
-	Extensions map[string]string `json:"extensions"`
+	Extensions map[string]string `json:"extensions,omitempty"`
 	// Patterns description: Map of patterns to language. Will return after first match, if any.
-	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns"`
+	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns,omitempty"`
 }
 type SyntaxHighlightingLanguagePatterns struct {
 	// Language description: Name of the language if pattern matches
