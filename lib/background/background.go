@@ -31,6 +31,9 @@ type Routine interface {
 // each routine will be called. This method blocks until the Stop methods of
 // each routine have returned. Two signals will cause the app to shut down
 // immediately.
+//
+// This function is only returned when routines are signaled to stop with
+// potential errors from stopping routines.
 func Monitor(ctx context.Context, routines ...Routine) error {
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)

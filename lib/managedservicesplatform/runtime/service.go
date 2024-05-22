@@ -125,7 +125,7 @@ func Start[
 		log.Bool("sentry", sentryEnabled))
 	err = background.Monitor(ctx, routine)
 	if err != nil {
-		startLogger.Error("error monitoring service routine", log.Error(err))
+		startLogger.Error("error stopping service routine", log.Error(err))
 	}
 	startLogger.Info("service stopped")
 }
