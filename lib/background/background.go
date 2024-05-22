@@ -64,14 +64,14 @@ func stopAll(ctx context.Context, wg *sync.WaitGroup, routines ...Routine) error
 	var stopErrsLock sync.Mutex
 	for _, r := range routines {
 		wg.Add(1)
-		go func(routine Routine) {
+		Go(func() {
 			defer wg.Done()
-			if err := routine.Stop(ctx); err != nil {
+			if err := r.Stop(ctx); err != nil {
 				stopErrsLock.Lock()
-				stopErrs = errors.Append(stopErrs, errors.Wrapf(err, "stop routine %q", routine.Name()))
+				stopErrs = errors.Append(stopErrs, errors.Wrapf(err, "stop routine %q", r.Name()))
 				stopErrsLock.Unlock()
 			}
-		}(r)
+		})
 	}
 
 	done := make(chan struct{})
