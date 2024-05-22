@@ -14,7 +14,7 @@ import (
 // Routine represents a background process that consists of a long-running
 // process with a graceful shutdown mechanism.
 type Routine interface {
-	// Name returns the name of the routine.
+	// Name returns the human-readable name of the routine.
 	Name() string
 	// Start begins the long-running process. This routine may also implement a Stop
 	// method that should signal this process the application is going to shut down.
