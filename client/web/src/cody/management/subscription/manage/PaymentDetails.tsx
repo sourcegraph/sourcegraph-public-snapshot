@@ -10,7 +10,12 @@ import {
     useElements,
     useStripe,
 } from '@stripe/react-stripe-js'
-import { type Appearance, loadStripe, type StripeCardElementOptions } from '@stripe/stripe-js'
+import {
+    type Appearance,
+    loadStripe,
+    type StripeCardElementOptions,
+    type StripeAddressElementOptions,
+} from '@stripe/stripe-js'
 import classNames from 'classnames'
 
 import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
@@ -31,6 +36,29 @@ const appearance: Appearance = {
     theme: 'stripe',
     variables: {
         colorPrimary: '#00b4d9',
+    },
+    rules: {
+        '.Label': {
+            marginBottom: '8px',
+            fontWeight: '500',
+            color: '#343a4d',
+            fontSize: '14px',
+            lineHeight: '20px',
+        },
+        '.Input': {
+            marginBottom: '4px',
+            paddingTop: '6px',
+            paddingBottom: '6px',
+            borderColor: '#dbe2f0',
+            borderRadius: '3px',
+            fontSize: '14px',
+            lineHeight: '20px',
+            boxShadow: 'none',
+        },
+        '.Input:focus': {
+            borderColor: '#0b70db',
+            boxShadow: '0 0 0 0.125rem #a3d0ff',
+        },
     },
 }
 
@@ -67,9 +95,9 @@ const PaymentMethod: React.FC<{
 }
 
 const PaymentMethodMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
-    <div className={styles.creditCardTitle}>
+    <div className={styles.title}>
         <H3>No payment method is available</H3>
-        <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onAddButtonClick}>
+        <Button variant="link" className={styles.titleButton} onClick={props.onAddButtonClick}>
             <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
         </Button>
     </div>
@@ -79,14 +107,14 @@ const ActivePaymentMethod: React.FC<
     Required<Pick<Subscription, 'paymentMethod'>> & { onEditButtonClick: () => void }
 > = props => (
     <>
-        <div className={styles.creditCardTitle}>
+        <div className={styles.title}>
             <H3>Active credit card</H3>
-            <Button variant="link" className={styles.creditCardTitleButton} onClick={props.onEditButtonClick}>
+            <Button variant="link" className={styles.titleButton} onClick={props.onEditButtonClick}>
                 <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
             </Button>
         </div>
-        <div className={styles.creditCardContent}>
-            <Text as="span" className={classNames('text-muted', styles.creditCardNumber)}>
+        <div className={styles.paymentMethodContent}>
+            <Text as="span" className={classNames('text-muted', styles.paymentMethodNumber)}>
                 <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod.last4}
             </Text>
             <Text as="span" className="text-muted">
@@ -162,21 +190,21 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
     return (
         <>
             <H3>Edit credit card</H3>
-            <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.creditCardForm}>
+            <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.paymentMethodForm}>
                 <div>
-                    <Label className={styles.creditCardFormLabel}>
+                    <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">Card number</Text>
                         <CardNumberElement options={cardElementOptions} onFocus={() => {}} />
                     </Label>
                 </div>
 
                 <Grid columnCount={2} className="mt-3 mb-0 pb-3">
-                    <Label className={styles.creditCardFormLabel}>
+                    <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">Expiry date</Text>
                         <CardExpiryElement options={cardElementOptions} onFocus={() => {}} />
                     </Label>
 
-                    <Label className={styles.creditCardFormLabel}>
+                    <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">CVC</Text>
                         <CardCvcElement options={cardElementOptions} onFocus={() => {}} />
                     </Label>
@@ -184,7 +212,7 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
 
                 {errorMessage && <Text className="text-danger">{errorMessage}</Text>}
 
-                <div className={classNames('mt-4', styles.creditCardFormButtonContainer)}>
+                <div className={classNames('mt-4', styles.paymentMethodFormButtonContainer)}>
                     <Button type="reset" variant="secondary" outline={true}>
                         Cancel
                     </Button>
@@ -201,196 +229,134 @@ const BillingAddress: React.FC<{
     subscription: Subscription
     onChange: () => unknown
 }> = ({ subscription, onChange }) => {
+    const [isEditMode, setIsEditMode] = useState(false)
+
+    return (
+        <div>
+            <div className={styles.title}>
+                <H3>Billing address</H3>
+                <Button variant="link" className={styles.titleButton} onClick={() => setIsEditMode(true)}>
+                    <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
+                </Button>
+            </div>
+
+            {isEditMode ? (
+                <BillingAddressForm
+                    subscription={subscription}
+                    onReset={() => setIsEditMode(false)}
+                    onSubmit={() => setIsEditMode(false)}
+                />
+            ) : (
+                <ActiveBillingAddress subscription={subscription} />
+            )}
+        </div>
+    )
+}
+
+const ActiveBillingAddress: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
+    <div>
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                Full name
+            </Text>
+            <Text className="font-weight-medium">{subscription.name}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                Country or region
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.country || '-'}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                Address line 1
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.line1 || '-'}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                Address line 2
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.line2 || '-'}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                City
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.city || '-'}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                State
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.state || '-'}</Text>
+        </div>
+
+        <div className="mt-3">
+            <Text size="small" className="mb-1 text-muted font-weight-medium">
+                Postal code
+            </Text>
+            <Text className="font-weight-medium">{subscription.address.postalCode || '-'}</Text>
+        </div>
+    </div>
+)
+
+const BillingAddressForm: React.FC<{
+    subscription: Subscription
+    onReset: () => void
+    onSubmit: () => void
+}> = props => {
     const stripe = useStripe()
     const elements = useElements()
-    const [editing, setEditing] = useState(false)
+
+    const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
-    const [savingStatus, setSavingStatus] = useState(false)
 
-    const handleSubmit = async () => {
-        if (!stripe || !elements) {
-            setErrorMessage('Stripe or Stripe Elements libraries not available.')
-            return
-        }
-        const addressElement = elements.getElement(AddressElement)
-        if (!addressElement) {
-            setErrorMessage('AddressElement not found.')
-            return
-        }
-        const addressElementValue = await addressElement.getValue()
-        if (!addressElementValue.complete) {
-            setErrorMessage('Address is not complete.')
-            return
-        }
-        const suppliedAddress = addressElementValue.value.address
-
-        setSavingStatus(true)
-        try {
-            const addressChanged =
-                suppliedAddress.line1 !== subscription.address.line1 ||
-                suppliedAddress.line2 !== subscription.address.line2 ||
-                suppliedAddress.city !== subscription.address.city ||
-                suppliedAddress.state !== subscription.address.state ||
-                suppliedAddress.postal_code !== subscription.address.postalCode ||
-                suppliedAddress.country !== subscription.address.country
-            const nameChanged = addressElementValue.value.name !== subscription.name
-
-            if (addressChanged) {
-                // await client.mutate({
-                //     mutation: MUTATE_TEAM_SUBSCRIPTION_ADDRESS,
-                //     variables: {
-                //         teamId: subscription.teamId,
-                //         addressLine1: suppliedAddress.line1,
-                //         addressLine2: suppliedAddress.line2 ?? '',
-                //         addressCity: suppliedAddress.city,
-                //         addressState: suppliedAddress.state,
-                //         addressPostalCode: suppliedAddress.postal_code,
-                //         addressCountry: suppliedAddress.country,
-                //     },
-                // })
-
-                console.log('TODO: mutate team subscription address')
-            }
-
-            if (nameChanged) {
-                // await client.mutate({
-                //     mutation: MUTATE_TEAM_SUBSCRIPTION_CUSTOMER_NAME,
-                //     variables: {
-                //         teamId: subscription.teamId,
-                //         customerName: addressElementValue.value.name,
-                //     },
-                // })
-
-                console.log('TODO: mutate team subscription customer name')
-            }
-
-            if (addressChanged || nameChanged) {
-                onChange()
-            }
-        } catch (error) {
-            // TODO[accounts.sourcegraph.com#353]: Send error to Sentry
-            // eslint-disable-next-line no-console
-            console.error(error)
-            setErrorMessage(
-                'An error occurred while updating your contact information. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
-            )
-        }
-        setSavingStatus(false)
-        setEditing(false)
+    const handleSubmit = async (event): Promise<void> => {
+        props.onSubmit()
+        return
     }
 
     // TODO: Customize this further, enabling validation, default forms, autocomplete, etc.
     // https://stripe.com/docs/js/elements_object/create_address_element
-    const options = useMemo(
-        () => ({
-            mode: 'billing',
-            display: { name: 'full' },
-            defaultValues: {
-                name: subscription.name,
-                address: {
-                    line1: subscription.address.line1,
-                    line2: subscription.address.line2,
-                    city: subscription.address.city,
-                    state: subscription.address.state,
-                    postal_code: subscription.address.postalCode,
-                    country: subscription.address.country,
-                },
+    const options: StripeAddressElementOptions = {
+        mode: 'billing',
+        display: { name: 'full' },
+        defaultValues: {
+            name: props.subscription.name,
+            address: {
+                line1: props.subscription.address.line1,
+                line2: props.subscription.address.line2,
+                city: props.subscription.address.city,
+                state: props.subscription.address.state,
+                postal_code: props.subscription.address.postalCode,
+                country: props.subscription.address.country,
             },
-        }),
-        [subscription]
-    )
+        },
+    }
 
     return (
-        <div>
-            {!editing && (
-                <a
-                    className="float-right cursor-pointer inline-flex items-center"
-                    onClick={() => {
-                        setEditing(true)
-                    }}
-                >
-                    <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 13 13"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="mr-2"
-                    >
-                        <path
-                            d="M7.87333 4.20001L8.5 4.82668L2.44667 10.8667H1.83333V10.2533L7.87333 4.20001ZM10.2733 0.200012C10.1067 0.200012 9.93333 0.266679 9.80667 0.393346L8.58667 1.61335L11.0867 4.11335L12.3067 2.89335C12.5667 2.63335 12.5667 2.20001 12.3067 1.95335L10.7467 0.393346C10.6133 0.260012 10.4467 0.200012 10.2733 0.200012ZM7.87333 2.32668L0.5 9.70001V12.2H3L10.3733 4.82668L7.87333 2.32668Z"
-                            fill="#0B70DB"
-                        />
-                    </svg>
-                    Edit
-                </a>
-            )}
-            <h2 className="text-lg font-semibold mb-6 text-slate-950">Billing address</h2>
-            {errorMessage && <p className="bg-red-100 text-red-700 p-4 rounded">{errorMessage}</p>}
+        <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
+            <AddressElement
+                options={options}
+                onFocus={() => {
+                    // setErrorMessage(null)
+                }}
+            />
 
-            <div className="relative">
-                {editing ? (
-                    <AddressElement
-                        options={options}
-                        onFocus={() => {
-                            setErrorMessage(null)
-                        }}
-                    />
-                ) : (
-                    <div>
-                        <p className="m-0 text-xs text-muted">Full name</p>
-                        <p className="m-0 mb-4">{subscription.name}</p>
-
-                        <p className="m-0 text-xs text-muted">Country or region</p>
-                        <p className="m-0 mb-4">{subscription.address.country || '-'}</p>
-
-                        <p className="m-0 text-xs text-muted">Address line 1</p>
-                        <p className="m-0 mb-4">{subscription.address.line1 || '-'}</p>
-
-                        <p className="m-0 text-xs text-muted">Address line 2</p>
-                        <p className="m-0 mb-4">{subscription.address.line2 || '-'}</p>
-
-                        <p className="m-0 text-xs text-muted">City</p>
-                        <p className="m-0 mb-4">{subscription.address.city || '-'}</p>
-
-                        <p className="m-0 text-xs text-muted">State</p>
-                        <p className="m-0 mb-4">{subscription.address.state || '-'}</p>
-
-                        <p className="m-0 text-xs text-muted">Postal code</p>
-                        <p className="m-0 mb-4">{subscription.address.postalCode || '-'}</p>
-                    </div>
-                )}
+            <div className={styles.billingAddressFormButtonContainer}>
+                <Button type="reset" variant="secondary" outline={true}>
+                    Cancel
+                </Button>
+                <Button disabled={isLoading} type="submit" variant="primary" className="ml-2">
+                    Save
+                </Button>
             </div>
-
-            <div className="flex justify-end mt-6">
-                {editing && (
-                    <>
-                        <button
-                            type="button"
-                            className="bg-gray-200 text-gray-700 hover:bg-gray-300 py-2 px-4 rounded mr-2"
-                            onClick={() => {
-                                setEditing(false)
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            className="bg-blue-600 text-white hover:bg-blue-700 py-2 px-4 rounded inline-flex items-center justify-center"
-                            onClick={event => {
-                                event.preventDefault()
-                                void handleSubmit()
-                            }}
-                            disabled={savingStatus}
-                        >
-                            {savingStatus && (
-                                <div className="spinner w-4 h-4 border-2 border-blue-700 border-t-transparent rounded-full animate-spin mr-2" />
-                            )}
-                            Submit
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
+        </Form>
     )
 }

@@ -12,17 +12,17 @@
     }
 }
 
-.credit-card {
-    &-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+.title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-        &-button {
-            margin-right: -0.75rem;
-        }
+    &-button {
+        margin-right: -0.75rem;
     }
+}
 
+.payment-method {
     &-content {
         display: flex;
         justify-content: space-between;
@@ -53,6 +53,19 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+    }
+}
+
+.billing-address {
+    &-form {
+        margin-top: 0.625rem;
+
+        &-button-container {
+            margin-top: 2.25rem;
+
+            display: flex;
+            justify-content: end;
         }
     }
 }
