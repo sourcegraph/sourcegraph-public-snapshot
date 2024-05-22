@@ -9,7 +9,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
+	k8syaml "sigs.k8s.io/yaml"
+
+	"github.com/sourcegraph/sourcegraph/internal/yaml"
 )
 
 // Test helpers
@@ -30,8 +32,11 @@ func (suite *ApplianceTestSuite) makeGoldenAssertions(namespace, goldenFileName 
 
 	goldenFilePath := filepath.Join("testdata", "golden-fixtures", goldenFileName+".yaml")
 	obtainedResources := goldenFile{Resources: suite.gatherResources(namespace)}
-	obtainedBytes, err := yaml.Marshal(obtainedResources)
+	obtainedBytes, err := k8syaml.Marshal(obtainedResources)
 	require.NoError(err)
+	obtainedBytes, err = yaml.ConvertYAMLStringsToMultilineLiterals(obtainedBytes)
+	require.NoError(err)
+
 	if len(os.Args) > 0 && os.Args[len(os.Args)-1] == "appliance-update-golden-files" {
 		err := os.MkdirAll(filepath.Dir(goldenFilePath), 0700)
 		require.NoError(err)
