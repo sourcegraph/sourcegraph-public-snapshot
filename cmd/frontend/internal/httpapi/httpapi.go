@@ -227,11 +227,22 @@ func NewHandler(
 			// This means that for any cookie-based authentication method, we need to have
 			// CSRF protection. (However, that appears to be the case, see `newExternalHTTPHandler`
 			// and its use of `CookieMiddlewareWithCSRFSafety`.)
+			samsOAuthConfig, err := ssc.GetSAMSOAuthContext(db)
+			if err != nil {
+				// This situation is pretty bad, as it means no Cody Pro-related functionality
+				// can work properly. So while the site can continue to load as expected,
+				// we will supply a zero-value OAuth config that will only serve 503s.
+				//
+				// This makes the failure a lot more obvious than not registering the routes
+				// at all, and trying to figure out why we are seeing 404s or 405s.
+				logger.Error("error loading SAMS config, unable to register SSC API proxy", sglog.Error(err))
+			}
 			sscBackendProxy := ssc.APIProxyHandler{
-				CodyProConfig: conf.Get().Dotcom.CodyProConfig,
-				DB:            db,
-				Logger:        logger.Scoped("SSC Proxy"),
-				URLPrefix:     "/.api/ssc/proxy",
+				CodyProConfig:    conf.Get().Dotcom.CodyProConfig,
+				DB:               db,
+				Logger:           logger.Scoped("SSC Proxy"),
+				URLPrefix:        "/.api/ssc/proxy",
+				SAMSOAuthContext: samsOAuthConfig,
 			}
 			m.PathPrefix("/ssc/proxy/").Handler(&sscBackendProxy)
 		}
