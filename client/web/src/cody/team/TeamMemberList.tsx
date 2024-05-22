@@ -104,7 +104,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
             if (!loading) {
                 // Avoids sending multiple requests at once
                 setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+                telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
                 const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
                 if (!response.ok) {
@@ -126,11 +126,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
     const removeMember = useCallback(
         async (accountId: string): Promise<void> => {
-            telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId, accountId } })
-
             if (!loading) {
                 setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+                telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
                 const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
                 if (!response.ok) {
