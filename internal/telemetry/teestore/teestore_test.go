@@ -254,7 +254,7 @@ func TestToEventLogs(t *testing.T) {
     "Argument": {
       "private": "sensitive-data",
       "telemetry.privateMetadata.exportable": false,
-	  "telemetry.privateMetadata.exportableFields": null
+      "telemetry.privateMetadata.exportableFields": null
     },
     "PublicArgument": {
       "public": 2,
@@ -320,7 +320,7 @@ func TestToEventLogs(t *testing.T) {
     "Argument": {
       "private": "sensitive-data",
       "telemetry.privateMetadata.exportable": false,
-	  "telemetry.privateMetadata.exportableFields": null
+      "telemetry.privateMetadata.exportableFields": null
     },
     "PublicArgument": {
       "interaction.traceID": "01020304050607080102040810203040",
