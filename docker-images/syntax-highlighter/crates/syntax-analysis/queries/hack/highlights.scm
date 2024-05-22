@@ -1,9 +1,9 @@
 ; Based on https://github.com/nvim-treesitter/nvim-treesitter/blob/master/queries/hack/highlights.scm
 
-(variable) @variable
-
 ((variable) @variable.builtin
   (#eq? @variable.builtin "$this"))
+
+(variable) @variable
 
 (braced_expression) @none
 
@@ -15,8 +15,6 @@
   (comment)
   (xhp_comment)
 ] @comment
-
-
 
 ((comment) @comment.documentation
   (#match? @comment.documentation "^[*][*][^*].*[*]$"))
@@ -82,6 +80,8 @@
   (xhp_modifier)
   (inout_modifier)
 ] @keyword.modifier
+
+(shape_type_specifier) @type.builtin
 
 [
   "shape"

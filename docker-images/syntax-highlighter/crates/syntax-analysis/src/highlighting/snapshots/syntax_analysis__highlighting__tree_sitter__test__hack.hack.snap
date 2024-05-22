@@ -32,6 +32,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                   ^ PunctuationDelimiter
 //                    ^ IdentifierType
 //                     ^ PunctuationDelimiter
+  use function UseNS\f;
+//^^^ Keyword
+//    ^^^^^^^^ Keyword
+//             ^^^^^ IdentifierNamespace
+//                  ^ PunctuationDelimiter
+//                   ^ IdentifierFunction
+//                    ^ PunctuationDelimiter
+  use T;
+//^^^ Keyword
+//    ^ Identifier
+//     ^ PunctuationDelimiter
   
   // NOTE: Tree-sitter grammar seems to not support module
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
@@ -44,40 +55,51 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^^ Identifier
 //                  ^ PunctuationDelimiter
   
-  // Functions
-//^^^^^^^^^^^^ Comment
-  function f(dynamic $d): void {}
-//^^^^^^^^ Keyword
-//         ^ IdentifierFunction
-//           ^^^^^^^ IdentifierBuiltinType
-//                   ^^ Identifier
+  namespace Hack\Example\namespace {
+//^^^^^^^^^ Keyword
+//          ^^^^ IdentifierNamespace
+//              ^ PunctuationDelimiter
+//               ^^^^^^^ IdentifierNamespace
 //                      ^ PunctuationDelimiter
-//                        ^^^^ IdentifierBuiltinType
-  function g(arraykey $a): void {}
-//^^^^^^^^ Keyword
-//         ^ IdentifierFunction
-//           ^^^^^^^^ IdentifierBuiltinType
-//                    ^^ Identifier
-//                       ^ PunctuationDelimiter
-//                         ^^^^ IdentifierBuiltinType
+//                       ^^^^^^^^^ Identifier
   
-  // Shape constructor
-//^^^^^^^^^^^^^^^^^^^^ Comment
-  function foo(int $arg): shape(...){
-//^^^^^^^^ Keyword
-//         ^^^ IdentifierFunction
-//             ^^^ IdentifierBuiltinType
-//                 ^^^^ Identifier
-//                      ^ PunctuationDelimiter
-//                        ^^^^^ IdentifierBuiltinType
-    return shape();
-//  ^^^^^^ Keyword
-//         ^^^^^ IdentifierBuiltinType
-//                ^ PunctuationDelimiter
+      // Functions
+//    ^^^^^^^^^^^^ Comment
+      function f(dynamic $d): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^ IdentifierBuiltinType
+//                       ^^ Identifier
+//                          ^ PunctuationDelimiter
+//                            ^^^^ IdentifierBuiltinType
+      function g(arraykey $a): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^^ IdentifierBuiltinType
+//                        ^^ Identifier
+//                           ^ PunctuationDelimiter
+//                             ^^^^ IdentifierBuiltinType
+  
+      // Shape constructor
+//    ^^^^^^^^^^^^^^^^^^^^ Comment
+      function foo(int $arg): shape(...){
+//    ^^^^^^^^ Keyword
+//             ^^^ IdentifierFunction
+//                 ^^^ IdentifierBuiltinType
+//                     ^^^^ Identifier
+//                          ^ PunctuationDelimiter
+//                            ^^^^^ IdentifierBuiltinType
+//                                  ^^^ IdentifierBuiltinType
+      return shape();
+//    ^^^^^^ Keyword
+//           ^^^^^ IdentifierBuiltinType
+//                  ^ PunctuationDelimiter
+      }
   }
   
+  
   /**
-//^^^ Comment 17:0..19:3
+//^^^ Comment 23:0..25:3
    * A doc comment starts with two asterisks.
    */
   function swap<T>(inout T $i1, inout T $i2): void {
@@ -353,11 +375,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^ Tag
 //                                         ^^^^^^ Tag
 //                                               ^ IdentifierOperator
-//                                                 StringLiteral 73:48..75:4
+//                                                 StringLiteral 79:48..81:4
       Text in the markup
       <!-- this is a comment -->
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-//                               StringLiteral 75:30..76:0
+//                               StringLiteral 81:30..82:0
   </tt>;
 //^^ Tag
 //  ^^ Tag
@@ -453,7 +475,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   $s = <<<EOT
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^^^ StringLiteral 91:5..93:3
+//     ^^^^^^ StringLiteral 97:5..99:3
    $('a') abc $(function{return;})
   EOT;
 //   ^ PunctuationDelimiter
@@ -540,11 +562,16 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ IdentifierOperator
 //               ^^^^^ IdentifierBuiltinType
 //                     ^^^^^^ StringLiteral
+//                           ^ IdentifierBuiltinType
 //                            ^^ IdentifierOperator
+//                              ^ IdentifierBuiltinType
 //                               ^^^^^ IdentifierBuiltinType
 //                                    ^ PunctuationDelimiter
+//                                     ^ IdentifierBuiltinType
 //                                      ^^^^^^ StringLiteral
+//                                            ^ IdentifierBuiltinType
 //                                             ^^ IdentifierOperator
+//                                               ^ IdentifierBuiltinType
 //                                                ^^^^^ IdentifierBuiltinType
 //                                                      ^ PunctuationDelimiter
   newtype Point = (float, float);
@@ -808,7 +835,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                       ^ IdentifierOperator
 //                                                         ^^^ IdentifierBuiltinType
       $this->stackPtr = C\count($elements) - 1;
-//    ^^^^^ Identifier
+//    ^^^^^ IdentifierBuiltin
 //         ^^ IdentifierOperator
 //           ^^^^^^^^ Identifier
 //                    ^ IdentifierOperator
@@ -830,7 +857,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                  ^ PunctuationDelimiter
 //                                    ^^^^ IdentifierBuiltinType
       $this->stackPtr++;
-//    ^^^^^ Identifier
+//    ^^^^^ IdentifierBuiltin
 //         ^^ IdentifierOperator
 //           ^^^^^^^^ Identifier
 //                   ^^ IdentifierOperator
@@ -840,15 +867,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^ IdentifierNamespace
 //         ^ PunctuationDelimiter
 //          ^^^^^ IdentifierFunction
-//                ^^^^^ Identifier
+//                ^^^^^ IdentifierBuiltin
 //                     ^^ IdentifierOperator
 //                       ^^^^^^^^ Identifier
 //                                 ^^^ IdentifierOperator
-//                                     ^^^^^ Identifier
+//                                     ^^^^^ IdentifierBuiltin
 //                                          ^^ IdentifierOperator
 //                                            ^^^^^^^^ Identifier
         $this->elements[] = $element;
-//      ^^^^^ Identifier
+//      ^^^^^ IdentifierBuiltin
 //           ^^ IdentifierOperator
 //             ^^^^^^^^ Identifier
 //                        ^ IdentifierOperator
@@ -857,10 +884,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       } else {
 //      ^^^^ Keyword
         $this->elements[$this->stackPtr] = $element;
-//      ^^^^^ Identifier
+//      ^^^^^ IdentifierBuiltin
 //           ^^ IdentifierOperator
 //             ^^^^^^^^ Identifier
-//                      ^^^^^ Identifier
+//                      ^^^^^ IdentifierBuiltin
 //                           ^^ IdentifierOperator
 //                             ^^^^^^^^ Identifier
 //                                       ^ IdentifierOperator
