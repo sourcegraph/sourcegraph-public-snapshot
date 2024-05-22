@@ -156,7 +156,16 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 		if len(syntacticResolvers) != 0 || err != nil {
 			return &syntacticResolvers, err
 		}
+
+		// Enhancement idea: if a syntactic SCIP index is unavailable,
+		// but the language is supported by scip-syntax, we could generate
+		// a syntactic SCIP index on-the-fly by having the syntax-highlighter
+		// analyze the file.
 	}
+
+	// We do not currently have any way of generating SCIP data
+	// during purely textual means.
+
 	return &[]resolverstubs.CodeGraphDataResolver{}, nil
 }
 
