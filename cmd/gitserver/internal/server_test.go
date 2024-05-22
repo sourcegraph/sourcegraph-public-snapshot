@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"container/list"
 	"context"
 	"fmt"
 	"io"
@@ -28,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -327,7 +325,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
-		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	})
 
 	s.ctx = ctx

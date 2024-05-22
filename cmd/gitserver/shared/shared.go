@@ -2,7 +2,6 @@
 package shared
 
 import (
-	"container/list"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -136,7 +134,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		FS:                      fs,
 		Hostname:                hostname,
 		DB:                      db,
-		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
 		RPSLimiter: ratelimit.NewInstrumentedLimiter(
