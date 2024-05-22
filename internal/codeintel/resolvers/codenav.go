@@ -160,9 +160,9 @@ type CodeGraphDataResolver interface {
 type CodeGraphDataProvenance string
 
 const (
-	ProvenancePrecise     CodeGraphDataProvenance = "Precise"
-	ProvenanceSyntactic   CodeGraphDataProvenance = "Syntactic"
-	ProvenanceSearchBased CodeGraphDataProvenance = "Search-based"
+	ProvenancePrecise     CodeGraphDataProvenance = "PRECISE"
+	ProvenanceSyntactic   CodeGraphDataProvenance = "SYNTACTIC"
+	ProvenanceSearchBased CodeGraphDataProvenance = "SEARCH_BASED"
 )
 
 type CodeGraphDataProvenanceComparator struct {

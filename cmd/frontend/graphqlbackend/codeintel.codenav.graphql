@@ -159,17 +159,17 @@ enum CodeGraphDataProvenance {
     such as for a specific OS or CPU, which can matter for
     codebases having a large amount of platform-specific code.
     """
-    Precise
+    PRECISE
     """
     Based on a data source that uses an abstract or concrete syntax
     tree, but without access to reliable type information.
     """
-    Syntactic
+    SYNTACTIC
     """
     Based on a data source that only does textual analysis, say
     using regular expressions.
     """
-    SearchBased
+    SEARCH_BASED
 }
 
 """
