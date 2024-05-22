@@ -3,13 +3,7 @@
 ((variable) @variable.builtin
   (#eq? @variable.builtin "$this"))
 
-(variable) @variable
-
 (braced_expression) @none
-
-(scoped_identifier
-  (qualified_identifier
-    (identifier) @type))
 
 [
   (comment)
@@ -72,6 +66,10 @@
 
 "return" @keyword.return
 
+(scoped_identifier
+  (qualified_identifier
+    (identifier) @type))
+
 [
   (abstract_modifier)
   (final_modifier)
@@ -105,8 +103,6 @@
   (true)
   (false)
 ] @boolean
-
-(type_specifier) @type
 
 [
   (nullable_modifier)
@@ -309,7 +305,6 @@
 (method_declaration
   name: (identifier) @function.method)
 
-
 (identifier) @variable
 (pipe_variable) @variable
 
@@ -392,3 +387,8 @@
   (xhp_open)
   (xhp_close)
 ] @tag
+
+(type_specifier (qualified_identifier (identifier) @type))
+(type_specifier) @type
+
+(variable) @variable

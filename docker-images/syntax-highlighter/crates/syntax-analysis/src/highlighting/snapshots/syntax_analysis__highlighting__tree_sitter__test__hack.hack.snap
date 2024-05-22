@@ -69,14 +69,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^^^^^^ Keyword
 //             ^ IdentifierFunction
 //               ^^^^^^^ IdentifierBuiltinType
-//                       ^^ Identifier
+//                       ^^ IdentifierParameter
 //                          ^ PunctuationDelimiter
 //                            ^^^^ IdentifierBuiltinType
       function g(arraykey $a): void {}
 //    ^^^^^^^^ Keyword
 //             ^ IdentifierFunction
 //               ^^^^^^^^ IdentifierBuiltinType
-//                        ^^ Identifier
+//                        ^^ IdentifierParameter
 //                           ^ PunctuationDelimiter
 //                             ^^^^ IdentifierBuiltinType
   
@@ -86,7 +86,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^^^^^^ Keyword
 //             ^^^ IdentifierFunction
 //                 ^^^ IdentifierBuiltinType
-//                     ^^^^ Identifier
+//                     ^^^^ IdentifierParameter
 //                          ^ PunctuationDelimiter
 //                            ^^^^^ IdentifierBuiltinType
 //                                  ^^^ IdentifierBuiltinType
@@ -110,11 +110,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^ IdentifierOperator
 //                 ^^^^^ Keyword
 //                       ^ Identifier
-//                         ^^^ Identifier
+//                         ^^^ IdentifierParameter
 //                            ^ PunctuationDelimiter
 //                              ^^^^^ Keyword
 //                                    ^ Identifier
-//                                      ^^^ Identifier
+//                                      ^^^ IdentifierParameter
 //                                          ^ PunctuationDelimiter
 //                                            ^^^^ IdentifierBuiltinType
     $temp = $i1;
@@ -129,7 +129,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ Identifier
 //     ^ IdentifierOperator
 //       ^^^^^^^^ Keyword
-//                ^^ Identifier
+//                ^^ IdentifierParameter
 //                      ^^^^^^ Keyword
 //                             ^^ Identifier
 //                                ^ IdentifierOperator
@@ -140,7 +140,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ Identifier
 //     ^ IdentifierOperator
 //       ^^^^^^^^ Keyword
-//                ^^ Identifier
+//                ^^ IdentifierParameter
 //                    ^^^ Keyword
 //                        ^^ Identifier
 //                              ^^^^^^ Keyword
@@ -152,7 +152,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     $f = $x ==> $x + 1;
 //  ^^ Identifier
 //     ^ IdentifierOperator
-//       ^^ Identifier
+//       ^^ IdentifierParameter
 //          ^^^ IdentifierOperator
 //              ^^ Identifier
 //                 ^ IdentifierOperator
@@ -162,7 +162,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ Identifier
 //     ^ IdentifierOperator
 //        ^^^ IdentifierBuiltinType
-//            ^^ Identifier
+//            ^^ IdentifierParameter
 //               ^ PunctuationDelimiter
 //                 ^^^ IdentifierBuiltinType
 //                     ^^^ IdentifierOperator
@@ -179,15 +179,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^^^^ IdentifierFunction
     int $start,
 //  ^^^ IdentifierBuiltinType
-//      ^^^^^^ Identifier
+//      ^^^^^^ IdentifierParameter
 //            ^ PunctuationDelimiter
     int $end,
 //  ^^^ IdentifierBuiltinType
-//      ^^^^ Identifier
+//      ^^^^ IdentifierParameter
 //          ^ PunctuationDelimiter
     string $keyPrefix = "",
 //  ^^^^^^ IdentifierBuiltinType
-//         ^^^^^^^^^^ Identifier
+//         ^^^^^^^^^^ IdentifierParameter
 //                    ^ IdentifierOperator
 //                      ^^ StringLiteral
 //                        ^ PunctuationDelimiter
@@ -498,7 +498,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //           ^^^ IdentifierFunction
 //               ^^ Identifier
 //                 ^ PunctuationDelimiter
-//                   ^^ Identifier
+//                   ^^ IdentifierParameter
 //                      ^^^ IdentifierOperator
 //                          ^^ Identifier
 //                             ^ IdentifierOperator
@@ -659,7 +659,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^^^^^ Keyword
 //                  ^^^^ IdentifierFunction
 //                       ^ Identifier
-//                         ^^^^^^^^ Identifier
+//                         ^^^^^^^^ IdentifierParameter
 //                                  ^ PunctuationDelimiter
 //                                    ^^^^ IdentifierBuiltinType
 //                                        ^ PunctuationDelimiter
@@ -826,7 +826,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                         ^ IdentifierOperator
 //                                          ^ Identifier
 //                                           ^ IdentifierOperator
-//                                             ^^^^^^^^^ Identifier
+//                                             ^^^^^^^^^ IdentifierParameter
 //                                                       ^ IdentifierOperator
 //                                                         ^^^ IdentifierBuiltinType
       $this->stackPtr = C\count($elements) - 1;
@@ -848,7 +848,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^^^^^ Keyword
 //                  ^^^^ IdentifierFunction
 //                       ^ Identifier
-//                         ^^^^^^^^ Identifier
+//                         ^^^^^^^^ IdentifierParameter
 //                                  ^ PunctuationDelimiter
 //                                    ^^^^ IdentifierBuiltinType
       $this->stackPtr++;
