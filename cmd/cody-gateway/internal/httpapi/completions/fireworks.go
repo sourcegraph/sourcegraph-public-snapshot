@@ -137,13 +137,14 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	if body.N > 1 {
 		body.N = 1
 	}
+	modelLanguageId := body.LanguageID
 	// Delete the fields that are not supported by the Fireworks API.
 	if body.LanguageID != "" {
 		body.LanguageID = ""
 	}
 
 	body.Model = pickStarCoderModel(body.Model, f.config)
-	body.Model = pickFineTunedModel(body.Model, body.LanguageID)
+	body.Model = pickFineTunedModel(body.Model, modelLanguageId)
 }
 
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
