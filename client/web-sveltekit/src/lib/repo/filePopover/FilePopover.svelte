@@ -24,6 +24,7 @@
 <script lang="ts">
     import { mdiFolder } from '@mdi/js'
 
+    import { resolveRoute } from '$app/paths'
     import Avatar from '$lib/Avatar.svelte'
     import { pluralize } from '$lib/common'
     import { getGraphQLClient } from '$lib/graphql'
@@ -38,23 +39,39 @@
     import NodeLine from './NodeLine.svelte'
 
     export let repoName: string
+    export let revision: string
     export let entry: FilePopoverFragment | DirPopoverFragment
 
-    function splitPath(filePath: string): [string, string] {
+    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+
+    function splitPath(filePath: string): [string[], string] {
         let parts = filePath.split('/')
-        return [parts.slice(0, parts.length - 1).join('/'), parts[parts.length - 1]]
+        return [parts.slice(0, parts.length - 1), parts[parts.length - 1]]
     }
 
-    $: [dirName, baseName] = splitPath(entry.path)
+    $: [dirNameEntries, baseName] = splitPath(entry.path)
+    $: dirNameBreadcrumbs = dirNameEntries.map((part, index, all): [string, string] => [
+        part,
+        resolveRoute(TREE_ROUTE_ID, {
+            repo: revision ? `${repoName}@${revision}` : repoName,
+            path: all.slice(0, index + 1).join('/'),
+        }),
+    ])
     $: lastCommit = entry.history.nodes[0].commit
 </script>
 
 <div class="root section muted">
     <div class="repo-and-path section mono">
         <small>
-            {displayRepoName(repoName).replaceAll('/', ' / ')}
-            ·
-            {dirName ? `${dirName.replaceAll('/', ' / ')}` : '/'}
+            {displayRepoName(repoName).replace('/', ' / ')}
+            {#if dirNameBreadcrumbs}·{/if}
+            {#each dirNameBreadcrumbs as [name, path], i}
+                {' '}
+                <span>
+                    {#if i > 0}/{/if}
+                    <a href={path}>{name}</a>
+                </span>
+            {/each}
         </small>
     </div>
 
