@@ -14,7 +14,6 @@
 
 <script lang="ts">
     import { mdiSourceMerge } from '@mdi/js'
-    import { capitalize } from 'lodash'
 
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
