@@ -2,12 +2,22 @@ package syntactic_indexing
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal/testutils"
-	// policystore "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -16,73 +26,106 @@ import (
 
 func TestSyntacticIndexingScheduler(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
 
+	// Bootstrap scheduler
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(observationCtx.Logger, sqlDB)
 	config := &SchedulerConfig{
 		PolicyBatchSize:     100,
 		RepositoryBatchSize: 2500,
 	}
-
-	scheduler, err := NewSyntacticJobScheduler(observationCtx, sqlDB, config)
-	require.NoError(t, err)
-
-	db := database.NewDB(observationCtx.Logger, sqlDB)
+	gitserverClient := gitserver.NewMockClient()
+	scheduler, jobStore := bootstrapScheduler(t, observationCtx, sqlDB, gitserverClient, config)
 
 	ctx := context.Background()
 
-	tacosRepoId, tacosRepoName, _ := 1, "github.com/tangy/tacos", testutils.MakeCommit(1)
-	empanadasRepoId, empanadasRepoName, _ := 2, "github.com/salty/empanadas", testutils.MakeCommit(2)
+	// Setup repositories
+	tacosRepoId, tacosRepoName, tacosCommit := 1, "github.com/tangy/tacos", testutils.MakeCommit(1)
+	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "github.com/salty/empanadas", testutils.MakeCommit(2)
 	mangosRepoId, mangosRepoName, _ := 3, "gitlab.com/juicy/mangos", testutils.MakeCommit(3)
-
 	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
 	setupRepoPolicies(t, ctx, db)
 
-	fmt.Println("what?")
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
+		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == empanadasCommit
 
-	err = scheduler.Schedule(observationCtx, ctx, time.Now())
+		if isTacos || isEmpanadas {
+			return api.CommitID(rev), nil
+		} else {
+			return api.CommitID("what"), errors.New(fmt.Sprintf("Unexpected repo (`%s`) and revision (`%s`) requested from gitserver: ", repo, rev))
+		}
+	})
 
-	require.Error(t, err)
+	gitserverClient.ListRefsFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 
-	// gsClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-	// 	isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
-	// 	isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == empanadasCommit
+		fmt.Println(repoName)
 
-	// 	if isTacos || isEmpanadas {
-	// 		return api.CommitID(rev), nil
-	// 	} else {
-	// 		return api.CommitID("what"), errors.New(fmt.Sprintf("Unexpected repo (`%s`) and revision (`%s`) requested from gitserver: ", repo, rev))
-	// 	}
-	// })
+		if string(repoName) == empanadasRepoName {
+			return []gitdomain.Ref{
+				{
+					Name:     "refs/head/main",
+					Type:     gitdomain.RefTypeBranch,
+					CommitID: api.CommitID(empanadasCommit),
+					IsHead:   true,
+				},
+			}, nil
+		} else {
+			return nil, errors.New(fmt.Sprintf("Unexpected repo (`%s`) requested from gitserver's ListRef", repoName))
+		}
 
-	// isQueued, err := jobStore.IsQueued(ctx, tacosRepoId, tacosCommit)
-	// require.False(t, isQueued)
-	// require.NoError(t, err)
+	})
 
-	// // Happy path
-	// scheduled, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
+	err := scheduler.Schedule(observationCtx, ctx, time.Now())
+	require.NoError(t, err)
 
-	// require.NoError(t, err)
-	// require.True(t, len(scheduled) == 1)
-	// require.Equal(t, scheduled[0].Commit, tacosCommit)
-	// require.Equal(t, scheduled[0].RepositoryID, tacosRepoId)
-	// require.Equal(t, scheduled[0].State, jobstore.Queued)
-	// require.Equal(t, scheduled[0].RepositoryName, tacosRepoName)
+	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().QueuedCount(ctx, false))(t))
+}
 
-	// // cannot schedule same repo+revision twice
-	// result, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
-	// require.Empty(t, result)
-	// require.NoError(t, err
-	// // cannot schedule for non existent repositories
-	// _, err = enqueuer.QueueIndexes(ctx, 250, tacosCommit, EnqueueOptions{})
-	// require.Error(t, err)
+func unwrap[T any](v T, err error) func(*testing.T) T {
+	return func(t *testing.T) T {
+		require.NoError(t, err)
+		return v
+	}
+}
 
-	// // cannot schedule for non existent revisions
-	// _, err = enqueuer.QueueIndexes(ctx, mangosRepoId, mangosCommit, EnqueueOptions{})
-	// require.Error(t, err)
+func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
+	sqlDB *sql.DB, gitserverClient gitserver.Client,
+	config *SchedulerConfig) (SyntacticJobScheduler, jobstore.SyntacticIndexingJobStore) {
 
+	db := database.NewDB(observationCtx.Logger, sqlDB)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, sqlDB)
+
+	uploadsSvc := uploads.NewService(observationCtx, db, codeIntelDB, gitserverClient.Scoped("uploads"))
+	policiesSvc := policies.NewService(observationCtx, db, uploadsSvc, gitserverClient.Scoped("policies"))
+
+	schedulerConfig.Load()
+
+	matcher := policies.NewMatcher(
+		gitserverClient,
+		policies.IndexingExtractor,
+		true,
+		true,
+	)
+
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
+	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
+
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, sqlDB)
+	require.NoError(t, err)
+
+	repoStore := db.Repos()
+
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
+
+	scheduler, err := NewSyntaticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *config)
+
+	require.NoError(t, err)
+
+	return scheduler, jobStore
 }
 
 func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
@@ -127,20 +170,5 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB) {
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
-	}
-
-	rows, _ := db.QueryContext(ctx, "select name from lsif_configuration_policies")
-
-	target := make([]interface{}, 1)
-
-	fmt.Println("LETSGO")
-	for rows.Next() {
-		err := rows.Scan(target...)
-		if err != nil {
-			fmt.Println("Failed to scan row", err)
-			return
-		}
-
-		fmt.Printf("%#v\n", target)
 	}
 }

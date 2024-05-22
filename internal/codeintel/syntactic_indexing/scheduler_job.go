@@ -44,7 +44,7 @@ func (j *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationC
 
 	schedulerConfig.Load()
 
-	scheduler, err := NewSyntacticJobScheduler(observationCtx, rawDB, schedulerConfig)
+	scheduler, err := BootstrapSyntacticJobScheduler(observationCtx, rawDB)
 
 	if err != nil {
 		return nil, err

@@ -38,7 +38,21 @@ type syntacticJobScheduler struct {
 
 var _ SyntacticJobScheduler = &syntacticJobScheduler{}
 
-func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB, config *SchedulerConfig) (SyntacticJobScheduler, error) {
+func NewSyntaticJobScheduler(repoSchedulingSvc reposcheduler.RepositorySchedulingService,
+	policyMatcher policies.Matcher, policiesSvc policies.Service,
+	repoStore database.RepoStore, enqueuer IndexEnqueuer, config SchedulerConfig) (SyntacticJobScheduler, error) {
+
+	return &syntacticJobScheduler{
+		RepositorySchedulingService: repoSchedulingSvc,
+		PolicyMatcher:               &policyMatcher,
+		PoliciesService:             policiesSvc,
+		RepoStore:                   repoStore,
+		Enqueuer:                    enqueuer,
+		Config:                      &config,
+	}, nil
+}
+
+func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (SyntacticJobScheduler, error) {
 	database := database.NewDB(observationCtx.Logger, db)
 
 	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
@@ -69,14 +83,7 @@ func NewSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB, c
 
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
-	return &syntacticJobScheduler{
-		RepositorySchedulingService: repoSchedulingSvc,
-		PolicyMatcher:               matcher,
-		PoliciesService:             *policiesSvc,
-		RepoStore:                   repoStore,
-		Enqueuer:                    enqueuer,
-		Config:                      schedulerConfig,
-	}, nil
+	return NewSyntaticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
 }
 
 // GetConfig implements SyntacticJobScheduler.

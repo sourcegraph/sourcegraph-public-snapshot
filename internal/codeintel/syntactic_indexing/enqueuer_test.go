@@ -17,17 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func unwrap[T any](t testing.TB) func(T, error) T {
-	return func(x T, err error) T {
-		t.Helper()
-		require.NoError(t, err)
-		// if err != nil {
-		// 	// t.Fatal(err)
-		// }
-		return x
-	}
-}
-
 func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	/*
 		The purpose of this test is to verify that methods InsertIndexes and IsQueued
@@ -48,8 +37,6 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	gsClient := gitserver.NewMockClient()
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gsClient)
-
-	fmt.Println(enqueuer)
 
 	tacosRepoId, tacosRepoName, tacosCommit := 1, "tangy/tacos", testutils.MakeCommit(1)
 	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "salty/empanadas", testutils.MakeCommit(2)
