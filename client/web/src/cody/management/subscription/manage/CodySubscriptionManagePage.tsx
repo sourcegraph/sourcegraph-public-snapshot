@@ -74,28 +74,8 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
 const currentSubscriptionCall = Client.getCurrentSubscription()
 
 const PageContent: React.FC = () => {
-    const { loading, error, data } = useApiCaller(currentSubscriptionCall)
-    // TODO: remove mock data usage!
-    const subscription = useMemo(
-        () =>
-            data && {
-                ...data,
-                address: {
-                    line1: '742 Evergreen Terrace',
-                    line2: '',
-                    city: 'Springfield',
-                    state: 'IL',
-                    postalCode: '62629',
-                    country: 'US',
-                },
-                paymentMethod: {
-                    expMonth: 6,
-                    expYear: 30,
-                    last4: '4242',
-                },
-            },
-        [data]
-    )
+    const { loading, error, data: subscription } = useApiCaller(currentSubscriptionCall)
+
     if (loading) {
         return <LoadingSpinner />
     }
