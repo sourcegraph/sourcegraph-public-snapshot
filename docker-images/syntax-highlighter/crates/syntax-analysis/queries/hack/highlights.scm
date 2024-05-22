@@ -81,7 +81,7 @@
   (inout_modifier)
 ] @keyword.modifier
 
-(shape_type_specifier) @type.builtin
+(shape_type_specifier (open_modifier)) @type.builtin
 
 [
   "shape"

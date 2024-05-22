@@ -562,17 +562,12 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ IdentifierOperator
 //               ^^^^^ IdentifierBuiltinType
 //                     ^^^^^^ StringLiteral
-//                           ^ IdentifierBuiltinType
 //                            ^^ IdentifierOperator
-//                              ^ IdentifierBuiltinType
-//                               ^^^^^ IdentifierBuiltinType
+//                               ^^^^^ IdentifierType
 //                                    ^ PunctuationDelimiter
-//                                     ^ IdentifierBuiltinType
 //                                      ^^^^^^ StringLiteral
-//                                            ^ IdentifierBuiltinType
 //                                             ^^ IdentifierOperator
-//                                               ^ IdentifierBuiltinType
-//                                                ^^^^^ IdentifierBuiltinType
+//                                                ^^^^^ IdentifierType
 //                                                      ^ PunctuationDelimiter
   newtype Point = (float, float);
 //^^^^^^^ Keyword
