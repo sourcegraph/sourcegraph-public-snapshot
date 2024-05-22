@@ -91,6 +91,9 @@ input CodeGraphDataProvenanceComparator {
 
 """
 EXPERIMENTAL: This type may change in a backwards-incompatible way.
+
+TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
+before stabilizing this API.
 """
 type CodeGraphData {
     """
