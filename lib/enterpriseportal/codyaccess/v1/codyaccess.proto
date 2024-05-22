@@ -75,7 +75,7 @@ message CodyGatewayAccess {
   // Rate limit for code completions access, or null if not enabled.
   optional CodyGatewayRateLimit code_completions_rate_limit = 4;
   // Rate limit for embedding text chunks, or null if not enabled.
-  optional CodyGatewayRateLimit embeddings_rate_limt = 5;
+  optional CodyGatewayRateLimit embeddings_rate_limit = 5;
 
   // Available access tokens for authenticating as the subscription holder with
   // Cody Gateway.

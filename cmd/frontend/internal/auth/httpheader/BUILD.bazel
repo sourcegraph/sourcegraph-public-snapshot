@@ -43,7 +43,6 @@ go_test(
         "//cmd/frontend/auth",
         "//internal/actor",
         "//internal/auth/providers",
-        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",

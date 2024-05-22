@@ -47,7 +47,7 @@ To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
 
 #### Docker
 
-[Run `gitserver` in a Docker container](https://sourcegraph.com/docs/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
+[Run `gitserver` in a Docker container](https://docs-legacy.sourcegraph.com/dev/background-information/sg#run-gitserver-in-a-docker-container). This is the option that gives an experience closest to a deployed Sourcegraph instance, and will work for any platform/OS on which you're developing (running `sg start`).
 
 #### Bazel
 

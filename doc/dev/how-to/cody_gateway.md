@@ -24,8 +24,8 @@ To use this locally running Cody Gateway from your local Sourcegraph instance, c
     "enabled": true,
     "provider": "sourcegraph",
     "endpoint": "http://localhost:9992",
-    "chatModel": "anthropic/claude-2",
-    "completionModel": "anthropic/claude-instant-1",
+    "chatModel": "anthropic/claude-3-sonnet-20240229",
+    "completionModel": "fireworks/starcoder",
     // Create an Enterprise subscription and license key:
     // https://sourcegraph.test:3443/site-admin/dotcom/product/subscriptions
     // Under "Cody services", ensure access is enabled and get the access token

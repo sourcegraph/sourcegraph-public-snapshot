@@ -126,7 +126,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	}
 
 	pending.Writef("Deploy instance details: \n%s", inst.String())
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", spec.Name, spec.Version, inst.URL))
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Deployment %q created for version %q - access at: %s", inst.Name, inst.Version, inst.URL))
 	return nil
 }
 
@@ -180,8 +180,8 @@ func createDeploymentName(originalName, version, email, branch string) string {
 	} else if version != "" {
 		// if a version is given we generate a name based on the email user and the given version
 		// to make sure the deployment is unique
-		user := strings.ReplaceAll(email[0:strings.Index(email, "@")], ".", "_")
-		deploymentName = user[:min(12, len(user))] + "_" + version
+		user := strings.ReplaceAll(email[0:strings.Index(email, "@")], ".", "-")
+		deploymentName = user[:min(12, len(user))] + "-" + version
 	} else {
 		deploymentName = branch
 	}
@@ -222,7 +222,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		}
 
 		build = b
-		version, err = determineVersion(build, ctx.String("tag"))
+		version, err = determineVersion(build, "")
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,8 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 		return err
 	}
 
-	deploymentName := createDeploymentName(ctx.String("name"), version, email, currRepo.Branch)
+	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
+	deploymentName := createDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {

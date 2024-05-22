@@ -126,7 +126,7 @@ fi
 
 # If we're building ephemeral cloud images, we don't push to prod but we need to prod version as tag
 if [ "${CLOUD_EPHEMERAL:-}" == "true" ]; then
-  dev_tags+=("${PUSH_VERSION}")
+  dev_tags=("${PUSH_VERSION}")
   push_prod=false
 fi
 

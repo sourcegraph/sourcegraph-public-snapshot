@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -18,7 +19,7 @@ type Appliance struct {
 
 	version     semver.Version
 	status      Status
-	sourcegraph Sourcegraph
+	sourcegraph config.Sourcegraph
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
 	// compiled against a newer version of the proto file, the server will still have default implementations of any new
@@ -53,7 +54,7 @@ func NewAppliance(client client.Client) *Appliance {
 		status: Status{
 			stage: StageUnknown,
 		},
-		sourcegraph: Sourcegraph{},
+		sourcegraph: config.Sourcegraph{},
 	}
 }
 
@@ -80,7 +81,7 @@ func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string)
 			},
 			Annotations: map[string]string{
 				// required annotation for our controller filter.
-				annotationKeyManaged: "true",
+				config.AnnotationKeyManaged: "true",
 			},
 		},
 		Immutable: pointers.Ptr(false),

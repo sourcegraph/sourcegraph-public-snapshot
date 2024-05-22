@@ -2,14 +2,12 @@ package scim
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 
 	"github.com/elimity-com/scim"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,13 +16,6 @@ import (
 )
 
 func TestUserResourceHandler_Create(t *testing.T) {
-	userpasswd.MockAddRandomSuffix = func(s string) (string, error) {
-		return fmt.Sprintf("%s-ubioa", s), nil
-	}
-	t.Cleanup(func() {
-		userpasswd.MockAddRandomSuffix = nil
-	})
-
 	txemail.DisableSilently()
 	db := getMockDB([]*types.UserForSCIM{
 		{User: types.User{ID: 1, Username: "user1", DisplayName: "Yay Scim", SCIMControlled: true}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
@@ -72,7 +63,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			username: "test@company.com",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, "test-ubioa", usernameInDB)
+				assert.Equal(t, "test", usernameInDB)
 				assert.Equal(t, "test@company.com", usernameInResource)
 			},
 		},
@@ -90,7 +81,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			username: "",
 			testFunc: func(t *testing.T, usernameInDB string, usernameInResource string, err error) {
 				assert.NoError(t, err)
-				assert.Len(t, usernameInDB, 6) // -abcde
+				assert.Len(t, usernameInDB, 5) // abcde
 				assert.Equal(t, "", usernameInResource)
 			},
 		},

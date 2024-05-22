@@ -6,7 +6,7 @@ import type { ExportTelemetryEventsResult } from '../graphql-operations'
 
 /**
  * ApolloTelemetryExporter exports events via the new Sourcegraph telemetry
- * framework: https://sourcegraph.com/docs/dev/background-information/telemetry
+ * framework: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
  */
 export class ApolloTelemetryExporter implements TelemetryExporter {
     constructor(private client: ApolloClient<object>) {}

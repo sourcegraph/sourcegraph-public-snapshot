@@ -18,6 +18,7 @@ import (
 	sglogr "github.com/sourcegraph/log/logr"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -57,7 +58,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	if err = (&appliance.Reconciler{
+	if err = (&reconciler.Reconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("sourcegraph-appliance"),

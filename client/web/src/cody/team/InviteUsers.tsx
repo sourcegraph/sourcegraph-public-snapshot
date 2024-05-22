@@ -23,6 +23,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     const [emailAddressesString, setEmailAddressesString] = useState<string>('')
     const [emailAddressErrorMessage, setEmailAddressErrorMessage] = useState<string | null>(null)
     const [invitesSendingStatus, setInvitesSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+    const [invitesSentCount, setInvitesSentCount] = useState(0)
     const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
 
     const onSendInvitesClicked = useCallback(async () => {
@@ -58,6 +59,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                 return
             }
             setInvitesSendingStatus('success')
+            setInvitesSentCount(emailAddresses.length)
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
                 metadata: { count: emailAddresses.length },
                 privateMetadata: { teamId, emailAddresses },
@@ -76,7 +78,9 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
         <>
             {invitesSendingStatus === 'success' && (
                 <div className={classNames('mb-4', styles.alert, styles.blueSuccessAlert)}>
-                    <H3>4 invites sent!</H3>
+                    <H3>
+                        {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
+                    </H3>
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
                     </Text>
@@ -95,43 +99,46 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                 </div>
             )}
 
-            {!!remainingInviteCount && (
-                <div className={classNames('p-4 border bg-1 mb-4 d-flex flex-row', styles.container)}>
-                    <div className="d-flex justify-content-between align-items-center w-100">
-                        <div>
-                            <img
-                                src="https://storage.googleapis.com/sourcegraph-assets/cody/user-badges.png"
-                                alt="User badges"
-                                width="230"
-                                height="202"
-                                className={classNames('mr-3')}
-                            />
-                        </div>
-                        <div className="flex-1 d-flex flex-column">
-                            <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
-                                <strong>Invite users</strong> – You have {remainingInviteCount} free{' '}
-                                {pluralize('seat', remainingInviteCount)}
-                            </H2>
-                            <TextArea
-                                className={classNames('mb-2')}
-                                placeholder="Example: someone@sourcegraph.com, another.user@sourcegraph.com"
-                                rows={4}
-                                onChange={event => {
-                                    setEmailAddressErrorMessage(null)
-                                    setEmailAddressesString(event.target.value)
-                                }}
-                            />
-                            <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
+            <div className={classNames('p-4 border bg-1 mb-4 d-flex flex-row', styles.container)}>
+                <div className="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <img
+                            src="https://storage.googleapis.com/sourcegraph-assets/cody/user-badges.png"
+                            alt="User badges"
+                            width="230"
+                            height="202"
+                            className={classNames('mr-3')}
+                        />
+                    </div>
+                    <div className="flex-1 d-flex flex-column">
+                        <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
+                            <strong>Invite users</strong> – {remainingInviteCount}{' '}
+                            {pluralize('seat', remainingInviteCount)} remaining
+                        </H2>
+                        <TextArea
+                            className={classNames('mb-2')}
+                            placeholder="Example: someone@sourcegraph.com, another.user@sourcegraph.com"
+                            rows={4}
+                            onChange={event => {
+                                setEmailAddressErrorMessage(null)
+                                setEmailAddressesString(event.target.value)
+                            }}
+                            isValid={emailAddressErrorMessage ? false : undefined}
+                        />
+                        {emailAddressErrorMessage ? (
                             <Text className="text-danger mb-2">{emailAddressErrorMessage}</Text>
-                            <div className="d-flex justify-content-end">
-                                <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
-                                    Send
-                                </ButtonLink>
-                            </div>
+                        ) : (
+                            <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
+                        )}
+
+                        <div>
+                            <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
+                                Send
+                            </ButtonLink>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </>
     )
 }

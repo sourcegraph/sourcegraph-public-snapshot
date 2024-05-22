@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/urlredactor"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -415,13 +414,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 			return nil, err
 		}
 
-		remoteURL, err := s.getRemoteURL(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
 		if err := syncer.IsCloneable(ctx, repo); err != nil {
-			redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
-			return nil, errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
+			return nil, errors.Wrapf(err, "error cloning repo: repo %s not cloneable", repo)
 		}
 
 		return syncer, nil
@@ -520,6 +514,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
 	}
 
+	// Set a separate timeout for post repo fetch actions, otherwise git commands
+	// that are run as part of that will have the default timeout of 1 minute,
+	// and we want this to succeed rather than be super fast.
+	ctx, cancel = context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 	if err := postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(common.GitDir(tmpPath), repo), s.hostname, repo, common.GitDir(tmpPath), syncer); err != nil {
 		return err
 	}
@@ -737,6 +736,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, lock Repos
 			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, output.String())
 		}
 
+		// Set a separate timeout for post repo fetch actions, otherwise git commands
+		// that are run as part of that will have the default timeout of 1 minute,
+		// and we want this to succeed rather than be super fast.
+		ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+		defer cancel()
 		return postRepoFetchActions(ctx, logger, s.fs, s.db, s.gitBackendSource(dir, repo), s.hostname, repo, dir, syncer)
 	}(ctx)
 

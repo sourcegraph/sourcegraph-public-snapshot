@@ -1,6 +1,7 @@
 package msp
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -338,4 +339,10 @@ func collectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, err
 		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
 	}
 	return collectedAlerts, nil
+}
+
+// sortSlice sorts a slice of elements and returns it, for ease of chaining.
+func sortSlice[S ~[]E, E cmp.Ordered](s S) S {
+	slices.Sort(s)
+	return s
 }
