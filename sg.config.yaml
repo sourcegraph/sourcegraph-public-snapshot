@@ -305,7 +305,7 @@ commands:
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      # Set in override if you want to test local Cody Gateway: http://go/embeddings-api-token-link
+      # Set in override if you want to test Embeddings with local Cody Gateway: http://go/embeddings-api-token-link
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
@@ -998,7 +998,7 @@ bazelCommands:
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      # Set in override if you want to test local Cody Gateway: http://go/embeddings-api-token-link
+      # Set in override if you want to test Embeddings with local Cody Gateway: http://go/embeddings-api-token-link
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
