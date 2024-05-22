@@ -1,7 +1,110 @@
-load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_pkg//:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
 load("//wolfi-images:defs.bzl", "wolfi_base")
+
+# The following legacy postgres-12-alpine image is still based on an Alpine upstream image.
+# We're still shipping this legacy image for backwards compatibility.
+
+pkg_files(
+    name = "passwd_groups",
+    srcs = [
+        "group",
+        "passwd",
+    ],
+    attributes = pkg_attributes(
+        gid = 0,
+        mode = "0644",
+        uid = 0,
+    ),
+)
+
+pkg_tar(
+    name = "passwd_groups_tar",
+    srcs = [":passwd_groups"],
+    package_dir = "/etc",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "pgdata-12-dir_tar",
+    srcs = [],
+    empty_dirs = ["/data/pgdata-12"],
+    owner = "70.70",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "var-lib-postgresql-data_tar",
+    srcs = [],
+    empty_dirs = ["/var/lib/postgresql/data"],
+    mode = "1777",
+    owner = "70.70",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "var-run-postgresql_tar",
+    srcs = [],
+    empty_dirs = ["/run/postgresql"],
+    mode = "3777",
+    owner = "70.70",
+    visibility = ["//visibility:public"],
+)
+
+oci_image(
+    name = "legacy_image",
+    base = "@legacy_postgres-12-alpine_base",
+    entrypoint = ["/postgres.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/data/pgdata-12",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
+    tars = [
+        "//docker-images/postgres-12-alpine:rootfs_tar",
+        ":passwd_groups_tar",
+        ":pgdata-12-dir_tar",
+        ":var-lib-postgresql-data_tar",
+        ":var-run-postgresql_tar",
+    ],
+    user = "postgres",
+)
+
+oci_tarball(
+    name = "legacy_tarball",
+    image = ":legacy_image",
+    repo_tags = ["codeinsights-db:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":legacy_image",
+    repository = image_repository("codeinsights-db"),
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":legacy_image",
+    tags = [
+        "exclusive",
+        "requires-network",
+        TAG_SEARCHSUITE,
+    ],
+)
+
+#
+# The following image is a Wolfi-based version of the postgres-12 container.
+# We are NOT shipping this image due to a complex database migration that would be required.
+# See RFC 793 for details.
+#
 
 filegroup(
     name = "config",
@@ -44,42 +147,11 @@ oci_tarball(
     repo_tags = ["codeinsights-db:candidate"],
 )
 
-container_structure_test(
-    name = "image_test",
-    timeout = "short",
-    configs = ["image_test.yaml"],
-    driver = "docker",
-    image = ":image",
-    tags = [
-        "exclusive",
-        "requires-network",
-    ],
-)
-
-# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
+# RFC 793: We are not publishing those images.
 # oci_push(
 #     name = "candidate_push",
 #     image = ":image",
 #     repository = image_repository("codeinsights-db"),
 # )
-
-# The above postgres-12-codeinsights image is built from the wolfi base image. Where as we're still shipping the legacy
-# image built, postgres-12-alpine, for backwards compatibility.
-oci_image(
-    name = "legacy_image",
-    base = "@legacy_codeinsights-db_base",
-)
-
-oci_tarball(
-    name = "legacy_tarball",
-    image = ":legacy_image",
-    repo_tags = ["codeinsights-db:candidate"],
-)
-
-oci_push(
-    name = "candidate_push",
-    image = ":legacy_image",
-    repository = image_repository("codeinsights-db"),
-)
 
 wolfi_base(target = "postgresql-12-codeinsights")

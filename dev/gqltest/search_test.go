@@ -26,13 +26,8 @@ func TestSearch(t *testing.T) {
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
+		Config: mustMarshalJSONString(&schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/java-langserver",
@@ -102,9 +97,6 @@ type searchClient interface {
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
-
-	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
-	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -252,27 +244,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// Make sure we only got .go files
-		for _, r := range results.Results {
-			if !strings.Contains(strings.ToLower(r.File.Name), ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
-			}
-		}
-	})
-
-	t.Run("lang: filter with case sensitivity", func(t *testing.T) {
-		// Guard against a previous regression where case sensitivity broke lang filters. This search
-		// query closely mimics the one the web client ues for search-based code navigation.
-		results, err := client.SearchFiles("type:symbol ^readLine$ lang:go case:yes patterntype:regexp")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Ensure some results are returned
-		if len(results.Results) == 0 {
-			t.Fatal("Want non-zero results but got none")
-		}
-
 		// Make sure we only got .go files
 		for _, r := range results.Results {
 			if !strings.Contains(strings.ToLower(r.File.Name), ".go") {
@@ -667,16 +638,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      "file:asdfasdf.go",
 				zeroResult: true,
 			},
-			// Symbol search
-			{
-				name:  "search for a known symbol",
-				query: "type:symbol count:100 patterntype:regexp ^newroute",
-			},
-			{
-				name:       "search for a non-existent symbol",
-				query:      "type:symbol asdfasdf",
-				zeroResult: true,
-			},
 			// Commit search
 			{
 				name:  "commit search, nonzero result",
@@ -770,30 +731,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("structural search", func(t *testing.T) {
-		// Enable structural search.
-		siteConfig, lastID, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldSiteConfig := new(schema.SiteConfiguration)
-		*oldSiteConfig = *siteConfig
-		defer func() {
-			_, lastID, err := client.SiteConfiguration()
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{StructuralSearch: "enabled"}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		enableStructuralSearch(t)
 
 		tests := []struct {
 			name       string

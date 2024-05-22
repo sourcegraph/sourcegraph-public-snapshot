@@ -9,6 +9,7 @@ go_library(
         "tracing.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/cody-gateway/internal/actor",

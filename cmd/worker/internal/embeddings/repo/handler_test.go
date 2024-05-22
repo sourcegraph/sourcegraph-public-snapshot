@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
@@ -20,20 +22,18 @@ import (
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
 
-	diffSymbolsFunc := &gitserver.ClientDiffSymbolsFunc{}
-	diffSymbolsFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, id api.CommitID, id2 api.CommitID) ([]byte, error) {
-		// This is a fake diff output that contains a modified, added and deleted file.
-		// The output assumes a specific order of "old commit" and "new commit" in
-		// the call to git diff.
-		//
-		// 		git diff -z --name-status --no-renames <old commit> <new commit>
-		//
-		return []byte("M\x00modifiedFile\x00A\x00addedFile\x00D\x00deletedFile\x00"), nil
+	changedFilesFunc := &gitserver.ClientChangedFilesFunc{}
+	changedFilesFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, id string, id2 string) (gitserver.ChangedFilesIterator, error) {
+		return gitserver.NewChangedFilesIteratorFromSlice([]gitdomain.PathStatus{
+			{Path: "modifiedFile", Status: gitdomain.StatusModified},
+			{Path: "addedFile", Status: gitdomain.StatusAdded},
+			{Path: "deletedFile", Status: gitdomain.StatusDeleted},
+		}), nil
 	})
 
 	readDirFunc := &gitserver.ClientReadDirFunc{}
-	readDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
-		return []fs.FileInfo{
+	readDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (gitserver.ReadDirIterator, error) {
+		return gitserver.NewReadDirIteratorFromSlice([]fs.FileInfo{
 			FakeFileInfo{
 				name: "modifiedFile",
 				size: 900,
@@ -50,12 +50,12 @@ func TestDiff(t *testing.T) {
 				name: "anotherFile",
 				size: 1200,
 			},
-		}, nil
+		}), nil
 	})
 
 	mockGitServer := &gitserver.MockClient{
-		DiffSymbolsFunc: diffSymbolsFunc,
-		ReadDirFunc:     readDirFunc,
+		ChangedFilesFunc: changedFilesFunc,
+		ReadDirFunc:      readDirFunc,
 	}
 
 	rf := revisionFetcher{

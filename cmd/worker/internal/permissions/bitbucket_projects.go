@@ -371,7 +371,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
-// See resetter documentation for more details. https://sourcegraph.com/docs/dev/background-information/workers#dequeueing-and-resetting-jobs
+// See resetter documentation for more details. https://docs-legacy.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
 func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter"), observationCtx)
 

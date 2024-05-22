@@ -4,6 +4,7 @@ go_library(
     name = "random",
     srcs = ["random.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
         "//dev/managedservicesplatform/internal/resourceid",

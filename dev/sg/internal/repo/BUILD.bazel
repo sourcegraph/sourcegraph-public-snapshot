@@ -8,6 +8,7 @@ go_library(
         "repo.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/repo",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/run",

@@ -109,8 +109,8 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
-				return test.getFiles, nil
+			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (gitserver.ReadDirIterator, error) {
+				return gitserver.NewReadDirIteratorFromSlice(test.getFiles), nil
 			})
 
 			langs, err := searchResultsStatsLanguages(context.Background(), logger, dbmocks.NewMockDB(), gsClient, test.results)

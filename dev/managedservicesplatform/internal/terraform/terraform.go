@@ -2,7 +2,7 @@ package terraform
 
 import "os"
 
-const defaultVersion = "1.3.10"
+const defaultVersion = "1.7.5"
 
 // Version is the version of Terraform to use, configurable by MSP_TERRAFORM_VERSION
 var Version = func() string {

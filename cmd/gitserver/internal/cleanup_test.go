@@ -9,10 +9,8 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
-	"testing/quick"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -81,6 +79,11 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		logger,
 		db,
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -142,6 +145,11 @@ func TestCleanupInactive(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -181,6 +189,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"does-not-exist",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
@@ -218,6 +231,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
@@ -255,6 +273,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"gitserver-0",
 			connection.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
@@ -327,6 +350,11 @@ func TestGitGCAuto(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -378,23 +406,19 @@ func TestCleanupBroken(t *testing.T) {
 	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
-	for gitDirPath, delta := range map[string]time.Duration{
-		repoGCOld:         2 * repoTTLGC,
-		repoCorrupt:       repoTTLGC / 2, // should only trigger corrupt, not old
-		repoPerforceGCOld: 2 * repoTTLGC,
+	for gitDirPath, delta := range map[string]int{
+		repoGCOld:         2 * gcFailureRecloneThreshold,
+		repoCorrupt:       gcFailureRecloneThreshold / 2,
+		repoPerforceGCOld: 2 * gcFailureRecloneThreshold,
 	} {
-		ts := time.Now().Add(-delta)
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(gitDirPath), "git")
-		require.NoError(t, cli.Config().Set(ctx, gitConfigGCFailed, strconv.Itoa(int(ts.Unix()))))
-		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
-			t.Fatal(err)
+		for range delta {
+			require.NoError(t, incrementGCFailCounter(common.GitDir(gitDirPath)))
 		}
 	}
 	{
-		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoCorrupt), "perforce")
-		if err := cli.Config().Set(ctx, gitConfigMaybeCorrupt, "1"); err != nil {
-			t.Fatal(err)
-		}
+		f, err := os.Create(filepath.Join(repoCorrupt, gitcli.RepoMaybeCorruptFlagFilepath))
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
 	}
 	{
 		cli := gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(repoPerforceGCOld), "perforce")
@@ -420,6 +444,9 @@ func TestCleanupBroken(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			return gitcli.NewBackend(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), dir, repoName)
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -471,6 +498,11 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
 			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -500,6 +532,11 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			fs,
+			func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+				b := git.NewMockGitBackend()
+				b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+				return b
+			},
 			wrexec.NewNoOpRecordingCommandFactory(),
 			"test-gitserver",
 			connection.GitserverAddresses{Addresses: []string{"test-gitserver"}},
@@ -652,6 +689,11 @@ func TestCleanupOldLocks(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		fs,
+		func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
+			b := git.NewMockGitBackend()
+			b.ConfigFunc.SetDefaultReturn(git.NewMockGitConfigBackend())
+			return b
+		},
 		wrexec.NewNoOpRecordingCommandFactory(),
 		"test-gitserver",
 		connection.GitserverAddresses{Addresses: []string{"gitserver-0"}},
@@ -879,16 +921,6 @@ func makeFakeRepo(d string, sizeBytes int) error {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil
-}
-
-func TestJitterDuration(t *testing.T) {
-	f := func(key string) bool {
-		d := jitterDuration(key, repoTTLGC/4)
-		return 0 <= d && d < repoTTLGC/4
-	}
-	if err := quick.Check(f, nil); err != nil {
-		t.Error(err)
-	}
 }
 
 func prepareEmptyGitRepo(t *testing.T, dir string) common.GitDir {
@@ -1396,4 +1428,58 @@ func TestSGMaintenanceRemovesLock(t *testing.T) {
 	if !errors.Is(err, fs.ErrNotExist) {
 		t.Fatal("sg maintenance should have removed the lockfile it created")
 	}
+}
+
+func TestGetSetLastSizeCalculation(t *testing.T) {
+	dir := common.GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	at, err := getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	// Never computed, should be zero.
+	require.True(t, at.IsZero())
+	now := time.Now().Truncate(time.Millisecond)
+	// Setting the value should work.
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
+	// Setting again should work.
+	now = time.Now().Truncate(time.Millisecond)
+	err = setLastSizeCalculation(dir, now)
+	require.NoError(t, err)
+	at, err = getLastSizeCalculation(dir)
+	require.NoError(t, err)
+	require.Equal(t, now, at)
+}
+
+func TestRepoGCFailCounter(t *testing.T) {
+	dir := t.TempDir()
+	gitDir := common.GitDir(dir)
+
+	// Reset when file doesn't exist doesn't fail:
+	require.NoError(t, resetGCFailCounter(gitDir))
+
+	// Getting the counter when file doesn't exist returns zero:
+	have, err := getGCFailCounter(gitDir)
+	require.NoError(t, err)
+	require.Equal(t, 0, have)
+
+	// Incrementing works:
+	for i := range 5 {
+		require.NoError(t, incrementGCFailCounter(gitDir))
+		have, err := getGCFailCounter(gitDir)
+		require.NoError(t, err)
+		require.Equal(t, i+1, have)
+	}
+
+	// Resetting works:
+	require.NoError(t, resetGCFailCounter(gitDir))
+	have, err = getGCFailCounter(gitDir)
+	require.NoError(t, err)
+	require.Equal(t, 0, have)
 }

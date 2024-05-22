@@ -104,6 +104,7 @@ generate_graphql_operations(
 ts_project(
     name = "graphql_operations",
     srcs = ["src/graphql-operations.ts"],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/shared",
@@ -218,6 +219,7 @@ ts_project(
         "src/types/ajs/index.d.ts",
         "src/types/webextension-polyfill/index.d.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":graphql_operations",
@@ -288,6 +290,7 @@ ts_project(
         "src/shared/code-hosts/sourcegraph/inject.test.tsx",
         "src/testSetup.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":browser",
@@ -330,6 +333,7 @@ vitest_test(
         ":module_styles",
         ":snapshots",
     ],
+    tags = [TAG_SEARCHSUITE],
 )
 
 filegroup(
@@ -403,6 +407,7 @@ ts_project(
         "src/browser-extension/options-menu/OptionsPage.story.tsx",
         "src/shared/components/HoverOverlay.story.tsx",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":browser",

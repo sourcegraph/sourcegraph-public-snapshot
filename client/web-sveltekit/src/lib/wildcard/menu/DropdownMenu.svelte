@@ -47,7 +47,6 @@
     div,
     div :global([role='menu']) {
         isolation: isolate;
-        z-index: 1000;
         min-width: 12rem;
         font-size: 0.875rem;
         background-clip: padding-box;

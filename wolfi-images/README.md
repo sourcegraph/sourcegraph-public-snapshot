@@ -13,7 +13,7 @@ The structure of this directory is:
 
 ## Getting started
 
-See the [Add and Update Wolfi Base Images](https://sourcegraph.com/docs/dev/how-to/wolfi/add_update_images) docs for guides to add new images and updating existing images. For more background, see the [Wolfi](https://sourcegraph.com/docs/dev/background-information/wolfi#wolfi) docs.
+See the [Add and Update Wolfi Base Images](https://docs-legacy.sourcegraph.com/dev/how-to/wolfi/add_update_images) docs for guides to add new images and updating existing images. For more background, see the [Wolfi](https://docs-legacy.sourcegraph.com/dev/background-information/wolfi#wolfi) docs.
 
 ### Quickstart
 

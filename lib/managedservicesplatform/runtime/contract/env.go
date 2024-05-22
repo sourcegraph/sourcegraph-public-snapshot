@@ -178,6 +178,25 @@ func (e *Env) GetInterval(name, defaultValue, description string) time.Duration 
 	return d
 }
 
+// GetInterval parses a duration string using 'time.ParseDuration', expecting
+// formats such as "300ms", "-1.5h" or "2h45m". Valid time units are "ns", "us"
+// (or "µs"), "ms", "s", "m", "h".
+//
+// The name and description are reported when running a service using the MSP
+// runtime with the '-help' flag.
+func (e *Env) GetOptionalInterval(name, description string) *time.Duration {
+	rawValue := e.GetOptional(name, description)
+	if rawValue == nil {
+		return nil
+	}
+	d, err := time.ParseDuration(*rawValue)
+	if err != nil {
+		e.AddError(errors.Errorf("invalid duration %q for %s: %s", *rawValue, name, err))
+		return nil
+	}
+	return &d
+}
+
 // GetBool returns the value with the given name interpreted as a boolean. If no value was
 // supplied in the environment, the given default is used in its place. If no value is available,
 // or if the given value or default cannot be converted to a boolean, an error is added to the

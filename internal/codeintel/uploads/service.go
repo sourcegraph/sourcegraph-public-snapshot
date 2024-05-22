@@ -92,7 +92,7 @@ func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Durati
 // TODO(efritz) - make adjustable via site configuration
 const numAncestors = 100
 
-// inferClosestUploads will return the set of visible uploads for the given commit. If this commit is
+// InferClosestUploads will return the set of visible uploads for the given commit. If this commit is
 // newer than our last refresh of the lsif_nearest_uploads table for this repository, then we will mark
 // the repository as dirty and quickly approximate the correct set of visible uploads.
 //
@@ -142,9 +142,9 @@ func (s *Service) InferClosestUploads(ctx context.Context, opts shared.UploadMat
 	// graph as dirty so it's updated for subsequent requests.
 
 	commits, err := s.gitserverClient.Commits(ctx, repo.Name, gitserver.CommitsOptions{
-		Range: opts.Commit,
-		N:     numAncestors,
-		Order: gitserver.CommitsOrderTopoDate,
+		Ranges: []string{opts.Commit},
+		N:      numAncestors,
+		Order:  gitserver.CommitsOrderTopoDate,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserverClient.Commits")

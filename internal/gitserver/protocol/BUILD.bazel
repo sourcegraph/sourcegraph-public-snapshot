@@ -10,6 +10,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -30,8 +31,10 @@ go_test(
         "util_test.go",
     ],
     embed = [":protocol"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
+        "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",

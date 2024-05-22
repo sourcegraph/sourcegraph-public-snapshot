@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
@@ -799,16 +799,16 @@ func TestRepoHasCommitAfter(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ string, _ string) (bool, error) {
+	mockGitserver.CommitsFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 		switch repoName {
 		case repoA.Name:
-			return true, nil
+			return []*gitdomain.Commit{{ID: "1"}}, nil
 		case repoB.Name:
-			return true, nil
+			return []*gitdomain.Commit{{ID: "1"}}, nil
 		case repoC.Name:
-			return false, nil
+			return []*gitdomain.Commit{}, nil
 		case repoD.Name:
-			return false, &gitdomain.RevisionNotFoundError{}
+			return []*gitdomain.Commit{}, &gitdomain.RevisionNotFoundError{}
 		default:
 			panic("unreachable")
 		}

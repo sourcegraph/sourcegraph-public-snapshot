@@ -10,6 +10,7 @@ go_library(
         "trie.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/trie",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
 )
 
@@ -19,5 +20,6 @@ go_test(
     srcs = ["trie_test.go"],
     data = glob(["testdata/**"]),
     embed = [":trie"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = ["//lib/errors"],
 )

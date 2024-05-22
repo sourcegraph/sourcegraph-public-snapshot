@@ -1,0 +1,17 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "integrationtest_test",
+    srcs = ["integration_test.go"],
+    deps = [
+        "//internal/appliance/config",
+        "//internal/k8s/resource/configmap",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//util/homedir",
+        "@io_k8s_sigs_yaml//:yaml",
+    ],
+)

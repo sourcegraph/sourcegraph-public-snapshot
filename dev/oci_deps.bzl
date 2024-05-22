@@ -212,9 +212,11 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/alpine-3.14",
     )
 
+    # https://hub.docker.com/_/docker/tags?name=dind
+    # Tag: docker:26.1.3-dind
     oci_pull(
         name = "upstream_dind_base",
-        digest = "sha256:b52760bc3766143ca050ab3f36f01108c30bbd6bc16094400855adfb9bd66f12",
+        digest = "sha256:ca2dd9db425230285567123ce06dbd3c2aed0eae23d58a1dd5787523a4329eea",
         image = "index.docker.io/library/docker",
     )
 
@@ -224,20 +226,15 @@ def oci_deps():
         image = "index.docker.io/sourcegraph/executor-vm",
     )
 
-    oci_pull(
-        name = "legacy_codeinsights-db_base",
-        digest = "sha256:c2384743265457f816d83358d8fb4810b9aac9f049fd462d1f630174076e0d94",
-        image = "index.docker.io/sourcegraph/codeinsights-db",
-    )
-
-    oci_pull(
-        name = "legacy_codeintel-db_base",
-        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
-        image = "index.docker.io/sourcegraph/codeintel-db",
-    )
-
+    # Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
+    # If there is any change, you should ping @release-team
+    # who will make sure changes are reflected in our deploy repository
     oci_pull(
         name = "legacy_postgres-12-alpine_base",
-        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
-        image = "index.docker.io/sourcegraph/postgres-12-alpine",
+        # IMPORTANT: Only update to Postgres 12.X Alpine linux/x86_64 images, and update the tag below
+        # (Bazel doesn't allow both tags and hashes)
+        # docker pull --platform linux/x86_64 postgres:12.18-alpine3.18
+        digest = "sha256:a7b33f6dc44abdd049d666ee8d919c54642a0b36563c28cf0849b744997da0a8",
+        image = "index.docker.io/library/postgres",
+        platforms = ["linux/amd64"],
     )

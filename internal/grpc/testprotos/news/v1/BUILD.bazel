@@ -21,6 +21,7 @@ go_library(
     name = "news",
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
 )
 

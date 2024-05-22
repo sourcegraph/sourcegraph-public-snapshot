@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -564,4 +566,27 @@ func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetActorFromUser(t *testing.T) {
+	cleanup := ResetMockSessionStore(t)
+	t.Cleanup(cleanup)
+
+	user := &types.User{
+		ID:        1,
+		SiteAdmin: true,
+		CreatedAt: time.Now(),
+	}
+
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
+	require.NoError(t, err)
+	rr := httptest.NewRecorder()
+
+	ctx, err = SetActorFromUser(ctx, rr, req, user, 0)
+	assert.NoError(t, err)
+
+	actor := actor.FromContext(ctx)
+	assert.NotNil(t, actor)
+	assert.Equal(t, actor.UID, user.ID)
 }

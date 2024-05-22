@@ -12,6 +12,7 @@ go_library(
         "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
@@ -42,6 +43,7 @@ go_test(
     ],
     embed = [":http"],
     tags = [
+        TAG_PLATFORM_GRAPH,
         # Test requires localhost database
         "requires-network",
     ],

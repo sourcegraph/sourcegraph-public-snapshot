@@ -129,7 +129,7 @@ EOF
     # Add note if any packages were modified
     if [ ${#modified_packages[@]} -gt 0 ]; then
       cat <<-EOF >>"${REPO_DIR}/annotations/${file}"
-NOTE: Any modified package will <strong>not</strong> be present in the image once merged - <a href="https://sourcegraph.com/docs/dev/how-to/wolfi/add_update_packages#update-an-existing-packaged-dependency">check the docs</a> for more details.
+NOTE: Any modified package will <strong>not</strong> be present in the image once merged - <a href="https://docs-legacy.sourcegraph.com/dev/how-to/wolfi/add_update_packages#update-an-existing-packaged-dependency">check the docs</a> for more details.
 EOF
     fi
   fi

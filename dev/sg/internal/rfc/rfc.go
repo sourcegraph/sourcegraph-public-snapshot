@@ -285,7 +285,7 @@ func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*h
 	}
 
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
+		Project: secrets.LocalDevProject,
 		// sg Google client credentials
 		Name: "SG_GOOGLE_CREDS",
 	})

@@ -5,6 +5,7 @@ go_library(
     name = "pypi",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/pypi",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/reposource",
@@ -24,6 +25,7 @@ go_test(
     srcs = ["client_test.go"],
     data = glob(["testdata/**"]),
     embed = [":pypi"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/httpcli",
         "//internal/httptestutil",

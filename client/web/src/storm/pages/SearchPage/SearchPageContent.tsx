@@ -7,7 +7,6 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -137,7 +136,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             <GettingStartedTour
                                 className="mt-5"
                                 telemetryService={telemetryService}
-                                telemetryRecorder={noOpTelemetryRecorder}
+                                telemetryRecorder={telemetryRecorder}
                                 variant="horizontal"
                                 authenticatedUser={authenticatedUser}
                             />
@@ -152,6 +151,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                             patternType={patternType}
                         />

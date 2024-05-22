@@ -21,6 +21,7 @@ go_library(
         "validation.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/validation",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -47,10 +48,12 @@ go_test(
     name = "validation_test",
     srcs = [
         "auth_test.go",
+        "cody_test.go",
         "prometheus_test.go",
         "txemail_test.go",
     ],
     embed = [":validation"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/conf",
         "//internal/src-prometheus",

@@ -5,17 +5,21 @@ go_library(
     name = "gitdomain",
     srcs = [
         "common.go",
+        "date.go",
         "errors.go",
         "log.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/fileutil",
         "//internal/gitserver/v1:gitserver",
         "//internal/lazyregexp",
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
+        "@com_github_tj_go_naturaldate//:go-naturaldate",
         "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
@@ -23,13 +27,20 @@ go_library(
 go_test(
     name = "gitdomain_test",
     timeout = "short",
-    srcs = ["common_test.go"],
+    srcs = [
+        "common_test.go",
+        "date_test.go",
+        "log_test.go",
+    ],
     embed = [":gitdomain"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
+        "//internal/fileutil",
         "//internal/gitserver/v1:gitserver",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
         "@org_golang_google_protobuf//proto",
     ],
 )

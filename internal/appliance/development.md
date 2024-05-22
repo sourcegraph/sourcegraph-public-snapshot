@@ -1,5 +1,14 @@
 # Appliance development
 
+This is currently focused on the Kubernetes resource reconciler (a.k.a. an
+"operator"), which is the backend of the appliance. The appliance frontend is
+in early development.
+
+## Architecture overview
+
+The appliance frontend and reconciler backend communicate via the Sourcegraph
+ConfigMap. The frontend drives the reconciler via changes to that ConfigMap.
+
 ## Adding a new service
 
 Note: the term "service" is overloaded. In this context, it refers to a

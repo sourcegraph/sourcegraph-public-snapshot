@@ -11,6 +11,7 @@ go_library(
         "scheduler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/own/background",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -57,6 +58,7 @@ go_test(
     ],
     embed = [":background"],
     tags = [
+        TAG_SEARCHSUITE,
         "requires-network",
     ],
     deps = [
@@ -67,6 +69,7 @@ go_test(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
+        "//internal/fileutil",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",

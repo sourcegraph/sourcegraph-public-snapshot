@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -23,12 +22,6 @@ import (
 // SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
 // helper program, which helps with manual testing of the HTTP auth proxy behavior.
 func TestMiddleware(t *testing.T) {
-	userpasswd.MockAddRandomSuffix = func(s string) (string, error) {
-		return fmt.Sprintf("%s-ubioa", s), nil
-	}
-	t.Cleanup(func() {
-		userpasswd.MockAddRandomSuffix = nil
-	})
 	defer licensing.TestingSkipFeatureChecks()()
 
 	logger := logtest.Scoped(t)
@@ -141,7 +134,7 @@ func TestMiddleware(t *testing.T) {
 		var calledMock bool
 		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
-			if got, want := op.UserProps.Username, "alice-ubioa"; got != want {
+			if got, want := op.UserProps.Username, "alice"; got != want {
 				t.Errorf("expected %v got %v", want, got)
 			}
 			if got, want := op.UserProps.Email, "alice@example.com"; got != want {

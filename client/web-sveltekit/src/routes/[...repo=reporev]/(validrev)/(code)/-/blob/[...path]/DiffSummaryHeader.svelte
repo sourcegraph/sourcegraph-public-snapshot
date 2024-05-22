@@ -64,6 +64,7 @@
         display: inline-flex;
         align-items: center;
         margin-left: 1rem;
+        font-weight: 700;
 
         .added {
             color: var(--success);

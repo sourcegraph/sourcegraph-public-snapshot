@@ -5,6 +5,7 @@ go_library(
     name = "on",
     srcs = ["aggregator.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/on",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
 )
 
@@ -13,5 +14,6 @@ go_test(
     timeout = "short",
     srcs = ["aggregator_test.go"],
     embed = [":on"],
+    tags = [TAG_SEARCHSUITE],
     deps = ["@com_github_stretchr_testify//assert"],
 )

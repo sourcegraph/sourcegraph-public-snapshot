@@ -44,9 +44,8 @@ func (f *FileChunkContextResolver) ToFileChunkContext() (*FileChunkContextResolv
 }
 
 func (f *FileChunkContextResolver) ChunkContent(ctx context.Context) (string, error) {
-	startLine, endLine := int32(f.startLine), int32(f.endLine)
 	return f.treeEntry.Content(ctx, &GitTreeContentPageArgs{
-		StartLine: &startLine,
-		EndLine:   &endLine,
+		StartLine: &f.startLine,
+		EndLine:   &f.endLine,
 	})
 }

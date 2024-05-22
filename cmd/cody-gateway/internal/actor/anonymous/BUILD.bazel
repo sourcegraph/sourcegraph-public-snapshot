@@ -4,6 +4,7 @@ go_library(
     name = "anonymous",
     srcs = ["anonymous.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",

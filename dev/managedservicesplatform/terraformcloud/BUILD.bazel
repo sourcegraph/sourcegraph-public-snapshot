@@ -4,6 +4,7 @@ go_library(
     name = "terraformcloud",
     srcs = ["terraformcloud.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/managedservicesplatform/internal/terraform",

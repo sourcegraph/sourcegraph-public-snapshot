@@ -5,7 +5,6 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "git",
     srcs = [
-        "cleanup.go",
         "git.go",
         "iface.go",
         "mock.go",
@@ -13,12 +12,11 @@ go_library(
         "type.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
-        "//cmd/gitserver/internal/gitserverfs",
         "//internal/api",
-        "//internal/conf",
         "//internal/fileutil",
         "//internal/gitserver/gitdomain",
         "//internal/metrics",
@@ -35,6 +33,7 @@ go_test(
     name = "git_test",
     srcs = ["git_test.go"],
     embed = [":git"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/gitserver/internal/common",
         "@com_github_stretchr_testify//require",

@@ -12,6 +12,7 @@ go_library(
         "webhooks.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/webhooks",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi",
@@ -36,6 +37,7 @@ go_test(
     ],
     embed = [":webhooks"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

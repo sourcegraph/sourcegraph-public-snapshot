@@ -11,6 +11,7 @@ go_library(
         "trace.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/deployment-notifier",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/team",
@@ -28,6 +29,7 @@ go_library(
 go_binary(
     name = "deployment-notifier",
     embed = [":deployment-notifier_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -41,6 +43,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":deployment-notifier_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//internal/httptestutil",
         "//lib/errors",

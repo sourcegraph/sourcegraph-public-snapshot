@@ -4,6 +4,7 @@ go_library(
     name = "context",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",

@@ -8,6 +8,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -28,6 +29,7 @@ go_test(
         "types_test.go",
     ],
     embed = [":extsvc"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//schema",

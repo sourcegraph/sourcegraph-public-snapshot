@@ -28,6 +28,7 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@codemirror/view",
@@ -82,6 +83,7 @@ ts_project(
         "settings.test.ts",
         "sign-in.test.ts",
     ],
+    tags = [TAG_SEARCHSUITE],
     tsconfig = ":tsconfig",
     deps = [
         ":integration",

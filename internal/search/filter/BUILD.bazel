@@ -4,6 +4,7 @@ go_library(
     name = "filter",
     srcs = ["select.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/filter",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = ["//lib/errors"],
 )

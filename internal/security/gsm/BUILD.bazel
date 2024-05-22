@@ -5,6 +5,7 @@ go_library(
     name = "gsm",
     srcs = ["gsm.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/security/gsm",
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -19,6 +20,7 @@ go_test(
     timeout = "short",
     srcs = ["gsm_test.go"],
     embed = [":gsm"],
+    tags = [TAG_SECURITY],
     deps = [
         "//lib/errors",
         "@com_github_googleapis_gax_go_v2//:gax-go",

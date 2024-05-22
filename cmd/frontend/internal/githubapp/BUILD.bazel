@@ -9,6 +9,7 @@ go_library(
         "resolver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
@@ -48,6 +49,7 @@ go_test(
     ],
     embed = [":githubapp"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

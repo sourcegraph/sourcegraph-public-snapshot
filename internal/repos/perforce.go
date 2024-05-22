@@ -93,14 +93,11 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 // composePerforceCloneURL composes a clone URL for a Perforce depot based on
 // given information. e.g.
 // perforce://ssl:111.222.333.444:1666//Sourcegraph/
-func composePerforceCloneURL(host, depot, username, password string) string {
+func composePerforceCloneURL(host, depot string) string {
 	cloneURL := url.URL{
 		Scheme: "perforce",
 		Host:   host,
 		Path:   depot,
-	}
-	if username != "" && password != "" {
-		cloneURL.User = url.UserPassword(username, password)
 	}
 	return cloneURL.String()
 }
@@ -112,7 +109,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
 
-	cloneURL := composePerforceCloneURL(s.config.P4Port, depot, "", "")
+	cloneURL := composePerforceCloneURL(s.config.P4Port, depot)
 
 	return &types.Repo{
 		Name: reposource.PerforceRepoName(

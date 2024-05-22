@@ -8,6 +8,7 @@ go_library(
         "search_query.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/limiter",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
@@ -24,5 +25,6 @@ go_test(
         "historical_test.go",
         "search_query_test.go",
     ],
+    tags = [TAG_SEARCHSUITE],
     deps = [":limiter"],
 )

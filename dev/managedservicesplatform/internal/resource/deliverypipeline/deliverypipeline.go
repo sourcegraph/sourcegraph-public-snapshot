@@ -6,21 +6,39 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploycustomtargettype"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploydeliverypipeline"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/clouddeploytarget"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+type Target struct {
+	ID        string
+	ProjectID string
+}
+
 type Config struct {
+	// Name and Description for the delivery pipeline.
+	Name        string
+	Description string
 	// Location currently must also be the location of all targets being
 	// deployed by this pipeline.
 	Location string
 
-	Name        string
-	Description string
+	// ServiceID and ServiceImage are used to configure target defaults.
+	ServiceID    string
+	ServiceImage string
 
-	// Stages lists target IDs in order.
-	Stages []string
+	// ExecutionSA is the service account that will be used to apply deployments.
+	ExecutionSA *serviceaccount.Output
+
+	// TargetStages lists targets in the order they should appear in the pipeline.
+	TargetStages []Target
+
+	// Repository is the source code repository for the images delivered to this pipeline.
+	Repository string
+
 	// Suspended prevents releases and rollouts from being created, rolled back,
 	// etc using this pipeline: https://cloud.google.com/deploy/docs/suspend-pipeline
 	Suspended bool
@@ -74,8 +92,37 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				Stages: pointers.Ptr(newStages(config)),
 			},
 
+			Annotations: &map[string]*string{
+				"source.repository": pointers.Ptr(config.Repository),
+			},
+
 			DependsOn: pointers.Ptr(append(config.DependsOn, targetType)),
 		})
+
+	for _, target := range config.TargetStages {
+		id := id.Group("target_stage")
+		_ = clouddeploytarget.NewClouddeployTarget(scope, id.TerraformID(target.ID), &clouddeploytarget.ClouddeployTargetConfig{
+			Name:     &target.ID,
+			Location: &config.Location,
+			CustomTarget: &clouddeploytarget.ClouddeployTargetCustomTarget{
+				CustomTargetType: targetType.Id(),
+			},
+			DeployParameters: &map[string]*string{
+				"customTarget/serviceID": &config.ServiceID,
+				"customTarget/image":     &config.ServiceImage,
+				"customTarget/projectID": &target.ProjectID,
+				// Tag must be provided in 'gcloud deploy releases create' via the
+				// flag '--deploy-parameters="customTarget/tag=$TAG"'.
+				// customTarget/tag: nil,
+			},
+			ExecutionConfigs: []*clouddeploytarget.ClouddeployTargetExecutionConfigs{{
+				Usages:         pointers.Ptr(pointers.Slice([]string{"RENDER", "DEPLOY"})),
+				ServiceAccount: &config.ExecutionSA.Email,
+			}},
+
+			DependsOn: pointers.Ptr(append(config.DependsOn, targetType)),
+		})
+	}
 
 	return &Output{
 		PipelineID: *pipeline.Uid(),
@@ -84,9 +131,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 func newStages(config Config) []*clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipelineStages {
 	var stages []*clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipelineStages
-	for _, target := range config.Stages {
+	for _, target := range config.TargetStages {
 		stages = append(stages, &clouddeploydeliverypipeline.ClouddeployDeliveryPipelineSerialPipelineStages{
-			TargetId: pointers.Ptr(target),
+			TargetId: pointers.Ptr(target.ID),
 		})
 	}
 	return stages

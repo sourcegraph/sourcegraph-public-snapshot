@@ -4,6 +4,7 @@ go_library(
     name = "cmd_lib",
     srcs = ["gen.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck/cmd",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/linters/staticcheck",
@@ -14,5 +15,6 @@ go_library(
 go_binary(
     name = "cmd",
     embed = [":cmd_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

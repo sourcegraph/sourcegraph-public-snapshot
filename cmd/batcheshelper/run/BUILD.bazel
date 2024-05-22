@@ -29,6 +29,7 @@ go_test(
         "post_test.go",
         "pre_test.go",
     ],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         ":run",
         "//cmd/batcheshelper/log",

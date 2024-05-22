@@ -12,6 +12,7 @@ import (
 	"github.com/dustin/go-humanize"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -20,15 +21,13 @@ type RequestId = int
 
 // ServiceStatus contains the status of all requests.
 type ServiceStatus struct {
-	logger                 log.Logger
 	threadIdToThreadStatus map[RequestId]*ThreadStatus
 	nextThreadId           RequestId
 	mu                     sync.Mutex
 }
 
-func NewStatus(logger log.Logger) *ServiceStatus {
+func NewStatus() *ServiceStatus {
 	return &ServiceStatus{
-		logger:                 logger.Scoped("status"),
 		threadIdToThreadStatus: map[int]*ThreadStatus{},
 		nextThreadId:           0,
 		mu:                     sync.Mutex{},

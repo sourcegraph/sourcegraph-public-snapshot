@@ -23,6 +23,7 @@ go_library(
         "uploadstore.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -70,6 +71,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":embeddings"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],

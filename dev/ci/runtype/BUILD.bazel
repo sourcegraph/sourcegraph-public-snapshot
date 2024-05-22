@@ -5,6 +5,7 @@ go_library(
     name = "runtype",
     srcs = ["runtype.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/runtype",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/lazyregexp",
@@ -17,5 +18,6 @@ go_test(
     timeout = "short",
     srcs = ["runtype_test.go"],
     embed = [":runtype"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = ["@com_github_stretchr_testify//assert"],
 )

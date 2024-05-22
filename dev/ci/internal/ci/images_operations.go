@@ -103,14 +103,19 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	switch c.RunType {
 	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
-		additionalProdRegistry = "" // we don't want to push to the public registry on internal releases
+		// we don't want to push to the public registry on internal releases, but we do want to publish the release to the cloud ephemeral registry
+		additionalProdRegistry = images.CloudEphemeralRegistry
 	case runtype.CloudEphemeral:
 		// cloud needs to "prod" tag, so we set the push registry for prod to the cloud ephemeral
 		devRegistry = images.CloudEphemeralRegistry
 		prodRegistry = ""
 		additionalProdRegistry = "" // we don't want to push to the public registry on cloud ephemeral
-		// by setting this to true, the `push_all.sh` script will tag images witht the `PUSH_VERSION`
+		// by setting this to true, the `push_all.sh` script will tag images with the `PUSH_VERSION`
 		cloudEphemeral = "true"
+		// we do not want this annotation when we're doing the candidate push - since the candidate tag is different
+		if !isCandidate {
+			opts = append(opts, bk.Cmd(fmt.Sprintf("./dev/ci/annotate-cloud-ephemeral.sh %s", c.Version)))
+		}
 	}
 
 	_, bazelRC := aspectBazelRC()
@@ -136,7 +141,8 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 							IncludeNames: false,
 						},
 					},
-				))...,
+				),
+			)...,
 		)
 	}
 }

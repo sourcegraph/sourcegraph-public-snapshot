@@ -43,6 +43,14 @@ type Instance struct {
 }
 
 func (i *Instance) String() string {
+	// Protobuf returns the unix zero epoch if the time is nil, so we check for that
+	// and we also check if we do have a valid time that it is not zero
+	fmtTime := func(t time.Time) string {
+		if isUnixEpochZero(t) || t.IsZero() {
+			return "n/a"
+		}
+		return i.CreatedAt.Format(time.RFC3339)
+	}
 	return fmt.Sprintf(`ID           : %s
 Name         : %s
 InstanceType : %s
@@ -59,7 +67,7 @@ Status       : %s
 ActionURL    : %s
 Error        : %s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
-		i.CreatedAt.Format(time.RFC3339), i.DeletedAt.Format(time.RFC3339), i.ExpiresAt.Format(time.RFC3339), i.Project, i.Region,
+		fmtTime(i.CreatedAt), fmtTime(i.DeletedAt), fmtTime(i.ExpiresAt), i.Project, i.Region,
 		i.Status.Status, i.Status.ActionURL, i.Status.Error)
 }
 
@@ -148,6 +156,10 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 		Status:       *status,
 		features:     features,
 	}, nil
+}
+
+func isUnixEpochZero(t time.Time) bool {
+	return t.Unix() == 0
 }
 
 func parseStatusReason(reason string) (string, string, error) {

@@ -18,6 +18,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/uploadstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/goroutine",
@@ -51,6 +52,7 @@ go_test(
         "store_test.go",
     ],
     embed = [":uploadstore"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/observation",
         "//lib/errors",

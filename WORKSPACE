@@ -467,8 +467,8 @@ load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_to
 rules_buf_dependencies()
 
 rules_buf_toolchains(
-    sha256 = "05dfb45d2330559d258e1230f5a25e154f0a328afda2a434348b5ba4c124ece7",
-    version = "v1.28.1",
+    sha256 = "f227f04f3f910a7611e8841d50172e3c0e9a94ad21760e6f8abbe3666d682ab5",
+    version = "v1.31.0",
 )
 
 load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
@@ -502,6 +502,7 @@ load("//dev:schema_migrations.bzl", "schema_migrations")
 
 schema_migrations(
     name = "schemas_migrations",
+    updated_at = "2024-05-07 14:39",
 )
 
 # wolfi images setup ================================

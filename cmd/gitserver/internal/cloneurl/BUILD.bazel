@@ -5,6 +5,7 @@ go_library(
     name = "cloneurl",
     srcs = ["clone_url.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//internal/conf/reposource",
@@ -34,6 +35,7 @@ go_test(
     name = "cloneurl_test",
     srcs = ["clone_url_test.go"],
     embed = [":cloneurl"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/database/dbmocks",
         "//internal/extsvc/awscodecommit",

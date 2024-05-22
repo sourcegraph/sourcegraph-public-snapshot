@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var ListVersionsEphemeralCommand = cli.Command{
+var listVersionsEphemeralCommand = cli.Command{
 	Name:        "list-versions",
-	Usage:       "sg could list-versions",
-	Description: "list ephemeral cloud instances attached to your GCP account",
+	Usage:       "List docker images in the cloud ephemeral registry",
+	Description: "List the tags/versions that are available for deployment from the cloud ephemeral registry",
 	Action:      listTagsCloudEphemeral,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -28,7 +28,7 @@ var ListVersionsEphemeralCommand = cli.Command{
 		},
 		&cli.IntFlag{
 			Name:  "limit",
-			Usage: "limit the number of versions to list - to list everything set limt to a negative value",
+			Usage: "limit the number of versions to list - to list everything set limit to a negative value",
 			Value: 100,
 		},
 		&cli.StringFlag{
@@ -102,7 +102,7 @@ Image count           : %d`, tag, image.UploadTime.AsTime().Format(time.DateTime
 					break
 				}
 			}
-			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag ouput use the --raw format or filter the tags by using --filter")
+			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag output use the --raw format or filter the tags by using --filter")
 		}
 	}
 	return nil

@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
@@ -94,7 +97,7 @@ func (it *refIterator) Next() (*gitdomain.Ref, error) {
 				createdDate = time.Unix(int64(ts), 0)
 			}
 			return &gitdomain.Ref{
-				Type:        refTypeForString(string(parts[0])),
+				Type:        refTypeForString(string(parts[0]), string(parts[2])),
 				Name:        string(parts[2]),
 				ShortName:   string(parts[3]),
 				CommitID:    api.CommitID(parts[5]),
@@ -112,13 +115,40 @@ func (it *refIterator) Next() (*gitdomain.Ref, error) {
 	return nil, io.EOF
 }
 
-func refTypeForString(s string) gitdomain.RefType {
-	switch s {
+func refTypeForString(objTyp, refname string) gitdomain.RefType {
+	switch objTyp {
 	case "tag":
 		return gitdomain.RefTypeTag
 	case "commit":
+		// lightweight tags are just refs that point to a commit, so we need to
+		// check if the refname is a tag ref.
+		if strings.HasPrefix(refname, "refs/tags/") {
+			return gitdomain.RefTypeTag
+		}
 		return gitdomain.RefTypeBranch
 	default:
 		return gitdomain.RefTypeUnknown
 	}
+}
+
+func (g *gitCLIBackend) RefHash(ctx context.Context) ([]byte, error) {
+	r, err := g.NewCommand(ctx, WithArguments("for-each-ref", "--format=%(objectname) %(refname)", "--sort", "refname", "--sort", "objectname"))
+	if err != nil {
+		return nil, err
+	}
+
+	hasher := sha256.New()
+	_, readErr := io.Copy(hasher, r)
+
+	if err := r.Close(); err != nil {
+		return nil, errors.Append(err, readErr)
+	}
+
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	hash := make([]byte, hex.EncodedLen(hasher.Size()))
+	hex.Encode(hash, hasher.Sum(nil))
+	return hash, nil
 }

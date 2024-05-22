@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -56,11 +57,11 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		}
 
 		// If there is only one auth provider configured, the single auth provider is a OAuth
-		// instance, it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+		// instance, it's an app request, the sign-out cookie is not present, and access requests are disabled, redirect to sign-in immediately.
 		//
-		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
+		// For sign-out requests (sign-out cookie is  present), the user will be redirected to the SG login page.
 		pc := getExactlyOneOAuthProvider()
-		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) {
+		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
@@ -70,7 +71,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 
 			return
 		}
-
 		span.AddEvent("proceeding to next")
 		span.End()
 		next.ServeHTTP(w, r)

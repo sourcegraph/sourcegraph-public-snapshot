@@ -9,6 +9,7 @@ go_library(
         "kubernetes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/config",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//internal/env",
@@ -31,6 +32,7 @@ go_test(
         "config_test.go",
         "kubernetes_test.go",
     ],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         ":config",
         "//internal/env",

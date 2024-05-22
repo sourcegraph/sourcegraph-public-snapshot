@@ -4,6 +4,7 @@ go_library(
     name = "rbac",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
