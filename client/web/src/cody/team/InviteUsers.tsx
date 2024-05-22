@@ -78,7 +78,9 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
         <>
             {invitesSendingStatus === 'success' && (
                 <div className={classNames('mb-4', styles.alert, styles.blueSuccessAlert)}>
-                    <H3>{invitesSentCount} {pluralize('invite', invitesSentCount)} sent!</H3>
+                    <H3>
+                        {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
+                    </H3>
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
                     </Text>
