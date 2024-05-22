@@ -9,8 +9,11 @@ import (
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	codyaccessv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1/v1connect"
@@ -22,30 +25,33 @@ type DotComDB interface {
 	GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*dotcomdb.CodyGatewayAccessAttributes, error)
 }
 
-func RegisterV1(logger log.Logger, mux *http.ServeMux, dotcom DotComDB) {
-	mux.Handle(codyaccessv1connect.NewCodyAccessServiceHandler(newHandlerV1(logger, dotcom)))
+func RegisterV1(logger log.Logger, mux *http.ServeMux, samsClient samsm2m.TokenIntrospector, dotcom DotComDB) {
+	mux.Handle(codyaccessv1connect.NewCodyAccessServiceHandler(&handlerV1{
+		logger:     logger.Scoped("codyaccess.v1"),
+		samsClient: samsClient,
+		dotcom:     dotcom,
+	}))
 }
 
 type handlerV1 struct {
 	codyaccessv1connect.UnimplementedCodyAccessServiceHandler
-
 	logger log.Logger
-	dotcom DotComDB
+
+	samsClient samsm2m.TokenIntrospector
+	dotcom     DotComDB
 }
 
 var _ codyaccessv1connect.CodyAccessServiceHandler = (*handlerV1)(nil)
 
-// newHandlerV1 implements enterpriseportal/codyaccess/v1/v1connect.
-func newHandlerV1(logger log.Logger, dotcom DotComDB) *handlerV1 {
-	return &handlerV1{
-		logger: logger.Scoped("codyaccess.v1"),
-		dotcom: dotcom,
-	}
-}
-
 func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayAccessRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayAccessResponse], error) {
 	logger := trace.Logger(ctx, s.logger).
 		With(log.String("query", fmt.Sprintf("%T", req.Msg.GetQuery())))
+
+	// 🚨 SECURITY: Require approrpiate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+		return nil, err
+	}
 
 	var attr *dotcomdb.CodyGatewayAccessAttributes
 	var err error
@@ -69,7 +75,7 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		return nil, connectutil.InternalError(logger, err,
+		return nil, connectutil.InternalError(ctx, logger, err,
 			"failed to get Cody Gateway access attributes")
 	}
 	return connect.NewResponse(&codyaccessv1.GetCodyGatewayAccessResponse{
@@ -79,6 +85,12 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 
 func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Request[codyaccessv1.ListCodyGatewayAccessesRequest]) (*connect.Response[codyaccessv1.ListCodyGatewayAccessesResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require approrpiate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
+	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+		return nil, err
+	}
 
 	if req.Msg.PageSize != 0 {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
@@ -92,7 +104,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		return nil, connectutil.InternalError(logger, err,
+		return nil, connectutil.InternalError(ctx, logger, err,
 			"failed to list Cody Gateway access attributes")
 	}
 	resp := codyaccessv1.ListCodyGatewayAccessesResponse{

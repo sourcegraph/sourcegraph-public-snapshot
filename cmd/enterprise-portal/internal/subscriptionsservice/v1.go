@@ -9,7 +9,9 @@ import (
 )
 
 func RegisterV1(logger log.Logger, mux *http.ServeMux) {
-	mux.Handle(subscriptionsv1connect.NewSubscriptionsServiceHandler(newHandlerV1(logger)))
+	mux.Handle(subscriptionsv1connect.NewSubscriptionsServiceHandler(&handlerV1{
+		logger: logger.Scoped("subscriptions.v1"),
+	}))
 }
 
 type handlerV1 struct {
@@ -19,9 +21,3 @@ type handlerV1 struct {
 }
 
 var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
-
-func newHandlerV1(logger log.Logger) *handlerV1 {
-	return &handlerV1{
-		logger: logger.Scoped("subscriptions.v1"),
-	}
-}

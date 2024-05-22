@@ -11,11 +11,13 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/connectutil",
         "//cmd/enterprise-portal/internal/dotcomdb",
+        "//cmd/enterprise-portal/internal/samsm2m",
         "//internal/trace",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",
         "//lib/enterpriseportal/codyaccess/v1/v1connect",
         "@com_connectrpc_connect//:connect",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],
 )

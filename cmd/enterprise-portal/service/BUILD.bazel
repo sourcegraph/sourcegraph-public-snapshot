@@ -23,5 +23,10 @@ go_library(
         "//lib/managedservicesplatform/runtime",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+        "@org_golang_x_net//http2",
+        "@org_golang_x_net//http2/h2c",
     ],
 )
