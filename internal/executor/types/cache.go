@@ -9,7 +9,7 @@ import (
 const (
 	DequeueCachePrefix = "executor_multihandler_dequeues"
 	DequeueTtl         = 5 * time.Minute
-	CleanupInterval    = 5 * time.Second
+	CleanupInterval    = 30 * time.Second
 )
 
 var DequeuePropertiesPerQueue = &schema.DequeueCacheConfig{
