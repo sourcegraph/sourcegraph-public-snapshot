@@ -29,7 +29,15 @@ func (g *gitCLIBackend) GetCommit(ctx context.Context, commit api.CommitID, incl
 		return nil, err
 	}
 
-	args := buildGetCommitArgs(commit, includeModifiedFiles)
+	// commit sometimes is not a commitID today, so we run a revparse first to make
+	// sure we're dealing with a commit ID. This will also report errors like
+	// "cannot resolve to commit" as a RevisionNotFoundError.
+	commitID, err := g.revParse(ctx, string(commit))
+	if err != nil {
+		return nil, err
+	}
+
+	args := buildGetCommitArgs(commitID, includeModifiedFiles)
 
 	r, err := g.NewCommand(ctx, WithArguments(args...))
 	if err != nil {

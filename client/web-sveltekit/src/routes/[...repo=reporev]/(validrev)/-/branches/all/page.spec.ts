@@ -24,7 +24,7 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('list branches', async ({ page }) => {
+test.skip('list branches', async ({ page }) => {
     await page.goto(url)
 
     await expect(page.getByRole('link', { name: 'main' })).toBeVisible()

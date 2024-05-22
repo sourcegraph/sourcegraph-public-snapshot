@@ -96,7 +96,7 @@
                 </MenuLink>
             {/each}
         </DropdownMenu>
-        <RepoSearchInput repoName={data.repoName} />
+        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
     </nav>
 </GlobalHeaderPortal>
 
