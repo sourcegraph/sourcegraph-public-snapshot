@@ -3,6 +3,7 @@ package sensitivemetadataallowlist
 import (
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -19,6 +20,13 @@ func TestRedactEvent(t *testing.T) {
 					Fields: map[string]*structpb.Value{
 						"testField":    structpb.NewStringValue("TestValue"),
 						"notTestField": structpb.NewStringValue("notTestValue"),
+						"nestedTestField": structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"testField":    structpb.NewStringValue("TestValue"),
+								"notTestField": structpb.NewStringValue("notTestValue"),
+							},
+						}),
+						"boolTestField": structpb.NewBoolValue(true),
 					},
 				},
 			},
@@ -27,7 +35,6 @@ func TestRedactEvent(t *testing.T) {
 			},
 		}
 	}
-
 	tests := []struct {
 		name        string
 		mode        redactMode
@@ -65,6 +72,20 @@ func TestRedactEvent(t *testing.T) {
 				require.NotNil(t, got.Parameters.PrivateMetadata)
 				assert.NotNil(t, got.Parameters.PrivateMetadata.Fields["testField"])
 				assert.Nil(t, got.Parameters.PrivateMetadata.Fields["notTestField"])
+			},
+		},
+		{
+			name:  "redact non-string type on allowlist",
+			mode:  redactMarketingAndUnallowedPrivateMetadataKeys,
+			event: makeFullEvent(),
+			allowedKeys: []string{
+				"boolTestField",
+				"nestedTestField",
+			},
+			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
+				// check that non-string types are redacted, only string types are allowed on allowlist
+				autogold.Expect("ERROR: value of allowlisted key was not a string, got: *structpb.Value_BoolValue").Equal(t, got.Parameters.PrivateMetadata.Fields["boolTestField"].GetStringValue())
+				autogold.Expect("ERROR: value of allowlisted key was not a string, got: *structpb.Value_StructValue").Equal(t, got.Parameters.PrivateMetadata.Fields["nestedTestField"].GetStringValue())
 			},
 		},
 		{

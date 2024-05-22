@@ -27,6 +27,7 @@ var additionalAllowedEventTypes = func() []EventType {
 func AllowedEventTypes() EventTypes {
 	return eventTypes(append(additionalAllowedEventTypes,
 		// Example event for testing.
+		// Always provide a reason for allowlisting an event.
 		EventType{
 			Feature: string(telemetry.FeatureExample),
 			Action:  string(telemetry.ActionExample),
@@ -34,7 +35,9 @@ func AllowedEventTypes() EventTypes {
 				"testField",
 			},
 		},
-		// reason for allowlisting
+		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
+		// customers with valuable language-specific insights from the analytics we offer.
+		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "cody.completions",
 			Action:  "suggested",
@@ -42,6 +45,9 @@ func AllowedEventTypes() EventTypes {
 				"languageId",
 			},
 		},
+		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
+		// customers with valuable language-specific insights from the analytics we offer.
+		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "cody.completions",
 			Action:  "accepted",
