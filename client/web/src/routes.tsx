@@ -5,6 +5,7 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { CodyAcceptInvitePage } from './cody/invites/AcceptInvitePage'
 import { isEmbeddedCodyProUIEnabled } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
@@ -435,6 +436,19 @@ export const routes: RouteObject[] = [
             <LegacyRoute
                 render={props => (
                     <CodyManageTeamPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyAcceptInvite,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodyAcceptInvitePage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ isSourcegraphDotCom, licenseFeatures }) =>
                     isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
