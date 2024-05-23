@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 
 import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus } from '@mdi/js'
 import {
@@ -18,48 +18,64 @@ import {
 } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
+import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
+import { Client } from '../../api/client'
+import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import styles from './PaymentDetails.module.scss'
 
 const publishableKey = window.context.frontendCodyProConfig?.stripePublishableKey
 if (!publishableKey) {
-    // TODO: handle error
-    throw new Error('Stripe publishable key not found')
+    logger.error('Stripe publishable key not found')
 }
 
 const stripePromise = loadStripe(publishableKey)
 
-export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
+interface PaymentDetailsProps {
+    subscription: Subscription
+    refetchSubscription: () => Promise<void>
+}
+
+export const PaymentDetails: React.FC<PaymentDetailsProps> = props => (
     <Grid columnCount={2} spacing={0} className={styles.grid}>
         <div className={styles.gridItem}>
-            <PaymentMethod subscription={subscription} />
+            <PaymentMethod subscription={props.subscription} refetchSubscription={props.refetchSubscription} />
         </div>
         <div className={styles.gridItem}>
-            <BillingAddress subscription={subscription} />
+            <BillingAddress subscription={props.subscription} refetchSubscription={props.refetchSubscription} />
         </div>
     </Grid>
 )
 
-const PaymentMethod: React.FC<{ subscription: Subscription }> = ({ subscription: { paymentMethod } }) => {
+const PaymentMethod: React.FC<PaymentDetailsProps> = props => {
     const [isEditMode, setIsEditMode] = useState(false)
 
-    if (!paymentMethod) {
+    if (!props.subscription.paymentMethod) {
         return <PaymentMethodMissing onAddButtonClick={() => setIsEditMode(true)} />
     }
 
     if (isEditMode) {
         return (
             <Elements stripe={stripePromise}>
-                <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
+                <PaymentMethodForm
+                    onReset={() => setIsEditMode(false)}
+                    onSubmit={() => setIsEditMode(false)}
+                    refetchSubscription={props.refetchSubscription}
+                />
             </Elements>
         )
     }
 
-    return <ActivePaymentMethod paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
+    return (
+        <ActivePaymentMethod
+            paymentMethod={props.subscription.paymentMethod}
+            onEditButtonClick={() => setIsEditMode(true)}
+        />
+    )
 }
 
 const PaymentMethodMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
@@ -116,22 +132,31 @@ const useStripeCardElementOptions = (): StripeCardElementOptions => {
     )
 }
 
-const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = props => {
+interface PaymentMethodFormProps extends Pick<PaymentDetailsProps, 'refetchSubscription'> {
+    onReset: () => void
+    onSubmit: () => void
+}
+
+const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
     const stripe = useStripe()
     const elements = useElements()
     const cardElementOptions = useStripeCardElementOptions()
 
+    const { caller } = useContext(CodyProApiClientContext)
+
     const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
 
-    const handleSubmit = async (): Promise<void> => {
+    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
+        event.preventDefault()
+
         if (!stripe || !elements) {
-            return setErrorMessage('Stripe or Stripe Elements libraries not available.')
+            return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
         }
 
         const cardNumberElement = elements.getElement(CardNumberElement)
         if (!cardNumberElement) {
-            return setErrorMessage('CardNumber element was not found.')
+            return setErrorMessage('Stripe card number element was not found.')
         }
 
         const tokenResult = await stripe.createToken(cardNumberElement)
@@ -139,32 +164,29 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
             return setErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
         }
 
+        const serverErrorText =
+            'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+
         setIsLoading(true)
         try {
-            // TODO: call SSC API
-            props.onSubmit()
-        } catch (error) {
-            // TODO[accounts.sourcegraph.com#353]: Send error to Sentry
-            // eslint-disable-next-line no-console
-            console.error(error)
-
-            // // If there is a human-friendly error in the GraphQL response, surface that to the user.
-            // const apolloError = error as ApolloError
-            // if (apolloError.name === 'ApolloError') {
-            //     if (apolloError.message !== 'Internal Server Error') {
-            //         setErrorMessage(
-            //             `An error occurred while updating your credit card information: ${apolloError.message}`
-            //         )
-            //         return
-            //     }
-            // }
-            setErrorMessage(
-                'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+            const { response } = await caller.call(
+                Client.updateCurrentSubscription({ customerUpdate: { newCreditCardToken: tokenResult.token.id } })
             )
+            if (response.ok) {
+                await props.refetchSubscription()
+                props.onSubmit()
+            } else {
+                setErrorMessage(serverErrorText)
+            }
+        } catch (error) {
+            logger.error(error)
+            setErrorMessage(serverErrorText)
         } finally {
             setIsLoading(false)
         }
     }
+
+    const cardElementProps = { options: cardElementOptions, onFocus: () => setErrorMessage('') }
 
     return (
         <>
@@ -174,19 +196,19 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
                 <div>
                     <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">Card number</Text>
-                        <CardNumberElement options={cardElementOptions} onFocus={() => {}} />
+                        <CardNumberElement {...cardElementProps} />
                     </Label>
                 </div>
 
                 <Grid columnCount={2} className="mt-3 mb-0 pb-3">
                     <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">Expiry date</Text>
-                        <CardExpiryElement options={cardElementOptions} onFocus={() => {}} />
+                        <CardExpiryElement {...cardElementProps} />
                     </Label>
 
                     <Label className={styles.paymentMethodFormLabel}>
                         <Text className="mb-2">CVC</Text>
-                        <CardCvcElement options={cardElementOptions} onFocus={() => {}} />
+                        <CardCvcElement {...cardElementProps} />
                     </Label>
                 </Grid>
 
@@ -329,49 +351,92 @@ const ActiveBillingAddress: React.FC<{ subscription: Subscription }> = ({ subscr
     </div>
 )
 
-const BillingAddressForm: React.FC<{
-    subscription: Subscription
+interface BillingAddressFormProps extends PaymentDetailsProps {
     onReset: () => void
     onSubmit: () => void
-}> = ({ subscription, onReset, onSubmit }) => {
+}
+
+const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
     const stripe = useStripe()
     const elements = useElements()
+
+    const { caller } = useContext(CodyProApiClientContext)
 
     const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
 
-    const handleSubmit = async (event): Promise<void> => {
-        onSubmit()
-        return
+    const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
+        event.preventDefault()
+
+        if (!stripe || !elements) {
+            return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
+        }
+
+        const addressElement = elements.getElement(AddressElement)
+        if (!addressElement) {
+            return setErrorMessage('Stripe address element was not found.')
+        }
+
+        const addressElementValue = await addressElement.getValue()
+        if (!addressElementValue.complete) {
+            return setErrorMessage('Address is not complete.')
+        }
+
+        const serverErrorText =
+            'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+
+        setIsLoading(true)
+        try {
+            const { line1, line2, postal_code, city, state, country } = addressElementValue.value.address
+            const { response } = await caller.call(
+                Client.updateCurrentSubscription({
+                    customerUpdate: {
+                        newName: addressElementValue.value.name,
+                        newAddress: {
+                            line1,
+                            line2: line2 || '',
+                            postalCode: postal_code,
+                            city,
+                            state,
+                            country,
+                        },
+                    },
+                })
+            )
+            if (response.ok) {
+                await props.refetchSubscription()
+                props.onSubmit()
+            } else {
+                setErrorMessage(serverErrorText)
+            }
+        } catch (error) {
+            logger.error(error)
+            setErrorMessage(serverErrorText)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const options: StripeAddressElementOptions = useMemo(
-        () => ({
+    const options = useMemo(
+        (): StripeAddressElementOptions => ({
             mode: 'billing',
             display: { name: 'full' },
             defaultValues: {
-                name: subscription.name,
+                name: props.subscription.name,
                 address: {
-                    line1: subscription.address.line1,
-                    line2: subscription.address.line2,
-                    city: subscription.address.city,
-                    state: subscription.address.state,
-                    postal_code: subscription.address.postalCode,
-                    country: subscription.address.country,
+                    ...props.subscription.address,
+                    postal_code: props.subscription.address.postalCode,
                 },
             },
         }),
-        [subscription]
+        [props.subscription]
     )
 
     return (
-        <Form onSubmit={handleSubmit} onReset={onReset} className={styles.billingAddressForm}>
-            <AddressElement
-                options={options}
-                onFocus={() => {
-                    // setErrorMessage(null)
-                }}
-            />
+        <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
+            <AddressElement options={options} onFocus={() => setErrorMessage('')} />
+
+            {errorMessage && <Text className="text-danger">{errorMessage}</Text>}
 
             <div className={styles.billingAddressFormButtonContainer}>
                 <Button type="reset" variant="secondary" outline={true}>

@@ -83,13 +83,13 @@ export const SubscriptionDetails: React.FC<{ subscription: Subscription }> = ({ 
 
             {confirmCancelModalVisible && (
                 <Modal aria-label="Confirmation modal" onDismiss={() => setConfirmCancelModalVisible(false)}>
-                    <div>
+                    <div className="pb-3">
                         <H3>Are you sure?</H3>
                         <Text className="mt-4">
                             Canceling you subscription now means that you won't be able to use Cody with Pro features
                             after {humanizeDate(subscription.currentPeriodEnd)}.
                         </Text>
-                        <Text className={classNames('mt-4 mb-3', styles.bold)}>Do you want to procceed?</Text>
+                        <Text className={classNames('mt-4 mb-0', styles.bold)}>Do you want to procceed?</Text>
                     </div>
                     <div className={classNames('d-flex mt-4', styles.buttonContainer)}>
                         <Button variant="secondary" outline={true} onClick={() => setConfirmCancelModalVisible(false)}>
