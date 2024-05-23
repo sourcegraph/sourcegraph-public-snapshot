@@ -6,11 +6,13 @@ import (
 	"regexp"
 	"time"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8syaml "sigs.k8s.io/yaml"
 
+	"github.com/sourcegraph/sourcegraph/internal/slices"
 	"github.com/sourcegraph/sourcegraph/internal/yaml"
 )
 
@@ -107,6 +109,10 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		obj.SetName(namespaceRegexp.ReplaceAllString(obj.Name, normalizedString))
 		obj.Labels["for-namespace"] = normalizedString
 		obj.RoleRef.Name = namespaceRegexp.ReplaceAllString(obj.RoleRef.Name, normalizedString)
+		obj.Subjects = slices.Map(obj.Subjects, func(s rbacv1.Subject) rbacv1.Subject {
+			s.Namespace = normalizedString
+			return s
+		})
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRoleBinding"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -159,6 +165,10 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	for _, obj := range roleBindings.Items {
 		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "RoleBinding"})
+		obj.Subjects = slices.Map(obj.Subjects, func(s rbacv1.Subject) rbacv1.Subject {
+			s.Namespace = normalizedString
+			return s
+		})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}

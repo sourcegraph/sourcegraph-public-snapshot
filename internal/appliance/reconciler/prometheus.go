@@ -222,6 +222,13 @@ func (r *Reconciler) reconcilePrometheusRoleBinding(ctx context.Context, sg *con
 		Kind: "Role",
 		Name: name,
 	}
+	binding.Subjects = []rbacv1.Subject{
+		{
+			Kind:      "ServiceAccount",
+			Name:      "prometheus",
+			Namespace: sg.Namespace,
+		},
+	}
 	return reconcileObject(ctx, r, sg.Spec.Prometheus, &binding, &rbacv1.RoleBinding{}, sg, owner)
 }
 
@@ -233,6 +240,13 @@ func (r *Reconciler) reconcilePrometheusClusterRoleBinding(ctx context.Context, 
 	binding.RoleRef = rbacv1.RoleRef{
 		Kind: "ClusterRole",
 		Name: name,
+	}
+	binding.Subjects = []rbacv1.Subject{
+		{
+			Kind:      "ServiceAccount",
+			Name:      "prometheus",
+			Namespace: sg.Namespace,
+		},
 	}
 	return reconcileObject(ctx, r, sg.Spec.Prometheus, &binding, &rbacv1.ClusterRoleBinding{}, sg, owner)
 }

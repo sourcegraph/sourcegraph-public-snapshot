@@ -54,6 +54,10 @@ resources:
       apiGroup: rbac.authorization.k8s.io
       kind: ClusterRole
       name: NORMALIZED_FOR_TESTING-prometheus
+    subjects:
+      - kind: ServiceAccount
+        name: prometheus
+        namespace: NORMALIZED_FOR_TESTING
   - apiVersion: v1
     data:
       spec: |
