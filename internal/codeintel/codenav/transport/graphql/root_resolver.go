@@ -170,6 +170,8 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 }
 
 func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.CompletedUpload {
+	// Use orderedmap instead of a map to preserve the order of the uploads
+	// and to avoid introducing non-determinism.
 	sortedMap := orderedmap.New[string, shared.CompletedUpload]()
 	for _, upload := range uploads {
 		key := fmt.Sprintf("%s:%s", upload.Indexer, upload.Commit)
