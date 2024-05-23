@@ -1,9 +1,15 @@
-import { Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { mdiFileDocumentOutline, mdiOpenInNew } from '@mdi/js'
+import classNames from 'classnames'
+
+import { H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
+import type { Invoice } from '../../api/teamSubscriptions'
 
 import { humanizeDate, usdCentsToHumanString } from './utils'
+
+import styles from './InvoiceHistory.module.scss'
 
 const invoicesCall = Client.getCurrentSubscriptionInvoices()
 
@@ -25,35 +31,46 @@ export const InvoiceHistory: React.FC = () => {
     }
 
     return (
-        <div className="block p-6 bg-white border border-separator-gray rounded-md drop-shadow-sm mb-8">
-            <h2 className="mb-4">Invoice history</h2>
-            <hr className="mb-4" />
+        <>
+            <H2 className="mb-4">Invoice history</H2>
+
+            <hr className={classNames('w-100', styles.divider)} />
+
             {data.invoices.length ? (
-                <ul>
-                    {data.invoices.map(invoice => {
-                        return (
-                            <div key={invoice.periodStart} className="flex flex-row space-x-4">
-                                <span className="flex-grow text-muted inline-block">
-                                    📄 {invoice.periodEnd ? humanizeDate(invoice.periodEnd) : '(no date)'}
-                                </span>
-                                <span className="text-muted">{usdCentsToHumanString(invoice.amountDue)}</span>
-                                <span>
-                                    {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1).toLowerCase()}
-                                </span>
-                                {invoice.hostedInvoiceUrl ? (
-                                    <Link to={invoice.hostedInvoiceUrl} target="_blank">
-                                        Get invoice
-                                    </Link>
-                                ) : (
-                                    '-'
-                                )}
-                            </div>
-                        )
-                    })}
+                <ul className="mb-0 list-unstyled">
+                    {data.invoices.map(invoice => (
+                        <InvoiceItem key={invoice.periodStart} invoice={invoice} />
+                    ))}
                 </ul>
             ) : (
-                <p>You have no invoices.</p>
+                <Text>You have no invoices.</Text>
             )}
-        </div>
+        </>
     )
 }
+
+const InvoiceItem: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
+    <li className={styles.invoice}>
+        <div className={classNames('text-muted', styles.invoiceCol)}>
+            <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} />
+            <Text as="span">{invoice.periodEnd ? humanizeDate(invoice.periodEnd) : '(no date)'}</Text>
+        </div>
+
+        <div className={classNames('font-weight-medium', styles.invoiceCol)}>
+            <Text as="span" className="text-muted">
+                {usdCentsToHumanString(invoice.amountDue)}
+            </Text>
+            <Text as="span" className="text-capitalize">
+                {invoice.status}
+            </Text>
+            {invoice.hostedInvoiceUrl ? (
+                <Link to={invoice.hostedInvoiceUrl} target="_blank" rel="noopener" className={styles.invoiceLink}>
+                    <Text as="span">Get Invoice</Text>
+                    <Icon aria-hidden={true} svgPath={mdiOpenInNew} className={styles.invoiceLinkIcon} />
+                </Link>
+            ) : (
+                '-'
+            )}
+        </div>
+    </li>
+)

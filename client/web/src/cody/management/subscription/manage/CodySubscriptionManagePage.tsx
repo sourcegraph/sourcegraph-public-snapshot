@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Card, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
@@ -109,7 +109,7 @@ const PageContent: React.FC = () => {
                 </Link>
             </div>
 
-            <Card className={classNames('p-4', styles.card)}>
+            <Card className={classNames('my-4 p-4', styles.card)}>
                 <SubscriptionDetails subscription={subscription} />
 
                 <hr className={styles.divider} />
@@ -117,7 +117,9 @@ const PageContent: React.FC = () => {
                 <PaymentDetails subscription={subscription} />
             </Card>
 
-            <InvoiceHistory />
+            <Card className={classNames('my-4 p-4', styles.card)}>
+                <InvoiceHistory />
+            </Card>
         </Page>
     )
 }
