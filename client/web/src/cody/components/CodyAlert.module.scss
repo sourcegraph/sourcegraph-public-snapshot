@@ -1,14 +1,7 @@
-.container {
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    padding: 1.5rem 2.5rem;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-}
-
 .alert {
     position: relative;
     padding: 1.5rem 1.5rem 1.5rem 5rem;
-    color: var(--gray-11);
+    color: #181b26;
     &::after {
         content: '';
         position: absolute;
@@ -34,6 +27,7 @@
     }
 }
 
+// TODO: Make it in the new design once https://github.com/sourcegraph/sourcegraph/pull/62860 is merged
 .green-success-alert {
     background-color: #e0f9d5;
     color: #054410;
