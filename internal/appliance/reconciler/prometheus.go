@@ -3,6 +3,7 @@ package reconciler
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"text/template"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,11 +42,18 @@ func (r *Reconciler) reconcilePrometheus(ctx context.Context, sg *config.Sourceg
 	if err := r.reconcilePrometheusRole(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Role")
 	}
-	if err := r.reconcilePrometheusRoleBinding(ctx, sg, owner); err != nil {
-		return errors.Wrap(err, "reconciling RoleBinding")
-	}
 	if err := r.reconcilePrometheusPVC(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling PVC")
+	}
+
+	if sg.Spec.Prometheus.Privileged {
+		if err := r.reconcilePrometheusClusterRoleBinding(ctx, sg, owner); err != nil {
+			return errors.Wrap(err, "reconciling ClusterRoleBinding")
+		}
+	} else {
+		if err := r.reconcilePrometheusRoleBinding(ctx, sg, owner); err != nil {
+			return errors.Wrap(err, "reconciling RoleBinding")
+		}
 	}
 	return nil
 }
@@ -150,23 +158,28 @@ func (r *Reconciler) reconcilePrometheusConfigMap(ctx context.Context, sg *confi
 }
 
 func (r *Reconciler) reconcilePrometheusRole(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	// TODO privileged resources:
-	// "namespaces",
-	// "nodes",
-	// "nodes/metrics",
-	// "nodes/proxy",
-	// nonresourceURLs
+	name := "prometheus"
+	cfg := sg.Spec.Prometheus
 
-	role := role.NewRole("prometheus", sg.Namespace)
-	role.Rules = []rbacv1.PolicyRule{
+	resources := []string{
+		"endpoints",
+		"pods",
+		"services",
+	}
+	if cfg.Privileged {
+		resources = append(
+			resources,
+			"namespaces",
+			"nodes",
+			"nodes/metrics",
+			"nodes/proxy",
+		)
+	}
+	rules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
-			Resources: []string{
-				"endpoints",
-				"pods",
-				"services",
-			},
-			Verbs: []string{"get", "list", "watch"},
+			Resources: resources,
+			Verbs:     []string{"get", "list", "watch"},
 		},
 		{
 			APIGroups: []string{""},
@@ -174,7 +187,23 @@ func (r *Reconciler) reconcilePrometheusRole(ctx context.Context, sg *config.Sou
 			Verbs:     []string{"get"},
 		},
 	}
-	return reconcileObject(ctx, r, sg.Spec.Prometheus, &role, &rbacv1.Role{}, sg, owner)
+	if cfg.Privileged {
+		rules = append(rules, rbacv1.PolicyRule{
+			NonResourceURLs: []string{"/metrics"},
+			Verbs:           []string{"get"},
+		})
+
+		// Make resource name sg-specific since this is a non-namespaced
+		// (cluster-scoped) object
+		name := fmt.Sprintf("%s-%s", sg.Namespace, "prometheus")
+		role := role.NewClusterRole(name, sg.Namespace)
+		role.Rules = rules
+		return reconcileObject(ctx, r, cfg, &role, &rbacv1.ClusterRole{}, sg, owner)
+	}
+
+	role := role.NewRole(name, sg.Namespace)
+	role.Rules = rules
+	return reconcileObject(ctx, r, cfg, &role, &rbacv1.Role{}, sg, owner)
 }
 
 func (r *Reconciler) reconcilePrometheusRoleBinding(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -185,6 +214,18 @@ func (r *Reconciler) reconcilePrometheusRoleBinding(ctx context.Context, sg *con
 		Name: name,
 	}
 	return reconcileObject(ctx, r, sg.Spec.Prometheus, &binding, &rbacv1.RoleBinding{}, sg, owner)
+}
+
+func (r *Reconciler) reconcilePrometheusClusterRoleBinding(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	// Make resource name sg-specific since this is a non-namespaced
+	// (cluster-scoped) object
+	name := fmt.Sprintf("%s-%s", sg.Namespace, "prometheus")
+	binding := rolebinding.NewClusterRoleBinding(name, sg.Namespace)
+	binding.RoleRef = rbacv1.RoleRef{
+		Kind: "ClusterRole",
+		Name: name,
+	}
+	return reconcileObject(ctx, r, sg.Spec.Prometheus, &binding, &rbacv1.ClusterRoleBinding{}, sg, owner)
 }
 
 func (r *Reconciler) reconcilePrometheusPVC(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

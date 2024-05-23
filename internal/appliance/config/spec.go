@@ -160,9 +160,7 @@ type PrometheusSpec struct {
 	// TODO build and test
 	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
 
-	// TODO build and test
-	Privileged bool `json:"privileged,omitempty"`
-
+	Privileged  bool   `json:"privileged,omitempty"`
 	StorageSize string `json:"storageSize,omitempty"`
 }
 

@@ -84,8 +84,33 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		objs = append(objs, &obj)
 	}
 
-	// TODO do we have to do something weird to handle ClusterRoles and
-	// ClusterRoleBindings, since these are not namespaced?
+	// Cluster-scoped resources have to be qualified by something other than
+	// metadata.namespace.
+	clusterRoles, err := suite.k8sClient.RbacV1().ClusterRoles().List(suite.ctx, metav1.ListOptions{
+		LabelSelector: "for-namespace=" + namespace,
+	})
+	suite.Require().NoError(err)
+	for _, obj := range clusterRoles.Items {
+		obj := obj
+		obj.SetName(namespaceRegexp.ReplaceAllString(obj.Name, normalizedString))
+		obj.Labels["for-namespace"] = normalizedString
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	clusterRoleBindings, err := suite.k8sClient.RbacV1().ClusterRoleBindings().List(suite.ctx, metav1.ListOptions{
+		LabelSelector: "for-namespace=" + namespace,
+	})
+	suite.Require().NoError(err)
+	for _, obj := range clusterRoleBindings.Items {
+		obj := obj
+		obj.SetName(namespaceRegexp.ReplaceAllString(obj.Name, normalizedString))
+		obj.Labels["for-namespace"] = normalizedString
+		obj.RoleRef.Name = namespaceRegexp.ReplaceAllString(obj.RoleRef.Name, normalizedString)
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRoleBinding"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
 
 	cmaps, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
