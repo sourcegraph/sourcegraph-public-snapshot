@@ -49,73 +49,34 @@ internal:
             fi
   finalize:
     steps:
-      - name: 'Test changelog generation'
+      - name: 'Register on release registry'
         cmd: |
-          set -eu -o pipefail
+          echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
+              "name": "sourcegraph",
+              "version": "{{version}}",
+              "git_sha": "'${COMMIT_SHA}'"
+            }' "https://releaseregistry.sourcegraph.com/v1/releases")
+          exit_code=$?
 
-          # Cleanup after ourselves.
-          trap 'rm ./changelog 2>/dev/null || true' EXIT
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to create release in release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release created, see:"
+            echo $body
+          fi
+      - name: 'notifications'
+        cmd: |
+          set -eu
 
-          DEVX_GH_TOKEN="$(gcloud secrets versions access latest --secret=DEVX_SERVICE_GH_TOKEN --quiet --project=sourcegraph-ci)"
-          echo $DEVX_GH_TOKEN | md5sum
-
-          # Find the asset id for the changelog binary on sourcegraph/devx-service latest release
-          asset_id=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DEVX_GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/sourcegraph/devx-service/releases/latest | jq '.assets[] | select(.name=="changelog") | .id')
-
-          # Download the binary
-          curl -L \
-            -H "Accept: application/octet-stream" \
-            -H "Authorization: Bearer $DEVX_GH_TOKEN"\
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -o changelog \
-            "https://api.github.com/repos/sourcegraph/devx-service/releases/assets/${asset_id}"
-
-          chmod +x changelog
-
-          pr_url=$(./changelog \
-            --github.token="$DEVX_GH_TOKEN" \
-            update-as-pr \
-            --github.repo="sourcegraph/sourcegraph" \
-            --output.repo="sourcegraph/docs" \
-            --output.repo.base="main" \
-            --output.changelog="docs/CHANGELOG.mdx" \
-            --output.changelog.marker='{/* CHANGELOG_START */}' \
-            --releaseregistry.token="$RELEASE_REGISTRY_TOKEN" \
-            --releaseregistry.name="sourcegraph" \
-            --releaseregistry.version=v5.4.2198)
-
+          # Post an annotation.
           cat << EOF | buildkite-agent annotate --style info
-          Succesfully submitted [changelog pull request for {{version}}]($pr_url)
+          Internal release is ready for promotion under the branch [\`{{git.branch}}\`](https://github.com/sourcegraph/sourcegraph/tree/$branch).
           EOF
-
-      # - name: 'Register on release registry'
-      #   cmd: |
-      #     echo "Registering internal sourcegraph/sourcegraph {{version}} release on release registry"
-      #     body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '{
-      #         "name": "sourcegraph",
-      #         "version": "{{version}}",
-      #         "git_sha": "'${COMMIT_SHA}'"
-      #       }' "https://releaseregistry.sourcegraph.com/v1/releases")
-      #     exit_code=$?
-      #
-      #     if [ $exit_code != 0 ]; then
-      #       echo "❌ Failed to create release in release registry, got:"
-      #       echo "--- raw body ---"
-      #       echo $body
-      #       echo "--- raw body ---"
-      #       exit $exit_code
-      #     else
-      #       echo "Release created, see:"
-      #       echo $body
-      #     fi
-      # - name: 'notifications'
-      #   cmd: |
-      #     set -eu
-      #
-      #     # Post an annotation.
-      #     cat << EOF | buildkite-agent annotate --style info
-      #     Internal release is ready for promotion under the branch [\`{{git.branch}}\`](https://github.com/sourcegraph/sourcegraph/tree/$branch).
-      #     EOF
 
 test:
   steps:
@@ -126,89 +87,89 @@ test:
           echo "❌ Tag '{{version}}' already exists"
           exit 1
         fi
-    # - name: 'check:migrator-schemas'
-    #   cmd: |
-    #     set -eu
-    #
-    #     REGISTRY="${PROD_REGISTRY:-''}"
-    #
-    #     # the reason this is not in the requirements check of the release yaml is because those checks also
-    #     # apply when running the release tooling locally, and the testing steps are supposed to run in CI
-    #     if [ -z ${REGISTRY} ]; then
-    #       echo "PROD_REGISTRY is not set - unable to check migrator image"
-    #       exit 1
-    #     fi
-    #
-    #     IMAGE="${REGISTRY}/migrator:{{tag}}"
-    #
-    #     # Pull the image so that we can inspect it
-    #     echo "pulling migrator image ${IMAGE}"
-    #     docker pull "${IMAGE}"
-    #
-    #     echo "checking migrator image for {{version}} schema description files"
-    #     # now we check that the schema description files exist
-    #     # we need to trim the result from docker since it has '\r' hence the use of tr
-    #     count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/{{version}}-*.json | wc -l" | tr -d '[:space:]')
-    #     if [[ "$count" -ne 3 ]]; then
-    #       echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected 3 got ${count}"
-    #       exit 1
-    #     fi
-    #
-    #     echo "checking migrator image for older schema description files"
-    #     count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/*-internal_database_schema*json | wc -l" | tr -d '[:space:]')
-    #
-    #     # in our newer releases we have upwards of 300 schema descriptions, so we check that we have at least 300
-    #     if [[ "$count" -lt 300 ]]; then
-    #       echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected more than 300 got ${count}"
-    #       exit 1
-    #     fi
-    # - name: 'db:migration:coherence_test'
-    #   cmd: |
-    #     set -eu
-    #
-    #     aspectRC="/tmp/aspect-generated.bazelrc"
-    #     rosetta bazelrc > "$aspectRC"
-    #     bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
-    #
-    #     # The upgradetest are inferring the stamp-version flag based on the version, so we need to unset it here.
-    #     _VERSION=$VERSION
-    #     unset VERSION
-    #
-    #     # We purposely limit the concurrency to 6, because if we use the default, there are
-    #     # scenarios where we can exhaust available ports to the docker daemon and end up
-    #     # with an infrastructure flake.
-    #     max_routines=6
-    #     # Hardcoding version, as for now I just want to make sure this works in CI.
-    #     bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
-    #       --post-release-version={{tag}} \
-    #       --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
-    #       --max-routines $max_routines
-    #
-    #     # Restoring it to avoid creating a footgun if we add more test steps later on.
-    #     VERSION=$_VERSION
+    - name: 'check:migrator-schemas'
+      cmd: |
+        set -eu
+
+        REGISTRY="${PROD_REGISTRY:-''}"
+
+        # the reason this is not in the requirements check of the release yaml is because those checks also
+        # apply when running the release tooling locally, and the testing steps are supposed to run in CI
+        if [ -z ${REGISTRY} ]; then
+          echo "PROD_REGISTRY is not set - unable to check migrator image"
+          exit 1
+        fi
+
+        IMAGE="${REGISTRY}/migrator:{{tag}}"
+
+        # Pull the image so that we can inspect it
+        echo "pulling migrator image ${IMAGE}"
+        docker pull "${IMAGE}"
+
+        echo "checking migrator image for {{version}} schema description files"
+        # now we check that the schema description files exist
+        # we need to trim the result from docker since it has '\r' hence the use of tr
+        count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/{{version}}-*.json | wc -l" | tr -d '[:space:]')
+        if [[ "$count" -ne 3 ]]; then
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected 3 got ${count}"
+          exit 1
+        fi
+
+        echo "checking migrator image for older schema description files"
+        count=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "ls -al /schema-descriptions/*-internal_database_schema*json | wc -l" | tr -d '[:space:]')
+
+        # in our newer releases we have upwards of 300 schema descriptions, so we check that we have at least 300
+        if [[ "$count" -lt 300 ]]; then
+          echo "migrator:{{tag}} does not contain the correct amount of schema description files for this release - expected more than 300 got ${count}"
+          exit 1
+        fi
+    - name: 'db:migration:coherence_test'
+      cmd: |
+        set -eu
+
+        aspectRC="/tmp/aspect-generated.bazelrc"
+        rosetta bazelrc > "$aspectRC"
+        bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
+        # The upgradetest are inferring the stamp-version flag based on the version, so we need to unset it here.
+        _VERSION=$VERSION
+        unset VERSION
+
+        # We purposely limit the concurrency to 6, because if we use the default, there are
+        # scenarios where we can exhaust available ports to the docker daemon and end up
+        # with an infrastructure flake.
+        max_routines=6
+        # Hardcoding version, as for now I just want to make sure this works in CI.
+        bazel ${bazelrc[*]} run //testing/tools/upgradetest:release_test_run -- all \
+          --post-release-version={{tag}} \
+          --target-registry us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/ \
+          --max-routines $max_routines
+
+        # Restoring it to avoid creating a footgun if we add more test steps later on.
+        VERSION=$_VERSION
 
 promoteToPublic:
   create:
     steps:
-      #      - name: 'validate promotion criteria'
-      #        cmd: |
-      #          echo "validating promotion criteria"
-      #          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
-      #          exit_code=$?
+      # - name: 'validate promotion criteria'
+      #   cmd: |
+      #     echo "validating promotion criteria"
+      #     body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+      #     exit_code=$?
       #
-      #          if [ $exit_code != 0 ]; then
-      #            echo "❌ Failed to fetch release on release registry, got:"
-      #            echo "--- raw body ---"
-      #            echo $body
-      #            echo "--- raw body ---"
-      #            exit $exit_code
-      #          fi
+      #     if [ $exit_code != 0 ]; then
+      #       echo "❌ Failed to fetch release on release registry, got:"
+      #       echo "--- raw body ---"
+      #       echo $body
+      #       echo "--- raw body ---"
+      #       exit $exit_code
+      #     fi
       #
-      #          is_development=$(echo "$body" | jq -r '.is_development')
-      #          if [ "$is_development" = "true" ]; then
-      #            echo "cannot promote a development release"
-      #            exit 1
-      #          fi
+      #     is_development=$(echo "$body" | jq -r '.is_development')
+      #     if [ "$is_development" = "true" ]; then
+      #       echo "cannot promote a development release"
+      #       exit 1
+      #     fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
@@ -326,3 +287,41 @@ promoteToPublic:
               echo "Posted to slack."
             fi
           done
+      - name: 'Generate and submit changelog pull request on sourcegraph/docs'
+        cmd: |
+          set -eu -o pipefail
+
+          # Cleanup after ourselves.
+          trap 'rm ./changelog 2>/dev/null || true' EXIT
+
+          # Grab the token from sourcegraph-devx-bot
+          DEVX_GH_TOKEN="$(gcloud secrets versions access latest --secret=DEVX_SERVICE_GH_TOKEN --quiet --project=sourcegraph-ci)"
+
+          # Find the asset id for the changelog binary on sourcegraph/devx-service latest release
+          asset_id=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DEVX_GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/sourcegraph/devx-service/releases/latest | jq '.assets[] | select(.name=="changelog") | .id')
+
+          # Download the binary
+          curl -L \
+            -H "Accept: application/octet-stream" \
+            -H "Authorization: Bearer $DEVX_GH_TOKEN"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o changelog \
+            "https://api.github.com/repos/sourcegraph/devx-service/releases/assets/${asset_id}"
+
+          chmod +x changelog
+
+          pr_url=$(./changelog \
+            --github.token="$DEVX_GH_TOKEN" \
+            update-as-pr \
+            --github.repo="sourcegraph/sourcegraph" \
+            --output.repo="sourcegraph/docs" \
+            --output.repo.base="main" \
+            --output.changelog="docs/CHANGELOG.mdx" \
+            --output.changelog.marker='{/* CHANGELOG_START */}' \
+            --releaseregistry.token="$RELEASE_REGISTRY_TOKEN" \
+            --releaseregistry.name="sourcegraph" \
+            --releaseregistry.version={{version}})
+
+          cat << EOF | buildkite-agent annotate --style info
+          Succesfully submitted [changelog pull request for {{version}}]($pr_url)
+          EOF
