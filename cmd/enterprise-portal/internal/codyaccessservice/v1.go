@@ -66,7 +66,7 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 
 	case *codyaccessv1.GetCodyGatewayAccessRequest_AccessToken:
 		if len(query.AccessToken) == 0 {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: subscription ID"))
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: access token"))
 		}
 		attr, err = s.dotcom.GetCodyGatewayAccessAttributesByAccessToken(ctx, query.AccessToken)
 

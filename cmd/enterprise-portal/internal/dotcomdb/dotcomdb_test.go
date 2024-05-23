@@ -201,6 +201,13 @@ func TestGetCodyGatewayAccessAttributes(t *testing.T) {
 						attr, err := dotcomreader.GetCodyGatewayAccessAttributesByAccessToken(ctx, token)
 						require.NoError(t, err)
 						validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
+
+						t.Run("compare with dotcom tokens DB", func(t *testing.T) {
+							subID, err := dotcomproductsubscriptiontest.NewTokensDB(t, dotcomdb).
+								LookupProductSubscriptionIDByAccessToken(ctx, token)
+							require.NoError(t, err)
+							assert.Equal(t, subID, attr.SubscriptionID)
+						})
 					})
 				}
 			})

@@ -57,6 +57,19 @@ func NewLicensesDB(t *testing.T, db database.DB) LicensesDB {
 	return productsubscription.NewLicensesDB(db)
 }
 
+type TokensDB interface {
+	LookupProductSubscriptionIDByAccessToken(ctx context.Context, token string) (string, error)
+}
+
+// NewTokensDB returns a new TokensDB backed by the given database.DB.
+// It requires testing.T to indicate that it should only be used in tests.
+//
+// See package docs for more details.
+func NewTokensDB(t *testing.T, db database.DB) TokensDB {
+	t.Helper()
+	return productsubscription.NewTokensDB(db)
+}
+
 type mockAdminFetcher struct{}
 
 func (mockAdminFetcher) GetByID(context.Context, int32) (*types.User, error) {
