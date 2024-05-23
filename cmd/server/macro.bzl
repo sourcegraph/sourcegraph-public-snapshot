@@ -32,7 +32,7 @@ def dependencies_tars(targets):
 def go_binary_nobundle(name, **kwargs):
     go_binary(
         name = name + "_underlying",
-        out = kwargs.pop("out", name),
+        out = kwargs.pop("out", name + "_underlying"),
         **kwargs
     )
 
