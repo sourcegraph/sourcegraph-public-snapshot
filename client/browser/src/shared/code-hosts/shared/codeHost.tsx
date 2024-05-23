@@ -938,6 +938,7 @@ export async function handleCodeHost({
                                     fileInfoOrError={error}
                                     sourcegraphURL={sourcegraphURL}
                                     telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
                                     platformContext={platformContext}
                                     extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
@@ -1237,6 +1238,7 @@ export async function handleCodeHost({
                             fileInfoOrError={diffOrBlobInfo}
                             sourcegraphURL={sourcegraphURL}
                             telemetryService={telemetryService}
+                            telemetryRecorder={telemetryRecorder}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
                             buttonProps={toolbarButtonProps}
