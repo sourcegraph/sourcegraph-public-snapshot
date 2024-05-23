@@ -19,6 +19,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     customerEmail: string | undefined
 }> = ({ stripePromise, customerEmail }) => {
     const [urlSearchParams] = useSearchParams()
+    const creatingTeam = urlSearchParams.get('team') === '1'
     // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which, if present,
     // will display a "promotional code" element in the Stripe Checkout UI.
     const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
@@ -27,7 +28,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     const call = useMemo(() => {
         const requestBody: CreateCheckoutSessionRequest = {
             interval: 'monthly',
-            seats: 1,
+            // If creating a team, we set seatCount=0, which means the user can adjust the seat count.
+            seats: creatingTeam ? 0 : 1,
             customerEmail,
             showPromoCodeField,
 
@@ -42,9 +44,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             // some prompt, to give the backends an opportunity to sync.
             returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`,
         }
-        return Client.createStripeCheckoutSession(req)
-    }, [customerEmail, showPromoCodeField])
         return Client.createStripeCheckoutSession(requestBody)
+    }, [creatingTeam, customerEmail, showPromoCodeField])
     const { loading, error, data } = useApiCaller(call)
 
     // Show a spinner while we wait for the Checkout session to be created.
