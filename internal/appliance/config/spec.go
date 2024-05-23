@@ -157,11 +157,9 @@ type PreciseCodeIntelSpec struct {
 type PrometheusSpec struct {
 	StandardConfig
 
-	// TODO build and test
 	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
-
-	Privileged  bool   `json:"privileged,omitempty"`
-	StorageSize string `json:"storageSize,omitempty"`
+	Privileged        bool   `json:"privileged,omitempty"`
+	StorageSize       string `json:"storageSize,omitempty"`
 }
 
 // RedisSpec defines the desired state of a Redis-based service.

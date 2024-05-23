@@ -100,9 +100,14 @@ func (r *Reconciler) reconcilePrometheusDeployment(ctx context.Context, sg *conf
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
+
+	cfgMapName := name
+	if cfg.ExistingConfigMap != "" {
+		cfgMapName = cfg.ExistingConfigMap
+	}
 	podTemplate.Template.Spec.Volumes = []corev1.Volume{
 		pod.NewVolumeFromPVC("data", name),
-		pod.NewVolumeFromConfigMap("config", name),
+		pod.NewVolumeFromConfigMap("config", cfgMapName),
 	}
 	podTemplate.Template.Spec.ServiceAccountName = name
 
@@ -137,6 +142,11 @@ func (r *Reconciler) reconcilePrometheusServiceAccount(ctx context.Context, sg *
 }
 
 func (r *Reconciler) reconcilePrometheusConfigMap(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.Prometheus
+	if cfg.ExistingConfigMap != "" {
+		return nil
+	}
+
 	tmpl, err := template.New("prometheus-config").Parse(string(config.PrometheusDefaultConfigTemplate))
 	if err != nil {
 		return errors.Wrap(err, "parsing default prometheus config template")
@@ -147,7 +157,6 @@ func (r *Reconciler) reconcilePrometheusConfigMap(ctx context.Context, sg *confi
 	}
 
 	name := "prometheus"
-	cfg := sg.Spec.Prometheus
 	cm := configmap.NewConfigMap(name, sg.Namespace)
 	cm.Data = map[string]string{
 		"prometheus.yml":  defaultConfig.String(),
