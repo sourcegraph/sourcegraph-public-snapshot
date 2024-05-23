@@ -16,8 +16,7 @@
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
     import { supportedEditors } from '$lib/web';
-    import {isMacPlatform, isWindowsPlatform} from '$lib/common';
-    import {getPlatform} from '$root/client/common';
+    import { getPlatform } from '$lib/common';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
     export let updateUserSetting: (edit: SettingsEdit) => Promise<void>;
@@ -63,11 +62,16 @@
         }
     }
 
-    const exampleProjectPaths = {
-        'windows': 'C:\\Users\\username\\Projects',
-        'linux': '/home/username/Projects',
-        'mac': '/Users/username/Projects',
-        'other': '/Users/username/Projects',
+    function getSystemAwareProjectPathExample(suffix?: string) {
+        switch (getPlatform()) {
+            case 'windows':
+                return 'C:\\Users\\username\\Projects' + (suffix ? `\\${suffix}` : '');
+            case 'linux':
+                return '/home/username/Projects' + (suffix ? `/${suffix}` : '');
+            case 'mac':
+            default:
+                return '/Users/username/Projects' + (suffix ? `/${suffix}` : '');
+        }
     }
 </script>
 
@@ -96,7 +100,7 @@
 {:else if editorSettingsErrorMessage}
     <Popover let:registerTrigger let:toggle placement="left-start">
         <Tooltip tooltip="Set your preferred editor">
-            <span use:registerTrigger on:click={toggle}>
+            <span use:registerTrigger on:click={() => toggle()}>
                 <DefaultEditorIcon/>
                 <span data-action-label> Editor </span>
             </span>
@@ -126,8 +130,8 @@
 
                 <p class="small form-info">
                     The directory that contains your repository checkouts. For example, if this repository is
-                    checked out to <code>{`${exampleProjectPaths[getPlatform()]}${isWindowsPlatform() ? '\\' : '/'}cody`}</code>, then set your default projects path
-                    to <code>{exampleProjectPaths[getPlatform()]}</code>.
+                    checked out to <code>{`${getSystemAwareProjectPathExample('cody')}`}</code>, then set your default projects path
+                    to <code>{getSystemAwareProjectPathExample()}</code>.
                 </p>
                 <label>
                     Editor
