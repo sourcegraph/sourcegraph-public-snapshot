@@ -204,13 +204,13 @@ type SCIPOccurrence {
 EXPERIMENTAL: This type may change in a backwards-compatible way.
 """
 enum SymbolRole {
-    Definition
-    Reference
+    DEFINITION
+    REFERENCE
     """
     Applicable for forward declarations in languages with header files (C, C++ etc.)
     as well as standalone signatures in languages with separate interface files (OCaml etc.).
     """
-    ForwardDefinition
+    FORWARD_DEFINITION
 }
 
 """

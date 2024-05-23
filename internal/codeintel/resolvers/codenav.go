@@ -273,7 +273,7 @@ type SymbolRole string
 
 // ⚠️ CAUTION: These constants are part of the public GraphQL API
 const (
-	SymbolRoleDefinition        SymbolRole = "Definition"
-	SymbolRoleReference         SymbolRole = "Reference"
-	SymbolRoleForwardDefinition SymbolRole = "ForwardDefinition"
+	SymbolRoleDefinition        SymbolRole = "DEFINITION"
+	SymbolRoleReference         SymbolRole = "REFERENCE"
+	SymbolRoleForwardDefinition SymbolRole = "FORWARD_DEFINITION"
 )
