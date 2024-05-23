@@ -278,7 +278,7 @@ oci_image(
 )
 
 oci_tarball(
-    name = "no_client_bundle.tarball",
+    name = "no_client_bundle.image_tarball",
     image = ":no_client_bundle.image",
     repo_tags = ["server:candidate"],
     visibility = ["//testing:__pkg__"],
