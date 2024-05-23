@@ -1,10 +1,7 @@
 import type { IEditor } from './onboarding/CodyOnboarding'
-import { JetBrainsInstructions } from './onboarding/instructions/JetBrains'
-import { JetBrainsTabInstructions } from './onboarding/instructions/JetBrainsTab'
-import { NeoVimInstructions } from './onboarding/instructions/NeoVim'
-import { NeoVimTabInstructions } from './onboarding/instructions/NeoVimTab'
-import { VSCodeInstructions } from './onboarding/instructions/VsCode'
-import { VSCodeTabInstructions } from './onboarding/instructions/VsCodeTab'
+import { JetBrainsInstructions, JetBrainsTabInstructions } from './onboarding/instructions/JetBrains'
+import { NeoVimInstructions, NeoVimTabInstructions } from './onboarding/instructions/NeoVim'
+import { VSCodeInstructions, VSCodeTabInstructions } from './onboarding/instructions/VsCode'
 
 export const editorGroups: IEditor[][] = [
     [
