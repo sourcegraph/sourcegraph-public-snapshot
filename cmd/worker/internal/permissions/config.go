@@ -18,7 +18,7 @@ type config struct {
 var ConfigInst = &config{}
 
 func (c *config) Load() {
-	c.WorkerPollInterval = c.GetInterval("BITBUCKET_PROJECT_PERMISSIONS_WORKER_POLL_INTERVAL", "1s", "How frequently to query the job queue")
+	c.WorkerPollInterval = c.GetInterval("BITBUCKET_PROJECT_PERMISSIONS_WORKER_POLL_INTERVAL", "10s", "How frequently to query the job queue")
 	c.WorkerConcurrency = c.GetInt("BITBUCKET_PROJECT_PERMISSIONS_WORKER_CONCURRENCY", "1", "The maximum number of projects that can be processed concurrently")
 	c.WorkerRetryInterval = c.GetInterval("BITBUCKET_PROJECT_PERMISSIONS_WORKER_RETRY_INTERVAL", "30s", "The minimum number of time to wait before retrying a failed job")
 }
