@@ -35,7 +35,7 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
 
     useEffect(() => {
-        async function postAcceptInvite() {
+        async function postAcceptInvite(): Promise<void> {
             const response = await requestSSC(`/team/${teamId}/invites/${inviteId}/accept`, 'POST')
             setLoading(false)
             if (response.status.toString().startsWith('2')) {
@@ -43,13 +43,11 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
                 navigate('/cody/team/manage')
             } else {
                 setErrorMessage(await response.text())
-                const error = await response.json()
-                console.error('Error accepting invite:', error)
             }
         }
 
         void postAcceptInvite()
-    }, [navigate])
+    }, [inviteId, navigate, teamId])
 
     return (
         <>
