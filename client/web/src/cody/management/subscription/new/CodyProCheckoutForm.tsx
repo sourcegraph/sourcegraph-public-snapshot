@@ -8,7 +8,7 @@ import { H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
-import { CreateCheckoutSessionRequest } from '../../api/types'
+import type { CreateCheckoutSessionRequest } from '../../api/types'
 
 /**
  * CodyProCheckoutForm is essentially an iframe that the Stripe Elements library will
@@ -18,14 +18,14 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     stripePromise: Promise<Stripe | null>
     customerEmail: string | undefined
 }> = ({ stripePromise, customerEmail }) => {
+    const [urlSearchParams] = useSearchParams()
     // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which, if present,
     // will display a "promotional code" element in the Stripe Checkout UI.
-    const [urlSearchParams] = useSearchParams()
     const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
 
     // Make the API call to create the Stripe Checkout session.
     const call = useMemo(() => {
-        const req: CreateCheckoutSessionRequest = {
+        const requestBody: CreateCheckoutSessionRequest = {
             interval: 'monthly',
             seats: 1,
             customerEmail,
@@ -44,6 +44,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
         }
         return Client.createStripeCheckoutSession(req)
     }, [customerEmail, showPromoCodeField])
+        return Client.createStripeCheckoutSession(requestBody)
     const { loading, error, data } = useApiCaller(call)
 
     // Show a spinner while we wait for the Checkout session to be created.
@@ -63,7 +64,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
 
     return (
         <div>
-            {data && data.clientSecret && (
+            {data?.clientSecret && (
                 <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret: data.clientSecret }}>
                     <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>
