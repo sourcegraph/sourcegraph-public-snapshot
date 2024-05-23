@@ -11,13 +11,14 @@ import {
     useStripe,
 } from '@stripe/react-stripe-js'
 import {
-    type Appearance,
     loadStripe,
     type StripeCardElementOptions,
     type StripeAddressElementOptions,
+    type StripeElementsOptions,
 } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
+import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import type { Subscription } from '../../api/teamSubscriptions'
@@ -32,55 +33,18 @@ if (!publishableKey) {
 
 const stripePromise = loadStripe(publishableKey)
 
-const appearance: Appearance = {
-    theme: 'stripe',
-    variables: {
-        colorPrimary: '#00b4d9',
-    },
-    rules: {
-        '.Label': {
-            marginBottom: '8px',
-            fontWeight: '500',
-            color: '#343a4d',
-            fontSize: '14px',
-            lineHeight: '20px',
-        },
-        '.Input': {
-            marginBottom: '4px',
-            paddingTop: '6px',
-            paddingBottom: '6px',
-            borderColor: '#dbe2f0',
-            borderRadius: '3px',
-            fontSize: '14px',
-            lineHeight: '20px',
-            boxShadow: 'none',
-        },
-        '.Input:focus': {
-            borderColor: '#0b70db',
-            boxShadow: '0 0 0 0.125rem #a3d0ff',
-        },
-    },
-}
-
-const noop = (): void => {}
-
 export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
-    <Elements stripe={stripePromise} options={{ appearance }}>
-        <Grid columnCount={2} spacing={0} className={styles.grid}>
-            <div className={styles.gridItem}>
-                <PaymentMethod subscription={subscription} onChange={noop} />
-            </div>
-            <div className={styles.gridItem}>
-                <BillingAddress subscription={subscription} onChange={noop} />
-            </div>
-        </Grid>
-    </Elements>
+    <Grid columnCount={2} spacing={0} className={styles.grid}>
+        <div className={styles.gridItem}>
+            <PaymentMethod subscription={subscription} />
+        </div>
+        <div className={styles.gridItem}>
+            <BillingAddress subscription={subscription} />
+        </div>
+    </Grid>
 )
 
-const PaymentMethod: React.FC<{
-    subscription: Subscription
-    onChange: () => unknown
-}> = ({ subscription: { paymentMethod }, onChange }) => {
+const PaymentMethod: React.FC<{ subscription: Subscription }> = ({ subscription: { paymentMethod } }) => {
     const [isEditMode, setIsEditMode] = useState(false)
 
     if (!paymentMethod) {
@@ -88,7 +52,11 @@ const PaymentMethod: React.FC<{
     }
 
     if (isEditMode) {
-        return <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
+        return (
+            <Elements stripe={stripePromise}>
+                <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
+            </Elements>
+        )
     }
 
     return <ActivePaymentMethod paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
@@ -124,23 +92,34 @@ const ActivePaymentMethod: React.FC<
     </>
 )
 
-const cardElementOptions: StripeCardElementOptions = {
-    // Don't use Stripe Link. Just the basics.
-    disableLink: true,
-    // Since it is supplied by the AddressElement.
-    hidePostalCode: true,
+const useStripeCardElementOptions = (): StripeCardElementOptions => {
+    const { theme } = useTheme()
 
-    // apply default wildcard input classes
-    classes: {
-        base: 'form-control',
-        focus: 'focus-visible',
-        invalid: 'is-invalid',
-    },
+    return useMemo(
+        () => ({
+            disableLink: true,
+            hidePostalCode: true,
+
+            classes: {
+                base: classNames('form-control', styles.paymentMethodFormInput),
+                focus: 'focus-visible',
+                invalid: 'is-invalid',
+            },
+
+            style: {
+                base: {
+                    color: theme === Theme.Light ? '#262b38' : '#dbe2f0',
+                },
+            },
+        }),
+        [theme]
+    )
 }
 
 const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }> = props => {
     const stripe = useStripe()
     const elements = useElements()
+    const cardElementOptions = useStripeCardElementOptions()
 
     const [isLoading, setIsLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState('')
@@ -190,6 +169,7 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
     return (
         <>
             <H3>Edit credit card</H3>
+
             <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.paymentMethodForm}>
                 <div>
                     <Label className={styles.paymentMethodFormLabel}>
@@ -225,10 +205,51 @@ const PaymentMethodForm: React.FC<{ onReset: () => void; onSubmit: () => void }>
     )
 }
 
-const BillingAddress: React.FC<{
-    subscription: Subscription
-    onChange: () => unknown
-}> = ({ subscription, onChange }) => {
+const useBillingAddressStripeElementsOptions = (): StripeElementsOptions => {
+    const { theme } = useTheme()
+
+    return useMemo(
+        () => ({
+            appearance: {
+                variables: {
+                    // corresponds to var(--font-family-base)
+                    fontFamily:
+                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+                    gridRowSpacing: '16px',
+                    borderRadius: '3px',
+                },
+
+                rules: {
+                    '.Label': {
+                        marginBottom: '8px',
+                        fontWeight: '500',
+                        color: theme === Theme.Light ? '#343a4d' : '#dbe2f0',
+                        lineHeight: '20px',
+                        fontSize: '14px',
+                    },
+                    '.Input': {
+                        backgroundColor: theme === Theme.Light ? '#ffffff' : '#1d212f',
+                        color: theme === Theme.Light ? '#262b38' : '#dbe2f0',
+                        paddingTop: '6px',
+                        paddingBottom: '6px',
+                        borderColor: theme === Theme.Light ? '#dbe2f0' : '#343a4d',
+                        boxShadow: 'none',
+                        lineHeight: '20px',
+                        fontSize: '14px',
+                    },
+                    '.Input:focus': {
+                        borderColor: '#0b70db',
+                        boxShadow: `0 0 0 0.125rem ${theme === Theme.Light ? '#a3d0ff' : '#0f59aa'}`,
+                    },
+                },
+            },
+        }),
+        [theme]
+    )
+}
+
+const BillingAddress: React.FC<{ subscription: Subscription }> = ({ subscription }) => {
+    const options = useBillingAddressStripeElementsOptions()
     const [isEditMode, setIsEditMode] = useState(false)
 
     return (
@@ -241,11 +262,13 @@ const BillingAddress: React.FC<{
             </div>
 
             {isEditMode ? (
-                <BillingAddressForm
-                    subscription={subscription}
-                    onReset={() => setIsEditMode(false)}
-                    onSubmit={() => setIsEditMode(false)}
-                />
+                <Elements stripe={stripePromise} options={options}>
+                    <BillingAddressForm
+                        subscription={subscription}
+                        onReset={() => setIsEditMode(false)}
+                        onSubmit={() => setIsEditMode(false)}
+                    />
+                </Elements>
             ) : (
                 <ActiveBillingAddress subscription={subscription} />
             )}
@@ -310,7 +333,7 @@ const BillingAddressForm: React.FC<{
     subscription: Subscription
     onReset: () => void
     onSubmit: () => void
-}> = props => {
+}> = ({ subscription, onReset, onSubmit }) => {
     const stripe = useStripe()
     const elements = useElements()
 
@@ -318,30 +341,31 @@ const BillingAddressForm: React.FC<{
     const [errorMessage, setErrorMessage] = useState('')
 
     const handleSubmit = async (event): Promise<void> => {
-        props.onSubmit()
+        onSubmit()
         return
     }
 
-    // TODO: Customize this further, enabling validation, default forms, autocomplete, etc.
-    // https://stripe.com/docs/js/elements_object/create_address_element
-    const options: StripeAddressElementOptions = {
-        mode: 'billing',
-        display: { name: 'full' },
-        defaultValues: {
-            name: props.subscription.name,
-            address: {
-                line1: props.subscription.address.line1,
-                line2: props.subscription.address.line2,
-                city: props.subscription.address.city,
-                state: props.subscription.address.state,
-                postal_code: props.subscription.address.postalCode,
-                country: props.subscription.address.country,
+    const options: StripeAddressElementOptions = useMemo(
+        () => ({
+            mode: 'billing',
+            display: { name: 'full' },
+            defaultValues: {
+                name: subscription.name,
+                address: {
+                    line1: subscription.address.line1,
+                    line2: subscription.address.line2,
+                    city: subscription.address.city,
+                    state: subscription.address.state,
+                    postal_code: subscription.address.postalCode,
+                    country: subscription.address.country,
+                },
             },
-        },
-    }
+        }),
+        [subscription]
+    )
 
     return (
-        <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
+        <Form onSubmit={handleSubmit} onReset={onReset} className={styles.billingAddressForm}>
             <AddressElement
                 options={options}
                 onFocus={() => {

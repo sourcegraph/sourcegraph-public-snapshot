@@ -40,6 +40,11 @@
             display: block;
         }
 
+        &-input {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
         &-row {
             display: flex;
         }
@@ -59,7 +64,7 @@
 
 .billing-address {
     &-form {
-        margin-top: 0.625rem;
+        margin-top: 9px;
 
         &-button-container {
             margin-top: 2.25rem;
