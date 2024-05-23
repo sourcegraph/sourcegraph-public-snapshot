@@ -11,6 +11,7 @@
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { QueryState, queryStateStore } from '$lib/search/state'
     import { repositoryInsertText } from '$lib/shared'
@@ -21,6 +22,7 @@
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
+    import { setRepositoryPageContext, type RepositoryPageContext } from './context'
 
     interface MenuEntry {
         /**
@@ -59,6 +61,20 @@
         { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
     ]
+    const repositoryContext = writable<RepositoryPageContext>({})
+    const contextSearchSuggestions = createScopeSuggestions({
+        getContextInformation() {
+            return {
+                repoName: data.repoName,
+                revision: $repositoryContext.revision ?? data.displayRevision,
+                directoryPath: $repositoryContext.directoryPath,
+                filePath: $repositoryContext.filePath,
+                fileLanguage: $repositoryContext.fileLanguage,
+            }
+        },
+    })
+
+    setRepositoryPageContext(repositoryContext)
 
     $: viewableNavEntries = navEntries.filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
@@ -102,7 +118,7 @@
 
 <GlobalHeaderPortal>
     <div class="search-header">
-        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} />
+        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} extension={contextSearchSuggestions} />
     </div>
 </GlobalHeaderPortal>
 
