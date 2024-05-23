@@ -27,10 +27,18 @@
             }
         ),
     ])
+
+    // HACK: we use a flexbox for the path and an inline icon, but we still want the copied path to be usable.
+    // This event handler removes the newlines surrounding slashes from the copied text.
+    function stripSpaces(event: ClipboardEvent) {
+        const selection = document.getSelection() ?? ''
+        event.clipboardData?.setData('text/plain', selection?.toString()?.replaceAll(/\n?\/\n?/g, '/'))
+        event.preventDefault()
+    }
 </script>
 
 <div class="header">
-    <h2>
+    <h2 on:copy={stripSpaces}>
         {#each breadcrumbs as [name, path], index}
             {@const last = index === breadcrumbs.length - 1}
             <!--
@@ -65,7 +73,7 @@
             </span>
         {/each}
     </h2>
-        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
+    <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
         <slot name="actions" />
         {#if $$slots.actionmenu}
