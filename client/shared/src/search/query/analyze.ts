@@ -1,7 +1,7 @@
 import { isDefined } from '@sourcegraph/common'
 
 import { type Node, OperatorKind } from './parser'
-import { type CharacterRange, KeywordKind, type Token } from './token'
+import { type CharacterRange, KeywordKind, type Token, PatternKind } from './token'
 
 // Empty range to create valid nodes
 const placeholderRange: CharacterRange = { start: 0, end: 0 }
@@ -100,32 +100,62 @@ const operatorKindToKeywordKind: Record<OperatorKind, KeywordKind> = {
 }
 
 /**
- * Converts a parse node into a sequence of Token's
+ * Converts a parse node into a sequence of Token's. This function generates
+ * new tokens as needed to represent the parse tree in a flat list. Those
+ * tokens won't have useful ranges. Range information is only preserved for
+ * pattern and parameter nodes.
  */
-function tokenize(node: Node | null): Token[] {
+function tokenize(node: Node | null, context = { position: 0 }): Token[] {
     switch (node?.type) {
         case undefined: {
             return []
         }
         case 'parameter': {
+            const fieldStart = node.range.start + (node.negated ? 1 : 0)
+            const fieldEnd = fieldStart + node.field.length
+            // + 1 due to ':' between field and value
+            const valueStart = fieldEnd + 1
+            const valueEnd = valueStart + node.value.length + (node.quoted ? 2 : 0)
+
             return [
                 {
                     type: 'filter',
-                    field: { type: 'literal', value: node.field, quoted: false, range: placeholderRange },
-                    value: { type: 'literal', value: node.value, quoted: node.quoted, range: placeholderRange },
+                    field: {
+                        type: 'literal',
+                        value: node.field,
+                        quoted: false,
+                        range: {
+                            start: fieldStart,
+                            end: fieldEnd,
+                        },
+                    },
+                    value: {
+                        type: 'literal',
+                        value: node.value,
+                        quoted: node.quoted,
+                        range: { start: valueStart, end: valueEnd },
+                    },
                     negated: node.negated,
-                    range: placeholderRange,
+                    range: node.range,
                 },
             ]
         }
         case 'pattern': {
+            if (node.kind === PatternKind.Regexp) {
+                return [
+                    {
+                        ...node,
+                        delimited: true,
+                    },
+                ]
+            }
             return [node]
         }
         case 'sequence': {
             const tokens: Token[] = []
             for (const child of node.nodes) {
                 if (tokens.length > 0) {
-                    tokens.push({ type: 'whitespace', range: placeholderRange })
+                    tokens.push({ type: 'whitespace', range: { start: context.position, end: context.position + 1 } })
                 }
                 tokens.push(...tokenize(child))
             }
