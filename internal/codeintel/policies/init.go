@@ -3,7 +3,7 @@ package policies
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
 	repomatcher "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background/repository_matcher"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"

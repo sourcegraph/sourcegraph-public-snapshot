@@ -60,4 +60,3 @@ func insertIndexRecords(t testing.TB, db database.DB, records ...SyntacticIndexi
 		require.NoError(t, err, "unexpected error while inserting index")
 	}
 }
-

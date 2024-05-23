@@ -121,7 +121,6 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
-		fmt.Println(isQueued)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}

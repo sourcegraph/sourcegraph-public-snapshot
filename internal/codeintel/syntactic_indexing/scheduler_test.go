@@ -11,7 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	policiesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal/testutils"
@@ -37,8 +36,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 		RepositoryBatchSize: 2500,
 	}
 	gitserverClient := gitserver.NewMockClient()
-	scheduler, jobStore := bootstrapScheduler(t, observationCtx, sqlDB, gitserverClient, config)
-	policyStore := policiesstore.New(observationCtx, db)
+	scheduler, jobStore, policies := bootstrapScheduler(t, observationCtx, sqlDB, gitserverClient, config)
 
 	ctx := context.Background()
 
@@ -50,7 +48,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
-	setupRepoPolicies(t, ctx, db, policyStore)
+	setupRepoPolicies(t, ctx, db, policies)
 
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
@@ -139,7 +137,7 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 
 func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 	sqlDB *sql.DB, gitserverClient gitserver.Client,
-	config *SchedulerConfig) (SyntacticJobScheduler, jobstore.SyntacticIndexingJobStore) {
+	config *SchedulerConfig) (SyntacticJobScheduler, jobstore.SyntacticIndexingJobStore, *policies.Service) {
 
 	db := database.NewDB(observationCtx.Logger, sqlDB)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, sqlDB)
@@ -170,10 +168,10 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 
 	require.NoError(t, err)
 
-	return scheduler, jobStore
+	return scheduler, jobStore, policiesSvc
 }
 
-func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, store policiesstore.Store) {
+func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, policies *policies.Service) {
 
 	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -217,12 +215,16 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, store 
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	for policyID, patterns := range map[int][]string{
-		1100: {"github.com/*"},
+	for _, policyID := range []int{
+		1100,
 	} {
-		if err := store.UpdateReposMatchingPatterns(ctx, patterns, policyID, nil); err != nil {
-			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
-		}
+
+		policy, _, err := policies.GetConfigurationPolicyByID(ctx, policyID)
+		require.NoError(t, err)
+
+		err = policies.UpdateReposMatchingPolicyPatterns(ctx, policy)
+		require.NoError(t, err)
+
 	}
 
 }

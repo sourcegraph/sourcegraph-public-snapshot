@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -59,14 +59,14 @@ func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPo
 		return policy, err
 	}
 
-	if err := s.updateReposMatchingPolicyPatterns(ctx, policy); err != nil {
+	if err := s.UpdateReposMatchingPolicyPatterns(ctx, policy); err != nil {
 		return policy, err
 	}
 
 	return policy, nil
 }
 
-func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy policiesshared.ConfigurationPolicy) error {
+func (s *Service) UpdateReposMatchingPolicyPatterns(ctx context.Context, policy policiesshared.ConfigurationPolicy) error {
 	var patterns []string
 	if policy.RepositoryPatterns != nil {
 		patterns = *policy.RepositoryPatterns
@@ -96,7 +96,7 @@ func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy policies
 		return err
 	}
 
-	return s.updateReposMatchingPolicyPatterns(ctx, policy)
+	return s.UpdateReposMatchingPolicyPatterns(ctx, policy)
 }
 
 func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) error {
