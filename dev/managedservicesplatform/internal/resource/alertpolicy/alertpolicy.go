@@ -105,12 +105,17 @@ type ResponseCodeMetric struct {
 	Duration     *string
 }
 
-type SeverityLevel string
+// MQL for alerting when a MQL query exceeds a threshold
+type MQL struct {
+	Query    string
+	Duration *string
+}
 
-const (
-	SeverityLevelWarning  = "WARNING"
-	SeverityLevelCritical = "CRITICAL"
-)
+// PromQL for alerting when a PromQL query exceeds a threshold
+type PromQL struct {
+	Query    string
+	Duration *string
+}
 
 // DescriptionSuffix points to the service page and environment anchor expected to be
 // generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/,
@@ -121,7 +126,7 @@ If you need additional assistance, reach out to #discuss-core-services.`,
 		s.GetHandbookPageURL(), environmentID)
 }
 
-type NotificationChannels map[SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
+type NotificationChannels map[spec.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
 type Config struct {
@@ -141,7 +146,7 @@ type Config struct {
 	// the provided set of NotificationChannels.
 	//
 	// If not provided, SeverityLevelWarning is used.
-	Severity SeverityLevel
+	Severity spec.SeverityLevel
 
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
@@ -150,6 +155,8 @@ type Config struct {
 	ThresholdAggregation *ThresholdAggregation
 	MetricAbsence        *MetricAbsence
 	ResponseCodeMetric   *ResponseCodeMetric
+	MQL                  *MQL
+	PromQL               *PromQL
 }
 
 // makeDocsSubject prefixes the name with the service and environment for ease
@@ -164,7 +171,7 @@ type Output struct {
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
-	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence}); err != nil {
+	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence, config.MQL, config.PromQL}); err != nil {
 		return nil, err
 	}
 
@@ -182,7 +189,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 
 	// Set default
 	if config.Severity == "" {
-		config.Severity = SeverityLevelWarning
+		config.Severity = spec.SeverityLevelWarning
 	}
 
 	// Labels for the alert
@@ -217,6 +224,10 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	case config.ResponseCodeMetric != nil:
 		condition = newResponseCodeMetricCondition(config)
 
+	case config.MQL != nil:
+		condition = newMQLCondition(config)
+	case config.PromQL != nil:
+		condition = newPromQLCondition(config)
 	default:
 		return nil, errors.New("no condition configuration provided")
 	}

@@ -160,8 +160,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	channels := make(map[alertpolicy.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
-	addChannel := func(level alertpolicy.SeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+	channels := make(map[spec.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level spec.SeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
 		channels[level] = append(channels[level], c)
 	}
 
@@ -235,7 +235,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 						*integration.ApiKey()),
 				},
 			})
-		addChannel(alertpolicy.SeverityLevelCritical, channel)
+		addChannel(spec.SeverityLevelCritical, channel)
 		opsgenieChannels = append(opsgenieChannels, channel)
 	}
 
@@ -325,8 +325,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}(),
 			})
 
-		addChannel(alertpolicy.SeverityLevelWarning, notificationChannel)
-		addChannel(alertpolicy.SeverityLevelCritical, notificationChannel)
+		addChannel(spec.SeverityLevelWarning, notificationChannel)
+		addChannel(spec.SeverityLevelCritical, notificationChannel)
 		slackChannels = append(slackChannels, notificationChannel)
 	}
 
@@ -398,6 +398,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		alertGroups["Cloud Run Job Alerts"] = jobAlerts
 	default:
 		return nil, errors.New("unknown service kind")
+	}
+
+	if vars.Monitoring.Alerts.CustomAlerts != nil {
+		customAlerts, err := createCustomAlerts(stack, id.Group("custom"), vars, channels)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create custom alerts")
+		}
+		alertGroups["Custom Alerts"] = customAlerts
 	}
 
 	if vars.RedisInstanceID != nil {
