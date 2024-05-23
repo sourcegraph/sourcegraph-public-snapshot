@@ -386,6 +386,8 @@ commands:
 
   enterprise-portal:
     cmd: |
+      # Connect to local development database, with the assumption that it will
+      #
       export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
       .bin/enterprise-portal
     install: |
@@ -398,6 +400,11 @@ commands:
       PORT: '6081'
       DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: debug
+      # Used for authentication
+      SAMS_URL: https://accounts.sgdev.org
+      # Set real values in sg.config.yaml overrides
+      ENTERPRISE_PORTAL_SAMS_CLIENT_ID: "sams_cid_put_a_real_value_in_sg.config.overwrite.yaml"
+      ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET: "sams_cs_put_a_real_value_in_sg.config.overwrite.yaml"
     watch:
       - lib
       - cmd/enterprise-portal
