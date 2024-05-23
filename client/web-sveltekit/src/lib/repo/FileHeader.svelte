@@ -31,9 +31,10 @@
 
 <div class="header">
     <h2>
-        {#each breadcrumbs as [name, path], index}
-            {@const last = index === breadcrumbs.length - 1}
-            <!--
+        {#each breadcrumbs as [name, path], index}{@const last =
+                index ===
+                breadcrumbs.length -
+                    1}<!--
                 The elements are arranged like this because we want to
                 ensure that the leading / before a segment always stays with
                 the segment. I.e.
@@ -48,24 +49,15 @@
 
                 However, without the following space the path wouldn't break/wrap
                 at all.
-            -->
-            {' '}
-            <span class:last>
-                {#if index > 0}
-                    <span class="slash">/</span>
-                {/if}
-                {#if last}
-                    <slot name="icon" />
-                {/if}
-                {#if path}
-                    <a href={path}>{name}</a>
-                {:else}
-                    {name}
-                {/if}
-            </span>
-        {/each}
+            -->{#if index > 0}<span
+                    class="gap"
+                />{/if}<span class:last
+                >{#if index > 0}<span class="slash">/</span>{/if}<span class="gap" />{#if last}<slot name="icon" /><span
+                        class="gap"
+                    />{/if}{#if path}<a href={path}>{name}</a>{:else}{name}{/if}</span
+            >{/each}
     </h2>
-        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
+    <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
         <slot name="actions" />
         {#if $$slots.actionmenu}
@@ -104,18 +96,15 @@
     }
 
     h2 {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.375em;
-        span {
-            display: flex;
-            gap: inherit;
-        }
-
         font-weight: 400;
         font-size: var(--code-font-size);
         font-family: var(--code-font-family);
         margin: 0;
+
+        .gap {
+            display: inline-block;
+            width: 0.375em;
+        }
 
         a {
             color: var(--text-body);
