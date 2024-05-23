@@ -16,6 +16,8 @@
     import Popover from '$lib/Popover.svelte';
     import { Button } from '$lib/wildcard';
     import { supportedEditors } from '$lib/web';
+    import {isMacPlatform, isWindowsPlatform} from '$lib/common';
+    import {getPlatform} from '$root/client/common';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
     export let updateUserSetting: (edit: SettingsEdit) => Promise<void>;
@@ -61,6 +63,12 @@
         }
     }
 
+    const exampleProjectPaths = {
+        'windows': 'C:\\Users\\username\\Projects',
+        'linux': '/home/username/Projects',
+        'mac': '/Users/username/Projects',
+        'other': '/Users/username/Projects',
+    }
 </script>
 
 {#if editors}
@@ -100,31 +108,37 @@
                     Open this and other files directly in your editor. Set your path and editor to get started. Update
                     any time in your user settings.
                 </p>
-                <p class="form-label">Default projects path</p>
-                <input
-                    id="OpenInEditorForm-projectPath"
-                    type="text"
-                    name="projectPath"
-                    placeholder="/Users/username/projects"
-                    required
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck={false}
-                    bind:value={defaultProjectPath}
-                    class="form-input"
-                />
+                <label>
+                    Default projects path
+                    <input
+                        id="OpenInEditorForm-projectPath"
+                        type="text"
+                        name="projectPath"
+                        placeholder="/Users/username/projects"
+                        required
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck={false}
+                        bind:value={defaultProjectPath}
+                        class="form-input"
+                    />
+                </label>
+
                 <p class="small form-info">
                     The directory that contains your repository checkouts. For example, if this repository is
-                    checked out to <code>/Users/username/projects/cody</code>, then set your default projects path
-                    to <code>/Users/username/projects</code>.
+                    checked out to <code>{`${exampleProjectPaths[getPlatform()]}${isWindowsPlatform() ? '\\' : '/'}cody`}</code>, then set your default projects path
+                    to <code>{exampleProjectPaths[getPlatform()]}</code>.
                 </p>
-                <p class="form-label editor-label">Editor</p>
-                <select class="form-input" id="OpenInEditorForm-editor" bind:value={selectedEditorId}>
-                    <option value=""></option>
-                    {#each supportedEditors.sort((a, b) => a.name.localeCompare(b.name)).filter(editor => editor.id !== 'custom') as editor}
-                        <option value={editor.id}>{editor.name}</option>
-                    {/each}
-                </select>
+                <label>
+                    Editor
+                    <select class="form-input" id="OpenInEditorForm-editor" bind:value={selectedEditorId}>
+                        <option value=""></option>
+                        {#each supportedEditors.sort((a, b) => a.name.localeCompare(b.name)).filter(editor => editor.id !== 'custom') as editor}
+                            <option value={editor.id}>{editor.name}</option>
+                        {/each}
+                    </select>
+                </label>
+
                 <p class="small form-info">Use a different editor?{' '}
                     <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">Set up a
                         different editor</a>
