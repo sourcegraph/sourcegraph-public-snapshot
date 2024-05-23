@@ -1,7 +1,7 @@
 // The URL to direct users in order to manage their Cody Pro subscription.
 import { useState, useEffect } from 'react'
 
-// URL the user needs to navigate to in4 order to modify their Cody Pro subscription.
+// URL the user needs to navigate to in order to modify their Cody Pro subscription.
 export const manageSubscriptionRedirectURL = `${
     window.context.frontendCodyProConfig?.sscBaseUrl || 'https://accounts.sourcegraph.com/cody'
 }/subscription`
