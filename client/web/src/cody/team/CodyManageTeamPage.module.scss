@@ -8,7 +8,7 @@
 .alert {
     position: relative;
     padding: 1.5rem 1.5rem 1.5rem 5rem;
-    color: #181b26;
+    color: var(--gray-11);
     &::after {
         content: '';
         position: absolute;
@@ -22,9 +22,11 @@
 }
 
 .purple-success-alert {
-    background-color: #e8d1ff;
+    background-color: var(--violet-02);
+    color: var(--violet-06);
     :global(.theme-dark) & {
-        background-color: #d68cf3;
+        background-color: var(--pink);
+        color: var(--gray-08);
     }
     &::after {
         // Purple checkmark SVG
@@ -57,7 +59,7 @@
 .user-badges {
     position: relative;
     left: -31px;
-    border: 1px solid #e6ebf2;
+    border: 1px solid var(--gray-03);
     border-radius: 50%;
 }
 
