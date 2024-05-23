@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { formatInviteDate } from './TeamMemberList'
 
 describe('formatInviteDate', () => {
-    it('shows relative descriptions of time in the desired format', async () => {
+    it('shows relative descriptions of time in the desired format', () => {
         // ISO-8601 (RFC3339) strings, just the way the backend returns them
         const inputDates = [
             '2024-05-22T15:59:55.000000+00:00',
@@ -21,7 +21,7 @@ describe('formatInviteDate', () => {
         expect(outputDates).toEqual(expectedOutput)
     })
 
-    it('handles malformed input', async () => {
+    it('handles malformed input', () => {
         // These are in the format of the normal output of our Go back end
         const inputDates = [null, '', '1T14:17:55.000000+00:00', '2024-05-15T14:17:55']
 
