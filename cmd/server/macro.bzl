@@ -39,15 +39,16 @@ def go_binary_nobundle(name, **kwargs):
     go_binary_nobundle_rule(
         name = name,
         go_binary = ":" + name + "_underlying",
+        out = native.package_name() + "/" + name,
         visibility = kwargs.pop("visibility", ["//visibility:public"]),
     )
 
 def _go_binary_nobundle_rule(ctx):
     # so that we can `bazel run` nobundle targets, we need to set `executable` in DefaultInfo.
     # But this can't be the output of a _different_ rule, it has to be the output of this rule.
-    executable = ctx.actions.declare_file(ctx.executable.go_binary.basename)
+    executable = ctx.actions.declare_file(ctx.attr.out)
     ctx.actions.symlink(output = executable, target_file = ctx.executable.go_binary)
-    return [DefaultInfo(executable = executable, files = depset(ctx.files.go_binary))]
+    return [DefaultInfo(executable = executable, files = depset(direct = [executable]))]
 
 go_binary_nobundle_rule = rule(
     implementation = _go_binary_nobundle_rule,
@@ -56,12 +57,14 @@ go_binary_nobundle_rule = rule(
         "go_binary": attr.label(
             providers = [GoArchive],
             executable = True,
+            mandatory = True,
             cfg = transition(
                 implementation = lambda settings, attr: [{"//:integration_testing": True}],
                 inputs = [],
                 outputs = ["//:integration_testing"],
             ),
         ),
+        "out": attr.string(mandatory = True),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
