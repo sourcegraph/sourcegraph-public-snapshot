@@ -17,6 +17,7 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/internal/yaml"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
@@ -109,7 +110,13 @@ func main() {
 	diffCmd := exec.Command("diff", diffCmdArgs...)
 	diffCmd.Stdout = os.Stdout
 	diffCmd.Stderr = os.Stderr
-	must(diffCmd.Run())
+	if err := diffCmd.Run(); err != nil {
+		// diff exitting non-zero is business as usual. In this case, we want to
+		// allow the deferred cleanup to run.
+		if errors.Is(err, &exec.ExitError{}) {
+			return
+		}
+	}
 }
 
 // First, marshal a k8s object using the k8s yaml library. We have to use this
