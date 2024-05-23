@@ -1,6 +1,7 @@
 import { type FunctionComponent, useMemo, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
@@ -8,7 +9,6 @@ import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 import { requestSSC } from '../util'
 
 import styles from './CodyManageTeamPage.module.scss'
-import { intlFormatDistance } from 'date-fns'
 
 export interface TeamMember {
     accountId: string
@@ -35,11 +35,14 @@ export interface TeamInvite {
     acceptedAt: string | null
 }
 
-// This little function is extracted to make it testable.
-// Same for the "now" parameter.
+// This tiny function is extracted to make it testable. Same for the "now" parameter.
 export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
     try {
-        return sentAt ? intlFormatDistance(sentAt || '', now ?? new Date()) : ''
+        if (sentAt) {
+            return intlFormatDistance(sentAt || '', now ?? new Date())
+        } else {
+            return ''
+        }
     } catch {
         return ''
     }
