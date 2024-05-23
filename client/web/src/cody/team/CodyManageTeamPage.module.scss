@@ -36,6 +36,7 @@
 
 .green-success-alert {
     background-color: #e0f9d5;
+    color: #054410;
     :global(.theme-dark) & {
         background-color: #51cf66;
     }
@@ -47,6 +48,7 @@
 
 .error-alert {
     background-color: #fff1f0;
+    color: #85111d;
     :global(.theme-dark) & {
         background-color: #ff5d5f;
     }
