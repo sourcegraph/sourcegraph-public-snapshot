@@ -54,24 +54,16 @@ type CodeInsightsDBSpec struct {
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
-// CodeIntelDBSpec defines the desired state of Code Intel database.
-type CodeIntelDBSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeIntel DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
+// CodeIntelSpec defines the desired state of Code Intel database.
+type CodeIntelSpec struct {
+	StandardConfig
 
 	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
+	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type IngressSpec struct {
@@ -269,7 +261,7 @@ type SourcegraphSpec struct {
 	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
 
 	// CodeIntel defines the desired state of the Code Intel service.
-	CodeIntel CodeIntelDBSpec `json:"codeIntel,omitempty"`
+	CodeIntel CodeIntelSpec `json:"codeIntel,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`

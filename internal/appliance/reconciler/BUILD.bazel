@@ -5,6 +5,7 @@ go_library(
     name = "reconciler",
     srcs = [
         "blobstore.go",
+        "codeintel.go",
         "gitserver.go",
         "kubernetes.go",
         "pgsql.go",
@@ -56,6 +57,7 @@ go_test(
     name = "reconciler_test",
     srcs = [
         "blobstore_test.go",
+        "codeintel_test.go",
         "gitserver_test.go",
         "golden_test.go",
         "helpers_test.go",

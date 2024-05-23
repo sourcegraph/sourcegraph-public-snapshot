@@ -22,31 +22,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcilePGSQL(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	if err := r.reconcilePGSQLStatefulSet(ctx, sg, owner); err != nil {
+func (r *Reconciler) reconcileCodeIntel(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	if err := r.reconcileCodeIntelStatefulSet(ctx, sg, owner); err != nil {
 		return err
 	}
-	if err := r.reconcilePGSQLPersistentVolumeClaim(ctx, sg, owner); err != nil {
+	if err := r.reconcileCodeIntelPersistentVolumeClaim(ctx, sg, owner); err != nil {
 		return err
 	}
-	if err := r.reconcilePGSQLConfigMap(ctx, sg, owner); err != nil {
+	if err := r.reconcileCodeIntelConfigMap(ctx, sg, owner); err != nil {
 		return err
 	}
-	if err := r.reconcilePGSQLSecret(ctx, sg, owner); err != nil {
+	if err := r.reconcileCodeIntelSecret(ctx, sg, owner); err != nil {
 		return err
 	}
-	if err := r.reconcilePGSQLService(ctx, sg, owner); err != nil {
+	if err := r.reconcileCodeIntelService(ctx, sg, owner); err != nil {
 		return err
 	}
-	if err := r.reconcilePGSQLServiceAccount(ctx, sg, owner); err != nil {
+	if err := r.reconcileCodeIntelServiceAccount(ctx, sg, owner); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cfg := sg.Spec.PGSQL
-	name := "pgsql"
+func (r *Reconciler) reconcileCodeIntelStatefulSet(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.CodeIntel
+	name := "codeintel-db"
 
 	ctrImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
@@ -73,9 +73,9 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 		ReadOnlyRootFilesystem:   pointers.Ptr(true),
 	}
 
-	databaseSecretName := "pgsql-auth"
+	databaseSecretName := "codeintel-db-auth"
 	ctr.Env = append(ctr.Env, container.EnvVarsPostgres(databaseSecretName)...)
-	ctr.Ports = []corev1.ContainerPort{{Name: name, ContainerPort: 5432}}
+	ctr.Ports = []corev1.ContainerPort{{Name: "pgsql", ContainerPort: 5432}}
 	ctr.LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
@@ -103,7 +103,6 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 	ctr.VolumeMounts = []corev1.VolumeMount{
 		{Name: "disk", MountPath: "/data"},
 		{Name: "pgsql-conf", MountPath: "/conf"},
-		{Name: "dshm", MountPath: "/dev/shm"},
 		{Name: "lockdir", MountPath: "/var/run/postgresql"},
 	}
 
@@ -160,27 +159,21 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 	}
 	pgExpCtr.Env = append(pgExpCtr.Env, container.EnvVarsPostgresExporter(databaseSecretName)...)
 	pgExpCtr.Env = append(pgExpCtr.Env, corev1.EnvVar{
-		Name: "PG_EXPORTER_EXTEND_QUERY_PATH", Value: "/config/queries.yaml",
+		Name: "PG_EXPORTER_EXTEND_QUERY_PATH", Value: "/config/code_intel_queries.yaml",
 	})
 
 	podVolumes := []corev1.Volume{
 		pod.NewVolumeEmptyDir("lockdir"),
-		{Name: "dshm", VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{
-				Medium:    corev1.StorageMediumMemory,
-				SizeLimit: pointers.Ptr(resource.MustParse("1Gi")),
-			},
-		}},
 		{Name: "disk", VolumeSource: corev1.VolumeSource{
 			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-				ClaimName: "pgsql",
+				ClaimName: "codeintel-db",
 			},
 		}},
 		{Name: "pgsql-conf", VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				DefaultMode: pointers.Ptr[int32](0777),
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "pgsql-conf",
+					Name: "codeintel-db-conf",
 				},
 			},
 		}},
@@ -202,32 +195,32 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
 
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &sset, &appsv1.StatefulSet{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &sset, &appsv1.StatefulSet{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cfg := sg.Spec.PGSQL
+func (r *Reconciler) reconcileCodeIntelPersistentVolumeClaim(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.CodeIntel
 	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
 	if err != nil {
 		return errors.Wrap(err, "parsing storage size")
 	}
 
-	p := pvc.NewPersistentVolumeClaim("pgsql", sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
+	p := pvc.NewPersistentVolumeClaim("codeintel-db", sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
 
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLConfigMap(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cm := configmap.NewConfigMap("pgsql-conf", sg.Namespace)
-	cm.Data = map[string]string{"postgresql.conf": string(config.PgsqlConfig)}
+func (r *Reconciler) reconcileCodeIntelConfigMap(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cm := configmap.NewConfigMap("codeintel-db-conf", sg.Namespace)
+	cm.Data = map[string]string{"postgresql.conf": string(config.CodeIntelConfig)}
 
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &cm, &corev1.ConfigMap{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &cm, &corev1.ConfigMap{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	scrt := secret.NewSecret("pgsql-auth", sg.Namespace, sg.Spec.RequestedVersion)
+func (r *Reconciler) reconcileCodeIntelSecret(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	scrt := secret.NewSecret("codeintel-db-auth", sg.Namespace, sg.Spec.RequestedVersion)
 
-	cn := sg.Spec.PGSQL.DatabaseConnection
+	cn := sg.Spec.CodeIntel.DatabaseConnection
 	scrt.Data = map[string][]byte{
 		"host":     []byte(cn.Host),
 		"port":     []byte(cn.Port),
@@ -236,21 +229,19 @@ func (r *Reconciler) reconcilePGSQLSecret(ctx context.Context, sg *config.Source
 		"database": []byte(cn.Database),
 	}
 
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &scrt, &corev1.Secret{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &scrt, &corev1.Secret{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	svc := service.NewService("pgsql", sg.Namespace, sg.Spec.PGSQL)
-	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "pgsql", TargetPort: intstr.FromString("pgsql"), Port: 5432},
-	}
-	svc.Spec.Selector = map[string]string{"app": "pgsql"}
+func (r *Reconciler) reconcileCodeIntelService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	svc := service.NewService("codeintel-db", sg.Namespace, sg.Spec.CodeIntel)
+	svc.Spec.Ports = []corev1.ServicePort{{Name: "pgsql", TargetPort: intstr.FromString("pgsql"), Port: 5432}}
+	svc.Spec.Selector = map[string]string{"app": "codeintel-db"}
 
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &svc, &corev1.Service{}, sg, owner)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePGSQLServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cfg := sg.Spec.PGSQL
-	sa := serviceaccount.NewServiceAccount("pgsql", sg.Namespace, cfg)
-	return reconcileObject(ctx, r, sg.Spec.PGSQL, &sa, &corev1.ServiceAccount{}, sg, owner)
+func (r *Reconciler) reconcileCodeIntelServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.CodeIntel
+	sa := serviceaccount.NewServiceAccount("codeintel", sg.Namespace, cfg)
+	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &sa, &corev1.ServiceAccount{}, sg, owner)
 }

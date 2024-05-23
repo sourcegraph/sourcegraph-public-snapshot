@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// Default
+// NewDefaultConfig
 //
 // Warning: never extract `ptr.To(thing)` into a package-level variable! If you
 // do this, reconciling a config that overrides a default value for that
@@ -80,6 +80,19 @@ func NewDefaultConfig() Sourcegraph {
 				NumWorkers: 4,
 				Replicas:   2,
 			},
+			CodeIntel: CodeIntelSpec{
+				StandardConfig: StandardConfig{
+					PrometheusPort: pointers.Ptr(9187),
+				},
+				StorageSize: "200Gi",
+				DatabaseConnection: &DatabaseConnectionSpec{
+					Host:     "codeintel-db",
+					Port:     "5432",
+					User:     "sg",
+					Password: "password",
+					Database: "sg",
+				},
+			},
 		},
 	}
 }
@@ -94,6 +107,7 @@ var defaultImages = map[string]map[string]string{
 var defaultImagesForVersion_5_3_9104 = map[string]string{
 	"alpine":                    "alpine-3.14:5.3.2@sha256:982220e0fd8ce55a73798fa7e814a482c4807c412f054c8440c5970b610239b7",
 	"blobstore":                 "blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa",
+	"codeintel-db":              "codeintel-db:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79",
 	"gitserver":                 "gitserver:5.3.2@sha256:6c6042cf3e5f3f16de9b82e3d4ab1647f8bb924cd315245bd7a3162f5489e8c4",
 	"pgsql":                     "postgres-12-alpine:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79",
 	"pgsql-exporter":            "postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0",
