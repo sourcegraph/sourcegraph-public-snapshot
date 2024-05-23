@@ -88,7 +88,7 @@
 {:else if editorSettingsErrorMessage}
     <Popover let:registerTrigger let:toggle placement="left-start">
         <Tooltip tooltip="Set your preferred editor">
-            <span use:registerTrigger on:click={() => toggle()}>
+            <span use:registerTrigger on:click={toggle}>
                 <DefaultEditorIcon/>
                 <span data-action-label> Editor </span>
             </span>
