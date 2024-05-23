@@ -362,7 +362,16 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         this.props.telemetryService.log(action.id)
         if (action.telemetryProps) {
             this.props.telemetryRecorder.recordEvent(
-                action.telemetryProps.feature as KnownString<Feature>,
+                // 👷 HACK: We have no control over what gets sent over Comlink/
+                // web workers, so we depend on action contribution implementations
+                // to give type guidance to ensure that we don't accidentally share
+                // arbitrary, potentially sensitive string values. In this
+                // RPC handler, when passing the provided event to the
+                // TelemetryRecorder implementation, we forcibly cast all
+                // the inputs below (feature) into known types
+                // (the string 'feature') so that the recorder will accept
+                // it. DO NOT do this elsewhere!
+                action.telemetryProps.feature as 'feature',
                 'executed',
                 {
                     privateMetadata: { action: action.id, ...action.telemetryProps.privateMetadata },
