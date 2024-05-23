@@ -39,12 +39,12 @@ export interface TeamInvite {
 export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
     try {
         if (sentAt) {
-            return intlFormatDistance(sentAt || '', now ?? new Date())
+            return intlFormatDistance(sentAt, now ?? new Date())
         }
+        return ''
     } catch {
         return ''
     }
-    return ''
 }
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
