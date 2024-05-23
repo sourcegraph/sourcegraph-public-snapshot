@@ -8,7 +8,6 @@ import { catchError, map, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import type { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, type ErrorLike, isExternalLink, logger } from '@sourcegraph/common'
-import { KnownString } from '@sourcegraph/telemetry'
 import {
     LoadingSpinner,
     Button,

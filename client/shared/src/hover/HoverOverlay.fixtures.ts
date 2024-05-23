@@ -42,6 +42,9 @@ export const FIXTURE_ACTIONS: ActionItemAction[] = [
             title: 'Go to definition',
             command: 'open',
             commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts#L57:1'],
+            telemetryProps: {
+                feature: 'blob.goToDefinition.preloaded',
+            },
         },
         active: true,
     },
@@ -51,6 +54,9 @@ export const FIXTURE_ACTIONS: ActionItemAction[] = [
             title: 'Find references',
             command: 'open',
             commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts?tab=references#L57:18'],
+            telemetryProps: {
+                feature: 'blob.findReferences',
+            },
         },
         active: true,
     },
