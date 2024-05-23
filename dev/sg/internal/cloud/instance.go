@@ -110,10 +110,6 @@ type InstanceFeatures struct {
 }
 
 func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
-	fmt.Printf("Status: %v\n", src.GetInstanceStatus())
-	fmt.Printf("Reason: %v\n", src.GetReason())
-	fmt.Printf("Status: %v\n", src.GetInstanceStatus())
-	fmt.Printf("Reason: %v\n", src.GetReason())
 	url, reason, err := parseStatusReason(src.GetReason())
 	if err != nil {
 		return nil, err
