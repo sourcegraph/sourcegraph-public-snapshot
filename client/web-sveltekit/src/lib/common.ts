@@ -12,7 +12,12 @@ export { logger } from '@sourcegraph/common/src/util/logger'
 export { isSafari } from '@sourcegraph/common/src/util/browserDetection'
 export { isExternalLink, type LineOrPositionOrRange, SourcegraphURL } from '@sourcegraph/common/src/util/url'
 export { parseJSONCOrError } from '@sourcegraph/common/src/util/jsonc'
-export { isWindowsPlatform, isMacPlatform, isLinuxPlatform, getPlatform } from '@sourcegraph/common/src/util/browserDetection'
+export {
+    isWindowsPlatform,
+    isMacPlatform,
+    isLinuxPlatform,
+    getPlatform,
+} from '@sourcegraph/common/src/util/browserDetection'
 
 let highlightingLoaded = false
 
