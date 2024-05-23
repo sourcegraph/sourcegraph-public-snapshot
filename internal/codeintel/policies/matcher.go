@@ -269,14 +269,14 @@ func commitsUniqueToBranch(ctx context.Context, gitserverClient gitserver.Client
 		rng = fmt.Sprintf("HEAD..%s", commitID)
 	}
 
-	var after string
+	var after time.Time
 	if maxCommitAge != nil {
-		after = maxCommitAge.Format(time.RFC3339)
+		after = *maxCommitAge
 	}
 
 	commits, err := gitserverClient.Commits(ctx, repo, gitserver.CommitsOptions{
-		Range: rng,
-		After: after,
+		Ranges: []string{rng},
+		After:  after,
 	})
 	if err != nil {
 		return nil, err

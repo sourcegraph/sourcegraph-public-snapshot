@@ -5,6 +5,7 @@ go_library(
     name = "api",
     srcs = ["api.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/api",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
@@ -18,5 +19,6 @@ go_test(
     timeout = "short",
     srcs = ["api_test.go"],
     embed = [":api"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = ["@com_github_stretchr_testify//require"],
 )

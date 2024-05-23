@@ -11,6 +11,7 @@ go_library(
         "unmarshal_documentation.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/lsif/protocol",
@@ -27,6 +28,7 @@ go_test(
         "unmarshal_test.go",
     ],
     embed = [":reader"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/lsif/protocol",
         "@com_github_google_go_cmp//cmp",

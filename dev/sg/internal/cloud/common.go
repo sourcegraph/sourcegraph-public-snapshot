@@ -14,13 +14,16 @@ var ErrUserCancelled = errors.New("user cancelled")
 var ErrWrongBranch = errors.New("wrong current branch")
 var ErrBranchOutOfSync = errors.New("branch is out of sync with remote")
 var ErrNotEphemeralInstance = errors.New("instance is not ephemeral")
+var ErrInstanceStatusNotComplete = errors.New("instance is not not in completed status")
 var ErrExpiredInstance = errors.New("instance has already expired")
 
 const CloudEmoji = "☁️"
 
 func sanitizeInstanceName(name string) string {
 	name = strings.ToLower(name)
-	return strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, "/", "-")
+	name = strings.ReplaceAll(name, "_", "-")
+	return name
 }
 
 func inferInstanceNameFromBranch(ctx context.Context) (string, error) {

@@ -31,7 +31,10 @@ go_test(
     timeout = "short",
     srcs = ["stitch_test.go"],
     embed = [":stitch"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_INFRA_RELEASE,
+        "requires-network",
+    ],
     deps = [
         "//internal/database/connections/live",
         "//internal/database/dbtest",

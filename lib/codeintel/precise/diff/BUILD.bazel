@@ -7,6 +7,7 @@ go_library(
     name = "diff",
     srcs = ["diff.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/codeintel/precise",
@@ -20,6 +21,7 @@ go_test(
     srcs = ["diff_test.go"],
     data = ["//lib/codeintel/precise/diff/testdata:data"],
     embed = [":diff"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",

@@ -9,16 +9,15 @@ go_library(
         "tar.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
         "//internal/database",
         "//internal/gitserver",
-        "//internal/gitserver/gitdomain",
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",
-        "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -28,6 +27,7 @@ go_test(
     timeout = "short",
     srcs = ["client_test.go"],
     embed = [":gitserver"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/gitserver",

@@ -18,6 +18,10 @@ test.beforeEach(async ({ sg }) => {
             repository: {
                 branches: {
                     nodes: [{ displayName: 'main' }, { displayName: 'feature/branch' }],
+                    pageInfo: {
+                        // Needed to prevent infinity scroll from trying to load more pages
+                        hasNextPage: false,
+                    },
                 },
             },
         }),

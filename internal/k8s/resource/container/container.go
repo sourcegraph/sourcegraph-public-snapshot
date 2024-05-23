@@ -1,6 +1,8 @@
 package container
 
 import (
+	"sort"
+
 	"github.com/grafana/regexp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,6 +31,8 @@ func NewContainer(name string, cfg config.StandardComponent, defaults config.Con
 
 	if cfg != nil {
 		if ctrConfig, ok := cfg.GetContainerConfig()[name]; ok {
+			ctr.Env = append(ctr.Env, newSortedEnvVars(ctrConfig.EnvVars)...)
+
 			if ctrConfig.BestEffortQOS {
 				ctr.Resources = corev1.ResourceRequirements{}
 			} else if ctrConfig.Resources != nil {
@@ -145,4 +149,20 @@ func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
 			Value: "/config/queries.yaml",
 		},
 	}
+}
+
+func newSortedEnvVars(vars map[string]string) []corev1.EnvVar {
+	keys := make([]string, len(vars))
+	i := 0
+	for key := range vars {
+		keys[i] = key
+		i++
+	}
+	sort.Strings(keys)
+
+	ret := make([]corev1.EnvVar, len(vars))
+	for i, key := range keys {
+		ret[i] = corev1.EnvVar{Name: key, Value: vars[key]}
+	}
+	return ret
 }

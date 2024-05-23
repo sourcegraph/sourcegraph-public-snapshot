@@ -14,6 +14,7 @@ go_library(
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/build-tracker",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/build-tracker/build",
@@ -37,6 +38,7 @@ go_library(
 go_binary(
     name = "build-tracker",
     embed = [":build-tracker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -50,6 +52,7 @@ go_test(
         "server_test.go",
     ],
     embed = [":build-tracker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/build-tracker/build",
         "//dev/build-tracker/config",
@@ -97,6 +100,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_INFRA_DEVINFRA,
     ],
 )
 

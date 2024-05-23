@@ -10,6 +10,7 @@ go_library(
         "perms_syncer_scheduler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/permissions",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -56,6 +57,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":permissions"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost for database
         "requires-network",
     ],

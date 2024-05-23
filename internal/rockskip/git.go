@@ -5,13 +5,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitserverClient interface {
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(logEntry gitdomain.LogEntry) error) error
+	ChangedFiles(context.Context, api.RepoName, string, string) (gitserver.ChangedFilesIterator, error)
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 

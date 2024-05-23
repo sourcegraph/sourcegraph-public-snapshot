@@ -8,6 +8,7 @@ go_library(
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/deploy",
@@ -23,4 +24,5 @@ go_test(
     timeout = "short",
     srcs = ["config_test.go"],
     embed = [":lsifuploadstore"],
+    tags = [TAG_PLATFORM_GRAPH],
 )

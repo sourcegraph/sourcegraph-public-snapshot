@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -14,7 +14,8 @@ type BigQueryWriter interface {
 }
 
 type BuildkiteAgentEvent struct {
-	event string
+	event     string
+	timestamp time.Time
 	buildkite.Agent
 }
 
@@ -27,20 +28,16 @@ func (b *BuildkiteAgentEvent) Save() (row map[string]bigquery.Value, insertID st
 		}
 	}
 
-	uuid, err := base64.StdEncoding.DecodeString(*b.ID)
-	if err != nil {
-		return nil, "", err
-	}
-
 	return map[string]bigquery.Value{
 		"event":      strings.TrimPrefix(b.event, "agent."),
-		"name":       b.Name,
-		"hostname":   b.Hostname,
-		"version":    b.Version,
-		"ip_address": b.IPAddress,
-		"queues":     strings.Join(queues, ","),
-		"user_agent": b.UserAgent,
-		"uuid":       strings.TrimPrefix(string(uuid), "Agent---"),
+		"uuid":       *b.ID,
+		"name":       *b.Name,
+		"hostname":   *b.Hostname,
+		"version":    *b.Version,
+		"ip_address": *b.IPAddress,
+		"queues":     queues,
+		"user_agent": *b.UserAgent,
+		"timestamp":  b.timestamp,
 	}, "", nil
 }
 

@@ -59,9 +59,9 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 		return errors.Wrap(err, "repoStore.Get")
 	}
 	commits, err := r.client.Commits(ctx, repo.Name, gitserver.CommitsOptions{
-		Order: gitserver.CommitsOrderTopoDate,
-		After: time.Now().AddDate(0, 0, -90).Format(time.RFC3339),
-		Range: "HEAD",
+		Order:  gitserver.CommitsOrderTopoDate,
+		After:  time.Now().AddDate(0, 0, -90),
+		Ranges: []string{"HEAD"},
 	})
 	if err != nil {
 		return errors.Wrap(err, "Commits")

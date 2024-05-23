@@ -22,6 +22,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -68,7 +69,8 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 		completion += content.Text
 	}
 
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+	parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.InputTokens, response.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,8 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		case "message_delta":
 			if event.Delta != nil {
 				stopReason = event.Delta.StopReason
-				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+requestParams.Model, string(feature), tokenusage.AwsBedrock)
+				parsedModelId := conftypes.NewBedrockModelRefFromModelID(requestParams.Model)
+				err = a.tokenManager.UpdateTokenCountsFromModelUsage(inputPromptTokens, event.Usage.OutputTokens, "anthropic/"+parsedModelId.Model, string(feature), tokenusage.AwsBedrock)
 				if err != nil {
 					logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 				}
@@ -232,19 +235,8 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling request body")
 	}
-	apiURL, err := url.Parse(c.endpoint)
-	if err != nil || apiURL.Scheme == "" {
-		apiURL = &url.URL{
-			Scheme: "https",
-			Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", defaultConfig.Region),
-		}
-	}
 
-	if stream {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model)
-	} else {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
-	}
+	apiURL := buildApiUrl(c.endpoint, requestParams.Model, stream, defaultConfig.Region)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
@@ -280,6 +272,41 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	return resp, nil
+}
+
+// Builds a bedrock api URL from the configured endpoint url.
+// If the endpoint isn't valid, falls back to the default endpoint for the specified fallbackRegion
+func buildApiUrl(endpoint string, model string, stream bool, fallbackRegion string) *url.URL {
+	apiURL, err := url.Parse(endpoint)
+	if err != nil || apiURL.Scheme == "" {
+		apiURL = &url.URL{
+			Scheme: "https",
+			Host:   fmt.Sprintf("bedrock-runtime.%s.amazonaws.com", fallbackRegion),
+		}
+	}
+
+	bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(model)
+
+	if bedrockModelRef.ProvisionedCapacity != nil {
+		// We need to Query escape the provisioned capacity ARN, since otherwise
+		// the AWS API Gateway interprets the path as a path and doesn't route
+		// to the Bedrock service. This would results in abstract Coral errors
+		if stream {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke-with-response-stream", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", *bedrockModelRef.ProvisionedCapacity)
+		} else {
+			apiURL.RawPath = fmt.Sprintf("/model/%s/invoke", url.QueryEscape(*bedrockModelRef.ProvisionedCapacity))
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", *bedrockModelRef.ProvisionedCapacity)
+		}
+	} else {
+		if stream {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", bedrockModelRef.Model)
+		} else {
+			apiURL.Path = fmt.Sprintf("/model/%s/invoke", bedrockModelRef.Model)
+		}
+	}
+
+	return apiURL
 }
 
 func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {

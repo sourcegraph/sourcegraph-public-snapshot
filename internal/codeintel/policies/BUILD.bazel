@@ -13,6 +13,7 @@ go_library(
         "service.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -46,6 +47,7 @@ go_test(
         "service_test.go",
     ],
     embed = [":policies"],
+    tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
         "//internal/codeintel/policies/shared",

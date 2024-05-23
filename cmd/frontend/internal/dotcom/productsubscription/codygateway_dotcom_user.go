@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -343,6 +344,18 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
+var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Claude3Haiku,
+	"anthropic/claude-instant-v1",
+	"anthropic/claude-instant-1",
+	"anthropic/claude-instant-1.2-cyan",
+	"anthropic/claude-instant-1.2",
+	"fireworks/starcoder",
+	"fireworks/" + fireworks.Llama213bCode,
+	"fireworks/" + fireworks.StarcoderTwo15b,
+	"fireworks/" + fireworks.StarcoderTwo7b},
+	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
+	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
+
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
@@ -367,6 +380,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
 			"openai/gpt-3.5-turbo",
+			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
 
@@ -380,21 +394,18 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-1",
 		}
 	case types.CompletionsFeatureCode:
-		return []string{
-			"anthropic/" + anthropic.Claude3Haiku,
-			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"anthropic/claude-instant-1.2-cyan",
-			"anthropic/claude-instant-1.2",
-			"fireworks/starcoder",
-			"fireworks/" + fireworks.Llama213bCode,
-			"fireworks/" + fireworks.StarcoderTwo15b,
-			"fireworks/" + fireworks.StarcoderTwo7b,
-			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
-		}
+		return allCodeCompletionModels
 	default:
 		return []string{}
 	}
+}
+
+func prefix(prefix string, models []string) []string {
+	result := make([]string, len(models))
+	for i := range models {
+		result[i] = prefix + models[i]
+	}
+	return result
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {

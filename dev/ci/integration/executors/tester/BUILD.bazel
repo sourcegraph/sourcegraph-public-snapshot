@@ -8,6 +8,7 @@ go_library(
         "testinfra.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/integration/executors/tester",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/ci/integration/executors/tester/config",
@@ -34,5 +35,6 @@ go_library(
 go_binary(
     name = "tester",
     embed = [":tester_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )

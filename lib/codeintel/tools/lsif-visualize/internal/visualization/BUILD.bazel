@@ -8,6 +8,7 @@ go_library(
         "visualizer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize/internal/visualization",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//lib/codeintel/tools/lsif-visualize:__subpackages__"],
     deps = [
         "//lib/codeintel/lsif/protocol/reader",

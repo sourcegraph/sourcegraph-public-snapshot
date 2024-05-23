@@ -1,6 +1,6 @@
 - steps:
     - root: foo/bar
-      image: sourcegraph/scip-go@sha256:e6ca2d4b55bd1379631d45faab169fc32dc6da2c1939ed11a700261ac4c4d26f
+      image: sourcegraph/scip-go@sha256:56414010d8917d6952c051dd5fcc0901fdf5c12031d352cc0b26778f040dddcc
       commands:
         - |
           if [ "$NETRC_DATA" ]; then
@@ -19,7 +19,7 @@
         echo "No netrc config set, continuing"
       fi
   root: foo/bar
-  indexer: sourcegraph/scip-go@sha256:e6ca2d4b55bd1379631d45faab169fc32dc6da2c1939ed11a700261ac4c4d26f
+  indexer: sourcegraph/scip-go@sha256:56414010d8917d6952c051dd5fcc0901fdf5c12031d352cc0b26778f040dddcc
   indexer_args:
     - scip-go
     - --no-animation
@@ -33,7 +33,7 @@
     - NETRC_DATA
 - steps:
     - root: foo/baz
-      image: sourcegraph/scip-go@sha256:e6ca2d4b55bd1379631d45faab169fc32dc6da2c1939ed11a700261ac4c4d26f
+      image: sourcegraph/scip-go@sha256:56414010d8917d6952c051dd5fcc0901fdf5c12031d352cc0b26778f040dddcc
       commands:
         - |
           if [ "$NETRC_DATA" ]; then
@@ -52,7 +52,7 @@
         echo "No netrc config set, continuing"
       fi
   root: foo/baz
-  indexer: sourcegraph/scip-go@sha256:e6ca2d4b55bd1379631d45faab169fc32dc6da2c1939ed11a700261ac4c4d26f
+  indexer: sourcegraph/scip-go@sha256:56414010d8917d6952c051dd5fcc0901fdf5c12031d352cc0b26778f040dddcc
   indexer_args:
     - scip-go
     - --no-animation

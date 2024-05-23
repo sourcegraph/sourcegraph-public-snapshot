@@ -4,6 +4,7 @@ go_library(
     name = "types",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/types",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = [
         "//:__subpackages__",
         "//internal/authz/github:__pkg__",

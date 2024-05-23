@@ -14,13 +14,21 @@ import (
 
 var ErrLeaseTimeNotSet error = errors.New("lease time not set")
 
-// EphemeralInstanceType is the instance type for ephemeral instances. An instance is considered ephemeral if it
-// contains "ephemeral_instance": "true" in its Instance Features
-const EphemeralInstanceType = "ephemeral"
+const (
+	// EphemeralInstanceType is the instance type for ephemeral instances. An instance is considered ephemeral if it
+	// contains "ephemeral_instance": "true" in its Instance Features
+	EphemeralInstanceType = "ephemeral"
 
-// InternalInstanceType is the instance type for internal instances. An instance is considered internal if it it is
-// in the Dev cloud environment and does not contain "ephemeral_instance": "true" in its Instance Features
-const InternalInstanceType = "internal"
+	// InternalInstanceType is the instance type for internal instances. An instance is considered internal if it it is
+	// in the Dev cloud environment and does not contain "ephemeral_instance": "true" in its Instance Features
+	InternalInstanceType = "internal"
+
+	InstanceStatusUnspecified = "unspecified"
+	InstanceStatusCompleted   = "completed"
+	InstanceStatusInProgress  = "in-progress"
+	InstanceStatusFailed      = "failed"
+	InstanceStatusUnknown     = "unknown"
+)
 
 type Instance struct {
 	ID           string `json:"id"`
@@ -43,6 +51,14 @@ type Instance struct {
 }
 
 func (i *Instance) String() string {
+	// Protobuf returns the unix zero epoch if the time is nil, so we check for that
+	// and we also check if we do have a valid time that it is not zero
+	fmtTime := func(t time.Time) string {
+		if isUnixEpochZero(t) || t.IsZero() {
+			return "n/a"
+		}
+		return i.CreatedAt.Format(time.RFC3339)
+	}
 	return fmt.Sprintf(`ID           : %s
 Name         : %s
 InstanceType : %s
@@ -59,7 +75,7 @@ Status       : %s
 ActionURL    : %s
 Error        : %s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
-		i.CreatedAt.Format(time.RFC3339), i.DeletedAt.Format(time.RFC3339), i.ExpiresAt.Format(time.RFC3339), i.Project, i.Region,
+		fmtTime(i.CreatedAt), fmtTime(i.DeletedAt), fmtTime(i.ExpiresAt), i.Project, i.Region,
 		i.Status.Status, i.Status.ActionURL, i.Status.Error)
 }
 
@@ -77,6 +93,10 @@ func (i *Instance) IsExpired() bool {
 	}
 
 	return time.Now().After(i.ExpiresAt)
+}
+
+func (i *Instance) HasStatus(status string) bool {
+	return i.Status.Status == status
 }
 
 type InstanceStatus struct {
@@ -100,16 +120,16 @@ func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
 	}
 	switch src.GetInstanceStatus() {
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
-		status.Status = "unspecified"
+		status.Status = InstanceStatusUnspecified
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK:
-		status.Status = "completed"
+		status.Status = InstanceStatusCompleted
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING:
-		status.Status = "in progress"
+		status.Status = InstanceStatusInProgress
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
-		status.Status = "failed"
+		status.Status = InstanceStatusFailed
 		status.Error = reason
 	default:
-		status.Status = "unknown"
+		status.Status = InstanceStatusUnknown
 	}
 
 	return &status, nil
@@ -148,6 +168,10 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 		Status:       *status,
 		features:     features,
 	}, nil
+}
+
+func isUnixEpochZero(t time.Time) bool {
+	return t.Unix() == 0
 }
 
 func parseStatusReason(reason string) (string, string, error) {

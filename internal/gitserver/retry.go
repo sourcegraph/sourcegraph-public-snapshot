@@ -190,4 +190,9 @@ func (r *automaticRetryClient) ReadDir(ctx context.Context, in *proto.ReadDirReq
 	return r.base.ReadDir(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) CommitLog(ctx context.Context, in *proto.CommitLogRequest, opts ...grpc.CallOption) (proto.GitserverService_CommitLogClient, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.CommitLog(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

@@ -5,6 +5,7 @@ go_library(
     name = "event",
     srcs = ["event.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/event",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -22,6 +23,7 @@ go_test(
     name = "event_test",
     srcs = ["event_test.go"],
     embed = [":event"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//internal/actor",
         "//internal/requestclient",

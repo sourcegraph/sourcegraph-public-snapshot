@@ -78,9 +78,6 @@ type MockClient struct {
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
-	// LogReverseEachFunc is an instance of a mock function object
-	// controlling the behavior of the method LogReverseEach.
-	LogReverseEachFunc *ClientLogReverseEachFunc
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *ClientMergeBaseFunc
@@ -228,11 +225,6 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
-				return
-			},
-		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (r0 api.CommitID, r1 error) {
 				return
@@ -269,7 +261,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, bool) (r0 []fs.FileInfo, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, bool) (r0 ReadDirIterator, r1 error) {
 				return
 			},
 		},
@@ -415,11 +407,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListRefs")
 			},
 		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-				panic("unexpected invocation of MockClient.LogReverseEach")
-			},
-		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockClient.MergeBase")
@@ -456,7 +443,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error) {
 				panic("unexpected invocation of MockClient.ReadDir")
 			},
 		},
@@ -565,9 +552,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
-		},
-		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: i.LogReverseEach,
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
 			defaultHook: i.MergeBase,
@@ -2590,120 +2574,6 @@ func (c ClientListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ClientLogReverseEachFunc describes the behavior when the LogReverseEach
-// method of the parent MockClient instance is invoked.
-type ClientLogReverseEachFunc struct {
-	defaultHook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	hooks       []func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	history     []ClientLogReverseEachFuncCall
-	mutex       sync.Mutex
-}
-
-// LogReverseEach delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockClient) LogReverseEach(v0 context.Context, v1 string, v2 string, v3 int, v4 func(entry gitdomain.LogEntry) error) error {
-	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.LogReverseEachFunc.appendCall(ClientLogReverseEachFuncCall{v0, v1, v2, v3, v4, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the LogReverseEach
-// method of the parent MockClient instance is invoked and the hook queue is
-// empty.
-func (f *ClientLogReverseEachFunc) SetDefaultHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LogReverseEach method of the parent MockClient instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientLogReverseEachFunc) PushHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientLogReverseEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientLogReverseEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-func (f *ClientLogReverseEachFunc) nextHook() func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientLogReverseEachFunc) appendCall(r0 ClientLogReverseEachFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientLogReverseEachFuncCall objects
-// describing the invocations of this function.
-func (f *ClientLogReverseEachFunc) History() []ClientLogReverseEachFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientLogReverseEachFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientLogReverseEachFuncCall is an object that describes an invocation of
-// method LogReverseEach on an instance of MockClient.
-type ClientLogReverseEachFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(entry gitdomain.LogEntry) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientLogReverseEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientLogReverseEachFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // ClientMergeBaseFunc describes the behavior when the MergeBase method of
 // the parent MockClient instance is invoked.
 type ClientMergeBaseFunc struct {
@@ -3489,15 +3359,15 @@ func (c ClientPerforceUsersFuncCall) Results() []interface{} {
 // ClientReadDirFunc describes the behavior when the ReadDir method of the
 // parent MockClient instance is invoked.
 type ClientReadDirFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error)
 	history     []ClientReadDirFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadDir delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) ReadDir(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string, v4 bool) ([]fs.FileInfo, error) {
+func (m *MockClient) ReadDir(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string, v4 bool) (ReadDirIterator, error) {
 	r0, r1 := m.ReadDirFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.ReadDirFunc.appendCall(ClientReadDirFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -3505,7 +3375,7 @@ func (m *MockClient) ReadDir(v0 context.Context, v1 api.RepoName, v2 api.CommitI
 
 // SetDefaultHook sets function that is called when the ReadDir method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error)) {
 	f.defaultHook = hook
 }
 
@@ -3513,7 +3383,7 @@ func (f *ClientReadDirFunc) SetDefaultHook(hook func(context.Context, api.RepoNa
 // ReadDir method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientReadDirFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error)) {
+func (f *ClientReadDirFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3521,20 +3391,20 @@ func (f *ClientReadDirFunc) PushHook(hook func(context.Context, api.RepoName, ap
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientReadDirFunc) SetDefaultReturn(r0 []fs.FileInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *ClientReadDirFunc) SetDefaultReturn(r0 ReadDirIterator, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientReadDirFunc) PushReturn(r0 []fs.FileInfo, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *ClientReadDirFunc) PushReturn(r0 ReadDirIterator, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientReadDirFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+func (f *ClientReadDirFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string, bool) (ReadDirIterator, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3584,7 +3454,7 @@ type ClientReadDirFuncCall struct {
 	Arg4 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []fs.FileInfo
+	Result0 ReadDirIterator
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

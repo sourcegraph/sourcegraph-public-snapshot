@@ -5,6 +5,7 @@ go_library(
     name = "audittest",
     srcs = ["audittest.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/audit/audittest",
+    tags = [TAG_SECURITY],
     visibility = ["//:__subpackages__"],
     deps = ["@com_github_sourcegraph_log//logtest"],
 )
@@ -13,6 +14,7 @@ go_test(
     name = "audittest_test",
     srcs = ["audittest_test.go"],
     embed = [":audittest"],
+    tags = [TAG_SECURITY],
     deps = [
         "//internal/actor",
         "//internal/audit",

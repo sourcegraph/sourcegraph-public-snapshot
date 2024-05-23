@@ -33,6 +33,8 @@ type ContainerConfig struct {
 	// https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/
 	BestEffortQOS bool                         `json:"bestEffortQOS,omitempty"`
 	Resources     *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	EnvVars map[string]string `json:"envVars,omitempty"`
 }
 
 // PodTemplateConfig is a config that applies to all Pod templates produced by a Service. If this needs

@@ -7,6 +7,7 @@ go_library(
         "gqltest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/lineargql/gqltest",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/linearhooks:__subpackages__"],
     deps = [
         "//lib/errors",

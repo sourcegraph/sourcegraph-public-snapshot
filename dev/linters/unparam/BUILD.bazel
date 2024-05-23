@@ -4,6 +4,7 @@ go_library(
     name = "unparam",
     srcs = ["unparam.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/unparam",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

@@ -13,6 +13,7 @@ go_library(
         "workspaces_execution_input.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/batches/env",
@@ -39,6 +40,7 @@ go_test(
         "published_test.go",
     ],
     embed = [":batches"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/batches/execution",
         "//lib/batches/git",

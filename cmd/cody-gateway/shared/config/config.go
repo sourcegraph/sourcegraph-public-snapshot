@@ -3,6 +3,7 @@ package config
 import (
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -207,7 +208,13 @@ func (c *Config) Load() {
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS",
-		strings.Join([]string{"gpt-4", "gpt-3.5-turbo", "gpt-4-turbo", "gpt-4-turbo-preview"}, ","),
+		strings.Join([]string{
+			"gpt-4",
+			"gpt-3.5-turbo",
+			"gpt-4o",
+			"gpt-4-turbo",
+			"gpt-4-turbo-preview",
+		}, ","),
 		"OpenAI models that can to be used."),
 	)
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {
@@ -224,7 +231,7 @@ func (c *Config) Load() {
 
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
-		strings.Join([]string{
+		strings.Join(slices.Concat([]string{
 			// Virtual model strings. Setting these will allow one or more of the specific models
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
@@ -246,9 +253,7 @@ func (c *Config) Load() {
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
-			// Finetuned models
-			fireworks.Mixtral8x7bFineTunedModel,
-		}, ","),
+		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))

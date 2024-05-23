@@ -5,6 +5,7 @@ go_library(
     name = "resolvers",
     srcs = ["context.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context/resolvers",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -14,6 +15,7 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_sourcegraph_conc//iter",
     ],
 )
@@ -23,6 +25,7 @@ go_test(
     srcs = ["context_test.go"],
     embed = [":resolvers"],
     tags = [
+        TAG_PLATFORM_SEARCH,
         # Test requires localhost database
         "requires-network",
     ],
@@ -40,9 +43,12 @@ go_test(
         "//internal/licensing",
         "//internal/observation",
         "//internal/rbac/types",
+        "//internal/search",
         "//internal/search/backend",
         "//internal/search/client",
         "//internal/search/job",
+        "//internal/search/result",
+        "//internal/search/streaming",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",
@@ -50,5 +56,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_stretchr_testify//require",
+        "@io_k8s_utils//pointer",
     ],
 )

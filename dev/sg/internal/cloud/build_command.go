@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var BuildEphemeralCommand = cli.Command{
+var buildEphemeralCommand = cli.Command{
 	Name:        "build",
-	Usage:       "trigger a cloud ephemeral build",
-	Description: "Triggers a Cloud Ephemeral build of the current branch which will push images to the cloud ephemeral registry",
+	Usage:       "Trigger a cloud ephemeral build which will push images to the cloud ephemeral registry",
+	Description: "Trigger a cloud ephemeral build which will push images to the cloud ephemeral registry",
 	Action:      buildCloudEphemeral,
 }
 

@@ -5,12 +5,14 @@
 
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
+    import Popover from '$lib/Popover.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type TreeEntry } from '$lib/repo/api/tree'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import FilePopover, { fetchPopoverData } from '$lib/repo/filePopover/FilePopover.svelte'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
-    import { createForwardStore } from '$lib/utils'
+    import { createForwardStore, delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
 
     export let repoName: string
@@ -52,6 +54,19 @@
         }
     }
 
+    function handleScopeChange(scopedTreeProvider: FileTreeProvider): void {
+        treeProvider = scopedTreeProvider.copy({ parent: undefined })
+        const root = treeProvider.getRoot()
+
+        if (root === NODE_LIMIT) {
+            return
+        }
+
+        if (!selectedPath.startsWith(root.path)) {
+            goto(replaceRevisionInURL(root.canonicalURL, revision), { keepFocus: true })
+        }
+    }
+
     /**
      * For a given path (e.g. foo/bar/baz) returns a list of ancestor paths (e.g.
      * [foo, foo/bar]
@@ -81,18 +96,24 @@
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
     const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
     $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
+
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 </script>
 
 <div tabindex="-1">
-    <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView
+        {treeProvider}
+        on:select={event => handleSelect(event.detail)}
+        on:scope-change={event => handleScopeChange(event.detail.provider)}
+    >
         <svelte:fragment let:entry let:expanded>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
@@ -103,19 +124,27 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <a
-                    href={replaceRevisionInURL(entry.canonicalURL, revision)}
-                    on:click|preventDefault={() => {}}
-                    tabindex={-1}
-                    data-go-up={isRoot ? true : undefined}
-                >
-                    {#if entry.isDirectory}
-                        <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
-                    {:else}
-                        <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
-                    {/if}
-                    {isRoot ? '..' : entry.name}
-                </a>
+                <Popover let:registerTrigger placement="right-end" showOnHover>
+                    <a
+                        href={replaceRevisionInURL(entry.canonicalURL, revision)}
+                        on:click|preventDefault={() => {}}
+                        tabindex={-1}
+                        data-go-up={isRoot ? true : undefined}
+                        use:registerTrigger
+                    >
+                        {#if entry.isDirectory}
+                            <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
+                        {:else}
+                            <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
+                        {/if}
+                        {isRoot ? '..' : entry.name}
+                    </a>
+                    <svelte:fragment slot="content">
+                        {#await delay(fetchPopoverData({ repoName, revision, filePath: entry.path }), 300) then entry}
+                            <FilePopover {repoName} {revision} {entry} />
+                        {/await}
+                    </svelte:fragment>
+                </Popover>
             {/if}
         </svelte:fragment>
         <Alert slot="error" let:error variant="danger">
@@ -130,7 +159,6 @@
 
         :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
             cursor: pointer;
-            border-radius: var(--border-radius);
 
             &:hover {
                 background-color: var(--color-bg-3);
@@ -138,25 +166,27 @@
         }
 
         :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
-            background-color: var(--color-bg-3);
+            --tree-node-expand-icon-color: var(--body-bg);
+            background-color: var(--primary);
+
+            &:hover {
+                background-color: var(--primary);
+            }
         }
     }
 
     a {
-        color: var(--text-body);
         flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+        padding: 0.2rem 0.25rem 0.2rem 0;
+        color: inherit;
         text-decoration: none;
-        padding: 0.1rem 0;
-
-        :global([data-treeitem][aria-selected='true']) & {
-            color: var(--text-title);
-        }
 
         &:hover {
-            color: var(--text-title);
+            color: inherit;
+            text-decoration: none;
         }
     }
 

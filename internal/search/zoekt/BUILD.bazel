@@ -12,6 +12,7 @@ go_library(
         "zoekt_global.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/zoekt",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -50,6 +51,7 @@ go_test(
         "query_test.go",
     ],
     embed = [":zoekt"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/search",

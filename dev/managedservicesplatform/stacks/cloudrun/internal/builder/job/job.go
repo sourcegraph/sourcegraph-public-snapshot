@@ -81,11 +81,9 @@ func (b *jobBuilder) AddDependency(dep cdktf.ITerraformDependable) {
 
 func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccess
-	var launchStage *string
 	if vars.PrivateNetwork != nil {
 		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service#example-usage---cloudrunv2-service-directvpc
 		// https://cloud.google.com/run/docs/configuring/vpc-direct-vpc
-		launchStage = pointers.Ptr("BETA") // Direct VPC is still in beta.
 		vpcAccess = &cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccess{
 			NetworkInterfaces: &[]*cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccessNetworkInterfaces{{
 				Network:    vars.PrivateNetwork.Network.Id(),
@@ -107,8 +105,6 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 		Name:      pointers.Ptr(name),
 		Location:  pointers.Ptr(vars.GCPRegion),
 		DependsOn: &b.dependencies,
-
-		LaunchStage: launchStage,
 
 		Template: &cloudrunv2job.CloudRunV2JobTemplate{
 			TaskCount: pointers.Ptr(float64(1)),
@@ -142,7 +138,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 				// Configuration for the single service container.
 				Containers: []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainers{{
 					Name:  pointers.Ptr(vars.Service.ID),
-					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ResolvedImageTag)),
+					Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, vars.ImageTag)),
 
 					Resources: &cloudrunv2job.CloudRunV2JobTemplateTemplateContainersResources{
 						Limits: &vars.ResourceLimits,

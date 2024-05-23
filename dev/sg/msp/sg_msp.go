@@ -293,7 +293,7 @@ sg msp generate -all -category=test
 				},
 				&cli.StringFlag{
 					Name:  "category",
-					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - must be used with '-all'",
+					Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - can only be used with '-all'",
 				},
 				&cli.BoolFlag{
 					Name:  "stable",
@@ -315,7 +315,7 @@ sg msp generate -all -category=test
 
 				if generateCategory != "" {
 					if !generateAll {
-						return errors.New("'-category' must be used with '-all'")
+						return errors.New("'-category' can only be used with '-all'")
 					}
 					if err := generateCategory.Validate(); err != nil {
 						return errors.Wrap(err, "invalid value for '-category'")
@@ -847,6 +847,10 @@ This command supports completions on services and environments.
 							Value: false,
 						},
 						&cli.StringFlag{
+							Name:  "category",
+							Usage: "Filter generated environments by category (one of 'test', 'internal', 'external') - can only be used with '-all'",
+						},
+						&cli.StringFlag{
 							Name:  "workspace-run-mode",
 							Usage: "One of 'vcs', 'cli', or 'ignore' (to respect existing configuration)",
 							Value: "vcs",
@@ -859,6 +863,20 @@ This command supports completions on services and environments.
 					},
 					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
+						var (
+							generateCategory = spec.EnvironmentCategory(c.String("category"))
+							generateAll      = c.Bool("all")
+						)
+
+						if generateCategory != "" {
+							if !generateAll {
+								return errors.New("'-category' can only be used with '-all'")
+							}
+							if err := generateCategory.Validate(); err != nil {
+								return errors.Wrap(err, "invalid value for '-category'")
+							}
+						}
+
 						secretStore, err := secrets.FromContext(c.Context)
 						if err != nil {
 							return err
@@ -889,7 +907,7 @@ This command supports completions on services and environments.
 
 						// If we are not syncing all environments for a service,
 						// then we are syncing a specific service environment.
-						if !c.Bool("all") {
+						if !generateAll {
 							std.Out.WriteNoticef("Syncing a specific service environment...")
 							svc, env, err := useServiceAndEnvironmentArguments(c, true)
 							if err != nil {
@@ -908,6 +926,10 @@ This command supports completions on services and environments.
 							}
 
 							confirmAction := "Syncing all environments for all services"
+							if generateCategory != "" {
+								confirmAction = fmt.Sprintf("%s, including only environments with category %q",
+									confirmAction, generateCategory)
+							}
 							if runMode != terraformcloud.WorkspaceRunModeIgnore {
 								// This action may override custom run mode
 								// configurations, which may unexpectedly deploy
@@ -936,6 +958,11 @@ This command supports completions on services and environments.
 									return errors.Wrap(err, serviceID)
 								}
 								for _, env := range svc.Environments {
+									if generateCategory != "" && generateCategory != env.Category {
+										std.Out.WriteSkippedf("[%s] Skipping env %s (not in category %q)",
+											serviceID, env.ID, generateCategory)
+										continue
+									}
 									if err := syncEnvironmentWorkspaces(c, tfcClient, svc.Service, env); err != nil {
 										return errors.Wrapf(err, "%s: sync env %q", serviceID, env.ID)
 									}
@@ -1026,33 +1053,70 @@ This command supports completions on services and environments.
 					return err
 				}
 
-				var environmentCount int
-				categories := make(map[spec.EnvironmentCategory]int)
-				teams := make(map[string]int)
+				var (
+					environmentCount int
+					envCategories    = make(map[spec.EnvironmentCategory]int)
+					envDeployTypes   = make(map[spec.EnvironmentDeployType]int)
+					envResources     = make(map[string]int)
+
+					serviceKinds     = make(map[spec.ServiceKind]int)
+					serviceTeams     = make(map[string]int)
+					rolloutPipelines int
+				)
 				for _, s := range services {
 					svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 					if err != nil {
 						return err
 					}
+					serviceKinds[svc.Service.GetKind()] += 1
 					for _, t := range svc.Service.Owners {
-						teams[t] += 1
+						serviceTeams[t] += 1
+					}
+					if svc.Rollout != nil {
+						rolloutPipelines += 1
 					}
 					for _, e := range svc.Environments {
 						environmentCount += 1
-						categories[e.Category] += 1
+						envCategories[e.Category] += 1
+						envDeployTypes[e.Deploy.Type] += 1
+						for _, r := range e.Resources.List() {
+							envResources[r] += 1
+						}
 					}
 				}
 
-				teamNames := maps.Keys(teams)
+				teamNames := maps.Keys(serviceTeams)
 				sort.Strings(teamNames)
 				summary := fmt.Sprintf(`Managed Services Platform fleet summary:
 
-- %d services
-- %d teams (%s)
-- %d environments
-`, len(services), len(teams), strings.Join(teamNames, ", "), environmentCount)
-				for category, count := range categories {
-					summary += fmt.Sprintf("\t- %s environments: %d\n", category, count)
+- **%d services** (%d services, %d jobs)
+- **%d teams** (%s)
+- **%d rollout pipelines**
+- **%d environments**
+`,
+					len(services),
+					serviceKinds[spec.ServiceKindService],
+					serviceKinds[spec.ServiceKindJob],
+					len(serviceTeams),
+					strings.Join(teamNames, ", "),
+					rolloutPipelines,
+					environmentCount)
+				// List categories by explicit order
+				for _, category := range []spec.EnvironmentCategory{
+					spec.EnvironmentCategoryTest,
+					spec.EnvironmentCategoryInternal,
+					spec.EnvironmentCategoryExternal,
+				} {
+					summary += fmt.Sprintf("\t- `%s` environments: %d\n",
+						category, envCategories[category])
+				}
+				// Sort keys for determinstic output
+				for _, deployType := range sortSlice(maps.Keys(envDeployTypes)) {
+					summary += fmt.Sprintf("\t- Using deploy type `%s`: %d\n",
+						deployType, envDeployTypes[deployType])
+				}
+				for _, resource := range sortSlice(maps.Keys(envResources)) {
+					summary += fmt.Sprintf("\t- Using resource `%s`: %d\n", resource, envResources[resource])
 				}
 				return std.Out.WriteMarkdown(summary)
 			},

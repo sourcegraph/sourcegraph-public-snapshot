@@ -5,7 +5,7 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { useEmbeddedCodyProUi } from './cody/util'
+import { isEmbeddedCodyProUIEnabled } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
@@ -66,6 +66,7 @@ const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
+const CodyManageTeamPage = lazyComponent(() => import('./cody/team/CodyManageTeamPage'), 'CodyManageTeamPage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
@@ -429,6 +430,19 @@ export const routes: RouteObject[] = [
         ),
     },
     {
+        path: PageRoutes.CodyManageTeam,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodyManageTeamPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
+            />
+        ),
+    },
+    {
         path: PageRoutes.CodyNewProSubscription,
         element: (
             <LegacyRoute
@@ -438,7 +452,9 @@ export const routes: RouteObject[] = [
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
-                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom && useEmbeddedCodyProUi()}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
             />
         ),
     },

@@ -17,10 +17,11 @@
     import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
+    import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
-    import { settings } from '$lib/stores'
+    import { isLightTheme, settings } from '$lib/stores'
     import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -139,7 +140,7 @@
 </script>
 
 {#if embedded}
-    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision} hideSidebarToggle>
+    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
             <slot name="actions" />
@@ -233,10 +234,16 @@
             <a href="{repoURL}/-/raw/{filePath}" target="_blank" download>Download file</a>
         </Alert>
     {:else if blob && showFormattedView}
-        <!-- jupyter is a global style -->
-        <div class={`rich jupyter ${markdownStyles.markdown}`}>
-            {@html blob.richHTML}
-        </div>
+        <!-- key on the HTML content so renderMermaid gets re-run -->
+        {#key blob.richHTML}
+            <!-- jupyter is a global style -->
+            <div
+                use:renderMermaid={{ selector: 'pre:has(code.language-mermaid)', isLightTheme: $isLightTheme }}
+                class={`rich jupyter ${markdownStyles.markdown}`}
+            >
+                {@html blob.richHTML}
+            </div>
+        {/key}
     {:else if blob}
         <!--
             This ensures that a new CodeMirror instance is created when the file changes.

@@ -4,5 +4,6 @@ go_library(
     name = "stacks",
     srcs = ["stacks.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )

@@ -9,6 +9,7 @@ go_library(
         "smart_search_job.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/smartsearch",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search",
@@ -36,6 +37,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":smartsearch"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/search",
         "//internal/search/alert",

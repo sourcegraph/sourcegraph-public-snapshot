@@ -5,6 +5,7 @@ go_library(
     name = "iam",
     srcs = ["iam.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/stacks/iam",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//dev/managedservicesplatform:__subpackages__",
         "//dev/sg/msp:__pkg__",
@@ -34,6 +35,7 @@ go_test(
     name = "iam_test",
     srcs = ["iam_test.go"],
     embed = [":iam"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//dev/managedservicesplatform/spec",
         "//lib/pointers",

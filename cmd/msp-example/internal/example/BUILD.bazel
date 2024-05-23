@@ -11,6 +11,7 @@ go_library(
         "redis.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/example",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = [
         "//cmd/msp-example:__pkg__",
         "//lib/managedservicesplatform/example:__subpackages__",

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type FunctionComponent } from 'react'
 
 import { Elements } from '@stripe/react-stripe-js'
 // NOTE: A side effect of loading this library will update the DOM and
@@ -17,9 +17,14 @@ import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
-import { type UserCodyPlanResult, type UserCodyPlanVariables } from '../../../../graphql-operations'
+import {
+    type UserCodyPlanResult,
+    type UserCodyPlanVariables,
+    CodySubscriptionPlan,
+} from '../../../../graphql-operations'
 import { CodyProIcon } from '../../../components/CodyIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
+import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
@@ -33,7 +38,7 @@ interface NewCodyProSubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
 }
 
-const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyProSubscriptionPageProps> = ({
+const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubscriptionPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -46,7 +51,7 @@ const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyPr
     if (dataLoadError) {
         throw dataLoadError
     }
-    if (data?.currentUser?.codySubscription?.plan === 'PRO') {
+    if (data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
         return <Navigate to="/cody/manage" replace={true} />
     }
 
@@ -68,12 +73,14 @@ const AuthenticatedNewCodyProSubscriptionPage: React.FunctionComponent<NewCodyPr
             </PageHeader>
 
             <Container>
-                <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
-                    <CodyProCheckoutForm
-                        stripeHandle={stripePromise}
-                        customerEmail={authenticatedUser?.emails[0].email || ''}
-                    />
-                </Elements>
+                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext()}>
+                    <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
+                        <CodyProCheckoutForm
+                            stripePromise={stripePromise}
+                            customerEmail={authenticatedUser?.emails[0].email || ''}
+                        />
+                    </Elements>
+                </CodyProApiClientContext.Provider>
             </Container>
         </Page>
     )

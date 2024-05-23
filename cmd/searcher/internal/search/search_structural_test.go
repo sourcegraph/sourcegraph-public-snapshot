@@ -17,8 +17,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 func TestMatcherLookupByLanguage(t *testing.T) {

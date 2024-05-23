@@ -14,6 +14,7 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
         normal = True,
@@ -37,6 +38,7 @@ rust_library(
     aliases = aliases(),
     crate_name = "syntect_server",
     proc_macro_deps = all_crate_deps(proc_macro = True),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(normal = True) + [
         "//docker-images/syntax-highlighter/crates/syntax-analysis",
@@ -55,6 +57,7 @@ rust_test(
     proc_macro_deps = all_crate_deps(
         proc_macro_dev = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     deps = all_crate_deps(
         normal_dev = True,
     ),
@@ -67,6 +70,7 @@ rust_binary(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
     deps = all_crate_deps(
         normal = True,
@@ -156,6 +160,7 @@ container_structure_test(
     tags = [
         "exclusive",
         "requires-network",
+        TAG_PLATFORM_GRAPH,
     ],
 )
 

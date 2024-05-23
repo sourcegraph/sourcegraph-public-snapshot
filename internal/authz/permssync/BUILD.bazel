@@ -5,6 +5,7 @@ go_library(
     name = "permssync",
     srcs = ["permssync.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/permssync",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -19,6 +20,7 @@ go_test(
     timeout = "short",
     srcs = ["permssync_test.go"],
     embed = [":permssync"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//internal/database",

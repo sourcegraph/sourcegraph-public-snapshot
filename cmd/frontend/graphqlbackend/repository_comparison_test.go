@@ -169,11 +169,9 @@ func TestRepositoryComparison(t *testing.T) {
 
 		mockGSClient := gitserver.NewMockClient()
 		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
+			wantRanges := []string{fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)}
 
-			if have, want := opts.Range, wantRange; have != want {
-				t.Fatalf("git.Commits received wrong range. want=%s, have=%s", want, have)
-			}
+			require.Equal(t, wantRanges, opts.Ranges)
 
 			return commits, nil
 		})

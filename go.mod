@@ -8,7 +8,7 @@ go 1.22.1
 // or intentional forks.
 replace (
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
-	// See https://sourcegraph.com/docs/dev/background-information/observability/prometheus
+	// See https://docs-legacy.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
 	// We publish 'dev/ci/images' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
@@ -221,12 +221,12 @@ require (
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.22.0
-	golang.org/x/net v0.23.0
+	golang.org/x/net v0.24.0
 	golang.org/x/oauth2 v0.19.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.19.0
 	golang.org/x/time v0.5.0
-	golang.org/x/tools v0.18.0
+	golang.org/x/tools v0.20.0
 	gonum.org/v1/gonum v0.14.0
 	google.golang.org/api v0.169.0
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
@@ -251,8 +251,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
-	github.com/aws/constructs-go/constructs/v10 v10.2.69
-	github.com/aws/jsii-runtime-go v1.84.0
+	github.com/aws/constructs-go/constructs/v10 v10.3.0
+	github.com/aws/jsii-runtime-go v1.98.0
 	github.com/bazelbuild/bazel-gazelle v0.35.0
 	github.com/bazelbuild/rules_go v0.47.0
 	github.com/bevzzz/nb v0.3.0
@@ -271,7 +271,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/hashicorp/go-tfe v1.32.1
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.20.7
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.5.4
@@ -287,16 +287,16 @@ require (
 	github.com/robert-nix/ansihtml v1.0.1
 	github.com/sourcegraph/cloud-api v0.0.0-20240501113836-ecd1d4cba9dd
 	github.com/sourcegraph/log/logr v0.0.0-20240425170707-431bcb6c8668
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240424172240-25e368a6e822
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240424172240-25e368a6e822
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240131130226-cb88836e6df8
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20231230001101-a13188f9c749
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231220215815-b87ebb3e8c47
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240109225336-01188650a68d
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240103014439-025608ddf849
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20231218231056-4749baca142f
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/notionreposync v0.0.0-20240510213306-87052870048d
 	github.com/sourcegraph/scip v0.3.3
 	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240426173441-db5b0a145ceb
@@ -606,7 +606,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240507175742-4e674a49795c
+	github.com/sourcegraph/zoekt v0.0.0-20240514170004-fe8f2a3d9cab
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -630,7 +630,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.0.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
-	golang.org/x/mod v0.15.0
+	golang.org/x/mod v0.17.0
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect

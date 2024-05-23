@@ -12,6 +12,7 @@ go_library(
         "shell.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/util",
@@ -40,6 +41,7 @@ go_test(
         "shell_test.go",
     ],
     embed = [":runtime"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/util",
         "//cmd/executor/internal/worker/cmdlogger",

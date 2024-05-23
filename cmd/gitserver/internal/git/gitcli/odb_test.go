@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -197,8 +198,49 @@ func TestGitCLIBackend_GetCommit(t *testing.T) {
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 
+	// This test only exists because we sometimes pass non-commit ID strings to the
+	// api.CommitID input of GetCommit. Once we get to clean that up, we can remove
+	// this test here.
+	t.Run("bad revision", func(t *testing.T) {
+		_, err := backend.GetCommit(ctx, "nonexisting", false)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
+	// This test only exists because we sometimes pass non-commit ID strings to the
+	// api.CommitID input of GetCommit. Once we get to clean that up, we can remove
+	// this test here.
+	t.Run("empty repo", func(t *testing.T) {
+		backend := BackendWithRepoCommands(t)
+		_, err := backend.GetCommit(ctx, "HEAD", false)
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+	})
+
 	t.Run("read commit", func(t *testing.T) {
 		c, err := backend.GetCommit(ctx, commitID, false)
+		require.NoError(t, err)
+		require.Equal(t, &git.GitCommitWithFiles{
+			Commit: &gitdomain.Commit{
+				ID:      commitID,
+				Message: "commit2",
+				Author: gitdomain.Signature{
+					Name:  "Foo Author",
+					Email: "foo@sourcegraph.com",
+					Date:  c.Author.Date, // Hard to test
+				},
+				Committer: &gitdomain.Signature{
+					Name:  "a",
+					Email: "a@a.com",
+					Date:  c.Committer.Date, // Hard to test
+				},
+				Parents: []api.CommitID{"405b565ed446e271bc1998a91dbf4fb50dbfabfe"},
+			},
+		}, c)
+		// This should not exist but callers currently pass HEAD as a commitID
+		// to gitserver. Until we get a handle on this, we want to verify that
+		// this works properly.
+		c, err = backend.GetCommit(ctx, "HEAD", false)
 		require.NoError(t, err)
 		require.Equal(t, &git.GitCommitWithFiles{
 			Commit: &gitdomain.Commit{
@@ -703,8 +745,12 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		t.Cleanup(func() { it.Close() })
 		_, err = it.Next()
 		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 
-		t.Log(err)
+		// Read no entries:
+		it, err = backend.ReadDir(ctx, "notfound", "nested", false)
+		require.NoError(t, err)
+		err = it.Close()
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 
@@ -818,4 +864,8 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		}, fis, cmpopts.IgnoreFields(fileutil.FileInfo{}, "Mode_")))
 		require.True(t, fis[3].IsDir())
 	})
+}
+
+func TestLogPartsPerCommitInSync(t *testing.T) {
+	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
 }

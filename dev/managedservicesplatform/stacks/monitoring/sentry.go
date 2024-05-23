@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/sentryalert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -22,15 +23,9 @@ func createSentryAlerts(
 			ID:            "all-issues",
 			SentryProject: vars.SentryProject,
 			AlertConfig: sentryalert.AlertConfig{
-				Name:      "Notify in Slack",
-				Frequency: 15, // Notify for an issue at most once every 15 minutes
-				Conditions: []sentryalert.Condition{
-					{
-						ID:       sentryalert.EventFrequencyCondition,
-						Value:    pointers.Ptr(0), // Always (seen more than 0 times) during interval
-						Interval: pointers.Ptr("15m"),
-					},
-				},
+				Name:        "Notify in Slack",
+				Frequency:   60,                        // Notify for an issue at most once every hour,
+				Conditions:  []sentryalert.Condition{}, // Empty conditions, always alert
 				ActionMatch: sentryalert.ActionMatchAny,
 				Actions: []sentryalert.Action{
 					{
@@ -48,7 +43,7 @@ func createSentryAlerts(
 		},
 	} {
 		if _, err := sentryalert.New(stack, id.Group(config.ID), config); err != nil {
-			return err
+			return errors.Wrapf(err, "creating sentry alert `%s`", config.ID)
 		}
 	}
 	return nil

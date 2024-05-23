@@ -272,8 +272,8 @@ func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx cont
 	if err != nil {
 		return nil, err
 	}
-	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
-		codyGatewayAccess: args.Update.CodyGatewayAccess,
+	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, DBSubscriptionUpdate{
+		CodyGatewayAccess: args.Update.CodyGatewayAccess,
 	}); err != nil {
 		return nil, err
 	}

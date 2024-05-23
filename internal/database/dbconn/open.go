@@ -199,23 +199,30 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	}, nil
 }
 
+// UnwrappableConn is a wrapped conn can surface the underlying connection. It
+// is also implemented by the otelsql driver.
+// See https://sourcegraph.com/github.com/XSAM/otelsql@0256631c154becc112155e330591de4e2802af5e/-/blob/conn.go?L279
+type UnwrappableConn interface{ Raw() driver.Conn }
+
+var _ UnwrappableConn = (*extendedConn)(nil)
+
 // Access the underlying connection, so we can forward the methods that
 // sqlhooks does not implement on its own.
-func (n *extendedConn) rawConn() driver.Conn {
+func (n *extendedConn) Raw() driver.Conn {
 	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
 	return c.Conn.Conn
 }
 
 func (n *extendedConn) Ping(ctx context.Context) error {
-	return n.rawConn().(driver.Pinger).Ping(ctx)
+	return n.Raw().(driver.Pinger).Ping(ctx)
 }
 
 func (n *extendedConn) ResetSession(ctx context.Context) error {
-	return n.rawConn().(driver.SessionResetter).ResetSession(ctx)
+	return n.Raw().(driver.SessionResetter).ResetSession(ctx)
 }
 
 func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
-	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+	return n.Raw().(driver.NamedValueChecker).CheckNamedValue(namedValue)
 }
 
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {

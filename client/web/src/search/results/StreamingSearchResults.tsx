@@ -10,7 +10,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, type StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -56,6 +56,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         platformContext,
     } = props
 
+    const settings = useSettings()
     const location = useLocation()
     const navigate = useNavigate()
     const { addRecentSearch } = useRecentSearches()
@@ -94,8 +95,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             // to a user. In practice we can likely go much lower.
             maxLineLen: 5 * 1024,
             zoektSearchOptions: searchOptions,
+            displayLimit: settings?.['search.displayLimit'],
         }),
-        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions]
+        [patternType, caseSensitive, trace, featureOverrides, searchMode, searchOptions, settings]
     )
     const results = useCachedSearchResults({
         query: submittedURLQuery,

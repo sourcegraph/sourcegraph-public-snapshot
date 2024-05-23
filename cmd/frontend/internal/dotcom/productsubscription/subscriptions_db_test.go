@@ -123,8 +123,8 @@ func TestProductSubscriptions_Update(t *testing.T) {
 
 	t.Run("billingSubscriptionID", func(t *testing.T) {
 		t.Run("set non-null value", func(t *testing.T) {
-			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				billingSubscriptionID: &sql.NullString{
+			err := subscriptions.Update(ctx, sub0, DBSubscriptionUpdate{
+				BillingSubscriptionID: &sql.NullString{
 					String: "x",
 					Valid:  true,
 				},
@@ -136,7 +136,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 
 		t.Run("update no fields", func(t *testing.T) {
-			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{})
+			err := subscriptions.Update(ctx, sub0, DBSubscriptionUpdate{})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
@@ -145,8 +145,8 @@ func TestProductSubscriptions_Update(t *testing.T) {
 
 		// Set null value.
 		t.Run("set null value", func(t *testing.T) {
-			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				billingSubscriptionID: &sql.NullString{Valid: false},
+			err := subscriptions.Update(ctx, sub0, DBSubscriptionUpdate{
+				BillingSubscriptionID: &sql.NullString{Valid: false},
 			})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
@@ -157,8 +157,8 @@ func TestProductSubscriptions_Update(t *testing.T) {
 
 	t.Run("codyGatewayAccess", func(t *testing.T) {
 		t.Run("set non-null values", func(t *testing.T) {
-			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+			err := subscriptions.Update(ctx, sub0, DBSubscriptionUpdate{
+				CodyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
 					Enabled:                                 pointify(true),
 					ChatCompletionsRateLimit:                pointify(graphqlbackend.BigInt(12)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
@@ -195,8 +195,8 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 
 		t.Run("set to zero/null values", func(t *testing.T) {
-			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+			err := subscriptions.Update(ctx, sub0, DBSubscriptionUpdate{
+				CodyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
 					Enabled:                                 pointify(false),
 					ChatCompletionsRateLimit:                pointify(graphqlbackend.BigInt(0)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(0)),

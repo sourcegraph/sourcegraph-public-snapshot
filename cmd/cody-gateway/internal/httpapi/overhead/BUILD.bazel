@@ -4,6 +4,7 @@ go_library(
     name = "overhead",
     srcs = ["overhead.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//internal/codygateway",

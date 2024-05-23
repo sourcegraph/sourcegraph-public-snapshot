@@ -32,19 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const git = "git"
-
-var ClientMocks, emptyClientMocks struct {
-	LocalGitserver          bool
-	LocalGitCommandReposDir string
-}
-
-// ResetClientMocks clears the mock functions set on Mocks (so that subsequent
-// tests don't inadvertently use them).
-func ResetClientMocks() {
-	ClientMocks = emptyClientMocks
-}
-
 var _ Client = &clientImplementor{}
 
 // ClientSource is a source of gitserver.Client instances.
@@ -411,7 +398,7 @@ type Client interface {
 	Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error)
 
 	// ReadDir reads the contents of the named directory at commit.
-	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+	ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) (ReadDirIterator, error)
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use.
@@ -457,9 +444,6 @@ type Client interface {
 
 	// ContributorCount returns the number of commits grouped by contributor
 	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
-
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
 
 	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
 	SystemsInfo(ctx context.Context) ([]protocol.SystemInfo, error)
@@ -578,66 +562,6 @@ func clientForConn(conn *grpc.ClientConn) proto.GitserverServiceClient {
 	}
 }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{c.scope},
-		Attrs: []attribute.KeyValue{
-			c.repo.Attr(),
-			attribute.StringSlice("args", c.args[1:]),
-		},
-	})
-	done := func() {
-		cancel()
-		endObservation(1, observation.Args{})
-	}
-	defer func() {
-		if err != nil {
-			done()
-		}
-	}()
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	client, err := c.execer.ClientForRepo(ctx, c.repo)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &proto.ExecRequest{
-		Repo:      string(c.repo),
-		Args:      stringsToByteSlices(c.args[1:]),
-		NoTimeout: c.noTimeout,
-	}
-
-	stream, err := client.Exec(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	r := streamio.NewReader(func() ([]byte, error) {
-		msg, err := stream.Recv()
-		if err != nil {
-			return nil, err
-		}
-		return msg.GetData(), nil
-	})
-
-	return &readCloseWrapper{Reader: r, closeFn: done}, nil
-}
-
-type readCloseWrapper struct {
-	io.Reader
-	closeFn func()
-}
-
-func (r *readCloseWrapper) Close() error {
-	r.closeFn()
-	return nil
-}
-
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
@@ -678,23 +602,6 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		default:
 			return false, errors.Newf("unknown message type %T", m)
 		}
-	}
-}
-
-func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
-	if ClientMocks.LocalGitserver {
-		cmd := NewLocalGitCommand(repo, arg...)
-		if ClientMocks.LocalGitCommandReposDir != "" {
-			cmd.ReposDir = ClientMocks.LocalGitCommandReposDir
-		}
-		return cmd
-	}
-	return &RemoteGitCommand{
-		repo:   repo,
-		execer: c.clientSource,
-		args:   append([]string{git}, arg...),
-		execOp: c.operations.exec,
-		scope:  c.scope,
 	}
 }
 
@@ -1164,6 +1071,25 @@ func (c *clientImplementor) ListGitoliteRepos(ctx context.Context, gitoliteHost 
 	return list, nil
 }
 
+// ReadDirIterator is an iterator for retrieving the file descriptors of files/dirs
+// in a Git repository.
+//
+// The caller must ensure that they call Close() when the iterator is no longer
+// needed to release any associated resources.
+type ReadDirIterator interface {
+	// Next returns the next file descriptor.
+	//
+	// If there are no more files, Next returns an io.EOF error.
+	// If an error occurs during iteration, Next returns the error that occurred.
+	Next() (fs.FileInfo, error)
+
+	// Close closes the iterator and releases any associated resources.
+	//
+	// It is important to call Close when the iterator is no longer needed to avoid resource leaks.
+	// After calling Close, any subsequent calls to Next will return an io.EOF error.
+	Close()
+}
+
 // ChangedFilesIterator is an iterator for retrieving the status of changed files in a Git repository.
 // It allows iterating over the changed files and retrieving their paths and statuses.
 //
@@ -1220,3 +1146,42 @@ func (c *changedFilesSliceIterator) Close() {
 }
 
 var _ ChangedFilesIterator = &changedFilesSliceIterator{}
+
+// NewReadDirIteratorFromSlice returns a new ReadDirIterator that iterates over
+// the given slice which is useful for testing.
+func NewReadDirIteratorFromSlice(fds []fs.FileInfo) ReadDirIterator {
+	return &readDirSliceIterator{fds: fds}
+}
+
+type readDirSliceIterator struct {
+	mu     sync.Mutex
+	fds    []fs.FileInfo
+	closed bool
+}
+
+func (c *readDirSliceIterator) Next() (fs.FileInfo, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.closed {
+		return nil, io.EOF
+	}
+
+	if len(c.fds) == 0 {
+		return nil, io.EOF
+	}
+
+	fd := c.fds[0]
+	c.fds = c.fds[1:]
+
+	return fd, nil
+}
+
+func (c *readDirSliceIterator) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.closed = true
+}
+
+var _ ReadDirIterator = &readDirSliceIterator{}

@@ -34,6 +34,7 @@ go_library(
         "sg_rfc.go",
         "sg_run.go",
         "sg_secret.go",
+        "sg_security.go",
         "sg_setup.go",
         "sg_src.go",
         "sg_start.go",
