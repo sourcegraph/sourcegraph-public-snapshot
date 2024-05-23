@@ -69,7 +69,7 @@ func (s *MonitoringAlertsSpec) Validate() []error {
 
 	customAlertIDs := make(map[string]struct{})
 	for _, c := range s.CustomAlerts {
-		// custom alert ids are generated from the name during unmarshaling
+		// Custom alert IDs are generated from the name during unmarshaling.
 		if _, ok := customAlertIDs[c.ID]; ok {
 			errs = append(errs, errors.Newf("custom alert names must be unique, found duplicate Name: `%s`", c.Name))
 		}
