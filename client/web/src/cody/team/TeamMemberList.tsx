@@ -1,6 +1,7 @@
 import { type FunctionComponent, useMemo, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
@@ -32,6 +33,18 @@ export interface TeamInvite {
     error: string | null
     sentAt: string | null
     acceptedAt: string | null
+}
+
+// This tiny function is extracted to make it testable. Same for the "now" parameter.
+export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
+    try {
+        if (sentAt) {
+            return intlFormatDistance(sentAt, now ?? new Date())
+        }
+        return ''
+    } catch {
+        return ''
+    }
 }
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
@@ -266,7 +279,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     )}
                                 </div>
                                 <div className="align-content-center">
-                                    <em>Invite sent {invite.sentAt /* TODO format this */}</em>
+                                    <em>Invite sent {formatInviteDate(invite.sentAt)}</em>
                                 </div>
                                 {isAdmin && (
                                     <>

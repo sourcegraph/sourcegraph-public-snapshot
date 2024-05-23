@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 
 // URL the user needs to navigate to in order to modify their Cody Pro subscription.
 export const manageSubscriptionRedirectURL = `${
-    window.context.frontendCodyProConfig?.sscBaseUrl || 'https://accounts.sourcegraph.com/cody'
+    window.context?.frontendCodyProConfig?.sscBaseUrl || 'https://accounts.sourcegraph.com/cody'
 }/subscription`
 
 /**
@@ -14,7 +14,7 @@ export const manageSubscriptionRedirectURL = `${
  * for managing their Cody Pro subscription information.
  */
 export function isEmbeddedCodyProUIEnabled(): boolean {
-    return !!(window.context.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
+    return !!(window.context?.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
         ?.stripePublishableKey
 }
 
