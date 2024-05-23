@@ -35,9 +35,20 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			name = name[:37] + "..."
 		}
 
+		status := "n/a"
+		if inst.Status.Status != "" {
+			status = inst.Status.Status
+			if inst.Status.Reason.Step != "" && inst.Status.Reason.Phase != "" {
+				status += " (" + inst.Status.Reason.Step + " " + inst.Status.Reason.Phase + ")"
+			}
+		}
+
 		actionURL := "n/a"
-		if inst.Status.ActionURL != "" {
-			actionURL = inst.Status.ActionURL
+		if inst.Status.Reason.JobURL != "" {
+			actionURL = inst.Status.Reason.JobURL
+			if inst.Status.Reason.JobState != "" {
+				actionURL = " (" + inst.Status.Reason.JobState + ")"
+			}
 		}
 		expiresAt := "n/a"
 		if !inst.ExpiresAt.IsZero() {
@@ -45,11 +56,11 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		}
 
 		return []any{
-			name, expiresAt, actionURL,
+			name, expiresAt, status, actionURL,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %s", "Name", "Expires At", "ActionURL")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-20s %s", "Name", "Expires At", "Status", "ActionURL")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -70,7 +81,7 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 	std.Out.WriteLine(output.Line("", output.StyleBold, heading))
 	for _, inst := range items {
 		values := p.valueFunc(inst)
-		line := fmt.Sprintf("%-40s %-20s %s", values...)
+		line := fmt.Sprintf("%-40s %-20s %-20s %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
 
