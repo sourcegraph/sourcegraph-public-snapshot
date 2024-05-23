@@ -58,7 +58,7 @@ var _ http.Handler = (*APIProxyHandler)(nil)
 // GetSAMSOAuthContext returns the OAuthContext object to describe the SAMS
 // IdP registered to the current Sourcegraph instance. (As identified by
 // `GETSAMSServiceID()`)
-func GetSAMSOAuthContext(db database.DB) (*oauthutil.OAuthContext, error) {
+func GetSAMSOAuthContext() (*oauthutil.OAuthContext, error) {
 	for _, provider := range conf.Get().AuthProviders {
 		oidcInfo := provider.Openidconnect
 		if oidcInfo == nil {

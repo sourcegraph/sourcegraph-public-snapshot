@@ -227,7 +227,7 @@ func NewHandler(
 			// This means that for any cookie-based authentication method, we need to have
 			// CSRF protection. (However, that appears to be the case, see `newExternalHTTPHandler`
 			// and its use of `CookieMiddlewareWithCSRFSafety`.)
-			samsOAuthConfig, err := ssc.GetSAMSOAuthContext(db)
+			samsOAuthConfig, err := ssc.GetSAMSOAuthContext()
 			if err != nil {
 				// This situation is pretty bad, as it means no Cody Pro-related functionality
 				// can work properly. So while the site can continue to load as expected,
