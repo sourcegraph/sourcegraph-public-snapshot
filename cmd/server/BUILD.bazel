@@ -225,19 +225,20 @@ go_binary_nobundle(
 )
 
 pkg_tar(
-    name = "tar_server_nobundle",
+    name = "no_client_bundle.tar",
     srcs = [":server_nobundle"],
     remap_paths = {"/server_nobundle": "/server"},
 )
 
+#
 pkg_tar(
-    name = "tar_frontend_nobundle",
+    name = "no_client_bundle_frontend.tar",
     srcs = ["//cmd/frontend:frontend_nobundle"],
     remap_paths = {"/frontend_nobundle": "/usr/local/bin/frontend"},
 )
 
 oci_image(
-    name = "image_nobundle",
+    name = "no_client_bundle.image",
     base = ":base_image",
     entrypoint = [
         "/sbin/tini",
@@ -251,7 +252,7 @@ oci_image(
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
-        ":tar_server_nobundle",
+        ":no_client_bundle.tar",
         ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
@@ -262,7 +263,7 @@ oci_image(
         ":tar_prom-wrapper",
         "//monitoring:generate_grafana_config_tar",
         "tar_image_test_scripts",
-        "tar_frontend_nobundle",
+        "no_client_bundle_frontend.tar",
     ] + dependencies_tars([
         "//cmd/precise-code-intel-worker",
         "//cmd/searcher",
@@ -277,8 +278,8 @@ oci_image(
 )
 
 oci_tarball(
-    name = "image_tarball_nobundle",
-    image = ":image_nobundle",
+    name = "no_client_bundle.tarball",
+    image = ":no_client_bundle.image",
     repo_tags = ["server:candidate"],
     visibility = ["//testing:__pkg__"],
 )

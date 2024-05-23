@@ -101,14 +101,14 @@ go_binary_nobundle(
 )
 
 pkg_tar(
-    name = "tar_frontend_nobundle",
+    name = "no_client_bundle.tar",
     srcs = [":frontend_nobundle"],
     remap_paths = {"/frontend_nobundle": "/frontend"},
     visibility = ["//visibility:public"],
 )
 
 oci_image(
-    name = "image_nobundle",
+    name = "no_client_bundle.image",
     base = "//wolfi-images/sourcegraph-base:base_image",
     cmd = ["serve"],
     entrypoint = [
@@ -130,7 +130,7 @@ oci_image(
         "CODEINTEL_PGUSER": "sg",
     },
     tars = [
-        ":tar_frontend_nobundle",
+        ":no_client_bundle.tar",
         # Needed so the "Upgrade readiness" page in the site-admin
         # can find locally the current schema.
         "//cmd/migrator:tar_current_schema_descriptions",
@@ -139,8 +139,8 @@ oci_image(
 )
 
 oci_tarball(
-    name = "image_tarball_nobundle",
-    image = ":image_nobundle",
+    name = "no_client_bundle.image_tarball",
+    image = ":no_client_bundle.image",
     repo_tags = ["frontend:candidate"],
     visibility = ["//testing/tools/upgradetest:__pkg__"],
 )
