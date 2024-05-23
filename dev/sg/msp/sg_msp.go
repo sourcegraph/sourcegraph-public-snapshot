@@ -1053,33 +1053,70 @@ This command supports completions on services and environments.
 					return err
 				}
 
-				var environmentCount int
-				categories := make(map[spec.EnvironmentCategory]int)
-				teams := make(map[string]int)
+				var (
+					environmentCount int
+					envCategories    = make(map[spec.EnvironmentCategory]int)
+					envDeployTypes   = make(map[spec.EnvironmentDeployType]int)
+					envResources     = make(map[string]int)
+
+					serviceKinds     = make(map[spec.ServiceKind]int)
+					serviceTeams     = make(map[string]int)
+					rolloutPipelines int
+				)
 				for _, s := range services {
 					svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
 					if err != nil {
 						return err
 					}
+					serviceKinds[svc.Service.GetKind()] += 1
 					for _, t := range svc.Service.Owners {
-						teams[t] += 1
+						serviceTeams[t] += 1
+					}
+					if svc.Rollout != nil {
+						rolloutPipelines += 1
 					}
 					for _, e := range svc.Environments {
 						environmentCount += 1
-						categories[e.Category] += 1
+						envCategories[e.Category] += 1
+						envDeployTypes[e.Deploy.Type] += 1
+						for _, r := range e.Resources.List() {
+							envResources[r] += 1
+						}
 					}
 				}
 
-				teamNames := maps.Keys(teams)
+				teamNames := maps.Keys(serviceTeams)
 				sort.Strings(teamNames)
 				summary := fmt.Sprintf(`Managed Services Platform fleet summary:
 
-- %d services
-- %d teams (%s)
-- %d environments
-`, len(services), len(teams), strings.Join(teamNames, ", "), environmentCount)
-				for category, count := range categories {
-					summary += fmt.Sprintf("\t- %s environments: %d\n", category, count)
+- **%d services** (%d services, %d jobs)
+- **%d teams** (%s)
+- **%d rollout pipelines**
+- **%d environments**
+`,
+					len(services),
+					serviceKinds[spec.ServiceKindService],
+					serviceKinds[spec.ServiceKindJob],
+					len(serviceTeams),
+					strings.Join(teamNames, ", "),
+					rolloutPipelines,
+					environmentCount)
+				// List categories by explicit order
+				for _, category := range []spec.EnvironmentCategory{
+					spec.EnvironmentCategoryTest,
+					spec.EnvironmentCategoryInternal,
+					spec.EnvironmentCategoryExternal,
+				} {
+					summary += fmt.Sprintf("\t- `%s` environments: %d\n",
+						category, envCategories[category])
+				}
+				// Sort keys for determinstic output
+				for _, deployType := range sortSlice(maps.Keys(envDeployTypes)) {
+					summary += fmt.Sprintf("\t- Using deploy type `%s`: %d\n",
+						deployType, envDeployTypes[deployType])
+				}
+				for _, resource := range sortSlice(maps.Keys(envResources)) {
+					summary += fmt.Sprintf("\t- Using resource `%s`: %d\n", resource, envResources[resource])
 				}
 				return std.Out.WriteMarkdown(summary)
 			},

@@ -39,7 +39,10 @@ export const load: PageLoad = async ({ params }) => {
                       after: null as string | null,
                   },
                   nextVariables: previousResult => {
-                      if (previousResult?.data?.repository?.comparison?.fileDiffs?.pageInfo?.hasNextPage) {
+                      if (
+                          !previousResult.error &&
+                          previousResult?.data?.repository?.comparison?.fileDiffs?.pageInfo?.hasNextPage
+                      ) {
                           return {
                               after: previousResult.data.repository.comparison.fileDiffs.pageInfo.endCursor,
                           }
@@ -48,7 +51,12 @@ export const load: PageLoad = async ({ params }) => {
                   },
                   combine: (previousResult, nextResult) => {
                       if (!nextResult.data?.repository?.comparison) {
-                          return nextResult
+                          return {
+                              ...nextResult,
+                              // When this code path is executed we probably have an error.
+                              // We still want to show the data that was loaded before the error occurred.
+                              data: previousResult.data,
+                          }
                       }
                       const previousNodes = previousResult.data?.repository?.comparison?.fileDiffs?.nodes ?? []
                       const nextNodes = nextResult.data.repository?.comparison?.fileDiffs?.nodes ?? []

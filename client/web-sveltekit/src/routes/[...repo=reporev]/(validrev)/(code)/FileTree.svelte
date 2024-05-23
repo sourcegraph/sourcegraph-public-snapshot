@@ -141,7 +141,7 @@
                     </a>
                     <svelte:fragment slot="content">
                         {#await delay(fetchPopoverData({ repoName, revision, filePath: entry.path }), 300) then entry}
-                            <FilePopover {repoName} {entry} />
+                            <FilePopover {repoName} {revision} {entry} />
                         {/await}
                     </svelte:fragment>
                 </Popover>

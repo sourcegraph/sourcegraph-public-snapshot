@@ -57,7 +57,10 @@ func allowedCustomModel(model string) string {
 		"fireworks/" + fireworks.Llama213bCodeInstruct,
 		"fireworks/" + fireworks.Llama234bCodeInstruct,
 		"fireworks/" + fireworks.Mistral7bInstruct,
-		"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
+		"fireworks/" + fireworks.FineTunedFIMVariant1,
+		"fireworks/" + fireworks.FineTunedFIMVariant2,
+		"fireworks/" + fireworks.FineTunedFIMVariant3,
+		"fireworks/" + fireworks.FineTunedFIMVariant4,
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-3-haiku-20240307",
 		// Deprecated model identifiers

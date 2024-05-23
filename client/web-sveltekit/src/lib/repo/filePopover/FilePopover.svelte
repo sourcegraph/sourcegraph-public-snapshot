@@ -24,6 +24,7 @@
 <script lang="ts">
     import { mdiFolder } from '@mdi/js'
 
+    import { resolveRoute } from '$app/paths'
     import Avatar from '$lib/Avatar.svelte'
     import { pluralize } from '$lib/common'
     import { getGraphQLClient } from '$lib/graphql'
@@ -38,24 +39,46 @@
     import NodeLine from './NodeLine.svelte'
 
     export let repoName: string
+    export let revision: string
     export let entry: FilePopoverFragment | DirPopoverFragment
 
-    function splitPath(filePath: string): [string, string] {
+    const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+
+    function splitPath(filePath: string): [string[], string] {
         let parts = filePath.split('/')
-        return [parts.slice(0, parts.length - 1).join('/'), parts[parts.length - 1]]
+        return [parts.slice(0, parts.length - 1), parts[parts.length - 1]]
     }
 
-    $: [dirName, baseName] = splitPath(entry.path)
+    $: [dirNameEntries, baseName] = splitPath(entry.path)
+    $: dirNameBreadcrumbs = dirNameEntries.map((part, index, all): [string, string] => [
+        part,
+        resolveRoute(TREE_ROUTE_ID, {
+            repo: revision ? `${repoName}@${revision}` : repoName,
+            path: all.slice(0, index + 1).join('/'),
+        }),
+    ])
     $: lastCommit = entry.history.nodes[0].commit
 </script>
 
 <div class="root section muted">
     <div class="repo-and-path section mono">
-        <small>
-            {displayRepoName(repoName).replaceAll('/', ' / ')}
-            ·
-            {dirName ? `${dirName.replaceAll('/', ' / ')}` : '/'}
-        </small>
+        <!--
+            Extra layer of divs to allow customizing the gap, but wrap before the slashes.
+            Ideally we'd be able to use `break-after: avoid;`, but that's not widely supported.
+        -->
+        {#each displayRepoName(repoName).split('/') as repoFragment, i}
+            <span>
+                {#if i > 0}<span>/</span>{/if}
+                <span>{repoFragment}</span>
+            </span>
+        {/each}
+        {#if dirNameBreadcrumbs.length}<span>·</span>{/if}
+        {#each dirNameBreadcrumbs as [name, href], i}
+            <span>
+                {#if i > 0}<span>/</span>{/if}
+                <span><a {href}>{name}</a></span>
+            </span>
+        {/each}
     </div>
 
     <div class="lang-and-file section">
@@ -82,7 +105,7 @@
         {/if}
     </div>
 
-    <div class="last-changed section">Last Changed @</div>
+    <div class="last-changed section">Last Changed</div>
 
     <div class="commit">
         <div class="node-line"><NodeLine /></div>
@@ -92,7 +115,7 @@
                     {lastCommit.abbreviatedOID}
                 </a>
             </Badge>
-            <div class="body">{lastCommit.subject}</div>
+            <div class="body"><a href={lastCommit.canonicalURL}>{lastCommit.subject}</a></div>
             <div class="author">
                 <Avatar avatar={lastCommit.author.person} --avatar-size="1.0rem" />
                 {lastCommit.author.person.displayName}
@@ -113,10 +136,24 @@
         }
 
         .repo-and-path {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375em;
+            span {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: inherit;
+            }
+
             border-bottom: 1px solid var(--border-color);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+
+            font-size: var(--font-size-tiny);
+            a {
+                color: unset;
+                &:hover {
+                    color: var(--text-body);
+                }
+            }
         }
 
         .lang-and-file {
@@ -184,5 +221,8 @@
 
     .body {
         color: var(--text-body);
+        a {
+            color: unset;
+        }
     }
 </style>
