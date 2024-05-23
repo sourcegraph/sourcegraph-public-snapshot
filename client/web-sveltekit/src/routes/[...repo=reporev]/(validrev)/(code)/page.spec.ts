@@ -1,4 +1,4 @@
-import { test, expect } from '../../../../testing/integration'
+import { test, expect, type Page } from '../../../../testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 
@@ -104,18 +104,18 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-    test.skip('basic functionality', async ({ page }) => {
+    async function openSidebar(page: Page): Promise<void> {
+        return page.getByLabel('Open sidebar').click()
+    }
+
+    test('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
         await page.goto(`/${repoName}`)
-        await expect(readmeEntry).toBeVisible()
-
-        // Close file sidebar
-        await page.getByRole('button', { name: 'Hide sidebar' }).click()
-        await expect(readmeEntry).toBeHidden()
 
         // Open sidebar
-        await page.getByRole('button', { name: 'Show sidebar' }).click()
+        await page.getByLabel('Open sidebar').click()
+        await expect(readmeEntry).toBeVisible()
 
         // Go to a file
         await readmeEntry.click()
@@ -123,14 +123,18 @@ test.describe('file sidebar', () => {
         // Verify that entry is selected
         await expect(page.getByRole('treeitem', { name: 'README.md', selected: true })).toBeVisible()
 
-        // Go other file
+        // Go to other file
         await page.getByRole('treeitem', { name: 'index.js' }).click()
         await expect(page).toHaveURL(`/${repoName}/-/blob/index.js`)
         // Verify that entry is selected
         await expect(page.getByRole('treeitem', { name: 'index.js', selected: true })).toBeVisible()
+
+        // Close file sidebar
+        await page.getByLabel('Close sidebar').click()
+        await expect(readmeEntry).toBeHidden()
     })
 
-    test.skip('error handling root', async ({ page, sg }) => {
+    test('error handling root', async ({ page, sg }) => {
         sg.mockOperations({
             TreeEntries: () => {
                 throw new Error('Sidebar error')
@@ -138,11 +142,13 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
+        await openSidebar(page)
         await expect(page.getByText(/Sidebar error/)).toBeVisible()
     })
 
-    test.skip('error handling children', async ({ page, sg }) => {
+    test('error handling children', async ({ page, sg }) => {
         await page.goto(`/${repoName}`)
+        await openSidebar(page)
 
         const treeItem = page.getByRole('treeitem', { name: 'src' })
         // For some reason we need to wait for the tree to be rendered
@@ -160,7 +166,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test.skip('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test('error handling non-existing directory -> root', async ({ page, sg }) => {
         // Here we expect the sidebar to show an error message, and after navigigating
         // to an existing directory, the directory contents
         sg.mockOperations({
@@ -170,6 +176,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}/-/tree/non-existing-directory`)
+        await openSidebar(page)
         await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
 
         sg.mockOperations({
@@ -181,6 +188,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
+        await openSidebar(page)
         await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible()
     })
 })
@@ -240,14 +248,64 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page }) => {
+test('file popover', async ({ page, sg }) => {
     await page.goto(`/${repoName}`)
 
+    // Open the sidebar
     await page.locator('#sidebar-panel').getByRole('button').click()
 
+    // Hover a tree entry, expect the popover to be visible
     await page.getByRole('link', { name: 'index.js' }).hover()
     await expect(page.getByText('Last Changed')).toBeVisible()
 
+    // Hover outside the popover (the Sourcegraph logo), expect the popover to be hidden
     await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
     await expect(page.getByText('Last Changed')).toBeHidden()
+
+    sg.mockOperations({
+        TreeEntries: () => ({
+            repository: {
+                id: '1',
+                commit: {
+                    tree: {
+                        entries: [
+                            {
+                                path: 'src/notes.txt',
+                                name: 'notes.txt',
+                                isDirectory: false,
+                                canonicalURL: `/${repoName}/-/blob/src/notes.txt`,
+                            },
+                        ],
+                    },
+                },
+            },
+        }),
+        FileOrDirPopoverQuery: () => ({
+            repository: {
+                commit: {
+                    path: {
+                        path: 'src/notes.txt',
+                        languages: ['Text'],
+                        byteSize: 32,
+                        totalLines: 42,
+                        name: 'notes.txt',
+                    },
+                },
+            },
+        }),
+    })
+
+    // Open a subdirectory so we get an entry with a clickable parent dir
+    await page.getByRole('link', { name: 'src' }).click()
+
+    // Hover the file to get a popover
+    await page.getByRole('treeitem', { name: 'notes.txt' }).getByRole('link').click()
+    await page.getByRole('treeitem', { name: 'notes.txt' }).getByRole('link').hover()
+
+    // Expect the popover to show up
+    await expect(page.getByText('Last Changed')).toBeVisible()
+
+    // Click the parent dir in the popover and expect to navigate to that page
+    await page.locator('span').filter({ hasText: /^src$/ }).getByRole('link').click()
+    await page.waitForURL(/src$/)
 })

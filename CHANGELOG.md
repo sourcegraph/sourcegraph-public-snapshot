@@ -43,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where usernames were too eagerly suffixed with a random ID to prevent duplicates which could cause issues with Bitbucket Server permissions syncing where exact username matches are required. [#62747](https://github.com/sourcegraph/sourcegraph/pull/62747)
 - Fixed an issue where code graph configuration policies would miscategorize lightweight tags as branches. [#62671](https://github.com/sourcegraph/sourcegraph/pull/62671)
 - Fixed a bug in batch changes scheduling that could cause excessive CPU usage. [#62597](https://github.com/sourcegraph/sourcegraph/pull/62597)
+- Cody ignore: update version constraint error message [#62654](https://github.com/sourcegraph/sourcegraph/pull/62654)
 
 ## 5.4.0
 

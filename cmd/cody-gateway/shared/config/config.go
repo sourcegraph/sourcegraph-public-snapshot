@@ -3,6 +3,7 @@ package config
 import (
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -230,7 +231,7 @@ func (c *Config) Load() {
 
 	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
-		strings.Join([]string{
+		strings.Join(slices.Concat([]string{
 			// Virtual model strings. Setting these will allow one or more of the specific models
 			// and allows Cody Gateway to decide which specific model to route the request to.
 			"starcoder",
@@ -252,9 +253,7 @@ func (c *Config) Load() {
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
-			// Finetuned models
-			fireworks.Mixtral8x7bFineTunedModel,
-		}, ","),
+		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))

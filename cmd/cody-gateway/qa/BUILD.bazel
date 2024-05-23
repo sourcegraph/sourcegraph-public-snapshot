@@ -15,6 +15,7 @@ go_test(
     ],
     deps = [
         "//internal/codygateway",
+        "//internal/completions/client/fireworks",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
     ],
