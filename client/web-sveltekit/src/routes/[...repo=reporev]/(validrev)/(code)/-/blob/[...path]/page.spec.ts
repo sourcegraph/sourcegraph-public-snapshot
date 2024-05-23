@@ -234,13 +234,34 @@ test.describe('file header', () => {
         await expect(page.getByText('42 lines')).toBeVisible()
     })
 
-    test('breadcrumbs', async ({ page }) => {
-        await page.goto(url)
-        const parentBreadcrumb = page.getByRole('link', { name: 'src' })
-        await expect(parentBreadcrumb).toBeVisible()
-        await parentBreadcrumb.click()
-        await page.waitForURL(`${repoName}/-/tree/src`)
-        await expect(page.getByRole('link', { name: 'src' })).toBeVisible()
+    test.describe('breadcrumbs', () => {
+        test('links work', async ({ page }) => {
+            await page.goto(url)
+            const parentBreadcrumb = page.getByRole('link', { name: 'src' })
+            await expect(parentBreadcrumb).toBeVisible()
+            await parentBreadcrumb.click()
+            await page.waitForURL(`${repoName}/-/tree/src`)
+            await expect(page.getByRole('link', { name: 'src' })).toBeVisible()
+        })
+
+        test('select and copy file path', async ({ page, context }) => {
+            await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+            await page.goto(url)
+            await page.getByText('src / readme.md').selectText()
+            await page.keyboard.press(`Meta+KeyC`)
+            await page.keyboard.press(`Control+KeyC`)
+            const clipboardText = await page.evaluate('navigator.clipboard.readText()')
+            expect(clipboardText, 'path should be copied to clipboard and not contain spaces').toBe('src/readme.md')
+        })
+
+        test('copy path button', async ({ page, context }) => {
+            await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+            await page.goto(url)
+            await page.getByRole('link', { name: 'src' }).hover()
+            await page.getByLabel('Copy path to clipboard').click()
+            const clipboardText = await page.evaluate('navigator.clipboard.readText()')
+            expect(clipboardText, 'path should be copied to clipboard').toBe('src/readme.md')
+        })
     })
 })
 
@@ -361,7 +382,7 @@ test.describe('scroll behavior', () => {
 
 test('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => ({
+        BlobFileViewBlobQuery: ({ }) => ({
             repository: {
                 commit: {
                     blob: null,
@@ -376,7 +397,7 @@ test('non-existent file', async ({ page, sg }) => {
 
 test('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => {
+        BlobFileViewBlobQuery: ({ }) => {
             throw new Error('Blob error')
         },
     })
@@ -387,7 +408,7 @@ test('error loading file data', async ({ page, sg }) => {
 
 test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewHighlightedFileQuery: ({}) => {
+        BlobFileViewHighlightedFileQuery: ({ }) => {
             throw new Error('Highlights error')
         },
     })
