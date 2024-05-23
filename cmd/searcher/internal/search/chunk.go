@@ -5,7 +5,7 @@ import (
 	"sort"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
 
 // chunkRanges groups a set of ranges into chunks of adjacent ranges.

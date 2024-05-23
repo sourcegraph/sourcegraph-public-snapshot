@@ -1,5 +1,5 @@
 // Package srcprometheus defines an API to interact with Sourcegraph Prometheus, including
-// prom-wrapper. See https://sourcegraph.com/docs/dev/background-information/observability/prometheus
+// prom-wrapper. See https://docs-legacy.sourcegraph.com/dev/background-information/observability/prometheus
 package srcprometheus
 
 import (
@@ -24,7 +24,7 @@ var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
 var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 
 // Client provides the interface for interacting with Sourcegraph Prometheus, including
-// prom-wrapper. See https://sourcegraph.com/docs/dev/background-information/observability/prometheus
+// prom-wrapper. See https://docs-legacy.sourcegraph.com/dev/background-information/observability/prometheus
 type Client interface {
 	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
 	GetConfigStatus(ctx context.Context) (*ConfigStatus, error)
@@ -40,7 +40,7 @@ type client struct {
 // Users should check for the latter case by asserting against `ErrPrometheusUnavailable`
 // to avoid rendering an error.
 //
-// See https://sourcegraph.com/docs/dev/background-information/observability/prometheus
+// See https://docs-legacy.sourcegraph.com/dev/background-information/observability/prometheus
 func NewClient(prometheusURL string) (Client, error) {
 	if prometheusURL == "" {
 		return nil, ErrPrometheusUnavailable

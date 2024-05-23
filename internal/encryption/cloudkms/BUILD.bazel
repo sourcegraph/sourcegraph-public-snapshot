@@ -8,6 +8,7 @@ go_library(
         "metrics.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
@@ -29,6 +30,7 @@ go_test(
     srcs = ["cloud_kms_test.go"],
     data = glob(["testdata/**"]),
     embed = [":cloudkms"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/encryption/envelope",
         "//internal/httpcli",

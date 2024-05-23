@@ -4,6 +4,7 @@ go_library(
     name = "ctags_config",
     srcs = ["ctags_config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/ctags_config",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/codeintel/languages",

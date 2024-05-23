@@ -54,6 +54,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

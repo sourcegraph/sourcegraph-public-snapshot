@@ -267,7 +267,7 @@ export const CrossingStyles: StoryFn = () => (
             <Link
                 target="_blank"
                 rel="noopener noreferrer"
-                to="https://sourcegraph.com/docs/dev/background-information/web/accessibility/detailed-checklist#headings"
+                to="https://docs-legacy.sourcegraph.com/dev/background-information/web/accessibility/detailed-checklist#headings"
             >
                 accessible
             </Link>{' '}

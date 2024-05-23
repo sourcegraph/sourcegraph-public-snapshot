@@ -24,6 +24,7 @@ import {
 } from '../../../../graphql-operations'
 import { CodyProIcon } from '../../../components/CodyIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
+import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
@@ -72,12 +73,14 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             </PageHeader>
 
             <Container>
-                <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
-                    <CodyProCheckoutForm
-                        stripePromise={stripePromise}
-                        customerEmail={authenticatedUser?.emails[0].email || ''}
-                    />
-                </Elements>
+                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext()}>
+                    <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
+                        <CodyProCheckoutForm
+                            stripePromise={stripePromise}
+                            customerEmail={authenticatedUser?.emails[0].email || ''}
+                        />
+                    </Elements>
+                </CodyProApiClientContext.Provider>
             </Container>
         </Page>
     )

@@ -4,6 +4,7 @@ go_library(
     name = "embed_queries_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/embeddings/qa/embed_queries",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/conf",
@@ -17,5 +18,6 @@ go_library(
 go_binary(
     name = "embed_queries",
     embed = [":embed_queries_lib"],
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
 )

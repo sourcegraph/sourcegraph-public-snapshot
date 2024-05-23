@@ -41,6 +41,7 @@ go_test(
     ],
     embed = [":sourcegraphoperator"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

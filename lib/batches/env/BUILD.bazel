@@ -8,6 +8,7 @@ go_library(
         "var.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/env",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -23,6 +24,7 @@ go_test(
         "var_test.go",
     ],
     embed = [":env"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//lib/pointers",
         "@com_github_google_go_cmp//cmp",

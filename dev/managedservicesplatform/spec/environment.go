@@ -171,6 +171,10 @@ func (c EnvironmentCategory) Validate() error {
 	return nil
 }
 
+func (c EnvironmentCategory) IsProduction() bool {
+	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
+}
+
 type EnvironmentDeployType string
 
 const (
@@ -178,10 +182,6 @@ const (
 	EnvironmentDeployTypeSubscription = "subscription"
 	EnvironmentDeployTypeRollout      = "rollout"
 )
-
-func (c EnvironmentCategory) IsProduction() bool {
-	return c == EnvironmentCategoryExternal || c == EnvironmentCategoryInternal
-}
 
 type EnvironmentDeploySpec struct {
 	// Type specifies the deployment method for the environment. There are
@@ -197,7 +197,12 @@ type EnvironmentDeploySpec struct {
 
 func (s EnvironmentDeploySpec) Validate() []error {
 	var errs []error
-	if s.Type == EnvironmentDeployTypeSubscription {
+	switch s.Type {
+	case EnvironmentDeployTypeManual:
+		if s.Subscription != nil {
+			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
+		}
+	case EnvironmentDeployTypeSubscription:
 		if s.Manual != nil {
 			errs = append(errs, errors.New("manual deploy spec provided when type is subscription"))
 		} else if s.Subscription == nil {
@@ -205,39 +210,12 @@ func (s EnvironmentDeploySpec) Validate() []error {
 		} else if s.Subscription.Tag == "" {
 			errs = append(errs, errors.New("no tag in image subscription specified"))
 		}
-	} else if s.Type == EnvironmentDeployTypeManual {
-		if s.Subscription != nil {
-			errs = append(errs, errors.New("subscription deploy spec provided when type is manual"))
-		}
+	case EnvironmentDeployTypeRollout:
+		// no validation
+	default:
+		errs = append(errs, errors.Newf("invalid deploy type %q", s.Type))
 	}
 	return errs
-}
-
-// ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
-func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
-	switch d.Type {
-	case EnvironmentDeployTypeManual:
-		if d.Manual == nil {
-			return "insiders", nil
-		}
-		return d.Manual.Tag, nil
-	case EnvironmentDeployTypeSubscription:
-		// we already validated in Validate(), hence it's fine to assume this won't panic
-		updater, err := imageupdater.New()
-		if err != nil {
-			return "", errors.Wrapf(err, "create image updater")
-		}
-		tagAndDigest, err := updater.ResolveTagAndDigest(repo, d.Subscription.Tag)
-		if err != nil {
-			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
-		}
-		return tagAndDigest, nil
-	case EnvironmentDeployTypeRollout:
-		// Enforce convention
-		return "insiders", nil
-	default:
-		return "", errors.Newf("unable to resolve tag for unknown deploy type %q", d.Type)
-	}
 }
 
 type EnvironmentDeployManualSpec struct {
@@ -245,10 +223,32 @@ type EnvironmentDeployManualSpec struct {
 	Tag string `yaml:"tag,omitempty"`
 }
 
+// GetTag returns the tag to deploy. If empty, defaults to "insiders".
+func (s *EnvironmentDeployManualSpec) GetTag() string {
+	if s == nil {
+		return "insiders"
+	}
+	return s.Tag
+}
+
 type EnvironmentDeployTypeSubscriptionSpec struct {
 	// Tag is the tag to subscribe to.
 	Tag string `yaml:"tag,omitempty"`
 	// TODO: In the future, we may support subscribing by semver constraints.
+}
+
+// ResolveTag fetches the latest digest for the target imageRepo and configured
+// subscription tag, and returns it.
+func (s EnvironmentDeployTypeSubscriptionSpec) ResolveTag(imageRepo string) (string, error) {
+	updater, err := imageupdater.New()
+	if err != nil {
+		return "", errors.Wrapf(err, "create image updater")
+	}
+	tagAndDigest, err := updater.ResolveTagAndDigest(imageRepo, s.Tag)
+	if err != nil {
+		return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
+	}
+	return tagAndDigest, nil
 }
 
 type EnvironmentServiceSpec struct {
@@ -523,6 +523,9 @@ func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
 	}
 	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
 		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
+	}
+	if s.GetLivenessIntervalSeconds() > 3600 {
+		errs = append(errs, errors.New("livenessInterval must be less than or equal to 3600 seconds"))
 	}
 
 	return errs

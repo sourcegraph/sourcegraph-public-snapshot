@@ -10,6 +10,7 @@ go_library(
         "ready.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/debugserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",

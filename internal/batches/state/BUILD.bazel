@@ -10,6 +10,7 @@ go_library(
         "state.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/state",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -45,6 +46,7 @@ go_test(
         "state_test.go",
     ],
     embed = [":state"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/batches/sources/azuredevops",
         "//internal/batches/types",

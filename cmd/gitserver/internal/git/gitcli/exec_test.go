@@ -37,14 +37,14 @@ func TestIsAllowedGitCmd(t *testing.T) {
 	logger := logtest.NoOp(t)
 	for _, args := range isAllowed {
 		t.Run("", func(t *testing.T) {
-			if !IsAllowedGitCmd(logger, args, "/fake/path") {
+			if !IsAllowedGitCmd(logger, args) {
 				t.Fatalf("expected args to be allowed: %q", args)
 			}
 		})
 	}
 	for _, args := range notAllowed {
 		t.Run("", func(t *testing.T) {
-			if IsAllowedGitCmd(logger, args, "/fake/path") {
+			if IsAllowedGitCmd(logger, args) {
 				t.Fatalf("expected args to NOT be allowed: %q", args)
 			}
 		})
@@ -56,30 +56,22 @@ func TestIsAllowedDiffGitCmd(t *testing.T) {
 		args []string
 		pass bool
 	}{
-		{args: []string{"diff", "HEAD", "83838383"}, pass: true},
-		{args: []string{"diff", "HEAD", "HEAD~10"}, pass: true},
-		{args: []string{"diff", "HEAD", "HEAD~10", "--", "foo"}, pass: true},
-		{args: []string{"diff", "HEAD", "HEAD~10", "--", "foo/baz"}, pass: true},
-		{args: []string{"diff", "ORIG_HEAD", "@~10", "--", "foo/baz"}, pass: true},
-		{args: []string{"diff", "HEAD~10", "--", "foo"}, pass: true},
-		{args: []string{"diff", "HEAD", "HEAD~10", "--", "foo/baz"}, pass: true},
-		{args: []string{"diff", "refs/heads/list", "HEAD~10", "--", "/foo/baz"}, pass: true},
-		{args: []string{"diff", "/dev/null", "/etc/passwd"}, pass: false},
-		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
-		{args: []string{"diff", "/dev/null", "/etc/passwd"}, pass: false},
-		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
-		{args: []string{"diff", "--", "/etc/hosts", "/etc/passwd"}, pass: false},
-		{args: []string{"diff", "--", "/etc/ees", "/etc/ee"}, pass: false},
-		{args: []string{"diff", "--", "../../../etc/ees", "/etc/ee"}, pass: false},
-		{args: []string{"diff", "--", "a/test.txt", "b/test.txt"}, pass: true},
-		{args: []string{"diff", "--find-renames"}, pass: true},
-		{args: []string{"diff", "a1c0f7d19f6e9eb76facc67c1c22c07bb2ad39c4...c70f79c26526ba74f38ecff2e1e686fc3e2bdcdd"}, pass: true},
+		{args: []string{"diff-tree", "HEAD", "83838383"}, pass: true},
+		{args: []string{"diff-tree", "HEAD", "HEAD~10"}, pass: true},
+		{args: []string{"diff-tree", "HEAD", "HEAD~10", "--", "foo"}, pass: true},
+		{args: []string{"diff-tree", "HEAD", "HEAD~10", "--", "foo/baz"}, pass: true},
+		{args: []string{"diff-tree", "ORIG_HEAD", "@~10", "--", "foo/baz"}, pass: true},
+		{args: []string{"diff-tree", "HEAD~10", "--", "foo"}, pass: true},
+		{args: []string{"diff-tree", "HEAD", "HEAD~10", "--", "foo/baz"}, pass: true},
+		{args: []string{"diff-tree", "refs/heads/list", "HEAD~10", "--", "/foo/baz"}, pass: true},
+		{args: []string{"diff-tree", "--find-renames"}, pass: true},
+		{args: []string{"diff-tree", "a1c0f7d19f6e9eb76facc67c1c22c07bb2ad39c4...c70f79c26526ba74f38ecff2e1e686fc3e2bdcdd"}, pass: true},
 	}
 
 	logger := logtest.NoOp(t)
 	for _, cmd := range allowed {
 		t.Run(fmt.Sprintf("%s returns %t", strings.Join(cmd.args, " "), cmd.pass), func(t *testing.T) {
-			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args, "/foo/baz"))
+			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args))
 		})
 	}
 }

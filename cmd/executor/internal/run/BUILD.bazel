@@ -13,6 +13,7 @@ go_library(
         "validate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/run",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/apiclient",
@@ -92,6 +93,7 @@ go_test(
     timeout = "short",
     srcs = ["validate_test.go"],
     embed = [":run"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/apiclient",
         "//cmd/executor/internal/config",

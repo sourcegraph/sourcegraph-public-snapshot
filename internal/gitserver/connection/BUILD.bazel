@@ -8,6 +8,7 @@ go_library(
         "connection.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/connection",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -27,6 +28,7 @@ go_test(
     name = "connection_test",
     srcs = ["addrs_test.go"],
     embed = [":connection"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//internal/conf",

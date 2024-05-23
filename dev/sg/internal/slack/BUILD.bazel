@@ -4,6 +4,7 @@ go_library(
     name = "slack",
     srcs = ["slack.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/secrets",

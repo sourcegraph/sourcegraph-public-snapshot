@@ -3,7 +3,7 @@ package search
 import (
 	"slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 

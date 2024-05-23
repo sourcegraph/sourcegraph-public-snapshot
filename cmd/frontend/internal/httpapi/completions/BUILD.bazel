@@ -11,6 +11,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/cody",

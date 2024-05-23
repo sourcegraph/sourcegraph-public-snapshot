@@ -48,7 +48,10 @@ func listTagsCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Retrieving docker images from registry %q", ar.RepositoryName))
+
+	// we create a new output here on stderr, so the output of this command can be piped into other commands
+	out := std.NewOutput(os.Stderr, false)
+	pending := out.Pending(output.Linef(CloudEmoji, output.StylePending, "Retrieving docker images from registry %q", ar.RepositoryName))
 	images, err := ar.ListDockerImages(ctx.Context, FilterTagByRegex(filterRegex))
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to retreive images from registry %q", ar.RepositoryName))
@@ -89,20 +92,20 @@ Image count           : %d`, tag, image.UploadTime.AsTime().Format(time.DateTime
 		{
 			count := 0
 			limit := ctx.Int("limit")
-			std.Out.Writef("%-50s %-20s %-5s", "Tag", "Upload time", "Image count")
+			out.Writef("%-50s %-20s %-5s", "Tag", "Upload time", "Image count")
 			for tag, images := range imagesByTag {
 				// we use the first image to get the upload time
 				image := images[0]
 				if len(tag) > 50 {
 					tag = tag[:47] + "..."
 				}
-				std.Out.Writef("%-50s %-20s %-5d", tag, image.UploadTime.AsTime().Format(time.DateTime), len(images))
+				out.Writef("%-50s %-20s %-5d", tag, image.UploadTime.AsTime().Format(time.DateTime), len(images))
 				count++
 				if limit >= 1 && count >= limit {
 					break
 				}
 			}
-			std.Out.WriteSuggestionf("Some tags might have been truncated. To see the full tag ouput use the --raw format or filter the tags by using --filter")
+			out.WriteSuggestionf("Some tags might have been truncated. To see the full tag output use the --raw format or filter the tags by using --filter")
 		}
 	}
 	return nil

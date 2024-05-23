@@ -10,6 +10,7 @@ go_library(
         "sexp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/job/printer",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/job",
@@ -28,6 +29,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":printer"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/search/job",
         "@com_github_hexops_autogold_v2//:autogold",

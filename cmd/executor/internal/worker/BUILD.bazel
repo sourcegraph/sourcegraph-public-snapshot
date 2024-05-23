@@ -9,6 +9,7 @@ go_library(
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/executor:__subpackages__"],
     deps = [
         "//cmd/executor/internal/apiclient",
@@ -46,6 +47,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":worker"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//cmd/executor/internal/janitor",
         "//cmd/executor/internal/util",

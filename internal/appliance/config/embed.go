@@ -5,16 +5,17 @@ import (
 )
 
 var (
-	//go:embed pgsql/postgresql.conf
+	//go:embed postgres/*
 	fs embed.FS
 
-	pgsqlConfig []byte
+	PgsqlConfig     []byte
+	CodeIntelConfig []byte
 )
 
 func init() {
-	pgsqlConfig, _ = fs.ReadFile("pgsql/postgresql.conf")
+	PgsqlConfig, _ = fs.ReadFile("postgres/pgsql.conf")
 }
 
-func DefaultPGSQLConfig() string {
-	return string(pgsqlConfig)
+func init() {
+	CodeIntelConfig, _ = fs.ReadFile("postgres/codeintel.conf")
 }

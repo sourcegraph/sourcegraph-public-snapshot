@@ -51,13 +51,13 @@ type EventLogStore interface {
 	// we never drop events once we attempt to store it.
 	//
 	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
-	// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
+	// Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 	BulkInsert(ctx context.Context, events []*Event) error
 
 	// Insert is a legacy mechanism for inserting a single event.
 	//
 	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
-	// Learn more: https://sourcegraph.com/docs/dev/background-information/telemetry
+	// Learn more: https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 	Insert(ctx context.Context, e *Event) error
 
 	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.

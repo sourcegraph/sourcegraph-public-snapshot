@@ -16,7 +16,6 @@ type operations struct {
 	archiveReader            *observation.Operation
 	commits                  *observation.Operation
 	contributorCount         *observation.Operation
-	exec                     *observation.Operation
 	firstEverCommit          *observation.Operation
 	behindAhead              *observation.Operation
 	getCommit                *observation.Operation
@@ -45,7 +44,6 @@ type operations struct {
 	createCommitFromPatch    *observation.Operation
 	getObject                *observation.Operation
 	getDefaultBranch         *observation.Operation
-	logReverseEach           *observation.Operation
 	diff                     *observation.Operation
 	changedFiles             *observation.Operation
 }
@@ -99,7 +97,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		archiveReader:            op("ArchiveReader"),
 		commits:                  op("Commits"),
 		contributorCount:         op("ContributorCount"),
-		exec:                     op("Exec"),
 		firstEverCommit:          op("FirstEverCommit"),
 		behindAhead:              op("BehindAhead"),
 		getCommit:                op("GetCommit"),
@@ -128,7 +125,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createCommitFromPatch:    op("CreateCommitFromPatch"),
 		getObject:                op("GetObject"),
 		getDefaultBranch:         op("GetDefaultBranch"),
-		logReverseEach:           op("LogReverseEach"),
 		diff:                     op("Diff"),
 		changedFiles:             op("ChangedFiles"),
 	}

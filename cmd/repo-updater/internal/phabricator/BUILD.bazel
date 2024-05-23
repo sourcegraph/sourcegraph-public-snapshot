@@ -4,6 +4,7 @@ go_library(
     name = "phabricator",
     srcs = ["phabricator.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/phabricator",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/repo-updater:__subpackages__"],
     deps = [
         "//internal/actor",

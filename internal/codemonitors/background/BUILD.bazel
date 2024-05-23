@@ -18,6 +18,7 @@ go_library(
         "email_template.txt.tmpl",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors/background",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
@@ -60,6 +61,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":background"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost database
         "requires-network",
     ],

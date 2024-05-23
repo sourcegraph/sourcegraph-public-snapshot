@@ -7,6 +7,7 @@ go_test(
     srcs = ["e2e_test.go"],
     embed = [":qa"],
     tags = [
+        TAG_CODY_PRIME,
         # We mark this as external because:
         # This test runs against an external environment, so results can change even if the test did not (so, we don't want caching)
         "external",
@@ -14,6 +15,7 @@ go_test(
     ],
     deps = [
         "//internal/codygateway",
+        "//internal/completions/client/fireworks",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
     ],
@@ -27,6 +29,7 @@ go_library(
         "openai.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/qa",
+    tags = [TAG_CODY_PRIME],
     visibility = ["//visibility:public"],
     deps = [
         "//internal/codygateway",

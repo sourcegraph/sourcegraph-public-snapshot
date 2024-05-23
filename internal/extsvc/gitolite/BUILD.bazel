@@ -8,6 +8,7 @@ go_library(
         "repos.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -22,6 +23,7 @@ go_test(
     timeout = "short",
     srcs = ["repos_test.go"],
     embed = [":gitolite"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/errcode",
         "//lib/errors",

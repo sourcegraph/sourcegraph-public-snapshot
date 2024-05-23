@@ -7,6 +7,7 @@ go_library(
         "job_selector.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",

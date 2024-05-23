@@ -34,7 +34,7 @@
             {@const last = index === breadcrumbs.length - 1}
             <!--
                 The elements are arranged like this because we want to
-                ensure that the leading / before a segement always stay with
+                ensure that the leading / before a segment always stays with
                 the segment. I.e.
 
                     path / to / file

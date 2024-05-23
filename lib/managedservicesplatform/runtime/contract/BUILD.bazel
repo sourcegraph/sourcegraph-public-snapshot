@@ -11,6 +11,7 @@ go_library(
         "postgresql.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -37,6 +38,7 @@ go_test(
         "diagnostics_test.go",
     ],
     embed = [":contract"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//lib/errors",
         "//lib/pointers",

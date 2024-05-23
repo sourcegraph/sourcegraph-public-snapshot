@@ -10,6 +10,7 @@ go_library(
         "queuehandler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
@@ -41,6 +42,7 @@ go_test(
         "queuehandler_test.go",
     ],
     embed = [":executorqueue"],
+    tags = [TAG_SEARCHSUITE],
     deps = [
         "//internal/api",
         "//internal/conf",

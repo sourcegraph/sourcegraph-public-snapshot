@@ -9,6 +9,7 @@ go_library(
         "middleware.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linearhooks/internal/handlers",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/linearhooks:__subpackages__"],
     deps = [
         "//dev/linearhooks/internal/lineargql",
@@ -26,6 +27,7 @@ go_test(
     name = "handlers_test",
     srcs = ["handlers_test.go"],
     embed = [":handlers"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/linearhooks/internal/lineargql",
         "//dev/linearhooks/internal/lineargql/gqltest",

@@ -652,6 +652,8 @@ type CodyProConfig struct {
 	SamsBackendOrigin string `json:"samsBackendOrigin,omitempty"`
 	// SscBackendOrigin description: Origin of the Self-serve Cody backend.
 	SscBackendOrigin string `json:"sscBackendOrigin,omitempty"`
+	// SscBaseUrl description: The base URL of the Self-Serve Cody site.
+	SscBaseUrl string `json:"sscBaseUrl,omitempty"`
 	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
 	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
 }
@@ -661,12 +663,12 @@ type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
 	AccessToken string `json:"accessToken,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
-	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommend using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	ChatModel string `json:"chatModel,omitempty"`
-	// ChatModelMaxTokens description: The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.
+	// ChatModelMaxTokens description: The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit. If smartContext is enabled, this value will be overridden by the clients.
 	ChatModelMaxTokens int `json:"chatModelMaxTokens,omitempty"`
 	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
-	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommend using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	CompletionModel string `json:"completionModel,omitempty"`
 	// CompletionModelMaxTokens description: The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.
 	CompletionModelMaxTokens int `json:"completionModelMaxTokens,omitempty"`
@@ -675,7 +677,7 @@ type Completions struct {
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/messages" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// FastChatModel description: The model used for fast chat completions.
-	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommed using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
+	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommend using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	FastChatModel string `json:"fastChatModel,omitempty"`
 	// FastChatModelMaxTokens description: The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
@@ -703,6 +705,8 @@ type Completions struct {
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
 	Provider string `json:"provider,omitempty"`
+	// SmartContext description: Whether the maximum number of tokens should be automatically adjusted by the client based on the name of chatModel. If enabled, it will override the value set in chatModelMaxTokens.
+	SmartContext string `json:"smartContext,omitempty"`
 }
 
 // ConfigFeatures description: Configuration for the completions service.
@@ -2783,7 +2787,7 @@ type SiteConfiguration struct {
 	CodyEnabled *bool `json:"cody.enabled,omitempty"`
 	// CodyPermissions description: Whether to enable Cody role-based access controls. Only respected if cody.restrictUsersFeatureFlag is not set. See https://sourcegraph.com/docs/admin/access_control
 	CodyPermissions *bool `json:"cody.permissions,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://sourcegraph.com/docs/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	// CodyRestrictUsersFeatureFlag description: DEPRECATED; see cody.permissions instead. PRIOR DESCRIPTION: Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs-legacy.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
 	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
@@ -3213,22 +3217,22 @@ type SymbolConfiguration struct {
 
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
-	Engine    SyntaxHighlightingEngine   `json:"engine"`
-	Languages SyntaxHighlightingLanguage `json:"languages"`
+	Engine    *SyntaxHighlightingEngine   `json:"engine,omitempty"`
+	Languages *SyntaxHighlightingLanguage `json:"languages,omitempty"`
 	// Symbols description: Configure symbol generation
 	Symbols *SymbolConfiguration `json:"symbols,omitempty"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use
-	Default string `json:"default"`
+	Default string `json:"default,omitempty"`
 	// Overrides description: Manually specify overrides for syntax highlighting engine per language
 	Overrides map[string]string `json:"overrides,omitempty"`
 }
 type SyntaxHighlightingLanguage struct {
 	// Extensions description: Map of extension to language
-	Extensions map[string]string `json:"extensions"`
+	Extensions map[string]string `json:"extensions,omitempty"`
 	// Patterns description: Map of patterns to language. Will return after first match, if any.
-	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns"`
+	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns,omitempty"`
 }
 type SyntaxHighlightingLanguagePatterns struct {
 	// Language description: Name of the language if pattern matches

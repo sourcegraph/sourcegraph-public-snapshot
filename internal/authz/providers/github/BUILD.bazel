@@ -11,6 +11,7 @@ go_library(
         "github.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/github",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
@@ -42,9 +43,11 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":github"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/api",
         "//internal/authz",
+        "//internal/conf",
         "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/extsvc/auth",

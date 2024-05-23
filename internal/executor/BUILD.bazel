@@ -4,6 +4,7 @@ go_library(
     name = "executor",
     srcs = ["store.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/executor",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = ["//lib/errors"],
 )

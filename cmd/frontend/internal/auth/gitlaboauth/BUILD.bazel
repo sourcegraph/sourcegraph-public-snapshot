@@ -49,6 +49,7 @@ go_test(
     ],
     embed = [":gitlaboauth"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         # Test requires localhost database
         "requires-network",
     ],

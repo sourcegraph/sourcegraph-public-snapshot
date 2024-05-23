@@ -4,6 +4,7 @@ go_library(
     name = "logging",
     srcs = ["logging.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/logging",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//dev/linters/nolint",

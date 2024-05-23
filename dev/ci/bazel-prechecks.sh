@@ -56,7 +56,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   sg bazel configure
   ```
 
-  #### For more information please see the [Bazel FAQ](https://sourcegraph.com/docs/dev/background-information/bazel/faq)
+  #### For more information please see the [Bazel FAQ](https://docs-legacy.sourcegraph.com/dev/background-information/bazel/faq)
 
 END
   exit "$EXIT_CODE"
@@ -80,7 +80,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   sg bazel configure godeps
   ```
 
-  #### For more information please see the [Bazel FAQ](https://sourcegraph.com/docs/dev/background-information/bazel/faq)
+  #### For more information please see the [Bazel FAQ](https://docs-legacy.sourcegraph.com/dev/background-information/bazel/faq)
 
 END
   exit "$EXIT_CODE"

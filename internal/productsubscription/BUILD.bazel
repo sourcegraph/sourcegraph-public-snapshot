@@ -4,5 +4,6 @@ go_library(
     name = "productsubscription",
     srcs = ["consts.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/productsubscription",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//:__subpackages__"],
 )

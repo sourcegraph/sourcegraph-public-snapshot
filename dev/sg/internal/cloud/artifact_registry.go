@@ -20,6 +20,12 @@ type DockerImageFilterOpt func(image *DockerImage) bool
 
 // FilterTagByRegex filters the Docker Image tags by the given regular expression
 func FilterTagByRegex(regex *regexp.Regexp) DockerImageFilterOpt {
+	if regex == nil {
+		return func(image *DockerImage) bool {
+			return true
+		}
+	}
+
 	return func(image *DockerImage) bool {
 		for _, tag := range image.Tags {
 			if regex.MatchString(tag) {
@@ -103,6 +109,14 @@ func (ar *ArtifactRegistry) ListDockerImages(ctx context.Context, filterOpts ...
 		Parent:   ar.Parent(),
 		PageSize: ar.PageSize,
 		OrderBy:  "upload_time",
+	}
+
+	// if we have no any filter options, we just accept all images
+	if len(filterOpts) == 0 {
+		acceptAll := func(image *DockerImage) bool {
+			return true
+		}
+		filterOpts = append(filterOpts, acceptAll)
 	}
 
 	images := []*DockerImage{}

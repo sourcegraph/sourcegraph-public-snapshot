@@ -5,6 +5,7 @@ go_library(
     name = "author",
     srcs = ["author.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/store/author",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
@@ -20,6 +21,7 @@ go_test(
     srcs = ["author_test.go"],
     embed = [":author"],
     tags = [
+        TAG_SEARCHSUITE,
         # Test requires localhost for database
         "requires-network",
     ],

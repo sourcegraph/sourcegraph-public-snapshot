@@ -7,6 +7,7 @@ go_library(
         "sanity_check.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
         "@com_github_grafana_regexp//:regexp",

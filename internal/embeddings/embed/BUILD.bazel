@@ -10,6 +10,7 @@ go_library(
         "iface.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -40,6 +41,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":embed"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = [
         "//internal/api",
         "//internal/codeintel/context",

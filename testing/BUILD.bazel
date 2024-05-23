@@ -116,6 +116,7 @@ server_integration_test(
     ],
     port = "7082",
     runner_src = ":backend_integration_test_p4.sh",
+    tags = [TAG_PLATFORM_SOURCE],
 )
 
 server_integration_test(
@@ -168,6 +169,7 @@ server_integration_test(
     tags = [
         "exclusive",
         "manual",
+        TAG_PLATFORM_GRAPH,
     ],
 )
 
@@ -230,5 +232,6 @@ server_integration_test(
     tags = [
         "manual",
         "no-sandbox",
+        TAG_PLATFORM_GRAPH,
     ],
 )

@@ -8,6 +8,7 @@ go_library(
         "server.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/httpserver",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",

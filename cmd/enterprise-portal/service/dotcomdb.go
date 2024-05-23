@@ -10,17 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 )
 
-func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Database, error) {
-	if config.DotComDB.PGDSNOverride != nil {
-		config, err := pgx.ParseConfig(*config.DotComDB.PGDSNOverride)
+func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Reader, error) {
+	if override := config.DotComDB.PGDSNOverride; override != nil {
+		config, err := pgx.ParseConfig(*override)
 		if err != nil {
-			return nil, errors.Wrap(err, "rendered PGDSN is invalid")
+			return nil, errors.Wrapf(err, "pgx.ParseConfig %q", *override)
 		}
 		conn, err := pgx.ConnectConfig(ctx, config)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "pgx.ConnectConfig %q", *override)
 		}
-		return dotcomdb.NewDatabase(conn), nil
+		return dotcomdb.NewReader(conn), nil
 	}
 
 	// Use IAM auth to connect to the Cloud SQL database.
@@ -28,5 +28,5 @@ func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Database, er
 	if err != nil {
 		return nil, errors.Wrap(err, "contract.GetPostgreSQLDB")
 	}
-	return dotcomdb.NewDatabase(conn), nil
+	return dotcomdb.NewReader(conn), nil
 }

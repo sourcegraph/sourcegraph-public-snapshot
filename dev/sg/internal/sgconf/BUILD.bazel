@@ -8,6 +8,7 @@ go_library(
         "global.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/run",
@@ -29,6 +30,7 @@ go_test(
         # but within the bazel tree
         "SG_FORCE_REPO_ROOT": "./fake_root",
     },
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/sg/internal/run",
         "//dev/sg/root",

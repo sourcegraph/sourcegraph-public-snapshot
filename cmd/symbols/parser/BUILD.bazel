@@ -11,6 +11,7 @@ go_library(
         "parser_pool.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/parser",
+    tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/symbols/fetcher",
@@ -36,5 +37,6 @@ go_test(
     name = "parser_test",
     srcs = ["observability_test.go"],
     embed = [":parser"],
+    tags = [TAG_PLATFORM_SEARCH],
     deps = ["//internal/observation"],
 )

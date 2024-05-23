@@ -8,6 +8,7 @@ go_library(
         "openai.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/openai",
+    tags = [TAG_CODY_CORE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/tokenizer",
@@ -26,6 +27,7 @@ go_test(
         "openai_test.go",
     ],
     embed = [":openai"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/tokenusage",
         "//internal/completions/types",

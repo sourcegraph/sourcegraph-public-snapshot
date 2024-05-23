@@ -8,6 +8,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution",
+    tags = [TAG_CODY_CORE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/api",
@@ -28,6 +29,7 @@ go_test(
     name = "attribution_test",
     srcs = ["attribution_test.go"],
     embed = [":attribution"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/api",
         "//internal/codygateway",

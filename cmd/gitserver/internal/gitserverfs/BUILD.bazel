@@ -10,6 +10,7 @@ go_library(
         "mock.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//cmd/gitserver/internal/common",
@@ -33,6 +34,7 @@ go_test(
         "initfs_test.go",
     ],
     embed = [":gitserverfs"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//cmd/gitserver/internal/common",
         "//internal/api",

@@ -8,6 +8,7 @@ go_library(
         "events.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/telemetry-gateway:__subpackages__"],
     deps = [
         "//internal/pubsub",
@@ -30,6 +31,7 @@ go_test(
         "events_test.go",
     ],
     embed = [":events"],
+    tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//internal/pubsub/pubsubtest",
         "//lib/telemetrygateway/v1:telemetrygateway",

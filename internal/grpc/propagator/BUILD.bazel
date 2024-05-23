@@ -4,6 +4,7 @@ go_library(
     name = "propagator",
     srcs = ["propagator.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/propagator",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "@org_golang_google_grpc//:go_default_library",

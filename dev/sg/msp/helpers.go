@@ -1,6 +1,7 @@
 package msp
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -262,7 +263,9 @@ func generateTerraform(service *spec.Spec, opts generateTerraformOptions) error 
 			return err
 		}
 
-		if rollout := service.BuildRolloutPipelineConfiguration(env); rollout != nil {
+		// Generate additional rollouts assets IFF this is the final stage of
+		// a rollout pipeline.
+		if rollout := service.BuildRolloutPipelineConfiguration(env); rollout.IsFinalStage() {
 			pending.Updatef("[%s] Building rollout pipeline configurations for environment %q...", serviceID, env.ID)
 
 			// We generate skaffold.yaml archive for upload to GCS. See
@@ -336,4 +339,10 @@ func collectAlertPolicies(svc *spec.Spec) (map[string]terraform.AlertPolicy, err
 		maps.Copy(collectedAlerts, monitoring.ResourceType.GoogleMonitoringAlertPolicy)
 	}
 	return collectedAlerts, nil
+}
+
+// sortSlice sorts a slice of elements and returns it, for ease of chaining.
+func sortSlice[S ~[]E, E cmp.Ordered](s S) S {
+	slices.Sort(s)
+	return s
 }

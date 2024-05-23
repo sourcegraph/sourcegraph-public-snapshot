@@ -9,6 +9,7 @@ go_library(
         "routes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler",
+    tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/batches/types",
@@ -43,7 +44,10 @@ go_test(
         "multihandler_test.go",
         "routes_test.go",
     ],
-    tags = ["requires-network"],
+    tags = [
+        TAG_SEARCHSUITE,
+        "requires-network",
+    ],
     deps = [
         ":handler",
         "//internal/batches/types",

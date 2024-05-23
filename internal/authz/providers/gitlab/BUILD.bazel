@@ -9,6 +9,7 @@ go_library(
         "sudo.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/auth/providers",
@@ -39,6 +40,7 @@ go_test(
     ],
     embed = [":gitlab"],
     tags = [
+        TAG_PLATFORM_SOURCE,
         "requires-network",
     ],
     deps = [

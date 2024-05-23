@@ -1,24 +1,24 @@
 <script lang="ts">
     import { onDestroy } from 'svelte'
     import { writable } from 'svelte/store'
+
     import { browser } from '$app/environment'
     import { beforeNavigate } from '$app/navigation'
-
     import { isErrorLike } from '$lib/common'
+    import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-    import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
 
     import './styles.scss'
 
     import { createFeatureFlagStore } from '$lib/featureflags'
+    import FuzzyFinderContainer from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
     import { getGraphQLClient } from '$lib/graphql/apollo'
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
-    import FuzzyFinderContainer from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
 
     export let data: LayoutData
 
@@ -96,7 +96,7 @@
     {/if}
 {/await}
 
-<GlobalHeader authenticatedUser={$user} {handleOptOut} />
+<GlobalHeader authenticatedUser={$user} {handleOptOut} entries={data.navigationEntries} />
 
 <main>
     <slot />
@@ -112,15 +112,7 @@
         flex-direction: column;
     }
 
-    // Ensure that any content in the global header has
-    // more layout priority over any content in the content (main) area
-    :global([data-global-header]) {
-        z-index: 1;
-        isolation: isolate;
-    }
-
     main {
-        z-index: 0;
         isolation: isolate;
         flex: 1;
         display: flex;

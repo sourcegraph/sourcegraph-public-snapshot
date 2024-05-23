@@ -7,6 +7,7 @@ go_library(
         "main.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/clear",
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/codeintel-qa/internal",
@@ -17,5 +18,6 @@ go_library(
 go_binary(
     name = "clear",
     embed = [":clear_lib"],
+    tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//visibility:public"],
 )

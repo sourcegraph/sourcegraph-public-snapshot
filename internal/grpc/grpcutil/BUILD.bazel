@@ -5,6 +5,7 @@ go_library(
     name = "grpcutil",
     srcs = ["util.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//:__subpackages__"],
     deps = ["@org_golang_google_grpc//:go_default_library"],
 )
@@ -13,6 +14,7 @@ go_test(
     name = "grpcutil_test",
     srcs = ["util_test.go"],
     embed = [":grpcutil"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

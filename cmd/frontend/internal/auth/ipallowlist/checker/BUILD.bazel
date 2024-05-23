@@ -20,6 +20,7 @@ go_test(
     srcs = ["checker_test.go"],
     data = glob(["testdata/**"]),
     embed = [":checker"],
+    tags = [TAG_PLATFORM_SOURCE],
     deps = [
         "//internal/conf",
         "//schema",

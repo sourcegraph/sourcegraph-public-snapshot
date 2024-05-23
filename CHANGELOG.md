@@ -17,13 +17,34 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Basic support for rendering Jupyter notebooks in the Sourcegraph web app. ([#59685](https://github.com/sourcegraph/sourcegraph/pull/59685))
+- Mermaid diagrams in Markdown are now rendered in the Sourcegraph web app ([#62678](https://github.com/sourcegraph/sourcegraph/pull/62678))
+- A feature flag for Cody, `completions.smartContext` is added and set to "enabled" by default. It allows clients to adjust the context window based on the name of the chat model. When smartContext is enabled, the `completions.chatModelMaxTokens` value is ignored. ([#62802](https://github.com/sourcegraph/sourcegraph/pull/62802))
+
+### Changed
+
+- The default and recommended chat model for Anthropic and Cody Gateway configurations is now `claude-3-sonnet-20240229`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
+- The default and recommended autocomplete model for Cody Gateway configurations is now `fireworks/starcoder`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
+
+### Fixed
+
+- Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
+- Providing an access token via the [`SRC_ACCESS_TOKEN`](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token) environment variable is now mandatory for uploading SCIP indexes using [src-cli](https://sourcegraph.com/docs/cli). [#62573](https://github.com/sourcegraph/sourcegraph/pull/62573)
+- Fixed several conditions that could cause a repository being incorrectly marked as modified during code host syncing. For these cases, unnecessary git fetches were triggered. [#62837](https://github.com/sourcegraph/sourcegraph/pull/62837)
+
+## 5.4.2198
+
+### Added
+
 ### Changed
 
 ### Fixed
 
 - Fix a bug that caused Bedrock Provisioned Throughput model names to fail [#62695](https://github.com/sourcegraph/sourcegraph/pull/62695) ~~[#62642](https://github.com/sourcegraph/sourcegraph/pull/62642)~~
-- Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
+- Fixed an issue where usernames were too eagerly suffixed with a random ID to prevent duplicates which could cause issues with Bitbucket Server permissions syncing where exact username matches are required. [#62747](https://github.com/sourcegraph/sourcegraph/pull/62747)
 - Fixed an issue where code graph configuration policies would miscategorize lightweight tags as branches. [#62671](https://github.com/sourcegraph/sourcegraph/pull/62671)
+- Fixed a bug in batch changes scheduling that could cause excessive CPU usage. [#62597](https://github.com/sourcegraph/sourcegraph/pull/62597)
+- Cody ignore: update version constraint error message [#62654](https://github.com/sourcegraph/sourcegraph/pull/62654)
 
 ## 5.4.0
 
