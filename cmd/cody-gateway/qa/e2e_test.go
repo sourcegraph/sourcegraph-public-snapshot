@@ -90,7 +90,14 @@ func Test_Embeddings_OpenAI(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(response.Embeddings))
 		assert.Equal(t, model.dimensions, len(response.Embeddings[0].Data))
-		assert.Equal(t, model.firstValue, response.Embeddings[0].Data[0])
+		// This can drift somewhat, round the comparison to a few decimal places
+		// to avoid diffs like:
+		//
+		//     expected: -0.036106355
+		//     actual  : -0.03610423
+		assert.Equal(t,
+			fmt.Sprintf("%.4f", model.firstValue),
+			fmt.Sprintf("%.4f", response.Embeddings[0].Data[0]))
 	}
 }
 

@@ -299,17 +299,23 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/cmd/cody-gateway
     checkBinary: .bin/cody-gateway
     env:
-      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
-      # Set in override if you want to test local Cody Gateway: https://docs-legacy.sourcegraph.com/dev/how-to/cody_gateway
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: '127.0.0.1:6098'
+      # Set in 'sg.config.overwrite.yaml' if you want to test local Cody Gateway:
+      # https://docs-legacy.sourcegraph.com/dev/how-to/cody_gateway
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      # Set in override if you want to test Embeddings with local Cody Gateway: http://go/embeddings-api-token-link
+      # Set in 'sg.config.overwrite.yaml' if you want to test upstream
+      # integrations from local Cody Gateway:
+      # Entitle: https://app.entitle.io/request?data=eyJkdXJhdGlvbiI6IjIxNjAwIiwianVzdGlmaWNhdGlvbiI6IldSSVRFIEpVU1RJRklDQVRJT04gSEVSRSIsInJvbGVJZHMiOlt7ImlkIjoiYjhmYTk2NzgtNDExZC00ZmU1LWE2NDYtMzY4Y2YzYzUwYjJlIiwidGhyb3VnaCI6ImI4ZmE5Njc4LTQxMWQtNGZlNS1hNjQ2LTM2OGNmM2M1MGIyZSIsInR5cGUiOiJyb2xlIn1dfQ%3D%3D
+      # GSM: https://console.cloud.google.com/security/secret-manager?project=cody-gateway-dev
+      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: sekret
+      CODY_GATEWAY_OPENAI_ACCESS_TOKEN: sekret
+      CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN: sekret
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sekret
-      SRC_LOG_LEVEL: info
-      # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: '127.0.0.1:6098'
     watch:
       - lib
       - internal
