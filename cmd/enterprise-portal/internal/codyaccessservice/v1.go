@@ -94,6 +94,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 		return nil, err
 	}
 
+	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
 	if req.Msg.PageSize != 0 {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
 	}
@@ -110,7 +111,9 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 			"failed to list Cody Gateway access attributes")
 	}
 	resp := codyaccessv1.ListCodyGatewayAccessesResponse{
-		NextPageToken: "", // never a next page, pagination is not implemented yet
+		// Never a next page, pagination is not implemented yet:
+		// https://linear.app/sourcegraph/issue/CORE-134
+		NextPageToken: "",
 		Accesses:      make([]*codyaccessv1.CodyGatewayAccess, len(attrs)),
 	}
 	for i, attr := range attrs {
