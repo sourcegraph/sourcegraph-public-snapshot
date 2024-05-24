@@ -503,13 +503,13 @@ type IncompleteDatapointAlert interface {
 
 type TimeoutDatapointAlert interface {
 	Time() gqlutil.DateTime
-	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Repositories(ctx context.Context) (*[]*RepositoryResolver, error)
 }
 
 type GenericIncompleteDatapointAlert interface {
 	Time() gqlutil.DateTime
 	Reason() string
-	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Repositories(ctx context.Context) (*[]*RepositoryResolver, error)
 }
 
 type ValidateScopedInsightQueryArgs struct {

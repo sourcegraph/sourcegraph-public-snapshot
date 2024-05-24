@@ -554,8 +554,8 @@ func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: t.point.Time}
 }
 
-func (t *timeoutDatapointAlertResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return repositoryResolver(ctx, t.db, t.point.RepoId)
+func (t *timeoutDatapointAlertResolver) Repositories(ctx context.Context) (*[]*graphqlbackend.RepositoryResolver, error) {
+	return repositoriesResolver(ctx, t.db, t.point.RepoIds)
 }
 
 type genericIncompleteDatapointAlertResolver struct {
@@ -574,8 +574,8 @@ func (g *genericIncompleteDatapointAlertResolver) Reason() string {
 	}
 }
 
-func (g *genericIncompleteDatapointAlertResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return repositoryResolver(ctx, g.db, g.point.RepoId)
+func (g *genericIncompleteDatapointAlertResolver) Repositories(ctx context.Context) (*[]*graphqlbackend.RepositoryResolver, error) {
+	return repositoriesResolver(ctx, g.db, g.point.RepoIds)
 }
 
 func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context, args *graphqlbackend.IncompleteDatapointsArgs) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
@@ -598,14 +598,18 @@ func isNilOrEmpty(s *string) bool {
 	return *s == ""
 }
 
-func repositoryResolver(ctx context.Context, db database.DB, repoId *int) (*graphqlbackend.RepositoryResolver, error) {
-	if repoId == nil {
+func repositoriesResolver(ctx context.Context, db database.DB, repoIds []int) (*[]*graphqlbackend.RepositoryResolver, error) {
+	if repoIds == nil {
 		return nil, nil
 	}
 	gsClient := gitserver.NewClient("graphql.search.results.repositories")
-	repo, err := db.Repos().Get(ctx, api.RepoID(*repoId))
-	if err != nil {
-		return nil, err
+	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repoIds))
+	for i, id := range repoIds {
+		repo, err := db.Repos().Get(ctx, api.RepoID(id))
+		if err != nil {
+			return nil, err
+		}
+		resolvers[i] = graphqlbackend.NewRepositoryResolver(db, gsClient, repo)
 	}
-	return graphqlbackend.NewRepositoryResolver(db, gsClient, repo), nil
+	return &resolvers, nil
 }

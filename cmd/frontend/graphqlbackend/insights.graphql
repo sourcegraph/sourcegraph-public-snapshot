@@ -170,9 +170,9 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     time: DateTime!
 
     """
-    The repository that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    The repositories that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
     """
-    repository: Repository
+    repositories: [Repository!]
 }
 
 """
@@ -190,9 +190,9 @@ type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
     reason: String!
 
     """
-    The repository that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    The repositories that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
     """
-    repository: Repository
+    repositories: [Repository!]
 }
 
 extend type Query {

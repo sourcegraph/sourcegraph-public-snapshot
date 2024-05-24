@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 	"strconv"
 	"strings"
 	"time"
@@ -860,20 +861,31 @@ func (s *Store) LoadIncompleteDatapoints(ctx context.Context, seriesID int) (res
 		return nil, errors.New("invalid seriesID")
 	}
 
-	q := "select reason, time, repo_id from insight_series_incomplete_points where series_id = %s group by reason, time, repo_id;"
+	q := "select reason, time, ARRAY_AGG(repo_id) from insight_series_incomplete_points where series_id = %s group by reason, time;"
 	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
 	if err != nil {
 		return nil, err
 	}
 	return results, scanAll(rows, func(s scanner) (err error) {
 		var tmp IncompleteDatapoint
+		var repoIds []sql.NullInt64
 		if err = rows.Scan(
 			&tmp.Reason,
 			&tmp.Time,
-			&tmp.RepoId); err != nil {
+			pq.Array(&repoIds)); err != nil {
 			return err
 		}
-		results = append(results, tmp)
+		mappedRepoIds := make([]int, len(repoIds))
+		for i, repoId := range repoIds {
+			if repoId.Valid {
+				mappedRepoIds[i] = int(repoId.Int64)
+			}
+		}
+		results = append(results, IncompleteDatapoint{
+			Reason:  tmp.Reason,
+			Time:    tmp.Time,
+			RepoIds: mappedRepoIds,
+		})
 		return nil
 	})
 }
@@ -891,9 +903,10 @@ func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteD
 }
 
 type IncompleteDatapoint struct {
-	Reason IncompleteReason
-	RepoId *int
-	Time   time.Time
+	Reason  IncompleteReason
+	RepoId  *int
+	Time    time.Time
+	RepoIds []int
 }
 
 type IncompleteReason string
