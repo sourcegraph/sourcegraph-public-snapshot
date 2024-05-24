@@ -4,6 +4,9 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 import type { UserConfig as VitestUserConfig } from 'vitest'
+import Icons from 'unplugin-icons/vite'
+import IconsResolver from 'unplugin-icons/resolver'
+import AutoImport from 'unplugin-auto-import/vite'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
 
@@ -14,6 +17,18 @@ export default defineConfig(({ mode }) => {
     let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
+            AutoImport({
+                dts: './src/auto-imports.d.ts',
+                resolvers: [
+                    IconsResolver({
+                        prefix: 'i',
+                    }),
+                ],
+            }),
+            Icons({
+                compiler: 'svelte',
+                defaultClass: 'icon',
+            }),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
             inspect(),

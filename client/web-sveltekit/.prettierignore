@@ -15,6 +15,7 @@ yarn.lock
 /static/mockServiceWorker.js
 *.gql.d.ts
 *.gql.ts
+auto-imports.d.ts
 graphql-operations.ts
 graphql-types.ts
 graphql-type-mocks.ts
