@@ -4,7 +4,7 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "yaml",
     srcs = ["yaml.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/yaml",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/yaml",
     visibility = ["//:__subpackages__"],
     deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
 )

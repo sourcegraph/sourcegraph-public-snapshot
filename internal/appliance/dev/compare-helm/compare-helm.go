@@ -16,7 +16,7 @@ import (
 	k8syamlapi "k8s.io/apimachinery/pkg/util/yaml"
 	k8syaml "sigs.k8s.io/yaml"
 
-	"github.com/sourcegraph/sourcegraph/internal/yaml"
+	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -127,7 +127,7 @@ func main() {
 func marshalYAMLNormalized(obj any) []byte {
 	yml, err := k8syaml.Marshal(obj)
 	must(err)
-	yml, err = yaml.ConvertYAMLStringsToMultilineLiterals(yml)
+	yml, err = applianceyaml.ConvertYAMLStringsToMultilineLiterals(yml)
 	must(err)
 	return yml
 }

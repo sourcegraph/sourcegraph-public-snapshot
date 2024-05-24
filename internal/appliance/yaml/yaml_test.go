@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/yaml"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
 )
 
 func TestConvertsStringsToMultilineLiterals(t *testing.T) {

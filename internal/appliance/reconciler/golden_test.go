@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8syaml "sigs.k8s.io/yaml"
 
+	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
 	"github.com/sourcegraph/sourcegraph/internal/slices"
-	"github.com/sourcegraph/sourcegraph/internal/yaml"
 )
 
 // Test helpers
@@ -36,7 +36,7 @@ func (suite *ApplianceTestSuite) makeGoldenAssertions(namespace, goldenFileName 
 	obtainedResources := goldenFile{Resources: suite.gatherResources(namespace)}
 	obtainedBytes, err := k8syaml.Marshal(obtainedResources)
 	require.NoError(err)
-	obtainedBytes, err = yaml.ConvertYAMLStringsToMultilineLiterals(obtainedBytes)
+	obtainedBytes, err = applianceyaml.ConvertYAMLStringsToMultilineLiterals(obtainedBytes)
 	require.NoError(err)
 
 	if len(os.Args) > 0 && os.Args[len(os.Args)-1] == "appliance-update-golden-files" {

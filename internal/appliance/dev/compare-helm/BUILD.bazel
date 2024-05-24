@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/dev/compare-helm",
     visibility = ["//visibility:private"],
     deps = [
-        "//internal/yaml",
+        "//internal/appliance/yaml",
         "//lib/errors",
         "@io_k8s_apimachinery//pkg/apis/meta/v1/unstructured",
         "@io_k8s_apimachinery//pkg/util/yaml",

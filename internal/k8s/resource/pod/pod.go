@@ -62,7 +62,7 @@ func NewVolumeFromConfigMap(name, configMapName string) corev1.Volume {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: configMapName,
 				},
-				DefaultMode: pointers.Ptr(int32(0777)),
+				DefaultMode: pointers.Ptr[int32](0777),
 			},
 		},
 	}
