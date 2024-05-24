@@ -2,15 +2,15 @@ package connectutil
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-
 	"github.com/sourcegraph/log"
+
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // InternalError logs an error, adds it to the trace, and returns a connect
