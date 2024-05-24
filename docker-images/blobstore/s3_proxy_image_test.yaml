@@ -9,12 +9,15 @@ commandTests:
     exitCode: 0
   - name: "s3proxy test"
     setup:
+      # Start s3proxy and run in background
       - ["sh", "-c", "/opt/s3proxy/run-docker-container.sh &"]
+      # s3proxy takes several seconds to startup
       - ["sleep", "5"]
     command: "curl"
     args: ["--write-out", "%{http_code}", "-X", "PUT", "http://localhost:9000/create-bucket-test-2022-01-09-attempt0"]
     # args: ["--write-out", "%{http_code}", "--silent", "--output", "/dev/null", "-X", "PUT", "http://localhost:9000/create-bucket-test-2022-01-09-attempt0"]
     teardown:
+      # Terminate s3proxy after curl command completes
       - ["pkill", "java"]
     expectedOutput: ["200"]
 
