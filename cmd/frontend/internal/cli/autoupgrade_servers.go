@@ -9,6 +9,7 @@ import (
 
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -70,7 +71,12 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 		confServer.Start()
 	})
 
-	return confServer.Stop, nil
+	return func() {
+		err := confServer.Stop(context.Background())
+		if err != nil {
+			obsvCtx.Logger.Error("failed to stop conf server", log.Error(err))
+		}
+	}, nil
 }
 
 func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
@@ -100,5 +106,10 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 		progressServer.Start()
 	})
 
-	return progressServer.Stop, nil
+	return func() {
+		err := progressServer.Stop(context.Background())
+		if err != nil {
+			obsvCtx.Logger.Error("failed to stop progress server", log.Error(err))
+		}
+	}, nil
 }

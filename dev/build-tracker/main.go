@@ -69,7 +69,7 @@ func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQuer
 		bkClient:     buildkite.NewClient(bk.Client()),
 	}
 
-	// Register routes the the server will be responding too
+	// Register routes the server will be responding too
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
 	r.Path("/-/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
@@ -85,20 +85,23 @@ func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQuer
 	return server
 }
 
+func (s *Server) Name() string { return "build-tracker" }
+
 func (s *Server) Start() {
 	if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.logger.Error("error stopping server", log.Error(err))
 	}
 }
 
-func (s *Server) Stop() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func (s *Server) Stop(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	if err := s.http.Shutdown(ctx); err != nil {
-		s.logger.Error("error shutting down server", log.Error(err))
-	} else {
-		s.logger.Info("server stopped")
+		return errors.Wrap(err, "shutdown server")
 	}
+
+	s.logger.Info("server stopped")
+	return nil
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
@@ -116,7 +119,6 @@ func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
 	}
 	vars := mux.Vars(req)
 

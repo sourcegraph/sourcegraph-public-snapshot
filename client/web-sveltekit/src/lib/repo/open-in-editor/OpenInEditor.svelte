@@ -1,25 +1,26 @@
 <script lang="ts">
+    import { page } from '$app/stores'
+    import { getPlatform } from '$lib/common'
+    import type { ExternalRepository, SettingsEdit } from '$lib/graphql-types'
+    import Popover from '$lib/Popover.svelte'
+    import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
+    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
+    import { settings } from '$lib/stores'
+    import Tooltip from '$lib/Tooltip.svelte'
     import {
         getEditor,
         parseBrowserRepoURL,
         buildRepoBaseNameAndPath,
         buildEditorUrl,
         isProjectPathValid,
+        supportedEditors,
     } from '$lib/web'
+    import { Button } from '$lib/wildcard'
+
     import { getEditorSettingsErrorMessage } from './build-url'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import EditorIcon from '$lib/repo/open-in-editor/EditorIcon.svelte'
-    import { settings } from '$lib/stores'
-    import { page } from '$app/stores'
-    import type { ExternalRepository, SettingsEdit } from '$lib/graphql-types'
-    import DefaultEditorIcon from '$lib/repo/open-in-editor/DefaultEditorIcon.svelte'
-    import Popover from '$lib/Popover.svelte';
-    import { Button } from '$lib/wildcard';
-    import { supportedEditors } from '$lib/web';
-    import { getPlatform } from '$lib/common';
 
     export let externalServiceType: ExternalRepository['serviceType'] = ''
-    export let updateUserSetting: (edit: SettingsEdit) => Promise<void>;
+    export let updateUserSetting: (edit: SettingsEdit) => Promise<void>
 
     $: openInEditor = $settings?.openInEditor
 
@@ -35,42 +36,42 @@
     $: defaultProjectPath = ''
     $: selectedEditorId = undefined
 
-    $: areSettingsValid = !!selectedEditorId && isProjectPathValid(defaultProjectPath);
+    $: areSettingsValid = !!selectedEditorId && isProjectPathValid(defaultProjectPath)
 
-    let isSaving = false;
+    let isSaving = false
     $: handleEditorUpdate = async (): Promise<void> => {
         if (!selectedEditorId || !defaultProjectPath) {
-            return;
+            return
         }
-        isSaving = true;
+        isSaving = true
         try {
             await updateUserSetting({
                 value: defaultProjectPath,
-                keyPath: [{property: 'openInEditor'}, {property: 'projectPaths.default'}],
-            });
+                keyPath: [{ property: 'openInEditor' }, { property: 'projectPaths.default' }],
+            })
             await updateUserSetting({
                 value: [selectedEditorId],
-                keyPath: [{property: 'openInEditor'}, {property: 'editorIds'}],
-            });
+                keyPath: [{ property: 'openInEditor' }, { property: 'editorIds' }],
+            })
 
             openInEditor = {
                 editorIds: [selectedEditorId],
                 'projectPaths.default': defaultProjectPath,
             }
         } finally {
-            isSaving = false;
+            isSaving = false
         }
     }
 
     function getSystemAwareProjectPathExample(suffix?: string) {
         switch (getPlatform()) {
             case 'windows':
-                return 'C:\\Users\\username\\Projects' + (suffix ? `\\${suffix}` : '');
+                return 'C:\\Users\\username\\Projects' + (suffix ? `\\${suffix}` : '')
             case 'linux':
-                return '/home/username/Projects' + (suffix ? `/${suffix}` : '');
+                return '/home/username/Projects' + (suffix ? `/${suffix}` : '')
             case 'mac':
             default:
-                return '/Users/username/Projects' + (suffix ? `/${suffix}` : '');
+                return '/Users/username/Projects' + (suffix ? `/${suffix}` : '')
         }
     }
 </script>
@@ -91,7 +92,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <EditorIcon editorId={editor.id}/>
+                    <EditorIcon editorId={editor.id} />
                     <span data-action-label> Editor </span>
                 </a>
             </Tooltip>
@@ -101,7 +102,7 @@
     <Popover let:registerTrigger let:toggle placement="left-start">
         <Tooltip tooltip="Set your preferred editor">
             <span use:registerTrigger on:click={() => toggle()}>
-                <DefaultEditorIcon/>
+                <DefaultEditorIcon />
                 <span data-action-label> Editor </span>
             </span>
         </Tooltip>
@@ -129,27 +130,29 @@
                 </label>
 
                 <p class="small form-info">
-                    The directory that contains your repository checkouts. For example, if this repository is
-                    checked out to <code>{`${getSystemAwareProjectPathExample('cody')}`}</code>, then set your default projects path
-                    to <code>{getSystemAwareProjectPathExample()}</code>.
+                    The directory that contains your repository checkouts. For example, if this repository is checked
+                    out to <code>{`${getSystemAwareProjectPathExample('cody')}`}</code>, then set your default projects
+                    path to <code>{getSystemAwareProjectPathExample()}</code>.
                 </p>
                 <label>
                     Editor
                     <select class="form-input" id="OpenInEditorForm-editor" bind:value={selectedEditorId}>
-                        <option value=""></option>
-                        {#each supportedEditors.sort((a, b) => a.name.localeCompare(b.name)).filter(editor => editor.id !== 'custom') as editor}
+                        <option value="" />
+                        {#each supportedEditors
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .filter(editor => editor.id !== 'custom') as editor}
                             <option value={editor.id}>{editor.name}</option>
                         {/each}
                     </select>
                 </label>
 
-                <p class="small form-info">Use a different editor?{' '}
-                    <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener">Set up a
-                        different editor</a>
+                <p class="small form-info">
+                    Use a different editor?{' '}
+                    <a href="/help/integration/open_in_editor" target="_blank" rel="noreferrer noopener"
+                        >Set up a different editor</a
+                    >
                 </p>
-                <Button variant="primary" type="submit" disabled={!areSettingsValid || isSaving}>
-                    Save
-                </Button>
+                <Button variant="primary" type="submit" disabled={!areSettingsValid || isSaving}>Save</Button>
             </form>
         </div>
     </Popover>
@@ -191,5 +194,4 @@
     .form-info {
         margin-top: 0.5rem;
     }
-
 </style>

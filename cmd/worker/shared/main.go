@@ -205,8 +205,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		allRoutines = append(allRoutines, r.Routine)
 	}
 
-	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
 }
 
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.
