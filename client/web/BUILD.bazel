@@ -1068,7 +1068,6 @@ ts_project(
         "src/enterprise/site-admin/dotcom/customers/SiteAdminCustomersPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyGatewayRateLimitModal.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyServicesSection.tsx",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/ModelBadges.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminGenerateProductLicenseForSubscriptionForm.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage.tsx",

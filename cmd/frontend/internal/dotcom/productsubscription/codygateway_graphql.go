@@ -63,10 +63,6 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.ChatRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.ChatRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.ChatRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
@@ -107,10 +103,6 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.CodeRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.CodeRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.CodeRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
@@ -150,10 +142,6 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 	if rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds
-	}
-	if rateLimitOverrides.EmbeddingsRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.EmbeddingsRateLimit.AllowedModels
 	}
 
 	return &codyGatewayRateLimitResolver{
