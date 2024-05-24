@@ -47,7 +47,7 @@ var _ codyaccessv1connect.CodyAccessServiceHandler = (*handlerV1)(nil)
 
 func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayAccessRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayAccessResponse], error) {
 	logger := trace.Logger(ctx, s.logger).
-		With(log.String("query", fmt.Sprintf("%T", req.Msg.GetQuery())))
+		With(log.String("queryType", fmt.Sprintf("%T", req.Msg.GetQuery())))
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)

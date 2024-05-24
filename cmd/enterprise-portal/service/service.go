@@ -99,10 +99,10 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		listenAddr,
 		&http.Server{
 			Addr: listenAddr,
+			// Cloud Run only supports HTTP/2 if the service accepts HTTP/2 cleartext (h2c),
+			// see https://cloud.google.com/run/docs/configuring/http2
 			Handler: h2c.NewHandler(
 				otelhttp.NewHandler(
-					// Cloud Run only supports HTTP/2 if the service accepts HTTP/2 cleartext (h2c),
-					// see https://cloud.google.com/run/docs/configuring/http2
 					httpServer,
 					"handler",
 					// Don't trust incoming spans, start our own.
