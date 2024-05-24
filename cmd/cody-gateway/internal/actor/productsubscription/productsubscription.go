@@ -10,10 +10,11 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
@@ -298,7 +299,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			rl.AllowedModels,
+			[]string{"*"}, // allow all models allowlisted by Cody Gateway
 			concurrencyConfig,
 		)
 	}
@@ -307,7 +308,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			rl.AllowedModels,
+			[]string{"*"}, // allow all models allowlisted by Cody Gateway
 			concurrencyConfig,
 		)
 	}
@@ -316,7 +317,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			rl.AllowedModels,
+			[]string{"*"}, // allow all models allowlisted by Cody Gateway
 			// TODO: Once we split interactive and on-interactive, we want to apply
 			// stricter limits here than percentage based for this heavy endpoint.
 			concurrencyConfig,
