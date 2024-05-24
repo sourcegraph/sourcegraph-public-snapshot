@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	internalTypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"testing"
 	"time"
 
@@ -236,7 +238,7 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(t))
+	postgres := dbmocks.NewMockDB()
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
 
@@ -291,6 +293,59 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 		require.NoError(t, err)
 		autogold.Expect([]string{"2020-01-02 00:00:00 +0000 UTC", "2020-01-01 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
+
+	t.Run("without aggregating for timeouts should yield repositories", func(t *testing.T) {
+
+		repoStore := dbmocks.NewMockRepoStore()
+		postgres.ReposFunc.SetDefaultReturn(repoStore)
+		repoStore.GetFunc.SetDefaultReturn(&internalTypes.Repo{ID: api.RepoID(repo), Name: "github.com/sourcegraph/sourcegraph"}, nil)
+
+		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: false})
+		require.NoError(t, err)
+
+		for _, alert := range got {
+			a, isTimeout := alert.ToTimeoutDatapointAlert()
+			if isTimeout {
+				resolvers, err := a.Repositories(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(*resolvers) != 1 {
+					t.Fatal("expected 1 repository")
+				}
+				for _, repositoryResolver := range *resolvers {
+					require.Equal(t, "github.com/sourcegraph/sourcegraph", repositoryResolver.Name())
+				}
+			}
+		}
+	})
+
+	t.Run("without aggregating for generic should yield repositories", func(t *testing.T) {
+
+		repoStore := dbmocks.NewMockRepoStore()
+		postgres.ReposFunc.SetDefaultReturn(repoStore)
+		repoStore.GetFunc.SetDefaultReturn(&internalTypes.Repo{ID: api.RepoID(repo), Name: "github.com/sourcegraph/sourcegraph"}, nil)
+
+		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: false})
+		require.NoError(t, err)
+
+		for _, alert := range got {
+			a, isTimeout := alert.ToTimeoutDatapointAlert()
+			if isTimeout {
+				resolvers, err := a.Repositories(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(*resolvers) != 1 {
+					t.Fatal("expected 1 repository")
+				}
+				for _, repositoryResolver := range *resolvers {
+					require.Equal(t, "github.com/sourcegraph/sourcegraph", repositoryResolver.Name())
+				}
+			}
+		}
+	})
+
 }
 
 func Test_NumSamplesFiltering(t *testing.T) {
