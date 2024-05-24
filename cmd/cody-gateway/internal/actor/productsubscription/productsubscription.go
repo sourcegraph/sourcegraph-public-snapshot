@@ -14,16 +14,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 )
 
 // SourceVersion should be bumped whenever the format of any cached data in this
