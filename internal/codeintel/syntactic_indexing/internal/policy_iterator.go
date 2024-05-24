@@ -2,16 +2,17 @@ package internal
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 )
 
-type PolicyType int
+type PolicyType string
 
 const (
-	SyntacticIndexing PolicyType = 0
-	PreciseIndexing   PolicyType = 1
+	SyntacticIndexing PolicyType = "SYNTACTIC_INDEXING"
+	PreciseIndexing   PolicyType = "PRECISE_INDEXING"
 )
 
 // This iterator abstracts away the pagination logic for retrieving policies batches,
@@ -30,51 +31,29 @@ type policyIterator struct {
 }
 
 func (p policyIterator) ForEachPoliciesBatch(ctx context.Context, handle func([]policiesshared.ConfigurationPolicy) error) error {
-	f := false
-	t := true
+	forSyntacticIndexing := pointers.Ptr(p.PolicyType == SyntacticIndexing)
+	forPreciseIndexing := pointers.Ptr(p.PolicyType == PreciseIndexing)
 
-	forSyntacticIndexing := &f
-	forPreciseIndexing := &f
-
-	if p.PolicyType == SyntacticIndexing {
-		forSyntacticIndexing = &t
-		forPreciseIndexing = nil
-	} else {
-		forPreciseIndexing = &t
-		forSyntacticIndexing = nil
+	options := policiesshared.GetConfigurationPoliciesOptions{
+		RepositoryID:         p.RepositoryID,
+		ForSyntacticIndexing: forSyntacticIndexing,
+		ForPreciseIndexing:   forPreciseIndexing,
+		Limit:                p.BatchSize,
 	}
 
-	offset := 0
-
-	for {
-
-		options := policiesshared.GetConfigurationPoliciesOptions{
-			RepositoryID:         p.RepositoryID,
-			ForSyntacticIndexing: forSyntacticIndexing,
-			ForPreciseIndexing:   forPreciseIndexing,
-			Limit:                p.BatchSize,
-			Offset:               offset,
-		}
-
-		policies, totalCount, err := p.Service.GetConfigurationPolicies(ctx, options)
-
+	for offset := 0; ; {
+		options.Offset = 0
+		policiesBatch, totalCount, err := p.Service.GetConfigurationPolicies(ctx, options)
 		if err != nil {
 			return err
 		}
-
-		if len(policies) == 0 {
+		if len(policiesBatch) == 0 {
 			break
 		}
-
-		handlerError := handle(policies)
-
-		if handlerError != nil {
+		if handlerError := handle(policiesBatch); handlerError != nil {
 			return handlerError // propagate error from the handler
 		}
-
-		offset = offset + len(policies)
-
-		if offset >= totalCount {
+		if offset = offset + len(policiesBatch); offset >= totalCount {
 			break
 		}
 	}

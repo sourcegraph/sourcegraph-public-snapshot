@@ -20,8 +20,9 @@ type IndexEnqueuer interface {
 }
 
 type EnqueueOptions struct {
-	force       bool
-	bypassLimit bool
+	// setting force=true will schedule the job for a
+	// given pair of (repo, commit) even if it already exists in the queue
+	force bool
 }
 
 type indexEnqueuerImpl struct {
@@ -51,7 +52,7 @@ func NewIndexEnqueuer(
 }
 
 type operations struct {
-	queueIndex *observation.Operation
+	queueIndexes *observation.Operation
 }
 
 var (
@@ -77,7 +78,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		queueIndex: op("QueueIndex"),
+		queueIndexes: op("QueueIndexes"),
 	}
 }
 
@@ -92,7 +93,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.IsQueued
 func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
-	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, trace, endObservation := s.operations.queueIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
 	}})
@@ -107,10 +108,9 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
-	commit := string(commitID)
-	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
+	trace.AddEvent("ResolveRevision", attribute.String("commit", string(commitID)))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, options)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commitID, options)
 }
 
 // queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
@@ -118,7 +118,9 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
+func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
+	commit := string(commitID)
+
 	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -130,19 +132,14 @@ func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context
 	}
 
 	if !options.force {
-		values := make([]jobstore.SyntacticIndexingJob, 1)
-		values[0] = jobstore.SyntacticIndexingJob{
-			State:        jobstore.Queued,
-			Commit:       commit,
-			RepositoryID: repositoryID,
-		}
+		values := []jobstore.SyntacticIndexingJob{
+			{
+				State:        jobstore.Queued,
+				Commit:       commit,
+				RepositoryID: repositoryID,
+			}}
 
-		jobs, err := s.jobStore.InsertIndexes(ctx, values)
-		if err != nil {
-			return nil, err
-		}
-
-		return jobs, nil
+		return s.jobStore.InsertIndexes(ctx, values)
 	}
 
 	return nil, nil

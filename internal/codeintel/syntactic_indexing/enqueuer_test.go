@@ -71,10 +71,10 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	require.Equal(t, scheduled[0].State, jobstore.Queued)
 	require.Equal(t, scheduled[0].RepositoryName, tacosRepoName)
 
-	// cannot schedule same repo+revision twice
-	result, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
+	// scheduling the same (repo, revision) twice doesn't return an error,
+	// but also doesn't insert a new job
+	result := unwrap(enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{}))(t)
 	require.Empty(t, result)
-	require.NoError(t, err)
 
 	// cannot schedule for non existent repositories
 	_, err = enqueuer.QueueIndexes(ctx, 250, tacosCommit, EnqueueOptions{})
