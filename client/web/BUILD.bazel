@@ -1897,6 +1897,7 @@ ts_project(
         "src/codeintel/ReferencesPanel.mocks.ts",
         "src/codeintel/ReferencesPanel.test.tsx",
         "src/cody/management/api/hooks/useApiClient.test.tsx",
+        "src/cody/team/TeamMemberList.test.ts",
         "src/cody/useCodyIgnore.test.ts",
         "src/components/ErrorBoundary.test.tsx",
         "src/components/FilteredConnection/FilteredConnection.test.tsx",

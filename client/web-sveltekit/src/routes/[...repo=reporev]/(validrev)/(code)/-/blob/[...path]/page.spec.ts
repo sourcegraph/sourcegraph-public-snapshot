@@ -44,6 +44,7 @@ test.beforeEach(({ sg }) => {
             languages: ['JavaScript'],
             richHTML: '',
             content: '"file content"',
+            binary: false,
         },
         {
             __typename: 'GitBlob',
@@ -55,6 +56,7 @@ test.beforeEach(({ sg }) => {
             richHTML: '',
             content: Array.from({ length: 500 }, (_, i) => `// line ${i + 1};`).join('\n'),
             totalLines: 500,
+            binary: false,
         },
         {
             __typename: 'GitBlob',
@@ -66,6 +68,26 @@ test.beforeEach(({ sg }) => {
             richHTML: '',
             content: Array.from({ length: 300 }, (_, i) => `// line ${i + 1};`).join('\n'),
             totalLines: 300,
+            binary: false,
+        },
+        {
+            __typename: 'GitBlob',
+            name: 'readme.md',
+            path: 'src/readme.md',
+            canonicalURL: `/${repoName}/-/blob/src/readme.md`,
+            isDirectory: false,
+            languages: ['Markdown'],
+            richHTML: '<h1>file content</h1>',
+            content: '# file content',
+            externalURLs: [
+                {
+                    url: 'https://example.com',
+                    serviceKind: ExternalServiceKind.GITHUB,
+                },
+            ],
+            binary: false,
+            byteSize: 12345,
+            totalLines: 42,
         },
     ])
 
@@ -87,7 +109,7 @@ test.beforeEach(({ sg }) => {
                 },
             },
         }),
-        BlobPageQuery: ({ path, repoName }) => ({
+        BlobFileViewBlobQuery: ({ path, repoName }) => ({
             repository: {
                 commit: {
                     blob: {
@@ -99,7 +121,7 @@ test.beforeEach(({ sg }) => {
     })
 })
 
-test.skip('load file', async ({ page }) => {
+test('load file', async ({ page }) => {
     await page.goto(url)
     await expect(page.getByRole('heading', { name: 'index.js' })).toBeVisible()
     await expect(page.getByText(/"file content"/)).toBeVisible()
@@ -108,37 +130,7 @@ test.skip('load file', async ({ page }) => {
 test.describe('file header', () => {
     const url = `/${repoName}/-/blob/src/readme.md`
 
-    test.beforeEach(({ sg }) => {
-        sg.mockOperations({
-            BlobPageQuery: ({}) => ({
-                repository: {
-                    commit: {
-                        blob: {
-                            __typename: 'GitBlob',
-                            name: 'readme.md',
-                            path: 'src/readme.md',
-                            canonicalURL: `/${repoName}/-/blob/src/readme.md`,
-                            isDirectory: false,
-                            languages: ['Markdown'],
-                            richHTML: '<h1>file content</h1>',
-                            content: '# file content',
-                            externalURLs: [
-                                {
-                                    url: 'https://example.com',
-                                    serviceKind: ExternalServiceKind.GITHUB,
-                                },
-                            ],
-                            binary: false,
-                            byteSize: 12345,
-                            totalLines: 42,
-                        },
-                    },
-                },
-            }),
-        })
-    })
-
-    test.skip('default editor link', async ({ page }) => {
+    test('default editor link', async ({ page }) => {
         await page.goto(url)
         const link = page.getByLabel('Editor')
         await expect(link, 'links to help page').toHaveAttribute('href', '/help/integration/open_in_editor')
@@ -150,7 +142,7 @@ test.describe('file header', () => {
         )
     })
 
-    test.skip('editor link', async ({ sg, page }) => {
+    test('editor link', async ({ sg, page }) => {
         const projectsPath = '/Users/USERNAME/Documents'
         sg.mockTypes({
             SettingsCascade: () => ({
@@ -173,7 +165,7 @@ test.describe('file header', () => {
         await expect(tooltip, 'inform user about settings').toHaveText('Open in IntelliJ IDEA')
     })
 
-    test.skip('code host link', async ({ page }) => {
+    test('code host link', async ({ page }) => {
         await page.goto(url)
         const link = page.getByLabel('Open in code host')
         await expect(link, 'links to correct code host').toHaveAttribute('href', 'https://example.com')
@@ -189,7 +181,7 @@ test.describe('file header', () => {
         )
     })
 
-    test.skip('dropdown menu', async ({ page }) => {
+    test('dropdown menu', async ({ page }) => {
         await page.goto(url)
 
         async function openDropdown() {
@@ -223,7 +215,7 @@ test.describe('file header', () => {
         ).toBeVisible()
     })
 
-    test.skip('view modes', async ({ page }) => {
+    test('view modes', async ({ page }) => {
         await page.goto(url)
         // Rendered markdown is shown by default
         await expect(page.getByLabel('Formatted'), "'Formatted' is selected by default").toBeChecked()
@@ -236,7 +228,7 @@ test.describe('file header', () => {
         await expect(page.getByText(/# file content/)).toBeVisible()
     })
 
-    test.skip('meta data', async ({ page }) => {
+    test('meta data', async ({ page }) => {
         await page.goto(url)
         await expect(page.getByText('12.35 KB')).toBeVisible()
         await expect(page.getByText('42 lines')).toBeVisible()
@@ -255,28 +247,31 @@ test.describe('file header', () => {
 test.describe('scroll behavior', () => {
     const url = `/${repoName}/-/blob/src/large-file-1.js`
 
-    test.skip('initial page load', async ({ page }) => {
+    test('initial page load', async ({ page }) => {
         await page.goto(url)
         await expect(page.getByText('line 1;'), 'file is scrolled to the top').toBeVisible()
     })
 
-    test.skip('initial page load with selected line', async ({ page }) => {
+    test('initial page load with selected line', async ({ page }) => {
         await page.goto(url + '?L100')
         const selectedLine = page.getByTestId('selected-line')
         await expect(selectedLine, 'selected line is scrolled into view').toBeVisible()
         await expect(selectedLine).toHaveText(/line 100;/)
     })
 
-    test.skip('go to another file', async ({ page, utils }) => {
+    test('go to another file', async ({ page, utils }) => {
         await page.goto(url)
         // Scroll to some arbitrary position
         await utils.scrollYAt(page.getByText('line 1;'), 1000)
+
+        // Open sidebar
+        await page.locator('#sidebar-panel').getByRole('button').click()
 
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
         await expect(page.getByText('line 1;')).toBeVisible()
     })
 
-    test.skip('select a line', async ({ page, utils }) => {
+    test('select a line', async ({ page, utils }) => {
         await page.goto(url)
 
         // Scrolls to line 64 at the top (found out by inspecting the test)
@@ -286,14 +281,14 @@ test.describe('scroll behavior', () => {
         const position = await line64.boundingBox()
 
         // Select line
-        await page.getByText('80', { exact: true }).click()
-        await expect(page.getByTestId('selected-line')).toHaveText(/line 80;/)
+        await page.getByText('70', { exact: true }).click()
+        await expect(page.getByTestId('selected-line')).toHaveText(/line 70;/)
 
         // Compare positions
         expect((await line64.boundingBox())?.y, 'selecting a line preserves scroll position').toBe(position?.y)
     })
 
-    test.skip('[back] preserve scroll position', async ({ page, utils }) => {
+    test('[back] preserve scroll position', async ({ page, utils }) => {
         await page.goto(url)
         const line1 = page.getByText('line 1;')
         await expect(line1).toBeVisible()
@@ -304,6 +299,9 @@ test.describe('scroll behavior', () => {
         await expect(line64).toBeVisible()
         const position = await line64.boundingBox()
 
+        // Open sidebar
+        await page.locator('#sidebar-panel').getByRole('button').click()
+
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
         await expect(line1).toBeVisible()
 
@@ -313,8 +311,12 @@ test.describe('scroll behavior', () => {
         )
     })
 
-    test.skip('[forward] preserve scroll position', async ({ page, utils }) => {
+    test('[forward] preserve scroll position', async ({ page, utils }) => {
         await page.goto(url)
+
+        // Open sidebar
+        await page.locator('#sidebar-panel').getByRole('button').click()
+
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
 
         const firstLine = page.getByText('line 1;')
@@ -334,7 +336,7 @@ test.describe('scroll behavior', () => {
         expect((await line64.boundingBox())?.y, 'restores scroll navigation on forward navigation').toBe(position?.y)
     })
 
-    test.skip('[back] preserve scroll position with selected line', async ({ page, utils }) => {
+    test('[back] preserve scroll position with selected line', async ({ page, utils }) => {
         await page.goto(url + '?L100')
         const line100 = page.getByText('line 100;')
         await expect(line100).toBeVisible()
@@ -345,6 +347,9 @@ test.describe('scroll behavior', () => {
         await expect(line210).toBeVisible()
         const position = await line210.boundingBox()
 
+        // Open sidebar
+        await page.locator('#sidebar-panel').getByRole('button').click()
+
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
         await expect(page.getByText('line 1;')).toBeVisible()
 
@@ -354,9 +359,9 @@ test.describe('scroll behavior', () => {
     })
 })
 
-test.skip('non-existent file', async ({ page, sg }) => {
+test('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobPageQuery: ({}) => ({
+        BlobFileViewBlobQuery: ({}) => ({
             repository: {
                 commit: {
                     blob: null,
@@ -369,9 +374,9 @@ test.skip('non-existent file', async ({ page, sg }) => {
     await expect(page.getByText('File not found')).toBeVisible()
 })
 
-test.skip('error loading file data', async ({ page, sg }) => {
+test('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobPageQuery: ({}) => {
+        BlobFileViewBlobQuery: ({}) => {
             throw new Error('Blob error')
         },
     })
@@ -382,7 +387,7 @@ test.skip('error loading file data', async ({ page, sg }) => {
 
 test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobSyntaxHighlightQuery: ({}) => {
+        BlobFileViewHighlightedFileQuery: ({}) => {
             throw new Error('Highlights error')
         },
     })

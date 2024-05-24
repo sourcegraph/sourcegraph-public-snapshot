@@ -32,3 +32,7 @@ export function isWindowsPlatform(): boolean {
     // Examples: 'Win32', 'Windows', 'Win64'
     return typeof window !== 'undefined' && window.navigator.platform.includes('Win')
 }
+
+export function getPlatform(): 'windows' | 'mac' | 'linux' | 'other' {
+    return isWindowsPlatform() ? 'windows' : isMacPlatform() ? 'mac' : isLinuxPlatform() ? 'linux' : 'other'
+}

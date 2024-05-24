@@ -5690,6 +5690,12 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
+        patch_args = ["-p1"],
+        # For some reason, this isn't being included automatically, causing a test failure
+        # when we try to use the dependency.
+        patches = [
+            "//third_party/com_github_sourcegraph_scip:add_parser_h_to_srcs.patch",
+        ],
         sum = "h1:3EOkChYOntwHl0pPSAju7rj0oRuujh8owC4vjGDEr0s=",
         version = "v0.3.3",
     )

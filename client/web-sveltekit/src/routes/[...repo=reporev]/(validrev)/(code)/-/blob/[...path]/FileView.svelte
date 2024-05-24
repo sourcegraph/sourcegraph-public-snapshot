@@ -156,7 +156,7 @@
         <svelte:fragment slot="actions">
             {#await data.externalServiceType then externalServiceType}
                 {#if externalServiceType && !isBinaryFile}
-                    <OpenInEditor {externalServiceType} />
+                    <OpenInEditor {externalServiceType} updateUserSetting={data.updateUserSetting} />
                 {/if}
             {/await}
             {#if blob}

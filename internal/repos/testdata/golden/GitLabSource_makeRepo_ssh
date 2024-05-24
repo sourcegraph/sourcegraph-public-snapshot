@@ -34,7 +34,10 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   },
   {
@@ -72,7 +75,10 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   },
   {
@@ -110,7 +116,10 @@
     "forks_count": 0,
     "empty_repo": false,
     "default_branch": "main",
-    "topics": ["topic1", "topic2"]
+    "topics": [
+     "topic1",
+     "topic2"
+    ]
    }
   }
  ]

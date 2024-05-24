@@ -18,13 +18,17 @@ test.beforeEach(async ({ sg }) => {
             repository: {
                 branches: {
                     nodes: [{ displayName: 'main' }, { displayName: 'feature/branch' }],
+                    pageInfo: {
+                        // Needed to prevent infinity scroll from trying to load more pages
+                        hasNextPage: false,
+                    },
                 },
             },
         }),
     })
 })
 
-test.skip('list branches', async ({ page }) => {
+test('list branches', async ({ page }) => {
     await page.goto(url)
 
     await expect(page.getByRole('link', { name: 'main' })).toBeVisible()
