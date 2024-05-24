@@ -5703,6 +5703,7 @@ def go_dependencies():
         name = "com_github_sourcegraph_sourcegraph_accounts_sdk_go",
         build_directives = [
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/background @//lib/background",
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph-accounts-sdk-go",
