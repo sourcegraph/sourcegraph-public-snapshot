@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +33,7 @@ func NewHandler(
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	mf ModelFactory,
-	allowedModels []string,
+	prefixedAllowedModels []string,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("embeddingshandler")
 
@@ -64,7 +63,7 @@ func NewHandler(
 				return
 			}
 
-			if !isAllowedModel(intersection(allowedModels, rateLimit.AllowedModels), body.Model) {
+			if !isAllowedModel(rateLimit.EvaluateAllowedModels(prefixedAllowedModels), body.Model) {
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", body.Model))
 				return
 			}
@@ -199,13 +198,4 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 	}
 	return false
-}
-
-func intersection(a, b []string) (c []string) {
-	for _, val := range a {
-		if slices.Contains(b, val) {
-			c = append(c, val)
-		}
-	}
-	return c
 }

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -137,7 +136,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
-
+	// unprefixed upstream model names
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
@@ -150,10 +149,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
 	// for rate limits from actor sources.
-	clonedAllowedModels := make([]string, len(allowedModels))
-	copy(clonedAllowedModels, allowedModels)
-	for i := range clonedAllowedModels {
-		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
+	prefixedAllowedModels := make([]string, len(allowedModels))
+	copy(prefixedAllowedModels, allowedModels)
+	for i := range prefixedAllowedModels {
+		prefixedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, prefixedAllowedModels[i])
 	}
 
 	// upstreamHandler is the actual HTTP handle that will perform "all of the things"
@@ -200,6 +199,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// This isn't very robust, but should tide us through a brief transition
 		// period until everything deploys and our caches refresh.
 		for i := range rateLimit.AllowedModels {
+			if rateLimit.AllowedModels[i] == "*" {
+				continue // special wildcard value
+			}
 			if !strings.Contains(rateLimit.AllowedModels[i], "/") {
 				rateLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, rateLimit.AllowedModels[i])
 			}
@@ -305,7 +307,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// the prefix yet when extracted - we need to add it back here. This
 		// full gatewayModel is also used in events tracking.
 		gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-		if allowed := intersection(clonedAllowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+		if allowed := rateLimit.EvaluateAllowedModels(prefixedAllowedModels); !isAllowedModel(allowed, gatewayModel) {
 			response.JSONError(logger, w, http.StatusBadRequest,
 				errors.Newf("model %q is not allowed, allowed: [%s]",
 					gatewayModel, strings.Join(allowed, ", ")))
@@ -534,13 +536,4 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 	}
 	return false
-}
-
-func intersection(a, b []string) (c []string) {
-	for _, val := range a {
-		if slices.Contains(b, val) {
-			c = append(c, val)
-		}
-	}
-	return c
 }
