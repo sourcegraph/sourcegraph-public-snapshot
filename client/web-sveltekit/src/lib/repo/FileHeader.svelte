@@ -32,7 +32,7 @@
     // This event handler removes the newlines surrounding slashes from the copied text.
     function stripSpaces(event: ClipboardEvent) {
         const selection = document.getSelection() ?? ''
-        event.clipboardData?.setData('text/plain', selection?.toString()?.replaceAll(/\n?\/\n?/g, '/'))
+        event.clipboardData?.setData('text/plain', selection.toString().replaceAll(/\n?\/\n?/g, '/'))
         event.preventDefault()
     }
 </script>
