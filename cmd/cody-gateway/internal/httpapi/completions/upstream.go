@@ -334,7 +334,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if flaggingResult.IsFlagged() {
 				requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 			}
-			if config.IdentifiersToLogFor.Has(act.ID) {
+			if act.IsDotComActor() && config.IdentifiersToLogFor.Has(act.ID) {
 				requestMetadata["full_prompt"] = body.BuildPrompt()
 			}
 			usageData := map[string]any{
