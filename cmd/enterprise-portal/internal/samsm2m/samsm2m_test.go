@@ -10,9 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
-
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
