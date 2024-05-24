@@ -64,7 +64,7 @@ export interface Caller {
 // the current Sourcegraph instance's SSC proxy API endpoint.
 export class CodyProApiCaller implements Caller {
     // e.g. "https://sourcegraph.com"
-    private origin: string
+    private readonly origin: string
 
     constructor() {
         this.origin = window.location.origin
