@@ -7,6 +7,16 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+  - name: "s3proxy test"
+    setup:
+      - ["sh", "-c", "/opt/s3proxy/run-docker-container.sh &"]
+      - ["sleep", "5"]
+    command: "curl"
+    args: ["--write-out", "%{http_code}", "-X", "PUT", "http://localhost:9000/create-bucket-test-2022-01-09-attempt0"]
+    # args: ["--write-out", "%{http_code}", "--silent", "--output", "/dev/null", "-X", "PUT", "http://localhost:9000/create-bucket-test-2022-01-09-attempt0"]
+    teardown:
+      - ["pkill", "java"]
+    expectedOutput: ["200"]
 
 fileExistenceTests:
 - name: 'Test for run-docker-container.sh'
