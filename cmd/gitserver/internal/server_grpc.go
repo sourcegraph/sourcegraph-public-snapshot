@@ -889,7 +889,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 				Repo:   req.GetRepoName(),
 				Commit: req.GetCommit(),
-				Path:   req.GetPath(),
+				Path:   []byte(req.GetPath()),
 			})
 			if err != nil {
 				return err
@@ -1018,7 +1018,7 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 				Repo:   req.GetRepoName(),
 				Commit: req.GetCommit(),
-				Path:   string(req.GetPath()),
+				Path:   req.GetPath(),
 			})
 			if err != nil {
 				return err
@@ -1581,7 +1581,7 @@ func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 				Repo:   string(repoName),
 				Commit: string(req.GetCommitSha()),
-				Path:   path,
+				Path:   []byte(path),
 			})
 			if err != nil {
 				return nil, err
@@ -1677,7 +1677,7 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 					Repo:   req.GetRepoName(),
 					Commit: string(req.GetCommitSha()),
-					Path:   string(req.GetPath()),
+					Path:   req.GetPath(),
 				})
 				if err != nil {
 					return err

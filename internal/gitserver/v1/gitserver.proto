@@ -841,7 +841,7 @@ message RevisionNotFoundPayload {
 message FileNotFoundPayload {
   string repo = 1;
   string commit = 2;
-  string path = 3;
+  bytes path = 3;
 }
 
 message ExecStatusPayload {

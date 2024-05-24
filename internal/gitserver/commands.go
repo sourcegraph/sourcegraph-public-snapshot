@@ -374,7 +374,7 @@ func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, comm
 				for _, d := range s.Details() {
 					fp, ok := d.(*proto.FileNotFoundPayload)
 					if ok {
-						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+						return nil, &os.PathError{Op: "open", Path: string(fp.Path), Err: os.ErrNotExist}
 					}
 				}
 			}
@@ -863,7 +863,7 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 				for _, d := range s.Details() {
 					fp, ok := d.(*proto.FileNotFoundPayload)
 					if ok {
-						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+						return nil, &os.PathError{Op: "open", Path: string(fp.Path), Err: os.ErrNotExist}
 					}
 				}
 			}
