@@ -6,7 +6,6 @@ import { Navigate } from 'react-router-dom'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -26,8 +25,6 @@ import { InvoiceHistory } from './InvoiceHistory'
 import { SubscriptionDetails } from './SubscriptionDetails'
 
 import styles from './CodySubscriptionManagePage.module.scss'
-
-const PaymentDetails = lazyComponent(() => import('./PaymentDetails'), 'PaymentDetails')
 
 interface Props extends Pick<LegacyLayoutRouteContext, 'telemetryRecorder'> {
     authenticatedUser: AuthenticatedUser
