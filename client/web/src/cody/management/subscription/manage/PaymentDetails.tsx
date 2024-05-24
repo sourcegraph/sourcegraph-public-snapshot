@@ -41,7 +41,7 @@ interface PaymentDetailsProps {
 }
 
 export const PaymentDetails: React.FC<PaymentDetailsProps> = props => (
-    <Grid columnCount={2} spacing={0} className={styles.grid}>
+    <Grid columnCount={2} spacing={0}>
         <div className={styles.gridItem}>
             <PaymentMethod subscription={props.subscription} refetchSubscription={props.refetchSubscription} />
         </div>
