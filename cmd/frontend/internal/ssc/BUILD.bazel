@@ -12,6 +12,7 @@ go_library(
     tags = [TAG_CODY_PRIME],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/external/session",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
