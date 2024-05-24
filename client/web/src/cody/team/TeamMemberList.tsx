@@ -172,7 +172,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                     className={classNames(
                         'mb-4',
                         styles.alert,
-                        actionResult.isError ? styles.errorAlert : styles.blueSuccessAlert
+                        actionResult.isError ? styles.errorAlert : styles.greenSuccessAlert
                     )}
                 >
                     {actionResult.message}
