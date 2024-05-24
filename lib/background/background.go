@@ -139,9 +139,7 @@ func (rs CombinedRoutine) Name() string {
 // Start starts all routines, it does not wait for the routines to finish
 // starting.
 func (rs CombinedRoutine) Start() {
-	wg := &sync.WaitGroup{}
-	startAll(wg, rs...)
-	wg.Wait()
+	startAll(&sync.WaitGroup{}, rs...)
 }
 
 // Stop attempts to gracefully stopping all routines. It attempts to collect all
