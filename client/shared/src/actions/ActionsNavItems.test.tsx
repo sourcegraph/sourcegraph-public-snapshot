@@ -43,6 +43,9 @@ describe('ActionItem', () => {
                                                         label: 'Action A',
                                                         description: 'This is Action A',
                                                     },
+                                                    telemetryProps: {
+                                                        feature: 'a',
+                                                    },
                                                 },
                                             ],
                                             menus: {

@@ -21,7 +21,15 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 location={history.location}
@@ -35,7 +43,15 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -50,7 +66,14 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 location={history.location}
@@ -64,7 +87,12 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
+                action={{
+                    id: 'a',
+                    command: 'c',
+                    actionItem: { pressed: true, label: 'b' },
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -79,7 +107,12 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
+                action={{
+                    id: 'a',
+                    command: 'c',
+                    actionItem: { pressed: false, label: 'b' },
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -94,7 +127,15 @@ describe('ActionItem', () => {
         const component = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -112,7 +153,15 @@ describe('ActionItem', () => {
         const { container, asFragment } = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -139,7 +188,15 @@ describe('ActionItem', () => {
         const { asFragment } = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -171,7 +228,15 @@ describe('ActionItem', () => {
         const { asFragment } = render(
             <ActionItem
                 active={true}
-                action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
+                action={{
+                    id: 'c',
+                    command: 'c',
+                    title: 't',
+                    description: 'd',
+                    iconURL: 'u',
+                    category: 'g',
+                    telemetryProps: { feature: 'a' },
+                }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 telemetryRecorder={noOpTelemetryRecorder}
                 variant="actionItem"
@@ -205,7 +270,13 @@ describe('ActionItem', () => {
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
                     active={true}
-                    action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
+                    action={{
+                        id: 'c',
+                        command: 'open',
+                        commandArguments: ['https://example.com/bar'],
+                        title: 't',
+                        telemetryProps: { feature: 'a' },
+                    }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}
@@ -221,7 +292,13 @@ describe('ActionItem', () => {
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
                     active={true}
-                    action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
+                    action={{
+                        id: 'c',
+                        command: 'open',
+                        commandArguments: ['https://other.com/foo'],
+                        title: 't',
+                        telemetryProps: { feature: 'a' },
+                    }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}
@@ -237,8 +314,14 @@ describe('ActionItem', () => {
             const { asFragment } = renderWithBrandedContext(
                 <ActionItem
                     active={true}
-                    action={{ id: 'c1', command: 'whatever', title: 'primary' }}
-                    altAction={{ id: 'c2', command: 'open', commandArguments: ['https://other.com/foo'], title: 'alt' }}
+                    action={{ id: 'c1', command: 'whatever', title: 'primary', telemetryProps: { feature: 'a' } }}
+                    altAction={{
+                        id: 'c2',
+                        command: 'open',
+                        commandArguments: ['https://other.com/foo'],
+                        title: 'alt',
+                        telemetryProps: { feature: 'a' },
+                    }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     telemetryRecorder={noOpTelemetryRecorder}
                     location={history.location}

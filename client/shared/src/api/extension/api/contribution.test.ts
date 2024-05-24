@@ -13,8 +13,8 @@ import {
 describe('mergeContributions()', () => {
     const FIXTURE_CONTRIBUTIONS_1: Evaluated<Contributions> = {
         actions: [
-            { id: '1.a', command: 'c', title: '1.A' },
-            { id: '1.b', command: 'c', title: '1.B' },
+            { id: '1.a', command: 'c', title: '1.A', telemetryProps: { feature: '1.a' } },
+            { id: '1.b', command: 'c', title: '1.B', telemetryProps: { feature: '1.b' } },
         ],
         menus: {
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
@@ -23,8 +23,8 @@ describe('mergeContributions()', () => {
 
     const FIXTURE_CONTRIBUTIONS_2: Evaluated<Contributions> = {
         actions: [
-            { id: '2.a', command: 'c', title: '2.A' },
-            { id: '2.b', command: 'c', title: '2.B' },
+            { id: '2.a', command: 'c', title: '2.A', telemetryProps: { feature: '2.a' } },
+            { id: '2.b', command: 'c', title: '2.B', telemetryProps: { feature: '2.b' } },
         ],
         menus: {
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
@@ -32,10 +32,10 @@ describe('mergeContributions()', () => {
     }
     const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
         actions: [
-            { id: '1.a', command: 'c', title: '1.A' },
-            { id: '1.b', command: 'c', title: '1.B' },
-            { id: '2.a', command: 'c', title: '2.A' },
-            { id: '2.b', command: 'c', title: '2.B' },
+            { id: '1.a', command: 'c', title: '1.A', telemetryProps: { feature: '1.a' } },
+            { id: '1.b', command: 'c', title: '1.B', telemetryProps: { feature: '1.b' } },
+            { id: '2.a', command: 'c', title: '2.A', telemetryProps: { feature: '2.a' } },
+            { id: '2.b', command: 'c', title: '2.B', telemetryProps: { feature: '2.b' } },
         ],
         menus: {
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
@@ -77,9 +77,9 @@ describe('filterContributions()', () => {
     it('handles non-empty contributions', () => {
         const expected: Evaluated<Contributions> = {
             actions: [
-                { id: 'a1', command: 'c' },
-                { id: 'a2', command: 'c' },
-                { id: 'a3', command: 'c' },
+                { id: 'a1', command: 'c', telemetryProps: { feature: 'a1' } },
+                { id: 'a2', command: 'c', telemetryProps: { feature: 'a2' } },
+                { id: 'a3', command: 'c', telemetryProps: { feature: 'a3' } },
             ],
             menus: {
                 [ContributableMenu.GlobalNav]: [{ action: 'a1', when: true }, { action: 'a2' }],
@@ -88,9 +88,9 @@ describe('filterContributions()', () => {
         expect(
             filterContributions({
                 actions: [
-                    { id: 'a1', command: 'c' },
-                    { id: 'a2', command: 'c' },
-                    { id: 'a3', command: 'c' },
+                    { id: 'a1', command: 'c', telemetryProps: { feature: 'a1' } },
+                    { id: 'a2', command: 'c', telemetryProps: { feature: 'a2' } },
+                    { id: 'a3', command: 'c', telemetryProps: { feature: 'a3' } },
                 ],
                 menus: {
                     [ContributableMenu.GlobalNav]: [
@@ -139,12 +139,14 @@ describe('evaluateContributions()', () => {
                         iconDescription: parseTemplate('${replaceMe}'),
                         iconURL: parseTemplate('${replaceMe}'),
                     },
+                    telemetryProps: { feature: 'a1' },
                 },
                 {
                     id: 'a2',
                     command: 'c2',
                     title: parseTemplate('${replaceMe}'),
                     category: parseTemplate('b'),
+                    telemetryProps: { feature: 'a2' },
                 },
                 {
                     id: 'a3',
@@ -155,6 +157,7 @@ describe('evaluateContributions()', () => {
                         label: parseTemplate('${replaceMe}'),
                         description: parseTemplate('b'),
                     },
+                    telemetryProps: { feature: 'a3' },
                 },
             ],
         }
@@ -175,9 +178,17 @@ describe('evaluateContributions()', () => {
                         iconDescription: 'x',
                         iconURL: 'x',
                     },
+                    telemetryProps: { feature: 'a1' },
                 },
-                { id: 'a2', command: 'c2', title: 'x', category: 'b' },
-                { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
+                { id: 'a2', command: 'c2', title: 'x', category: 'b', telemetryProps: { feature: 'a2' } },
+                {
+                    id: 'a3',
+                    command: 'c3',
+                    title: 'b',
+                    category: 'b',
+                    actionItem: { label: 'x', description: 'b' },
+                    telemetryProps: { feature: 'a3' },
+                },
             ],
         }
         expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual(expected)
@@ -191,6 +202,7 @@ describe('evaluateContributions()', () => {
                     id: 'x',
                     command: 'c',
                     commandArguments: ['b', 'x', 'b', 'x'],
+                    telemetryProps: { feature: 'x' },
                 },
             ],
         }
@@ -206,6 +218,7 @@ describe('evaluateContributions()', () => {
                             parseTemplate('b'),
                             parseTemplate('${replaceMe}'),
                         ],
+                        telemetryProps: { feature: 'x' },
                     },
                 ],
             })
@@ -222,11 +235,14 @@ describe('evaluateContributions()', () => {
                     actionItem: {
                         pressed: parse('a'),
                     },
+                    telemetryProps: { feature: 'a' },
                 },
             ],
         }
         expect(evaluateContributions(FIXTURE_CONTEXT, input)).toEqual({
-            actions: [{ id: 'a', command: 'c', title: 'a', actionItem: { pressed: true } }],
+            actions: [
+                { id: 'a', command: 'c', title: 'a', actionItem: { pressed: true }, telemetryProps: { feature: 'a' } },
+            ],
         })
     })
 })
@@ -234,11 +250,11 @@ describe('evaluateContributions()', () => {
 describe('parseContributionExpressions()', () => {
     it('should not parse the `id` or `command` values', () => {
         const expected: Contributions = {
-            actions: [{ id: '${replaceMe}', command: '${c}' }],
+            actions: [{ id: '${replaceMe}', command: '${c}', telemetryProps: { feature: 'a' } }],
         }
         expect(
             parseContributionExpressions({
-                actions: [{ id: '${replaceMe}', command: '${c}' }],
+                actions: [{ id: '${replaceMe}', command: '${c}', telemetryProps: { feature: 'b' } }],
             })
         ).toEqual(expected)
     })
