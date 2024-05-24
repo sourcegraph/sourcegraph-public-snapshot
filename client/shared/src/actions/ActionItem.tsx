@@ -342,9 +342,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         )
     }
 
-    public runAction = <Feature extends string>(
-        event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>
-    ): void => {
+    public runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
         const action = (isAltEvent(event) && this.props.altAction) || this.props.action
 
         if (!action.command) {
