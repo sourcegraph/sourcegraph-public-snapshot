@@ -1,493 +1,496 @@
 resources:
-- apiVersion: apps/v1
-  kind: StatefulSet
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    generation: 1
-    labels:
-      app.kubernetes.io/component: pgsql
-      app.kubernetes.io/name: sourcegraph
-      app.kubernetes.io/version: 5.3.9104
-      deploy: sourcegraph
-    name: pgsql
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
-      name: sg
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 1
+      labels:
+        app.kubernetes.io/component: pgsql
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: pgsql
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-  spec:
-    minReadySeconds: 10
-    persistentVolumeClaimRetentionPolicy:
-      whenDeleted: Retain
-      whenScaled: Retain
-    podManagementPolicy: OrderedReady
-    replicas: 1
-    revisionHistoryLimit: 10
-    selector:
-      matchLabels:
-        app: pgsql
-    serviceName: pgsql
-    template:
-      metadata:
-        annotations:
-          kubectl.kubernetes.io/default-container: pgsql
-        creationTimestamp: null
-        labels:
+    spec:
+      minReadySeconds: 10
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Retain
+        whenScaled: Retain
+      podManagementPolicy: OrderedReady
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
           app: pgsql
-          deploy: sourcegraph
-        name: pgsql
-      spec:
-        containers:
-        - env:
-          - name: POSTGRES_DATABASE
-            valueFrom:
-              secretKeyRef:
-                key: database
-                name: pgsql-auth
-          - name: POSTGRES_HOST
-            valueFrom:
-              secretKeyRef:
-                key: host
-                name: pgsql-auth
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: pgsql-auth
-          - name: POSTGRES_PORT
-            valueFrom:
-              secretKeyRef:
-                key: port
-                name: pgsql-auth
-          - name: POSTGRES_USER
-            valueFrom:
-              secretKeyRef:
-                key: user
-                name: pgsql-auth
-          - name: POSTGRES_DB
-            value: $(POSTGRES_DATABASE)
-          image: index.docker.io/sourcegraph/postgres-12-alpine:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            exec:
-              command:
-              - /liveness.sh
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
+      serviceName: pgsql
+      template:
+        metadata:
+          annotations:
+            kubectl.kubernetes.io/default-container: pgsql
+          creationTimestamp: null
+          labels:
+            app: pgsql
+            deploy: sourcegraph
           name: pgsql
-          ports:
-          - containerPort: 5432
-            name: pgsql
-            protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-              - /ready.sh
-            failureThreshold: 3
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-            limits:
-              cpu: "4"
-              memory: 4Gi
-            requests:
-              cpu: "4"
-              memory: 4Gi
+        spec:
+          containers:
+            - env:
+                - name: POSTGRES_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      key: database
+                      name: pgsql-auth
+                - name: POSTGRES_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      key: host
+                      name: pgsql-auth
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: pgsql-auth
+                - name: POSTGRES_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: pgsql-auth
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: pgsql-auth
+                - name: POSTGRES_DB
+                  value: $(POSTGRES_DATABASE)
+              image: index.docker.io/sourcegraph/postgres-12-alpine:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                exec:
+                  command:
+                    - /liveness.sh
+                failureThreshold: 3
+                initialDelaySeconds: 15
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              name: pgsql
+              ports:
+                - containerPort: 5432
+                  name: pgsql
+                  protocol: TCP
+              readinessProbe:
+                exec:
+                  command:
+                    - /ready.sh
+                failureThreshold: 3
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources:
+                limits:
+                  cpu: "4"
+                  memory: 4Gi
+                requests:
+                  cpu: "4"
+                  memory: 4Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 999
+                runAsUser: 999
+              startupProbe:
+                exec:
+                  command:
+                    - /liveness.sh
+                failureThreshold: 360
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /data
+                  name: disk
+                - mountPath: /conf
+                  name: pgsql-conf
+                - mountPath: /dev/shm
+                  name: dshm
+                - mountPath: /var/run/postgresql
+                  name: lockdir
+            - env:
+                - name: DATA_SOURCE_DB
+                  valueFrom:
+                    secretKeyRef:
+                      key: database
+                      name: pgsql-auth
+                - name: DATA_SOURCE_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: pgsql-auth
+                - name: DATA_SOURCE_PORT
+                  valueFrom:
+                    secretKeyRef:
+                      key: port
+                      name: pgsql-auth
+                - name: DATA_SOURCE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: user
+                      name: pgsql-auth
+                - name: DATA_SOURCE_URI
+                  value: 127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
+                - name: PG_EXPORTER_EXTEND_QUERY_PATH
+                  value: /config/queries.yaml
+              image: index.docker.io/sourcegraph/postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0
+              imagePullPolicy: IfNotPresent
+              name: pgsql-exporter
+              resources:
+                limits:
+                  cpu: 10m
+                  memory: 50M
+                requests:
+                  cpu: 10m
+                  memory: 50M
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 999
+                runAsUser: 999
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+          dnsPolicy: ClusterFirst
+          initContainers:
+            - command:
+                - sh
+                - -c
+                - if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi
+              image: index.docker.io/sourcegraph/alpine-3.14:5.3.2@sha256:982220e0fd8ce55a73798fa7e814a482c4807c412f054c8440c5970b610239b7
+              imagePullPolicy: IfNotPresent
+              name: correct-data-dir-permissions
+              resources:
+                limits:
+                  cpu: 10m
+                  memory: 50M
+                requests:
+                  cpu: 10m
+                  memory: 50M
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 999
+                runAsUser: 999
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /data
+                  name: disk
+          restartPolicy: Always
+          schedulerName: default-scheduler
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
             runAsGroup: 999
             runAsUser: 999
-          startupProbe:
-            exec:
-              command:
-              - /liveness.sh
-            failureThreshold: 360
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: FallbackToLogsOnError
-          volumeMounts:
-          - mountPath: /data
-            name: disk
-          - mountPath: /conf
-            name: pgsql-conf
-          - mountPath: /dev/shm
-            name: dshm
-          - mountPath: /var/run/postgresql
-            name: lockdir
-        - env:
-          - name: DATA_SOURCE_DB
-            valueFrom:
-              secretKeyRef:
-                key: database
-                name: pgsql-auth
-          - name: DATA_SOURCE_PASS
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: pgsql-auth
-          - name: DATA_SOURCE_PORT
-            valueFrom:
-              secretKeyRef:
-                key: port
-                name: pgsql-auth
-          - name: DATA_SOURCE_USER
-            valueFrom:
-              secretKeyRef:
-                key: user
-                name: pgsql-auth
-          - name: DATA_SOURCE_URI
-            value: 127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
-          - name: PG_EXPORTER_EXTEND_QUERY_PATH
-            value: /config/queries.yaml
-          image: index.docker.io/sourcegraph/postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0
-          imagePullPolicy: IfNotPresent
-          name: pgsql-exporter
-          resources:
-            limits:
-              cpu: 10m
-              memory: 50M
-            requests:
-              cpu: 10m
-              memory: 50M
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsGroup: 999
-            runAsUser: 999
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: FallbackToLogsOnError
-        dnsPolicy: ClusterFirst
-        initContainers:
-        - command:
-          - sh
-          - -c
-          - if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi
-          image: index.docker.io/sourcegraph/alpine-3.14:5.3.2@sha256:982220e0fd8ce55a73798fa7e814a482c4807c412f054c8440c5970b610239b7
-          imagePullPolicy: IfNotPresent
-          name: correct-data-dir-permissions
-          resources:
-            limits:
-              cpu: 10m
-              memory: 50M
-            requests:
-              cpu: 10m
-              memory: 50M
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsGroup: 999
-            runAsUser: 999
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: FallbackToLogsOnError
-          volumeMounts:
-          - mountPath: /data
-            name: disk
-        restartPolicy: Always
-        schedulerName: default-scheduler
-        securityContext:
-          fsGroup: 999
-          fsGroupChangePolicy: OnRootMismatch
-          runAsGroup: 999
-          runAsUser: 999
-        serviceAccount: pgsql
-        serviceAccountName: pgsql
-        terminationGracePeriodSeconds: 120
-        volumes:
-        - emptyDir: {}
-          name: lockdir
-        - emptyDir:
-            medium: Memory
-            sizeLimit: 1Gi
-          name: dshm
-        - name: disk
-          persistentVolumeClaim:
-            claimName: pgsql
-        - configMap:
-            defaultMode: 511
-            name: pgsql-conf
-          name: pgsql-conf
-    updateStrategy:
-      type: RollingUpdate
-  status:
-    availableReplicas: 0
-    replicas: 0
-- apiVersion: v1
-  data:
-    postgresql.conf: |
-      #------------------------------------------------------------------------------
-      # POSTGRESQL DEFAULT CONFIGURATION
-      #------------------------------------------------------------------------------
+          serviceAccount: pgsql
+          serviceAccountName: pgsql
+          terminationGracePeriodSeconds: 120
+          volumes:
+            - emptyDir: {}
+              name: lockdir
+            - emptyDir:
+                medium: Memory
+                sizeLimit: 1Gi
+              name: dshm
+            - name: disk
+              persistentVolumeClaim:
+                claimName: pgsql
+            - configMap:
+                defaultMode: 511
+                name: pgsql-conf
+              name: pgsql-conf
+      updateStrategy:
+        type: RollingUpdate
+    status:
+      availableReplicas: 0
+      replicas: 0
+  - apiVersion: v1
+    data:
+      postgresql.conf: |
+        #------------------------------------------------------------------------------
+        # POSTGRESQL DEFAULT CONFIGURATION
+        #------------------------------------------------------------------------------
 
-      # Below is PostgreSQL default configuration.
-      # You should apply your own customization in the CUSTOMIZED OPTIONS section below
-      # to avoid merge conflict in the future.
+        # Below is PostgreSQL default configuration.
+        # You should apply your own customization in the CUSTOMIZED OPTIONS section below
+        # to avoid merge conflict in the future.
 
-      listen_addresses = '*'
-      max_connections = 100
-      shared_buffers = 128MB
-      dynamic_shared_memory_type = posix
-      max_wal_size = 1GB
-      min_wal_size = 80MB
-      log_timezone = 'UTC'
-      datestyle = 'iso, mdy'
-      timezone = 'UTC'
-      lc_messages = 'en_US.utf8'
-      lc_monetary = 'en_US.utf8'
-      lc_numeric = 'en_US.utf8'
-      lc_time = 'en_US.utf8'
-      default_text_search_config = 'pg_catalog.english'
+        listen_addresses = '*'
+        max_connections = 100
+        shared_buffers = 128MB
+        dynamic_shared_memory_type = posix
+        max_wal_size = 1GB
+        min_wal_size = 80MB
+        log_timezone = 'UTC'
+        datestyle = 'iso, mdy'
+        timezone = 'UTC'
+        lc_messages = 'en_US.utf8'
+        lc_monetary = 'en_US.utf8'
+        lc_numeric = 'en_US.utf8'
+        lc_time = 'en_US.utf8'
+        default_text_search_config = 'pg_catalog.english'
 
 
-      #------------------------------------------------------------------------------
-      # SOURCEGRAPH RECOMMENDED OPTIONS
-      #------------------------------------------------------------------------------
+        #------------------------------------------------------------------------------
+        # SOURCEGRAPH RECOMMENDED OPTIONS
+        #------------------------------------------------------------------------------
 
-      # Below is Sourcegraph recommended Postgres configuration based on the default resource configuration.
-      # You should apply your own customization in the CUSTOMIZED OPTIONS section below
-      # to avoid merge conflict in the future.
+        # Below is Sourcegraph recommended Postgres configuration based on the default resource configuration.
+        # You should apply your own customization in the CUSTOMIZED OPTIONS section below
+        # to avoid merge conflict in the future.
 
-      shared_buffers = 1GB
-      work_mem = 5MB
-      maintenance_work_mem = 250MB
-      temp_file_limit = 20GB
-      bgwriter_delay = 50ms
-      bgwriter_lru_maxpages = 200
-      effective_io_concurrency = 200
-      max_worker_processes = 4
-      max_parallel_maintenance_workers = 4
-      max_parallel_workers_per_gather = 2
-      max_parallel_workers = 4
-      wal_buffers = 16MB
-      max_wal_size = 8GB
-      min_wal_size = 2GB
-      random_page_cost = 1.1
-      effective_cache_size = 3GB
+        shared_buffers = 1GB
+        work_mem = 5MB
+        maintenance_work_mem = 250MB
+        temp_file_limit = 20GB
+        bgwriter_delay = 50ms
+        bgwriter_lru_maxpages = 200
+        effective_io_concurrency = 200
+        max_worker_processes = 4
+        max_parallel_maintenance_workers = 4
+        max_parallel_workers_per_gather = 2
+        max_parallel_workers = 4
+        wal_buffers = 16MB
+        max_wal_size = 8GB
+        min_wal_size = 2GB
+        random_page_cost = 1.1
+        effective_cache_size = 3GB
 
 
-      #------------------------------------------------------------------------------
-      # CUSTOMIZED OPTIONS
-      #------------------------------------------------------------------------------
+        #------------------------------------------------------------------------------
+        # CUSTOMIZED OPTIONS
+        #------------------------------------------------------------------------------
 
-      # Add your customization by using 'pgsql.additionalConfig' in your override file.
-      # Learn more: https://docs.sourcegraph.com/admin/config/postgres-conf
-  immutable: false
-  kind: ConfigMap
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    labels:
-      deploy: sourcegraph
-    name: pgsql-conf
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
-      name: sg
+        # Add your customization by using 'pgsql.additionalConfig' in your override file.
+        # Learn more: https://docs.sourcegraph.com/admin/config/postgres-conf
+    immutable: false
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: pgsql-conf
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-- apiVersion: v1
-  data:
-    spec: |
-      spec:
-        requestedVersion: "5.3.9104"
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
 
-        blobstore:
-          disabled: true
+          blobstore:
+            disabled: true
 
-        codeInsights:
-          disabled: true
+          codeInsights:
+            disabled: true
 
-        codeIntel:
-          disabled: true
+          codeIntel:
+            disabled: true
 
-        frontend:
-          disabled: true
+          frontend:
+            disabled: true
 
-        gitServer:
-          disabled: true
+          gitServer:
+            disabled: true
 
-        indexedSearch:
-          disabled: true
+          indexedSearch:
+            disabled: true
 
-        indexedSearchIndexer:
-          disabled: true
+          indexedSearchIndexer:
+            disabled: true
 
-        pgsql: {}
+          pgsql: {}
 
-        postgresExporter:
-          disabled: true
+          postgresExporter:
+            disabled: true
 
-        preciseCodeIntel:
-          disabled: true
+          preciseCodeIntel:
+            disabled: true
 
-        redisCache:
-          disabled: true
+          redisCache:
+            disabled: true
 
-        redisExporter:
-          disabled: true
+          redisExporter:
+            disabled: true
 
-        redisStore:
-          disabled: true
+          redisStore:
+            disabled: true
 
-        repoUpdater:
-          disabled: true
+          repoUpdater:
+            disabled: true
 
-        searcher:
-          disabled: true
+          searcher:
+            disabled: true
 
-        symbols:
-          disabled: true
+          symbols:
+            disabled: true
 
-        syntectServer:
-          disabled: true
+          syntectServer:
+            disabled: true
 
-        worker:
-          disabled: true
-  kind: ConfigMap
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/currentVersion: 5.3.9104
-      appliance.sourcegraph.com/managed: "true"
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    name: sg
-    namespace: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-- apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    finalizers:
-    - kubernetes.io/pvc-protection
-    labels:
-      deploy: sourcegraph
-    name: pgsql
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
       name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-  spec:
-    accessModes:
-    - ReadWriteOnce
-    resources:
-      requests:
-        storage: 200Gi
-    volumeMode: Filesystem
-  status:
-    phase: Pending
-- apiVersion: v1
-  data:
-    database: c2c=
-    host: cGdzcWw=
-    password: cGFzc3dvcmQ=
-    port: NTQzMg==
-    user: c2c=
-  kind: Secret
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    labels:
-      app.kubernetes.io/component: pgsql-auth
-      app.kubernetes.io/name: sourcegraph
-      app.kubernetes.io/version: 5.3.9104
-      deploy: sourcegraph
-    name: pgsql-auth
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
-      name: sg
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      finalizers:
+        - kubernetes.io/pvc-protection
+      labels:
+        deploy: sourcegraph
+      name: pgsql
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-  type: Opaque
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    labels:
-      deploy: sourcegraph
-    name: pgsql
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
-      name: sg
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi
+      volumeMode: Filesystem
+    status:
+      phase: Pending
+  - apiVersion: v1
+    data:
+      database: c2c=
+      host: cGdzcWw=
+      password: cGFzc3dvcmQ=
+      port: NTQzMg==
+      user: c2c=
+    kind: Secret
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app.kubernetes.io/component: pgsql-auth
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: pgsql-auth
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
-      prometheus.io/port: "9187"
-      sourcegraph.prometheus/scrape: "true"
-    creationTimestamp: "2024-04-19T00:00:00Z"
-    labels:
-      app: pgsql
-      app.kubernetes.io/component: pgsql
-      deploy: sourcegraph
-    name: pgsql
-    namespace: NORMALIZED_FOR_TESTING
-    ownerReferences:
-    - apiVersion: v1
-      blockOwnerDeletion: true
-      controller: true
-      kind: ConfigMap
-      name: sg
+    type: Opaque
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: pgsql
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
-    resourceVersion: NORMALIZED_FOR_TESTING
-    uid: NORMALIZED_FOR_TESTING
-  spec:
-    clusterIP: NORMALIZED_FOR_TESTING
-    clusterIPs:
-    - NORMALIZED_FOR_TESTING
-    internalTrafficPolicy: Cluster
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    ports:
-    - name: pgsql
-      port: 5432
-      protocol: TCP
-      targetPort: pgsql
-    selector:
-      app: pgsql
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 1a699c66e173ecb90aba090427b165f1eb257dcaf67627d48b11d21460a8475b
+        prometheus.io/port: "9187"
+        sourcegraph.prometheus/scrape: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app: pgsql
+        app.kubernetes.io/component: pgsql
+        deploy: sourcegraph
+      name: pgsql
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      clusterIP: NORMALIZED_FOR_TESTING
+      clusterIPs:
+        - NORMALIZED_FOR_TESTING
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+        - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+        - name: pgsql
+          port: 5432
+          protocol: TCP
+          targetPort: pgsql
+      selector:
+        app: pgsql
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}

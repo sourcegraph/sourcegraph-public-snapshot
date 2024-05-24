@@ -154,6 +154,14 @@ type PreciseCodeIntelSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type PrometheusSpec struct {
+	StandardConfig
+
+	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
+	Privileged        bool   `json:"privileged,omitempty"`
+	StorageSize       string `json:"storageSize,omitempty"`
+}
+
 // RedisSpec defines the desired state of a Redis-based service.
 type RedisSpec struct {
 	StandardConfig
@@ -283,6 +291,8 @@ type SourcegraphSpec struct {
 
 	// PreciseCodeIntel defines the desired state of the Precise Code Intel service.
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
+
+	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 
 	// RedisCache defines the desired state of the Redis cache service.
 	RedisCache RedisSpec `json:"redisCache,omitempty"`

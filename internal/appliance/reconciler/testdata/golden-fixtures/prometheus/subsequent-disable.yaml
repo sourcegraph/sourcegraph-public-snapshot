@@ -1,0 +1,161 @@
+resources:
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: f3552ecdd048a5aa1442524110f3648d103930c4977323d60e0832a9afbb941a
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+        for-namespace: NORMALIZED_FOR_TESTING
+      name: NORMALIZED_FOR_TESTING-prometheus
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - endpoints
+          - pods
+          - services
+          - namespaces
+          - nodes
+          - nodes/metrics
+          - nodes/proxy
+        verbs:
+          - get
+          - list
+          - watch
+      - apiGroups:
+          - ""
+        resources:
+          - configmap
+        verbs:
+          - get
+      - nonResourceURLs:
+          - /metrics
+        verbs:
+          - get
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: f3552ecdd048a5aa1442524110f3648d103930c4977323d60e0832a9afbb941a
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+        for-namespace: NORMALIZED_FOR_TESTING
+      name: NORMALIZED_FOR_TESTING-prometheus
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: NORMALIZED_FOR_TESTING-prometheus
+    subjects:
+      - kind: ServiceAccount
+        name: prometheus
+        namespace: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
+
+          blobstore:
+            disabled: true
+
+          codeInsights:
+            disabled: true
+
+          codeIntel:
+            disabled: true
+
+          frontend:
+            disabled: true
+
+          gitServer:
+            disabled: true
+
+          indexedSearch:
+            disabled: true
+
+          indexedSearchIndexer:
+            disabled: true
+
+          pgsql:
+            disabled: true
+
+          postgresExporter:
+            disabled: true
+
+          preciseCodeIntel:
+            disabled: true
+
+          redisCache:
+            disabled: true
+
+          redisStore:
+            disabled: true
+
+          repoUpdater:
+            disabled: true
+
+          searcher:
+            disabled: true
+
+          symbols:
+            disabled: true
+
+          syntectServer:
+            disabled: true
+
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: f3552ecdd048a5aa1442524110f3648d103930c4977323d60e0832a9afbb941a
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      deletionGracePeriodSeconds: 0
+      deletionTimestamp: "2024-04-19T00:00:00Z"
+      finalizers:
+        - kubernetes.io/pvc-protection
+      labels:
+        deploy: sourcegraph
+      name: prometheus
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 200Gi
+      volumeMode: Filesystem
+    status:
+      phase: Pending
