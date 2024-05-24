@@ -1,13 +1,13 @@
 package:
   name: s3proxy
   version: 2.0.0
-  epoch: 3 # Independent from repo epoch
-  description: "Access other storage backends via the S3 API"
+  epoch: 4 # Independent from repo epoch
+  description: 'Access other storage backends via the S3 API'
   target-architecture:
     - x86_64
   copyright:
     - paths:
-      - "*"
+        - '*'
       attestation: ''
       license: 'Apache License 2.0'
   dependencies:
@@ -33,8 +33,8 @@ pipeline:
   - uses: fetch
     with:
       # Package epoch is independent from repo epoch
-      uri: https://github.com/sourcegraph/s3proxy/archive/refs/tags/s3proxy-${{package.version}}-2.tar.gz
-      expected-sha256: efeda0b7e2d87dbfb053510d706b109f8dcbf83fb7833e9d43b2231a2beaf247
+      uri: https://github.com/sourcegraph/s3proxy/archive/refs/tags/s3proxy-${{package.version}}-3.tar.gz
+      expected-sha256: 21583a5db1483ec89e1da0a2de3b1f9caaa79ce291dd0f7af5b9b1366567c515
       extract: true
   - runs: |
       JAVA_HOME=/usr/lib/jvm/java-11-openjdk/ mvn package -DskipTests
