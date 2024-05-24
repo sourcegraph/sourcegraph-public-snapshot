@@ -19,7 +19,10 @@ go_library(
 go_test(
     name = "dotcomdb_test",
     srcs = ["dotcomdb_test.go"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
     deps = [
         ":dotcomdb",
         "//cmd/frontend/dotcomproductsubscriptiontest",

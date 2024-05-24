@@ -387,7 +387,7 @@ commands:
   enterprise-portal:
     cmd: |
       # Connect to local development database, with the assumption that it will
-      #
+      # have dotcom database tables.
       export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
       .bin/enterprise-portal
     install: |
