@@ -22,6 +22,7 @@ import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
 
 import { InvoiceHistory } from './InvoiceHistory'
+import { PaymentDetails } from './PaymentDetails'
 import { SubscriptionDetails } from './SubscriptionDetails'
 
 import styles from './CodySubscriptionManagePage.module.scss'
