@@ -15,7 +15,7 @@ export interface ReactFriendlyApiResponse<T> {
 // state.
 //
 // IMPORTANT: In order to avoid the same API request being made multiple times,
-// you MUST ensure that the provided call is the same between repains of the
+// you MUST ensure that the provided call is the same between repaints of the
 // calling React component. i.e. you pretty much always need to create it via
 // `useMemo()`.
 export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<Resp> {
@@ -34,7 +34,7 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
         // https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect
         let ignore = false
 
-        ;(async () => {
+        async function callApi(): Promise<void> {
             try {
                 const callerResponse = await caller.call(call)
 
@@ -76,7 +76,9 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
                 setResponse(undefined)
                 setLoading(false)
             }
-        })()
+        }
+
+        void callApi()
 
         return () => {
             ignore = true
