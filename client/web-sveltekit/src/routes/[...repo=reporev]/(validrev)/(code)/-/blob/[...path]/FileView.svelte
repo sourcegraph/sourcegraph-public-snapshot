@@ -8,6 +8,8 @@
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
 
+    import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
     import type { ScrollSnapshot } from '$lib/codemirror/utils'
@@ -92,6 +94,7 @@
                   requestGraphQL(options) {
                       return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
                   },
+                  telemetryRecorder: noOpTelemetryRecorder,
               })
             : null
 

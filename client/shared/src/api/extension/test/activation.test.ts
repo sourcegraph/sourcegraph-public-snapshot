@@ -7,6 +7,7 @@ import { describe, it } from 'vitest'
 import type { Contributions } from '@sourcegraph/client-api'
 
 import type { SettingsCascade } from '../../../settings/settings'
+import { noOpTelemetryRecorder } from '../../../telemetry'
 import type { MainThreadAPI } from '../../contract'
 import { pretendRemote } from '../../util'
 import { activateExtensions, type ExecutableExtension } from '../activation'
@@ -19,6 +20,7 @@ describe('Extension activation', () => {
 
             const mockMain = pretendRemote<Pick<MainThreadAPI, 'logEvent' | 'getTelemetryRecorder'>>({
                 logEvent,
+                getTelemetryRecorder: () => noOpTelemetryRecorder,
             })
 
             const FIXTURE_EXTENSION: ExecutableExtension = {
