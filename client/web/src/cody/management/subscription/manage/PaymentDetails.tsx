@@ -33,7 +33,7 @@ if (!publishableKey) {
     logger.error('Stripe publishable key not found')
 }
 
-const stripePromise = loadStripe(publishableKey)
+const stripePromise = loadStripe(publishableKey || '')
 
 interface PaymentDetailsProps {
     subscription: Subscription
