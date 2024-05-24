@@ -122,15 +122,13 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	)
 	return background.LIFOStopRoutine{
 		background.CallbackRoutine{
-			StopFunc: func() {
+			StopFunc: func(ctx context.Context) error {
 				start := time.Now()
-				if err := dotcomDB.Close(context.Background()); err != nil {
-					logger.Error("failed to close dotcom database connection",
-						log.Error(err),
-						log.Duration("elapsed", time.Since(start)))
-				} else {
-					logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
+				if err := dotcomDB.Close(ctx); err != nil {
+					return errors.Wrap(err, "dotcomDB.Close")
 				}
+				logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
+				return nil
 			},
 		},
 		server, // stop server first
