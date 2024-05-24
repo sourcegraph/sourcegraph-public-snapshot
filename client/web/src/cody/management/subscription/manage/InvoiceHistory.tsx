@@ -1,6 +1,8 @@
 import { mdiFileDocumentOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
+import { Navigate } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
@@ -14,19 +16,30 @@ import styles from './InvoiceHistory.module.scss'
 const invoicesCall = Client.getCurrentSubscriptionInvoices()
 
 export const InvoiceHistory: React.FC = () => {
-    const { loading, error, data } = useApiCaller(invoicesCall)
+    const { loading, error, data, response } = useApiCaller(invoicesCall)
 
     if (loading) {
         return <LoadingSpinner />
     }
 
     if (error) {
-        // TODO: handle error
+        logger.error('Error fetching current subscription invoices', error)
+        return null
+    }
+
+    if (response && !response.ok) {
+        if (response.status === 401) {
+            return <Navigate to="/-/sign-out" replace={true} />
+        }
+
+        logger.error(`Fetch Cody subscription invoices request failed with status ${response.status}`)
         return null
     }
 
     if (!data) {
-        // TODO: why empty response - handle it
+        if (response) {
+            logger.error('Current subscription invoices are not available.')
+        }
         return null
     }
 
