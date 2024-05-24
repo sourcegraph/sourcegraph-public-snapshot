@@ -58,7 +58,6 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 	// Start each command concurrently
 	for _, cmd := range runner.cmds {
-		cmd := cmd
 		p.Go(func(ctx context.Context) error {
 			config := cmd.GetConfig()
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", config.Name))

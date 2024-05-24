@@ -358,7 +358,7 @@ type UploadMatchingOptions struct {
 	//
 	// Indexer must be shared.SyntacticIndexer for syntactic indexes to be considered.
 	//
-	// If Indexer is empty, then all uploads will be considered.
+	// If Indexer is empty, then all precise indexes will be considered.
 	Indexer string
 }
 

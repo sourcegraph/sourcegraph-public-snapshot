@@ -54,24 +54,16 @@ type CodeInsightsDBSpec struct {
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
-// CodeIntelDBSpec defines the desired state of Code Intel database.
-type CodeIntelDBSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeIntel DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
+// CodeIntelSpec defines the desired state of Code Intel database.
+type CodeIntelSpec struct {
+	StandardConfig
 
 	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
+	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 
 	// StorageSize defines the requested amount of storage for the PVC.
 	// Default: 200Gi
 	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type IngressSpec struct {
@@ -160,6 +152,14 @@ type PreciseCodeIntelSpec struct {
 	// Replicas defines the number of Precise Code Intel Worker pod replicas.
 	// Default: 2
 	Replicas int32 `json:"replicas,omitempty"`
+}
+
+type PrometheusSpec struct {
+	StandardConfig
+
+	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
+	Privileged        bool   `json:"privileged,omitempty"`
+	StorageSize       string `json:"storageSize,omitempty"`
 }
 
 // RedisSpec defines the desired state of a Redis-based service.
@@ -269,7 +269,7 @@ type SourcegraphSpec struct {
 	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
 
 	// CodeIntel defines the desired state of the Code Intel service.
-	CodeIntel CodeIntelDBSpec `json:"codeIntel,omitempty"`
+	CodeIntel CodeIntelSpec `json:"codeIntel,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`
@@ -291,6 +291,8 @@ type SourcegraphSpec struct {
 
 	// PreciseCodeIntel defines the desired state of the Precise Code Intel service.
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
+
+	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 
 	// RedisCache defines the desired state of the Redis cache service.
 	RedisCache RedisSpec `json:"redisCache,omitempty"`

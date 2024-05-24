@@ -15,6 +15,8 @@ import (
 
 type operations struct {
 	gitBlobLsifData *observation.Operation
+	codeGraphData   *observation.Operation
+	occurrences     *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -45,6 +47,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		gitBlobLsifData: op("GitBlobLsifData"),
+		codeGraphData:   op("CodeGraphData"),
+		occurrences:     op("Occurrences"),
 		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
