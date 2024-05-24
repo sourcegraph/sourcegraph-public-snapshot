@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from 'react'
 
-import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus } from '@mdi/js'
+import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus, mdiCheck } from '@mdi/js'
 import {
     AddressElement,
     CardCvcElement,
@@ -20,7 +20,7 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
+import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
@@ -150,24 +150,29 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
     const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
         event.preventDefault()
 
+        setIsLoading(true)
+        setErrorMessage('')
+
         if (!stripe || !elements) {
+            setIsLoading(false)
             return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
         }
 
         const cardNumberElement = elements.getElement(CardNumberElement)
         if (!cardNumberElement) {
+            setIsLoading(false)
             return setErrorMessage('Stripe card number element was not found.')
         }
 
         const tokenResult = await stripe.createToken(cardNumberElement)
         if (tokenResult.error) {
+            setIsLoading(false)
             return setErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
         }
 
         const serverErrorText =
             'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
 
-        setIsLoading(true)
         try {
             const { response } = await caller.call(
                 Client.updateCurrentSubscription({ customerUpdate: { newCreditCardToken: tokenResult.token.id } })
@@ -218,8 +223,18 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
                     <Button type="reset" variant="secondary" outline={true}>
                         Cancel
                     </Button>
-                    <Button disabled={isLoading} type="submit" variant="primary" className="ml-2">
-                        Save
+                    <Button
+                        disabled={isLoading}
+                        type="submit"
+                        variant="primary"
+                        className={classNames('ml-2', styles.iconButton)}
+                    >
+                        {isLoading ? (
+                            <LoadingSpinner className="mr-1" />
+                        ) : (
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
+                        )}
+                        <Text as="span">Save</Text>
                     </Button>
                 </div>
             </Form>
@@ -270,7 +285,7 @@ const useBillingAddressStripeElementsOptions = (): StripeElementsOptions => {
     )
 }
 
-const BillingAddress: React.FC<{ subscription: Subscription }> = ({ subscription }) => {
+const BillingAddress: React.FC<PaymentDetailsProps> = props => {
     const options = useBillingAddressStripeElementsOptions()
     const [isEditMode, setIsEditMode] = useState(false)
 
@@ -286,13 +301,14 @@ const BillingAddress: React.FC<{ subscription: Subscription }> = ({ subscription
             {isEditMode ? (
                 <Elements stripe={stripePromise} options={options}>
                     <BillingAddressForm
-                        subscription={subscription}
+                        subscription={props.subscription}
+                        refetchSubscription={props.refetchSubscription}
                         onReset={() => setIsEditMode(false)}
                         onSubmit={() => setIsEditMode(false)}
                     />
                 </Elements>
             ) : (
-                <ActiveBillingAddress subscription={subscription} />
+                <ActiveBillingAddress subscription={props.subscription} />
             )}
         </div>
     )
@@ -368,24 +384,29 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
     const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
         event.preventDefault()
 
+        setIsLoading(true)
+        setErrorMessage('')
+
         if (!stripe || !elements) {
+            setIsLoading(false)
             return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
         }
 
         const addressElement = elements.getElement(AddressElement)
         if (!addressElement) {
+            setIsLoading(false)
             return setErrorMessage('Stripe address element was not found.')
         }
 
         const addressElementValue = await addressElement.getValue()
         if (!addressElementValue.complete) {
+            setIsLoading(false)
             return setErrorMessage('Address is not complete.')
         }
 
         const serverErrorText =
             'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
 
-        setIsLoading(true)
         try {
             const { line1, line2, postal_code, city, state, country } = addressElementValue.value.address
             const { response } = await caller.call(
@@ -436,14 +457,24 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
         <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
             <AddressElement options={options} onFocus={() => setErrorMessage('')} />
 
-            {errorMessage && <Text className="text-danger">{errorMessage}</Text>}
+            {errorMessage && <Text className="mt-3 text-danger">{errorMessage}</Text>}
 
             <div className={styles.billingAddressFormButtonContainer}>
                 <Button type="reset" variant="secondary" outline={true}>
                     Cancel
                 </Button>
-                <Button disabled={isLoading} type="submit" variant="primary" className="ml-2">
-                    Save
+                <Button
+                    disabled={isLoading}
+                    type="submit"
+                    variant="primary"
+                    className={classNames('ml-2', styles.iconButton)}
+                >
+                    {isLoading ? (
+                        <LoadingSpinner className="mr-1" />
+                    ) : (
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
+                    )}
+                    <Text as="span">Save</Text>
                 </Button>
             </div>
         </Form>

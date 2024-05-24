@@ -128,7 +128,7 @@ const PageContent: React.FC = () => {
             </div>
 
             <Card className={classNames('my-4 p-4', styles.card)}>
-                <SubscriptionDetails subscription={subscription} />
+                <SubscriptionDetails subscription={subscription} refetchSubscription={refetchSubscription} />
 
                 <hr className={styles.divider} />
 
