@@ -43,12 +43,12 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	if err != nil {
 		return nil, errors.Wrap(err, "newDotComDBConn")
 	}
-	defer dotcomDB.Close(context.Background())
 
 	// Validate connection on startup
-	if err := dotcomDB.Ping(context.Background()); err != nil {
+	if err := dotcomDB.Ping(ctx); err != nil {
 		return nil, errors.Wrap(err, "dotcomDB.Ping")
 	}
+	logger.Debug("connected to dotcom database")
 
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
 	logger.Debug("using SAMS client",
@@ -120,5 +120,19 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 			WriteTimeout: time.Minute,
 		},
 	)
-	return server, nil
+	return background.LIFOStopRoutine{
+		background.CallbackRoutine{
+			StopFunc: func() {
+				start := time.Now()
+				if err := dotcomDB.Close(context.Background()); err != nil {
+					logger.Error("failed to close dotcom database connection",
+						log.Error(err),
+						log.Duration("elapsed", time.Since(start)))
+				} else {
+					logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
+				}
+			},
+		},
+		server, // stop server first
+	}, nil
 }

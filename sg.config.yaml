@@ -400,6 +400,7 @@ commands:
       PORT: '6081'
       DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: debug
+      GRPC_WEB_UI_ENABLED: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
       # Set real values in sg.config.yaml overrides
