@@ -1,3 +1,8 @@
+.title {
+    display: flex;
+    align-items: center;
+}
+
 .link {
     display: flex;
     align-items: center;
@@ -12,8 +17,4 @@
     width: 100%;
     margin-top: 1.125rem;
     margin-bottom: 1.125rem;
-}
-
-.cody-icon {
-    margin-left: -15px;
 }
