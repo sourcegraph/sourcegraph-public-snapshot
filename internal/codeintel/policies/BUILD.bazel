@@ -50,6 +50,7 @@ go_test(
     tags = [TAG_PLATFORM_GRAPH],
     deps = [
         "//internal/api",
+        "//internal/codeintel/policies/internal/store",
         "//internal/codeintel/policies/shared",
         "//internal/codeintel/uploads/shared",
         "//internal/database/dbmocks",

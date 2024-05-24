@@ -8,5 +8,6 @@ go_library(
     deps = [
         "//internal/codeintel/policies",
         "//internal/codeintel/policies/shared",
+        "//lib/pointers",
     ],
 )
