@@ -31,6 +31,7 @@ type flaggingConfig struct {
 // makeFlaggingConfig converts the config.FlaggingConfig into the type used in this package.
 // (This just avoids taking a hard dependency, allowing the config package to change independently, etc.)
 func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
+
 	return flaggingConfig{
 		AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
 		BlockedPromptPatterns:          cfg.BlockedPromptPatterns,

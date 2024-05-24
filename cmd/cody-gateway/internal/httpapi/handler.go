@@ -7,6 +7,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,6 +40,7 @@ type Config struct {
 	AutoFlushStreamingResponses bool
 	EnableAttributionSearch     bool
 	Sourcegraph                 config.SourcegraphConfig
+	IdentifiersToLogFor         collections.Set[string]
 }
 
 var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
@@ -114,19 +116,16 @@ func NewHandler(
 			),
 		)
 	}
+	upstreamConfig := completions.UpstreamHandlerConfig{
+		DefaultRetryAfterSeconds:    3, // matching SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION
+		AutoFlushStreamingResponses: config.AutoFlushStreamingResponses,
+		IdentifiersToLogFor:         config.IdentifiersToLogFor,
+	}
 
 	if config.Anthropic.AccessToken == "" {
 		logger.Error("Anthropic access token not set. Not registering Anthropic-related endpoints.")
 	} else {
-		anthropicHandler, err := completions.NewAnthropicHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Anthropic,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		anthropicHandler, err := completions.NewAnthropicHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Anthropic, flaggedPromptRecorder, upstreamConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "init Anthropic handler")
 		}
@@ -136,15 +135,7 @@ func NewHandler(
 			attributesAnthropicCompletions,
 			anthropicHandler)
 
-		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Anthropic,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		anthropicMessagesHandler, err := completions.NewAnthropicMessagesHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Anthropic, flaggedPromptRecorder, upstreamConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "init anthropicMessages handler")
 		}
@@ -158,15 +149,7 @@ func NewHandler(
 	if config.OpenAI.AccessToken == "" {
 		logger.Error("OpenAI access token not set. Not registering OpenAI-related endpoints.")
 	} else {
-		openAIHandler := completions.NewOpenAIHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.OpenAI,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		openAIHandler := completions.NewOpenAIHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.OpenAI, flaggedPromptRecorder, upstreamConfig)
 		registerStandardEndpoint(
 			"v1.completions.openai",
 			"/completions/openai",
@@ -200,15 +183,7 @@ func NewHandler(
 	if config.Fireworks.AccessToken == "" {
 		logger.Error("Fireworks access token not set. Not registering Fireworks-related endpoints.")
 	} else {
-		fireworksHandler := completions.NewFireworksHandler(
-			logger,
-			eventLogger,
-			rs,
-			config.RateLimitNotifier,
-			httpClient,
-			config.Fireworks,
-			flaggedPromptRecorder,
-			config.AutoFlushStreamingResponses)
+		fireworksHandler := completions.NewFireworksHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Fireworks, flaggedPromptRecorder, upstreamConfig)
 		registerStandardEndpoint(
 			"v1.completions.fireworks",
 			"/completions/fireworks",
