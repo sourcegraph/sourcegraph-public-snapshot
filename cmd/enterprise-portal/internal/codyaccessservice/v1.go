@@ -2,7 +2,6 @@ package codyaccessservice
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	codyaccessv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1/v1connect"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const Name = codyaccessv1connect.CodyAccessServiceName
