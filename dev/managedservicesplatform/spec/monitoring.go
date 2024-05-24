@@ -2,7 +2,6 @@ package spec
 
 import (
 	"strings"
-	"time"
 
 	"github.com/grafana/regexp"
 
@@ -15,8 +14,8 @@ var customAlertNamePattern = regexp.MustCompile(`^[-A-Za-z0-9 ]+$`)
 type SeverityLevel string
 
 const (
-	SeverityLevelWarning  = "WARNING"
-	SeverityLevelCritical = "CRITICAL"
+	SeverityLevelWarning  SeverityLevel = "WARNING"
+	SeverityLevelCritical SeverityLevel = "CRITICAL"
 )
 
 type MonitoringSpec struct {
@@ -48,8 +47,10 @@ type ResponseCodeRatioAlertSpec struct {
 	Code         *int     `yaml:"code,omitempty"`
 	CodeClass    *string  `yaml:"codeClass,omitempty"`
 	ExcludeCodes []string `yaml:"excludeCodes,omitempty"`
-	Duration     *string  `yaml:"duration,omitempty"`
-	Ratio        float64  `yaml:"ratio"`
+	// Duration is the time in minutes the query must violate the threshold
+	// to trigger the alert.
+	Duration *int    `yaml:"duration,omitempty"`
+	Ratio    float64 `yaml:"ratio"`
 }
 
 func (s *MonitoringAlertsSpec) Validate() []error {
@@ -110,30 +111,49 @@ func (r *ResponseCodeRatioAlertSpec) Validate() []error {
 	}
 
 	if r.Duration != nil {
-		duration, err := time.ParseDuration(*r.Duration)
-		if err != nil {
-			errs = append(errs, errors.Wrap(err, "responseCodeRatios[].duration must be in the format of XXs"))
-		} else if duration%time.Minute != 0 {
-			errs = append(errs, errors.New("responseCodeRatios[].duration must be a multiple of 60s"))
+		if *r.Duration < 0 {
+			errs = append(errs, errors.New("responseCodeRatios[].duration must be a whole number"))
+		}
+		if *r.Duration > 1440 { // 24 hours
+			errs = append(errs, errors.New("responseCodeRatios[].duration must be less than 1440 minutes"))
 		}
 	}
 
 	return errs
 }
 
-// CustomAlert
+type CustomAlertQueryType string
+
+const (
+	MQL    CustomAlertQueryType = "MQL"
+	PromQL CustomAlertQueryType = "PromQL"
+)
+
+// CustomAlert defines a custom alert on a mql or promql query
 type CustomAlert struct {
-	ID            string        `yaml:"-"`
-	Name          string        `yaml:"name"`
-	Description   string        `yaml:"description,omitempty"`
-	SeverityLevel SeverityLevel `yaml:"severityLevel"`
-	Duration      *string       `yaml:"duration,omitempty"`
-	MQLQuery      *string       `yaml:"mqlQuery,omitempty"`
-	PromQLQuery   *string       `yaml:"promQLQuery,omitempty"`
+	ID string `yaml:"-"` // set by custom unmarshaller
+	// Human readable name of the alert
+	Name        string `yaml:"name"`
+	Description string `yaml:"description,omitempty"`
+	// SeverityLevel is the severity level of the alert.
+	// Valid values are "WARNING" and "CRITICAL".
+	// Alerts with severity level WARNING are not sent to Opsgenie
+	SeverityLevel SeverityLevel        `yaml:"severityLevel"`
+	Condition     CustomAlertCondition `yaml:"condition"`
+}
+
+type CustomAlertCondition struct {
+	// Type is one of `MQL` or `PromQL`
+	Type CustomAlertQueryType `yaml:"type"`
+	// Query is the MQL or PromQL query to execute
+	Query string `yaml:"query"`
+	// Duration is the time in minutes the query must violate the threshold
+	// to trigger the alert.
+	Duration *int `yaml:"duration,omitempty"`
 }
 
 func (c *CustomAlert) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// Use an alias to prevent cyclical unmarshaling
+	// Use an alias to prevent cyclical unmarshalling
 	type CustomAlertAlias CustomAlert
 	if err := unmarshal((*CustomAlertAlias)(c)); err != nil {
 		return err
@@ -157,24 +177,27 @@ func (c *CustomAlert) Validate() []error {
 		errs = append(errs, errors.New("customAlerts[].severityLevel must be either `WARNING` or `CRITICAL`"))
 	}
 
+	switch c.Condition.Type {
+	case MQL, PromQL:
+		break
+	default:
+		errs = append(errs, errors.New("customAlerts[].condition.type must be either `MQL` or `PromQL`"))
+	}
+
 	if c.Name == "" {
 		errs = append(errs, errors.New("customAlerts[].name is required"))
 	}
 
-	if c.MQLQuery != nil && c.PromQLQuery != nil {
-		errs = append(errs, errors.New("only one of customAlerts[].mqlQuery or customAlerts[].promQLQuery should be specified"))
+	if c.Condition.Query == "" {
+		errs = append(errs, errors.New("customAlerts[].condition.query cannot be empty"))
 	}
 
-	if c.MQLQuery == nil && c.PromQLQuery == nil {
-		errs = append(errs, errors.New("one of customAlerts[].mqlQuery or customAlerts[].promQLQuery should be specified"))
-	}
-
-	if c.Duration != nil {
-		duration, err := time.ParseDuration(*c.Duration)
-		if err != nil {
-			errs = append(errs, errors.Wrap(err, "customAlerts[].duration must be in the format of XXs"))
-		} else if duration%time.Minute != 0 {
-			errs = append(errs, errors.New("customAlerts[].duration must be a multiple of 60s"))
+	if c.Condition.Duration != nil {
+		if *c.Condition.Duration < 0 {
+			errs = append(errs, errors.New("customAlerts[].condition.duration must be a whole number"))
+		}
+		if *c.Condition.Duration > 1440 { // 24 hours
+			errs = append(errs, errors.New("customAlerts[].condition.duration must be less than 1440 minutes"))
 		}
 	}
 

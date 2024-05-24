@@ -18,14 +18,15 @@ func newResponseCodeMetricCondition(config *Config) *monitoringalertpolicy.Monit
 	query := responseCodeMQLBuilder(config)
 
 	if config.ResponseCodeMetric.Duration == nil {
-		config.ResponseCodeMetric.Duration = pointers.Ptr("60s")
+		// default to 1 minute
+		config.ResponseCodeMetric.Duration = pointers.Ptr(1)
 	}
 
 	return &monitoringalertpolicy.MonitoringAlertPolicyConditions{
 		DisplayName: pointers.Ptr(config.Name),
 		ConditionMonitoringQueryLanguage: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguage{
 			Query:    pointers.Ptr(query),
-			Duration: config.ResponseCodeMetric.Duration,
+			Duration: pointers.Stringf("%ds", *config.ResponseCodeMetric.Duration*60),
 			Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguageTrigger{
 				Count: pointers.Float64(1),
 			},

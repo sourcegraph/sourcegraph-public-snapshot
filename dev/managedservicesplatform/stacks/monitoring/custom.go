@@ -29,25 +29,11 @@ func createCustomAlerts(
 			Description: config.Description,
 			Severity:    config.SeverityLevel,
 
-			MQL: func() *alertpolicy.MQL {
-				if config.MQLQuery != nil {
-					return &alertpolicy.MQL{
-						Query:    *config.MQLQuery,
-						Duration: config.Duration,
-					}
-				}
-				return nil
-			}(),
-
-			PromQL: func() *alertpolicy.PromQL {
-				if config.PromQLQuery != nil {
-					return &alertpolicy.PromQL{
-						Query:    *config.PromQLQuery,
-						Duration: config.Duration,
-					}
-				}
-				return nil
-			}(),
+			CustomAlert: &alertpolicy.CustomAlert{
+				Type:     config.Condition.Type,
+				Query:    config.Condition.Query,
+				Duration: config.Condition.Duration,
+			},
 
 			// Shared configuration
 			Service:              vars.Service,

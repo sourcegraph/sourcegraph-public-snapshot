@@ -102,19 +102,14 @@ type ResponseCodeMetric struct {
 	CodeClass    *string
 	ExcludeCodes []string
 	Ratio        float64
-	Duration     *string
+	Duration     *int
 }
 
-// MQL for alerting when a MQL query exceeds a threshold
-type MQL struct {
+// CustomAlert for alerting on a custom mql or promql query
+type CustomAlert struct {
+	Type     spec.CustomAlertQueryType
 	Query    string
-	Duration *string
-}
-
-// PromQL for alerting when a PromQL query exceeds a threshold
-type PromQL struct {
-	Query    string
-	Duration *string
+	Duration *int
 }
 
 // DescriptionSuffix points to the service page and environment anchor expected to be
@@ -155,8 +150,7 @@ type Config struct {
 	ThresholdAggregation *ThresholdAggregation
 	MetricAbsence        *MetricAbsence
 	ResponseCodeMetric   *ResponseCodeMetric
-	MQL                  *MQL
-	PromQL               *PromQL
+	CustomAlert          *CustomAlert
 }
 
 // makeDocsSubject prefixes the name with the service and environment for ease
@@ -171,7 +165,7 @@ type Output struct {
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output, error) {
-	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence, config.MQL, config.PromQL}); err != nil {
+	if err := onlyOneNonNil([]any{config.ThresholdAggregation, config.ResponseCodeMetric, config.MetricAbsence, config.CustomAlert}); err != nil {
 		return nil, err
 	}
 
@@ -224,10 +218,8 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 	case config.ResponseCodeMetric != nil:
 		condition = newResponseCodeMetricCondition(config)
 
-	case config.MQL != nil:
-		condition = newMQLCondition(config)
-	case config.PromQL != nil:
-		condition = newPromQLCondition(config)
+	case config.CustomAlert != nil:
+		condition = newCustomAlertCondition(config)
 	default:
 		return nil, errors.New("no condition configuration provided")
 	}
