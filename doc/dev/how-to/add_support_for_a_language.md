@@ -105,7 +105,7 @@ For example:
 ### Adding New Syntax Highlighting
 
 
-To add syntax highlighting on a new language follow the following steps in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. (You can also refer to this [PR](https://github.com/sourcegraph/sourcegraph/pull/61478) that added highlighting support for the Pkl language)
+To add syntax highlighting for a language follow the steps below. You can also refer to this [PR](https://github.com/sourcegraph/sourcegraph/pull/61478) that added highlighting support for the Pkl language.
 
 
 **Under [docker-images/syntax-highlighter/crates](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates):**
@@ -114,9 +114,13 @@ To add syntax highlighting on a new language follow the following steps in the [
 
 1. In [tree-sitter-all-languages/lib.rs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/docker-images/syntax-highlighter/crates/tree-sitter-all-languages/src/lib.rs) add new entries in the `ParserId` enum and associated references. 
 
-1. In [syntax-analysis/queries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/queries) add a folder for the language with three files in it (`highlights.scm`, `locals.scm`, and `injections.scm`). These files can be empty besides `highlights.scm`, which must contain tree-sitter queries for identifying and labeling all tokens in the language requiring highlighting. For more information on writing tree-sitter queries, see the [tree-sitter docs](https://tree-sitter.github.io/tree-sitter/syntax-highlighting#highlights) or refer to the other `.scm` files in the folder. 
+1. In [syntax-analysis/queries](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/queries) add a folder for the language with three files in it (`highlights.scm`, `locals.scm`, and `injections.scm`). These files can be empty besides `highlights.scm`, which must contain tree-sitter queries for identifying and labeling all tokens in the language requiring highlighting. For more information on writing tree-sitter queries, see the [tree-sitter docs](https://tree-sitter.github.io/tree-sitter/syntax-highlighting#highlights) or refer to the other `.scm` files in the folder.
 
-1. In [syntax-analysis/src/highlighting/snapshots/files](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/src/highlighting/snapshots/files) add an example file for the language which demonstrates all key language elements needing highlighting. Try to keep file minimal and avoid redundancy. 
+1. In [syntax-analysis/src/highlighting/snapshots/files](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis/src/highlighting/snapshots/files) add an example file for the language which demonstrates all key language elements needing highlighting. Some tips for writing queries and adding test cases:
+
+  - Try to be exhaustive: Exercise as many syntax features as possible. Generally, this involves going through the language's reference documentation, identifying the various syntax features that are available, and making sure there are queries and code examples for each.
+  - Avoid redundancy: Generally, every line should exercise a syntax feature that hasn't been exercised earlier in the file. More lines increases code review burden, and when the snapshots change, redundancy creates larger diffs.
+  - Explicitly state known gaps: If a syntax feature is not supported by the grammar, file an issue for that on the grammar's repository and link that issue from a comment in the example file next to that syntax feature.
 
 1.  In [syntax-analysis/src/highlighting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/docker-images/syntax-highlighter/crates/syntax-analysis) run cargo tests `cargo test` to execute the tests and `cargo insta review` to update and regenerate new snapshots. Please review the snapshot generated and ensure the file has proper highlighting annotations ([example](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/docker-images/syntax-highlighter/crates/syntax-analysis/src/highlighting/snapshots/syntax_analysis__highlighting__tree_sitter__test__python.py.snap)). 
  
