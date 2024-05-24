@@ -31,7 +31,6 @@ type Interface interface {
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
-	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	LoadIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
 	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 	GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
@@ -830,32 +829,8 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 
 var quote = sqlf.Sprintf
 
-// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
-// remove any repository granularity information from the result.
-func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
-	if seriesID == 0 {
-		return nil, errors.New("invalid seriesID")
-	}
-
-	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
-	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
-	if err != nil {
-		return nil, err
-	}
-	return results, scanAll(rows, func(s scanner) (err error) {
-		var tmp IncompleteDatapoint
-		if err = rows.Scan(
-			&tmp.Reason,
-			&tmp.Time); err != nil {
-			return err
-		}
-		results = append(results, tmp)
-		return nil
-	})
-}
-
-// This is a variant of LoadAggregatedIncompleteDatapoints, but it retains the repoId so that
-// the graphql resolvers can resolve the repository.l
+// LoadIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
+// remove any repository granularity information from the result, but the repoIds are retained as a list.
 func (s *Store) LoadIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
 	if seriesID == 0 {
 		return nil, errors.New("invalid seriesID")

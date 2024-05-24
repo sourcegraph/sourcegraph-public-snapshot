@@ -1353,10 +1353,6 @@ type MockInterface struct {
 	// object controlling the behavior of the method
 	// GetInsightSeriesRecordingTimes.
 	GetInsightSeriesRecordingTimesFunc *InterfaceGetInsightSeriesRecordingTimesFunc
-	// LoadAggregatedIncompleteDatapointsFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// LoadAggregatedIncompleteDatapoints.
-	LoadAggregatedIncompleteDatapointsFunc *InterfaceLoadAggregatedIncompleteDatapointsFunc
 	// LoadIncompleteDatapointsFunc is an instance of a mock function object
 	// controlling the behavior of the method LoadIncompleteDatapoints.
 	LoadIncompleteDatapointsFunc *InterfaceLoadIncompleteDatapointsFunc
@@ -1400,11 +1396,6 @@ func NewMockInterface() *MockInterface {
 		},
 		GetInsightSeriesRecordingTimesFunc: &InterfaceGetInsightSeriesRecordingTimesFunc{
 			defaultHook: func(context.Context, int, SeriesPointsOpts) (r0 types.InsightSeriesRecordingTimes, r1 error) {
-				return
-			},
-		},
-		LoadAggregatedIncompleteDatapointsFunc: &InterfaceLoadAggregatedIncompleteDatapointsFunc{
-			defaultHook: func(context.Context, int) (r0 []IncompleteDatapoint, r1 error) {
 				return
 			},
 		},
@@ -1465,11 +1456,6 @@ func NewStrictMockInterface() *MockInterface {
 				panic("unexpected invocation of MockInterface.GetInsightSeriesRecordingTimes")
 			},
 		},
-		LoadAggregatedIncompleteDatapointsFunc: &InterfaceLoadAggregatedIncompleteDatapointsFunc{
-			defaultHook: func(context.Context, int) ([]IncompleteDatapoint, error) {
-				panic("unexpected invocation of MockInterface.LoadAggregatedIncompleteDatapoints")
-			},
-		},
 		LoadIncompleteDatapointsFunc: &InterfaceLoadIncompleteDatapointsFunc{
 			defaultHook: func(context.Context, int) ([]IncompleteDatapoint, error) {
 				panic("unexpected invocation of MockInterface.LoadIncompleteDatapoints")
@@ -1518,9 +1504,6 @@ func NewMockInterfaceFrom(i Interface) *MockInterface {
 		},
 		GetInsightSeriesRecordingTimesFunc: &InterfaceGetInsightSeriesRecordingTimesFunc{
 			defaultHook: i.GetInsightSeriesRecordingTimes,
-		},
-		LoadAggregatedIncompleteDatapointsFunc: &InterfaceLoadAggregatedIncompleteDatapointsFunc{
-			defaultHook: i.LoadAggregatedIncompleteDatapoints,
 		},
 		LoadIncompleteDatapointsFunc: &InterfaceLoadIncompleteDatapointsFunc{
 			defaultHook: i.LoadIncompleteDatapoints,
@@ -1981,118 +1964,6 @@ func (c InterfaceGetInsightSeriesRecordingTimesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c InterfaceGetInsightSeriesRecordingTimesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// InterfaceLoadAggregatedIncompleteDatapointsFunc describes the behavior
-// when the LoadAggregatedIncompleteDatapoints method of the parent
-// MockInterface instance is invoked.
-type InterfaceLoadAggregatedIncompleteDatapointsFunc struct {
-	defaultHook func(context.Context, int) ([]IncompleteDatapoint, error)
-	hooks       []func(context.Context, int) ([]IncompleteDatapoint, error)
-	history     []InterfaceLoadAggregatedIncompleteDatapointsFuncCall
-	mutex       sync.Mutex
-}
-
-// LoadAggregatedIncompleteDatapoints delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockInterface) LoadAggregatedIncompleteDatapoints(v0 context.Context, v1 int) ([]IncompleteDatapoint, error) {
-	r0, r1 := m.LoadAggregatedIncompleteDatapointsFunc.nextHook()(v0, v1)
-	m.LoadAggregatedIncompleteDatapointsFunc.appendCall(InterfaceLoadAggregatedIncompleteDatapointsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// LoadAggregatedIncompleteDatapoints method of the parent MockInterface
-// instance is invoked and the hook queue is empty.
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) SetDefaultHook(hook func(context.Context, int) ([]IncompleteDatapoint, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LoadAggregatedIncompleteDatapoints method of the parent MockInterface
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) PushHook(hook func(context.Context, int) ([]IncompleteDatapoint, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) SetDefaultReturn(r0 []IncompleteDatapoint, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]IncompleteDatapoint, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) PushReturn(r0 []IncompleteDatapoint, r1 error) {
-	f.PushHook(func(context.Context, int) ([]IncompleteDatapoint, error) {
-		return r0, r1
-	})
-}
-
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) nextHook() func(context.Context, int) ([]IncompleteDatapoint, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) appendCall(r0 InterfaceLoadAggregatedIncompleteDatapointsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// InterfaceLoadAggregatedIncompleteDatapointsFuncCall objects describing
-// the invocations of this function.
-func (f *InterfaceLoadAggregatedIncompleteDatapointsFunc) History() []InterfaceLoadAggregatedIncompleteDatapointsFuncCall {
-	f.mutex.Lock()
-	history := make([]InterfaceLoadAggregatedIncompleteDatapointsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// InterfaceLoadAggregatedIncompleteDatapointsFuncCall is an object that
-// describes an invocation of method LoadAggregatedIncompleteDatapoints on
-// an instance of MockInterface.
-type InterfaceLoadAggregatedIncompleteDatapointsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []IncompleteDatapoint
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c InterfaceLoadAggregatedIncompleteDatapointsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c InterfaceLoadAggregatedIncompleteDatapointsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -116,7 +116,7 @@ func fakeBackfillGetter(backfills []scheduler.SeriesBackfill, err error) GetSeri
 }
 
 func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
-	return func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error) {
+	return func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
 		return nil, nil
 	}
 }
@@ -283,13 +283,13 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 	}
 
 	t.Run("as timeout", func(t *testing.T) {
-		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: true})
+		got, err := resolver.IncompleteDatapoints(ctx)
 		require.NoError(t, err)
 		autogold.Expect([]string{"2020-01-02 00:00:00 +0000 UTC", "2020-01-01 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
 
 	t.Run("sort by timestamp descending", func(t *testing.T) {
-		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: true})
+		got, err := resolver.IncompleteDatapoints(ctx)
 		require.NoError(t, err)
 		autogold.Expect([]string{"2020-01-02 00:00:00 +0000 UTC", "2020-01-01 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
@@ -300,7 +300,7 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 		postgres.ReposFunc.SetDefaultReturn(repoStore)
 		repoStore.GetFunc.SetDefaultReturn(&internalTypes.Repo{ID: api.RepoID(repo), Name: "github.com/sourcegraph/sourcegraph"}, nil)
 
-		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: false})
+		got, err := resolver.IncompleteDatapoints(ctx)
 		require.NoError(t, err)
 
 		for _, alert := range got {
@@ -326,7 +326,7 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 		postgres.ReposFunc.SetDefaultReturn(repoStore)
 		repoStore.GetFunc.SetDefaultReturn(&internalTypes.Repo{ID: api.RepoID(repo), Name: "github.com/sourcegraph/sourcegraph"}, nil)
 
-		got, err := resolver.IncompleteDatapoints(ctx, &graphqlbackend.IncompleteDatapointsArgs{AggregateRepositories: false})
+		got, err := resolver.IncompleteDatapoints(ctx)
 		require.NoError(t, err)
 
 		for _, alert := range got {

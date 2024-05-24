@@ -141,13 +141,7 @@ type InsightSeriesStatus {
     """
     Data points that are flagged terminally incomplete for this series.
     """
-    incompleteDatapoints(
-        """
-        By default, incomplete datapoints are aggregated across all repositories.
-        Setting this to false will allow resolving the repository.
-        """
-        aggregateRepositories: Boolean = true
-    ): [IncompleteDatapointAlert!]!
+    incompleteDatapoints: [IncompleteDatapointAlert!]!
 }
 
 """
@@ -170,7 +164,7 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     time: DateTime!
 
     """
-    The repositories that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    The repositories that this data point is incomplete for.
     """
     repositories: [Repository!]
 }
@@ -190,7 +184,7 @@ type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
     reason: String!
 
     """
-    The repositories that this data point is incomplete for. This field will only resolve if `aggregateRepositories` on `incompleteDatapoints` is set to true.
+    The repositories that this data point is incomplete for.
     """
     repositories: [Repository!]
 }

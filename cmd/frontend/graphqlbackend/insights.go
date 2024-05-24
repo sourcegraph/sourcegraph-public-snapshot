@@ -100,10 +100,6 @@ type InsightViewDebugResolver interface {
 	Raw(context.Context) ([]string, error)
 }
 
-type IncompleteDatapointsArgs struct {
-	AggregateRepositories bool
-}
-
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
 	PendingJobs(context.Context) (int32, error)
@@ -111,7 +107,7 @@ type InsightStatusResolver interface {
 	FailedJobs(context.Context) (int32, error)
 	BackfillQueuedAt(context.Context) *gqlutil.DateTime
 	IsLoadingData(context.Context) (*bool, error)
-	IncompleteDatapoints(ctx context.Context, args *IncompleteDatapointsArgs) ([]IncompleteDatapointAlert, error)
+	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
 }
 
 type InsightsPointsArgs struct {

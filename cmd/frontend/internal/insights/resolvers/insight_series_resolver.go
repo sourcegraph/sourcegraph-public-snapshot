@@ -81,7 +81,7 @@ type statusInfo struct {
 type (
 	GetSeriesQueueStatusFunc    func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
 	GetSeriesBackfillsFunc      func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
-	GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error)
+	GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error)
 	insightStatusResolver       struct {
 		getQueueStatus          GetSeriesQueueStatusFunc
 		getSeriesBackfills      GetSeriesBackfillsFunc
@@ -165,12 +165,8 @@ func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSerie
 		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
 		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
 	}
-	getIncompletes := func(ctx context.Context, seriesID int, aggregateRepositories bool) ([]store.IncompleteDatapoint, error) {
-		if aggregateRepositories {
-			return r.timeSeriesStore.LoadAggregatedIncompleteDatapoints(ctx, seriesID)
-		} else {
-			return r.timeSeriesStore.LoadIncompleteDatapoints(ctx, seriesID)
-		}
+	getIncompletes := func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
+		return r.timeSeriesStore.LoadIncompleteDatapoints(ctx, seriesID)
 	}
 	return newStatusResolver(getStatus, getBackfills, getIncompletes, viewSeries, r.postgresDB)
 }
@@ -578,8 +574,8 @@ func (g *genericIncompleteDatapointAlertResolver) Repositories(ctx context.Conte
 	return repositoriesResolver(ctx, g.db, g.point.RepoIds)
 }
 
-func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context, args *graphqlbackend.IncompleteDatapointsArgs) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
-	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID, args.AggregateRepositories)
+func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID)
 	// Before this change we wouldn't sort the datapoints. This should make it easier to understand a long list of datapoints.
 	sort.Slice(incomplete, func(i, j int) bool {
 		return incomplete[i].Time.After(incomplete[j].Time)
