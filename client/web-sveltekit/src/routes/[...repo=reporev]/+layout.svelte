@@ -25,17 +25,18 @@
     export let data: LayoutData
 
     const menuOpen = writable(false)
-    const navEntries: { path: string; icon: string; title: string }[] = [
-        { path: '', icon: mdiCodeTags, title: 'Code' },
-        { path: '/-/commits', icon: mdiSourceCommit, title: 'Commits' },
-        { path: '/-/branches', icon: mdiSourceBranch, title: 'Branches' },
-        { path: '/-/tags', icon: mdiTag, title: 'Tags' },
-        { path: '/-/stats/contributors', icon: mdiAccount, title: 'Contributors' },
+    const navEntries: { path: string; icon: string; title: string; user?: boolean }[] = [
+        { path: '', icon: mdiCodeTags, title: 'Code', user: true },
+        { path: '/-/commits', icon: mdiSourceCommit, title: 'Commits', user: true },
+        { path: '/-/branches', icon: mdiSourceBranch, title: 'Branches', user: true },
+        { path: '/-/tags', icon: mdiTag, title: 'Tags', user: true },
+        { path: '/-/stats/contributors', icon: mdiAccount, title: 'Contributors', user: true },
     ]
-    const menuEntries: { path: string; icon: string; title: string }[] = [
-        { path: '/-/compare', icon: mdiHistory, title: 'Compare' },
+    const menuEntries: { path: string; icon: string; title: string; user?: boolean }[] = [
+        { path: '/-/compare', icon: mdiHistory, title: 'Compare', user: true },
         { path: '/-/own', icon: mdiAccount, title: 'Ownership' },
         { path: '/-/embeddings', icon: '', title: 'Embeddings' },
+        { path: '/-/code-graph', icon: '', title: 'Code graph data' },
         { path: '/-/batch-changes', icon: '', title: 'Batch changes' },
         { path: '/-/settings', icon: mdiCog, title: 'Settings' },
     ]
@@ -64,15 +65,17 @@
 
         <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
             {#each navEntriesToShow as entry}
-                {@const href = data.repoURL + entry.path}
-                <li>
-                    <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
-                        {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
-                        {/if}
-                        <span>{entry.title}</span>
-                    </a>
-                </li>
+                {#if entry.user}
+                    {@const href = data.repoURL + entry.path}
+                    <li>
+                        <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
+                            {#if entry.icon}
+                                <Icon svgPath={entry.icon} inline />
+                            {/if}
+                            <span>{entry.title}</span>
+                        </a>
+                    </li>
+                {/if}
             {/each}
         </ul>
 
@@ -85,15 +88,17 @@
                 <Icon svgPath={mdiDotsHorizontal} aria-label="More repo navigation items" />
             </svelte:fragment>
             {#each allMenuEntries as entry}
-                {@const href = data.repoURL + entry.path}
-                <MenuLink {href}>
-                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
-                        {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
-                        {/if}
-                        <span>{entry.title}</span>
-                    </span>
-                </MenuLink>
+                {#if data.user?.siteAdmin || entry.user}
+                    {@const href = data.repoURL + entry.path}
+                    <MenuLink {href}>
+                        <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                            {#if entry.icon}
+                                <Icon svgPath={entry.icon} inline />
+                            {/if}
+                            <span>{entry.title}</span>
+                        </span>
+                    </MenuLink>
+                {/if}
             {/each}
         </DropdownMenu>
         <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
