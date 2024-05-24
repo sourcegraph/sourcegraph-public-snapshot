@@ -12,7 +12,7 @@ commandTests:
     command: "sh"
     args: [
       "-c",
-      "/opt/s3proxy/run-docker-container.sh >/dev/null 2>&1 & sleep 5 && curl -X PUT --write-out %{http_code} http://lolhost:9000/create-bucket-test-2022-01-09-attempt0"
+      "/opt/s3proxy/run-docker-container.sh >/dev/null 2>&1 & sleep 5 && curl -X PUT --write-out %{http_code} http://localhost:9000/create-bucket-test-2022-01-09-attempt0"
     ]
     expectedOutput: ["200"]
     exitCode: 0
