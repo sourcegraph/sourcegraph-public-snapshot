@@ -42,6 +42,12 @@ type ContactProperties struct {
 	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
 	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 
+	// The URL of the first page a user landed on their first session on a Sourcegraph site.
+	// The cookie name for tracking the last visited URL within the current session has been updated to 'first_page_seen_url',
+	// however, in the HubSpot integration, we are still using the legacy HubSpot contact property 'first_source_url'
+	// for backward compatibility with existing HubSpot configurations and workflows.
+	FirstSourceURL string `json:"first_source_url"`
+
 	// The URL of the last page the user saw across multiple cookie duration sessions.
 	// Same logic as 'LastsourceUrl' property but storing values across various cookie duration sessions.
 	LastPageSeenShort string `json:"last_page_seen_short"`
@@ -180,6 +186,12 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("gclid", h.GoogleClickID)
 	apiProps.set("msclkid", h.MicrosoftClickID)
 	return apiProps
+}
+
+func firstTimeUserValues(h *ContactProperties) *apiProperties {
+	firstTimeUserProps := &apiProperties{}
+	firstTimeUserProps.set("first_source_url", h.FirstSourceURL)
+	return firstTimeUserProps
 }
 
 // apiProperties represents a list of HubSpot API-compliant key-value pairs
