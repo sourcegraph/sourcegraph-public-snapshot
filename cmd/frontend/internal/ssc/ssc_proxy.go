@@ -10,10 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
@@ -223,16 +221,7 @@ func (p *APIProxyHandler) tryRefreshSAMSCredentials(
 }
 
 func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var info struct {
-		Actor *actor.Actor `json:"actor"`
-	}
-	if err := session.GetData(r, "actor", &info); err != nil {
-		p.Logger.Error("failed to get actor from session", log.Error(err))
-	}
-	// TODO: we should set actor to context in another way,
-	// see: https://github.com/sourcegraph/sourcegraph/blob/24c0b99b65161297c41b9836bbd80f7811daae20/cmd/frontend/internal/httpapi/httpapi.go#L217-L229
-	ctx := actor.WithActor(r.Context(), info.Actor)
-
+	ctx := r.Context()
 	p.Logger.Info("proxying SSC API request", log.String("url", r.URL.String()))
 
 	// Confirm the proxy is configured correctly.
