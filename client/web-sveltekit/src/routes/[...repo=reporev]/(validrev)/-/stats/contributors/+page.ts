@@ -8,7 +8,7 @@ import { ContributorsPage_ContributorsQuery } from './page.gql'
 const pageSize = 20
 
 export const load: PageLoad = ({ url, params }) => {
-    const afterDate = url.searchParams.get('after') ?? ''
+    const afterDate = url.searchParams.get('after') ?? null
     const { first, last, before, after } = getPaginationParams(url.searchParams, pageSize)
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
