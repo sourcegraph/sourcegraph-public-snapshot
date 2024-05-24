@@ -38,7 +38,7 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
         async function postAcceptInvite(): Promise<void> {
             const response = await requestSSC(`/team/${teamId}/invites/${inviteId}/accept`, 'POST')
             setLoading(false)
-            if (response.status.toString().startsWith('2')) {
+            if (response.ok) {
                 await new Promise(resolve => setTimeout(resolve, 1000))
                 navigate('/cody/team/manage')
             } else {
