@@ -7,9 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func createResponseCodeAlerts(
+func createCustomAlerts(
 	stack cdktf.TerraformStack,
 	id resourceid.ID,
 	vars Variables,
@@ -18,27 +19,30 @@ func createResponseCodeAlerts(
 	// Collect all alerts to aggregate in a dashboard
 	var alerts []monitoringalertpolicy.MonitoringAlertPolicy
 
-	for _, config := range vars.Monitoring.Alerts.ResponseCodeRatios {
-		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			Service:       vars.Service,
-			EnvironmentID: vars.EnvironmentID,
+	// Iterate over a list of custom alert configurations.
+	for _, config := range vars.Monitoring.Alerts.CustomAlerts {
 
+		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+			// Alert policy
 			ID:          config.ID,
-			ProjectID:   vars.ProjectID,
 			Name:        config.Name,
 			Description: config.Description,
+			Severity:    config.SeverityLevel,
 
-			ResponseCodeMetric: &alertpolicy.ResponseCodeMetric{
-				Code:            config.Code,
-				CodeClass:       config.CodeClass,
-				ExcludeCodes:    config.ExcludeCodes,
-				Ratio:           config.Ratio,
-				DurationMinutes: config.DurationMinutes,
+			CustomAlert: &alertpolicy.CustomAlert{
+				Type:            config.Condition.Type,
+				Query:           config.Condition.Query,
+				DurationMinutes: config.Condition.Duration,
 			},
+
+			// Shared configuration
+			Service:              vars.Service,
+			EnvironmentID:        vars.EnvironmentID,
+			ProjectID:            vars.ProjectID,
 			NotificationChannels: channels,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, config.ID)
 		}
 		alerts = append(alerts, alert.AlertPolicy)
 	}
