@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import path from 'path'
+import path from 'node:path'
 
 import { faker } from '@faker-js/faker'
 import { test as base, type Page, type Locator } from '@playwright/test'
@@ -7,7 +7,7 @@ import glob from 'glob'
 import { buildSchema } from 'graphql'
 import * as mime from 'mime-types'
 
-import { type SearchEvent } from '../lib/shared'
+import type { SearchEvent } from '../lib/shared'
 
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
@@ -74,9 +74,9 @@ interface MockSearchStream {
 
 const IS_BAZEL = process.env.BAZEL === '1'
 
-const SCHEMA_DIR = (IS_BAZEL ? '' : '../../') + 'cmd/frontend/graphqlbackend'
+const SCHEMA_DIR = `${IS_BAZEL ? '' : '../../'}cmd/frontend/graphqlbackend`
 
-const ASSETS_DIR = process.env.ASSETS_DIR || './build/'
+const ASSETS_DIR = process.env.ASSETS_DIR || './build/_sk/'
 
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
@@ -154,7 +154,7 @@ class Sourcegraph {
      * page to be "ready" by waiting for the "Filter results" heading to be visible.
      */
     public async mockSearchStream(): Promise<MockSearchStream> {
-        await this.page.addInitScript(function () {
+        await this.page.addInitScript(() => {
             window.$$sources = []
             window.EventSource = class MockEventSource {
                 static readonly CONNECTING = 0

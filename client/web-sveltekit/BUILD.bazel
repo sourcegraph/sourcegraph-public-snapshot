@@ -1,13 +1,13 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
-load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
 load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
 load("@npm//client/web-sveltekit:svelte-check/package_json.bzl", svelte_check = "bin")
 load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
 load("//dev:defs.bzl", "ts_binary", "vitest_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load(":utils.bzl", "compile_app")
 
 # gazelle:ignore
 SRCS = [
@@ -125,7 +125,7 @@ CONFIGS = [
 
 npm_link_all_packages(name = "node_modules")
 
-vite_bin.vite(
+compile_app(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
     args = [
@@ -137,8 +137,8 @@ vite_bin.vite(
         "BAZEL": "1",
     },
     out_dirs = ["build"],
+    test_name = "web-sveltekit-test",
     visibility = ["//client/web/dist:__pkg__"],
-    # silent_on_success = False,
 )
 
 playwright_test_bin.playwright_test(
@@ -165,7 +165,7 @@ PLAYWRIGHT_DEPS = [
 copy_to_directory(
     name = "test_app_assets",
     srcs = [
-        ":web-sveltekit",
+        ":web-sveltekit-test",
     ],
 )
 
@@ -188,7 +188,7 @@ playwright_test_bin.playwright_test(
     ] + PLAYWRIGHT_DEPS,
     env = {
         "BAZEL": "1",
-        "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk",
+        "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk/",
     },
 )
 
