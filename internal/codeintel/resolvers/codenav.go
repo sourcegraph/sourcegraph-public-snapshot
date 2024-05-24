@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
@@ -13,6 +16,11 @@ import (
 
 type CodeNavServiceResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	// CodeGraphData is a newer API that is more SCIP-oriented.
+	// The second parameter is called 'opts' and not 'args' to reflect
+	// that it is not what is exactly provided as input from the GraphQL
+	// client.
+	CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -140,3 +148,132 @@ type DiagnosticResolver interface {
 	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
 }
+
+type CodeGraphDataResolver interface {
+	Provenance(ctx context.Context) (CodeGraphDataProvenance, error)
+	Commit(ctx context.Context) (string, error)
+	ToolInfo(ctx context.Context) (*CodeGraphToolInfo, error)
+	// Pre-condition: args are Normalized.
+	Occurrences(ctx context.Context, args *OccurrencesArgs) (SCIPOccurrenceConnectionResolver, error)
+}
+
+type CodeGraphDataProvenance string
+
+const (
+	ProvenancePrecise     CodeGraphDataProvenance = "PRECISE"
+	ProvenanceSyntactic   CodeGraphDataProvenance = "SYNTACTIC"
+	ProvenanceSearchBased CodeGraphDataProvenance = "SEARCH_BASED"
+)
+
+type CodeGraphDataProvenanceComparator struct {
+	Equals *CodeGraphDataProvenance
+}
+
+type CodeGraphDataFilter struct {
+	Provenance *CodeGraphDataProvenanceComparator
+}
+
+// String is meant as a debugging-only representation without round-trippability
+func (f *CodeGraphDataFilter) String() string {
+	if f != nil && f.Provenance != nil && f.Provenance.Equals != nil {
+		return fmt.Sprintf("provenance == %s", string(*f.Provenance.Equals))
+	}
+	return ""
+}
+
+type CodeGraphDataArgs struct {
+	Filter *CodeGraphDataFilter
+}
+
+func (args *CodeGraphDataArgs) Attrs() []attribute.KeyValue {
+	if args == nil {
+		return nil
+	}
+	return []attribute.KeyValue{attribute.String("args.filter", args.Filter.String())}
+}
+
+type ForEachProvenance[T any] struct {
+	SearchBased T
+	Syntactic   T
+	Precise     T
+}
+
+func (a *CodeGraphDataArgs) ProvenancesForSCIPData() ForEachProvenance[bool] {
+	var out ForEachProvenance[bool]
+	if a == nil || a.Filter == nil || a.Filter.Provenance == nil || a.Filter.Provenance.Equals == nil {
+		out.Syntactic = true
+		out.Precise = true
+	} else {
+		p := *a.Filter.Provenance.Equals
+		switch p {
+		case ProvenancePrecise:
+			out.Precise = true
+		case ProvenanceSyntactic:
+			out.Syntactic = true
+		case ProvenanceSearchBased:
+		}
+	}
+	return out
+}
+
+type CodeGraphDataOpts struct {
+	Args   *CodeGraphDataArgs
+	Repo   *types.Repo
+	Commit api.CommitID
+	Path   string
+}
+
+func (opts *CodeGraphDataOpts) Attrs() []attribute.KeyValue {
+	return append([]attribute.KeyValue{attribute.String("repo", opts.Repo.String()),
+		opts.Commit.Attr(),
+		attribute.String("path", opts.Path)}, opts.Args.Attrs()...)
+}
+
+type CodeGraphToolInfo struct {
+	Name_    *string
+	Version_ *string
+}
+
+func (ti *CodeGraphToolInfo) Name() *string {
+	return ti.Name_
+}
+
+func (ti *CodeGraphToolInfo) Version() *string {
+	return ti.Version_
+}
+
+type OccurrencesArgs struct {
+	First *int32
+	After *string
+}
+
+// Normalize returns args for convenience of chaining
+func (args *OccurrencesArgs) Normalize(maxPageSize int32) *OccurrencesArgs {
+	if args == nil {
+		*args = OccurrencesArgs{}
+	}
+	if args.First == nil || *args.First > maxPageSize {
+		args.First = &maxPageSize
+	}
+	return args
+}
+
+type SCIPOccurrenceConnectionResolver interface {
+	ConnectionResolver[SCIPOccurrenceResolver]
+	PageInfo(ctx context.Context) (*graphqlutil.ConnectionPageInfo[SCIPOccurrenceResolver], error)
+}
+
+type SCIPOccurrenceResolver interface {
+	Symbol() (*string, error)
+	Range() (RangeResolver, error)
+	Roles() (*[]SymbolRole, error)
+}
+
+type SymbolRole string
+
+// ⚠️ CAUTION: These constants are part of the public GraphQL API
+const (
+	SymbolRoleDefinition        SymbolRole = "DEFINITION"
+	SymbolRoleReference         SymbolRole = "REFERENCE"
+	SymbolRoleForwardDefinition SymbolRole = "FORWARD_DEFINITION"
+)

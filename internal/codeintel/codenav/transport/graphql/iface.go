@@ -3,6 +3,8 @@ package graphql
 import (
 	"context"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -22,6 +24,7 @@ type CodeNavService interface {
 	GetClosestCompletedUploadsForBlob(context.Context, uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error)
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
+	SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error)
 }
 
 type AutoIndexingService interface {
