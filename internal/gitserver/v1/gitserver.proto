@@ -652,7 +652,7 @@ message BlameRequest {
   string repo_name = 2;
   // commit is the commit sha to start the blame operation at.
   string commit = 3;
-  string path = 4;
+  bytes path = 4;
   bool ignore_whitespace = 5;
   optional BlameRange range = 8;
 }

@@ -847,7 +847,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 	accesslog.Record(
 		ctx,
 		req.GetRepoName(),
-		log.String("path", req.GetPath()),
+		log.String("path", string(req.GetPath())),
 		log.String("commit", req.GetCommit()),
 	)
 
@@ -883,7 +883,7 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 		}
 	}
 
-	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), req.GetPath(), opts)
+	r, err := backend.Blame(ctx, api.CommitID(req.GetCommit()), string(req.GetPath()), opts)
 	if err != nil {
 		if os.IsNotExist(err) {
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
