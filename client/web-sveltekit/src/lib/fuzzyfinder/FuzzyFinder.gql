@@ -2,33 +2,34 @@ query FuzzyFinderQuery($query: String!) {
     search(query: $query) {
         results {
             results {
-                ...FuzzyFinderFileMatch
-                ...FuzzyFinderRepository
+                ...FuzzyFinderSearchResult
             }
         }
     }
 }
 
-fragment FuzzyFinderFileMatch on FileMatch {
-    file {
-        path
-        url
-        ...FileIcon_GitBlob
-    }
-    symbols {
-        name
-        kind
-        location {
+fragment FuzzyFinderSearchResult on SearchResult {
+    ... on FileMatch {
+        file {
+            path
             url
+            ...FileIcon_GitBlob
+        }
+        symbols {
+            name
+            kind
+            location {
+                url
+            }
+        }
+        repository {
+            name
+            stars
         }
     }
-    repository {
+
+    ... on Repository {
         name
         stars
     }
-}
-
-fragment FuzzyFinderRepository on Repository {
-    name
-    stars
 }

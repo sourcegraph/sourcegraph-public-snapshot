@@ -1,4 +1,4 @@
-import { Fzf, type FzfOptions, type FzfResultItem } from 'fzf'
+import { Fzf, extendedMatch, byLengthAsc, type FzfOptions, type FzfResultItem } from 'fzf'
 import { Observable, Subject } from 'rxjs'
 import { throttleTime, switchMap } from 'rxjs/operators'
 import { readable, type Readable } from 'svelte/store'
@@ -8,24 +8,36 @@ import { mapOrThrow } from '$lib/graphql'
 import type { Loadable } from '$lib/utils'
 import { CachedAsyncCompletionSource } from '$lib/web'
 
-import { FuzzyFinderQuery, type FuzzyFinderFileMatch } from './FuzzyFinder.gql'
+import {
+    FuzzyFinderQuery,
+    type FuzzyFinderSearchResult,
+    type FuzzyFinderSearchResult_FileMatch_,
+} from './FuzzyFinder.gql'
 
-interface SymbolMatch {
+interface Match {
+    /**
+     * The value used to match the query.
+     */
+    value: string
+    ranking?: number
+}
+
+interface SymbolMatch extends Match {
     type: 'symbol'
-    file: FuzzyFinderFileMatch['file']
-    repository: FuzzyFinderFileMatch['repository']
-    symbol: FuzzyFinderFileMatch['symbols'][number]
+    file: FuzzyFinderSearchResult_FileMatch_['file']
+    repository: FuzzyFinderSearchResult_FileMatch_['repository']
+    symbol: FuzzyFinderSearchResult_FileMatch_['symbols'][number]
 }
 
-interface FileMatch {
+interface FileMatch extends Match {
     type: 'file'
-    file: FuzzyFinderFileMatch['file']
-    repository: FuzzyFinderFileMatch['repository']
+    file: FuzzyFinderSearchResult_FileMatch_['file']
+    repository: FuzzyFinderSearchResult_FileMatch_['repository']
 }
 
-interface RepositoryMatch {
+interface RepositoryMatch extends Match {
     type: 'repo'
-    repository: FuzzyFinderFileMatch['repository']
+    repository: FuzzyFinderSearchResult_FileMatch_['repository']
 }
 
 export type FuzzyFinderResult = SymbolMatch | FileMatch | RepositoryMatch
@@ -34,126 +46,120 @@ export interface CompletionSource<T> extends Readable<Loadable<FzfResultItem<T>[
     next: (value: string) => void
 }
 
+// Separate type to enforce that `sort` is always `true` and `tiebreakers` is available.
+type FuzzyFinderFzfOptions = FzfOptions<Match> & { sort: true }
+
+// The number of results to fetch from the server and display in the UI.
+const LIMIT = 50
+const THROTTLE_TIME = 100
+
+const defaultFzfOptions: FuzzyFinderFzfOptions = {
+    sort: true,
+    fuzzy: 'v2',
+    casing: 'smart-case',
+    forward: true,
+    limit: LIMIT,
+    // This enables multi-word matching and special characters like `'`, '^', etc.
+    // See https://github.com/junegunn/fzf/tree/7191ebb615f5d6ebbf51d598d8ec853a65e2274d?tab=readme-ov-file#search-syntax
+    match: extendedMatch,
+    selector: item => item.value,
+    tiebreakers: [
+        // Sort by ranking, if available.
+        (a, b) => (b.item.ranking ?? 0) - (a.item.ranking ?? 0),
+    ],
+}
+
 export function createRepositorySource(client: GraphQLClient): CompletionSource<RepositoryMatch> {
-    const fzfOptions: FzfOptions<RepositoryMatch> = {
-        sort: true,
-        fuzzy: 'v2',
-        selector: item => item.repository.name,
-        forward: false,
-        limit: 50,
-        tiebreakers: [(a, b) => b.item.repository.stars - a.item.repository.stars, (a, b) => b.start - a.start],
-    }
-
-    const source = new CachedAsyncCompletionSource({
-        queryKey(value) {
-            return `type:repo count:50 repo:"${value}"`
+    return createCompletionSource(
+        client,
+        () => '',
+        value => `type:repo repo:"${value}"`,
+        (result, results) => {
+            if (result.__typename === 'Repository') {
+                results.push([
+                    result.name,
+                    { type: 'repo', value: result.name, ranking: result.stars, repository: result },
+                ])
+            }
         },
-        async query(query) {
-            return client
-                .query(FuzzyFinderQuery, {
-                    query,
-                })
-                .then(
-                    mapOrThrow(response => {
-                        const repos: [string, RepositoryMatch][] = []
-                        for (const result of response.data?.search?.results.results ?? []) {
-                            if (result.__typename === 'Repository') {
-                                repos.push([result.name, { type: 'repo', repository: result }])
-                            }
-                        }
-                        return repos
-                    })
-                )
-        },
-        filter(entries, value) {
-            return new Fzf(entries, fzfOptions).find(value)
-        },
-    })
-
-    const subject = new Subject<string>()
-    const { subscribe } = fromObservable(
-        subject.pipe(
-            throttleTime(100, undefined, { leading: false, trailing: true }),
-            switchMap(value => toObservable(source, value))
-        ),
-        { pending: true, value: [], error: null }
+        {
+            forward: false,
+        }
     )
-
-    return {
-        subscribe,
-        next: value => subject.next(value),
-    }
 }
 
 export function createFileSource(client: GraphQLClient, scope: () => string): CompletionSource<FileMatch> {
-    const fzfOptions: FzfOptions<FileMatch> = {
-        sort: true,
-        fuzzy: 'v2',
-        selector: item => item.file.path,
-        forward: false,
-        limit: 50,
-        tiebreakers: [(a, b) => b.item.repository.stars - a.item.repository.stars, (a, b) => b.start - a.start],
-    }
-
-    const source = new CachedAsyncCompletionSource({
-        dataCacheKey: scope,
-        queryKey(value, scope) {
-            return `type:path count:50 ${scope} file:"${value}"`
+    return createCompletionSource(
+        client,
+        scope,
+        (value, scope) => `type:path ${scope} file:"${value}"`,
+        (result, results) => {
+            if (result.__typename === 'FileMatch') {
+                results.push([
+                    result.file.url,
+                    {
+                        type: 'file',
+                        value: result.file.path,
+                        ranking: result.repository.stars,
+                        file: result.file,
+                        repository: result.repository,
+                    },
+                ])
+            }
         },
-        async query(query) {
-            return client
-                .query(FuzzyFinderQuery, {
-                    query,
-                })
-                .then(
-                    mapOrThrow(response => {
-                        const repos: [string, FileMatch][] = []
-                        for (const result of response.data?.search?.results.results ?? []) {
-                            if (result.__typename === 'FileMatch') {
-                                repos.push([
-                                    result.file.url,
-                                    { type: 'file', file: result.file, repository: result.repository },
-                                ])
-                            }
-                        }
-                        return repos
-                    })
-                )
-        },
-        filter(entries, value) {
-            return new Fzf(entries, fzfOptions).find(value)
-        },
-    })
-
-    const subject = new Subject<string>()
-    const { subscribe } = fromObservable(
-        subject.pipe(
-            throttleTime(100, undefined, { leading: false, trailing: true }),
-            switchMap(value => toObservable(source, value))
-        ),
-        { pending: true, value: [], error: null }
+        {
+            forward: false,
+        }
     )
-
-    return {
-        subscribe,
-        next: value => subject.next(value),
-    }
 }
 
 export function createSymbolSource(client: GraphQLClient, scope: () => string): CompletionSource<SymbolMatch> {
-    const fzfOptions: FzfOptions<SymbolMatch> = {
-        sort: true,
-        fuzzy: 'v2',
-        selector: item => item.symbol.name,
-        limit: 50,
-        tiebreakers: [(a, b) => b.item.repository.stars - a.item.repository.stars, (a, b) => b.start - a.start],
+    return createCompletionSource(
+        client,
+        scope,
+        (value, scope) => `type:symbol ${scope} "${value}"`,
+        (result, results) => {
+            if (result.__typename === 'FileMatch') {
+                for (const symbol of result.symbols) {
+                    results.push([
+                        symbol.location.url,
+                        {
+                            type: 'symbol',
+                            value: symbol.name,
+                            ranking: result.repository.stars,
+                            file: result.file,
+                            repository: result.repository,
+                            symbol,
+                        },
+                    ])
+                }
+            }
+        },
+        {
+            tiebreakers: [byLengthAsc],
+        }
+    )
+}
+
+function createCompletionSource<T extends Match>(
+    client: GraphQLClient,
+    getScope: () => string,
+    getQuery: (value: string, scope?: string) => string,
+    appendResult: (result: FuzzyFinderSearchResult, results: [string, T][]) => void,
+    additionalFzfOptions?: Partial<FuzzyFinderFzfOptions>
+): CompletionSource<T> {
+    let fzfOptions = defaultFzfOptions
+    if (additionalFzfOptions) {
+        fzfOptions = {
+            ...fzfOptions,
+            ...additionalFzfOptions,
+            tiebreakers: (fzfOptions.tiebreakers ?? []).concat(additionalFzfOptions.tiebreakers ?? []),
+        }
     }
 
     const source = new CachedAsyncCompletionSource({
-        dataCacheKey: scope,
-        queryKey(value, scope) {
-            return `type:symbol count:50 ${scope} "${value}"`
-        },
+        dataCacheKey: getScope,
+        queryKey: (...args) => `count:${LIMIT} ${getQuery(...args)}`,
         async query(query) {
             return client
                 .query(FuzzyFinderQuery, {
@@ -161,30 +167,25 @@ export function createSymbolSource(client: GraphQLClient, scope: () => string): 
                 })
                 .then(
                     mapOrThrow(response => {
-                        const results: [string, SymbolMatch][] = []
+                        const results: [string, T][] = []
                         for (const result of response.data?.search?.results.results ?? []) {
-                            if (result.__typename === 'FileMatch') {
-                                for (const symbol of result.symbols) {
-                                    results.push([
-                                        symbol.location.url,
-                                        { type: 'symbol', file: result.file, repository: result.repository, symbol },
-                                    ])
-                                }
-                            }
+                            appendResult(result, results)
                         }
                         return results
                     })
                 )
         },
         filter(entries, value) {
-            return new Fzf(entries, fzfOptions).find(value)
+            const fzf = new Fzf<Match[]>(entries, fzfOptions)
+            // @fkling: I wasn't able to get the type inference to work, so I had to cast the result.
+            return fzf.find(value) as FzfResultItem<T>[]
         },
     })
 
     const subject = new Subject<string>()
     const { subscribe } = fromObservable(
         subject.pipe(
-            throttleTime(100, undefined, { leading: false, trailing: true }),
+            throttleTime(THROTTLE_TIME, undefined, { leading: false, trailing: true }),
             switchMap(value => toObservable(source, value))
         ),
         { pending: true, value: [], error: null }
