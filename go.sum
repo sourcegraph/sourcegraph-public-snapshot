@@ -1749,8 +1749,8 @@ github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7
 github.com/sourcegraph/run v0.12.0/go.mod h1:PwaP936BTnAJC1cqR5rSbG5kOs/EWStTK3lqvMX5GUA=
 github.com/sourcegraph/scip v0.3.3 h1:3EOkChYOntwHl0pPSAju7rj0oRuujh8owC4vjGDEr0s=
 github.com/sourcegraph/scip v0.3.3/go.mod h1:Q67VaoTpftINIy/CLrkYQOMwlsx67h8ys+ligmdUcqM=
-github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240522211807-a906ab485b78 h1:VHG7pK2GHFQRr1myczYARGpuPcyo7KuPFpe4O60KFTw=
-github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240522211807-a906ab485b78/go.mod h1:Hj3RGEMy4fM5xRVucbT0XHkbOrK7rttWh6fWg26sQpo=
+github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240524154739-87189364d07f h1:55o/Oo+gFRmE5tmFod6M/koth7RFtgRxfApjBxxtORI=
+github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240524154739-87189364d07f/go.mod h1:+yFgPzr01Ks+pcvFlStxKtUp4Wq//BqQEJDnZczD3h0=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/sourcegraph/zoekt v0.0.0-20240514170004-fe8f2a3d9cab h1:9g0lbxps+Yr99nE2Y8RnhPwV6HUYUxEpHfB+RISFfdU=
