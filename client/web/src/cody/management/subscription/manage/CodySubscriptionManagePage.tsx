@@ -201,14 +201,7 @@ const CodyIcon: React.FC<{ className?: string }> = ({ className }) => (
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(23.4233 -44.4873) rotate(77.074) scale(58.2161)"
             >
-                <stop
-                    stopColor="#00DBFF"
-                    style={{
-                        stopColor: '#00DBFF',
-                        stopColor: 'color(display-p3 0.0000 0.8602 1.0000)',
-                        stopOpacity: 1,
-                    }}
-                />
+                <stop stopColor="#00DBFF" style={{ stopColor: '#00DBFF', stopOpacity: 1 }} />
                 <stop offset="1" stopColor="#00DBFF" stopOpacity="0" style={{ stopColor: 'none', stopOpacity: 0 }} />
             </radialGradient>
             <linearGradient
@@ -219,51 +212,11 @@ const CodyIcon: React.FC<{ className?: string }> = ({ className }) => (
                 y2="17"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop
-                    offset="0.0576364"
-                    stopColor="#FF291F"
-                    style={{
-                        stopColor: '#FF291F',
-                        stopColor: 'color(display-p3 1.0000 0.1627 0.1208)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.308435"
-                    stopColor="#00CBEC"
-                    style={{
-                        stopColor: '#00CBEC',
-                        stopColor: 'color(display-p3 0.0000 0.7961 0.9255)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.642062"
-                    stopColor="#A112FF"
-                    style={{
-                        stopColor: '#A112FF',
-                        stopColor: 'color(display-p3 0.6314 0.0706 1.0000)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.744128"
-                    stopColor="#7048E8"
-                    style={{
-                        stopColor: '#7048E8',
-                        stopColor: 'color(display-p3 0.4392 0.2824 0.9098)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.876835"
-                    stopColor="#FF5543"
-                    style={{
-                        stopColor: '#FF5543',
-                        stopColor: 'color(display-p3 1.0000 0.3333 0.2627)',
-                        stopOpacity: 1,
-                    }}
-                />
+                <stop offset="0.0576364" stopColor="#FF291F" style={{ stopColor: '#FF291F', stopOpacity: 1 }} />
+                <stop offset="0.308435" stopColor="#00CBEC" style={{ stopColor: '#00CBEC', stopOpacity: 1 }} />
+                <stop offset="0.642062" stopColor="#A112FF" style={{ stopColor: '#A112FF', stopOpacity: 1 }} />
+                <stop offset="0.744128" stopColor="#7048E8" style={{ stopColor: '#7048E8', stopOpacity: 1 }} />
+                <stop offset="0.876835" stopColor="#FF5543" style={{ stopColor: '#FF5543', stopOpacity: 1 }} />
             </linearGradient>
             <linearGradient
                 id="paint2_linear_5107_1290"
@@ -273,24 +226,8 @@ const CodyIcon: React.FC<{ className?: string }> = ({ className }) => (
                 y2="26.4367"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop
-                    offset="0.00948703"
-                    stopColor="#A112FF"
-                    style={{
-                        stopColor: '#A112FF',
-                        stopColor: 'color(display-p3 0.6314 0.0706 1.0000)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.961681"
-                    stopColor="#7048E8"
-                    style={{
-                        stopColor: '#7048E8',
-                        stopColor: 'color(display-p3 0.4392 0.2824 0.9098)',
-                        stopOpacity: 1,
-                    }}
-                />
+                <stop offset="0.00948703" stopColor="#A112FF" style={{ stopColor: '#A112FF', stopOpacity: 1 }} />
+                <stop offset="0.961681" stopColor="#7048E8" style={{ stopColor: '#7048E8', stopOpacity: 1 }} />
             </linearGradient>
             <linearGradient
                 id="paint3_linear_5107_1290"
@@ -300,42 +237,10 @@ const CodyIcon: React.FC<{ className?: string }> = ({ className }) => (
                 y2="77.5"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop
-                    offset="0.00481802"
-                    stopColor="#7048E8"
-                    style={{
-                        stopColor: '#7048E8',
-                        stopColor: 'color(display-p3 0.4392 0.2824 0.9098)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.417018"
-                    stopColor="#00CBEC"
-                    style={{
-                        stopColor: '#00CBEC',
-                        stopColor: 'color(display-p3 0.0000 0.7961 0.9255)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="0.642062"
-                    stopColor="#A112FF"
-                    style={{
-                        stopColor: '#A112FF',
-                        stopColor: 'color(display-p3 0.6314 0.0706 1.0000)',
-                        stopOpacity: 1,
-                    }}
-                />
-                <stop
-                    offset="1"
-                    stopColor="#FF5543"
-                    style={{
-                        stopColor: '#FF5543',
-                        stopColor: 'color(display-p3 1.0000 0.3333 0.2627)',
-                        stopOpacity: 1,
-                    }}
-                />
+                <stop offset="0.00481802" stopColor="#7048E8" style={{ stopColor: '#7048E8', stopOpacity: 1 }} />
+                <stop offset="0.417018" stopColor="#00CBEC" style={{ stopColor: '#00CBEC', stopOpacity: 1 }} />
+                <stop offset="0.642062" stopColor="#A112FF" style={{ stopColor: '#A112FF', stopOpacity: 1 }} />
+                <stop offset="1" stopColor="#FF5543" style={{ stopColor: '#FF5543', stopOpacity: 1 }} />
             </linearGradient>
         </defs>
     </svg>
