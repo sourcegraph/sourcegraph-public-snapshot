@@ -254,7 +254,7 @@ describe('parseContributionExpressions()', () => {
         }
         expect(
             parseContributionExpressions({
-                actions: [{ id: '${replaceMe}', command: '${c}', telemetryProps: { feature: 'b' } }],
+                actions: [{ id: '${replaceMe}', command: '${c}', telemetryProps: { feature: 'a' } }],
             })
         ).toEqual(expected)
     })
