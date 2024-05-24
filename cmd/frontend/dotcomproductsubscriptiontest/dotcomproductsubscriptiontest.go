@@ -35,6 +35,10 @@ func (s *subscriptionsDB) UpdateCodyGatewayAccess(ctx context.Context, id string
 	})
 }
 
+func (s *subscriptionsDB) Archive(ctx context.Context, id string) error {
+	return productsubscription.NewSubscriptionsDB(s.db).Archive(ctx, id)
+}
+
 // NewSubscriptionsDB returns a new SubscriptionsDB backed by the given database.DB.
 // It requires testing.T to indicate that it should only be used in tests.
 //

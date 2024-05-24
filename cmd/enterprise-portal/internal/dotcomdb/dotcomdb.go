@@ -176,8 +176,12 @@ FROM product_subscriptions subscription
 	) tokens ON tokens.product_subscription_id = subscription.id`
 
 	clauses := []string{rawClause}
+	// Add WHERE clause, amending it to include a condition that the subscription
+	// must not be archived.
 	if conds.whereClause != "" {
-		clauses = append(clauses, "WHERE "+conds.whereClause)
+		clauses = append(clauses, "WHERE "+conds.whereClause+" AND subscription.archived_at IS NULL")
+	} else {
+		clauses = append(clauses, "WHERE subscription.archived_at IS NULL")
 	}
 	clauses = append(clauses, "GROUP BY subscription.id") // required, after WHERE clause
 	if conds.havingClause != "" {
