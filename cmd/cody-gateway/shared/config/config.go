@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -65,6 +66,7 @@ type Config struct {
 	ActorConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
 	ActorRateLimitNotify        codygateway.ActorRateLimitNotifyConfig
 	AutoFlushStreamingResponses bool
+	IdentifiersToLogFor         collections.Set[string]
 
 	Attribution struct {
 		Enabled bool
@@ -119,6 +121,9 @@ type FlaggingConfig struct {
 	// Phrases we look for in a flagged request to consider blocking the response.
 	// Each phrase is lower case. Can be empty (to disable blocking).
 	BlockedPromptPatterns []string
+
+	// Identifiers (of actors) for which we will log all prompts
+	IdentifiersToLogFor []string
 
 	// RequestBlockingEnabled controls whether or not requests can be blocked.
 	// A possible escape hatch if there is a sudden spike in false-positives.
@@ -292,6 +297,7 @@ func (c *Config) Load() {
 
 	c.ActorRateLimitNotify.SlackWebhookURL = c.GetOptional("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_SLACK_WEBHOOK_URL", "The Slack webhook URL to send notifications to.")
 	c.AutoFlushStreamingResponses = c.GetBool("CODY_GATEWAY_AUTO_FLUSH_STREAMING_RESPONSES", "false", "Whether we should flush streaming responses after every write.")
+	c.IdentifiersToLogFor = collections.NewSet(splitMaybe(c.GetOptional("CODY_GATEWAY_IDENTIFIERS_TO_LOG_FOR", "Identifiers of actors that have all their prompts logged."))...)
 
 	c.Attribution.Enabled = c.GetBool("CODY_GATEWAY_ENABLE_ATTRIBUTION_SEARCH", "false", "Whether attribution search endpoint is available.")
 
@@ -330,6 +336,7 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 
 	cfg.AllowedPromptPatterns = maybeLoadLowercaseSlice("ALLOWED_PROMPT_PATTERNS", "Allowed prompt patterns")
 	cfg.BlockedPromptPatterns = maybeLoadLowercaseSlice(envVarPrefix+"BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")
+
 	cfg.RequestBlockingEnabled = c.GetBool(envVarPrefix+"REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")

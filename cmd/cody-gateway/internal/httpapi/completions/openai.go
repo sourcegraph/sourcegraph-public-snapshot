@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,16 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewOpenAIHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.OpenAIConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) http.Handler {
+func NewOpenAIHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.OpenAIConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+	// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
+	// in requests, so set a very high retry-after to discourage Sourcegraph
+	// clients from retrying at all since retries are probably not going to
+	// help in a minute-long rate limit window.
+	upstreamConfig.DefaultRetryAfterSeconds = 30
+
 	return makeUpstreamHandler[openaiRequest](
 		baseLogger,
 		eventLogger,
@@ -42,13 +38,7 @@ func NewOpenAIHandler(
 		config.AllowedModels,
 		&OpenAIHandlerMethods{config: config},
 		promptRecorder,
-
-		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
-		// in requests, so set a very high retry-after to discourage Sourcegraph
-		// clients from retrying at all since retries are probably not going to
-		// help in a minute-long rate limit window.
-		30, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	)
 }
 

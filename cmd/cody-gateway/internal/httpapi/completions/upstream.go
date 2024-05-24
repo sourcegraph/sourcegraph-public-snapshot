@@ -17,6 +17,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
@@ -74,7 +76,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 
 	// shouldFlagRequest is called after the request has been validated, and is where we
 	// run various heuristics to check if the request is abusive in nature. (e.g. suspiciously
-	// long, contains words/phrases from a blocklist, etc.)
+	// long, contains words/phrases from a blocklist, known bad actor etc.)
 	//
 	// All implementations of this function should call isFlaggedRequest(...), along with
 	// any LLM or provider-specific logic.
@@ -113,6 +115,15 @@ type UpstreamRequest interface {
 	BuildPrompt() string
 }
 
+type UpstreamHandlerConfig struct {
+	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
+	// limit events in case a retry-after is not provided by the upstream
+	// response.
+	DefaultRetryAfterSeconds    int
+	AutoFlushStreamingResponses bool
+	IdentifiersToLogFor         collections.Set[string]
+}
+
 // makeUpstreamHandler a big deal. This method will produce an http.Handler that will handle converting
 // the Cody Gateway user's request to the backing LLM ("upstream provider"). This is how we provide a
 // consistent way for providing logging, telemetry, rate limiting, etc. across multiple upstream providers.
@@ -132,11 +143,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	methods upstreamHandlerMethods[ReqT],
 	flaggedPromptRecorder PromptRecorder,
 
-	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
-	// limit events in case a retry-after is not provided by the upstream
-	// response.
-	defaultRetryAfterSeconds int,
-	autoFlushStreamingResponses bool,
+	config UpstreamHandlerConfig,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName)
 
@@ -327,6 +334,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if flaggingResult.IsFlagged() {
 				requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 			}
+			if config.IdentifiersToLogFor.Has(act.ID) {
+				requestMetadata["full_prompt"] = body.BuildPrompt()
+			}
 			usageData := map[string]any{
 				"prompt_character_count":           promptUsage.characters,
 				"prompt_token_count":               promptUsage.tokens,
@@ -436,7 +446,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
 				w.Header().Set("retry-after", upstreamRetryAfter)
 			} else {
-				w.Header().Set("retry-after", strconv.Itoa(defaultRetryAfterSeconds))
+				w.Header().Set("retry-after", strconv.Itoa(config.DefaultRetryAfterSeconds))
 			}
 		}
 
@@ -449,7 +459,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 		// (so events are sent to the client as soon as possible)
 		var responseWriter io.Writer = w
-		if autoFlushStreamingResponses && body.ShouldStream() {
+		if config.AutoFlushStreamingResponses && body.ShouldStream() {
 			if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 				responseWriter = fw
 			} else {

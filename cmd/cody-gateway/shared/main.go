@@ -183,6 +183,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			Fireworks:                   cfg.Fireworks,
 			EmbeddingsAllowedModels:     cfg.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses: cfg.AutoFlushStreamingResponses,
+			IdentifiersToLogFor:         cfg.IdentifiersToLogFor,
 			EnableAttributionSearch:     cfg.Attribution.Enabled,
 			Sourcegraph:                 cfg.Sourcegraph,
 		},
