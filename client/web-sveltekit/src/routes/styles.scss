@@ -60,3 +60,24 @@ kbd {
     background-color: var(--color-bg-1);
     box-shadow: inset 0 -2px 0 var(--color-bg-2);
 }
+
+svg {
+    $iconSize: var(--icon-size, 1.5rem);
+    $iconInlineSize: var(--icon-inline-size, #{(16 / 14)}em);
+
+    &.icon {
+        width: $iconSize;
+        height: $iconSize;
+    }
+
+    &.icon-inline {
+        width: $iconInlineSize;
+        height: $iconInlineSize;
+        vertical-align: text-bottom;
+    }
+
+    &.icon,
+    &.icon-inline {
+        color: var(--icon-fill-color, var(--color, inherit));
+    }
+}

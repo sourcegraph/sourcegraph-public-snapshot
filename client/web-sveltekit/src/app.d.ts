@@ -2,6 +2,8 @@
 // for information about these interfaces
 /// <reference types="@sveltejs/kit" />
 
+import 'unplugin-icons/types/svelte'
+
 declare global {
     namespace App {
         interface PageData {

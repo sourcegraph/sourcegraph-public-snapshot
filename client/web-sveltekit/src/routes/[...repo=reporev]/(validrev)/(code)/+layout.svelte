@@ -27,8 +27,9 @@
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline, mdiHome } from '@mdi/js'
+    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
+    import IconHome from 'virtual:icons/lucide/home'
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
@@ -36,6 +37,7 @@
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -213,7 +215,7 @@
                         <Button variant="secondary" outline size="sm">
                             <svelte:fragment slot="custom" let:buttonClass>
                                 <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
-                                    <Icon svgPath={mdiHome} inline />
+                                    <Icon2 icon={IconHome} inline />
                                 </a>
                             </svelte:fragment>
                         </Button>
