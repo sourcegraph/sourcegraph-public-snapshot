@@ -14,7 +14,8 @@ spec:
     disabled: true
 
   gitServer:
-    storageSize: "500Gi"
+    persistentVolumeConfig:
+      storageSize: "500Gi"
 
   indexedSearch:
     disabled: true

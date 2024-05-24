@@ -56,7 +56,7 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 		},
 	})
 
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	storageSize, err := resource.ParseQuantity(cfg.GetPersistentVolumeConfig().StorageSize)
 	if err != nil {
 		return errors.Wrap(err, "parsing storage size")
 	}
@@ -116,11 +116,14 @@ func (r *Reconciler) reconcileSymbolsStatefulSet(ctx context.Context, sg *config
 		pod.NewVolumeEmptyDir("tmp"),
 	}
 
+	pvc, err := pvc.NewPersistentVolumeClaim("cache", sg.Namespace, cfg)
+	if err != nil {
+		return err
+	}
+
 	sset := statefulset.NewStatefulSet(name, sg.Namespace, sg.Spec.RequestedVersion)
 	sset.Spec.Template = podTemplate.Template
-	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
-		pvc.NewPersistentVolumeClaim("cache", sg.Namespace, storageSize, sg.Spec.StorageClass.Name),
-	}
+	sset.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{pvc}
 
 	return reconcileObject(ctx, r, sg.Spec.Symbols, &sset, &appsv1.StatefulSet{}, sg, owner)
 }

@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ab677ca3d3c1faf2f802c3a7a01b81b35c553394c3ec9a548543908453c6e57f
+        appliance.sourcegraph.com/configHash: a4d7cf9fa6a7436907e7497d01af3436ddeba9198ca2ffa9d5ec9b303819aa3a
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -157,7 +157,8 @@ resources:
             disabled: true
 
           gitServer:
-            storageSize: "500Gi"
+            persistentVolumeConfig:
+              storageSize: "500Gi"
 
           indexedSearch:
             disabled: true
@@ -211,7 +212,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ab677ca3d3c1faf2f802c3a7a01b81b35c553394c3ec9a548543908453c6e57f
+        appliance.sourcegraph.com/configHash: a4d7cf9fa6a7436907e7497d01af3436ddeba9198ca2ffa9d5ec9b303819aa3a
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -230,7 +231,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: ab677ca3d3c1faf2f802c3a7a01b81b35c553394c3ec9a548543908453c6e57f
+        appliance.sourcegraph.com/configHash: a4d7cf9fa6a7436907e7497d01af3436ddeba9198ca2ffa9d5ec9b303819aa3a
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"

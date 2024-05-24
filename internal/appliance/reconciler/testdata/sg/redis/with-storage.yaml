@@ -32,10 +32,12 @@ spec:
     disabled: true
 
   redisCache:
-    storageSize: 123Gi
+    persistentVolumeConfig:
+      storageSize: 123Gi
 
   redisStore:
-    storageSize: 123Gi
+    persistentVolumeConfig:
+      storageSize: 456Gi
 
   repoUpdater:
     disabled: true

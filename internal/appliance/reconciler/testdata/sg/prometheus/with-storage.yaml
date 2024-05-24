@@ -53,4 +53,5 @@ spec:
     disabled: true
 
   prometheus:
-    storageSize: 123Gi
+    persistentVolumeConfig:
+      storageSize: 123Gi

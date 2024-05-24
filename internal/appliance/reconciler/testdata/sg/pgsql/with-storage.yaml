@@ -23,7 +23,8 @@ spec:
     disabled: true
 
   pgsql:
-    storageSize: "500Gi"
+    persistentVolumeConfig:
+      storageSize: "500Gi"
 
   postgresExporter:
     disabled: true
