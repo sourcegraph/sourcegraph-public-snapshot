@@ -48,7 +48,7 @@ type ResponseCodeRatioAlertSpec struct {
 	CodeClass    *string  `yaml:"codeClass,omitempty"`
 	ExcludeCodes []string `yaml:"excludeCodes,omitempty"`
 	// Duration is the time in minutes the query must violate the threshold
-	// to trigger the alert.
+	// to trigger the alert. Defaults to one minute.
 	Duration *int    `yaml:"duration,omitempty"`
 	Ratio    float64 `yaml:"ratio"`
 }
@@ -129,10 +129,10 @@ const (
 	PromQL CustomAlertQueryType = "PromQL"
 )
 
-// CustomAlert defines a custom alert on a mql or promql query
+// CustomAlert defines a custom alert on a mql or promql query.
 type CustomAlert struct {
 	ID string `yaml:"-"` // set by custom unmarshaller
-	// Human readable name of the alert
+	// Human readable name of the alert.
 	Name        string `yaml:"name"`
 	Description string `yaml:"description,omitempty"`
 	// SeverityLevel is the severity level of the alert.
@@ -147,8 +147,8 @@ type CustomAlertCondition struct {
 	Type CustomAlertQueryType `yaml:"type"`
 	// Query is the MQL or PromQL query to execute
 	Query string `yaml:"query"`
-	// Duration is the time in minutes the query must violate the threshold
-	// to trigger the alert.
+	// Duration is the time in minutes the query must violate the threshold.
+	// to trigger the alert. Defaults to one minute.
 	Duration *int `yaml:"duration,omitempty"`
 }
 
