@@ -151,8 +151,8 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticated
                     />
                 ) : (
                     <CodyWebChat
-                        accessToken='sgp_a0d7ccb4f752ea73_fa526bc1d42785f2898b3f82c24dbd231b10e247'
-                        serverEndpoint='https://sourcegraph.com'
+                        accessToken=''
+                        serverEndpoint={window.location.origin}
                     />
                 )}
             </div>
