@@ -93,6 +93,10 @@ func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitse
 	}
 }
 
+func (s *UpdateScheduler) Name() string {
+	return "UpdateScheduler"
+}
+
 func (s *UpdateScheduler) Start() {
 	// Make sure the update scheduler acts as an internal actor, so it can see all
 	// repos.
@@ -103,10 +107,11 @@ func (s *UpdateScheduler) Start() {
 	go s.runScheduleLoop(ctx)
 }
 
-func (s *UpdateScheduler) Stop() {
+func (s *UpdateScheduler) Stop(context.Context) error {
 	if s.cancelCtx != nil {
 		s.cancelCtx()
 	}
+	return nil
 }
 
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.

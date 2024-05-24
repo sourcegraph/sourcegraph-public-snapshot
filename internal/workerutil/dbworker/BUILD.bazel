@@ -34,5 +34,6 @@ go_test(
         "@com_github_derision_test_glock//:glock",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )

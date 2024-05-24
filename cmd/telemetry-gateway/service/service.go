@@ -130,9 +130,9 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		),
 		background.CallbackRoutine{
 			// No Start - serving is handled by httpserver
-			StopFunc: func() {
+			StopFunc: func(ctx context.Context) error {
 				grpcServer.GracefulStop()
-				eventsTopic.Stop()
+				return eventsTopic.Stop(ctx)
 			},
 		},
 	}, nil

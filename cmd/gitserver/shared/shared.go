@@ -227,7 +227,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	ready()
 
 	// Launch all routines!
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	err = goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	if err != nil {
+		logger.Error("error monitoring background routines", log.Error(err))
+	}
 
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
