@@ -17,16 +17,16 @@ import (
 func newResponseCodeMetricCondition(config *Config) *monitoringalertpolicy.MonitoringAlertPolicyConditions {
 	query := responseCodeMQLBuilder(config)
 
-	if config.ResponseCodeMetric.Duration == nil {
+	if config.ResponseCodeMetric.DurationMinutes == nil {
 		// default to 1 minute
-		config.ResponseCodeMetric.Duration = pointers.Ptr(1)
+		config.ResponseCodeMetric.DurationMinutes = pointers.Ptr(uint(1))
 	}
 
 	return &monitoringalertpolicy.MonitoringAlertPolicyConditions{
 		DisplayName: pointers.Ptr(config.Name),
 		ConditionMonitoringQueryLanguage: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguage{
 			Query:    pointers.Ptr(query),
-			Duration: pointers.Stringf("%ds", *config.ResponseCodeMetric.Duration*60),
+			Duration: pointers.Stringf("%ds", *config.ResponseCodeMetric.DurationMinutes*60),
 			Trigger: &monitoringalertpolicy.MonitoringAlertPolicyConditionsConditionMonitoringQueryLanguageTrigger{
 				Count: pointers.Float64(1),
 			},

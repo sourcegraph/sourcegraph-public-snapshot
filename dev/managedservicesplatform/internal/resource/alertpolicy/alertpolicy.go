@@ -98,18 +98,18 @@ type MetricAbsence struct {
 //
 // `ExcludeCodes` allows filtering out specific response codes from the `CodeClass`
 type ResponseCodeMetric struct {
-	Code         *int
-	CodeClass    *string
-	ExcludeCodes []string
-	Ratio        float64
-	Duration     *int
+	Code            *int
+	CodeClass       *string
+	ExcludeCodes    []string
+	Ratio           float64
+	DurationMinutes *uint
 }
 
 // CustomAlert for alerting on a custom mql or promql query
 type CustomAlert struct {
-	Type     spec.CustomAlertQueryType
-	Query    string
-	Duration *int
+	Type            spec.CustomAlertQueryType
+	Query           string
+	DurationMinutes *uint
 }
 
 // DescriptionSuffix points to the service page and environment anchor expected to be
@@ -121,7 +121,7 @@ If you need additional assistance, reach out to #discuss-core-services.`,
 		s.GetHandbookPageURL(), environmentID)
 }
 
-type NotificationChannels map[spec.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
+type NotificationChannels map[spec.AlertSeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel
 
 // Config for a Monitoring Alert Policy
 type Config struct {
@@ -141,7 +141,7 @@ type Config struct {
 	// the provided set of NotificationChannels.
 	//
 	// If not provided, SeverityLevelWarning is used.
-	Severity spec.SeverityLevel
+	Severity spec.AlertSeverityLevel
 
 	// NotificationChannels to choose from for subscribing on this alert
 	NotificationChannels NotificationChannels
@@ -183,7 +183,7 @@ func New(scope constructs.Construct, id resourceid.ID, config *Config) (*Output,
 
 	// Set default
 	if config.Severity == "" {
-		config.Severity = spec.SeverityLevelWarning
+		config.Severity = spec.AlertSeverityLevelWarning
 	}
 
 	// Labels for the alert

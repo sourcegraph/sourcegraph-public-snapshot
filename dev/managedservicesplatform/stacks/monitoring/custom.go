@@ -30,9 +30,9 @@ func createCustomAlerts(
 			Severity:    config.SeverityLevel,
 
 			CustomAlert: &alertpolicy.CustomAlert{
-				Type:     config.Condition.Type,
-				Query:    config.Condition.Query,
-				Duration: config.Condition.Duration,
+				Type:            config.Condition.Type,
+				Query:           config.Condition.Query,
+				DurationMinutes: config.Condition.Duration,
 			},
 
 			// Shared configuration

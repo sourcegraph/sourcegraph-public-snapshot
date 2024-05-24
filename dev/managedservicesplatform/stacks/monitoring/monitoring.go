@@ -160,8 +160,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	channels := make(map[spec.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
-	addChannel := func(level spec.SeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+	channels := make(map[spec.AlertSeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level spec.AlertSeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
 		channels[level] = append(channels[level], c)
 	}
 
@@ -235,7 +235,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 						*integration.ApiKey()),
 				},
 			})
-		addChannel(spec.SeverityLevelCritical, channel)
+		addChannel(spec.AlertSeverityLevelCritical, channel)
 		opsgenieChannels = append(opsgenieChannels, channel)
 	}
 
@@ -325,8 +325,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}(),
 			})
 
-		addChannel(spec.SeverityLevelWarning, notificationChannel)
-		addChannel(spec.SeverityLevelCritical, notificationChannel)
+		addChannel(spec.AlertSeverityLevelWarning, notificationChannel)
+		addChannel(spec.AlertSeverityLevelCritical, notificationChannel)
 		slackChannels = append(slackChannels, notificationChannel)
 	}
 

@@ -11,11 +11,12 @@ import (
 var codeClassPattern = regexp.MustCompile(`\dx+`)
 var customAlertNamePattern = regexp.MustCompile(`^[-A-Za-z0-9 ]+$`)
 
-type SeverityLevel string
+// AlertSeverityLevel is used for configuration notification urgency for monitoring alerts.
+type AlertSeverityLevel string
 
 const (
-	SeverityLevelWarning  SeverityLevel = "WARNING"
-	SeverityLevelCritical SeverityLevel = "CRITICAL"
+	AlertSeverityLevelWarning  AlertSeverityLevel = "WARNING"
+	AlertSeverityLevelCritical AlertSeverityLevel = "CRITICAL"
 )
 
 type MonitoringSpec struct {
@@ -47,10 +48,10 @@ type ResponseCodeRatioAlertSpec struct {
 	Code         *int     `yaml:"code,omitempty"`
 	CodeClass    *string  `yaml:"codeClass,omitempty"`
 	ExcludeCodes []string `yaml:"excludeCodes,omitempty"`
-	// Duration is the time in minutes the query must violate the threshold
+	// DurationMinutes is the time in minutes the query must violate the threshold
 	// to trigger the alert. Defaults to one minute.
-	Duration *int    `yaml:"duration,omitempty"`
-	Ratio    float64 `yaml:"ratio"`
+	DurationMinutes *uint   `yaml:"durationMinutes,omitempty"`
+	Ratio           float64 `yaml:"ratio"`
 }
 
 func (s *MonitoringAlertsSpec) Validate() []error {
@@ -110,11 +111,8 @@ func (r *ResponseCodeRatioAlertSpec) Validate() []error {
 		}
 	}
 
-	if r.Duration != nil {
-		if *r.Duration < 0 {
-			errs = append(errs, errors.New("responseCodeRatios[].duration must be a whole number"))
-		}
-		if *r.Duration > 1440 { // 24 hours
+	if r.DurationMinutes != nil {
+		if *r.DurationMinutes > 1440 { // 24 hours
 			errs = append(errs, errors.New("responseCodeRatios[].duration must be less than 1440 minutes"))
 		}
 	}
@@ -125,8 +123,8 @@ func (r *ResponseCodeRatioAlertSpec) Validate() []error {
 type CustomAlertQueryType string
 
 const (
-	MQL    CustomAlertQueryType = "MQL"
-	PromQL CustomAlertQueryType = "PromQL"
+	CustomAlertQueryTypeMQL    CustomAlertQueryType = "mql"
+	CustomAlertQueryTypePromQL CustomAlertQueryType = "promql"
 )
 
 // CustomAlert defines a custom alert on a mql or promql query.
@@ -138,7 +136,7 @@ type CustomAlert struct {
 	// SeverityLevel is the severity level of the alert.
 	// Valid values are "WARNING" and "CRITICAL".
 	// Alerts with severity level WARNING are not sent to Opsgenie
-	SeverityLevel SeverityLevel        `yaml:"severityLevel"`
+	SeverityLevel AlertSeverityLevel   `yaml:"severityLevel"`
 	Condition     CustomAlertCondition `yaml:"condition"`
 }
 
@@ -149,7 +147,7 @@ type CustomAlertCondition struct {
 	Query string `yaml:"query"`
 	// Duration is the time in minutes the query must violate the threshold.
 	// to trigger the alert. Defaults to one minute.
-	Duration *int `yaml:"duration,omitempty"`
+	Duration *uint `yaml:"duration,omitempty"`
 }
 
 func (c *CustomAlert) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -171,17 +169,17 @@ func (c *CustomAlert) Validate() []error {
 	}
 
 	switch c.SeverityLevel {
-	case SeverityLevelWarning, SeverityLevelCritical:
+	case AlertSeverityLevelWarning, AlertSeverityLevelCritical:
 		break
 	default:
 		errs = append(errs, errors.New("customAlerts[].severityLevel must be either `WARNING` or `CRITICAL`"))
 	}
 
 	switch c.Condition.Type {
-	case MQL, PromQL:
+	case CustomAlertQueryTypeMQL, CustomAlertQueryTypePromQL:
 		break
 	default:
-		errs = append(errs, errors.New("customAlerts[].condition.type must be either `MQL` or `PromQL`"))
+		errs = append(errs, errors.New("customAlerts[].condition.type must be either `mql` or `promql`"))
 	}
 
 	if c.Name == "" {
@@ -193,9 +191,6 @@ func (c *CustomAlert) Validate() []error {
 	}
 
 	if c.Condition.Duration != nil {
-		if *c.Condition.Duration < 0 {
-			errs = append(errs, errors.New("customAlerts[].condition.duration must be a whole number"))
-		}
 		if *c.Condition.Duration > 1440 { // 24 hours
 			errs = append(errs, errors.New("customAlerts[].condition.duration must be less than 1440 minutes"))
 		}
