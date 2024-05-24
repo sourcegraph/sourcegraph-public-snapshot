@@ -281,8 +281,11 @@ func (s *UpdateScheduler) UpdateFromDiff(diff types.RepoSyncDiff) {
 	for _, r := range diff.Added {
 		s.upsert(r, true)
 	}
-	for _, r := range diff.Modified.Repos() {
-		s.upsert(r, true)
+	for _, r := range diff.Modified {
+		// Modified repos only need to be updated immediately if their name changed,
+		// otherwise we just make sure they're part of the scheduler, but don't
+		// trigger a repo update.
+		s.upsert(r.Repo, r.Modified&types.RepoModifiedName == types.RepoModifiedName)
 	}
 
 	known := len(diff.Added) + len(diff.Modified)

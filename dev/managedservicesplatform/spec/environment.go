@@ -524,6 +524,9 @@ func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
 	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
 		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
 	}
+	if s.GetLivenessIntervalSeconds() > 3600 {
+		errs = append(errs, errors.New("livenessInterval must be less than or equal to 3600 seconds"))
+	}
 
 	return errs
 }

@@ -472,6 +472,19 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 	})
 }
 
+func (r *GitTreeEntryResolver) CodeGraphData(ctx context.Context, args *resolverstubs.CodeGraphDataArgs) (*[]resolverstubs.CodeGraphDataResolver, error) {
+	repo, err := r.commit.repoResolver.getRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return EnterpriseResolvers.codeIntelResolver.CodeGraphData(ctx, &resolverstubs.CodeGraphDataOpts{
+		Args:   args,
+		Repo:   repo,
+		Commit: api.CommitID(r.Commit().OID()),
+		Path:   r.Path(),
+	})
+}
+
 func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
 	repo, err := r.commit.repoResolver.getRepo(ctx)
 	if err != nil {

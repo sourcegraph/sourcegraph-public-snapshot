@@ -35,7 +35,7 @@ func NewPackagesFilterApplicator(
 		goroutine.HandlerFunc(job.handle),
 		goroutine.WithName("codeintel.package-filter-applicator"),
 		goroutine.WithDescription("applies package repo filters to all package repo references to precompute their blocked status"),
-		goroutine.WithInterval(time.Second*5),
+		goroutine.WithInterval(time.Second*30),
 	)
 }
 

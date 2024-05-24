@@ -130,7 +130,8 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 
 				// Attach a simple indicator to denote if this metadata will
 				// be exported.
-				md["telemetry.privateMetadata.exportable"] = sensitiveMetadataAllowlist.IsAllowed(e)
+				md["telemetry.privateMetadata.exportableFields"], md["telemetry.privateMetadata.exportable"] =
+					sensitiveMetadataAllowlist.IsAllowed(e)
 
 				data, err := json.Marshal(md)
 				if err != nil {

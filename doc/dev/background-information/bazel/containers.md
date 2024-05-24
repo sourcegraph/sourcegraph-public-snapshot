@@ -138,6 +138,13 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+  # Each command in the setup section will run in a separate container and then commits a modified image to be the new base image for the test run
+  - name: "fetch and test sg"
+    setup: [["wget", "https://github.com/sourcegraph/sg/releases/download/2024-05-23-19-04-d485d76e/sg_linux_amd64", "-O", "sg"], ["chmod", "+x", "sg"]]
+    command: "./sg"
+    args: ["--help"]
+    expectedOutput: ["The Sourcegraph developer tool"]
 ```
 
 We can now build this image _locally_ and run those tests as well.

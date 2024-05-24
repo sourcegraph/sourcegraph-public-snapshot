@@ -19,7 +19,19 @@
             "name": "May 2024 Release",
             "codeFreezeDate": "2024-05-02T09:00:00-07:00",
             "monthlyReleaseDate": "2024-05-06T09:00:00-07:00",
-            "patchReleaseDate": "2024-05-20T09:00:00-07:00"
+            "patchReleaseDate": "2024-05-27T09:00:00-07:00"
+        },
+        {
+            "name": "June 2024 Release",
+            "codeFreezeDate": "2024-06-02T09:00:00-07:00",
+            "monthlyReleaseDate": "2024-06-05T09:00:00-07:00",
+            "patchReleaseDate": "2024-06-20T09:00:00-07:00"
+        },
+        {
+            "name": "July 2024 Release",
+            "codeFreezeDate": "2024-07-02T09:00:00-07:00",
+            "monthlyReleaseDate": "2024-07-05T09:00:00-07:00",
+            "patchReleaseDate": "2024-07-22T09:00:00-07:00"
         }
     ]
 }

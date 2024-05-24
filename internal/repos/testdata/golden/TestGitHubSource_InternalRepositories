@@ -36,7 +36,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -76,7 +76,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -116,7 +116,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -156,7 +156,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL",
+    "visibility": "internal",
     "DiskUsage": 1
    }
   },
@@ -197,7 +197,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -237,7 +237,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL",
+    "visibility": "internal",
     "DiskUsage": 2
    }
   },
@@ -278,7 +278,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -318,7 +318,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -358,7 +358,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -398,7 +398,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -438,7 +438,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL",
+    "visibility": "internal",
     "DiskUsage": 8875581
    }
   },
@@ -479,7 +479,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL",
+    "visibility": "internal",
     "DiskUsage": 1
    }
   },
@@ -520,7 +520,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -560,7 +560,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -606,7 +606,7 @@
       }
      ]
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   },
   {
@@ -646,7 +646,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL",
+    "visibility": "internal",
     "DiskUsage": 1
    }
   },
@@ -687,7 +687,7 @@
     "RepositoryTopics": {
      "Nodes": []
     },
-    "visibility": "INTERNAL"
+    "visibility": "internal"
    }
   }
  ]

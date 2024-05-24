@@ -1,0 +1,12 @@
+diff --git a/cmd/scip/tests/reprolang/src/BUILD.bazel b/cmd/scip/tests/reprolang/src/BUILD.bazel
+index e75c26d..3b53842 100644
+--- a/cmd/scip/tests/reprolang/src/BUILD.bazel
++++ b/cmd/scip/tests/reprolang/src/BUILD.bazel
+@@ -4,6 +4,7 @@ go_library(
+     name = "src",
+     srcs = [
+         "binding.go",
++        "tree_sitter/parser.h",
+         "parser.c",
+         "workaround.go",
+     ],
