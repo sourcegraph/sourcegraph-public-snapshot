@@ -79,7 +79,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     return (
         <>
             {invitesSendingStatus === 'success' && (
-                <div className={classNames('mb-4', styles.alert, styles.greenSuccessAlert)}>
+                <CodyAlert variant="greenSuccess">
                     <H3>
                         {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
                     </H3>
