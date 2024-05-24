@@ -2434,6 +2434,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-kotlin",
+ "tree-sitter-magik",
  "tree-sitter-matlab",
  "tree-sitter-nickel",
  "tree-sitter-perl",
@@ -2542,6 +2543,15 @@ dependencies = [
 name = "tree-sitter-kotlin"
 version = "0.2.11"
 source = "git+https://github.com/fwcd/tree-sitter-kotlin?rev=100d79fd96b56a1b99099a8d2f3c114b8687acfb#100d79fd96b56a1b99099a8d2f3c114b8687acfb"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-magik"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-magik?rev=1a63bf46ff8896f7373637ad357a690522976623#1a63bf46ff8896f7373637ad357a690522976623"
 dependencies = [
  "cc",
  "tree-sitter",
