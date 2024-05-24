@@ -153,6 +153,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
 	apiProps.set("database_id", h.DatabaseID)
 	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
+	apiProps.set("first_source_url", h.FirstSourceURL)
 	apiProps.set("last_source_url", h.LastSourceURL)
 	apiProps.set("last_page_seen_url_short", h.LastPageSeenShort)
 	apiProps.set("last_page_seen_url_mid", h.LastPageSeenMid)
@@ -186,12 +187,6 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("gclid", h.GoogleClickID)
 	apiProps.set("msclkid", h.MicrosoftClickID)
 	return apiProps
-}
-
-func firstTimeUserValues(h *ContactProperties) *apiProperties {
-	firstTimeUserProps := &apiProperties{}
-	firstTimeUserProps.set("first_source_url", h.FirstSourceURL)
-	return firstTimeUserProps
 }
 
 // apiProperties represents a list of HubSpot API-compliant key-value pairs
