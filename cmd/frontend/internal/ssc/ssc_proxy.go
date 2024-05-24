@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -210,7 +211,7 @@ func (p *APIProxyHandler) tryRefreshSAMSCredentials(
 		Expiry:       currentToken.Expiry,
 	}
 	newToken, _ /* newRefreshToken */, newExpiry, err := refreshFn(
-		ctx, http.DefaultClient, &userBearerToken)
+		ctx, httpcli.UncachedExternalDoer, &userBearerToken)
 	if err != nil {
 		return "", errors.Wrap(err, "refreshing SAMS token")
 	}
