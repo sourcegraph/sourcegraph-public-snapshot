@@ -260,6 +260,24 @@ WARNING: if you just fixed (automatically or manually) this step, you must resta
 			dependencyGcloud(),
 		},
 	},
+	{
+		Name:        "Playwright",
+		Description: "Installs playwright for local client testing",
+		Checks: []*dependency{
+			{
+				Name:        "Local NPM dependencies",
+				Description: "Runs pnpm install to get all local dependencies",
+				Check:       checkAction(check.CommandExitCode("pnpm install --recursive --offline", 0)),
+				Fix:         cmdFix(`pnpm install --recursive`),
+			},
+			{
+				Name:        "Playwright browser deps",
+				Description: "Installs playwright browser executables",
+				Check:       checkAction(check.FileExists("~/Library/Caches/ms-playwright/")),
+				Fix:         cmdFix(`npx playwright install`),
+			},
+		},
+	},
 }
 
 // var homebrewPsqlVersion = regexp.MustCompile(`^psql (PostgreSQL) 15\.(\d+) (Homebrew)$`)

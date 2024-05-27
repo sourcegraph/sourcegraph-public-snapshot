@@ -228,18 +228,6 @@ func categoryAdditionalSGConfiguration() category {
 		Name: "Additional sg configuration",
 		Checks: []*dependency{
 			{
-				Name:        "Local NPM dependencies",
-				Description: "Runs pnpm install to get all local dependencies",
-				Check:       checkAction(check.CommandExitCode("pnpm install --recursive --offline", 0)),
-				Fix:         cmdFix(`pnpm install --recursive`),
-			},
-			{
-				Name:        "Playwright browser deps",
-				Description: "Installs playwright browser executables",
-				Check:       checkAction(check.FileExists("~/Library/Caches/ms-playwright/")),
-				Fix:         cmdFix(`npx playwright install`),
-			},
-			{
 				Name: "Autocompletions",
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
 					if !usershell.IsSupportedShell(ctx) {
