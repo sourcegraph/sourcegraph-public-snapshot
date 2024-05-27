@@ -36,6 +36,11 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
 
     useEffect(() => {
         async function postAcceptInvite(): Promise<void> {
+            if (!teamId || !inviteId) {
+                setErrorMessage('Invalid invite ID or team ID')
+                setLoading(false)
+                return
+            }
             const response = await requestSSC(`/team/${teamId}/invites/${inviteId}/accept`, 'POST')
             setLoading(false)
             if (response.ok) {
