@@ -5,7 +5,6 @@ load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tar
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:msp_delivery.bzl", "msp_delivery")
-load("//wolfi-images:defs.bzl", "wolfi_base")
 
 go_library(
     name = "build-tracker_lib",
@@ -129,5 +128,3 @@ go_mockgen(
     ],
     deps = [":build-tracker_lib"],
 )
-
-wolfi_base()
