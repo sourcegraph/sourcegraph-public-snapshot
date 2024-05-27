@@ -65,15 +65,21 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		return nil, connect.NewError(connect.CodeInvalidArgument,
 			errors.New("at least one filter is required"))
 	}
-	for _, f := range filters {
+	for _, filter := range filters {
 		// TODO: Implement additional filtering as needed
-		switch f.Filter.(type) {
+		switch f := filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_Type:
 			return nil, connect.NewError(connect.CodeUnimplemented,
 				errors.New("filtering by type is not implemented"))
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_LicenseKeySubstring:
 			return nil, connect.NewError(connect.CodeUnimplemented,
 				errors.New("filtering by license key substring is not implemented"))
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
+			if f.SubscriptionId == "" {
+				return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query: access token"))
+			}
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
+			// Nothing to validate
 		}
 	}
 
