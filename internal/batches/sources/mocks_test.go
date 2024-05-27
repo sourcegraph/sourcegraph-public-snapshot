@@ -11034,9 +11034,6 @@ type MockGitserverClient struct {
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *GitserverClientListRefsFunc
-	// LogReverseEachFunc is an instance of a mock function object
-	// controlling the behavior of the method LogReverseEach.
-	LogReverseEachFunc *GitserverClientLogReverseEachFunc
 	// MergeBaseFunc is an instance of a mock function object controlling
 	// the behavior of the method MergeBase.
 	MergeBaseFunc *GitserverClientMergeBaseFunc
@@ -11181,11 +11178,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ListRefsFunc: &GitserverClientListRefsFunc{
 			defaultHook: func(context.Context, api.RepoName, gitserver.ListRefsOpts) (r0 []gitdomain.Ref, r1 error) {
-				return
-			},
-		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
 				return
 			},
 		},
@@ -11371,11 +11363,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ListRefs")
 			},
 		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-				panic("unexpected invocation of MockGitserverClient.LogReverseEach")
-			},
-		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitserverClient.MergeBase")
@@ -11522,9 +11509,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		ListRefsFunc: &GitserverClientListRefsFunc{
 			defaultHook: i.ListRefs,
-		},
-		LogReverseEachFunc: &GitserverClientLogReverseEachFunc{
-			defaultHook: i.LogReverseEach,
 		},
 		MergeBaseFunc: &GitserverClientMergeBaseFunc{
 			defaultHook: i.MergeBase,
@@ -13579,122 +13563,6 @@ func (c GitserverClientListRefsFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientListRefsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientLogReverseEachFunc describes the behavior when the
-// LogReverseEach method of the parent MockGitserverClient instance is
-// invoked.
-type GitserverClientLogReverseEachFunc struct {
-	defaultHook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	hooks       []func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
-	history     []GitserverClientLogReverseEachFuncCall
-	mutex       sync.Mutex
-}
-
-// LogReverseEach delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) LogReverseEach(v0 context.Context, v1 string, v2 string, v3 int, v4 func(entry gitdomain.LogEntry) error) error {
-	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.LogReverseEachFunc.appendCall(GitserverClientLogReverseEachFuncCall{v0, v1, v2, v3, v4, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the LogReverseEach
-// method of the parent MockGitserverClient instance is invoked and the hook
-// queue is empty.
-func (f *GitserverClientLogReverseEachFunc) SetDefaultHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// LogReverseEach method of the parent MockGitserverClient instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitserverClientLogReverseEachFunc) PushHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientLogReverseEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientLogReverseEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-		return r0
-	})
-}
-
-func (f *GitserverClientLogReverseEachFunc) nextHook() func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientLogReverseEachFunc) appendCall(r0 GitserverClientLogReverseEachFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientLogReverseEachFuncCall
-// objects describing the invocations of this function.
-func (f *GitserverClientLogReverseEachFunc) History() []GitserverClientLogReverseEachFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientLogReverseEachFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientLogReverseEachFuncCall is an object that describes an
-// invocation of method LogReverseEach on an instance of
-// MockGitserverClient.
-type GitserverClientLogReverseEachFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 func(entry gitdomain.LogEntry) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientLogReverseEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientLogReverseEachFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // GitserverClientMergeBaseFunc describes the behavior when the MergeBase

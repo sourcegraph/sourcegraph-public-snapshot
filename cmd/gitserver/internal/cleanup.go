@@ -5,8 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"hash/fnv"
-	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -23,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -112,13 +111,9 @@ var (
 var sgMaintenanceScript string
 
 const (
-	day = 24 * time.Hour
-	// repoTTLGC is how often we should re-clone a repository once it is
-	// reporting git gc issues.
-	repoTTLGC = 2 * day
-	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
-	// corrupt on disk.
-	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
+	// gcFailureRecloneThreshold is the amount of times git gc has to fail before
+	// a repo is considered for recloning.
+	gcFailureRecloneThreshold = 5
 	// The name of the log file placed by sg maintenance in case it encountered an
 	// error.
 	sgmLog = "sgm.log"
@@ -349,20 +344,24 @@ func cleanupRepos(
 	}
 
 	maybeRemoveCorrupt := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, _ error) {
-		corrupt, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
+		corrupt, shouldLog, reason, err := checkRepoDirCorrupt(rcf, repoName, dir)
 		if !corrupt || err != nil {
 			return false, err
 		}
 
-		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
-		if err != nil {
-			logger.Warn("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
+		if shouldLog {
+			err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
+			if err != nil {
+				logger.Error("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
+			}
 		}
 
-		logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
+		logger.Warn("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
+
 		if err := fs.RemoveRepo(repoName); err != nil {
 			return true, err
 		}
+
 		reposRemoved.WithLabelValues(reason).Inc()
 
 		// Set as not_cloned in the database.
@@ -410,37 +409,16 @@ func cleanupRepos(
 	}
 
 	maybeReclone := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
-		const maybeCorrupt = "maybeCorrupt"
 
-		if maybeCorrupt, _ := backend.Config().Get(ctx, gitConfigMaybeCorrupt); maybeCorrupt != "" {
-			// Set the reason so that the repo cleaned up
-			reason = maybeCorrupt
-			// We don't log the corruption here, since the corruption *should* have already been
-			// logged when this config setting was set in the repo.
-			// When the repo is recloned, the corrupted_at status should be cleared, which means
-			// the repo is not considered corrupted anymore.
-			//
-			// unset flag to stop constantly re-cloning if it fails.
-			_ = backend.Config().Unset(ctx, gitConfigMaybeCorrupt)
-		}
-
-		// Check if we marked GC as failed and if so, if it's been too long.
-		gcFailedAt, err := backend.Config().Get(ctx, gitConfigGCFailed)
+		gcFailedTimes, err := getGCFailCounter(dir)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to read git gc fail time")
+			return false, errors.Wrap(err, "failed to read git GC failure counter")
 		}
-		if gcFailedAt != "" {
-			gcFailedAtInt, err := strconv.Atoi(gcFailedAt)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to parse git gc fail time")
-			}
-			firstGCFailure := time.Unix(int64(gcFailedAtInt), 0)
-			if time.Since(firstGCFailure) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-				if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
-					reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
-				}
+		if gcFailedTimes >= gcFailureRecloneThreshold {
+			reason = "git gc failed too many times"
+			if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
+				reason = reason + ": " + string(bytes.TrimSpace(gclog))
 			}
 		}
 
@@ -450,20 +428,18 @@ func cleanupRepos(
 			}
 		}
 
+		if reason == "" {
+			return false, nil
+		}
+
 		// We believe converting a Perforce depot to a Git repository is generally a
 		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
-		if reason != maybeCorrupt {
-			repoType, err := git.GetRepositoryType(ctx, backend.Config())
-			if err != nil {
-				return false, err
-			}
-			if repoType == "perforce" {
-				reason = ""
-			}
+		repoType, err := git.GetRepositoryType(ctx, backend.Config())
+		if err != nil {
+			return false, err
 		}
-
-		if reason == "" {
+		if repoType == "perforce" {
 			return false, nil
 		}
 
@@ -472,7 +448,7 @@ func cleanupRepos(
 			log.String("reason", reason),
 		)
 
-		recloneLogger.Info("re-cloning potentially broken repo")
+		recloneLogger.Info("re-cloning repo after GC failures")
 
 		// We trigger a reclone by removing the repo from disk and marking it as
 		// uncloned in the DB. The reclone will then be performed as if this repo
@@ -564,7 +540,7 @@ func cleanupRepos(
 	}
 
 	performGC := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
-		return false, gitGC(ctx, logger, backend, rcf, repoName, dir)
+		return false, gitGC(logger, rcf, repoName, dir)
 	}
 
 	performSGMaintenance := func(backend git.GitBackend, repoName api.RepoName, dir common.GitDir) (done bool, err error) {
@@ -683,13 +659,13 @@ func cleanupRepos(
 	logger.Info("Janitor run finished", log.String("duration", time.Since(start).String()))
 }
 
-func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) (bool, string, error) {
+func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) (corrupt, shouldLog bool, description string, err error) {
 	// We treat repositories missing HEAD to be corrupt. Both our cloning
 	// and fetching ensure there is a HEAD file.
 	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-		return true, "missing-head", nil
+		return true, true, "missing-head", nil
 	} else if err != nil {
-		return false, "", err
+		return false, false, "", err
 	}
 
 	// We have seen repository corruption fail in such a way that the git
@@ -699,10 +675,38 @@ func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, repoName api.RepoN
 	// leads to most commands failing against the repository. It is safer
 	// to remove now than try a safe reclone.
 	if gitIsNonBareBestEffort(rcf, repoName, dir) {
-		return true, "non-bare", nil
+		return true, true, "non-bare", nil
 	}
 
-	return false, "", nil
+	if maybeCorrupt, err := checkRepoFlaggedForCorruption(dir); err != nil {
+		return false, false, "", err
+	} else if maybeCorrupt {
+		// Repo corruption has already been logged on the git CLI side, we don't
+		// need to log it again.
+		return true, false, "failed-odb-read", nil
+	}
+
+	return false, false, "", nil
+}
+
+func checkRepoFlaggedForCorruption(gitDir common.GitDir) (bool, error) {
+	p := gitDir.Path(gitcli.RepoMaybeCorruptFlagFilepath)
+
+	_, err := os.Stat(p)
+	if err != nil && !os.IsNotExist(err) {
+		return false, err
+	}
+
+	// Nothing logged, the repo isn't corrupted.
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	// Best effort remove the flag, since we will now attempt to recover from it.
+	// If that doesn't work, the next run will flag it again, and we can try to
+	// repair it again.
+	_ = os.Remove(p)
+
+	return true, nil
 }
 
 // howManyBytesToFree returns the number of bytes that should be freed to make sure
@@ -851,12 +855,10 @@ func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, repoName api.Re
 	return bytes.Equal(b, []byte("false"))
 }
 
-const gitConfigGCFailed = "sourcegraph.gcFailedAt"
-
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
 // operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
-func gitGC(ctx context.Context, logger log.Logger, backend git.GitBackend, rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) error {
+func gitGC(logger log.Logger, rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoName, cmd)
@@ -865,21 +867,16 @@ func gitGC(ctx context.Context, logger log.Logger, backend git.GitBackend, rcf *
 		if gclog, readErr := os.ReadFile(dir.Path("gc.log")); readErr == nil && len(gclog) > 0 {
 			// gc failed most likely.
 			logger.Error("git gc failed", log.String("repo", string(dir)), log.Error(err), log.String("gc.log", string(gclog)))
-			existing, err := backend.Config().Get(ctx, gitConfigGCFailed)
-			if err != nil {
-				logger.Error("failed to read gitConfigGCFailed config", log.Error(err))
-			} else if existing == "" { // Not set yet.
-				if err := backend.Config().Set(ctx, gitConfigGCFailed, strconv.Itoa(int(time.Now().Unix()))); err != nil {
-					logger.Error("failed to set gitConfigGCFailed config", log.Error(err))
-				}
+			if err := incrementGCFailCounter(dir); err != nil {
+				logger.Error("failed to increment git GC fail counter", log.Error(err))
 			}
 		}
 
 		return errors.Wrapf(executil.WrapCmdError(cmd, err), "failed to git-gc")
 	}
 
-	// This run of git gc was a success, reset the failedAt config.
-	return backend.Config().Unset(ctx, gitConfigGCFailed)
+	// This run of git gc was a success, reset the failedAt counter.
+	return resetGCFailCounter(dir)
 }
 
 const (
@@ -1162,21 +1159,6 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 	return count > limit, nil
 }
 
-// jitterDuration returns a duration between [0, d) based on key. This is like
-// a random duration, but instead of a random source it is computed via a hash
-// on key.
-func jitterDuration(key string, d time.Duration) time.Duration {
-	h := fnv.New64()
-	_, _ = io.WriteString(h, key)
-	r := time.Duration(h.Sum64())
-	if r < 0 {
-		// +1 because we have one more negative value than positive. ie
-		// math.MinInt64 == -math.MinInt64.
-		r = -(r + 1)
-	}
-	return r % d
-}
-
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
 // file is missing, no error is returned. The first argument indicates whether a
 // stale file was present.
@@ -1244,4 +1226,49 @@ func setLastSizeCalculation(dir common.GitDir, when time.Time) error {
 	_ = f.Close()
 	// We use modtime to track the last time fetched.
 	return os.Chtimes(path, time.Time{}, when)
+}
+
+const gcFailedCounterFilepath = ".sourcegraph-gc-fail-counter"
+
+func getGCFailCounter(dir common.GitDir) (int, error) {
+	path := dir.Path(gcFailedCounterFilepath)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	i, err := strconv.Atoi(string(b))
+	if err != nil {
+		// The file contains invalid data, remove it so we recover from that.
+		_ = os.Remove(path)
+		return 0, err
+	}
+	return i, nil
+}
+
+// incrementGCFailCounter increments the gc failed counter.
+// Note that this method is not thread safe, writing the fail counter for the same
+// repo from multiples threads has undefined behavior and may undercount.
+func incrementGCFailCounter(dir common.GitDir) error {
+	current, err := getGCFailCounter(dir)
+	if err != nil {
+		return err
+	}
+
+	path := dir.Path(gcFailedCounterFilepath)
+	return os.WriteFile(path, []byte(strconv.Itoa(current+1)), os.ModePerm)
+}
+
+func resetGCFailCounter(dir common.GitDir) error {
+	path := dir.Path(gcFailedCounterFilepath)
+	err := os.Remove(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }

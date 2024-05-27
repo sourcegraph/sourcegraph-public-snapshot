@@ -1,0 +1,59 @@
+spec:
+  requestedVersion: "5.3.9104"
+  imageRepository: my-custom-image-repository.info/sourcegraph-images
+
+  blobstore:
+    disabled: true
+
+  codeInsights:
+    disabled: true
+
+  codeIntel:
+    disabled: true
+
+  frontend:
+    disabled: true
+
+  gitServer:
+    disabled: true
+
+  indexedSearch:
+    disabled: true
+
+  indexedSearchIndexer:
+    disabled: true
+
+  pgsql:
+    disabled: true
+
+  postgresExporter:
+    disabled: true
+
+  preciseCodeIntel:
+    disabled: true
+
+  redisCache:
+    disabled: true
+
+  redisStore:
+    disabled: true
+
+  repoUpdater:
+    disabled: true
+
+  searcher:
+    disabled: true
+
+  symbols:
+    containerConfig:
+      symbols:
+        image: some-image:some-tag
+
+  syntectServer:
+    disabled: true
+
+  worker:
+    disabled: true
+
+  prometheus:
+    disabled: true

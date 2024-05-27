@@ -613,7 +613,8 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			},
 			finalQueue: []*repoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
-				{Repo: b, Seq: 2, Updating: false},
+				// Note: Repo b is not in here, because modified repos are not added to
+				// immediate update queue.
 			},
 		},
 		{

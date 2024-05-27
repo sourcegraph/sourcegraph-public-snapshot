@@ -1,13 +1,16 @@
 import { type FunctionComponent, useMemo, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
+import { CodyAlert } from '../components/CodyAlert'
+import { CodyContainer } from '../components/CodyContainer'
 import { requestSSC } from '../util'
 
-import styles from './CodyManageTeamPage.module.scss'
+import styles from './TeamMemberList.module.scss'
 
 export interface TeamMember {
     accountId: string
@@ -32,6 +35,18 @@ export interface TeamInvite {
     error: string | null
     sentAt: string | null
     acceptedAt: string | null
+}
+
+// This tiny function is extracted to make it testable. Same for the "now" parameter.
+export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
+    try {
+        if (sentAt) {
+            return intlFormatDistance(sentAt, now ?? new Date())
+        }
+        return ''
+    } catch {
+        return ''
+    }
 }
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
@@ -104,7 +119,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
             if (!loading) {
                 // Avoids sending multiple requests at once
                 setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+                telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
                 const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
                 if (!response.ok) {
@@ -126,11 +141,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
     const removeMember = useCallback(
         async (accountId: string): Promise<void> => {
-            telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId, accountId } })
-
             if (!loading) {
                 setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+                telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
                 const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
                 if (!response.ok) {
@@ -157,48 +170,46 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     return (
         <>
             {actionResult && (
-                <div
-                    className={classNames(
-                        'mb-4',
-                        styles.alert,
-                        actionResult.isError ? styles.errorAlert : styles.blueSuccessAlert
-                    )}
-                >
-                    {actionResult.message}
-                </div>
+                <CodyAlert variant={actionResult.isError ? 'error' : 'greenSuccess'}>{actionResult.message}</CodyAlert>
             )}
-            <div className={classNames('p-4 border bg-1 d-flex flex-column', styles.container)}>
+            <CodyContainer className={classNames('p-4 border bg-1 d-flex flex-column')}>
                 <H2 className="text-lg font-semibold mb-2">Team members</H2>
                 <Text className="text-sm text-gray-500 mb-4">Manage invited and active users</Text>
-                <ul className="space-y-4 d-flex flex-column list-none pl-0">
+                <ul className={classNames(styles.teamMemberList, 'list-none pl-0')}>
                     {teamMembers.map(member => (
-                        <li key={member.accountId} className="d-flex flex-row justify-between mb-4">
-                            <div className="flex-1 d-flex flex-row">
-                                {member.avatarUrl ? (
-                                    <img
-                                        src={member.avatarUrl}
-                                        alt="avatar"
-                                        width="40"
-                                        height="40"
-                                        className={classNames(styles.avatar)}
-                                    />
-                                ) : (
-                                    <div className={classNames(styles.avatar, styles.avatarPlaceholder)} />
-                                )}
-                                <div className="d-flex flex-column justify-content-center ml-2">
-                                    {member.displayName && <strong>{member.displayName}</strong>}
-                                    <Text className="mb-0">{member.email}</Text>
-                                </div>
-                                {member.role === 'admin' && (
+                        <li key={member.accountId} className="d-contents">
+                            <div className="align-content-center">
+                                <div className="d-flex flex-row">
+                                    {member.avatarUrl ? (
+                                        <img
+                                            src={member.avatarUrl}
+                                            alt="avatar"
+                                            width="40"
+                                            height="40"
+                                            className={classNames(styles.avatar)}
+                                        />
+                                    ) : (
+                                        <div className={classNames(styles.avatar, styles.avatarPlaceholder)} />
+                                    )}
                                     <div className="d-flex flex-column justify-content-center ml-2">
-                                        <Badge variant="primary">ADMIN</Badge>
+                                        {member.displayName && <strong>{member.displayName}</strong>}
+                                        <Text className="mb-0">{member.email}</Text>
                                     </div>
+                                </div>
+                            </div>
+                            <div className="align-content-center">
+                                {member.role === 'admin' && (
+                                    <Badge variant="primary" className="text-uppercase">
+                                        admin
+                                    </Badge>
                                 )}
                             </div>
-                            {isAdmin && (
-                                <div className="d-flex">
-                                    {member.role === 'admin' ? (
-                                        <div className="d-flex flex-column justify-content-center ml-2">
+                            <div />
+                            {isAdmin ? (
+                                member.role === 'admin' ? (
+                                    <>
+                                        <div />
+                                        <div className="align-content-center text-center">
                                             <Link
                                                 to="#"
                                                 onClick={() => updateRole(member.accountId, 'member')}
@@ -208,83 +219,86 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                                 Revoke admin
                                             </Link>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="d-flex flex-column justify-content-center ml-2">
-                                                <Link
-                                                    to="#"
-                                                    onClick={() => updateRole(member.accountId, 'admin')}
-                                                    className="ml-2"
-                                                >
-                                                    Make admin
-                                                </Link>
-                                            </div>
-                                            <div className="d-flex flex-column justify-content-center ml-2">
-                                                <ButtonLink
-                                                    to="#"
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => removeMember(member.accountId)}
-                                                    className="ml-2"
-                                                >
-                                                    Remove
-                                                </ButtonLink>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="align-content-center text-center">
+                                            <Link
+                                                to="#"
+                                                onClick={() => updateRole(member.accountId, 'admin')}
+                                                className="ml-2"
+                                            >
+                                                Make admin
+                                            </Link>
+                                        </div>
+                                        <div className="align-content-center text-center">
+                                            <Link
+                                                to="#"
+                                                onClick={() => removeMember(member.accountId)}
+                                                className="ml-2"
+                                            >
+                                                Remove
+                                            </Link>
+                                        </div>
+                                    </>
+                                )
+                            ) : (
+                                <>
+                                    <div />
+                                    <div />
+                                </>
                             )}
                         </li>
                     ))}
                     {invites
                         .filter(invite => invite.status === 'sent')
                         .map(invite => (
-                            <li key={invite.id} className="d-flex flex-row justify-between mb-4">
-                                <div className="flex-1 d-flex flex-row">
-                                    <div className={classNames(styles.avatar, styles.avatarPlaceholder)} />
-                                    <div className="d-flex flex-column justify-content-center ml-2">
-                                        <Text className="mb-0">{invite.email}</Text>
-                                    </div>
-                                    {invite.role === 'admin' && (
+                            <li key={invite.id} className="d-contents">
+                                <div className="align-content-center">
+                                    <div className="d-flex flex-row">
+                                        <div className={classNames(styles.avatar, styles.avatarPlaceholder)} />
                                         <div className="d-flex flex-column justify-content-center ml-2">
-                                            <Badge variant="primary">ADMIN</Badge>
-                                        </div>
-                                    )}
-                                    <div className="d-flex flex-column justify-content-center ml-2">
-                                        <div className="d-flex flex-row">
-                                            <div className="d-flex flex-column justify-content-center ml-2">
-                                                <Badge variant="secondary">INVITED</Badge>
-                                            </div>
-                                            <em className="ml-4">Invite sent {invite.sentAt /* TODO format this */}</em>
+                                            <Text className="mb-0">{invite.email}</Text>
                                         </div>
                                     </div>
                                 </div>
+                                <div className="align-content-center">
+                                    <Badge variant="secondary" className="mr-2 text-uppercase">
+                                        invited
+                                    </Badge>
+                                    {invite.role === 'admin' && (
+                                        <Badge variant="primary" className="text-uppercase">
+                                            admin
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="align-content-center">
+                                    <em>Invite sent {formatInviteDate(invite.sentAt)}</em>
+                                </div>
                                 {isAdmin && (
-                                    <div className="d-flex">
-                                        <div className="d-flex row justify-content-center ml-2">
-                                            <div className="d-flex flex-column justify-content-center ml-2">
-                                                <Link to="#" onClick={() => revokeInvite(invite.id)} className="ml-2">
-                                                    Revoke
-                                                </Link>
-                                            </div>
-                                            <div className="d-flex flex-column justify-content-center ml-2">
-                                                <ButtonLink
-                                                    to="#"
-                                                    variant="success"
-                                                    size="sm"
-                                                    onClick={() => resendInvite(invite.id)}
-                                                    className="ml-2"
-                                                >
-                                                    Resend invite
-                                                </ButtonLink>
-                                            </div>
+                                    <>
+                                        <div className="align-content-center text-center">
+                                            <Link to="#" onClick={() => revokeInvite(invite.id)} className="ml-2">
+                                                Revoke
+                                            </Link>
                                         </div>
-                                    </div>
+                                        <div className="align-content-center text-center">
+                                            <ButtonLink
+                                                to="#"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => resendInvite(invite.id)}
+                                                className="ml-2"
+                                            >
+                                                Re-send invite
+                                            </ButtonLink>
+                                        </div>
+                                    </>
                                 )}
                             </li>
                         ))}
                 </ul>
-            </div>
+            </CodyContainer>
         </>
     )
 }

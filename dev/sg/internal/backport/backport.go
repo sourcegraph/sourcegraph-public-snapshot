@@ -8,7 +8,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/execute"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -58,7 +57,6 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 
 	// prefixed with "sg/backport-" to avoid conflicts with other branches
 	backportBranch := fmt.Sprintf("sg/backport-%d-to-%s", prNumber, version)
-	backportBranchRepo := repo.NewGitRepo(backportBranch, backportBranch)
 	p = std.Out.Pending(output.Styledf(output.StylePending, "Creating backport branch %q...", backportBranch))
 	if _, err := execute.Git(cmd.Context, "checkout", "-b", backportBranch, fmt.Sprintf("origin/%s", version)); err != nil {
 		p.Destroy()
@@ -68,7 +66,7 @@ func Run(cmd *cli.Context, prNumber int64, version string) error {
 
 	// Fetch latest change from remote
 	p = std.Out.Pending(output.Styled(output.StylePending, "Fetching latest changes from remote..."))
-	if _, err := backportBranchRepo.FetchOrigin(cmd.Context); err != nil {
+	if _, err := execute.Git(cmd.Context, "fetch"); err != nil {
 		p.Destroy()
 		return err
 	}

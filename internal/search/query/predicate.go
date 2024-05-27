@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -626,7 +627,7 @@ type RevAtTimePredicate struct {
 func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 	elems := strings.Split(params, ",")
 	if len(elems) == 1 {
-		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
+		t, err := gitdomain.ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
 		if err != nil {
 			return err
 		}
@@ -634,7 +635,7 @@ func (f *RevAtTimePredicate) Unmarshal(params string, negated bool) error {
 		f.RevSpec = "HEAD"
 		return nil
 	} else if len(elems) == 2 {
-		t, err := ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
+		t, err := gitdomain.ParseGitDate(strings.TrimSpace(elems[0]), time.Now)
 		if err != nil {
 			return err
 		}

@@ -32,7 +32,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 		}
 
 		for i, call := range gitserverClient.CommitsFunc.History() {
-			if call.Arg2.After != "" {
+			if !call.Arg2.After.IsZero() {
 				t.Errorf("unexpected restriction of git results by date: call #%d", i)
 			}
 		}

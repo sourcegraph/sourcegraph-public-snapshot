@@ -34,14 +34,17 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 	defer dotcomDB.Close(context.Background())
 
-	// Simple test for now, move elsewhere later
+	// Validate connection on startup
 	if err := dotcomDB.Ping(context.Background()); err != nil {
 		return nil, errors.Wrap(err, "dotcomDB.Ping")
 	}
 
 	httpServer := http.NewServeMux()
+
+	// Register MSP endpoints
 	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{})
 
+	// Initialize server
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	server := httpserver.NewFromAddr(
 		listenAddr,

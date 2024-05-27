@@ -2,6 +2,7 @@ package licensing
 
 import (
 	"slices"
+	"time"
 )
 
 // CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
@@ -14,6 +15,10 @@ type CodyGatewayRateLimit struct {
 
 	Limit           int64
 	IntervalSeconds int32
+}
+
+func (r CodyGatewayRateLimit) IntervalDuration() time.Duration {
+	return time.Duration(r.IntervalSeconds) * time.Second
 }
 
 // NewCodyGatewayChatRateLimit applies default Cody Gateway access based on the plan.

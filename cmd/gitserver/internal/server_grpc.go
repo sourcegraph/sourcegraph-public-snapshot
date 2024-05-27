@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -138,6 +139,7 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	ctx := ss.Context()
 
 	// Log which actor is accessing the repo.
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	args := byteSlicesToStrings(req.GetArgs())
 	logAttrs := []log.Field{}
 	if len(args) > 0 {
@@ -147,25 +149,21 @@ func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		)
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	if req.GetRepo() == "" {
 		return status.New(codes.InvalidArgument, "repo must be specified").Err()
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	repoName := api.RepoName(req.GetRepo())
 	repoDir := gs.fs.RepoDir(repoName)
 	backend := gs.gitBackendSource(repoDir, repoName)
 
 	if err := gs.checkRepoExists(ctx, repoName); err != nil {
 		return err
-	}
-
-	if req.GetNoTimeout() {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 24*time.Hour)
-		defer cancel()
-
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -1195,15 +1193,17 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 		return err
 	}
 
-	sendFunc := func(refs []*proto.GitRef) error {
-		return ss.Send(&proto.ListRefsResponse{Refs: refs})
-	}
+	tr, _ := trace.New(ss.Context(), "chunkedsender")
+	defer tr.EndWithErr(&err)
 
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of refs, sending them all in one
 	// message would be very slow, but sending them all in individual messages
 	// would also be slow, so we chunk them instead.
-	chunker := chunk.New(sendFunc)
+	chunker := chunk.New(func(refs []*proto.GitRef) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(refs)))
+		return ss.Send(&proto.ListRefsResponse{Refs: refs})
+	})
 
 	for {
 		ref, err := it.Next()
@@ -1507,12 +1507,14 @@ func (gs *grpcServer) ChangedFiles(req *proto.ChangedFilesRequest, ss proto.Gits
 	}
 	defer iterator.Close()
 
-	chunker := chunk.New(func(paths []*proto.ChangedFile) error {
-		out := &proto.ChangedFilesResponse{
-			Files: paths,
-		}
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
 
-		return ss.Send(out)
+	chunker := chunk.New(func(paths []*proto.ChangedFile) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(paths)))
+		return ss.Send(&proto.ChangedFilesResponse{
+			Files: paths,
+		})
 	})
 
 	for {
@@ -1653,15 +1655,17 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 		}
 	}()
 
-	sendFunc := func(fis []*proto.FileInfo) error {
-		return ss.Send(&proto.ReadDirResponse{FileInfo: fis})
-	}
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
 
 	// We use a chunker here to make sure we don't send too large gRPC messages.
 	// For repos with thousands or even millions of files, sending them all in one
 	// message would be very slow, but sending them all in individual messages
 	// would also be slow, so we chunk them instead.
-	chunker := chunk.New(sendFunc)
+	chunker := chunk.New(func(fis []*proto.FileInfo) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(fis)))
+		return ss.Send(&proto.ReadDirResponse{FileInfo: fis})
+	})
 
 	for {
 		fi, err := it.Next()
@@ -1702,6 +1706,135 @@ func (gs *grpcServer) ReadDir(req *proto.ReadDirRequest, ss proto.GitserverServi
 	err = chunker.Flush()
 	if err != nil {
 		return errors.Wrap(err, "failed to flush files")
+	}
+
+	return nil
+}
+
+func (gs *grpcServer) CommitLog(req *proto.CommitLogRequest, ss proto.GitserverService_CommitLogServer) (err error) {
+	ctx := ss.Context()
+
+	accesslog.Record(
+		ctx,
+		req.GetRepoName(),
+		log.Strings("ranges", byteSlicesToStrings(req.GetRanges())),
+		log.String("path", string(req.GetPath())),
+	)
+
+	if req.GetRepoName() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if len(req.GetRanges()) == 0 && !req.GetAllRefs() {
+		return status.New(codes.InvalidArgument, "must specify ranges or all_refs").Err()
+	}
+
+	if len(req.GetRanges()) > 0 && req.GetAllRefs() {
+		return status.New(codes.InvalidArgument, "cannot specify both ranges and all_refs").Err()
+	}
+
+	var order git.CommitLogOrder
+	switch req.GetOrder() {
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_COMMIT_DATE:
+		order = git.CommitLogOrderCommitDate
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_TOPO_DATE:
+		order = git.CommitLogOrderTopoDate
+	case proto.CommitLogRequest_COMMIT_LOG_ORDER_UNSPECIFIED:
+		order = git.CommitLogOrderDefault
+	default:
+		return status.New(codes.InvalidArgument, "unknown order").Err()
+	}
+
+	repoName := api.RepoName(req.GetRepoName())
+	repoDir := gs.fs.RepoDir(repoName)
+
+	if err := gs.checkRepoExists(ctx, repoName); err != nil {
+		return err
+	}
+
+	backend := gs.gitBackendSource(repoDir, repoName)
+
+	it, err := backend.CommitLog(ctx, git.CommitLogOpts{
+		Ranges:                byteSlicesToStrings(req.GetRanges()),
+		AllRefs:               req.GetAllRefs(),
+		After:                 req.GetAfter().AsTime(),
+		Before:                req.GetBefore().AsTime(),
+		MaxCommits:            req.GetMaxCommits(),
+		Skip:                  req.GetSkip(),
+		FollowOnlyFirstParent: req.GetFollowOnlyFirstParent(),
+		IncludeModifiedFiles:  req.GetIncludeModifiedFiles(),
+		MessageQuery:          string(req.GetMessageQuery()),
+		AuthorQuery:           string(req.GetAuthorQuery()),
+		Path:                  string(req.GetPath()),
+		FollowPathRenames:     req.GetFollowPathRenames(),
+		Order:                 order,
+	})
+	if err != nil {
+		gs.svc.LogIfCorrupt(ctx, repoName, err)
+		return err
+	}
+
+	defer func() {
+		closeErr := it.Close()
+		if closeErr == nil {
+			return
+		}
+
+		if err == nil {
+			err = closeErr
+			return
+		}
+	}()
+
+	tr, _ := trace.New(ctx, "chunkedsender")
+	defer tr.EndWithErr(&err)
+
+	// We use a chunker here to make sure we don't send too large gRPC messages.
+	// For repos with thousands or even millions of commits, sending them all in one
+	// message would be very memory intensive, but sending them all in individual
+	// messages would be slow, so we chunk them instead.
+	chunker := chunk.New(func(cs []*proto.GetCommitResponse) error {
+		tr.AddEvent("sending chunk", attribute.Int("count", len(cs)))
+		return ss.Send(&proto.CommitLogResponse{Commits: cs})
+	})
+
+	for {
+		commit, err := it.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			var e *gitdomain.RevisionNotFoundError
+			if errors.As(err, &e) {
+				s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+					Repo: req.GetRepoName(),
+					Spec: e.Spec,
+				})
+				if err != nil {
+					return err
+				}
+				return s.Err()
+			}
+			return err
+		}
+
+		modifiedFiles := make([][]byte, len(commit.ModifiedFiles))
+		for i, f := range commit.ModifiedFiles {
+			modifiedFiles[i] = []byte(f)
+		}
+
+		err = chunker.Send(&proto.GetCommitResponse{
+			Commit:        commit.ToProto(),
+			ModifiedFiles: modifiedFiles,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to send commits chunk")
+		}
+	}
+
+	err = chunker.Flush()
+	if err != nil {
+		return errors.Wrap(err, "failed to flush commits")
 	}
 
 	return nil

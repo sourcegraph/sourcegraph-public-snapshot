@@ -106,6 +106,7 @@ func (r *errorTranslatingCreateCommitFromPatchBinaryClient) CloseAndRecv() (*pro
 }
 
 func (r *errorTranslatingClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
 	cc, err := r.base.Exec(ctx, in, opts...)
 	if err != nil {
 		return nil, convertGRPCErrorToGitDomainError(err)
@@ -366,6 +367,23 @@ type errorTranslatingReadDirClient struct {
 
 func (r *errorTranslatingReadDirClient) Recv() (*proto.ReadDirResponse, error) {
 	res, err := r.GitserverService_ReadDirClient.Recv()
+	return res, convertGRPCErrorToGitDomainError(err)
+}
+
+func (r *errorTranslatingClient) CommitLog(ctx context.Context, in *proto.CommitLogRequest, opts ...grpc.CallOption) (proto.GitserverService_CommitLogClient, error) {
+	cc, err := r.base.CommitLog(ctx, in, opts...)
+	if err != nil {
+		return nil, convertGRPCErrorToGitDomainError(err)
+	}
+	return &errorTranslatingCommitLogClient{cc}, nil
+}
+
+type errorTranslatingCommitLogClient struct {
+	proto.GitserverService_CommitLogClient
+}
+
+func (r *errorTranslatingCommitLogClient) Recv() (*proto.CommitLogResponse, error) {
+	res, err := r.GitserverService_CommitLogClient.Recv()
 	return res, convertGRPCErrorToGitDomainError(err)
 }
 

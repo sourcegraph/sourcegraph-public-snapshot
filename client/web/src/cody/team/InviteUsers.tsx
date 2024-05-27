@@ -1,14 +1,12 @@
 import React, { useState, useCallback } from 'react'
 
-import classNames from 'classnames'
-
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
+import { CodyAlert } from '../components/CodyAlert'
+import { CodyContainer } from '../components/CodyContainer'
 import { isValidEmailAddress, requestSSC } from '../util'
-
-import styles from './CodyManageTeamPage.module.scss'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | null
@@ -23,6 +21,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     const [emailAddressesString, setEmailAddressesString] = useState<string>('')
     const [emailAddressErrorMessage, setEmailAddressErrorMessage] = useState<string | null>(null)
     const [invitesSendingStatus, setInvitesSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
+    const [invitesSentCount, setInvitesSentCount] = useState(0)
     const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
 
     const onSendInvitesClicked = useCallback(async () => {
@@ -58,6 +57,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                 return
             }
             setInvitesSendingStatus('success')
+            setInvitesSentCount(emailAddresses.length)
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
                 metadata: { count: emailAddresses.length },
                 privateMetadata: { teamId, emailAddresses },
@@ -75,63 +75,68 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     return (
         <>
             {invitesSendingStatus === 'success' && (
-                <div className={classNames('mb-4', styles.alert, styles.blueSuccessAlert)}>
-                    <H3>4 invites sent!</H3>
+                <CodyAlert variant="greenSuccess">
+                    <H3>
+                        {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
+                    </H3>
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
                     </Text>
-                </div>
+                </CodyAlert>
             )}
             {invitesSendingStatus === 'error' && (
-                <div className={classNames('mb-4', styles.alert, styles.errorAlert)}>
+                <CodyAlert variant="error">
                     <H3>Invites not sent.</H3>
                     <Text size="small" className="text-muted mb-0">
                         {invitesSendingErrorMessage}
                     </Text>
-                    <Text size="small">
+                    <Text size="small" className="mb-0">
                         If you encounter this issue repeatedly, please contact support at{' '}
                         <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>.
                     </Text>
-                </div>
+                </CodyAlert>
             )}
 
-            {!!remainingInviteCount && (
-                <div className={classNames('p-4 border bg-1 mb-4 d-flex flex-row', styles.container)}>
-                    <div className="d-flex justify-content-between align-items-center w-100">
-                        <div>
-                            <img
-                                src="https://storage.googleapis.com/sourcegraph-assets/cody/user-badges.png"
-                                alt="User badges"
-                                width="230"
-                                height="202"
-                                className={classNames('mr-3')}
-                            />
-                        </div>
-                        <div className="flex-1 d-flex flex-column">
-                            <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
-                                <strong>Invite users</strong> – You have {remainingInviteCount} free{' '}
-                                {pluralize('seat', remainingInviteCount)}
-                            </H2>
-                            <TextArea
-                                className={classNames('mb-2')}
-                                placeholder="Example: someone@sourcegraph.com, another.user@sourcegraph.com"
-                                rows={4}
-                                onChange={event => {
-                                    setEmailAddressErrorMessage(null)
-                                    setEmailAddressesString(event.target.value)
-                                }}
-                            />
-                            <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
+            <CodyContainer className="p-4 border bg-1 mb-4 d-flex flex-row">
+                <div className="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <img
+                            src="https://storage.googleapis.com/sourcegraph-assets/cody/user-badges.png"
+                            alt="User badges"
+                            width="230"
+                            height="202"
+                            className="mr-3"
+                        />
+                    </div>
+                    <div className="flex-1 d-flex flex-column">
+                        <H2 className="mb-4">
+                            <strong>Invite users</strong> – {remainingInviteCount}{' '}
+                            {pluralize('seat', remainingInviteCount)} remaining
+                        </H2>
+                        <TextArea
+                            className="mb-2"
+                            placeholder="Example: someone@sourcegraph.com, another.user@sourcegraph.com"
+                            rows={4}
+                            onChange={event => {
+                                setEmailAddressErrorMessage(null)
+                                setEmailAddressesString(event.target.value)
+                            }}
+                            isValid={emailAddressErrorMessage ? false : undefined}
+                        />
+                        {emailAddressErrorMessage ? (
                             <Text className="text-danger mb-2">{emailAddressErrorMessage}</Text>
-                            <div className="d-flex justify-content-end">
-                                <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
-                                    Send
-                                </ButtonLink>
-                            </div>
+                        ) : (
+                            <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
+                        )}
+
+                        <div>
+                            <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
+                                Send
+                            </ButtonLink>
                         </div>
                     </div>
                 </div>
-            )}
+            </CodyContainer>
         </>
     )
 }

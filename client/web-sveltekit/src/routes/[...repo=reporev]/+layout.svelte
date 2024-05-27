@@ -9,35 +9,55 @@
         mdiTag,
         mdiDotsHorizontal,
     } from '@mdi/js'
-
     import { writable } from 'svelte/store'
-    import { page } from '$app/stores'
+
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
+    import { page } from '$app/stores'
     import { computeFit } from '$lib/dom'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
     import RepoSearchInput from './RepoSearchInput.svelte'
 
+    interface MenuEntry {
+        /**
+         * The (URL) path to the page.
+         */
+        path: string
+        /**
+         * The visible name of the menu entry.
+         */
+        label: string
+        /**
+         * The icon to display next to the title.
+         */
+        icon?: string
+        /**
+         * Who can see this entry.
+         */
+        visibility: 'admin' | 'user'
+    }
+
     export let data: LayoutData
 
     const menuOpen = writable(false)
-    const navEntries: { path: string; icon: string; title: string }[] = [
-        { path: '', icon: mdiCodeTags, title: 'Code' },
-        { path: '/-/commits', icon: mdiSourceCommit, title: 'Commits' },
-        { path: '/-/branches', icon: mdiSourceBranch, title: 'Branches' },
-        { path: '/-/tags', icon: mdiTag, title: 'Tags' },
-        { path: '/-/stats/contributors', icon: mdiAccount, title: 'Contributors' },
+    const navEntries: MenuEntry[] = [
+        { path: '', icon: mdiCodeTags, label: 'Code', visibility: 'user' },
+        { path: '/-/commits', icon: mdiSourceCommit, label: 'Commits', visibility: 'user' },
+        { path: '/-/branches', icon: mdiSourceBranch, label: 'Branches', visibility: 'user' },
+        { path: '/-/tags', icon: mdiTag, label: 'Tags', visibility: 'user' },
+        { path: '/-/stats/contributors', icon: mdiAccount, label: 'Contributors', visibility: 'user' },
     ]
-    const menuEntries: { path: string; icon: string; title: string }[] = [
-        { path: '/-/compare', icon: mdiHistory, title: 'Compare' },
-        { path: '/-/own', icon: mdiAccount, title: 'Ownership' },
-        { path: '/-/embeddings', icon: '', title: 'Embeddings' },
-        { path: '/-/batch-changes', icon: '', title: 'Batch changes' },
-        { path: '/-/settings', icon: mdiCog, title: 'Settings' },
+    const menuEntries: MenuEntry[] = [
+        { path: '/-/compare', icon: mdiHistory, label: 'Compare', visibility: 'user' },
+        { path: '/-/own', icon: mdiAccount, label: 'Ownership', visibility: 'admin' },
+        { path: '/-/embeddings', label: 'Embeddings', visibility: 'admin' },
+        { path: '/-/code-graph', label: 'Code graph data', visibility: 'admin' },
+        { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
+        { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
     ]
 
     let visibleNavEntries = navEntries.length
@@ -64,15 +84,17 @@
 
         <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
             {#each navEntriesToShow as entry}
-                {@const href = data.repoURL + entry.path}
-                <li>
-                    <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
-                        {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
-                        {/if}
-                        <span>{entry.title}</span>
-                    </a>
-                </li>
+                {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
+                    {@const href = data.repoURL + entry.path}
+                    <li>
+                        <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
+                            {#if entry.icon}
+                                <Icon svgPath={entry.icon} inline />
+                            {/if}
+                            <span>{entry.label}</span>
+                        </a>
+                    </li>
+                {/if}
             {/each}
         </ul>
 
@@ -85,18 +107,20 @@
                 <Icon svgPath={mdiDotsHorizontal} aria-label="More repo navigation items" />
             </svelte:fragment>
             {#each allMenuEntries as entry}
-                {@const href = data.repoURL + entry.path}
-                <MenuLink {href}>
-                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
-                        {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
-                        {/if}
-                        <span>{entry.title}</span>
-                    </span>
-                </MenuLink>
+                {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
+                    {@const href = data.repoURL + entry.path}
+                    <MenuLink {href}>
+                        <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                            {#if entry.icon}
+                                <Icon svgPath={entry.icon} inline />
+                            {/if}
+                            <span>{entry.label}</span>
+                        </span>
+                    </MenuLink>
+                {/if}
             {/each}
         </DropdownMenu>
-        <RepoSearchInput repoName={data.repoName} />
+        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
     </nav>
 </GlobalHeaderPortal>
 

@@ -48,6 +48,7 @@ go_test(
     name = "validation_test",
     srcs = [
         "auth_test.go",
+        "cody_test.go",
         "prometheus_test.go",
         "txemail_test.go",
     ],

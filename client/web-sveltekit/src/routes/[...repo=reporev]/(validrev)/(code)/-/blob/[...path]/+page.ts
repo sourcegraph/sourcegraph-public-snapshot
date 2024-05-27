@@ -1,6 +1,6 @@
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
-import { fetchBlameHunksMemoized, type BlameHunkData } from '@sourcegraph/web/src/repo/blame/shared'
+import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
 
 import { SourcegraphURL } from '$lib/common'
 import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
@@ -11,9 +11,9 @@ import { assertNonNullable } from '$lib/utils'
 import type { PageLoad, PageLoadEvent } from './$types'
 import {
     BlobDiffViewCommitQuery,
-    BlobFileViewHighlightedFileQuery,
-    BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewBlobQuery,
+    BlobFileViewCommitQuery_revisionOverride,
+    BlobFileViewHighlightedFileQuery,
 } from './page.gql'
 
 function loadDiffView({ params, url }: PageLoadEvent) {

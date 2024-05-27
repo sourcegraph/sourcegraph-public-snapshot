@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import {
     Badge,
     Button,
@@ -26,10 +25,9 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { manageSubscriptionRedirectURL, isEmbeddedCodyProUIEnabled } from '../util'
+import { isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -49,7 +47,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     const utm_source = parameters.get('utm_source')
     useEffect(() => {
-        EVENT_LOGGER.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source }, { utm_source })
         telemetryRecorder.recordEvent('cody.planSelection', 'view')
     }, [utm_source, telemetryRecorder])
 
@@ -72,7 +69,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         return null
     }
 
-    const isProUser = data.currentUser.codySubscription?.plan !== CodySubscriptionPlan.PRO
+    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
 
     return (
         <>
@@ -85,7 +82,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             <Button
                                 variant="primary"
                                 onClick={() => {
-                                    EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
+                                    telemetryRecorder.recordEvent('cody.manageSubscription', 'click', {
+                                        metadata: { tier: 1 },
+                                    })
                                     window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
@@ -209,7 +208,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         className="mb-0 text-muted d-inline cursor-pointer"
                                         size="small"
                                         onClick={() => {
-                                            EVENT_LOGGER.log(EventName.CODY_MANAGE_SUBSCRIPTION_CLICKED)
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 0 },
                                             })
@@ -227,7 +225,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL // TODO: Use team link or argument
+                                                // We add ?team=1 to the URL to indicate that the user is creating a team.
+                                                // We can use this info to initialize the UI differently,
+                                                // or even display an entirely different UI.
+                                                const url = new URL(manageSubscriptionRedirectURL)
+                                                url.searchParams.append('team', '1')
+                                                window.location.href = url.toString()
                                             }}
                                         >
                                             <span className={classNames(styles.proBadge, 'mr-1')} />
@@ -235,10 +238,11 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
+                                            to={manageSubscriptionRedirectURL}
                                             target="_blank"
                                             rel="noreferrer noopener"
-                                            onClick={() => {
+                                            onClick={event => {
+                                                event.preventDefault()
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
@@ -364,11 +368,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                 to="https://sourcegraph.com/contact/request-info?utm_source=cody_subscription_page"
                                 target="_blank"
                                 onClick={() => {
-                                    EVENT_LOGGER.log(
-                                        EventName.CODY_SUBSCRIPTION_PLAN_CLICKED,
-                                        { tier: 'enterprise' },
-                                        { tier: 'enterprise' }
-                                    )
                                     telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                         metadata: { tier: 2 },
                                     })

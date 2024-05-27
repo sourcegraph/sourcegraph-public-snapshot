@@ -51,6 +51,10 @@ func newServer(httpServer *http.Server, makeListener func() (net.Listener, error
 	return s
 }
 
+func (s *server) Name() string {
+	return "HTTP server"
+}
+
 func (s *server) Start() {
 	listener, err := s.makeListener()
 	if err != nil {
@@ -64,17 +68,18 @@ func (s *server) Start() {
 	}
 }
 
-func (s *server) Stop() {
+func (s *server) Stop(ctx context.Context) error {
 	s.once.Do(func() {
 		if s.preShutdownPause > 0 {
 			time.Sleep(s.preShutdownPause)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
 		defer cancel()
 
 		if err := s.server.Shutdown(ctx); err != nil {
 			log15.Error("Failed to shutdown server", "error", err)
 		}
 	})
+	return nil
 }

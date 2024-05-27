@@ -96,9 +96,9 @@
     }
 
     $: if (!!lastCommitQuery) {
-        // Reset commit history when the query observable changes. Without
-        // this we are showing the commit history of the previously selected
-        // file/folder until the new commit history is loaded.
+        // Reset last commit when the query observable changes. Without
+        // this we are showing the last commit of the previously selected
+        // file/folder until the last commit is loaded.
         lastCommit = null
     }
 
@@ -190,7 +190,13 @@
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
                 <div class="sidebar-action-row">
-                    <Button variant="secondary" outline size="sm" on:click={toggleFileSidePanel}>
+                    <Button
+                        variant="secondary"
+                        outline
+                        size="sm"
+                        on:click={toggleFileSidePanel}
+                        aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
+                    >
                         <Icon svgPath={!isCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight} inline />
                     </Button>
 

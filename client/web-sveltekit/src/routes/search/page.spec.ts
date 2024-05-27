@@ -99,16 +99,6 @@ test('fills search query from URL', async ({ page }) => {
     await expect(page.getByRole('textbox')).toHaveText('test')
 })
 
-test('main navbar menus are visible above search input', async ({ page, sg }) => {
-    const stream = await sg.mockSearchStream()
-    await page.goto('/search?q=test')
-    await stream.publish(createProgressEvent(), createDoneEvent())
-    await stream.close()
-    await page.getByRole('button', { name: 'Code Search' }).click()
-    await page.getByRole('link', { name: 'Search Home' }).click()
-    await expect(page).toHaveURL(/\/search$/)
-})
-
 test.use({
     permissions: ['clipboard-write', 'clipboard-read'],
 })
@@ -134,7 +124,7 @@ test('copy path button appears and copies path', async ({ page, sg }) => {
         await page.getByRole('link', { name: match.path }).hover()
         expect(copyPathButton).toBeVisible()
         await copyPathButton.click()
-        let clipboardText = await page.evaluate('navigator.clipboard.readText()')
+        const clipboardText = await page.evaluate('navigator.clipboard.readText()')
         expect(clipboardText).toBe(match.path)
     }
 })
@@ -145,7 +135,7 @@ test.describe('preview panel', async () => {
         await page.goto('/search?q=test')
         await page.getByRole('heading', { name: 'Filter results' }).waitFor()
         sg.mockOperations({
-            BlobPageQuery: () => ({
+            BlobFileViewBlobQuery: () => ({
                 repository: { commit: { blob: { content: chunkMatch.chunkMatches![0].content } } },
             }),
         })
@@ -188,7 +178,7 @@ test.describe('preview panel', async () => {
         await stream.close()
 
         sg.mockOperations({
-            BlobPageQuery: () => ({
+            BlobFileViewBlobQuery: () => ({
                 repository: { commit: { blob: { content: chunkMatch.chunkMatches![0].content } } },
             }),
         })

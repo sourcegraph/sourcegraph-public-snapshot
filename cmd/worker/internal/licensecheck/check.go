@@ -199,6 +199,11 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db databa
 			goroutine.WithInterval(licensing.LicenseCheckInterval),
 			goroutine.WithInitialDelay(initialWaitInterval),
 		)
-		go goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)
+		go func() {
+			err := goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)
+			if err != nil {
+				logger.Error("error monitoring background routines", log.Error(err))
+			}
+		}()
 	})
 }

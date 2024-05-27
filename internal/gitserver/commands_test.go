@@ -2,15 +2,14 @@ package gitserver
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"math/rand"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -140,596 +140,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	}
 }
 
-func TestLogPartsPerCommitInSync(t *testing.T) {
-	require.Equal(t, partsPerCommit-1, strings.Count(logFormatWithoutRefs, "%x00"))
-}
-
-func TestCommits_After(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-
-	testCases := []struct {
-		label                 string
-		commitDates           []string
-		after                 string
-		revspec               string
-		want, wantSubRepoTest bool
-	}{
-		{
-			label: "after specific date",
-			commitDates: []string{
-				"2006-01-02T15:04:05Z",
-				"2007-01-02T15:04:05Z",
-				"2008-01-02T15:04:05Z",
-			},
-			after:           "2006-01-02T15:04:05Z",
-			revspec:         "master",
-			want:            true,
-			wantSubRepoTest: true,
-		},
-		{
-			label: "after 1 year ago",
-			commitDates: []string{
-				"2016-01-02T15:04:05Z",
-				"2017-01-02T15:04:05Z",
-				"2017-01-02T15:04:06Z",
-			},
-			after:           "1 year ago",
-			revspec:         "master",
-			want:            false,
-			wantSubRepoTest: false,
-		},
-		{
-			label: "after too recent date",
-			commitDates: []string{
-				"2006-01-02T15:04:05Z",
-				"2007-01-02T15:04:05Z",
-				"2008-01-02T15:04:05Z",
-			},
-			after:           "2010-01-02T15:04:05Z",
-			revspec:         "HEAD",
-			want:            false,
-			wantSubRepoTest: false,
-		},
-		{
-			label: "commit 1 second after",
-			commitDates: []string{
-				"2006-01-02T15:04:05Z",
-				"2007-01-02T15:04:05Z",
-				"2007-01-02T15:04:06Z",
-			},
-			after:           "2007-01-02T15:04:05Z",
-			revspec:         "HEAD",
-			want:            true,
-			wantSubRepoTest: false,
-		},
-		{
-			label: "after 10 years ago",
-			commitDates: []string{
-				"2016-01-02T15:04:05Z",
-				"2017-01-02T15:04:05Z",
-				"2017-01-02T15:04:06Z",
-			},
-			after:           "10 years ago",
-			revspec:         "HEAD",
-			want:            true,
-			wantSubRepoTest: true,
-		},
-	}
-
-	t.Run("basic", func(t *testing.T) {
-		for _, tc := range testCases {
-			t.Run(tc.label, func(t *testing.T) {
-				client := NewTestClient(t)
-
-				gitCommands := make([]string, len(tc.commitDates))
-				for i, date := range tc.commitDates {
-					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-				}
-				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.Commits(ctx, repo, CommitsOptions{
-					N:      2,
-					Ranges: []string{tc.revspec},
-					After:  tc.after,
-				})
-				require.NoError(t, err)
-
-				if len(got) > 0 != tc.want {
-					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
-				}
-			})
-		}
-	})
-
-	t.Run("with sub-repo permissions", func(t *testing.T) {
-		for _, tc := range testCases {
-			t.Run(tc.label, func(t *testing.T) {
-				gitCommands := make([]string, len(tc.commitDates))
-				for i, date := range tc.commitDates {
-					fileName := fmt.Sprintf("file%d", i)
-					gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName), fmt.Sprintf("git add %s", fileName))
-					gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m commit%d --author='a <a@a.com>'", date, i))
-				}
-				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
-				checker := getTestSubRepoPermsChecker("file2")
-				client := NewTestClient(t).WithChecker(checker)
-				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.Commits(ctx, repo, CommitsOptions{
-					N:      2,
-					After:  tc.after,
-					Ranges: []string{tc.revspec},
-				})
-				if err != nil {
-					t.Errorf("got error: %s", err)
-				}
-				if len(got) > 0 != tc.want {
-					t.Errorf("got %t commits, want %t", len(got) > 0, tc.want)
-				}
-
-				// Case where user can't view commit 1 or commit 2, which will mean in some cases since len(Commits)>0 will be false due to those commits not being visible.
-				checker = getTestSubRepoPermsChecker("file1", "file2")
-				client = NewTestClient(t).WithChecker(checker)
-				got, err = client.Commits(ctx, repo, CommitsOptions{
-					N:      2,
-					After:  tc.after,
-					Ranges: []string{tc.revspec},
-				})
-				if err != nil {
-					t.Errorf("got error: %s", err)
-				}
-				if len(got) > 0 != tc.wantSubRepoTest {
-					t.Errorf("got %t commits, want %t", len(got) > 0, tc.wantSubRepoTest)
-				}
-			})
-		}
-	})
-}
-
-var nonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
-
-func TestRepository_Commits(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-
-	// TODO(sqs): test CommitsOptions.Base
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-	}
-	wantGitCommits := []*gitdomain.Commit{
-		{
-			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-			Message:   "bar",
-			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
-		},
-		{
-			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "foo",
-			Parents:   nil,
-		},
-	}
-	tests := map[string]struct {
-		repo        api.RepoName
-		id          api.CommitID
-		wantCommits []*gitdomain.Commit
-		wantTotal   uint
-	}{
-		"git cmd": {
-			repo:        MakeGitRepository(t, gitCommands...),
-			id:          "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommits: wantGitCommits,
-			wantTotal:   2,
-		},
-	}
-	client := NewClient("test")
-	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Ranges: []string{string(test.id)}}, checker, test.wantCommits, t)
-
-				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Ranges: []string{string(nonExistentCommitID)}}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-				}
-			})
-		}
-	}
-	runCommitsTests(nil)
-	checker := getTestSubRepoPermsChecker()
-	runCommitsTests(checker)
-}
-
-func TestCommits_SubRepoPerms(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := []string{
-		"touch file1",
-		"git add file1",
-		"git commit -m commit1",
-		"touch file2",
-		"git add file2",
-		"touch file2.2",
-		"git add file2.2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-		"touch file3",
-		"git add file3",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-	}
-	repo := MakeGitRepository(t, gitCommands...)
-
-	tests := map[string]struct {
-		wantCommits   []*gitdomain.Commit
-		opt           CommitsOptions
-		wantTotal     uint
-		noAccessPaths []string
-	}{
-		"if no read perms on at least one file in the commit should filter out commit": {
-			wantTotal: 2,
-			wantCommits: []*gitdomain.Commit{
-				{
-					ID:        "b96d097108fa49e339ca88bc97ab07f833e62131",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "commit2",
-					Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
-				},
-				{
-					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Message:   "commit1",
-				},
-			},
-			noAccessPaths: []string{"file2", "file3"},
-		},
-		"sub-repo perms with path (w/ no access) specified should return no commits": {
-			wantTotal: 1,
-			opt: CommitsOptions{
-				Path: "file2",
-			},
-			wantCommits:   []*gitdomain.Commit{},
-			noAccessPaths: []string{"file2", "file3"},
-		},
-		"sub-repo perms with path (w/ access) specified should return that commit": {
-			wantTotal: 1,
-			opt: CommitsOptions{
-				Path: "file1",
-			},
-			wantCommits: []*gitdomain.Commit{
-				{
-					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Message:   "commit1",
-				},
-			},
-			noAccessPaths: []string{"file2", "file3"},
-		},
-	}
-
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			client := NewTestClient(t).WithChecker(checker)
-			commits, err := client.Commits(ctx, repo, test.opt)
-			if err != nil {
-				t.Errorf("%s: Commits(): %s", label, err)
-				return
-			}
-
-			if len(commits) != len(test.wantCommits) {
-				t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
-			}
-
-			checkCommits(t, commits, test.wantCommits)
-		})
-	}
-}
-
-func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-	gitCommands := []string{
-		"touch file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:01Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:01Z",
-		"touch file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:02Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:02Z",
-		"echo foo > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:03Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:03Z",
-		"echo asdf > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:04Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:04Z",
-		"echo bar > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit5 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"echo asdf2 > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit -m commit6 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-		"echo bazz > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit7 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-		"echo bazz > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit8 --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
-	}
-
-	tests := map[string]struct {
-		repo          api.RepoName
-		wantCommits   []*gitdomain.Commit
-		opt           CommitsOptions
-		wantTotal     uint
-		noAccessPaths []string
-	}{
-		"return the requested number of commits": {
-			repo:      MakeGitRepository(t, gitCommands...),
-			wantTotal: 3,
-			opt: CommitsOptions{
-				N: 3,
-			},
-			wantCommits: []*gitdomain.Commit{
-				{
-					ID:        "61dbc35f719c53810904a2d359309d4e1e98a6be",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "commit7",
-					Parents:   []api.CommitID{"66566c8aa223f3e1b94ebe09e6cdb14c3a5bfb36"},
-				},
-				{
-					ID:        "2e6b2c94293e9e339f781b2a2f7172e15460f88c",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Parents: []api.CommitID{
-						"9a7ec70986d657c4c86d6ac476f0c5181ece509a",
-					},
-					Message: "commit5",
-				},
-				{
-					ID:        "9a7ec70986d657c4c86d6ac476f0c5181ece509a",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
-					Message:   "commit4",
-					Parents: []api.CommitID{
-						"f3fa8cf6ec56d0469402523385d6ca4b7cb222d8",
-					},
-				},
-			},
-			noAccessPaths: []string{"file2"},
-		},
-	}
-
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			client := NewTestClient(t).WithChecker(checker)
-			commits, err := client.Commits(ctx, test.repo, test.opt)
-			if err != nil {
-				t.Errorf("%s: Commits(): %s", label, err)
-				return
-			}
-
-			if diff := cmp.Diff(test.wantCommits, commits); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
-func TestRepository_Commits_options(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, actor.FromUser(42))
-
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --allow-empty -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
-	}
-	wantGitCommits := []*gitdomain.Commit{
-		{
-			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-			Message:   "bar",
-			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
-		},
-	}
-	wantGitCommits2 := []*gitdomain.Commit{
-		{
-			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Message:   "qux",
-			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
-		},
-	}
-	tests := map[string]struct {
-		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
-		wantTotal   uint
-	}{
-		"git cmd": {
-			opt:         CommitsOptions{Ranges: []string{"ade564eba4cf904492fb56dcd287ac633e6e082c"}, N: 1, Skip: 1},
-			wantCommits: wantGitCommits,
-			wantTotal:   1,
-		},
-		"git cmd Head": {
-			opt: CommitsOptions{
-				Ranges: []string{"b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c"},
-			},
-			wantCommits: wantGitCommits2,
-			wantTotal:   1,
-		},
-		"before": {
-			opt: CommitsOptions{
-				Before: "2006-01-02T15:04:07Z",
-				Ranges: []string{"HEAD"},
-				N:      1,
-			},
-			wantCommits: []*gitdomain.Commit{
-				{
-					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "bar",
-					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
-				},
-			},
-			wantTotal: 1,
-		},
-	}
-	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
-			})
-		}
-		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
-		// repos a success case.
-		subRepo := ""
-		if checker != nil {
-			subRepo = " sub repo enabled"
-		}
-		t.Run("empty repo"+subRepo, func(t *testing.T) {
-			repo := MakeGitRepository(t)
-			before := ""
-			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			client := NewTestClient(t).WithChecker(checker)
-			_, err := client.Commits(ctx, repo, CommitsOptions{N: 0, Order: CommitsOrderCommitDate, After: after, Before: before})
-			if err == nil {
-				t.Error("expected error, got nil")
-			}
-			wantErr := `git command [git log --format=format:%x1e%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
-			if subRepo != "" {
-				wantErr += " --name-only"
-			}
-			wantErr += `] failed (output: ""): exit status 128`
-			if err.Error() != wantErr {
-				t.Errorf("expected:%v got:%v", wantErr, err.Error())
-			}
-		})
-	}
-	runCommitsTests(nil)
-	checker := getTestSubRepoPermsChecker()
-	runCommitsTests(checker)
-}
-
-func TestRepository_Commits_options_path(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
-		UID: 1,
-	})
-
-	gitCommands := []string{
-		"git commit --allow-empty -m commit1",
-		"touch file1",
-		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + times[0] + " file1",
-		"git add file1",
-		"git commit -m commit2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-	}
-	wantGitCommits := []*gitdomain.Commit{
-		{
-			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "commit2",
-			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
-		},
-	}
-	tests := map[string]struct {
-		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
-	}{
-		"git cmd Path 0": {
-			opt: CommitsOptions{
-				Ranges: []string{"master"},
-				Path:   "doesnt-exist",
-			},
-			wantCommits: nil,
-		},
-		"git cmd Path 1": {
-			opt: CommitsOptions{
-				Ranges: []string{"master"},
-				Path:   "file1",
-			},
-			wantCommits: wantGitCommits,
-		},
-		"git cmd non utf8": {
-			opt: CommitsOptions{
-				Ranges: []string{"master"},
-				Author: "a\xc0rn",
-			},
-			wantCommits: nil,
-		},
-	}
-
-	runCommitsTest := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
-			})
-		}
-	}
-	runCommitsTest(nil)
-	checker := getTestSubRepoPermsChecker()
-	runCommitsTest(checker)
-}
-
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
-	t.Helper()
-	client := NewTestClient(t).WithChecker(checker)
-	commits, err := client.Commits(ctx, repo, opt)
-	if err != nil {
-		t.Errorf("%s: Commits(): %s", label, err)
-		return
-	}
-
-	if len(commits) != len(wantCommits) {
-		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
-	}
-	checkCommits(t, commits, wantCommits)
-}
-
-func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
-	t.Helper()
-	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
-		var gotC, wantC *gitdomain.Commit
-		if i < len(commits) {
-			gotC = commits[i]
-		}
-		if i < len(wantCommits) {
-			wantC = wantCommits[i]
-		}
-		if diff := cmp.Diff(gotC, wantC); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-}
-
 // get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
 func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermissionChecker {
 	checker := authz.NewMockSubRepoPermissionChecker()
@@ -746,25 +156,6 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 	})
 	usePermissionsForFilePermissionsFunc(checker)
 	return checker
-}
-
-func CommitsEqual(a, b *gitdomain.Commit) bool {
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if a.Author.Date != b.Author.Date {
-		return false
-	}
-	a.Author.Date = b.Author.Date
-	if ac, bc := a.Committer, b.Committer; ac != nil && bc != nil {
-		if ac.Date != bc.Date {
-			return false
-		}
-		ac.Date = bc.Date
-	} else if !(ac == nil && bc == nil) {
-		return false
-	}
-	return reflect.DeepEqual(a, b)
 }
 
 func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
@@ -2339,4 +1730,310 @@ func TestClient_ReadDir(t *testing.T) {
 
 		it.Close()
 	})
+}
+
+func TestClient_Commits(t *testing.T) {
+	t.Run("correctly returns server response", func(t *testing.T) {
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_CommitLogClient()
+				s.RecvFunc.PushReturn(&proto.CommitLogResponse{
+					Commits: []*proto.GetCommitResponse{
+						{
+							Commit: &v1.GitCommit{
+								Oid:       "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+								Author:    &v1.GitSignature{Name: []byte("Bar Author"), Email: []byte("bar@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z"))},
+								Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z"))},
+								Message:   []byte("bar"),
+								Parents:   []string{"5fab3adc1e398e749749271d14ab843759b192cf"},
+							},
+							ModifiedFiles: [][]byte{[]byte("file")},
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(&proto.CommitLogResponse{
+					Commits: []*proto.GetCommitResponse{
+						{
+							Commit: &v1.GitCommit{
+								Oid:       "5fab3adc1e398e749749271d14ab843759b192cf",
+								Author:    &v1.GitSignature{Name: []byte("Foo Author"), Email: []byte("foo@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+								Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+								Message:   []byte("foo"),
+								Parents:   nil,
+							},
+							ModifiedFiles: [][]byte{[]byte("otherfile")},
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.CommitLogFunc.SetDefaultReturn(s, nil)
+				return c
+			}
+		})
+
+		c := NewTestClient(t).WithClientSource(source)
+
+		cs, err := c.Commits(context.Background(), "repo", CommitsOptions{AllRefs: true})
+		require.NoError(t, err)
+
+		require.Equal(t, []*gitdomain.Commit{
+			{
+				ID:        "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+				Author:    gitdomain.Signature{Name: "Bar Author", Email: "bar@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+				Message:   "bar",
+				Parents:   []api.CommitID{"5fab3adc1e398e749749271d14ab843759b192cf"},
+			},
+			{
+				ID:        "5fab3adc1e398e749749271d14ab843759b192cf",
+				Author:    gitdomain.Signature{Name: "Foo Author", Email: "foo@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Message:   "foo",
+				Parents:   []api.CommitID{},
+			},
+		}, cs)
+	})
+
+	t.Run("returns common errors correctly", func(t *testing.T) {
+		t.Run("RevisionNotFound", func(t *testing.T) {
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c := NewMockGitserverServiceClient()
+					ss := NewMockGitserverService_CommitLogClient()
+					s, err := status.New(codes.NotFound, "revision not found").WithDetails(&proto.RevisionNotFoundPayload{
+						Repo: "repo",
+						Spec: "HEAD",
+					})
+					ss.RecvFunc.SetDefaultReturn(nil, s.Err())
+					require.NoError(t, err)
+					c.CommitLogFunc.PushReturn(ss, nil)
+					return c
+				}
+			})
+
+			c := NewTestClient(t).WithClientSource(source)
+
+			_, err := c.Commits(context.Background(), "repo", CommitsOptions{AllRefs: true})
+			require.Error(t, err)
+			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		})
+	})
+	t.Run("subrepo permissions", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+
+		allGitCommits := []*gitdomain.Commit{
+			{
+				ID:        "5f2834f77bc9df150aad4067819960034faedb61",
+				Author:    gitdomain.Signature{Name: "Foobar Author", Email: "foobar@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+				Message:   "foobar",
+				Parents:   []api.CommitID{"2b2289762392764ed127587b0d5fd88a2f16b7c1"},
+			},
+			{
+				ID:        "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+				Author:    gitdomain.Signature{Name: "Bar Author", Email: "bar@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+				Message:   "bar",
+				Parents:   []api.CommitID{"5fab3adc1e398e749749271d14ab843759b192cf"},
+			},
+			{
+				ID:        "5fab3adc1e398e749749271d14ab843759b192cf",
+				Author:    gitdomain.Signature{Name: "Foo Author", Email: "foo@sourcegraph.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Message:   "foo",
+				Parents:   []api.CommitID{},
+			},
+		}
+
+		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				c := NewMockGitserverServiceClient()
+				s := NewMockGitserverService_CommitLogClient()
+				s.RecvFunc.PushReturn(&proto.CommitLogResponse{
+					Commits: []*proto.GetCommitResponse{
+						{
+							Commit: &v1.GitCommit{
+								Oid:       "5f2834f77bc9df150aad4067819960034faedb61",
+								Author:    &v1.GitSignature{Name: []byte("Foobar Author"), Email: []byte("foobar@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z"))},
+								Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z"))},
+								Message:   []byte("foobar"),
+								Parents:   []string{"2b2289762392764ed127587b0d5fd88a2f16b7c1"},
+							},
+							ModifiedFiles: [][]byte{[]byte("file3")},
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(&proto.CommitLogResponse{
+					Commits: []*proto.GetCommitResponse{
+						{
+							Commit: &v1.GitCommit{
+								Oid:       "2b2289762392764ed127587b0d5fd88a2f16b7c1",
+								Author:    &v1.GitSignature{Name: []byte("Bar Author"), Email: []byte("bar@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z"))},
+								Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:07Z"))},
+								Message:   []byte("bar"),
+								Parents:   []string{"5fab3adc1e398e749749271d14ab843759b192cf"},
+							},
+							ModifiedFiles: [][]byte{[]byte("file2.2"), []byte("file2")},
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(&proto.CommitLogResponse{
+					Commits: []*proto.GetCommitResponse{
+						{
+							Commit: &v1.GitCommit{
+								Oid:       "5fab3adc1e398e749749271d14ab843759b192cf",
+								Author:    &v1.GitSignature{Name: []byte("Foo Author"), Email: []byte("foo@sourcegraph.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+								Committer: &v1.GitSignature{Name: []byte("c"), Email: []byte("c@c.com"), Date: timestamppb.New(mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z"))},
+								Message:   []byte("foo"),
+								Parents:   nil,
+							},
+							ModifiedFiles: [][]byte{[]byte("file1")},
+						},
+					},
+				}, nil)
+				s.RecvFunc.PushReturn(nil, io.EOF)
+				c.CommitLogFunc.SetDefaultHook(func(ctx context.Context, clr *v1.CommitLogRequest, co ...grpc.CallOption) (v1.GitserverService_CommitLogClient, error) {
+					// With subrepo permissions on, we always need to request modified files.
+					require.True(t, clr.IncludeModifiedFiles)
+					return s, nil
+				})
+				return c
+			}
+		})
+
+		t.Run("if no read perms on at least one file in the commit should filter out commit", func(t *testing.T) {
+			checker := getTestSubRepoPermsChecker("file2", "file3")
+			c := NewTestClient(t).WithClientSource(source).WithChecker(checker)
+
+			cs, err := c.Commits(ctx, "repo", CommitsOptions{AllRefs: true})
+			require.NoError(t, err)
+			require.Equal(t, allGitCommits[1:3], cs)
+		})
+
+		t.Run("fetch more pages when commits are filtered out", func(t *testing.T) {
+			c := NewMockGitserverServiceClient()
+			commits := []*proto.GetCommitResponse{
+				{
+					Commit: &v1.GitCommit{
+						Oid: "8",
+					},
+					ModifiedFiles: [][]byte{[]byte("file2")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "7",
+					},
+					ModifiedFiles: [][]byte{[]byte("file1")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "6",
+					},
+					ModifiedFiles: [][]byte{[]byte("file2")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "5",
+					},
+					ModifiedFiles: [][]byte{[]byte("file1")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "4",
+					},
+					ModifiedFiles: [][]byte{[]byte("file1")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "3",
+					},
+					ModifiedFiles: [][]byte{[]byte("file1")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "2",
+					},
+					ModifiedFiles: [][]byte{[]byte("file2")},
+				},
+				{
+					Commit: &v1.GitCommit{
+						Oid: "1",
+					},
+					ModifiedFiles: [][]byte{[]byte("file1")},
+				},
+			}
+			source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					c.CommitLogFunc.SetDefaultHook(func(ctx context.Context, clr *v1.CommitLogRequest, co ...grpc.CallOption) (v1.GitserverService_CommitLogClient, error) {
+						// With subrepo permissions on, we always need to request modified files.
+						require.True(t, clr.IncludeModifiedFiles)
+						s := NewMockGitserverService_CommitLogClient()
+						for range clr.MaxCommits {
+							s.RecvFunc.PushReturn(&v1.CommitLogResponse{
+								Commits: commits[:1],
+							}, nil)
+							commits = commits[1:]
+						}
+						s.RecvFunc.PushReturn(nil, io.EOF)
+						return s, nil
+					})
+					return c
+				}
+			})
+
+			checker := getTestSubRepoPermsChecker("file2")
+			cli := NewTestClient(t).WithClientSource(source).WithChecker(checker)
+
+			cs, err := cli.Commits(ctx, "repo", CommitsOptions{
+				AllRefs: true,
+				N:       3,
+			})
+			require.NoError(t, err)
+			require.Equal(t, []*gitdomain.Commit{
+				{
+					ID: "7",
+					Author: gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Committer: &gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Parents: []api.CommitID{},
+				},
+				{
+					ID: "5",
+					Author: gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Committer: &gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Parents: []api.CommitID{},
+				},
+				{
+					ID: "4",
+					Author: gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Committer: &gitdomain.Signature{
+						Date: time.Unix(0, 0).UTC(),
+					},
+					Parents: []api.CommitID{},
+				},
+			}, cs)
+
+			// First page [8,7,6] contains only one visible commit [7], second page
+			// contains [5,4,3], and we have enough for N=3 with [7,5,4].
+			mockrequire.CalledN(t, c.CommitLogFunc, 2)
+		})
+	})
+}
+
+func mustParseTime(layout, value string) time.Time {
+	tm, err := time.Parse(layout, value)
+	if err != nil {
+		panic(err.Error())
+	}
+	return tm
 }

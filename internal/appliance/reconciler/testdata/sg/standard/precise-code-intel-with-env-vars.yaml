@@ -1,0 +1,60 @@
+spec:
+  requestedVersion: "5.3.9104"
+
+  blobstore:
+    disabled: true
+
+  codeInsights:
+    disabled: true
+
+  codeIntel:
+    disabled: true
+
+  frontend:
+    disabled: true
+
+  gitServer:
+    disabled: true
+
+  indexedSearch:
+    disabled: true
+
+  indexedSearchIndexer:
+    disabled: true
+
+  pgsql:
+    disabled: true
+
+  postgresExporter:
+    disabled: true
+
+  preciseCodeIntel:
+    containerConfig:
+      precise-code-intel-worker:
+        envVars:
+          PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL: 30s
+          PRECISE_CODE_INTEL_UPLOAD_BACKEND: S3
+
+  redisCache:
+    disabled: true
+
+  redisStore:
+    disabled: true
+
+  repoUpdater:
+    disabled: true
+
+  searcher:
+    disabled: true
+
+  symbols:
+    disabled: true
+
+  syntectServer:
+    disabled: true
+
+  worker:
+    disabled: true
+
+  prometheus:
+    disabled: true
