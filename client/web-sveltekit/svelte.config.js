@@ -19,7 +19,7 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev' || process.env.E2E_BU
   // This template includes Go template syntax and is used by the Sourcegraph
   // backend to inject additional data into the HTML page.
   appTemplate = 'src/app.prod.html'
-  let out = 'build/'
+  let out = process.env.BUILD_DIR ?? 'build/'
 
   if (process.env.E2E_BUILD) {
     // In the e2e build, we will be serving static HTML files
@@ -33,7 +33,7 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev' || process.env.E2E_BU
     out = '../../client/web/dist/'
   }
 
-  out += OUTPUT_DIR
+  out = join(out, OUTPUT_DIR)
 
   adapter = sgAdapter({
     out,
