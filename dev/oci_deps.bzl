@@ -1,14 +1,15 @@
 """
 Load external dependencies for base images
-
-Looking to update the base images?
-The update process has changed and no longer uses this file - for details see:
-    https://sourcegraph.notion.site/Add-and-Update-Base-Images-e809e5a79cb440d1a5d459c570a670f2#16838a6cbd9644bfaf3ff1b68ae4b595
-
-However, several legacy images are still updated via this file.
 """
 
 load("@rules_oci//oci:pull.bzl", "oci_pull")
+
+# Looking to update the base images?
+#
+# The update process has changed and no longer uses this file - for details see:
+#     https://sourcegraph.notion.site/Add-and-Update-Base-Images-e809e5a79cb440d1a5d459c570a670f2#16838a6cbd9644bfaf3ff1b68ae4b595
+#
+# However, several legacy images are still updated via this file.
 
 def oci_deps():
     """
