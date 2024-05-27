@@ -324,7 +324,7 @@ func (c *Config) Load() {
 			"gemini-1.5-pro-latest",
 			"gemini-1.5-flash-latest",
 		}, ","),
-		"OpenAI models that can to be used."),
+		"Google models that can to be used."),
 	)
 
 }
