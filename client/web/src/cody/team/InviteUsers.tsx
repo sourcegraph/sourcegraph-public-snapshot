@@ -1,7 +1,5 @@
 import React, { useState, useCallback } from 'react'
 
-import classNames from 'classnames'
-
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
@@ -9,8 +7,6 @@ import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { isValidEmailAddress, requestSSC } from '../util'
-
-import styles from './InviteUsers.module.scss'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | null
@@ -113,7 +109,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                         />
                     </div>
                     <div className="flex-1 d-flex flex-column">
-                        <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
+                        <H2 className="mb-4">
                             <strong>Invite users</strong> – {remainingInviteCount}{' '}
                             {pluralize('seat', remainingInviteCount)} remaining
                         </H2>
