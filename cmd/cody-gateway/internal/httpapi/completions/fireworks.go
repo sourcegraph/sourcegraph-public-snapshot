@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -23,16 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewFireworksHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.FireworksConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) http.Handler {
+func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+	// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
+	// do any retries
+	upstreamConfig.DefaultRetryAfterSeconds = 30
+
 	return makeUpstreamHandler[fireworksRequest](
 		baseLogger,
 		eventLogger,
@@ -47,10 +41,7 @@ func NewFireworksHandler(
 			config:      config,
 		},
 		promptRecorder,
-		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
-		// do any retries
-		30, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	)
 }
 
