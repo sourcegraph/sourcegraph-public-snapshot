@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"strings"
 	"sync"
 
@@ -188,6 +189,41 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 		out = append(out, pair.Value)
 	}
 	return out
+}
+
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err rror) {
+	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
+	numPreciseResults := 0
+	numSyntacticResults := 0
+	numSearchBasedResults := 0
+	defer func() {
+		endObservation.OnCancel(ctx, 1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("results.precise", numPreciseResults),
+			attribute.Int("results.syntactic", numSyntacticResults),
+			attribute.Int("results.searchBased", numSearchBasedResults),
+		}})
+	}()
+
+	const maxUsagesCount = 100
+	args.Normalize(maxUsagesCount)
+	remainingCount := int(*args.First)
+	provsForSCIPData := args.ProvenancesForSCIPData()
+
+	if provsForSCIPData.Precise {
+		// Attempt to get up to remainingCount precise results.
+		remainingCount = remainingCount - numPreciseResults
+	}
+
+	if remainingCount > 0 && provsForSCIPData.Syntactic {
+		// Attempt to get up to remainingCount syntactic results.
+		remainingCount = remainingCount - numSyntacticResults
+	}
+
+	if remainingCount > 0 && provsForSCIPData.SearchBased {
+		// Attempt to get up to remainingCount search-based results.
+	}
+
+	return nil, errors.New("Not implemented yet")
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
