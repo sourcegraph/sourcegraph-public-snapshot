@@ -46,7 +46,7 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
             if (response.ok) {
                 // Wait a second before navigating to the manage team page so that the user sees the success alert.
                 await new Promise(resolve => setTimeout(resolve, 1000))
-                navigate('/cody/team/manage')
+                navigate('/cody/team/manage?welcome=1')
             } else {
                 setErrorMessage(await response.text())
             }
