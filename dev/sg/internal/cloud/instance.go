@@ -3,6 +3,7 @@ package cloud
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -106,6 +107,7 @@ type InstanceStatus struct {
 type StatusReason struct {
 	Step     string `json:"step"`
 	Phase    string `json:"phase"`
+	JobCount int    `json:"job_count"`
 	JobURL   string `json:"job_url"`
 	JobState string `json:"job_state"`
 	Overall  string `json:"overall"`
@@ -114,6 +116,17 @@ type StatusReason struct {
 func newStatusReason(reason string) (StatusReason, error) {
 	if reason == "" {
 		return StatusReason{}, nil
+	}
+
+	// TODO(burmudar): handle storing of multiple jobs
+	jobCount := 1
+	// if the reason contains a semicolon it means there are multiple jobs, we only want the last job
+	if strings.Contains(reason, ";") {
+		parts := strings.Split(reason, ";")
+		// we want to know the number of jobs
+		jobCount = len(parts)
+		// we want to know the last job
+		reason = strings.TrimSpace(parts[jobCount-1])
 	}
 	// step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress, conclusion: failed
 	statusRegex := regexp.MustCompile(`^step (\d\/\d):(.*), job-url:(.*), state:(\w+)(, conclusion:(\w+))?$`)
@@ -129,6 +142,7 @@ func newStatusReason(reason string) (StatusReason, error) {
 	return StatusReason{
 		Step:     matches[1],
 		Phase:    matches[2],
+		JobCount: jobCount,
 		JobURL:   matches[3],
 		JobState: matches[4],
 		Overall:  conclusion,
