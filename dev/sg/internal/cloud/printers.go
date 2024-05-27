@@ -43,13 +43,6 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			}
 		}
 
-		LastJobURL := "n/a"
-		if inst.Status.Reason.JobURL != "" {
-			LastJobURL = inst.Status.Reason.JobURL
-			if inst.Status.Reason.JobState != "" {
-				LastJobURL += " (" + inst.Status.Reason.JobState + ")"
-			}
-		}
 		expiresAt := "n/a"
 		if !inst.ExpiresAt.IsZero() {
 			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
