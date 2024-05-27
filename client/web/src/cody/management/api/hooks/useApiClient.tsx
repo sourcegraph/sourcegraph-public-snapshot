@@ -34,7 +34,7 @@ export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<R
 
             // If we received a 200 response, all is well. We can just return
             // the unmarshalled JSON response object as-is.
-            if (callerResponse.response.status >= 200 && callerResponse.response.status <= 299) {
+            if (callerResponse.response.ok) {
                 setData(callerResponse.data)
                 setError(undefined)
                 setResponse(callerResponse.response)
