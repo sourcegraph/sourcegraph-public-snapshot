@@ -27,6 +27,7 @@ go_library(
         "//cmd/worker/internal/migrations",
         "//cmd/worker/internal/outboundwebhooks",
         "//cmd/worker/internal/own",
+        "//cmd/worker/internal/perforce",
         "//cmd/worker/internal/permissions",
         "//cmd/worker/internal/ratelimit",
         "//cmd/worker/internal/repostatistics",

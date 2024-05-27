@@ -71,12 +71,10 @@ DeletetAt    : %s
 ExpiresAt    : %s
 Project      : %s
 Region       : %s
-Status       : %s %s
-ActionURL    : %s
-Error        : %s
+%s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
 		fmtTime(i.CreatedAt), fmtTime(i.DeletedAt), fmtTime(i.ExpiresAt), i.Project, i.Region,
-		i.Status.Status, i.Status.Reason.GetStepPhaseString(), i.Status.Reason.GetJobURLStateString(), i.Status.Error)
+		i.Status.String())
 }
 
 func (i *Instance) IsEphemeral() bool {
@@ -110,23 +108,30 @@ type StatusReason struct {
 	Phase    string `json:"phase"`
 	JobURL   string `json:"job_url"`
 	JobState string `json:"job_state"`
+	Overall  string `json:"overall"`
 }
 
 func newStatusReason(reason string) (StatusReason, error) {
 	if reason == "" {
 		return StatusReason{}, nil
 	}
-	// step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress
-	statusRegex := regexp.MustCompile(`^step (\d\/\d):(.*), job-url:(.*), state:(\w+)$`)
+	// step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress, conclusion: failed
+	statusRegex := regexp.MustCompile(`^step (\d\/\d):(.*), job-url:(.*), state:(\w+)(, conclusion:(\w+))?$`)
 	matches := statusRegex.FindStringSubmatch(reason)
-	if len(matches) != 5 {
+	// if matches is 7, it means we have a conclusion, if matches is 5 then we don't have aa conclusion
+	if len(matches) != 5 && len(matches) != 7 {
 		return StatusReason{}, errors.Newf("failed to parse status reason: %q", reason)
+	}
+	var conclusion string
+	if len(matches) == 7 {
+		conclusion = matches[6]
 	}
 	return StatusReason{
 		Step:     matches[1],
 		Phase:    matches[2],
 		JobURL:   matches[3],
 		JobState: matches[4],
+		Overall:  conclusion,
 	}, nil
 }
 
@@ -147,11 +152,12 @@ func (s *StatusReason) GetJobURLStateString() string {
 }
 
 func (s *InstanceStatus) String() string {
-	return fmt.Sprintf(`Status: %s
-Step: %s
-Phase: %s
-JobURL: %s
-JobState: %s`, s.Status, s.Reason.Step, s.Reason.Phase, s.Reason.JobURL, s.Reason.JobState)
+	return fmt.Sprintf(`Status       : %s
+Step         : %s
+Phase        : %s
+JobURL       : %s
+JobState     : %s
+Overall      : %s`, s.Status, s.Reason.Step, s.Reason.Phase, s.Reason.JobURL, s.Reason.JobState, s.Reason.Overall)
 }
 
 type InstanceFeatures struct {

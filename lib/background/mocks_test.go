@@ -6,12 +6,18 @@
 
 package background
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 // MockRoutine is a mock implementation of the Routine interface (from the
 // package github.com/sourcegraph/sourcegraph/lib/background) used for unit
 // testing.
 type MockRoutine struct {
+	// NameFunc is an instance of a mock function object controlling the
+	// behavior of the method Name.
+	NameFunc *RoutineNameFunc
 	// StartFunc is an instance of a mock function object controlling the
 	// behavior of the method Start.
 	StartFunc *RoutineStartFunc
@@ -24,13 +30,18 @@ type MockRoutine struct {
 // return zero values for all results, unless overwritten.
 func NewMockRoutine() *MockRoutine {
 	return &MockRoutine{
+		NameFunc: &RoutineNameFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
 		StartFunc: &RoutineStartFunc{
 			defaultHook: func() {
 				return
 			},
 		},
 		StopFunc: &RoutineStopFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -41,13 +52,18 @@ func NewMockRoutine() *MockRoutine {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockRoutine() *MockRoutine {
 	return &MockRoutine{
+		NameFunc: &RoutineNameFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockRoutine.Name")
+			},
+		},
 		StartFunc: &RoutineStartFunc{
 			defaultHook: func() {
 				panic("unexpected invocation of MockRoutine.Start")
 			},
 		},
 		StopFunc: &RoutineStopFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) error {
 				panic("unexpected invocation of MockRoutine.Stop")
 			},
 		},
@@ -58,6 +74,9 @@ func NewStrictMockRoutine() *MockRoutine {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockRoutineFrom(i Routine) *MockRoutine {
 	return &MockRoutine{
+		NameFunc: &RoutineNameFunc{
+			defaultHook: i.Name,
+		},
 		StartFunc: &RoutineStartFunc{
 			defaultHook: i.Start,
 		},
@@ -65,6 +84,104 @@ func NewMockRoutineFrom(i Routine) *MockRoutine {
 			defaultHook: i.Stop,
 		},
 	}
+}
+
+// RoutineNameFunc describes the behavior when the Name method of the parent
+// MockRoutine instance is invoked.
+type RoutineNameFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []RoutineNameFuncCall
+	mutex       sync.Mutex
+}
+
+// Name delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRoutine) Name() string {
+	r0 := m.NameFunc.nextHook()()
+	m.NameFunc.appendCall(RoutineNameFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Name method of the
+// parent MockRoutine instance is invoked and the hook queue is empty.
+func (f *RoutineNameFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Name method of the parent MockRoutine instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RoutineNameFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RoutineNameFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RoutineNameFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *RoutineNameFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RoutineNameFunc) appendCall(r0 RoutineNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RoutineNameFuncCall objects describing the
+// invocations of this function.
+func (f *RoutineNameFunc) History() []RoutineNameFuncCall {
+	f.mutex.Lock()
+	history := make([]RoutineNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RoutineNameFuncCall is an object that describes an invocation of method
+// Name on an instance of MockRoutine.
+type RoutineNameFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RoutineNameFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RoutineNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // RoutineStartFunc describes the behavior when the Start method of the
@@ -164,23 +281,23 @@ func (c RoutineStartFuncCall) Results() []interface{} {
 // RoutineStopFunc describes the behavior when the Stop method of the parent
 // MockRoutine instance is invoked.
 type RoutineStopFunc struct {
-	defaultHook func()
-	hooks       []func()
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []RoutineStopFuncCall
 	mutex       sync.Mutex
 }
 
 // Stop delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRoutine) Stop() {
-	m.StopFunc.nextHook()()
-	m.StopFunc.appendCall(RoutineStopFuncCall{})
-	return
+func (m *MockRoutine) Stop(v0 context.Context) error {
+	r0 := m.StopFunc.nextHook()(v0)
+	m.StopFunc.appendCall(RoutineStopFuncCall{v0, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the Stop method of the
 // parent MockRoutine instance is invoked and the hook queue is empty.
-func (f *RoutineStopFunc) SetDefaultHook(hook func()) {
+func (f *RoutineStopFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -188,7 +305,7 @@ func (f *RoutineStopFunc) SetDefaultHook(hook func()) {
 // Stop method of the parent MockRoutine instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *RoutineStopFunc) PushHook(hook func()) {
+func (f *RoutineStopFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -196,20 +313,20 @@ func (f *RoutineStopFunc) PushHook(hook func()) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RoutineStopFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func() {
-		return
+func (f *RoutineStopFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RoutineStopFunc) PushReturn() {
-	f.PushHook(func() {
-		return
+func (f *RoutineStopFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
 	})
 }
 
-func (f *RoutineStopFunc) nextHook() func() {
+func (f *RoutineStopFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -241,16 +358,23 @@ func (f *RoutineStopFunc) History() []RoutineStopFuncCall {
 
 // RoutineStopFuncCall is an object that describes an invocation of method
 // Stop on an instance of MockRoutine.
-type RoutineStopFuncCall struct{}
+type RoutineStopFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c RoutineStopFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RoutineStopFuncCall) Results() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Result0}
 }

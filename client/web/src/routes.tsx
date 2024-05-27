@@ -67,6 +67,7 @@ const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
 const CodyManageTeamPage = lazyComponent(() => import('./cody/team/CodyManageTeamPage'), 'CodyManageTeamPage')
+const CodyAcceptInvitePage = lazyComponent(() => import('./cody/invites/AcceptInvitePage'), 'CodyAcceptInvitePage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
@@ -435,6 +436,19 @@ export const routes: RouteObject[] = [
             <LegacyRoute
                 render={props => (
                     <CodyManageTeamPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()
+                }
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodyAcceptInvite,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodyAcceptInvitePage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ isSourcegraphDotCom, licenseFeatures }) =>
                     isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isEmbeddedCodyProUIEnabled()

@@ -109,9 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Mark health server as ready and go!
 	ready()
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

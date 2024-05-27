@@ -109,6 +109,11 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=false
+elif [[ "$BUILDKITE_BRANCH" =~ ^docker-images/.* ]]; then
+  # We only push on internal registries on a main-dry-run.
+  dev_tags+=("insiders")
+  prod_tags+=("insiders")
+  push_prod=true
 elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   # All release branch builds must be published to prod tags to support
   # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050

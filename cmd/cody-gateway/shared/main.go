@@ -237,9 +237,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		backgroundRoutines = append(backgroundRoutines, w)
 	}
 	// Block until done
-	goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
 }
 
 func newRedisStore(store redispool.KeyValue) limiter.RedisStore {

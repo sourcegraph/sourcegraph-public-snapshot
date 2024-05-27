@@ -6,14 +6,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 )
 
 type licenseWorker struct{}
@@ -51,6 +50,10 @@ type licenseChecksWrapper struct {
 	db     database.DB
 }
 
+func (l *licenseChecksWrapper) Name() string {
+	return "LicenseChecks"
+}
+
 func (l *licenseChecksWrapper) Start() {
 	goroutine.Go(func() {
 		licensing.StartMaxUserCount(l.logger, &usersStore{
@@ -62,9 +65,7 @@ func (l *licenseChecksWrapper) Start() {
 	}
 }
 
-func (l *licenseChecksWrapper) Stop() {
-	// no-op
-}
+func (l *licenseChecksWrapper) Stop(context.Context) error { return nil }
 
 type usersStore struct {
 	db database.DB

@@ -45,6 +45,7 @@ const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
  * @param sscUrl The SSC API URL to call. Example: "/checkout/session".
  * @param method E.g. "POST".
  * @param params The body to send to the SSC API. Will be JSON-encoded.
+ *               In the case of GET and HEAD, use the query string instead.
  */
 export function requestSSC(sscUrl: string, method: string, params?: object): Promise<Response> {
     // /.api/ssc/proxy endpoint exchanges the Sourcegraph session credentials for a SAMS access token.

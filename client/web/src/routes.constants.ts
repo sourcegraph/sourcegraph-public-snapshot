@@ -48,6 +48,8 @@ export enum PageRoutes {
     CodySubscription = '/cody/subscription',
 
     CodyManageTeam = '/cody/team/manage',
+    // Accepts an invite to join a Cody team, then redirects to the Cody team page.
+    CodyAcceptInvite = '/cody/invites/accept',
 
     CodySwitchAccount = '/cody/switch-account/:username',
     Own = '/own',
