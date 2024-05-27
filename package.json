@@ -261,7 +261,7 @@
     "typed-scss-modules": "^4.1.1",
     "typescript": "^5.0.2",
     "utc-version": "^2.0.2",
-    "vite": "^4.1.4",
+    "vite": "^4.5.3",
     "vite-plugin-turbosnap": "^1.0.3",
     "vitest": "1.0.0-beta.4",
     "vitest-fetch-mock": "^0.2.2",
