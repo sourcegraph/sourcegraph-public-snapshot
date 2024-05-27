@@ -5,7 +5,6 @@ import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { CodyAcceptInvitePage } from './cody/invites/AcceptInvitePage'
 import { isEmbeddedCodyProUIEnabled } from './cody/util'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
@@ -68,6 +67,7 @@ const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodyManagementPage = lazyComponent(() => import('./cody/management/CodyManagementPage'), 'CodyManagementPage')
 const CodyManageTeamPage = lazyComponent(() => import('./cody/team/CodyManageTeamPage'), 'CodyManageTeamPage')
+const CodyAcceptInvitePage = lazyComponent(() => import('./cody/invites/AcceptInvitePage'), 'CodyAcceptInvitePage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
     'CodySwitchAccountPage'
