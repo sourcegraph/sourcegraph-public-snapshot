@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"strings"
 	"sync"
 
@@ -188,6 +189,31 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 		out = append(out, pair.Value)
 	}
 	return out
+}
+
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (resolverstubs.UsageConnectionResolver, error) {
+	return nil, errors.New("Not implemented yet")
+	//ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{ /*TODO: Add args*/ })
+	//endObservation.OnCancel(ctx, 1, observation.Args{})
+	//
+	//shouldPerformPreciseLookup := false
+	//if args != nil && args.Symbol != nil && args.Symbol.Name.Equals != nil && args.Symbol.Provenance.Equals != nil && *args.Symbol.Provenance.Equals == resolverstubs.ProvenancePrecise {
+	//	shouldPerformPreciseLookup = true
+	//}
+	//if shouldPerformPreciseLookup {
+	//
+	//}
+	//
+	//shouldPerformSearchQuery := false
+	//if shouldPerformSearchQuery {
+	//	symbolString := ""
+	//	// Perform search query with Searcher/Zoekt
+	//	performSearchQuery := func(string s) {}
+	//	performSearchQuery(symbolString) // pass in repo filters
+	//}
+	//if args != nil && args.Symbol != nil && args.S != "" {
+	//	return nil, nil
+	//}
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This

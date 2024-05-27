@@ -21,6 +21,7 @@ type CodeNavServiceResolver interface {
 	// that it is not what is exactly provided as input from the GraphQL
 	// client.
 	CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error)
+	UsagesForSymbol(ctx context.Context, args *UsagesForSymbolArgs) (UsageConnectionResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -277,3 +278,80 @@ const (
 	SymbolRoleReference         SymbolRole = "REFERENCE"
 	SymbolRoleForwardDefinition SymbolRole = "FORWARD_DEFINITION"
 )
+
+type UsagesForSymbolArgs struct {
+	Symbol *SymbolComparator
+	Range  RangeInput
+	Filter *UsagesFilter
+	First  *int32
+	After  *string
+}
+
+type SymbolComparator struct {
+	Name       SymbolNameComparator
+	Provenance CodeGraphDataProvenanceComparator
+}
+
+type SymbolNameComparator struct {
+	Equals *string
+}
+
+type RangeInput struct {
+	Repository string
+	Revision   *string
+	Path       string
+	Start      *PositionInput
+	End        *PositionInput
+}
+
+type PositionInput struct {
+	// Zero-based line number
+	Line int32
+	// Zero-based UTF-16 code unit offset
+	Character int32
+}
+
+type UsagesFilter struct {
+	Not        *UsagesFilter
+	Repository *RepositoryFilter
+}
+
+type RepositoryFilter struct {
+	Name StringComparator
+}
+
+type StringComparator struct {
+	Equals *string
+}
+
+type UsageConnectionResolver interface {
+	ConnectionResolver[UsageResolver]
+	PageInfo(ctx context.Context) (*graphqlutil.ConnectionPageInfo[UsageResolver], error)
+}
+
+type UsageResolver interface {
+	Symbol(context.Context) (SymbolInformationResolver, error)
+	UsageRange(context.Context) (UsageRangeResolver, error)
+	SurroundingContent(_ context.Context, args *struct {
+		*SurroundingLines `json:"surroundingLines"`
+	}) (*string, error)
+}
+
+type SymbolInformationResolver interface {
+	Name() (string, error)
+	Documentation() (*[]string, error)
+	Provenance() (CodeGraphDataProvenance, error)
+	DataSource() *string
+}
+
+type UsageRangeResolver interface {
+	Repository() string
+	Revision() string
+	Path() string
+	Range() RangeResolver
+}
+
+type SurroundingLines struct {
+	LinesBefore *int32 `json:"linesBefore"`
+	LinesAfter  *int32 `json:"linesAfter"`
+}

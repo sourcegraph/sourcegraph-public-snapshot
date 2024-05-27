@@ -452,6 +452,10 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context) (bool, error) 
 	return err == io.EOF, nil
 }
 
+func NewXZ() *GitTreeEntryResolver {
+	return nil
+}
+
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (resolverstubs.GitBlobLSIFDataResolver, error) {
 	var toolName string
 	if args.ToolName != nil {
