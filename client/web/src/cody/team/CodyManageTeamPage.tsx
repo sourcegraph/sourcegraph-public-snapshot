@@ -11,14 +11,13 @@ import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { CodyAlert } from '../components/CodyAlert'
+import { WhiteIcon } from '../components/WhiteIcon'
 import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
 import { useSSCQuery } from '../util'
 
 import { InviteUsers } from './InviteUsers'
 import { TeamMemberList, type TeamMember, type TeamInvite } from './TeamMemberList'
-import { WhiteIcon } from './WhiteIcon'
-
-import styles from './CodyManageTeamPage.module.scss'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
@@ -113,23 +112,23 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 </PageHeader>
 
                 {codySubscriptionError || codySubscriptionSummaryError || membersDataError || invitesDataError ? (
-                    <div className={classNames('mb-4', styles.alert, styles.errorAlert)}>
+                    <CodyAlert variant="error">
                         <H3>We couldn't load team data this time. Please try a bit later.</H3>
                         {errorMessage ?? (
                             <Text size="small" className="text-muted mb-0">
                                 {errorMessage}
                             </Text>
                         )}
-                    </div>
+                    </CodyAlert>
                 ) : null}
 
                 {newSeatsPurchased && (
-                    <div className={classNames('mb-4', styles.alert, styles.purpleSuccessAlert)}>
+                    <CodyAlert variant="purpleSuccess">
                         <H3>{newSeatsPurchased} Cody teams seats purchased!</H3>
                         <Text size="small" className="mb-0">
                             Invited users will receive unlimited autocompletions and unlimited chat messages.
                         </Text>
-                    </div>
+                    </CodyAlert>
                 )}
 
                 {isAdmin && !!remainingInviteCount && (
