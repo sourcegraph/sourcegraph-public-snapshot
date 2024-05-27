@@ -29,7 +29,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -63,3 +63,5 @@ oci_push(
     image = ":image",
     repository = image_repository("linearhooks"),
 )
+
+wolfi_base()

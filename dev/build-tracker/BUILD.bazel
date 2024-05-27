@@ -76,7 +76,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -128,3 +128,5 @@ go_mockgen(
     ],
     deps = [":build-tracker_lib"],
 )
+
+wolfi_base()
