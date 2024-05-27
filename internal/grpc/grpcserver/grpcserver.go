@@ -1,6 +1,7 @@
 package grpcserver
 
 import (
+	"context"
 	"net"
 	"os"
 	"sync"
@@ -53,6 +54,10 @@ func newServer(logger log.Logger, grpcServer *grpc.Server, makeListener func() (
 	return s
 }
 
+func (s *server) Name() string {
+	return "gRPC server"
+}
+
 func (s *server) Start() {
 	listener, err := s.makeListener()
 	if err != nil {
@@ -66,7 +71,7 @@ func (s *server) Start() {
 	}
 }
 
-func (s *server) Stop() {
+func (s *server) Stop(context.Context) error {
 	s.once.Do(func() {
 		s.logger.Info("Shutting down gRPC server")
 		if s.preShutdownPause > 0 {
@@ -90,4 +95,5 @@ func (s *server) Stop() {
 
 		s.logger.Warn("gRPC server forcefully stopped")
 	})
+	return nil
 }
