@@ -44,7 +44,7 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev' || process.env.E2E_BU
 } else {
   const pages = join(out, OUTPUT_DIR)
   // Default, standalone setup
-  adapter = staticAdapter({ fallback: 'index.html', pages, })
+  adapter = staticAdapter({ fallback: 'index.html', pages })
 }
 
 /** @type {import('@sveltejs/kit').Config} */
