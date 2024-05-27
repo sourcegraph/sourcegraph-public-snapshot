@@ -78,6 +78,8 @@ type Config struct {
 	SAMSClientConfig SAMSClientConfig
 	// one of "production", "staging" or "dev" (all 3 can connect to sourcegraph.com)
 	Environment string
+
+	Google GoogleConfig
 }
 
 type OpenTelemetryConfig struct {
@@ -109,6 +111,12 @@ type OpenAIConfig struct {
 type SourcegraphConfig struct {
 	EmbeddingsAPIURL   string
 	EmbeddingsAPIToken string
+}
+
+type GoogleConfig struct {
+	AccessToken    string
+	AllowedModels  []string
+	FlaggingConfig FlaggingConfig
 }
 
 // FlaggingConfig defines common parameters for filtering and flagging requests,
@@ -309,6 +317,9 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
+
+	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
+
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for

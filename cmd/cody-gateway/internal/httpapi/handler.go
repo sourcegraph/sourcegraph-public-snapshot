@@ -36,6 +36,7 @@ type Config struct {
 	Anthropic                   config.AnthropicConfig
 	OpenAI                      config.OpenAIConfig
 	Fireworks                   config.FireworksConfig
+	Google                      config.GoogleConfig
 	EmbeddingsAllowedModels     []string
 	AutoFlushStreamingResponses bool
 	EnableAttributionSearch     bool
@@ -50,6 +51,7 @@ var (
 	attributesOpenAICompletions    = newMetricAttributes("openai", "completions")
 	attributesOpenAIEmbeddings     = newMetricAttributes("openai", "embeddings")
 	attributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
+	attributesGoogleCompletions    = newMetricAttributes("google", "completions")
 )
 
 func NewHandler(
@@ -189,6 +191,15 @@ func NewHandler(
 			"/completions/fireworks",
 			attributesFireworksCompletions,
 			fireworksHandler)
+	}
+
+	if config.Google.AccessToken != "" {
+		googleHandler := completions.NewGoogleHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Google, flaggedPromptRecorder, upstreamConfig)
+		registerStandardEndpoint(
+			"v1.completions.google",
+			"/completions/google",
+			attributesGoogleCompletions,
+			googleHandler)
 	}
 
 	// Register a route where actors can retrieve their current rate limit state.

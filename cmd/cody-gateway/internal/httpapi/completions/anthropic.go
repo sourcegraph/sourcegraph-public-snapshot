@@ -113,7 +113,7 @@ type AnthropicHandlerMethods struct {
 	config             config.AnthropicConfig
 }
 
-func (a *AnthropicHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (a *AnthropicHandlerMethods) getAPIURL(feature codygateway.Feature, _ anthropicRequest) string {
 	return "https://api.anthropic.com/v1/complete"
 }
 

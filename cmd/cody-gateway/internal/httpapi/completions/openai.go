@@ -107,7 +107,7 @@ type OpenAIHandlerMethods struct {
 	config config.OpenAIConfig
 }
 
-func (*OpenAIHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (*OpenAIHandlerMethods) getAPIURL(_ codygateway.Feature, _ openaiRequest) string {
 	return "https://api.openai.com/v1/chat/completions"
 }
 
@@ -118,9 +118,9 @@ func (*OpenAIHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 	return nil
 }
 
-func (o *OpenAIHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req openaiRequest) (*flaggingResult, error) {
+func (o *OpenAIHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, req openaiRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(
-		nil, /* tokenzier, meaning token counts aren't considered when for flagging consideration. */
+		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
 		flaggingRequest{
 			FlattenedPrompt: req.BuildPrompt(),
 			MaxTokens:       int(req.MaxTokens),

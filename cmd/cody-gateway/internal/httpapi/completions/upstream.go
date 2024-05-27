@@ -64,7 +64,7 @@ var hopHeaders = map[string]struct{}{
 // Methods do not need to be concurrency-safe, as they are only called sequentially.
 type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// getAPIURLByFeature returns the upstream API endpoint to call for the given feature.
-	getAPIURLByFeature(codygateway.Feature) string
+	getAPIURL(codygateway.Feature, ReqT) string
 
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// This is where we enforce things like character/token limits, etc. Any non-nil errors
@@ -286,7 +286,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}
 
 		// Create a new request to send upstream, making sure we retain the same context.
-		upstreamURL := methods.getAPIURLByFeature(feature)
+		upstreamURL := methods.getAPIURL(feature, body)
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))

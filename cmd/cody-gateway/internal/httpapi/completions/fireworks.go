@@ -104,7 +104,7 @@ type FireworksHandlerMethods struct {
 	config      config.FireworksConfig
 }
 
-func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, _ fireworksRequest) string {
 	if feature == codygateway.FeatureChatCompletions {
 		return "https://api.fireworks.ai/inference/v1/chat/completions"
 	} else {
