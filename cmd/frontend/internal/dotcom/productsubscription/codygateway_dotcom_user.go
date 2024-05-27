@@ -246,7 +246,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
 			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true),
+			AllowedModels:   allowedModels(scope, true, false),
 			Limit:           1,
 			IntervalSeconds: math.MaxInt32,
 		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
@@ -280,7 +280,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
 
-	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	models := allowedModels(scope, subscription.ApplyProRateLimits, featureflag.FromContext(ctx).GetBoolOr("cody-pro-gemini-enabled", false))
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -356,7 +356,7 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
 	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
 
-func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
+func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiEnabled bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
@@ -373,7 +373,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			}
 		}
 
-		return []string{
+		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
@@ -393,6 +393,11 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 		}
+		if googleGeminiEnabled {
+			chatModels = append(chatModels, "google/gemini-1.5-pro-latest", "google/gemini-1.5-flash-latest")
+		}
+		return chatModels
+
 	case types.CompletionsFeatureCode:
 		return allCodeCompletionModels
 	default:
