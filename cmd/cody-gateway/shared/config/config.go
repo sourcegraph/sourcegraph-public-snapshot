@@ -319,6 +319,13 @@ func (c *Config) Load() {
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
 
 	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
+	c.Google.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_GOOGLE_ALLOWED_MODELS",
+		strings.Join([]string{
+			"gemini-1.5-pro-latest",
+			"gemini-1.5-flash-latest",
+		}, ","),
+		"OpenAI models that can to be used."),
+	)
 
 }
 
