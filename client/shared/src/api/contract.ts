@@ -177,7 +177,7 @@ export interface MainThreadAPI {
     /**
      * Log an event (by sending it to the server).
      *
-     * @deprecated use recordEvent instead
+     * @deprecated use getTelemetryRecorder().recordEvent instead
      */
     logEvent: (eventName: string, eventProperties?: any) => void
 
