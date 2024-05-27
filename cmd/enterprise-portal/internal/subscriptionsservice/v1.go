@@ -7,6 +7,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
@@ -42,6 +44,12 @@ var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
 
 func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req *connect.Request[subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
+
+	// 🚨 SECURITY: Require approrpiate M2M scope.
+	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
+	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+		return nil, err
+	}
 
 	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
 	if req.Msg.PageSize != 0 {

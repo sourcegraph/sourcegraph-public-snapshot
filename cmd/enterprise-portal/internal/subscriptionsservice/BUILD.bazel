@@ -19,6 +19,7 @@ go_library(
         "//lib/pointers",
         "@com_connectrpc_connect//:connect",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
