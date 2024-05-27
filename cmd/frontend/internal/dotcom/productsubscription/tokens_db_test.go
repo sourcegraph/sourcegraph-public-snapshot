@@ -43,7 +43,7 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 
 		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
 
-		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		gotPS, err := NewTokensDB(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})
@@ -55,7 +55,7 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
 		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(license.LicenseKeyBasedAccessTokenPrefix):]
 
-		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		gotPS, err := NewTokensDB(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})
@@ -95,7 +95,7 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 			t.Fatal("last_used_at was not nil upon token creation")
 		}
 
-		dbTokens := newDBTokens(db)
+		dbTokens := NewTokensDB(db)
 
 		// Call LookupDotcomUserIDByAccessToken. This will have a side-effect of updating the
 		// token's last_used_at column.
