@@ -51,37 +51,35 @@ const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvit
     }, [inviteId, navigate, teamId])
 
     return (
-        <>
-            <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Manage Cody team" />
-                <PageHeader className="mb-4 mt-4">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
-                            Join Cody Pro team
-                        </div>
-                    </PageHeader.Heading>
-                </PageHeader>
+        <Page className={classNames('d-flex flex-column')}>
+            <PageTitle title="Manage Cody team" />
+            <PageHeader className="mb-4 mt-4">
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <div className="d-inline-flex align-items-center">
+                        <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
+                        Join Cody Pro team
+                    </div>
+                </PageHeader.Heading>
+            </PageHeader>
 
-                {errorMessage ? (
-                    <CodyAlert variant="error">
-                        <H3>We couldn't accept the invite.</H3>
-                        <Text size="small" className="text-muted mb-0">
-                            {errorMessage}
-                        </Text>
-                    </CodyAlert>
-                ) : null}
+            {errorMessage ? (
+                <CodyAlert variant="error">
+                    <H3>We couldn't accept the invite.</H3>
+                    <Text size="small" className="text-muted mb-0">
+                        {errorMessage}
+                    </Text>
+                </CodyAlert>
+            ) : null}
 
-                {!loading && !errorMessage ? (
-                    <CodyAlert variant="greenSuccess">
-                        <H3>Invite accepted!</H3>
-                        <Text size="small" className="mb-0">
-                            You are now a member of the team. We'll now redirect you to the team page.
-                        </Text>
-                    </CodyAlert>
-                ) : null}
-            </Page>
-        </>
+            {!loading && !errorMessage ? (
+                <CodyAlert variant="greenSuccess">
+                    <H3>Invite accepted!</H3>
+                    <Text size="small" className="mb-0">
+                        You are now a member of the team. We'll now redirect you to the team page.
+                    </Text>
+                </CodyAlert>
+            ) : null}
+        </Page>
     )
 }
 
