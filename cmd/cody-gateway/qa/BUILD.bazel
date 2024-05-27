@@ -15,6 +15,7 @@ go_test(
     ],
     deps = [
         "//internal/codygateway",
+        "//internal/completions/client/fireworks",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
     ],
@@ -25,6 +26,7 @@ go_library(
     srcs = [
         "anthropic.go",
         "fireworks.go",
+        "google.go",
         "openai.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/qa",

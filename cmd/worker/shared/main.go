@@ -28,6 +28,7 @@ import (
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/own"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
@@ -127,7 +128,8 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 
 		"exhaustive-search-job": search.NewSearchJob(),
 
-		"repo-perms-syncer": workerauthz.NewPermsSyncerJob(),
+		"repo-perms-syncer":          workerauthz.NewPermsSyncerJob(),
+		"perforce-changelist-mapper": perforce.NewPerforceChangelistMappingJob(),
 	}
 
 	var config Config
@@ -205,8 +207,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		allRoutines = append(allRoutines, r.Routine)
 	}
 
-	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
 }
 
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.

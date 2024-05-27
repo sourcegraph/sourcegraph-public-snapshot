@@ -45,7 +45,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Upgrading deployment %q to version %q", spec.Name, spec.Version))
 
 	// Check if the deployment already exists
-	_, err = cloudClient.GetInstance(ctx, spec.Name)
+	inst, err := cloudClient.GetInstance(ctx, spec.Name)
 	if err != nil {
 		if errors.Is(err, ErrInstanceNotFound) {
 			return ErrInstanceNotFound
@@ -53,7 +53,22 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 			return errors.Wrapf(err, "failed to check if instance %q already exists", spec.Name)
 		}
 	}
-	inst, err := cloudClient.UpgradeInstance(ctx, spec)
+	// Do various checks before upgrading the instance
+	if !inst.HasStatus(InstanceStatusCompleted) {
+		std.Out.WriteWarningf("Cannot upgrade instance with status %q - if this issue persists, please reach out to #discuss-dev-infra", inst.Status.Status)
+		return ErrInstanceStatusNotComplete
+	}
+	if !inst.IsEphemeral() {
+		std.Out.WriteWarningf("Cannot upgrade non-ephemeral instance %q", name)
+		return ErrNotEphemeralInstance
+	}
+	if inst.IsExpired() {
+		std.Out.WriteWarningf("Cannot upgrade expired instance %q", name)
+		return ErrExpiredInstance
+	}
+
+	// All checks OK, we can issue the upgrade
+	inst, err = cloudClient.UpgradeInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Upgrade of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to issue upgrade of %q to version %s", spec.Name, spec.Version)

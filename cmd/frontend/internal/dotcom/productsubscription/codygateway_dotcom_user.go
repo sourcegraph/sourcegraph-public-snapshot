@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -245,7 +246,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		return licensing.CodyGatewayRateLimit{
 			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true),
+			AllowedModels:   allowedModels(scope, true, false),
 			Limit:           1,
 			IntervalSeconds: math.MaxInt32,
 		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
@@ -278,8 +279,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
-
-	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	models := allowedModels(scope, true, featureflag.FromContext(ctx).GetBoolOr("cody-pro-gemini-enabled", false))
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -343,7 +343,19 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	return oneDayInSeconds, nil, nil
 }
 
-func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
+var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Claude3Haiku,
+	"anthropic/claude-instant-v1",
+	"anthropic/claude-instant-1",
+	"anthropic/claude-instant-1.2-cyan",
+	"anthropic/claude-instant-1.2",
+	"fireworks/starcoder",
+	"fireworks/" + fireworks.Llama213bCode,
+	"fireworks/" + fireworks.StarcoderTwo15b,
+	"fireworks/" + fireworks.StarcoderTwo7b},
+	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
+	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
+
+func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiEnabled bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
@@ -360,7 +372,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			}
 		}
 
-		return []string{
+		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
@@ -380,22 +392,24 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 		}
-	case types.CompletionsFeatureCode:
-		return []string{
-			"anthropic/" + anthropic.Claude3Haiku,
-			"anthropic/claude-instant-v1",
-			"anthropic/claude-instant-1",
-			"anthropic/claude-instant-1.2-cyan",
-			"anthropic/claude-instant-1.2",
-			"fireworks/starcoder",
-			"fireworks/" + fireworks.Llama213bCode,
-			"fireworks/" + fireworks.StarcoderTwo15b,
-			"fireworks/" + fireworks.StarcoderTwo7b,
-			"fireworks/" + fireworks.Mixtral8x7bFineTunedModel,
+		if googleGeminiEnabled {
+			chatModels = append(chatModels, "google/gemini-1.5-pro-latest", "google/gemini-1.5-flash-latest")
 		}
+		return chatModels
+
+	case types.CompletionsFeatureCode:
+		return allCodeCompletionModels
 	default:
 		return []string{}
 	}
+}
+
+func prefix(prefix string, models []string) []string {
+	result := make([]string, len(models))
+	for i := range models {
+		result[i] = prefix + models[i]
+	}
+	return result
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayRateLimitStatusByUserName(ctx context.Context, args *graphqlbackend.CodyGatewayRateLimitStatusByUserNameArgs) (*[]graphqlbackend.RateLimitStatus, error) {

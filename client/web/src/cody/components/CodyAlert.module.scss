@@ -1,0 +1,52 @@
+.alert {
+    position: relative;
+    padding: 1.5rem 1.5rem 1.5rem 5rem;
+    color: var(--gray-11);
+
+    &::after {
+        content: '';
+        position: absolute;
+    }
+}
+
+.purple-success-alert {
+    background-color: var(--violet-02);
+    color: var(--violet-06);
+    :global(.theme-dark) & {
+        background-color: var(--pink);
+        color: var(--gray-08);
+    }
+    &::after {
+        // Purple checkmark SVG
+        background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 31 25'><path fill='%23a405e1' d='M27 .4a3.4 3.4 0 0 0-2.4 1.1L12 15.6 7 9.3a3.4 3.4 0 0 0-5-.6 3.4 3.4 0 0 0-.5 4.9L9.2 23a3.4 3.4 0 0 0 5.3.1l15.2-17a3.4 3.4 0 0 0-.3-4.9 3.4 3.4 0 0 0-2.5-.8Z'/></svg>");
+    }
+}
+
+.green-success-alert {
+    background-color: #e0f9d5;
+    color: #054410;
+    :global(.theme-dark) & {
+        background-color: #51cf66;
+    }
+    &::after {
+        // Green checkmark SVG
+        background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 31 25'><path fill='%23319E44' d='M27 .4a3.4 3.4 0 0 0-2.4 1.1L12 15.6 7 9.3a3.4 3.4 0 0 0-5-.6 3.4 3.4 0 0 0-.5 4.9L9.2 23a3.4 3.4 0 0 0 5.3.1l15.2-17a3.4 3.4 0 0 0-.3-4.9 3.4 3.4 0 0 0-2.5-.8Z'/></svg>");
+    }
+}
+
+.error-alert {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    padding-left: calc(1.5rem + 124px + 1.5rem);
+    overflow: hidden;
+    background-color: var(--oc-orange-1);
+    color: var(--gray-08);
+    :global(.theme-dark) & {
+        background-color: var(--oc-orange-4);
+    }
+    &::after {
+        top: 1.5rem;
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        width: 124px;
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 124 99"><g filter="url(%23a)"><path fill="%23D9D9D9" fill-rule="evenodd" d="M10.86 5c-3.32 0-6 3.22-6 7.19v124.62c0 3.97 2.68 7.19 6 7.19h102c3.31 0 6-3.22 6-7.19V12.19c0-3.97-2.69-7.19-6-7.19h-102Zm44.82 11.17c-1.65 0-3 1.6-3 3.59 0 1.98 1.35 3.58 3 3.58h12.36c1.65 0 2.99-1.6 2.99-3.58s-1.34-3.59-3-3.59H55.69Z" clip-rule="evenodd"/><path fill="%23EFF2F5" fill-rule="evenodd" d="M10.86 5c-3.32 0-6 3.22-6 7.19v124.62c0 3.97 2.68 7.19 6 7.19h102c3.31 0 6-3.22 6-7.19V12.19c0-3.97-2.69-7.19-6-7.19h-102Zm44.82 11.17c-1.65 0-3 1.6-3 3.59 0 1.98 1.35 3.58 3 3.58h12.36c1.65 0 2.99-1.6 2.99-3.58s-1.34-3.59-3-3.59H55.69Z" clip-rule="evenodd"/><path fill="%23fff" fill-opacity=".2" fill-rule="evenodd" d="M10.86 5c-3.32 0-6 3.22-6 7.19v124.62c0 3.97 2.68 7.19 6 7.19h102c3.31 0 6-3.22 6-7.19V12.19c0-3.97-2.69-7.19-6-7.19h-102Zm44.82 11.17c-1.65 0-3 1.6-3 3.59 0 1.98 1.35 3.58 3 3.58h12.36c1.65 0 2.99-1.6 2.99-3.58s-1.34-3.59-3-3.59H55.69Z" clip-rule="evenodd"/><path fill="url(%23b)" fill-rule="evenodd" d="M10.86 5c-3.32 0-6 3.22-6 7.19v124.62c0 3.97 2.68 7.19 6 7.19h102c3.31 0 6-3.22 6-7.19V12.19c0-3.97-2.69-7.19-6-7.19h-102Zm44.82 11.17c-1.65 0-3 1.6-3 3.59 0 1.98 1.35 3.58 3 3.58h12.36c1.65 0 2.99-1.6 2.99-3.58s-1.34-3.59-3-3.59H55.69Z" clip-rule="evenodd"/><path stroke="%23000" stroke-opacity=".16" stroke-width=".4" d="M5.06 12.19c0-3.9 2.63-6.99 5.8-6.99h102c3.17 0 5.8 3.1 5.8 6.99v124.62c0 3.9-2.63 6.99-5.8 6.99h-102c-3.17 0-5.8-3.1-5.8-6.99V12.19Zm50.62 3.78c-1.8 0-3.2 1.73-3.2 3.79 0 2.05 1.4 3.78 3.2 3.78h12.36c1.8 0 3.19-1.73 3.19-3.78 0-2.06-1.4-3.79-3.2-3.79H55.69Z"/><path fill="%23DBE2F0" d="M63.67 69.33h-3.34v-6.66h3.34v6.66Zm0 6.67h-3.34v-3.33h3.34V76Zm-20 5h36.66L62 49.33 43.67 81Z"/></g><defs><linearGradient id="b" x1="62.09" x2="62.09" y1="137.07" y2="5" gradientUnits="userSpaceOnUse"><stop offset=".43" stop-color="%23fff"/><stop offset="1" stop-color="%23fff" stop-opacity="0"/></linearGradient><filter id="a" width="123" height="148" x=".36" y=".5" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/><feMorphology in="SourceAlpha" operator="dilate" radius="1" result="effect1_dropShadow_5081_15909"/><feOffset/><feGaussianBlur stdDeviation="1.75"/><feColorMatrix values="0 0 0 0 0.141522 0 0 0 0 0.159783 0 0 0 0 0.21 0 0 0 0.31 0"/><feBlend in2="BackgroundImageFix" result="effect1_dropShadow_5081_15909"/><feBlend in="SourceGraphic" in2="effect1_dropShadow_5081_15909" result="shape"/></filter></defs></svg>');
+    }
+}

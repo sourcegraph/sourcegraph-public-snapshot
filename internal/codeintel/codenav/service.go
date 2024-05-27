@@ -945,3 +945,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 	return
 }
+
+func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
+	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+}

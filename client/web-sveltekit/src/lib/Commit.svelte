@@ -13,7 +13,7 @@
     export let commit: Commit
     export let alwaysExpanded: boolean = false
 
-    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']>['person'] | null {
+    function getCommitter({ committer }: Commit): NonNullable<Commit['committer']> | null {
         if (!committer) {
             return null
         }
@@ -21,26 +21,27 @@
         if (committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
             return null
         }
-        return committer.person
+        return committer
     }
 
-    $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
-    $: author = commit.author.person
-    $: committer = getCommitter(commit)
-    $: authorAvatarTooltip = author.name + (committer ? ' (author)' : '')
+    $: author = commit.author
+    $: committer = getCommitter(commit) ?? author
+    $: committerIsAuthor = committer.person.email === author.person.email
+    $: commitDate = new Date(committer.date)
+    $: authorAvatarTooltip = author.person.name + (committer ? ' (author)' : '')
     let expanded = alwaysExpanded
 </script>
 
 <div class="root">
     <div class="avatar">
         <Tooltip tooltip={authorAvatarTooltip}>
-            <Avatar avatar={author} />
+            <Avatar avatar={author.person} />
         </Tooltip>
     </div>
-    {#if committer && committer.name !== author.name}
+    {#if !committerIsAuthor}
         <div class="avatar">
-            <Tooltip tooltip="{committer.name} (committer)">
-                <Avatar avatar={committer} />
+            <Tooltip tooltip="{committer.person.name} (committer)">
+                <Avatar avatar={committer.person} />
             </Tooltip>
         </div>
     {/if}
@@ -53,7 +54,11 @@
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{author.name}</strong> <Timestamp date={commitDate} /></span>
+        <span>
+            {#if !committerIsAuthor}authored by <strong>{author.person.name}</strong> and{/if}
+            committed by <strong>{committer.person.name}</strong>
+            <Timestamp date={commitDate} />
+        </span>
         {#if expanded && commit.body}
             <pre>{commit.body}</pre>
         {/if}

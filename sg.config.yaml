@@ -384,6 +384,24 @@ commands:
       - cmd/msp-example
       - lib/managedservicesplatform
 
+  enterprise-portal:
+    cmd: |
+      export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
+      .bin/enterprise-portal
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-portal github.com/sourcegraph/sourcegraph/cmd/enterprise-portal
+    checkBinary: .bin/enterprise-portal
+    env:
+      PORT: '6081'
+      DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: debug
+    watch:
+      - lib
+      - cmd/enterprise-portal
+
   searcher:
     cmd: .bin/searcher
     install: |

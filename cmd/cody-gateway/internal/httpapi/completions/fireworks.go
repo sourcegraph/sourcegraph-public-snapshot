@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -23,16 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-func NewFireworksHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.FireworksConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) http.Handler {
+func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) http.Handler {
+	// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
+	// do any retries
+	upstreamConfig.DefaultRetryAfterSeconds = 30
+
 	return makeUpstreamHandler[fireworksRequest](
 		baseLogger,
 		eventLogger,
@@ -47,10 +41,7 @@ func NewFireworksHandler(
 			config:      config,
 		},
 		promptRecorder,
-		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
-		// do any retries
-		30, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	)
 }
 
@@ -67,6 +58,7 @@ type fireworksRequest struct {
 	Stream      bool      `json:"stream,omitempty"`
 	Echo        bool      `json:"echo,omitempty"`
 	Stop        []string  `json:"stop,omitempty"`
+	LanguageID  string    `json:"languageId,omitempty"`
 }
 
 func (fr fireworksRequest) ShouldStream() bool {
@@ -112,7 +104,7 @@ type FireworksHandlerMethods struct {
 	config      config.FireworksConfig
 }
 
-func (f *FireworksHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, _ fireworksRequest) string {
 	if feature == codygateway.FeatureChatCompletions {
 		return "https://api.fireworks.ai/inference/v1/chat/completions"
 	} else {
@@ -136,8 +128,14 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 	if body.N > 1 {
 		body.N = 1
 	}
+	modelLanguageId := body.LanguageID
+	// Delete the fields that are not supported by the Fireworks API.
+	if body.LanguageID != "" {
+		body.LanguageID = ""
+	}
 
 	body.Model = pickStarCoderModel(body.Model, f.config)
+	body.Model = pickFineTunedModel(body.Model, modelLanguageId)
 }
 
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
@@ -241,6 +239,51 @@ func pickStarCoderModel(model string, config config.FireworksConfig) string {
 	}
 
 	return model
+}
+
+func pickFineTunedModel(model string, language string) string {
+	switch model {
+	// 1. Fine-tuned models Mixtral variant
+	case fireworks.FineTunedFIMVariant1:
+		return fireworks.FineTunedMixtralAll
+
+	// 2. Fine-tuned model Language specific mixtral variant
+	case fireworks.FineTunedFIMVariant2:
+		{
+			switch language {
+			case "typescript", "typescriptreact":
+				return fireworks.FineTunedMixtralTypescript
+			case "javascript":
+				return fireworks.FineTunedMixtralJavascript
+			case "php":
+				return fireworks.FineTunedMixtralPhp
+			case "python":
+				return fireworks.FineTunedMixtralPython
+			default:
+				return fireworks.FineTunedMixtralAll
+			}
+		}
+	case fireworks.FineTunedFIMVariant3:
+		return fireworks.FineTunedLlamaAll
+	case fireworks.FineTunedFIMVariant4:
+		{
+			switch language {
+			case "typescript", "typescriptreact":
+				return fireworks.FineTunedLlamaTypescript
+			case "javascript":
+				return fireworks.FineTunedLlamaJavascript
+			case "php":
+				return fireworks.FineTunedLlamaPhp
+			case "python":
+				return fireworks.FineTunedLlamaPython
+			default:
+				return fireworks.FineTunedLlamaAll
+			}
+		}
+	default:
+		return model
+	}
+
 }
 
 // Picks a model based on a specific percentage split. If the percent value is 0, the
