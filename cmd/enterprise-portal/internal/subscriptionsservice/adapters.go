@@ -19,12 +19,13 @@ func convertLicenseAttrsToProto(attrs *dotcomdb.LicenseAttributes) *subscription
 		conds = append(conds, &subscriptionsv1.EnterpriseSubscriptionLicenseCondition{
 			Status:             subscriptionsv1.EnterpriseSubscriptionLicenseCondition_STATUS_REVOKED,
 			LastTransitionTime: timestamppb.New(*attrs.RevokedAt),
+			Message:            pointers.DerefZero(attrs.RevokeReason),
 		})
 	}
 
 	return &subscriptionsv1.EnterpriseSubscriptionLicense{
-		Id:             attrs.ID,
-		SubscriptionId: attrs.SubscriptionID,
+		Id:             subscriptionsv1.EnterpriseSubscriptionLicenseIDPrefix + attrs.ID,
+		SubscriptionId: subscriptionsv1.EnterpriseSubscriptionIDPrefix + attrs.SubscriptionID,
 		Conditions:     conds,
 		License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
 			Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
@@ -36,6 +37,8 @@ func convertLicenseAttrsToProto(attrs *dotcomdb.LicenseAttributes) *subscription
 					SalesforceSubscriptionId: pointers.DerefZero(attrs.SalesforceSubscriptionID),
 					SalesforceOpportunityId:  pointers.DerefZero(attrs.SalesforceOpportunityID),
 				},
+				LicenseKey: attrs.LicenseKey,
+				InstanceId: pointers.DerefZero(attrs.InstanceID),
 			},
 		},
 	}

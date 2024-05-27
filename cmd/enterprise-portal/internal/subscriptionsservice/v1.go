@@ -52,9 +52,8 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 	}
 
 	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
-	if req.Msg.PageSize != 0 {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
-	}
+	// BUT, we allow pageSize to act as a 'limit' parameter for querying for
+	// 'active license'.
 	if req.Msg.PageToken != "" {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("pagination not implemented"))
 	}
