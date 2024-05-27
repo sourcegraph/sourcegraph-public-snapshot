@@ -113,7 +113,6 @@ go_test(
         "//cmd/gitserver/internal/git",
         "//cmd/gitserver/internal/git/gitcli",
         "//cmd/gitserver/internal/gitserverfs",
-        "//cmd/gitserver/internal/perforce",
         "//cmd/gitserver/internal/vcssyncer",
         "//internal/actor",
         "//internal/api",

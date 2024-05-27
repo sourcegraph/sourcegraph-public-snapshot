@@ -6,16 +6,16 @@ import (
 
 var (
 	//go:embed postgres/*
+	//go:embed prometheus/default.yml.gotmpl
 	fs embed.FS
 
-	PgsqlConfig     []byte
-	CodeIntelConfig []byte
+	PgsqlConfig                     []byte
+	PrometheusDefaultConfigTemplate []byte
+	CodeIntelConfig                 []byte
 )
 
 func init() {
-	PgsqlConfig, _ = fs.ReadFile("postgres/pgsql.conf")
-}
-
-func init() {
 	CodeIntelConfig, _ = fs.ReadFile("postgres/codeintel.conf")
+	PgsqlConfig, _ = fs.ReadFile("postgres/pgsql.conf")
+	PrometheusDefaultConfigTemplate, _ = fs.ReadFile("prometheus/default.yml.gotmpl")
 }

@@ -77,7 +77,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     return (
         <>
             {invitesSendingStatus === 'success' && (
-                <div className={classNames('mb-4', styles.alert, styles.blueSuccessAlert)}>
+                <div className={classNames('mb-4', styles.alert, styles.greenSuccessAlert)}>
                     <H3>
                         {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
                     </H3>
@@ -92,7 +92,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                     <Text size="small" className="text-muted mb-0">
                         {invitesSendingErrorMessage}
                     </Text>
-                    <Text size="small">
+                    <Text size="small" className="mb-0">
                         If you encounter this issue repeatedly, please contact support at{' '}
                         <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>.
                     </Text>
