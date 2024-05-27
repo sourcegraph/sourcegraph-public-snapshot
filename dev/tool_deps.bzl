@@ -65,6 +65,15 @@ filegroup(
 )
 """
 
+CHROMIUM_BUILDFILE = """
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+js_library(
+    name = "chromium",
+    srcs = ["{}"],
+    visibility = ["//visibility:public"],
+)
+"""
+
 def tool_deps():
     "Repository rules to fetch third party tooling used for dev purposes"
 
@@ -339,4 +348,15 @@ def tool_deps():
         name = "linear-sdk-graphql-schema",
         url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
         integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
+    )
+
+    # Chromium deps for playwright
+    # Only installed for CI, locally we use a system install
+    # to find the update URLs try running:
+    # npx playwright install --dry-run
+    http_archive(
+        name = "chromium-linux-x86_64",
+        integrity = "sha256-T7teJtSwhf7LIpQMEp4zp3Ey3T/p4Y7dQI/7VGVHdkE=",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-linux.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-linux/chrome"),
     )

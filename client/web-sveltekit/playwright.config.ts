@@ -14,7 +14,13 @@ const config: PlaywrightTestConfig = {
     projects: [
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: {
+                    // When in CI, use bazel packaged linux chromium
+                    executablePath: process.env.CI && process.env.CHROMIUM_BIN,
+                },
+            },
         },
     ],
 }
