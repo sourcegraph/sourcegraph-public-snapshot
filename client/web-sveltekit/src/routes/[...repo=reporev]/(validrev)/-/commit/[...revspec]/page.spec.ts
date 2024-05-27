@@ -22,7 +22,7 @@ test('commit not found', async ({ page, sg }) => {
         // Some tests are working with `pnpm run test` but not in Bazel.
         // To get CI working we are skipping these tests for now.
         // https://github.com/sourcegraph/sourcegraph/pull/62560#issuecomment-2128313393
-        return;
+        return
     }
     sg.mockOperations({
         ResolveRepoRevision: () => ({
@@ -48,7 +48,7 @@ test('error loading commit information', async ({ page, sg }) => {
         // Some tests are working with `pnpm run test` but not in Bazel.
         // To get CI working we are skipping these tests for now.
         // https://github.com/sourcegraph/sourcegraph/pull/62560#issuecomment-2128313393
-        return;
+        return
     }
     sg.mockOperations({
         CommitPage_CommitQuery: () => {

@@ -22,15 +22,15 @@ if (process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev' || process.env.E2E_BU
   let out = 'build/'
 
   if (process.env.E2E_BUILD) {
-        // In the e2e build, we will be serving static HTML files
-        // so there won't be a server templating the index file
-        appTemplate = "src/app.html"
+    // In the e2e build, we will be serving static HTML files
+    // so there won't be a server templating the index file
+    appTemplate = 'src/app.html'
   }
 
   if (!process.env.BAZEL || process.env.DEPLOY_TYPE === 'dev') {
     // When DEPLOY_TYPE is set to 'dev' we copy output files to the
     // 'assets' folder where the web server reads them from
-        out = '../../client/web/dist/'
+    out = '../../client/web/dist/'
   }
 
   out += OUTPUT_DIR
