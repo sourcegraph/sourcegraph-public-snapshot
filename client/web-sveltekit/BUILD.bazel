@@ -167,17 +167,17 @@ copy_to_directory(
     ],
 )
 
-sh_binary(
+sh_test(
     name = "dummy",
     srcs = ["dummy.sh"],
     data = [
-        "@chromium-darwin-arm64//:chromium",
-        "@chromium-darwin-x86_64//:chromium",
+        # "@chromium-darwin-arm64//:chromium",
+        # "@chromium-darwin-x86_64//:chromium",
         "@chromium-linux-x86_64//:chromium",
     ],
     env = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-darwin-x86_64//:chromium)"},
-        "@bazel_tools//src/conditions:darwin_arm64": {"CHROMIUM_BIN": "$(rootpaths @chromium-darwin-arm64//:chromium)"},
+        "@bazel_tools//src/conditions:darwin_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
+        "@bazel_tools//src/conditions:darwin_arm64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
         "@bazel_tools//src/conditions:linux_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
     }),
 )
