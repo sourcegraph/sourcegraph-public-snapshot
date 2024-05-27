@@ -99,9 +99,7 @@ func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleReques
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
 	}
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
-	fmt.Println(url)
-	return url
+	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
 }
 
 func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ googleRequest) error {
@@ -217,11 +215,9 @@ func parseGoogleTokenUsage(r io.Reader, logger log.Logger) (promptTokens int, co
 		lastEvent = scanner.Bytes()
 	}
 	var res googleResponse
-
 	if err := json.NewDecoder(bytes.NewReader(lastEvent[5:])).Decode(&res); err != nil {
 		logger.Error("failed to parse Google response as JSON", log.Error(err))
 		return -1, -1, err
 	}
-	fmt.Println(string(lastEvent))
 	return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
 }
