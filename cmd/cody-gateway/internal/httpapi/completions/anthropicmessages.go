@@ -152,7 +152,7 @@ type AnthropicMessagesHandlerMethods struct {
 	config    config.AnthropicConfig
 }
 
-func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (a *AnthropicMessagesHandlerMethods) getAPIURL(feature codygateway.Feature, _ anthropicMessagesRequest) string {
 	return "https://api.anthropic.com/v1/messages"
 }
 

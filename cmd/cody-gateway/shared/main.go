@@ -181,6 +181,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			Anthropic:                   cfg.Anthropic,
 			OpenAI:                      cfg.OpenAI,
 			Fireworks:                   cfg.Fireworks,
+			Google:                      cfg.Google,
 			EmbeddingsAllowedModels:     cfg.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses: cfg.AutoFlushStreamingResponses,
 			IdentifiersToLogFor:         cfg.IdentifiersToLogFor,
