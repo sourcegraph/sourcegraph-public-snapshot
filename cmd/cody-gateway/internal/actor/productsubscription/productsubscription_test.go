@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
+	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 )
 
 func TestNewActor(t *testing.T) {
@@ -19,8 +20,9 @@ func TestNewActor(t *testing.T) {
 		Interval:   24 * time.Hour,
 	}
 	type args struct {
-		s               dotcom.ProductSubscriptionState
-		devLicensesOnly bool
+		access            *codyaccessv1.CodyGatewayAccess
+		activeLicenseTags []string
+		devLicensesOnly   bool
 	}
 	tests := []struct {
 		name        string
@@ -30,25 +32,18 @@ func TestNewActor(t *testing.T) {
 		{
 			name: "not dev only",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
+				&codyaccessv1.CodyGatewayAccess{
+					Enabled: true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
+				nil,
 				false,
 			},
 			wantEnabled: true,
@@ -56,25 +51,18 @@ func TestNewActor(t *testing.T) {
 		{
 			name: "dev only, not a dev license",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
+				&codyaccessv1.CodyGatewayAccess{
+					Enabled: true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
+				nil,
 				true,
 			},
 			wantEnabled: false,
@@ -82,30 +70,18 @@ func TestNewActor(t *testing.T) {
 		{
 			name: "dev only, is a dev license",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
+				&codyaccessv1.CodyGatewayAccess{
+					Enabled: true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
-					ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-						Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-							Tags: []string{"dev"},
-						},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
+				[]string{"dev"},
 				true,
 			},
 			wantEnabled: true,
@@ -113,7 +89,7 @@ func TestNewActor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.s, tt.args.devLicensesOnly, concurrencyConfig)
+			act := newActor(nil, "", tt.args.access, tt.args.activeLicenseTags, tt.args.devLicensesOnly, concurrencyConfig)
 			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
 		})
 	}
@@ -121,40 +97,23 @@ func TestNewActor(t *testing.T) {
 
 func TestGetSubscriptionAccountName(t *testing.T) {
 	tests := []struct {
-		name         string
-		mockUsername string
-		mockTags     []string
-		wantName     string
+		name     string
+		mockTags []string
+		wantName string
 	}{
 		{
-			name:         "has special license tag",
-			mockUsername: "alice",
-			mockTags:     []string{"trial", "customer:acme"},
-			wantName:     "acme",
+			name:     "has special license tag",
+			mockTags: []string{"trial", "customer:acme"},
+			wantName: "acme",
 		},
 		{
-			name:         "use account username",
-			mockUsername: "alice",
-			mockTags:     []string{"plan:enterprise-1"},
-			wantName:     "alice",
-		},
-		{
-			name:     "no account name",
+			name:     "no data",
 			wantName: "",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getSubscriptionAccountName(dotcom.ProductSubscriptionState{
-				Account: &dotcom.ProductSubscriptionStateAccountUser{
-					Username: test.mockUsername,
-				},
-				ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-					Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-						Tags: test.mockTags,
-					},
-				},
-			})
+			got := getSubscriptionAccountName(test.mockTags)
 			assert.Equal(t, test.wantName, got)
 		})
 	}

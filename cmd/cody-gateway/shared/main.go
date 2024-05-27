@@ -22,17 +22,17 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	grpcoauth "github.com/sourcegraph/sourcegraph/internal/grpc/grpcoauth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -43,14 +43,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+
+	"github.com/sourcegraph/sourcegraph/lib/background"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
@@ -138,24 +149,67 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.NewSources(anonymous.NewSource(cfg.AllowAnonymous, cfg.ActorConcurrencyLimit))
+
 	var dotcomClient graphql.Client
 	if cfg.Dotcom.AccessToken != "" {
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
-		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		obctx.Logger.Info("dotcom-user actor source enabled")
 		dotcomClient = dotcom.NewClient(cfg.Dotcom.URL, cfg.Dotcom.AccessToken, cfg.Dotcom.ClientID, cfg.Environment)
+		sources.Add(
+			dotcomuser.NewSource(
+				obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				cfg.ActorConcurrencyLimit,
+				rs,
+				cfg.Dotcom.ActorRefreshCoolDownInterval,
+			),
+		)
+	} else {
+		obctx.Logger.Error("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-user actor source is disabled")
+	}
+
+	// backgroundRoutines collects background dependencies for shutdown
+	var backgroundRoutines []background.Routine
+	if cfg.EnterprisePortal.URL != nil {
+		obctx.Logger.Info("enterprise subscriptions actor source enabled")
+		conn, err := dialEnterprisePortal(
+			ctx,
+			obctx.Logger.Scoped("enterpriseportal"),
+			cfg.EnterprisePortal.URL,
+			// Authenticate using SAMS client credentials
+			sams.ClientCredentialsTokenSource(
+				cfg.SAMSClientConfig.ConnConfig,
+				cfg.SAMSClientConfig.ClientID,
+				cfg.SAMSClientConfig.ClientSecret,
+				[]scopes.Scope{
+					scopes.ToScope(scopes.ServiceEnterprisePortal, "codyaccess", scopes.ActionRead),
+					scopes.ToScope(scopes.ServiceEnterprisePortal, "subscription", scopes.ActionRead),
+				},
+			),
+		)
+		if err != nil {
+			return errors.Wrap(err, "connect to Enterprise Portal")
+		}
+		backgroundRoutines = append(backgroundRoutines, background.CallbackRoutine{
+			NameFunc: func() string { return "enterpriseportal.grpc.conn" },
+			StopFunc: func(context.Context) error { return conn.Close() },
+		})
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
 				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
-				dotcomClient,
+				enterprisePortalServices{
+					codyaccessv1.NewCodyAccessServiceClient(conn),
+					subscriptionsv1.NewSubscriptionsServiceClient(conn),
+				},
 				cfg.Dotcom.InternalMode,
 				cfg.ActorConcurrencyLimit,
 			),
-			dotcomuser.NewSource(obctx.Logger, rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())), dotcomClient, cfg.ActorConcurrencyLimit, rs, cfg.Dotcom.ActorRefreshCoolDownInterval),
 		)
 	} else {
-		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+		obctx.Logger.Error("CODY_GATEWAY_ENTERPRISE_PORTAL_URL is not set, enterprise subscriptions actor source is disabled")
 	}
 
 	authr := &auth.Authenticator{
@@ -227,17 +281,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	ready()
 	obctx.Logger.Info("service ready", log.String("address", address))
 
-	// Collect background routines
-	backgroundRoutines := []goroutine.BackgroundRoutine{
+	// Collect service routines
+	serviceRoutines := []goroutine.BackgroundRoutine{
 		server,
 		sources.Worker(obctx, sourceWorkerMutex, cfg.SourcesSyncInterval),
 	}
 	if w, ok := eventLogger.(goroutine.BackgroundRoutine); ok {
-		// eventLogger is events.BufferedLogger
+		// eventLogger is events.BufferedLogger, we need to shut it down cleanly
 		backgroundRoutines = append(backgroundRoutines, w)
 	}
+
 	// Block until done
-	return goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
+	return goroutine.MonitorBackgroundRoutines(ctx, background.FIFOSTopRoutine{
+		// Stop important service routines first
+		background.CombinedRoutine(serviceRoutines),
+		// Then shut down other background services
+		background.CombinedRoutine(backgroundRoutines),
+	})
 }
 
 func newRedisStore(store redispool.KeyValue) limiter.RedisStore {
@@ -348,3 +408,30 @@ func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error 
 	key := fmt.Sprintf("prompt:%s:%s:%s", traceID, feature, reqActor.ID)
 	return p.redis.SetEx(key, p.ttlSeconds, prompt)
 }
+
+func dialEnterprisePortal(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource) (*grpc.ClientConn, error) {
+	insecureTarget := addr.Scheme != "https"
+	if insecureTarget && !env.InsecureDev {
+		return nil, errors.New("insecure export address used outside of dev mode")
+	}
+	opts := []grpc.DialOption{
+		grpc.WithPerRPCCredentials(grpcoauth.TokenSource{TokenSource: ts}),
+	}
+	if insecureTarget {
+		opts = append(opts, defaults.DialOptions(logger)...)
+	} else {
+		opts = append(opts, defaults.ExternalDialOptions(logger)...)
+	}
+	conn, err := grpc.DialContext(ctx, addr.Host, opts...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to connect to Enterprise Portal gRPC service at %s", addr.String())
+	}
+	return conn, nil
+}
+
+type enterprisePortalServices struct {
+	codyaccessv1.CodyAccessServiceClient
+	subscriptionsv1.SubscriptionsServiceClient
+}
+
+var _ productsubscription.EnterprisePortalClient = (*enterprisePortalServices)(nil)

@@ -9,21 +9,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
 	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vektah/gqlparser/v2/gqlerror"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	internalproductsubscription "github.com/sourcegraph/sourcegraph/internal/productsubscription"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -58,36 +61,26 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 
 	t.Run("authenticated without cache hit", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
-				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
-						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-							},
-						},
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		client.GetCodyGatewayAccessFunc.PushReturn(
+			&codyaccessv1.GetCodyGatewayAccessResponse{
+				Access: &codyaccessv1.CodyGatewayAccess{
+					SubscriptionId: "es_6452a8fc-e650-45a7-a0a2-357f776b3b46",
+					Enabled:        true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
-			}
-			return nil
-		})
+			},
+			nil,
+		)
+		client.ListEnterpriseSubscriptionLicensesFunc.PushReturn(nil, errors.New("not a fatal error"))
+
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.NotNil(t, actor.FromContext(r.Context()))
 			w.WriteHeader(http.StatusOK)
@@ -102,7 +95,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.Called(t, client.MakeRequestFunc)
+		mockrequire.Called(t, client.GetCodyGatewayAccessFunc)
 	})
 
 	t.Run("authenticated with cache hit", func(t *testing.T) {
@@ -111,7 +104,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":true,"rateLimit":null}`),
 			true,
 		)
-		client := dotcom.NewMockClient()
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.NotNil(t, actor.FromContext(r.Context()))
 			w.WriteHeader(http.StatusOK)
@@ -126,7 +119,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.NotCalled(t, client.MakeRequestFunc)
+		mockrequire.NotCalled(t, client.GetCodyGatewayAccessFunc)
 	})
 
 	t.Run("authenticated but not enabled", func(t *testing.T) {
@@ -135,7 +128,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"rateLimit":null}`),
 			true,
 		)
-		client := dotcom.NewMockClient()
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
@@ -154,7 +147,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"endpointAccess":{"/v1/attribution":true},"rateLimit":null}`),
 			true,
 		)
-		client := dotcom.NewMockClient()
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
 
 		t.Run("bypass works for attribution", func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -183,15 +176,11 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 
 	t.Run("access token denied from sources", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			return gqlerror.List{
-				{
-					Message:    "access denied",
-					Extensions: map[string]any{"code": internalproductsubscription.GQLErrCodeProductSubscriptionNotFound},
-				},
-			}
-		})
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		client.GetCodyGatewayAccessFunc.PushReturn(
+			nil,
+			status.Error(codes.NotFound, "not found"),
+		)
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
@@ -202,14 +191,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		mockrequire.Called(t, client.GetCodyGatewayAccessFunc)
 	})
 
 	t.Run("server error from sources", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			return errors.New("server error")
-		})
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		client.GetCodyGatewayAccessFunc.SetDefaultReturn(
+			nil,
+			errors.New("server error"),
+		)
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
@@ -224,40 +215,41 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 
 	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
-				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
-						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-							},
-						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-								Tags: []string{""},
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
+		client.GetCodyGatewayAccessFunc.PushReturn(
+			&codyaccessv1.GetCodyGatewayAccessResponse{
+				Access: &codyaccessv1.CodyGatewayAccess{
+					SubscriptionId: subscriptionID,
+					Enabled:        true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+				},
+			},
+			nil,
+		)
+		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
+			assert.EqualValues(t, 1, req.PageSize)
+			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
+			// Ensure second filter is for an archival state filter
+			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
+			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
+				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
+					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
+						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
+							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
+								Tags: []string{"foo"},
 							},
 						},
 					},
-				},
-			}
-			return nil
+				}},
+			}, nil
 		})
 
 		w := httptest.NewRecorder()
@@ -273,40 +265,41 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 
 	t.Run("internal mode, authenticated dev license", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
-				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
-						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-							},
-						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
+		client.GetCodyGatewayAccessFunc.PushReturn(
+			&codyaccessv1.GetCodyGatewayAccessResponse{
+				Access: &codyaccessv1.CodyGatewayAccess{
+					SubscriptionId: subscriptionID,
+					Enabled:        true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+				},
+			},
+			nil,
+		)
+		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
+			assert.EqualValues(t, 1, req.PageSize)
+			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
+			// Ensure second filter is for an archival state filter
+			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
+			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
+				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
+					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
+						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
+							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
 								Tags: []string{licensing.DevTag},
 							},
 						},
 					},
-				},
-			}
-			return nil
+				}},
+			}, nil
 		})
 
 		w := httptest.NewRecorder()
@@ -322,40 +315,41 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 
 	t.Run("internal mode, authenticated internal license", func(t *testing.T) {
 		cache := NewMockListingCache()
-		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
-				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
-						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
-										Limit:           10,
-										IntervalSeconds: 10,
-									},
-								},
-							},
-						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-								Tags: []string{licensing.DevTag},
+		client := productsubscriptiontest.NewMockEnterprisePortalClient()
+		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
+		client.GetCodyGatewayAccessFunc.PushReturn(
+			&codyaccessv1.GetCodyGatewayAccessResponse{
+				Access: &codyaccessv1.CodyGatewayAccess{
+					SubscriptionId: subscriptionID,
+					Enabled:        true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+				},
+			},
+			nil,
+		)
+		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
+			assert.EqualValues(t, 1, req.PageSize)
+			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
+			// Ensure second filter is for an archival state filter
+			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
+			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
+				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
+					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
+						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
+							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
+								Tags: []string{licensing.InternalTag},
 							},
 						},
 					},
-				},
-			}
-			return nil
+				}},
+			}, nil
 		})
 
 		w := httptest.NewRecorder()
