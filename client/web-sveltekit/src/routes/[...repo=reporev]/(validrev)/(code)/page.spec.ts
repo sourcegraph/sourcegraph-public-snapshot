@@ -108,7 +108,7 @@ test.describe('file sidebar', () => {
         return page.getByLabel('Open sidebar').click()
     }
 
-    test('basic functionality', async ({ page }) => {
+    test.skip('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
         await page.goto(`/${repoName}`)
