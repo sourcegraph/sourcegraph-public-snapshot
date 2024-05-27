@@ -1,6 +1,6 @@
 # Because we have a bunch of ${} in there, which clash with the interpolation for "".format(...),
 # it's simpler to have this in a var and inject it as is, rather than having to escape everything.
-CMD_PREAMBLE = """set -ex
+CMD_PREAMBLE = """set -e
 
 export HOME=$(pwd)
 export SG_FORCE_REPO_ROOT=$(pwd)
