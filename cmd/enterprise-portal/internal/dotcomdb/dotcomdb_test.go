@@ -324,16 +324,27 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	rootTestName := t.Name()
 	mock := setupDBAndInsertMockLicense(t, db, info, nil)
 
+	assertMockLicense := func(t *testing.T, l *dotcomdb.LicenseAttributes) {
+		assert.Equal(t, mock.targetSubscriptionID, l.SubscriptionID)
+		assert.Equal(t, info.UserCount, uint(*l.UserCount))
+		assert.NotEmpty(t, l.CreatedAt)
+		assert.Equal(t,
+			info.ExpiresAt.Format(time.DateTime),
+			l.ExpiresAt.Format(time.DateTime))
+		assert.Equal(t, info.Tags, l.Tags)
+	}
+
 	ctx := context.Background()
 	for _, tc := range []struct {
-		name    string
-		filters []*v1.ListEnterpriseSubscriptionLicensesFilter
-		expect  func(t *testing.T, licenses []*dotcomdb.LicenseAttributes)
+		name     string
+		filters  []*v1.ListEnterpriseSubscriptionLicensesFilter
+		pageSize int
+		expect   func(t *testing.T, licenses []*dotcomdb.LicenseAttributes)
 	}{{
 		name:    "no filters",
 		filters: nil,
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
-			assert.Len(t, licenses, mock.createdLicenses)
+			assert.Len(t, licenses, mock.createdLicenses) // return all results
 		},
 	}, {
 		name: "filter by subscription ID",
@@ -346,13 +357,19 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 			assert.Len(t, licenses, 2) // setupDBAndInsertMockLicense adds 2
 			// The first one is our most recently created one, i.e. the one we
 			// requested in setupDBAndInsertMockLicense
-			assert.Equal(t, mock.targetSubscriptionID, licenses[0].SubscriptionID)
-			assert.Equal(t, info.UserCount, uint(*licenses[0].UserCount))
-			assert.NotEmpty(t, licenses[0].CreatedAt)
-			assert.Equal(t,
-				info.ExpiresAt.Format(time.DateTime),
-				licenses[0].ExpiresAt.Format(time.DateTime))
-			assert.Equal(t, info.Tags, licenses[0].Tags)
+			assertMockLicense(t, licenses[0])
+		},
+	}, {
+		name: "filter by subscription ID and limit 1",
+		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
+				SubscriptionId: mock.targetSubscriptionID,
+			},
+		}},
+		pageSize: 1,
+		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
+			assert.Len(t, licenses, 1)
+			assertMockLicense(t, licenses[0])
 		},
 	}, {
 		name: "filter by subscription ID and not archived",
@@ -369,7 +386,9 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 			// setupDBAndInsertMockLicense adds 2 for the target subscription,
 			// both unarchived
 			assert.Len(t, licenses, 2)
-			assert.Equal(t, mock.targetSubscriptionID, licenses[0].SubscriptionID)
+			for _, l := range licenses {
+				assert.Equal(t, mock.targetSubscriptionID, l.SubscriptionID)
+			}
 		},
 	}, {
 		name: "filter by is archived",
@@ -393,9 +412,10 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
-			licenses, err := dotcomreader.ListEnterpriseSubscriptionLicenses(ctx, tc.filters)
+			licenses, err := dotcomreader.ListEnterpriseSubscriptionLicenses(ctx, tc.filters, tc.pageSize)
 			require.NoError(t, err)
 			for _, l := range licenses {
+				// Each mock license key contains a variation of the root test name
 				assert.Contains(t, l.LicenseKey, rootTestName)
 			}
 			if tc.expect != nil {

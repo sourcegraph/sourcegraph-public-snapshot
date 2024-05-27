@@ -19,7 +19,7 @@ import (
 const Name = subscriptionsv1connect.SubscriptionsServiceName
 
 type DotComDB interface {
-	ListEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter) ([]*dotcomdb.LicenseAttributes, error)
+	ListEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
 }
 
 func RegisterV1(logger log.Logger, mux *http.ServeMux, samsClient samsm2m.TokenIntrospector, dotcom DotComDB) {
@@ -70,7 +70,10 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		}
 	}
 
-	licenses, err := s.dotcom.ListEnterpriseSubscriptionLicenses(ctx, filters)
+	licenses, err := s.dotcom.ListEnterpriseSubscriptionLicenses(ctx, filters,
+		// Provide page size to allow "active license" functionality, by only
+		// retrieving the most recently created result.
+		int(req.Msg.GetPageSize()))
 	if err != nil {
 		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
 			return nil, connect.NewError(connect.CodeNotFound, err)

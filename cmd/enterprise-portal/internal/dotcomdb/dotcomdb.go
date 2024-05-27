@@ -137,6 +137,7 @@ var ErrCodyGatewayAccessNotFound = errors.New("cody gateway access not found")
 type queryConditions struct {
 	whereClause  string
 	havingClause string
+	limit        int
 }
 
 func (q *queryConditions) addWhere(cond string) {
@@ -311,6 +312,9 @@ LEFT JOIN product_subscriptions subscriptions
 		clauses = append(clauses, "HAVING "+conds.havingClause)
 	}
 	clauses = append(clauses, "ORDER BY licenses.created_at DESC")
+	if conds.limit > 0 {
+		clauses = append(clauses, fmt.Sprintf("LIMIT %d", conds.limit))
+	}
 	return strings.Join(clauses, "\n")
 }
 
@@ -362,8 +366,14 @@ func scanLicenseAttributes(row pgx.Row) (*LicenseAttributes, error) {
 	return &attrs, nil
 }
 
-func (r *Reader) ListEnterpriseSubscriptionLicenses(ctx context.Context, filters []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter) ([]*LicenseAttributes, error) {
-	var conds queryConditions
+func (r *Reader) ListEnterpriseSubscriptionLicenses(
+	ctx context.Context,
+	filters []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter,
+	pageSize int,
+) ([]*LicenseAttributes, error) {
+	conds := queryConditions{
+		limit: pageSize,
+	}
 	var args []any
 	for _, filter := range filters {
 		switch filter.GetFilter().(type) {
