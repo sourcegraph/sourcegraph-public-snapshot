@@ -188,6 +188,7 @@ playwright_test_bin.playwright_test(
     ] + PLAYWRIGHT_DEPS,
     env = {
         "BAZEL": "1",
+        "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/build/_sk/",
     },
 )
