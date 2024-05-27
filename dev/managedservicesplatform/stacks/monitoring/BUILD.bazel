@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "cloudsql.go",
         "common.go",
+        "custom.go",
         "dashboard.go",
         "job.go",
         "monitoring.go",

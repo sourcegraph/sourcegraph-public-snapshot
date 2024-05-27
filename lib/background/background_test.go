@@ -5,8 +5,13 @@ import (
 	"os"
 	"syscall"
 	"testing"
+	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Make the exiter a no-op in tests
@@ -23,7 +28,8 @@ func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
 
 	go func() {
 		defer close(unblocked)
-		monitorBackgroundRoutines(context.Background(), signals, r1, r2, r3)
+		err := monitorBackgroundRoutines(context.Background(), signals, r1, r2, r3)
+		require.NoError(t, err)
 	}()
 
 	signals <- syscall.SIGINT
@@ -52,7 +58,8 @@ func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
 
 	go func() {
 		defer close(unblocked)
-		monitorBackgroundRoutines(ctx, signals, r1, r2, r3)
+		err := monitorBackgroundRoutines(ctx, signals, r1, r2, r3)
+		assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
 	}()
 
 	cancel()
@@ -68,18 +75,94 @@ func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
 	}
 }
 
+func TestCombinedRoutine_Name(t *testing.T) {
+	r1 := NewMockRoutine()
+	r1.NameFunc.SetDefaultReturn("r1")
+	r2 := NewMockRoutine()
+	r2.NameFunc.SetDefaultReturn("r2")
+	rs := CombinedRoutine{r1, r2}
+	assert.Equal(t, `combined["r1" "r2"]`, rs.Name())
+}
+
+func TestCombinedRoutines(t *testing.T) {
+	t.Run("successful stop", func(t *testing.T) {
+		r1 := NewMockRoutine()
+		r2 := NewMockRoutine()
+		rs := CombinedRoutine{r1, r2}
+		rs.Start()
+
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
+		defer cancel()
+		err := rs.Stop(ctx)
+		require.NoError(t, err)
+		mockrequire.Called(t, r1.StopFunc)
+		mockrequire.Called(t, r2.StopFunc)
+	})
+
+	t.Run("stop with error", func(t *testing.T) {
+		r1 := NewMockRoutine()
+		r2 := NewMockRoutine()
+		r2.NameFunc.SetDefaultReturn("mock")
+		r2.StopFunc.SetDefaultReturn(errors.New("stop error"))
+		rs := CombinedRoutine{r1, r2}
+		rs.Start()
+
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
+		defer cancel()
+		err := rs.Stop(ctx)
+		assert.EqualError(t, err, `stop routine "mock": stop error`)
+		mockrequire.Called(t, r1.StopFunc)
+		mockrequire.Called(t, r2.StopFunc)
+	})
+
+	t.Run("stop with timeout", func(t *testing.T) {
+		r1 := NewMockRoutine()
+		r1.NameFunc.SetDefaultReturn("mock")
+		r1.StopFunc.SetDefaultReturn(errors.New("stop error"))
+		r2 := NewMockRoutine()
+		r2.StopFunc.PushHook(func(context.Context) error {
+			time.Sleep(100 * time.Millisecond)
+			return nil
+		})
+		rs := CombinedRoutine{r1, r2}
+		rs.Start()
+
+		// Context deadline is 50ms, which is half of the sleep time of r2.
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(50*time.Millisecond))
+		defer cancel()
+		err := rs.Stop(ctx)
+		assert.EqualError(t, err, `unable to stop routines gracefully with partial errors: stop routine "mock": stop error: context deadline exceeded`)
+
+		// Although the caller doesn't wait, each routine should still be stopped if
+		// they get the chance. We wait long enough to avoid flakiness.
+		time.Sleep(100 * time.Millisecond)
+		mockrequire.Called(t, r1.StopFunc)
+		mockrequire.Called(t, r2.StopFunc)
+	})
+}
+
 func TestLIFOStopRoutine(t *testing.T) {
 	// use an unguarded slice because LIFOStopRoutine should only stop in sequence
 	var stopped []string
 	r1 := NewMockRoutine()
-	r1.StopFunc.PushHook(func() { stopped = append(stopped, "r1") })
+	r1.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r1")
+		return nil
+	})
 	r2 := NewMockRoutine()
-	r2.StopFunc.PushHook(func() { stopped = append(stopped, "r2") })
+	r2.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r2")
+		return nil
+	})
 	r3 := NewMockRoutine()
-	r3.StopFunc.PushHook(func() { stopped = append(stopped, "r3") })
+	r3.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r3")
+		return nil
+	})
 
 	r := LIFOStopRoutine{r1, r2, r3}
-	r.Stop()
+	err := r.Stop(context.Background())
+	require.NoError(t, err)
 	// stops in reverse
 	assert.Equal(t, []string{"r3", "r2", "r1"}, stopped)
 }

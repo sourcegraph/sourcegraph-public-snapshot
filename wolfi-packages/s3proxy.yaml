@@ -1,7 +1,7 @@
 package:
   name: s3proxy
   version: 2.0.0
-  epoch: 4 # Independent from repo epoch
+  epoch: 5 # Independent from repo epoch
   description: 'Access other storage backends via the S3 API'
   target-architecture:
     - x86_64
@@ -40,5 +40,6 @@ pipeline:
       JAVA_HOME=/usr/lib/jvm/java-11-openjdk/ mvn package -DskipTests
   - runs: |
       mkdir -p ${{targets.destdir}}/opt/
+      chmod 755 target/s3proxy
       cp -r target/ ${{targets.destdir}}/opt/s3proxy
       cp src/main/resources/run-docker-container.sh ${{targets.destdir}}/opt/s3proxy

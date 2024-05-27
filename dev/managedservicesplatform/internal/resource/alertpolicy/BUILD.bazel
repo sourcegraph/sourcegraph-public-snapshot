@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "alertpolicy.go",
         "conditionbuilder.go",
+        "customalert.go",
         "metricabsence.go",
         "responsecode.go",
         "thresholdaggregation.go",

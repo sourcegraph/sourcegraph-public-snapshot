@@ -3,30 +3,15 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "common",
-    srcs = [
-        "common.go",
-        "queue.go",
-    ],
+    srcs = ["common.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common",
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/gitserver:__subpackages__"],
-    deps = [
-        "//internal/observation",
-        "@com_github_prometheus_client_golang//prometheus",
-    ],
 )
 
 go_test(
     name = "common_test",
-    srcs = [
-        "common_test.go",
-        "queue_test.go",
-    ],
+    srcs = ["common_test.go"],
     embed = [":common"],
     tags = [TAG_PLATFORM_SOURCE],
-    deps = [
-        "//internal/observation",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_stretchr_testify//require",
-    ],
 )
