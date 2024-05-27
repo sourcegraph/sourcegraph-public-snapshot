@@ -42,7 +42,7 @@ const (
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
-	DockerImages        // build one or all docker images without testing
+	DockerImages        // build, test and push images on DockerHub registry with insider tags.
 	CloudEphemeral      // build all images and push to cloud ephemeral registry for use with cloud deployment
 
 	BazelDo // run a specific bazel command
