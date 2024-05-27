@@ -176,9 +176,9 @@ sh_test(
         "@chromium-linux-x86_64//:chromium",
     ],
     env = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
-        "@bazel_tools//src/conditions:darwin_arm64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
-        "@bazel_tools//src/conditions:linux_x86_64": {"CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)"},
+        "@bazel_tools//src/conditions:darwin_x86_64": {"CHROMIUM_BIN": "DARWIN_X86_64"},
+        "@bazel_tools//src/conditions:darwin_arm64": {"CHROMIUM_BIN": "DARWIN_ARM64"},
+        "@bazel_tools//src/conditions:linux_x86_64": {"CHROMIUM_BIN": "LINUX_X86_64"},
     }),
 )
 
