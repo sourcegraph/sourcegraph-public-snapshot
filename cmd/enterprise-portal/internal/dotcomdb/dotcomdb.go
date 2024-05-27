@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -199,7 +200,8 @@ func (r *Reader) GetCodyGatewayAccessAttributesBySubscription(ctx context.Contex
 	query := newCodyGatewayAccessQuery(queryConditions{
 		whereClause: "subscription.id = $1",
 	})
-	row := r.conn.QueryRow(ctx, query, subscriptionID)
+	row := r.conn.QueryRow(ctx, query,
+		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 	return scanCodyGatewayAccessAttributes(row)
 }
 
