@@ -77,7 +77,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 
 	// Register connect endpoints
 	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
-	subscriptionsservice.RegisterV1(logger, httpServer)
+	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
 
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	if !contract.MSP && debugserver.GRPCWebUIEnabled {
