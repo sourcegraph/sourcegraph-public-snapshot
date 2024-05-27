@@ -1313,6 +1313,63 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	}
 }
 
+func TestRepos_List_ExternalServiceType(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	services := typestest.MakeExternalServices()
+	service1 := services[0]
+	service2 := services[1]
+	require.NotEqual(t, service1.Kind, service2.Kind)
+
+	if err := db.ExternalServices().Create(ctx, confGet, service1); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Create(ctx, confGet, service2); err != nil {
+		t.Fatal(err)
+	}
+
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
+	if err := db.Repos().Create(ctx, mine...); err != nil {
+		t.Fatal(err)
+	}
+
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
+	if err := db.Repos().Create(ctx, yours...); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Some", ReposListOptions{ExternalServiceType: extsvc.KindToType(service1.Kind)}, mine},
+		{"Default", ReposListOptions{}, append(mine, yours...)},
+		{"NonExistant", ReposListOptions{ExternalServiceType: "unknown"}, nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
 func TestRepos_List_topics(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)

@@ -648,6 +648,9 @@ type ReposListOptions struct {
 	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
 	ExternalRepoIncludeContains []api.ExternalRepoSpec
 
+	// ExternalServiceType matches on the external_service_type column, if non-empty.
+	ExternalServiceType string
+
 	// ExternalRepoExcludeContains is the list of specs to exclude repos using
 	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
 	ExternalRepoExcludeContains []api.ExternalRepoSpec
@@ -1035,6 +1038,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
+	}
+
+	if opt.ExternalServiceType != "" {
+		where = append(where, sqlf.Sprintf("external_service_type = %s", opt.ExternalServiceType))
 	}
 
 	if opt.NoForks {
