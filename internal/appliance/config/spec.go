@@ -28,10 +28,6 @@ type DatabaseConnectionSpec struct {
 // BlobstoreSpec defines the desired state of Blobstore.
 type BlobstoreSpec struct {
 	StandardConfig
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // CodeInsightsDBSpec defines the desired state of Code Insights database.
@@ -46,32 +42,16 @@ type CodeInsightsDBSpec struct {
 	// Database allows for custom database connection details.
 	Database *DatabaseConnectionSpec `json:"database,omitempty"`
 
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
-// CodeIntelDBSpec defines the desired state of Code Intel database.
-type CodeIntelDBSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeIntel DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
+// CodeIntelSpec defines the desired state of Code Intel database.
+type CodeIntelSpec struct {
+	StandardConfig
 
 	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
 }
 
 type IngressSpec struct {
@@ -106,10 +86,6 @@ type GitServerSpec struct {
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
 	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
 	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
 	SSHSecret string `json:"sshSecret,omitempty"`
@@ -120,10 +96,6 @@ type IndexedSearchSpec struct {
 	// Replicas defines the number of Index Search pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
 
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
@@ -141,10 +113,6 @@ type PGSQLSpec struct {
 
 	// DatabaseConnection allows for custom database connection details.
 	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 200Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 type PostgresExporterSpec struct {
@@ -162,13 +130,16 @@ type PreciseCodeIntelSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type PrometheusSpec struct {
+	StandardConfig
+
+	ExistingConfigMap string `json:"existingConfigMap,omitempty"`
+	Privileged        bool   `json:"privileged,omitempty"`
+}
+
 // RedisSpec defines the desired state of a Redis-based service.
 type RedisSpec struct {
 	StandardConfig
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 100Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // RepoUpdaterSpec defines the desired state of the Repo Updater service.
@@ -185,13 +156,6 @@ type SearcherSpec struct {
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 26Gi
-	StorageSize string `json:"storageSize,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // SymbolsSpec defines the desired state of the Symbols service.
@@ -201,10 +165,6 @@ type SymbolsSpec struct {
 	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// StorageSize defines the requested amount of storage for the PVC.
-	// Default: 12Gi
-	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // SyntectServerSpec defines the desired state of the Syntect server service.
@@ -269,7 +229,7 @@ type SourcegraphSpec struct {
 	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
 
 	// CodeIntel defines the desired state of the Code Intel service.
-	CodeIntel CodeIntelDBSpec `json:"codeIntel,omitempty"`
+	CodeIntel CodeIntelSpec `json:"codeIntel,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`
@@ -291,6 +251,8 @@ type SourcegraphSpec struct {
 
 	// PreciseCodeIntel defines the desired state of the Precise Code Intel service.
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
+
+	Prometheus PrometheusSpec `json:"prometheus,omitempty"`
 
 	// RedisCache defines the desired state of the Redis cache service.
 	RedisCache RedisSpec `json:"redisCache,omitempty"`

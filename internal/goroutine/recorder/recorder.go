@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 
 type Recordable interface {
 	Start()
-	Stop()
+	Stop(ctx context.Context) error
 	Name() string
 	Type() RoutineType
 	JobName() string

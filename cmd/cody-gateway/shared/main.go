@@ -181,8 +181,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			Anthropic:                   cfg.Anthropic,
 			OpenAI:                      cfg.OpenAI,
 			Fireworks:                   cfg.Fireworks,
+			Google:                      cfg.Google,
 			EmbeddingsAllowedModels:     cfg.AllowedEmbeddingsModels,
 			AutoFlushStreamingResponses: cfg.AutoFlushStreamingResponses,
+			IdentifiersToLogFor:         cfg.IdentifiersToLogFor,
 			EnableAttributionSearch:     cfg.Attribution.Enabled,
 			Sourcegraph:                 cfg.Sourcegraph,
 		},
@@ -235,9 +237,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		backgroundRoutines = append(backgroundRoutines, w)
 	}
 	// Block until done
-	goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
 }
 
 func newRedisStore(store redispool.KeyValue) limiter.RedisStore {

@@ -52,11 +52,12 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)|(/-/raw/)': {
-                    target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
-                    changeOrigin: true,
-                    secure: false,
-                },
+                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|embeddings|code-graph|batch-changes|settings)(/|$)':
+                    {
+                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
+                        changeOrigin: true,
+                        secure: false,
+                    },
             },
         },
 

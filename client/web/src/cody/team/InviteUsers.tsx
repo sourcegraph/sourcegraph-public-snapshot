@@ -1,14 +1,12 @@
 import React, { useState, useCallback } from 'react'
 
-import classNames from 'classnames'
-
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
+import { CodyAlert } from '../components/CodyAlert'
+import { CodyContainer } from '../components/CodyContainer'
 import { isValidEmailAddress, requestSSC } from '../util'
-
-import styles from './CodyManageTeamPage.module.scss'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | null
@@ -77,29 +75,29 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     return (
         <>
             {invitesSendingStatus === 'success' && (
-                <div className={classNames('mb-4', styles.alert, styles.blueSuccessAlert)}>
+                <CodyAlert variant="greenSuccess">
                     <H3>
                         {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
                     </H3>
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
                     </Text>
-                </div>
+                </CodyAlert>
             )}
             {invitesSendingStatus === 'error' && (
-                <div className={classNames('mb-4', styles.alert, styles.errorAlert)}>
+                <CodyAlert variant="error">
                     <H3>Invites not sent.</H3>
                     <Text size="small" className="text-muted mb-0">
                         {invitesSendingErrorMessage}
                     </Text>
-                    <Text size="small">
+                    <Text size="small" className="mb-0">
                         If you encounter this issue repeatedly, please contact support at{' '}
                         <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>.
                     </Text>
-                </div>
+                </CodyAlert>
             )}
 
-            <div className={classNames('p-4 border bg-1 mb-4 d-flex flex-row', styles.container)}>
+            <CodyContainer className="p-4 border bg-1 mb-4 d-flex flex-row">
                 <div className="d-flex justify-content-between align-items-center w-100">
                     <div>
                         <img
@@ -107,16 +105,16 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                             alt="User badges"
                             width="230"
                             height="202"
-                            className={classNames('mr-3')}
+                            className="mr-3"
                         />
                     </div>
                     <div className="flex-1 d-flex flex-column">
-                        <H2 className={classNames('mb-4', styles.inviteUsersHeader)}>
+                        <H2 className="mb-4 font-weight-normal">
                             <strong>Invite users</strong> – {remainingInviteCount}{' '}
                             {pluralize('seat', remainingInviteCount)} remaining
                         </H2>
                         <TextArea
-                            className={classNames('mb-2')}
+                            className="mb-2"
                             placeholder="Example: someone@sourcegraph.com, another.user@sourcegraph.com"
                             rows={4}
                             onChange={event => {
@@ -138,7 +136,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                         </div>
                     </div>
                 </div>
-            </div>
+            </CodyContainer>
         </>
     )
 }

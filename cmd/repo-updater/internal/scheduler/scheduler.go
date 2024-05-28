@@ -93,6 +93,10 @@ func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitse
 	}
 }
 
+func (s *UpdateScheduler) Name() string {
+	return "UpdateScheduler"
+}
+
 func (s *UpdateScheduler) Start() {
 	// Make sure the update scheduler acts as an internal actor, so it can see all
 	// repos.
@@ -103,10 +107,11 @@ func (s *UpdateScheduler) Start() {
 	go s.runScheduleLoop(ctx)
 }
 
-func (s *UpdateScheduler) Stop() {
+func (s *UpdateScheduler) Stop(context.Context) error {
 	if s.cancelCtx != nil {
 		s.cancelCtx()
 	}
+	return nil
 }
 
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
@@ -281,8 +286,11 @@ func (s *UpdateScheduler) UpdateFromDiff(diff types.RepoSyncDiff) {
 	for _, r := range diff.Added {
 		s.upsert(r, true)
 	}
-	for _, r := range diff.Modified.Repos() {
-		s.upsert(r, true)
+	for _, r := range diff.Modified {
+		// Modified repos only need to be updated immediately if their name changed,
+		// otherwise we just make sure they're part of the scheduler, but don't
+		// trigger a repo update.
+		s.upsert(r.Repo, r.Modified&types.RepoModifiedName == types.RepoModifiedName)
 	}
 
 	known := len(diff.Added) + len(diff.Modified)

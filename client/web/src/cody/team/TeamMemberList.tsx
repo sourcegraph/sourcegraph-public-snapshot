@@ -1,13 +1,16 @@
 import { type FunctionComponent, useMemo, useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
+import { CodyAlert } from '../components/CodyAlert'
+import { CodyContainer } from '../components/CodyContainer'
 import { requestSSC } from '../util'
 
-import styles from './CodyManageTeamPage.module.scss'
+import styles from './TeamMemberList.module.scss'
 
 export interface TeamMember {
     accountId: string
@@ -32,6 +35,18 @@ export interface TeamInvite {
     error: string | null
     sentAt: string | null
     acceptedAt: string | null
+}
+
+// This tiny function is extracted to make it testable. Same for the "now" parameter.
+export const formatInviteDate = (sentAt: string | null, now?: Date): string => {
+    try {
+        if (sentAt) {
+            return intlFormatDistance(sentAt, now ?? new Date())
+        }
+        return ''
+    } catch {
+        return ''
+    }
 }
 
 export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
@@ -155,17 +170,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     return (
         <>
             {actionResult && (
-                <div
-                    className={classNames(
-                        'mb-4',
-                        styles.alert,
-                        actionResult.isError ? styles.errorAlert : styles.blueSuccessAlert
-                    )}
-                >
-                    {actionResult.message}
-                </div>
+                <CodyAlert variant={actionResult.isError ? 'error' : 'greenSuccess'}>{actionResult.message}</CodyAlert>
             )}
-            <div className={classNames('p-4 border bg-1 d-flex flex-column', styles.container)}>
+            <CodyContainer className={classNames('p-4 border bg-1 d-flex flex-column')}>
                 <H2 className="text-lg font-semibold mb-2">Team members</H2>
                 <Text className="text-sm text-gray-500 mb-4">Manage invited and active users</Text>
                 <ul className={classNames(styles.teamMemberList, 'list-none pl-0')}>
@@ -266,7 +273,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     )}
                                 </div>
                                 <div className="align-content-center">
-                                    <em>Invite sent {invite.sentAt /* TODO format this */}</em>
+                                    <em>Invite sent {formatInviteDate(invite.sentAt)}</em>
                                 </div>
                                 {isAdmin && (
                                     <>
@@ -291,7 +298,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                             </li>
                         ))}
                 </ul>
-            </div>
+            </CodyContainer>
         </>
     )
 }

@@ -2858,10 +2858,10 @@
           "errorMessage": "The substring 'cumber' is not allowed because it is a bad idea and may lead to unexpected issues."
         },
         "chatModelMaxTokens": {
-          "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit. If smartContext is enabled, this value will be overridden by the clients.",
+          "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit. If smartContextWindow is enabled, this value will be overridden by the clients.",
           "type": "integer"
         },
-        "smartContext": {
+        "smartContextWindow": {
           "description": "Whether the maximum number of tokens should be automatically adjusted by the client based on the name of chatModel. If enabled, it will override the value set in chatModelMaxTokens.",
           "type": "string",
           "default": "enabled",

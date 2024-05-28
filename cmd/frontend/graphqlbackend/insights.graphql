@@ -162,6 +162,11 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     The data point that is incomplete.
     """
     time: DateTime!
+
+    """
+    The repositories that this data point is incomplete for.
+    """
+    repositories: [Repository!]
 }
 
 """
@@ -177,6 +182,11 @@ type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
     A message describing why the datapoint was marked incomplete.
     """
     reason: String!
+
+    """
+    The repositories that this data point is incomplete for.
+    """
+    repositories: [Repository!]
 }
 
 extend type Query {
@@ -278,7 +288,7 @@ type InsightsDashboard implements Node {
     views(first: Int, after: ID): InsightViewConnection
 
     """
-    The permission grants assossiated with the dashboard.
+    The permission grants associated with the dashboard.
     """
     grants: InsightsPermissionGrants!
 }

@@ -49,3 +49,6 @@ spec:
 
   worker:
     disabled: true
+
+  prometheus:
+    disabled: true

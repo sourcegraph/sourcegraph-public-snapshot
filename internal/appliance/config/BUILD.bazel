@@ -11,7 +11,11 @@ go_library(
         "embed.go",
         "spec.go",
     ],
-    embedsrcs = ["pgsql/postgresql.conf"],
+    embedsrcs = [
+        "postgres/codeintel.conf",
+        "postgres/pgsql.conf",
+        "prometheus/default.yml.gotmpl",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
     visibility = ["//:__subpackages__"],
     deps = [

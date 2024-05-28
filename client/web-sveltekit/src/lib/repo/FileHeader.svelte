@@ -6,6 +6,7 @@
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
     const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
     const BLOB_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/blob/[...path]'
@@ -26,10 +27,18 @@
             }
         ),
     ])
+
+    // HACK: we use a flexbox for the path and an inline icon, but we still want the copied path to be usable.
+    // This event handler removes the newlines surrounding slashes from the copied text.
+    function stripSpaces(event: ClipboardEvent) {
+        const selection = document.getSelection() ?? ''
+        event.clipboardData?.setData('text/plain', selection.toString().replaceAll(/\n?\/\n?/g, '/'))
+        event.preventDefault()
+    }
 </script>
 
 <div class="header">
-    <h2>
+    <h2 on:copy={stripSpaces}>
         {#each breadcrumbs as [name, path], index}
             {@const last = index === breadcrumbs.length - 1}
             <!--
@@ -64,6 +73,7 @@
             </span>
         {/each}
     </h2>
+    <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
         <slot name="actions" />
         {#if $$slots.actionmenu}
@@ -92,9 +102,24 @@
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
         gap: 0.5rem;
+
+        .copy-button {
+            visibility: hidden;
+        }
+        &:hover .copy-button {
+            visibility: visible;
+        }
     }
 
     h2 {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375em;
+        span {
+            display: flex;
+            gap: inherit;
+        }
+
         font-weight: 400;
         font-size: var(--code-font-size);
         font-family: var(--code-font-family);

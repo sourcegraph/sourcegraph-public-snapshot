@@ -1805,9 +1805,6 @@ type Repository struct {
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:"visibility,omitempty"`
 
-	// Parent is non-nil for forks and contains details of the parent repository.
-	Parent *ParentRepository `json:",omitempty"`
-
 	// DiskUsageKibibytes is, according to GitHub's docs, in kilobytes, but
 	// empirically it's in kibibytes (meaning: multiples of 1024 bytes, not
 	// 1000).
@@ -1842,11 +1839,6 @@ type restRepositoryPermissions struct {
 	Pull  bool `json:"pull"`
 }
 
-type restParentRepository struct {
-	FullName string `json:"full_name,omitempty"`
-	Fork     bool   `json:"is_fork,omitempty"`
-}
-
 type restRepository struct {
 	ID          string `json:"node_id"` // GraphQL ID
 	DatabaseID  int64  `json:"id"`
@@ -1863,7 +1855,6 @@ type restRepository struct {
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
-	Parent      *restParentRepository     `json:"parent,omitempty"`
 	// DiskUsageKibibytes uses the "size" field which is, according to GitHub's
 	// docs, in kilobytes, but empirically it's in kibibytes (meaning:
 	// multiples of 1024 bytes, not 1000).
@@ -1911,13 +1902,6 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		RepositoryTopics:   RepositoryTopics{topics},
 		Visibility:         Visibility(restRepo.Visibility),
 		DiskUsageKibibytes: restRepo.DiskUsageKibibytes,
-	}
-
-	if restRepo.Parent != nil {
-		repo.Parent = &ParentRepository{
-			NameWithOwner: restRepo.Parent.FullName,
-			IsFork:        restRepo.Parent.Fork,
-		}
 	}
 
 	return &repo

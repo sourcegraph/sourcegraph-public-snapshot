@@ -54,6 +54,20 @@ func NewVolumeFromPVC(name, claimName string) corev1.Volume {
 	}
 }
 
+func NewVolumeFromConfigMap(name, configMapName string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+				DefaultMode: pointers.Ptr[int32](0777),
+			},
+		},
+	}
+}
+
 func NewVolumeEmptyDir(name string) corev1.Volume {
 	return corev1.Volume{
 		Name: name,

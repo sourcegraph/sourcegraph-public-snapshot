@@ -4,6 +4,7 @@ load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
 load("//wolfi-images:defs.bzl", "wolfi_base")
+load("//cmd/server:macro.bzl", "go_binary_nobundle")
 
 go_library(
     name = "server_lib",
@@ -209,3 +210,76 @@ oci_push(
 )
 
 wolfi_base()
+
+# No client bundle targets
+
+go_binary_nobundle(
+    name = "server_nobundle",
+    embed = [":server_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "no_client_bundle.tar",
+    srcs = [":server_nobundle"],
+    remap_paths = {"/server_nobundle": "/server"},
+)
+
+#
+pkg_tar(
+    name = "no_client_bundle_frontend.tar",
+    srcs = ["//cmd/frontend:frontend_nobundle"],
+    remap_paths = {"/frontend_nobundle": "/usr/local/bin/frontend"},
+)
+
+oci_image(
+    name = "no_client_bundle.image",
+    base = ":base_image",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/server",
+    ],
+    env = {
+        "GO111MODULES": "on",
+        "LANG": "en_US.utf8",
+        "LC_ALL": "en_US.utf8",
+        # "PGHOST": "/var/run/postgresql",
+    },
+    tars = [
+        ":no_client_bundle.tar",
+        ":static_config_tar",
+        ":tar_postgres_exporter_config",
+        ":tar_monitoring_config",
+        ":tar_syntax-highlighter",
+        ":tar_scip-ctags",
+        ":tar_postgres_optimize",
+        ":tar_postgres_reindex",
+        ":tar_prom-wrapper",
+        "//monitoring:generate_grafana_config_tar",
+        "tar_image_test_scripts",
+        "no_client_bundle_frontend.tar",
+    ] + dependencies_tars([
+        "//cmd/precise-code-intel-worker",
+        "//cmd/searcher",
+        "//cmd/embeddings",
+        "//cmd/gitserver",
+        "//cmd/migrator",
+        "//cmd/repo-updater",
+        "//cmd/symbols",
+        "//cmd/worker",
+    ]) + dependencies_tars(ZOEKT_DEPS),
+    workdir = "/",
+)
+
+oci_tarball(
+    name = "no_client_bundle.image_tarball",
+    image = ":no_client_bundle.image",
+    repo_tags = ["server:candidate"],
+    visibility = ["//testing:__pkg__"],
+)

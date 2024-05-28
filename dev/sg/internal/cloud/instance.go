@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	cloudapiv1 "github.com/sourcegraph/cloud-api/go/cloudapi/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,7 +58,7 @@ func (i *Instance) String() string {
 		if isUnixEpochZero(t) || t.IsZero() {
 			return "n/a"
 		}
-		return i.CreatedAt.Format(time.RFC3339)
+		return t.Format(time.RFC3339)
 	}
 	return fmt.Sprintf(`ID           : %s
 Name         : %s
@@ -71,12 +72,10 @@ DeletetAt    : %s
 ExpiresAt    : %s
 Project      : %s
 Region       : %s
-Status       : %s
-ActionURL    : %s
-Error        : %s
+%s
 `, i.ID, i.Name, i.InstanceType, i.Environment, i.Version, i.URL, i.AdminEmail,
 		fmtTime(i.CreatedAt), fmtTime(i.DeletedAt), fmtTime(i.ExpiresAt), i.Project, i.Region,
-		i.Status.Status, i.Status.ActionURL, i.Status.Error)
+		i.Status.String())
 }
 
 func (i *Instance) IsEphemeral() bool {
@@ -100,9 +99,79 @@ func (i *Instance) HasStatus(status string) bool {
 }
 
 type InstanceStatus struct {
-	Status    string `json:"status"`
-	ActionURL string `json:"actionUrl"`
-	Error     string `json:"error"`
+	Status string       `json:"status"`
+	Reason StatusReason `json:"reason"`
+	Error  string       `json:"error"`
+}
+
+type StatusReason struct {
+	Step     string `json:"step"`
+	Phase    string `json:"phase"`
+	JobCount int    `json:"job_count"`
+	JobURL   string `json:"job_url"`
+	JobState string `json:"job_state"`
+	Overall  string `json:"overall"`
+}
+
+func newStatusReason(reason string) (StatusReason, error) {
+	if reason == "" {
+		return StatusReason{}, nil
+	}
+
+	// TODO(burmudar): handle storing of multiple jobs
+	jobCount := 1
+	// if the reason contains a semicolon it means there are multiple jobs, we only want the last job
+	if strings.Contains(reason, ";") {
+		parts := strings.Split(reason, ";")
+		// we want to know the number of jobs
+		jobCount = len(parts)
+		// we want to know the last job
+		reason = strings.TrimSpace(parts[jobCount-1])
+	}
+	// step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress, conclusion: failed
+	statusRegex := regexp.MustCompile(`^step (\d\/\d):(.*), job-url:(.*), state:(\w+)(, conclusion:(\w+))?$`)
+	matches := statusRegex.FindStringSubmatch(reason)
+	// if matches is 7, it means we have a conclusion, if matches is 5 then we don't have aa conclusion
+	if len(matches) != 5 && len(matches) != 7 {
+		return StatusReason{}, errors.Newf("failed to parse status reason: %q", reason)
+	}
+	var conclusion string
+	if len(matches) == 7 {
+		conclusion = matches[6]
+	}
+	return StatusReason{
+		Step:     matches[1],
+		Phase:    matches[2],
+		JobCount: jobCount,
+		JobURL:   matches[3],
+		JobState: matches[4],
+		Overall:  conclusion,
+	}, nil
+}
+
+func (s *StatusReason) GetStepPhaseString() string {
+	if s.Step == "" || s.Phase == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("(%s %s)", s.Step, s.Phase)
+}
+
+func (s *StatusReason) GetJobURLStateString() string {
+	value := s.JobURL
+	if s.JobState != "" {
+		value = fmt.Sprintf("%s (%s)", value, s.JobState)
+	}
+	return value
+}
+
+func (s *InstanceStatus) String() string {
+	return fmt.Sprintf(`Status       : %s
+Step         : %s
+Phase        : %s
+JobURL       : %s
+JobState     : %s
+Overall      : %s`, s.Status, s.Reason.Step, s.Reason.Phase, s.Reason.JobURL, s.Reason.JobState, s.Reason.Overall)
 }
 
 type InstanceFeatures struct {
@@ -110,13 +179,13 @@ type InstanceFeatures struct {
 }
 
 func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
-	url, reason, err := parseStatusReason(src.GetReason())
+	reason, err := newStatusReason(src.GetReason())
 	if err != nil {
 		return nil, err
 	}
 
 	status := InstanceStatus{
-		ActionURL: url,
+		Reason: reason,
 	}
 	switch src.GetInstanceStatus() {
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
@@ -127,7 +196,7 @@ func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
 		status.Status = InstanceStatusInProgress
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED:
 		status.Status = InstanceStatusFailed
-		status.Error = reason
+		status.Error = src.GetReason()
 	default:
 		status.Status = InstanceStatusUnknown
 	}
@@ -156,6 +225,7 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	return &Instance{
 		ID:           src.GetId(),
 		Name:         details.Name,
+		Environment:  DevEnvironment,
 		InstanceType: instanceType,
 		Version:      details.Version,
 		URL:          pointers.DerefZero(details.Url),
@@ -172,34 +242,6 @@ func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 
 func isUnixEpochZero(t time.Time) bool {
 	return t.Unix() == 0
-}
-
-func parseStatusReason(reason string) (string, string, error) {
-	if reason == "" {
-		return "", "", nil
-	}
-	parts := strings.Split(reason, ",")
-	if len(parts) != 2 {
-		return "", "", errors.Newf("invalid status reason format: %q", reason)
-	}
-	fieldValue := func(s string) (string, error) {
-		colonIdx := strings.Index(s, ":")
-		if colonIdx == -1 {
-			return "", errors.Newf("invalid field format %q", s)
-		}
-		return s[colonIdx+1:], nil
-	}
-
-	url, err := fieldValue(parts[0])
-	if err != nil {
-		return "", "", errors.Wrapf(err, "field error at pos 0")
-	}
-	status, err := fieldValue(parts[1])
-	if err != nil {
-		return "", "", errors.Wrapf(err, "field error at pos 1")
-	}
-
-	return url, status, nil
 }
 
 func toInstances(items ...*cloudapiv1.Instance) ([]*Instance, error) {

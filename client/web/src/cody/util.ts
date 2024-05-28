@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 
 // URL the user needs to navigate to in order to modify their Cody Pro subscription.
 export const manageSubscriptionRedirectURL = `${
-    window.context.frontendCodyProConfig?.sscBaseUrl || 'https://accounts.sourcegraph.com/cody'
+    window.context?.frontendCodyProConfig?.sscBaseUrl || 'https://accounts.sourcegraph.com/cody'
 }/subscription`
 
 /**
@@ -14,7 +14,7 @@ export const manageSubscriptionRedirectURL = `${
  * for managing their Cody Pro subscription information.
  */
 export function isEmbeddedCodyProUIEnabled(): boolean {
-    return !!(window.context.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
+    return !!(window.context?.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
         ?.stripePublishableKey
 }
 
@@ -45,6 +45,7 @@ const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
  * @param sscUrl The SSC API URL to call. Example: "/checkout/session".
  * @param method E.g. "POST".
  * @param params The body to send to the SSC API. Will be JSON-encoded.
+ *               In the case of GET and HEAD, use the query string instead.
  */
 export function requestSSC(sscUrl: string, method: string, params?: object): Promise<Response> {
     // /.api/ssc/proxy endpoint exchanges the Sourcegraph session credentials for a SAMS access token.
