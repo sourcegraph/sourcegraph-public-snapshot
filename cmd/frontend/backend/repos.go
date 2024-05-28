@@ -3,10 +3,11 @@ package backend
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -269,16 +270,11 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 		return nil, err
 	}
 
-	root, err := s.gitserverClient.Stat(ctx, repo, commitID, "")
-	if err != nil {
-		return nil, err
-	}
-
 	// In computing the inventory, sub-tree inventories are cached based on the OID of the Git
 	// tree. Compared to per-blob caching, this creates many fewer cache entries, which means fewer
 	// stores, fewer lookups, and less cache storage overhead. Compared to per-commit caching, this
 	// yields a higher cache hit rate because most trees are unchanged across commits.
-	inv, err := invCtx.Entries(ctx, root)
+	inv, err := invCtx.All(ctx)
 	if err != nil {
 		return nil, err
 	}

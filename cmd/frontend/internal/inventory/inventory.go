@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"go.opentelemetry.io/otel/attribute"
 	"io"
 	"io/fs"
 
@@ -51,8 +49,6 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 		return Lang{}, nil
 	}
 
-	trc, ctx := trace.New(ctx, "getLang")
-	defer trc.End()
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
 		return Lang{}, errors.Wrap(err, "getting file reader")
@@ -65,12 +61,6 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
-
-	trc.AddEvent("GetLanguageByFilename",
-		attribute.String("FileName", file.Name()),
-		attribute.Bool("Safe", safe),
-		attribute.String("MatchedLang", matchedLang),
-	)
 
 	// No content
 	if rc == nil {
