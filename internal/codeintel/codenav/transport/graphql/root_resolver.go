@@ -3,7 +3,9 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"strings"
 	"sync"
 
@@ -23,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type rootResolver struct {
@@ -31,6 +35,7 @@ type rootResolver struct {
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
+	searcherClient                 searchclient.SearchClient
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
 	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
@@ -47,6 +52,7 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
+	searcherClient searchclient.SearchClient,
 	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
 	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
@@ -65,6 +71,7 @@ func NewRootResolver(
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
+		searcherClient:                 searcherClient,
 		uploadLoaderFactory:            uploadLoaderFactory,
 		indexLoaderFactory:             indexLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
@@ -192,7 +199,6 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 }
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (resolverstubs.UsageConnectionResolver, error) {
-	return nil, errors.New("Not implemented yet")
 	//ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{ /*TODO: Add args*/ })
 	//endObservation.OnCancel(ctx, 1, observation.Args{})
 	//
@@ -203,6 +209,43 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	//if shouldPerformPreciseLookup {
 	//
 	//}
+
+	shouldPerformSyntacticLookup := true
+	if shouldPerformSyntacticLookup {
+		searchQuery := "repo:^github\\.com/sourcegraph/sourcegraph$ rev:HEAD skip_references_at_offsets"
+		var patternType = "standard"
+		var contextLines int32 = 0
+		plan, err := r.searcherClient.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
+		if err != nil {
+			return nil, err
+		}
+		stream := streaming.NewAggregatingStream()
+		_, err = r.searcherClient.Execute(ctx, stream, plan)
+		if err != nil {
+			return nil, err
+		}
+		for _, match := range stream.Results {
+			t, ok := match.(*result.FileMatch)
+			if !ok {
+				continue
+			}
+			fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
+			for _, line := range t.ChunkMatches.AsLineMatches() {
+				fmt.Printf("  %d:%d-%d:%d %s\n",
+					line.LineNumber, line.OffsetAndLengths[0][0],
+					line.LineNumber, line.OffsetAndLengths[0][0]+line.OffsetAndLengths[0][1],
+					line.Preview,
+				)
+			}
+
+		}
+		// Produces:
+		// [frontend] Matches in: github.com/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/syntax-analysis/src/locals.rs
+		// [frontend]   229:4-229:30     skip_references_at_offsets: HashSet<usize>,
+		// [frontend]   258:12-258:38             skip_references_at_offsets: HashSet::new(),
+		// [frontend]   284:13-284:39         self.skip_references_at_offsets.insert(node.start_byte());
+		// [frontend]   703:21-703:47                     .skip_references_at_offsets
+	}
 	//
 	//shouldPerformSearchQuery := false
 	//if shouldPerformSearchQuery {
@@ -214,6 +257,8 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	//if args != nil && args.Symbol != nil && args.S != "" {
 	//	return nil, nil
 	//}
+
+	return nil, errors.New("Not implemented yet")
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
