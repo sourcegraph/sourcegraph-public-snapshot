@@ -45,7 +45,7 @@ export module Client {
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
     urlSuffix: string
-    requestBody?: any
+    requestBody?: unknown
 
     // Unused. This will never be set, it is only to
     // pass along the expected response type.
@@ -64,7 +64,7 @@ export interface Caller {
 // the current Sourcegraph instance's SSC proxy API endpoint.
 export class CodyProApiCaller implements Caller {
     // e.g. "https://sourcegraph.com"
-    private origin: string
+    private readonly origin: string
 
     constructor() {
         this.origin = window.location.origin

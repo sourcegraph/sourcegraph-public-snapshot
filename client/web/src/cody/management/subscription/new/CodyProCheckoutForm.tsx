@@ -8,7 +8,7 @@ import { H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
-import { CreateCheckoutSessionRequest } from '../../api/types'
+import type { CreateCheckoutSessionRequest } from '../../api/types'
 
 /**
  * CodyProCheckoutForm is essentially an iframe that the Stripe Elements library will
@@ -18,16 +18,18 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     stripePromise: Promise<Stripe | null>
     customerEmail: string | undefined
 }> = ({ stripePromise, customerEmail }) => {
+    const [urlSearchParams] = useSearchParams()
+    const creatingTeam = urlSearchParams.get('team') === '1'
     // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which, if present,
     // will display a "promotional code" element in the Stripe Checkout UI.
-    const [urlSearchParams] = useSearchParams()
     const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
 
     // Make the API call to create the Stripe Checkout session.
     const call = useMemo(() => {
-        const req: CreateCheckoutSessionRequest = {
+        const requestBody: CreateCheckoutSessionRequest = {
             interval: 'monthly',
-            seats: 1,
+            // If creating a team, we set seatCount=0, which means the user can adjust the seat count.
+            seats: creatingTeam ? 0 : 1,
             customerEmail,
             showPromoCodeField,
 
@@ -40,10 +42,10 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             // and Sourcegraph.com, immediately loading the Dashboard page isn't
             // going to show the right data reliably. We will need to instead show
             // some prompt, to give the backends an opportunity to sync.
-            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`,
+            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}&welcome=1`,
         }
-        return Client.createStripeCheckoutSession(req)
-    }, [customerEmail, showPromoCodeField])
+        return Client.createStripeCheckoutSession(requestBody)
+    }, [creatingTeam, customerEmail, showPromoCodeField])
     const { loading, error, data } = useApiCaller(call)
 
     // Show a spinner while we wait for the Checkout session to be created.
@@ -63,7 +65,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
 
     return (
         <div>
-            {data && data.clientSecret && (
+            {data?.clientSecret && (
                 <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret: data.clientSecret }}>
                     <EmbeddedCheckout />
                 </EmbeddedCheckoutProvider>

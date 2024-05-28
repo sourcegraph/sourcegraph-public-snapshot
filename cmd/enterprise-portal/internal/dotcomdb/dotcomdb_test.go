@@ -73,6 +73,8 @@ type mockAccess struct {
 }
 
 func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info license.Info, cgAccess graphqlbackend.UpdateCodyGatewayAccessInput) mockAccess {
+	start := time.Now()
+
 	ctx := context.Background()
 	subdb := dotcomproductsubscriptiontest.NewSubscriptionsDB(t, dotcomdb)
 	ldb := dotcomproductsubscriptiontest.NewLicensesDB(t, dotcomdb)
@@ -90,6 +92,22 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 			ExpiresAt: info.ExpiresAt,
 		})
 		require.NoError(t, err)
+	}
+
+	{
+		// Create a different subscription and license that's archived,
+		// created at the same time, to ensure we don't use it
+		u, err := dotcomdb.Users().Create(ctx, database.NewUser{Username: "archived"})
+		require.NoError(t, err)
+		sub, err := subdb.Create(ctx, u.ID, u.Username)
+		require.NoError(t, err)
+		_, err = ldb.Create(ctx, sub, t.Name()+"-archived", 2, license.Info{
+			CreatedAt: info.CreatedAt,
+			ExpiresAt: info.ExpiresAt,
+		})
+		require.NoError(t, err)
+		// Archive the subscription
+		require.NoError(t, subdb.Archive(ctx, sub))
 	}
 
 	// Create the subscription we will assert against
@@ -130,6 +148,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 		require.NoError(t, err)
 	}
 
+	t.Logf("Setup complete in %s", time.Since(start).String())
 	return result
 }
 
@@ -201,6 +220,13 @@ func TestGetCodyGatewayAccessAttributes(t *testing.T) {
 						attr, err := dotcomreader.GetCodyGatewayAccessAttributesByAccessToken(ctx, token)
 						require.NoError(t, err)
 						validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
+
+						t.Run("compare with dotcom tokens DB", func(t *testing.T) {
+							subID, err := dotcomproductsubscriptiontest.NewTokensDB(t, dotcomdb).
+								LookupProductSubscriptionIDByAccessToken(ctx, token)
+							require.NoError(t, err)
+							assert.Equal(t, subID, attr.SubscriptionID)
+						})
 					})
 				}
 			})

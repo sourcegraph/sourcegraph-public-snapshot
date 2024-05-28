@@ -56,7 +56,8 @@ message EnterpriseSubscriptionCondition {
 
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
 message EnterpriseSubscription {
-  // ID is the external, prefixed UUID-format identifier for this subscription.
+  // ID is the external, prefixed UUID-format identifier for this subscription
+  // (e.g. "es_...").
   string id = 1;
   // Timeline of key events corresponding to this subscription.
   repeated EnterpriseSubscriptionCondition conditions = 2;

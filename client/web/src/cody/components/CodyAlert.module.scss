@@ -34,6 +34,27 @@
     }
 }
 
+.purple-cody-pro {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    padding-left: calc(1.5rem + 135px + 1.5rem);
+    background-color: var(--violet-02);
+    color: var(--gray-11);
+    :global(.theme-dark) & {
+        background-color: var(--pink);
+    }
+    &::after {
+        position: absolute;
+        bottom: 0;
+        left: 1.5rem;
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        width: 135px;
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        height: 95px;
+        background-image: url('https://storage.googleapis.com/sourcegraph-assets/cody-pro-card.png');
+        background-size: cover;
+    }
+}
+
 .error-alert {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     padding-left: calc(1.5rem + 124px + 1.5rem);

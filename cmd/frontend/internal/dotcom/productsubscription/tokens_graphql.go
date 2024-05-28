@@ -32,7 +32,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(c
 		return nil, err
 	}
 
-	subID, err := newDBTokens(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, args.AccessToken)
+	subID, err := NewTokensDB(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, args.AccessToken)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, ErrProductSubscriptionNotFound{err}

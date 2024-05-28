@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -176,8 +177,12 @@ FROM product_subscriptions subscription
 	) tokens ON tokens.product_subscription_id = subscription.id`
 
 	clauses := []string{rawClause}
+	// Add WHERE clause, amending it to include a condition that the subscription
+	// must not be archived.
 	if conds.whereClause != "" {
-		clauses = append(clauses, "WHERE "+conds.whereClause)
+		clauses = append(clauses, "WHERE "+conds.whereClause+" AND subscription.archived_at IS NULL")
+	} else {
+		clauses = append(clauses, "WHERE subscription.archived_at IS NULL")
 	}
 	clauses = append(clauses, "GROUP BY subscription.id") // required, after WHERE clause
 	if conds.havingClause != "" {
@@ -195,7 +200,8 @@ func (r *Reader) GetCodyGatewayAccessAttributesBySubscription(ctx context.Contex
 	query := newCodyGatewayAccessQuery(queryConditions{
 		whereClause: "subscription.id = $1",
 	})
-	row := r.conn.QueryRow(ctx, query, subscriptionID)
+	row := r.conn.QueryRow(ctx, query,
+		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 	return scanCodyGatewayAccessAttributes(row)
 }
 

@@ -109,7 +109,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                         />
                     </div>
                     <div className="flex-1 d-flex flex-column">
-                        <H2 className="mb-4">
+                        <H2 className="mb-4 font-weight-normal">
                             <strong>Invite users</strong> – {remainingInviteCount}{' '}
                             {pluralize('seat', remainingInviteCount)} remaining
                         </H2>
