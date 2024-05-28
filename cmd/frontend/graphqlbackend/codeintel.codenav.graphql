@@ -431,19 +431,19 @@ extend type Query {
         the combined results for all symbols will be returned.
         In that case, `Usage.symbol.name` can be used to group results.
         """
-        symbol: SymbolComparator
+        symbol: SymbolComparator,
 
         """
         Information about an existing source range for a usage of the symbol.
         TODO: Specify behavior for various cases of overlap between LookupRange
         and actual occurrence range.
         """
-        range: RangeInput!
+        range: RangeInput!,
 
         """
         Filter to allow customization of returned results.
         """
-        filter: UsagesFilter
+        filter: UsagesFilter,
 
         """
         When specified, indicates that this request should be paginated and
@@ -473,10 +473,10 @@ input SymbolComparator {
 """
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
-input # Implementation note: In the future, we may want to extend this
+# Implementation note: In the future, we may want to extend this
 # to allow passing in a suffix or a "symbol pattern".
 # See https://github.com/sourcegraph/sourcegraph/issues/59957
-SymbolNameComparator {
+input SymbolNameComparator {
     equals: String
 }
 
@@ -549,7 +549,7 @@ same file or same repository respectively.
 
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
-input # Design Rationale:
+# Design Rationale:
 #
 # 1. The ref panel did separate queries for 'this repo' vs 'all other repos'
 #    https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/codeintel/searchBased.ts?L105:13-105:23#tab=references
@@ -561,7 +561,7 @@ input # Design Rationale:
 #    Once syntactic is added, if we want to allow the user to specify either
 #    syntactic or precise (but not search-based), we'd need OR.
 #    OR will also not be needed for the first implementation pass.
-UsagesFilter {
+input UsagesFilter {
     not: UsagesFilter
     repository: RepositoryFilter
     # TODO(id: usagesForSymbols-v2)
@@ -635,7 +635,7 @@ type Usage {
     or exceeds the number of available lines, the value is interpreted as
     until the start/end of the file.
     """
-    surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String
+    surroundingContent(surroundingLines: SurroundingLines = {linesBefore: 0, linesAfter: 0}): String
 }
 
 """
