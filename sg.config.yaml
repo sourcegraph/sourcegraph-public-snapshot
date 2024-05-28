@@ -403,9 +403,13 @@ commands:
       GRPC_WEB_UI_ENABLED: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
-      # Set real values in sg.config.yaml overrides
-      ENTERPRISE_PORTAL_SAMS_CLIENT_ID: "sams_cid_put_a_real_value_in_sg.config.overwrite.yaml"
-      ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET: "sams_cs_put_a_real_value_in_sg.config.overwrite.yaml"
+      # client name: 'enterprise-portal-local-dev'
+      ENTERPRISE_PORTAL_SAMS_CLIENT_ID: "sams_cid_018fc125-5a92-70fa-8dee-2c6df3adc100"
+    externalSecrets:
+      ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: ENTERPRISE_PORTAL_LOCAL_SAMS_CLIENT_SECRET
+
     watch:
       - lib
       - cmd/enterprise-portal
@@ -1869,7 +1873,7 @@ tests:
       TEST_USER_PASSWORD: supersecurepassword
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
       BROWSER: chrome
-    external_secrets:
+    externalSecrets:
       GH_TOKEN:
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'

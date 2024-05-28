@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/statefulset"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -207,13 +206,10 @@ func (r *Reconciler) reconcilePGSQLStatefulSet(ctx context.Context, sg *config.S
 
 func (r *Reconciler) reconcilePGSQLPersistentVolumeClaim(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.PGSQL
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	p, err := pvc.NewPersistentVolumeClaim("pgsql", sg.Namespace, cfg)
 	if err != nil {
-		return errors.Wrap(err, "parsing storage size")
+		return err
 	}
-
-	p := pvc.NewPersistentVolumeClaim("pgsql", sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
-
 	return reconcileObject(ctx, r, sg.Spec.PGSQL, &p, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 

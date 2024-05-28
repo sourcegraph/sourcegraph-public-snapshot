@@ -220,6 +220,7 @@ message ListEnterpriseSubscriptionLicensesResponse {
   // This field represents the pagination token to retrieve the next page of
   // results. If the value is "", it means no further results for the request.
   string next_page_token = 1;
-  // The list of licenses that matched the given query.
+  // The list of licenses that matched the given query, sorted by the most
+  // recently created licenses first.
   repeated EnterpriseSubscriptionLicense licenses = 2;
 }

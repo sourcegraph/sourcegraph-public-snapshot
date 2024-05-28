@@ -33,6 +33,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/license",
         "//internal/licensing",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/pointers",
         "@com_github_jackc_pgx_v4//stdlib",
         "@com_github_jackc_pgx_v5//:pgx",

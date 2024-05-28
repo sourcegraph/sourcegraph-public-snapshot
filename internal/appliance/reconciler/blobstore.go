@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
@@ -35,14 +34,7 @@ func (r *Reconciler) reconcileBlobstore(ctx context.Context, sg *config.Sourcegr
 }
 
 func buildBlobstorePersistentVolumeClaim(sg *config.Sourcegraph) (corev1.PersistentVolumeClaim, error) {
-	storage := sg.Spec.Blobstore.StorageSize
-	if _, err := resource.ParseQuantity(storage); err != nil {
-		return corev1.PersistentVolumeClaim{}, errors.Errorf("invalid blobstore storage size: %s", storage)
-	}
-
-	p := pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, resource.MustParse(storage), sg.Spec.StorageClass.Name)
-
-	return p, nil
+	return pvc.NewPersistentVolumeClaim("blobstore", sg.Namespace, sg.Spec.Blobstore)
 }
 
 func (r *Reconciler) reconcileBlobstorePersistentVolumeClaims(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

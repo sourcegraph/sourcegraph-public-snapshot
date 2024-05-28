@@ -660,8 +660,8 @@ func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
 	}
 	return nil
 }
-func (c *codyLLMConfigurationResolver) SmartContext() string {
-	if c.config.SmartContext == "disabled" {
+func (c *codyLLMConfigurationResolver) SmartContextWindow() string {
+	if c.config.SmartContextWindow == "disabled" {
 		return "disabled"
 	}
 	return "enabled"

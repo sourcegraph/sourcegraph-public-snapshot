@@ -21,7 +21,11 @@ func NewDefaultConfig() Sourcegraph {
 
 			// Service-specific config
 			Blobstore: BlobstoreSpec{
-				StorageSize: "100Gi",
+				StandardConfig: StandardConfig{
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "100Gi",
+					},
+				},
 			},
 			RepoUpdater: RepoUpdaterSpec{
 				StandardConfig: StandardConfig{
@@ -31,22 +35,28 @@ func NewDefaultConfig() Sourcegraph {
 			Symbols: SymbolsSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "12Gi",
+					},
 				},
-				Replicas:    1,
-				StorageSize: "12Gi",
+				Replicas: 1,
 			},
 			GitServer: GitServerSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(6060),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "200Gi",
+					},
 				},
-				Replicas:    1,
-				StorageSize: "200Gi",
+				Replicas: 1,
 			},
 			PGSQL: PGSQLSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9187),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "200Gi",
+					},
 				},
-				StorageSize: "200Gi",
 				DatabaseConnection: &DatabaseConnectionSpec{
 					Host:     "pgsql",
 					Port:     "5432",
@@ -58,14 +68,18 @@ func NewDefaultConfig() Sourcegraph {
 			RedisCache: RedisSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9121),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "100Gi",
+					},
 				},
-				StorageSize: "100Gi",
 			},
 			RedisStore: RedisSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9121),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "100Gi",
+					},
 				},
-				StorageSize: "100Gi",
 			},
 			SyntectServer: SyntectServerSpec{
 				StandardConfig: StandardConfig{
@@ -83,8 +97,10 @@ func NewDefaultConfig() Sourcegraph {
 			CodeIntel: CodeIntelSpec{
 				StandardConfig: StandardConfig{
 					PrometheusPort: pointers.Ptr(9187),
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "200Gi",
+					},
 				},
-				StorageSize: "200Gi",
 				DatabaseConnection: &DatabaseConnectionSpec{
 					Host:     "codeintel-db",
 					Port:     "5432",
@@ -94,7 +110,11 @@ func NewDefaultConfig() Sourcegraph {
 				},
 			},
 			Prometheus: PrometheusSpec{
-				StorageSize: "200Gi",
+				StandardConfig: StandardConfig{
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "200Gi",
+					},
+				},
 			},
 		},
 	}

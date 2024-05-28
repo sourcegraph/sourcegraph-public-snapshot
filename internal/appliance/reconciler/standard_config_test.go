@@ -9,14 +9,15 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 	for _, tc := range []struct {
 		name string
 	}{
+		{name: "standard/blobstore-with-named-storage-class"},
+		{name: "standard/precise-code-intel-with-env-vars"},
+		{name: "standard/redis-with-multiple-custom-images"},
+		{name: "standard/redis-with-storage"},
+		{name: "standard/repo-updater-with-no-resources"},
 		{name: "standard/repo-updater-with-pod-template-config"},
 		{name: "standard/repo-updater-with-resources"},
-		{name: "standard/repo-updater-with-no-resources"},
 		{name: "standard/repo-updater-with-sa-annotations"},
 		{name: "standard/symbols-with-custom-image"},
-		{name: "standard/redis-with-multiple-custom-images"},
-		{name: "standard/precise-code-intel-with-env-vars"},
-		{name: "standard/blobstore-with-named-storage-class"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
