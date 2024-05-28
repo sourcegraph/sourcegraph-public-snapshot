@@ -3,7 +3,6 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"strings"
 	"sync"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type rootResolver struct {
