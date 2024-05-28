@@ -126,8 +126,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 		assert.Contains(t, result.reasons, "unknown_prompt")
 	})
 
-	// If the prompt is NOT flagged, then we do not perform the "blocking due to bad phrase" check.
-	// In other words, a valid prompt with a bad phrase is allowed through.
+	// If the prompt contains bad phrases, the request is blocked immediately, and it is also marked as flagged (for future inspection).
 	t.Run("bad phrase only", func(t *testing.T) {
 		cfgWithBadPhrase := cfgWithPreamble
 		cfgWithBadPhrase.BlockedPromptPatterns = []string{"bad phrase"}
@@ -135,7 +134,8 @@ func TestIsFlaggedRequest(t *testing.T) {
 			validPreamble+" ... bad phrase ...",
 			cfgWithBadPhrase)
 		require.NoError(t, err)
-		assert.False(t, result.IsFlagged())
+		assert.True(t, result.IsFlagged())
+		assert.True(t, result.shouldBlock)
 	})
 
 	t.Run("TokenCountChecks", func(t *testing.T) {
