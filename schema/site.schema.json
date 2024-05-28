@@ -2839,7 +2839,7 @@
           "type": "string"
         },
         "user": {
-          "description": "Its the user field for OpenAI config for both AzureOpenAI and OpenAI",
+          "description": "The user field for OpenAI config for both AzureOpenAI and OpenAI",
           "type": "string"
         },
         "fastChatModel": {
