@@ -35,10 +35,10 @@ func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivat
 	if mode >= redactMarketingAndUnallowedPrivateMetadataKeys {
 		// Do private metadata redaction in this if case, as the next case will strip
 		// everything
-		if event.Parameters == nil {
+		if event.Parameters == nil || event.Parameters.PrivateMetadata == nil {
 			return mode
 		}
-		for key, value := range event.Parameters.PrivateMetadata.Fields {
+		for key, value := range event.GetParameters().GetPrivateMetadata().GetFields() {
 			if !slices.Contains(allowedPrivateMetadataKeys, key) {
 				// Strip all keys that are NOT in the allowlist, as they are considered sensitive.
 				// No need to check data types, since we're only dealing with keys.
