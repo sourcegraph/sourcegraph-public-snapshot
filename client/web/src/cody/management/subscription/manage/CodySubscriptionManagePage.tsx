@@ -18,8 +18,8 @@ import {
 } from '../../../../graphql-operations'
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
-import { Client } from '../../api/client'
-import { useApiCaller } from '../../api/hooks/useApiClient'
+import { QueryClientProvider } from '../../api/react-query/QueryClientProvider'
+import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 
 import { InvoiceHistory } from './InvoiceHistory'
 import { PaymentDetails } from './PaymentDetails'
@@ -66,42 +66,32 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         return <Navigate to="/cody/manage/subscription/new" replace={true} />
     }
 
-    return <PageContent />
+    return (
+        // TODO: Move `QueryClientProvider` higher in the component tree.
+        // We want to wrap any component that relies on `useResource` or `useUpdateResource`
+        // from client/web/src/cody/management/api/react-query folder to be wrapped with `QueryClientProvider`.
+        // This wrapper is here only for demo PR purposes.
+        <QueryClientProvider>
+            <PageContent />
+        </QueryClientProvider>
+    )
 }
 
-const currentSubscriptionCall = Client.getCurrentSubscription()
+export const CodySubscriptionManagePage = withAuthenticatedUser(AuthenticatedCodySubscriptionManagePage)
 
 const PageContent: React.FC = () => {
-    const {
-        loading,
-        error,
-        data: subscription,
-        refetch: refetchSubscription,
-        response,
-    } = useApiCaller(currentSubscriptionCall)
+    const subscriptionQueryResult = useCurrentSubscription()
 
-    if (loading) {
+    if (subscriptionQueryResult.isLoading) {
         return <LoadingSpinner />
     }
 
-    if (error) {
-        logger.error('Error fetching current subscription', error)
+    if (subscriptionQueryResult.isError) {
         return null
     }
 
-    if (response && !response.ok) {
-        if (response.status === 401) {
-            return <Navigate to="/-/sign-out" replace={true} />
-        }
-
-        logger.error(`Fetch Cody subscription request failed with status ${response.status}`)
-        return null
-    }
-
+    const subscription = subscriptionQueryResult?.data?.data
     if (!subscription) {
-        if (response) {
-            logger.error('Current subscription is not available.')
-        }
         return null
     }
 
@@ -123,11 +113,11 @@ const PageContent: React.FC = () => {
             </div>
 
             <Card className={classNames('my-4 p-4', styles.card)}>
-                <SubscriptionDetails subscription={subscription} refetchSubscription={refetchSubscription} />
+                <SubscriptionDetails subscription={subscription} />
 
                 <hr className={styles.divider} />
 
-                <PaymentDetails subscription={subscription} refetchSubscription={refetchSubscription} />
+                <PaymentDetails subscription={subscription} />
             </Card>
 
             <Card className={classNames('my-4 p-4', styles.card)}>
@@ -246,5 +236,3 @@ const CodyIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 )
 /* eslint-enable react/forbid-dom-props */
-
-export const CodySubscriptionManagePage = withAuthenticatedUser(AuthenticatedCodySubscriptionManagePage)
