@@ -22,7 +22,7 @@ import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { useCurrentSubscription, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import styles from './PaymentDetails.module.scss'
@@ -54,8 +54,6 @@ export const PaymentDetails: React.FC<PaymentDetailsProps> = props => (
 
 const PaymentMethod: React.FC<PaymentDetailsProps> = props => {
     const [isEditMode, setIsEditMode] = useState(false)
-    const q = useCurrentSubscription()
-    console.log('PaymentMethod', q)
 
     if (!props.subscription.paymentMethod) {
         return <PaymentMethodMissing onAddButtonClick={() => setIsEditMode(true)} />
@@ -282,9 +280,6 @@ const useBillingAddressStripeElementsOptions = (): StripeElementsOptions => {
 const BillingAddress: React.FC<PaymentDetailsProps> = props => {
     const options = useBillingAddressStripeElementsOptions()
     const [isEditMode, setIsEditMode] = useState(false)
-
-    const q = useCurrentSubscription()
-    console.log('BillingAddress', q)
 
     return (
         <div>
