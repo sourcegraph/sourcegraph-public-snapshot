@@ -27,7 +27,6 @@ export default defineConfig(({ mode }) => {
             }),
             Icons({
                 compiler: 'svelte',
-                defaultClass: 'icon',
             }),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
