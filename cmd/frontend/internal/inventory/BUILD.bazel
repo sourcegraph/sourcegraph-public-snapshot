@@ -12,13 +12,13 @@ go_library(
     tags = [TAG_SEARCHSUITE],
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//internal/trace",
+        "//internal/api",
+        "//internal/gitserver",
         "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_go_enry_go_enry_v2//data",
         "@com_github_sourcegraph_conc//iter",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
