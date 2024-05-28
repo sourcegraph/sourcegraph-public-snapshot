@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, H1, H3, Icon, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
-import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import { getCodyProApiErrorMessage, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import { humanizeDate, usdCentsToHumanString } from './utils'
@@ -35,10 +35,15 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
     const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false)
     const [isErrorVisible, setIsErrorVisible] = useState(false)
 
+    const errorMessage = getCodyProApiErrorMessage(
+        updateCurrentSubscriptionMutation.error,
+        'An error occurred while updating your subscription status. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+    )
+
     useEffect(
         function clearErrorMessageAfterTimeout() {
             let timeout: NodeJS.Timeout
-            if (updateCurrentSubscriptionMutation.error) {
+            if (errorMessage) {
                 setIsErrorVisible(true)
                 timeout = setTimeout(() => setIsErrorVisible(false), 5000)
             }
@@ -48,7 +53,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                 }
             }
         },
-        [updateCurrentSubscriptionMutation.error]
+        [errorMessage]
     )
 
     return (
@@ -148,10 +153,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
             </div>
 
             {updateCurrentSubscriptionMutation.isError && isErrorVisible ? (
-                <Text className="mt-3 text-danger">
-                    An error occurred while updating your subscription status. Please try again. If the problem
-                    persists, contact support at support@sourcegraph.com.
-                </Text>
+                <Text className="mt-3 text-danger">{errorMessage}</Text>
             ) : null}
         </>
     )

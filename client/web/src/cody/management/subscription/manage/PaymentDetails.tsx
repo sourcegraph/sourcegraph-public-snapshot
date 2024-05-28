@@ -22,7 +22,7 @@ import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import { getCodyProApiErrorMessage, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import styles from './PaymentDetails.module.scss'
@@ -148,7 +148,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
 
     const isLoading = isStripeLoading || updateCurrentSubscriptionMutation.isPending
     const errorMessage =
-        stripeErrorMessage || updateCurrentSubscriptionMutation.isError ? updateSubscriptionMutationErrorText : ''
+        stripeErrorMessage ||
+        getCodyProApiErrorMessage(updateCurrentSubscriptionMutation.error, updateSubscriptionMutationErrorText)
 
     useEffect(() => {
         if (errorMessage) {
@@ -376,7 +377,8 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
 
     const isLoading = isStripeLoading || updateCurrentSubscriptionMutation.isPending
     const errorMessage =
-        stripeErrorMessage || updateCurrentSubscriptionMutation.isError ? updateSubscriptionMutationErrorText : ''
+        stripeErrorMessage ||
+        getCodyProApiErrorMessage(updateCurrentSubscriptionMutation.error, updateSubscriptionMutationErrorText)
 
     useEffect(() => {
         if (errorMessage) {

@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Alert, Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
@@ -19,7 +19,7 @@ import {
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { QueryClientProvider } from '../../api/react-query/QueryClientProvider'
-import { useCurrentSubscription } from '../../api/react-query/subscriptions'
+import { getCodyProApiErrorMessage, useCurrentSubscription } from '../../api/react-query/subscriptions'
 
 import { InvoiceHistory } from './InvoiceHistory'
 import { PaymentDetails } from './PaymentDetails'
@@ -72,7 +72,9 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         // from client/web/src/cody/management/api/react-query folder to be wrapped with `QueryClientProvider`.
         // This wrapper is here only for demo PR purposes.
         <QueryClientProvider>
-            <PageContent />
+            <Page className="d-flex flex-column">
+                <PageContent />
+            </Page>
         </QueryClientProvider>
     )
 }
@@ -83,20 +85,21 @@ const PageContent: React.FC = () => {
     const subscriptionQueryResult = useCurrentSubscription()
 
     if (subscriptionQueryResult.isLoading) {
-        return <LoadingSpinner />
+        return <LoadingSpinner className="mx-auto" />
     }
 
-    if (subscriptionQueryResult.isError) {
-        return null
+    const errorMessage = getCodyProApiErrorMessage(subscriptionQueryResult.error, 'Failed to fetch subscription data')
+    if (errorMessage) {
+        return <Alert variant="danger">{errorMessage}</Alert>
     }
 
     const subscription = subscriptionQueryResult?.data?.data
     if (!subscription) {
-        return null
+        return <Alert variant="warning">Subscription data is not available</Alert>
     }
 
     return (
-        <Page className="d-flex flex-column">
+        <>
             <PageTitle title="Manage Subscription" />
             <PageHeader className="mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1" className={classNames('mb-4', styles.title)}>
@@ -123,7 +126,7 @@ const PageContent: React.FC = () => {
             <Card className={classNames('my-4 p-4', styles.card)}>
                 <InvoiceHistory />
             </Card>
-        </Page>
+        </>
     )
 }
 
