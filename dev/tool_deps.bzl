@@ -356,6 +356,20 @@ def tool_deps():
     # to find the update URLs try running:
     # npx playwright install --dry-run
     http_archive(
+        name = "chromium-darwin-arm64",
+        integrity = "sha256-5wj+iZyUU7WSAyA8Unriu9swRag3JyAxUUgGgVM+fTw=",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-mac-arm64.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-mac/Chromium.app/Contents/MacOS/Chromium"),
+    )
+
+    http_archive(
+        name = "chromium-darwin-x86_64",
+        integrity = "sha256-kzTbTaznfQFD9HK1LMrDGdcs1ZZiq2Rfv+l5qjM5Cus=",
+        url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-mac.zip",
+        build_file_content = CHROMIUM_BUILDFILE.format("chrome-mac/Chromium.app/Contents/MacOS/Chromium"),
+    )
+
+    http_archive(
         name = "chromium-linux-x86_64",
         integrity = "sha256-T7teJtSwhf7LIpQMEp4zp3Ey3T/p4Y7dQI/7VGVHdkE=",
         url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-linux.zip",

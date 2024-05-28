@@ -177,6 +177,7 @@ copy_to_directory(
 
 playwright_test_bin.playwright_test(
     name = "e2e_test",
+    timeout = "short",
     args = [
         "test",
         "--config $(location playwright.config.ts)",
@@ -191,11 +192,10 @@ playwright_test_bin.playwright_test(
         ":generate-graphql-types",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
-        "@chromium-linux-x86_64//:chromium",
+        "//dev/tools:chromium",
     ] + PLAYWRIGHT_DEPS,
     env = {
-        # We pass in the linux chromium bin but only use it in CI
-        "CHROMIUM_BIN": "$(rootpaths @chromium-linux-x86_64//:chromium)",
+        "CHROMIUM_BIN": "$(rootpath //dev/tools:chromium)",
         "BAZEL": "1",
         "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
