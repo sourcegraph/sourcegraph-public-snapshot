@@ -91,6 +91,33 @@ test:
           echo "❌ Tag '{{version}}' already exists"
           exit 1
         fi
+    - name: 'check:frontend and server image contain bundle'
+      cmd: |
+        set -eu
+
+        REGISTRY="${PROD_REGISTRY:-''}"
+
+        # the reason this is not in the requirements check of the release yaml is because those checks also
+        # apply when running the release tooling locally, and the testing steps are supposed to run in CI
+        if [ -z ${REGISTRY} ]; then
+          echo "PROD_REGISTRY is not set - unable to check frontend/server image"
+          exit 1
+        fi
+
+        for image in frontend server; do
+          IMAGE="${REGISTRY}/$image:{{tag}}"
+
+          # Pull the image so that we can inspect it
+          echo "pulling $image image ${IMAGE}"
+          # docker pull "${IMAGE}"
+
+          echo "checking $image binary in $image image for web bundle"
+          marker=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "strings $image | grep WEB_BUNDLE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          if [[ "$marker" != '"_marker": "WEB_BUNDLE"' ]]; then
+            echo "$image:{{tag}} does not contain the web bundle marker string: '$marker'"
+            exit 1
+          fi
+        done
     - name: 'check:migrator-schemas'
       cmd: |
         set -eu
