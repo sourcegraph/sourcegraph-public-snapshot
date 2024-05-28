@@ -40,7 +40,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	tacosRepoId, tacosRepoName, tacosCommit := 1, "tangy/tacos", testutils.MakeCommit(1)
 	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "salty/empanadas", testutils.MakeCommit(2)
-	mangosRepoId, mangosRepoName, mangosCommit := 3, "juicy/mangos", testutils.MakeCommit(3)
+	mangosRepoId, mangosRepoName := 3, "juicy/mangos"
 
 	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
@@ -81,7 +81,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	require.Error(t, err)
 
 	// cannot schedule for non existent revisions
-	_, err = enqueuer.QueueIndexes(ctx, mangosRepoId, mangosCommit, EnqueueOptions{})
+	_, err = enqueuer.QueueIndexes(ctx, mangosRepoId, testutils.MakeCommit(100), EnqueueOptions{})
 	require.Error(t, err)
 
 }
