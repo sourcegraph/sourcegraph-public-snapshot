@@ -1,4 +1,4 @@
-import { BillingInterval } from './teamSubscriptions'
+import type { BillingInterval } from './teamSubscriptions'
 
 export interface CreateCheckoutSessionRequest {
     interval: BillingInterval
