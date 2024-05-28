@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpapi",
+    srcs = [
+        "httpapi.go",
+        "metrics.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/httpapi",
+    visibility = ["//cmd/msp-example:__subpackages__"],
+    deps = [
+        "//lib/managedservicesplatform/runtime",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)

@@ -1,4 +1,4 @@
-package example
+package bigquery
 
 import (
 	"context"
@@ -8,17 +8,26 @@ import (
 	"cloud.google.com/go/bigquery"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/bigquerywriter"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
-func writeBigQueryEvent(ctx context.Context, contract runtime.Contract, eventName string) error {
+type Client struct {
+	w *bigquerywriter.Writer
+}
+
+func NewClient(ctx context.Context, contract runtime.Contract) (*Client, error) {
 	bq, err := contract.BigQuery.GetTableWriter(ctx, "example")
 	if err != nil {
-		return errors.Wrap(err, "BigQuery.GetTableWriter")
+		return nil, errors.Wrap(err, "BigQuery.GetTableWriter")
 	}
-	defer func() { _ = bq.Close() }()
+	return &Client{bq}, nil
+}
 
-	return bq.Write(ctx, bigQueryEntry{
+func (c *Client) Close() error { return c.w.Close() }
+
+func (c *Client) Write(ctx context.Context, eventName string) error {
+	return c.w.Write(ctx, bigQueryEntry{
 		Name:      eventName,
 		CreatedAt: time.Now(),
 	})
