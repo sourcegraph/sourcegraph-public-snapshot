@@ -5,6 +5,8 @@ go_library(
     srcs = [
         "appliance.go",
         "grpc.go",
+        "html.go",
+        "routes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
@@ -12,6 +14,7 @@ go_library(
         "//internal/appliance/config",
         "//internal/appliance/v1:appliance",
         "//lib/pointers",
+        "@com_github_gorilla_mux//:mux",
         "@com_github_masterminds_semver//:semver",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
