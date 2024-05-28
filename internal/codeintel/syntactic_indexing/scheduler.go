@@ -52,12 +52,12 @@ func NewSyntaticJobScheduler(repoSchedulingSvc reposcheduler.RepositorySchedulin
 	}, nil
 }
 
-func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, db *sql.DB) (SyntacticJobScheduler, error) {
-	database := database.NewDB(observationCtx.Logger, db)
+func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, rawDB *sql.DB) (SyntacticJobScheduler, error) {
+	database := database.NewDB(observationCtx.Logger, rawDB)
 
 	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
 
-	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, rawDB)
 
 	uploadsSvc := uploads.NewService(observationCtx, database, codeIntelDB, gitserverClient.Scoped("uploads"))
 	policiesSvc := policies.NewService(observationCtx, database, uploadsSvc, gitserverClient.Scoped("policies"))
@@ -74,7 +74,7 @@ func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, db *sql
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, database)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, rawDB)
 	if err != nil {
 		return nil, err
 	}

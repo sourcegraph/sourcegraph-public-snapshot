@@ -22,12 +22,7 @@ func InitDB(observationCtx *observation.Context) (database.DB, error) {
 }
 
 func InitRawDB(observationCtx *observation.Context) (*sql.DB, error) {
-	rawDB, err := initDatabaseMemo.Init(observationCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	return rawDB, err
+	return initDatabaseMemo.Init(observationCtx)
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
