@@ -3,6 +3,7 @@ package azureopenai
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -277,6 +278,8 @@ func streamChat(
 	// Azure sends incremental deltas for each message in a chat stream
 	// build up the full message content over multiple responses
 	var content string
+	var promptTokens int32
+
 	for {
 		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done
@@ -287,6 +290,11 @@ func streamChat(
 				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 			}
 			return nil
+		}
+		// These are only included in the last message, so we're not worried about overwriting
+		if entry.Usage != nil {
+			promptTokens = *entry.Usage.PromptTokens
+			fmt.Println("Prompt Tokens: ", promptTokens)
 		}
 		// some other error has occurred
 		if err != nil {
@@ -358,6 +366,7 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 		Stop:           requestParams.StopSequences,
 		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
 		DeploymentName: &requestParams.Model,
+		User:           &requestParams.User,
 	}
 }
 
@@ -380,6 +389,7 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 		Stop:           requestParams.StopSequences,
 		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
 		DeploymentName: &requestParams.Model,
+		User:           &requestParams.User,
 	}, nil
 }
 

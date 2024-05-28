@@ -707,6 +707,8 @@ type Completions struct {
 	Provider string `json:"provider,omitempty"`
 	// SmartContextWindow description: Whether the maximum number of tokens should be automatically adjusted by the client based on the name of chatModel. If enabled, it will override the value set in chatModelMaxTokens.
 	SmartContextWindow string `json:"smartContextWindow,omitempty"`
+	// User description: Its the user field for OpenAI config for both AzureOpenAI and OpenAI
+	User string `json:"user,omitempty"`
 }
 
 // ConfigFeatures description: Configuration for the completions service.
