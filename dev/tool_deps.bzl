@@ -70,6 +70,7 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 js_library(
     name = "chromium",
     srcs = ["{}"],
+    data = glob(["**/*"]),
     visibility = ["//visibility:public"],
 )
 """
