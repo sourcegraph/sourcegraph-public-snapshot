@@ -37,7 +37,6 @@ var clientCredentialsFlags = []cli.Flag{
 	&cli.StringSliceFlag{
 		Name:    "scopes",
 		Aliases: []string{"s"},
-		EnvVars: []string{"SAMS_SCOPES"},
 		Value:   cli.NewStringSlice("openid", "profile", "email"),
 		Usage:   "OAuth scopes ('$SERVICE::$PERM::$ACTION') to request from the Sourcegraph Accounts Management System (SAMS) server",
 	},
