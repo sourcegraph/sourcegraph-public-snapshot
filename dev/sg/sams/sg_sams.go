@@ -1,4 +1,4 @@
-// Package msp exports 'sg sams' commands for the Sourcegraph Accounts Management System.
+// Package sams exports 'sg sams' commands for the Sourcegraph Accounts Management System.
 package sams
 
 import (
