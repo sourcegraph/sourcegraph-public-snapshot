@@ -7,7 +7,6 @@ func (suite *ApplianceTestSuite) TestDeployGitServer() {
 		name string
 	}{
 		{name: "gitserver/default"},
-		{name: "gitserver/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

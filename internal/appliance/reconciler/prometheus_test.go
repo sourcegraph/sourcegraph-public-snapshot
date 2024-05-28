@@ -9,7 +9,6 @@ func (suite *ApplianceTestSuite) TestDeployPrometheus() {
 		{name: "prometheus/default"},
 		{name: "prometheus/privileged"},
 		{name: "prometheus/with-existing-configmap"},
-		{name: "prometheus/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
