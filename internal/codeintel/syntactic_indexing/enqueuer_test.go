@@ -65,7 +65,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	scheduled, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
 
 	require.NoError(t, err)
-	require.True(t, len(scheduled) == 1)
+	require.Equal(t, 1, len(scheduled))
 	require.Equal(t, scheduled[0].Commit, tacosCommit)
 	require.Equal(t, scheduled[0].RepositoryID, tacosRepoId)
 	require.Equal(t, scheduled[0].State, jobstore.Queued)

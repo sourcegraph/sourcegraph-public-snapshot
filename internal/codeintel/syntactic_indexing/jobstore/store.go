@@ -105,8 +105,7 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 		if err != nil {
 			return err
 		}
-		// TODO: add operations and record this operation
-		// s.operations.indexesInserted.Add(float64(len(ids)))
+		s.operations.indexesInserted.Add(float64(len(ids)))
 
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 		if err != nil {
