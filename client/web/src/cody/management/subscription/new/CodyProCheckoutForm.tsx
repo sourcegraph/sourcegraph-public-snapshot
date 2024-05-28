@@ -42,7 +42,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             // and Sourcegraph.com, immediately loading the Dashboard page isn't
             // going to show the right data reliably. We will need to instead show
             // some prompt, to give the backends an opportunity to sync.
-            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}`,
+            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}&welcome=1`,
         }
         return Client.createStripeCheckoutSession(requestBody)
     }, [creatingTeam, customerEmail, showPromoCodeField])
