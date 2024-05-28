@@ -95,7 +95,7 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	deploymentName := createDeploymentName(ctx.String("name"), version, email, currentBranch)
+	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)
 
 	err = upgradeDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {

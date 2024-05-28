@@ -173,7 +173,7 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	return nil
 }
 
-func createDeploymentName(originalName, version, email, branch string) string {
+func determineDeploymentName(originalName, version, email, branch string) string {
 	var deploymentName string
 	if originalName != "" {
 		deploymentName = originalName
@@ -236,7 +236,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	}
 
 	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
-	deploymentName := createDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
+	deploymentName := determineDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {
