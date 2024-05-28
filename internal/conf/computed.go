@@ -910,6 +910,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		CompletionModel:                  completionsConfig.CompletionModel,
 		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
+		User:                             completionsConfig.User,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
 		PerCommunityUserChatMonthlyLLMRequestLimit:             completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,
