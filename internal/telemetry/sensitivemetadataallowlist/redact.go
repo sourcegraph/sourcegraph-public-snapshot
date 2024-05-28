@@ -24,10 +24,10 @@ const (
 
 // 🚨 SECURITY: Be very careful with the redaction mechanisms here, as it impacts
 // what data we export from customer Sourcegraph instances.
-func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivateMetadataKeys []string) {
+func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivateMetadataKeys []string) redactMode {
 	// redactNothing (generally only in dotcom)
 	if mode >= redactNothing {
-		return
+		return mode
 	}
 
 	// redactMarketingAndUnallowedPrivateMetadataKeys
@@ -35,7 +35,10 @@ func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivat
 	if mode >= redactMarketingAndUnallowedPrivateMetadataKeys {
 		// Do private metadata redaction in this if case, as the next case will strip
 		// everything
-		for key, value := range event.Parameters.PrivateMetadata.Fields {
+		if event.Parameters == nil || event.Parameters.PrivateMetadata == nil {
+			return mode
+		}
+		for key, value := range event.GetParameters().GetPrivateMetadata().GetFields() {
 			if !slices.Contains(allowedPrivateMetadataKeys, key) {
 				// Strip all keys that are NOT in the allowlist, as they are considered sensitive.
 				// No need to check data types, since we're only dealing with keys.
@@ -47,11 +50,12 @@ func redactEvent(event *telemetrygatewayv1.Event, mode redactMode, allowedPrivat
 					structpb.NewStringValue(fmt.Sprintf("ERROR: value of allowlisted key was not a string, got: %T", value.Kind))
 			}
 		}
-		return
+		return mode
 	}
 
 	// redactAllSensitive
 	if event.Parameters != nil {
 		event.Parameters.PrivateMetadata = nil
 	}
+	return mode
 }

@@ -254,10 +254,9 @@ func (r *Reconciler) reconcilePrometheusClusterRoleBinding(ctx context.Context, 
 func (r *Reconciler) reconcilePrometheusPVC(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	name := "prometheus"
 	cfg := sg.Spec.Prometheus
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	pvc, err := pvc.NewPersistentVolumeClaim(name, sg.Namespace, cfg)
 	if err != nil {
-		return errors.Wrap(err, "parsing storage size")
+		return err
 	}
-	pvc := pvc.NewPersistentVolumeClaim(name, sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
 	return reconcileObject(ctx, r, cfg, &pvc, &corev1.PersistentVolumeClaim{}, sg, owner)
 }

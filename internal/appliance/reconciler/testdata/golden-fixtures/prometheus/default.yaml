@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -327,7 +327,7 @@ resources:
     kind: ConfigMap
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -414,7 +414,7 @@ resources:
     kind: PersistentVolumeClaim
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       finalizers:
         - kubernetes.io/pvc-protection
@@ -444,7 +444,7 @@ resources:
     kind: Role
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -480,7 +480,7 @@ resources:
     kind: RoleBinding
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -507,7 +507,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -526,7 +526,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 40ddb993f0b30dff9200540c876d34e75d530d9ca00cd171e90e517a34b963c2
+        appliance.sourcegraph.com/configHash: 0d793282aafb84217a72f4943c126870b047084dea6cd77eeebbcdb9929a1477
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: prometheus

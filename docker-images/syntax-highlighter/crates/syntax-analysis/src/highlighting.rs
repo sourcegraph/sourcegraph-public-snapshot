@@ -119,7 +119,7 @@ impl<'a> FileInfo<'a> {
             prefix_langs: Vec<(&'static str, &'static str)>,
             default: &'static str,
         }
-        let overrides = vec![
+        let overrides = [
             Override {
                 extension: "cls",
                 prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
