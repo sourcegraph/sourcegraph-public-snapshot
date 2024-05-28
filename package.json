@@ -47,7 +47,8 @@
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
     "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
-    "_chromatic": "chromatic"
+    "_chromatic": "chromatic",
+    "install:browsers": "pnpm -r install:browsers"
   },
   "jscpd": {
     "gitignore": true,

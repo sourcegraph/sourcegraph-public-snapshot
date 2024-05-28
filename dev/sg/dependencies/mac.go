@@ -274,7 +274,7 @@ WARNING: if you just fixed (automatically or manually) this step, you must resta
 				Name:        "Playwright browser deps",
 				Description: "Installs playwright browser executables",
 				Check:       checkAction(check.FileExists("~/Library/Caches/ms-playwright/")),
-				Fix:         cmdFix(`npx playwright install`),
+				Fix:         cmdFix(`pnpm install:browsers`),
 			},
 		},
 	},

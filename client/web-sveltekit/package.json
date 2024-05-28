@@ -9,6 +9,7 @@
     "build:preview": "vite build --mode=preview",
     "build:watch": "vite build --watch",
     "preview": "vite preview",
+    "install:browsers": "playwright install",
     "test": "playwright test",
     "test:dev": "PORT=5173 playwright test --ui",
     "test:svelte": "vitest --run",
