@@ -7567,13 +7567,13 @@ type CodyLLMConfiguration {
     """
     chatModel: String!
     """
-    Maximum number of tokens client should use when talking to the chatModel. If smartContext is enabled, this value will be ignored.
+    Maximum number of tokens client should use when talking to the chatModel. If smartContextWindow is enabled, this value will be ignored.
     """
     chatModelMaxTokens: Int
     """
     Enable Cody clients to adjust context window based on the name of the chat model. If enabled, the chatModelMaxTokens value will be ignored.
     """
-    smartContext: String!
+    smartContextWindow: String!
     """
     Name of the model being used for fast chat.
     """
