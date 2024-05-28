@@ -29,6 +29,7 @@ go_test(
     embed = [":sensitivemetadataallowlist"],
     tags = [TAG_INFRA_CORESERVICES],
     deps = [
+        "//internal/dotcom",
         "//internal/telemetry",
         "//lib/pointers",
         "//lib/telemetrygateway/v1:telemetrygateway",

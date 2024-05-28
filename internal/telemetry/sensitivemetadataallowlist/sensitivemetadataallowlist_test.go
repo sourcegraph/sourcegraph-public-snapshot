@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	v1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
 )
@@ -119,4 +120,38 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEventTypesRedact(t *testing.T) {
+	allowedTypes := eventTypes(EventType{
+		Feature:                    "example",
+		Action:                     "exampleAction",
+		AllowedPrivateMetadataKeys: []string{"foo"},
+	})
+
+	t.Run("dotcom mode", func(t *testing.T) {
+		dotcom.MockSourcegraphDotComMode(t, true)
+		mode := allowedTypes.Redact(&v1.Event{
+			Feature: "example",
+			Action:  "exampleAction",
+		})
+		assert.Equal(t, redactNothing, mode)
+	})
+
+	t.Run("default", func(t *testing.T) {
+		t.Run("allowlisted", func(t *testing.T) {
+			mode := allowedTypes.Redact(&v1.Event{
+				Feature: "example",
+				Action:  "exampleAction",
+			})
+			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
+		})
+		t.Run("not allowlisted", func(t *testing.T) {
+			mode := allowedTypes.Redact(&v1.Event{
+				Feature: "foobar",
+				Action:  "exampleAction",
+			})
+			assert.Equal(t, redactAllSensitive, mode)
+		})
+	})
 }

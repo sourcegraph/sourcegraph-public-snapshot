@@ -76,13 +76,13 @@ func eventTypes(types ...EventType) EventTypes {
 //
 // 🚨 SECURITY: Be very careful with the redaction modes used here, as it impacts
 // what data we export from customer Sourcegraph instances.
-func (e EventTypes) Redact(event *telemetrygatewayv1.Event) {
+func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 	if dotcom.SourcegraphDotComMode() {
-		redactEvent(event, redactNothing, nil)
+		return redactEvent(event, redactNothing, nil)
 	} else if keys, allowed := e.IsAllowed(event); allowed {
-		redactEvent(event, redactMarketingAndUnallowedPrivateMetadataKeys, keys)
+		return redactEvent(event, redactMarketingAndUnallowedPrivateMetadataKeys, keys)
 	}
-	redactEvent(event, redactAllSensitive, nil)
+	return redactEvent(event, redactAllSensitive, nil)
 }
 
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that
