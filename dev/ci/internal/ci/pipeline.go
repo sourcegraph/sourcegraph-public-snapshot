@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/helpers"
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
@@ -108,7 +109,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
 
 				// sanitize the input
-				if err := verifyBazelCommand(bzlCmd); err != nil {
+				if err := helpers.VerifyBazelCommand(bzlCmd); err != nil {
 					return nil, errors.Wrapf(err, "cannot generate bazel-do")
 				}
 

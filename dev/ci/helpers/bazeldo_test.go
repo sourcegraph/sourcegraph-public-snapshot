@@ -1,4 +1,4 @@
-package ci
+package helpers
 
 import (
 	"testing"
@@ -46,7 +46,7 @@ func TestVerifyBazelCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.cmd, func(t *testing.T) {
-			err := verifyBazelCommand(test.cmd)
+			err := VerifyBazelCommand(test.cmd)
 			if (test.wantError && err == nil) || (!test.wantError && err != nil) {
 				t.Log(err)
 				t.Fail()
