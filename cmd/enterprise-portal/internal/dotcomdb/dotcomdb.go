@@ -9,7 +9,9 @@ package dotcomdb
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -135,6 +137,15 @@ var ErrCodyGatewayAccessNotFound = errors.New("cody gateway access not found")
 type queryConditions struct {
 	whereClause  string
 	havingClause string
+	limit        int
+}
+
+func (q *queryConditions) addWhere(cond string) {
+	if q.whereClause != "" {
+		q.whereClause += " AND " + cond
+	} else {
+		q.whereClause = cond
+	}
 }
 
 func newCodyGatewayAccessQuery(conds queryConditions) string {
@@ -260,6 +271,134 @@ func (r *Reader) GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*Cody
 	var attrs []*CodyGatewayAccessAttributes
 	for rows.Next() {
 		attr, err := scanCodyGatewayAccessAttributes(rows)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to scan cody gateway access attributes")
+		}
+		attrs = append(attrs, attr)
+	}
+	return attrs, rows.Err()
+}
+
+var ErrEnterpriseSubscriptionLicenseNotFound = errors.New("enterprise subscription license not found")
+
+func newLicensesQuery(conds queryConditions) string {
+	const rawClause = `
+SELECT
+	-- EnterpriseSubscriptionLicense
+	licenses.id,
+	licenses.product_subscription_id,
+	-- EnterpriseSubscriptionLicenseCondition
+	licenses.created_at,
+	licenses.revoked_at,
+	licenses.revoke_reason,
+	-- EnterpriseSubscriptionLicenseKey
+	licenses.license_version,
+	licenses.license_tags,
+	licenses.license_user_count,
+	licenses.license_expires_at,
+	licenses.salesforce_sub_id,
+	licenses.salesforce_opp_id,
+	licenses.license_key,
+	licenses.site_id
+FROM product_licenses licenses
+LEFT JOIN product_subscriptions subscriptions
+	ON subscriptions.id = licenses.product_subscription_id
+`
+	clauses := []string{rawClause}
+	if conds.whereClause != "" {
+		clauses = append(clauses, "WHERE "+conds.whereClause)
+	}
+	if conds.havingClause != "" {
+		clauses = append(clauses, "HAVING "+conds.havingClause)
+	}
+	clauses = append(clauses, "ORDER BY licenses.created_at DESC")
+	if conds.limit > 0 {
+		clauses = append(clauses, fmt.Sprintf("LIMIT %d", conds.limit))
+	}
+	return strings.Join(clauses, "\n")
+}
+
+type LicenseAttributes struct {
+	// EnterpriseSubscriptionLicense
+	ID             string
+	SubscriptionID string
+	// EnterpriseSubscriptionLicenseCondition
+	CreatedAt    time.Time
+	RevokedAt    *time.Time
+	RevokeReason *string
+	// EnterpriseSubscriptionLicenseKey
+	InfoVersion              *uint32
+	Tags                     []string
+	UserCount                *uint64
+	ExpiresAt                *time.Time
+	SalesforceSubscriptionID *string
+	SalesforceOpportunityID  *string
+	LicenseKey               string
+	InstanceID               *string
+}
+
+func scanLicenseAttributes(row pgx.Row) (*LicenseAttributes, error) {
+	var attrs LicenseAttributes
+	err := row.Scan(
+		// EnterpriseSubscriptionLicense
+		&attrs.ID,
+		&attrs.SubscriptionID,
+		// EnterpriseSubscriptionLicenseCondition
+		&attrs.CreatedAt,
+		&attrs.RevokedAt,
+		&attrs.RevokeReason,
+		// EnterpriseSubscriptionLicenseKey
+		&attrs.InfoVersion,
+		&attrs.Tags,
+		&attrs.UserCount,
+		&attrs.ExpiresAt,
+		&attrs.SalesforceSubscriptionID,
+		&attrs.SalesforceOpportunityID,
+		&attrs.LicenseKey,
+		&attrs.InstanceID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.WithStack(ErrEnterpriseSubscriptionLicenseNotFound)
+		}
+		return nil, errors.Wrap(err, "failed to get enterprise subscription license attributes")
+	}
+	return &attrs, nil
+}
+
+func (r *Reader) ListEnterpriseSubscriptionLicenses(
+	ctx context.Context,
+	filters []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter,
+	pageSize int,
+) ([]*LicenseAttributes, error) {
+	conds := queryConditions{
+		limit: pageSize,
+	}
+	var args []any
+	for _, filter := range filters {
+		switch filter.GetFilter().(type) {
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
+			conds.addWhere(fmt.Sprintf("licenses.product_subscription_id = $%d", len(args)+1))
+			args = append(args,
+				strings.TrimPrefix(filter.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix))
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
+			if filter.GetIsArchived() {
+				conds.addWhere("subscriptions.archived_at IS NOT NULL")
+			} else {
+				conds.addWhere("subscriptions.archived_at IS NULL")
+			}
+		}
+	}
+
+	query := newLicensesQuery(conds)
+	rows, err := r.conn.Query(ctx, query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
+	}
+	defer rows.Close()
+	var attrs []*LicenseAttributes
+	for rows.Next() {
+		attr, err := scanLicenseAttributes(rows)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to scan cody gateway access attributes")
 		}
