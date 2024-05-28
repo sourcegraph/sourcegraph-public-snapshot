@@ -64,7 +64,8 @@ message CodyGatewayAccessToken {
 
 message CodyGatewayAccess {
   // The external, prefixed UUID-format identifier for the Enterprise
-  // subscription corresponding to this Cody Gateway access description.
+  // subscription corresponding to this Cody Gateway access description
+  // (e.g. "es_...").
   string subscription_id = 1;
 
   // Whether or not a subscription has Cody Gateway access enabled.
