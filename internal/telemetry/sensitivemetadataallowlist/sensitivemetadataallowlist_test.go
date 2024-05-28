@@ -6,6 +6,7 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
@@ -136,6 +137,25 @@ func TestEventTypesRedact(t *testing.T) {
 			Action:  "exampleAction",
 		})
 		assert.Equal(t, redactNothing, mode)
+
+		ev := &v1.Event{
+			Feature: "foobar",
+			Action:  "exampleAction",
+			Parameters: &v1.EventParameters{
+				PrivateMetadata: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"foo": {
+							Kind: &structpb.Value_NumberValue{
+								NumberValue: 1,
+							},
+						},
+					},
+				},
+			},
+		}
+		mode = allowedTypes.Redact(ev)
+		assert.Equal(t, redactNothing, mode)
+		assert.NotNil(t, ev.Parameters.PrivateMetadata)
 	})
 
 	t.Run("default", func(t *testing.T) {
@@ -147,11 +167,24 @@ func TestEventTypesRedact(t *testing.T) {
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 		})
 		t.Run("not allowlisted", func(t *testing.T) {
-			mode := allowedTypes.Redact(&v1.Event{
+			ev := &v1.Event{
 				Feature: "foobar",
 				Action:  "exampleAction",
-			})
+				Parameters: &v1.EventParameters{
+					PrivateMetadata: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"foo": {
+								Kind: &structpb.Value_NumberValue{
+									NumberValue: 1,
+								},
+							},
+						},
+					},
+				},
+			}
+			mode := allowedTypes.Redact(ev)
 			assert.Equal(t, redactAllSensitive, mode)
+			assert.Nil(t, ev.Parameters.PrivateMetadata)
 		})
 	})
 }
