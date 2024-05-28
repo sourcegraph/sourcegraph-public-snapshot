@@ -22,7 +22,9 @@ Learn how to write good pull request description: https://www.notion.so/sourcegr
 3. You can edit this after the pull request was merged, as long as release shipping it hasn't been promoted to the public.
 4. For more information, please see this how-to https://www.notion.so/sourcegraph/Writing-a-changelog-entry-dd997f411d524caabf0d8d38a24a878c?
 
-Cheat sheet: $type = chore|fix|feature $domain: source|search|ci|release|plg|cody|...
+Audience: TS/CSE > Customers > Teammates (in that order).
+
+Cheat sheet: $type = chore|fix|feature $domain: source|search|ci|release|plg|cody|local|...
 -->
 
 <!--
