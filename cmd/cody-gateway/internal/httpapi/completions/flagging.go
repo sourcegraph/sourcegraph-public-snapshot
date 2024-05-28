@@ -58,8 +58,8 @@ type flaggingResult struct {
 
 // isFlaggedRequest inspects the request and determines if it should be "flagged". This is how we
 // perform basic abuse-detection and filtering. The implementation should err on the side of efficency,
-// as the goal isn't for 100% accuracy. But to catch obvious abuse patterns, and let other backend
-// systems do a more through review async.
+// as the goal isn't for 100% accuracy - isFlaggedRequest should catch obvious abuse patterns, and let other backend
+// systems do a more thorough review async.
 func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
@@ -88,15 +88,16 @@ func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingCon
 		}
 	}
 
-	if len(reasons) == 0 {
-		return nil, nil
-	}
-
 	// The request has been flagged. Now we determine if it is serious enough to outright block the request.
 	var blocked bool
 	hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
 	if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || hasBlockedPhrase {
 		blocked = true
+		reasons = append(reasons, "blocked_phrase")
+	}
+
+	if len(reasons) == 0 {
+		return nil, nil
 	}
 
 	// Maximum number of characters of the prompt prefix we include in logs and telemetry.

@@ -11,6 +11,7 @@ go_library(
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/ci/helpers",
         "//dev/ci/runtype",
         "//dev/sg/internal/bk",
         "//dev/sg/internal/category",

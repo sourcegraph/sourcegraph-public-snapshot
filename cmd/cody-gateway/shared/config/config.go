@@ -353,8 +353,7 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.MaxTokensToSampleFlaggingLimit = c.GetInt(envVarPrefix+"MAX_TOKENS_TO_SAMPLE_FLAGGING_LIMIT", "4000", "Maximum value of max_tokens_to_sample to allow without flagging.")
 
 	cfg.AllowedPromptPatterns = maybeLoadLowercaseSlice("ALLOWED_PROMPT_PATTERNS", "Allowed prompt patterns")
-	cfg.BlockedPromptPatterns = maybeLoadLowercaseSlice(envVarPrefix+"BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")
-
+	cfg.BlockedPromptPatterns = maybeLoadLowercaseSlice("BLOCKED_PROMPT_PATTERNS", "Patterns to block in prompt.")
 	cfg.RequestBlockingEnabled = c.GetBool(envVarPrefix+"REQUEST_BLOCKING_ENABLED", "false", "Whether we should block requests that match our blocking criteria.")
 
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
