@@ -17,7 +17,6 @@ common --modify_execution_info=CopyDirectory=+no-remote,CopyToDirectory=+no-remo
 
 common --credential_helper=storage.googleapis.com=%workspace%/dev/remote_cache_local_env.sh
 common --remote_cache=https://storage.googleapis.com/local_bazel_remote_cache
-common --nobuild_runfile_links
 
 # If true, remote cache I/O will happen in the background instead of taking place as the part of a spawn.
 # Docs: https://bazel.build/reference/command-line-reference#flag--experimental_remote_cache_async
