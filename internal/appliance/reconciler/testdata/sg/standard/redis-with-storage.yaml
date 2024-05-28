@@ -14,7 +14,7 @@ spec:
     disabled: true
 
   gitServer:
-    storageSize: "500Gi"
+    disabled: true
 
   indexedSearch:
     disabled: true
@@ -32,10 +32,12 @@ spec:
     disabled: true
 
   redisCache:
-    disabled: true
+    persistentVolumeConfig:
+      storageSize: 123Gi
 
   redisStore:
-    disabled: true
+    persistentVolumeConfig:
+      storageSize: 456Gi
 
   repoUpdater:
     disabled: true

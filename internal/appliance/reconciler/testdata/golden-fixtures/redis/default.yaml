@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -136,7 +136,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -336,7 +336,7 @@ resources:
     kind: PersistentVolumeClaim
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       finalizers:
         - kubernetes.io/pvc-protection
@@ -366,7 +366,7 @@ resources:
     kind: PersistentVolumeClaim
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       finalizers:
         - kubernetes.io/pvc-protection
@@ -398,7 +398,7 @@ resources:
     kind: Secret
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app.kubernetes.io/component: redis-cache
@@ -423,7 +423,7 @@ resources:
     kind: Secret
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app.kubernetes.io/component: redis-store
@@ -446,7 +446,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
         prometheus.io/port: "9121"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
@@ -488,7 +488,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 142c00ae31a1d919c6bebf39a02cfd56ecf57e219dc5427b0fbeba316a831ebf
+        appliance.sourcegraph.com/configHash: 37fe5323c846c6cc05683d28024d7b98c0a9b6bc2818ffc14a4d886981569411
         prometheus.io/port: "9121"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
