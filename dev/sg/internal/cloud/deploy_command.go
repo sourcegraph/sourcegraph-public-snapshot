@@ -45,7 +45,7 @@ func deployUpgradeSuggestion(name, version string) string {
 		"- Create a new deployment with a different name by running\n" +
 		"\n```sg cloud deploy --name <new-name>```\n\n" +
 		"- Upgrade the existing deployment with the new version once the build completes by running\n" +
-		"\n```sg cloud upgrade --name \"%s\"--version \"%s\"```\n"
+		"\n```sg cloud upgrade --name \"%s\" --version \"%s\"```\n"
 	return fmt.Sprintf(text, name, version)
 }
 
@@ -99,11 +99,11 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	if err != nil {
 		if !errors.Is(err, ErrInstanceNotFound) {
 			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
+		} else {
+			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
+			// Deployment exists
+			return ErrDeploymentExists
 		}
-	} else {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
-		// Deployment exists
-		return ErrDeploymentExists
 	}
 
 	pending.Updatef("Fetching license key...")
