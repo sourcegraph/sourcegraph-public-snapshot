@@ -191,7 +191,7 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
-func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err rror) {
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	numPreciseResults := 0
 	numSyntacticResults := 0
