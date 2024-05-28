@@ -401,9 +401,11 @@ commands:
       DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: debug
       GRPC_WEB_UI_ENABLED: 'true'
-      # Used for authentication
+      # Used offline authentication for local development - see
+      # 'cmd/enterprise-portal/internal/samsm2m/offline.go'
+      SAMS_API_URL: offline
       SAMS_URL: https://accounts.sgdev.org
-      # Set real values in sg.config.yaml overrides
+      # Set these values in 'sg.config.overwrite.yaml' for integration testing.
       ENTERPRISE_PORTAL_SAMS_CLIENT_ID: "sams_cid_put_a_real_value_in_sg.config.overwrite.yaml"
       ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET: "sams_cs_put_a_real_value_in_sg.config.overwrite.yaml"
     watch:

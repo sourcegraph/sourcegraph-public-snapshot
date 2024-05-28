@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/codyaccessservice",
         "//cmd/enterprise-portal/internal/dotcomdb",
+        "//cmd/enterprise-portal/internal/samsm2m",
         "//cmd/enterprise-portal/internal/subscriptionsservice",
         "//internal/debugserver",
         "//internal/httpserver",
@@ -22,6 +23,7 @@ go_library(
         "//lib/errors",
         "//lib/managedservicesplatform/cloudsql",
         "//lib/managedservicesplatform/runtime",
+        "//lib/pointers",
         "@com_connectrpc_grpcreflect//:grpcreflect",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_sourcegraph_log//:log",

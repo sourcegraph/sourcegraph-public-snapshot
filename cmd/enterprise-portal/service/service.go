@@ -13,6 +13,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Service is the implementation of the Enterprise Portal service.
@@ -51,23 +53,40 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	logger.Debug("connected to dotcom database")
 
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
-	logger.Debug("using SAMS client",
-		log.String("samsExternalURL", config.SAMS.ExternalURL),
-		log.Stringp("samsAPIURL", config.SAMS.APIURL),
-		log.String("clientID", config.SAMS.ClientID))
-	samsClient, err := sams.NewClientV1(
-		sams.ClientV1Config{
-			ConnConfig: config.SAMS.ConnConfig,
-			TokenSource: sams.ClientCredentialsTokenSource(
-				config.SAMS.ConnConfig,
-				config.SAMS.ClientID,
-				config.SAMS.ClientSecret,
-				[]scopes.Scope{scopes.OpenID, scopes.Profile, scopes.Email},
-			),
-		},
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
+	var tokensService samsm2m.TokenIntrospector
+	if pointers.DerefZero(config.SAMS.APIURL) == "offline" && !contract.MSP {
+		// Use a fake offline token introspector that always allows access
+		logger.Warn("using offline token introspector")
+		tokensService = samsm2m.OfflineTokenInstrospector{
+			Logger:   log.Scoped("samsm2m.OfflineTokenInstrospector"),
+			ClientID: config.SAMS.ClientID,
+			// All scopes used in this service
+			Scopes: scopes.Scopes{
+				scopes.ToScope(scopes.ServiceEnterprisePortal, "codyaccess", "read"),
+				scopes.ToScope(scopes.ServiceEnterprisePortal, "subscription", "read"),
+			},
+		}
+	} else {
+		// Use a real SAMS integration
+		logger.Debug("using SAMS client",
+			log.String("samsExternalURL", config.SAMS.ExternalURL),
+			log.Stringp("samsAPIURL", config.SAMS.APIURL),
+			log.String("clientID", config.SAMS.ClientID))
+		samsClient, err := sams.NewClientV1(
+			sams.ClientV1Config{
+				ConnConfig: config.SAMS.ConnConfig,
+				TokenSource: sams.ClientCredentialsTokenSource(
+					config.SAMS.ConnConfig,
+					config.SAMS.ClientID,
+					config.SAMS.ClientSecret,
+					[]scopes.Scope{scopes.OpenID, scopes.Profile, scopes.Email},
+				),
+			},
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
+		}
+		tokensService = samsClient.Tokens()
 	}
 
 	httpServer := http.NewServeMux()
@@ -76,8 +95,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{})
 
 	// Register connect endpoints
-	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
-	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
+	codyaccessservice.RegisterV1(logger, httpServer, tokensService, dotcomDB)
+	subscriptionsservice.RegisterV1(logger, httpServer, tokensService, dotcomDB)
 
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	if !contract.MSP && debugserver.GRPCWebUIEnabled {
