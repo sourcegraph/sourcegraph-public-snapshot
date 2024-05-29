@@ -8,9 +8,9 @@
     /**
      * Show the popover when hovering over the trigger.
      */
-    export let showOnHover = false
-    export let hoverDelay: number = 0
-    export let hoverCloseDelay: number = 0
+    export let showOnHover: boolean = false
+    export let hoverDelay: number = 500
+    export let hoverCloseDelay: number = 150
 
     let isOpen = false
     let trigger: HTMLElement | null
@@ -24,7 +24,7 @@
 
     function handleClickOutside(event: { detail: HTMLElement }): void {
         if (event.detail !== trigger && !trigger?.contains(event.detail)) {
-            isOpen = false
+            toggle(false)
         }
     }
 
@@ -37,31 +37,25 @@
 
         function handleMouseEnterTrigger(): void {
             clearTimeout(delayTimer)
-            delayTimer = setTimeout(() => {
-                isOpen = true
-            }, hoverDelay)
+            delayTimer = setTimeout(() => toggle(true), hoverDelay)
         }
 
         function handleMouseLeaveTrigger(event: MouseEvent): void {
             // It should be possible to move the mouse from the trigger to the popover without closing it
             if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
                 clearTimeout(delayTimer)
-                delayTimer = setTimeout(() => {
-                    isOpen = false
-                }, hoverCloseDelay)
+                delayTimer = setTimeout(() => toggle(false), hoverCloseDelay)
             }
         }
 
         function handleMouseMoveTrigger(): void {
             clearTimeout(delayTimer)
-            delayTimer = setTimeout(() => {
-                isOpen = true
-            }, hoverDelay)
+            delayTimer = setTimeout(() => toggle(true), hoverDelay)
         }
 
         function handleWindowLoseFocus(): void {
             clearTimeout(delayTimer)
-            isOpen = false
+            toggle(false)
         }
 
         if (showOnHover) {

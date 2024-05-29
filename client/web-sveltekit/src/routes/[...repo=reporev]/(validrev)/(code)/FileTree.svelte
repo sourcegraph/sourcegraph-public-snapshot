@@ -124,7 +124,7 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover let:registerTrigger placement="right-end" hover={{ enable: true, delayMillis: 500 }}>
+                <Popover let:registerTrigger placement="right-end" showOnHover>
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
                         on:click|preventDefault={() => {}}
