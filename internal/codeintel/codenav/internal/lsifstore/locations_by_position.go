@@ -283,7 +283,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// we should include in reference and implementation searches.
 
 	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbol.Documentation
+		hoverText = symbolHoverText(symbol)
 
 		for _, rel := range symbol.Relationships {
 			if rel.IsDefinition {
@@ -366,8 +366,15 @@ func monikersToString(vs []precise.MonikerData) string {
 	return strings.Join(strs, ", ")
 }
 
-//
-//
+func symbolHoverText(symbol *scip.SymbolInformation) []string {
+	if symbol.SignatureDocumentation != nil {
+		signature := []string{fmt.Sprintf("```%s\n%s\n```", symbol.SignatureDocumentation.Language, symbol.SignatureDocumentation.Text)}
+		return append(signature, symbol.Documentation...)
+	} else {
+		return symbol.Documentation
+	}
+
+}
 
 func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
 	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
