@@ -1823,7 +1823,12 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, external
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := s.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
+	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
+		externalServiceType: externalServiceType,
+		externalServiceURL:  externalServiceURL,
+		credential:          credential,
+		username:            username,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1854,7 +1859,12 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, external
 		return nil, ErrDuplicateCredential{}
 	}
 
-	a, err := s.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
+	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
+		externalServiceType: externalServiceType,
+		externalServiceURL:  externalServiceURL,
+		credential:          credential,
+		username:            username,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1869,15 +1879,22 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, external
 	return cred, nil
 }
 
-func (s *Service) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (extsvcauth.Authenticator, error) {
+type generateAuthenticatorForCredentialArgs struct {
+	externalServiceType string
+	externalServiceURL  string
+	credential          string
+	username            *string
+}
+
+func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
 	var a extsvcauth.Authenticator
 	keypair, err := encryption.GenerateRSAKey()
 	if err != nil {
 		return nil, err
 	}
-	if externalServiceType == extsvc.TypeBitbucketServer {
+	if args.externalServiceType == extsvc.TypeBitbucketServer {
 		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
-		username, err := s.FetchUsernameForBitbucketServerToken(ctx, externalServiceURL, externalServiceType, credential)
+		username, err := s.FetchUsernameForBitbucketServerToken(ctx, args.externalServiceURL, args.externalServiceType, args.credential)
 		if err != nil {
 			if bitbucketserver.IsUnauthorized(err) {
 				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
@@ -1885,42 +1902,42 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, extern
 			return nil, err
 		}
 		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: credential},
+			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: args.credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
-	} else if externalServiceType == extsvc.TypeBitbucketCloud {
+	} else if args.externalServiceType == extsvc.TypeBitbucketCloud {
 		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
-	} else if externalServiceType == extsvc.TypeAzureDevOps {
+	} else if args.externalServiceType == extsvc.TypeAzureDevOps {
 		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
-	} else if externalServiceType == extsvc.TypeGerrit {
+	} else if args.externalServiceType == extsvc.TypeGerrit {
 		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
-	} else if externalServiceType == extsvc.TypePerforce {
+	} else if args.externalServiceType == extsvc.TypePerforce {
 		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
 			PrivateKey: keypair.PrivateKey,
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
 	} else {
 		a = &extsvcauth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},
+			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: args.credential},
 			PrivateKey:       keypair.PrivateKey,
 			PublicKey:        keypair.PublicKey,
 			Passphrase:       keypair.Passphrase,
@@ -1928,7 +1945,7 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, extern
 	}
 
 	// Validate the newly created authenticator.
-	if err := s.ValidateAuthenticator(ctx, externalServiceURL, externalServiceType, a); err != nil {
+	if err := s.ValidateAuthenticator(ctx, args.externalServiceURL, args.externalServiceType, a); err != nil {
 		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 	}
 	return a, nil
