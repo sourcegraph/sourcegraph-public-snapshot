@@ -105,7 +105,10 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	workerStore := makeStore(observationCtx, db.Handle(), syncTypeRepo)
 	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, syncTypeRepo, syncJobsStore)
 	go worker.Start()
-	t.Cleanup(worker.Stop)
+	t.Cleanup(func() {
+		err := worker.Stop(ctx)
+		require.NoError(t, err)
+	})
 
 	// Adding repo perms sync jobs.
 	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
@@ -248,7 +251,10 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	workerStore := makeStore(observationCtx, db.Handle(), syncTypeUser)
 	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, syncTypeUser, syncJobsStore)
 	go worker.Start()
-	t.Cleanup(worker.Stop)
+	t.Cleanup(func() {
+		err := worker.Stop(ctx)
+		require.NoError(t, err)
+	})
 
 	// Adding user perms sync jobs.
 	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,

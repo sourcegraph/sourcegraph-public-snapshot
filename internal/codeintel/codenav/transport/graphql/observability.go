@@ -15,6 +15,8 @@ import (
 
 type operations struct {
 	gitBlobLsifData *observation.Operation
+	codeGraphData   *observation.Operation
+	occurrences     *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -25,6 +27,7 @@ type operations struct {
 	ranges          *observation.Operation
 	snapshot        *observation.Operation
 	visibleIndexes  *observation.Operation
+	usagesForSymbol *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -45,6 +48,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		gitBlobLsifData: op("GitBlobLsifData"),
+		codeGraphData:   op("CodeGraphData"),
+		occurrences:     op("Occurrences"),
 		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
@@ -55,6 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		ranges:          op("Ranges"),
 		snapshot:        op("Snapshot"),
 		visibleIndexes:  op("VisibleIndexes"),
+		usagesForSymbol: op("UsagesForSymbol"),
 	}
 }
 

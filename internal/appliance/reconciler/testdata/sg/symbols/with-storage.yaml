@@ -44,10 +44,14 @@ spec:
     disabled: true
 
   symbols:
-    storageSize: "100Gi"
+    persistentVolumeConfig:
+      storageSize: "100Gi"
 
   syntectServer:
     disabled: true
 
   worker:
+    disabled: true
+
+  prometheus:
     disabled: true

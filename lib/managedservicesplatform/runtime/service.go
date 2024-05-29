@@ -123,6 +123,9 @@ func Start[
 		log.Int("port", ctr.Port),
 		log.Bool("msp", ctr.MSP),
 		log.Bool("sentry", sentryEnabled))
-	background.Monitor(ctx, routine)
+	err = background.Monitor(ctx, routine)
+	if err != nil {
+		startLogger.Error("error stopping service routine", log.Error(err))
+	}
 	startLogger.Info("service stopped")
 }

@@ -125,6 +125,14 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArg
 	return r.codenavResolver.GitBlobLSIFData(ctx, args)
 }
 
+func (r *Resolver) CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error) {
+	return r.codenavResolver.CodeGraphData(ctx, opts)
+}
+
+func (r *Resolver) UsagesForSymbol(ctx context.Context, args *UsagesForSymbolArgs) (UsageConnectionResolver, error) {
+	return r.codenavResolver.UsagesForSymbol(ctx, args)
+}
+
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
 	return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
 }

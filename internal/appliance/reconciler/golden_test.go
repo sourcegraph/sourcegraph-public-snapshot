@@ -3,18 +3,25 @@ package reconciler
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
+	k8syaml "sigs.k8s.io/yaml"
+
+	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
+	"github.com/sourcegraph/sourcegraph/internal/slices"
 )
 
 // Test helpers
 
 // creationTimestamp and uid need to be normalized
 var magicTime = metav1.NewTime(time.Date(2024, time.April, 19, 0, 0, 0, 0, time.UTC))
+
+var namespaceRegexp = regexp.MustCompile(`test\-appliance\-\w+`)
 
 const normalizedString = "NORMALIZED_FOR_TESTING"
 
@@ -27,8 +34,11 @@ func (suite *ApplianceTestSuite) makeGoldenAssertions(namespace, goldenFileName 
 
 	goldenFilePath := filepath.Join("testdata", "golden-fixtures", goldenFileName+".yaml")
 	obtainedResources := goldenFile{Resources: suite.gatherResources(namespace)}
-	obtainedBytes, err := yaml.Marshal(obtainedResources)
+	obtainedBytes, err := k8syaml.Marshal(obtainedResources)
 	require.NoError(err)
+	obtainedBytes, err = applianceyaml.ConvertYAMLStringsToMultilineLiterals(obtainedBytes)
+	require.NoError(err)
+
 	if len(os.Args) > 0 && os.Args[len(os.Args)-1] == "appliance-update-golden-files" {
 		err := os.MkdirAll(filepath.Dir(goldenFilePath), 0700)
 		require.NoError(err)
@@ -64,6 +74,14 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}
+	daemonsets, err := suite.k8sClient.AppsV1().DaemonSets(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range daemonsets.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
 	ssets, err := suite.k8sClient.AppsV1().StatefulSets(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range ssets.Items {
@@ -75,10 +93,50 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}
+
+	// Cluster-scoped resources have to be qualified by something other than
+	// metadata.namespace.
+	clusterRoles, err := suite.k8sClient.RbacV1().ClusterRoles().List(suite.ctx, metav1.ListOptions{
+		LabelSelector: "for-namespace=" + namespace,
+	})
+	suite.Require().NoError(err)
+	for _, obj := range clusterRoles.Items {
+		obj := obj
+		obj.SetName(namespaceRegexp.ReplaceAllString(obj.Name, normalizedString))
+		obj.Labels["for-namespace"] = normalizedString
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	clusterRoleBindings, err := suite.k8sClient.RbacV1().ClusterRoleBindings().List(suite.ctx, metav1.ListOptions{
+		LabelSelector: "for-namespace=" + namespace,
+	})
+	suite.Require().NoError(err)
+	for _, obj := range clusterRoleBindings.Items {
+		obj := obj
+		obj.SetName(namespaceRegexp.ReplaceAllString(obj.Name, normalizedString))
+		obj.Labels["for-namespace"] = normalizedString
+		obj.RoleRef.Name = namespaceRegexp.ReplaceAllString(obj.RoleRef.Name, normalizedString)
+		obj.Subjects = slices.Map(obj.Subjects, func(s rbacv1.Subject) rbacv1.Subject {
+			s.Namespace = normalizedString
+			return s
+		})
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRoleBinding"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+
 	cmaps, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range cmaps.Items {
 		obj := obj
+
+		// Find and replace all instances of the randomly-namd namespace in
+		// configmap data. Crude, but necessary for Prometheus config.
+		for file, content := range obj.Data {
+			obj.Data[file] = namespaceRegexp.ReplaceAllString(content, normalizedString)
+		}
+
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
@@ -99,6 +157,26 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 	for _, obj := range pods.Items {
 		obj := obj
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	roles, err := suite.k8sClient.RbacV1().Roles(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range roles.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "Role"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+	roleBindings, err := suite.k8sClient.RbacV1().RoleBindings(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range roleBindings.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "RoleBinding"})
+		obj.Subjects = slices.Map(obj.Subjects, func(s rbacv1.Subject) rbacv1.Subject {
+			s.Namespace = normalizedString
+			return s
+		})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}

@@ -1,4 +1,4 @@
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -266,6 +266,17 @@ go_proto_compiler(
         "@org_golang_google_grpc//codes:go_default_library",
         "@org_golang_google_grpc//status:go_default_library",
     ],
+)
+
+# Settings for automatic building of frontend/single-server without client bundle included
+bool_setting(
+    name = "integration_testing",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "integration_testing_enabled",
+    flag_values = {":integration_testing": "true"},
 )
 
 # nogo config

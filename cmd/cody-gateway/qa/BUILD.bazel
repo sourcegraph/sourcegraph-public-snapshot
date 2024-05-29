@@ -26,6 +26,7 @@ go_library(
     srcs = [
         "anthropic.go",
         "fireworks.go",
+        "google.go",
         "openai.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/qa",

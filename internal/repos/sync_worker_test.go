@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log"
 
@@ -64,9 +65,14 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	// finalising the row which means that when running tests in verbose mode we'll
 	// see "sql: transaction has already been committed or rolled back". These
 	// errors can be ignored.
-	defer janitor.Stop()
-	defer resetter.Stop()
-	defer worker.Stop()
+	t.Cleanup(func() {
+		err := janitor.Stop(ctx)
+		require.NoError(t, err)
+		err = resetter.Stop(ctx)
+		require.NoError(t, err)
+		err = worker.Stop(ctx)
+		require.NoError(t, err)
+	})
 
 	var job *repos.SyncJob
 	select {

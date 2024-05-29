@@ -7,6 +7,15 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+    # This test runs as a single command, as commands run in the setup block are not executed in the same container as the command block
+  - name: "s3proxy test"
+    command: "sh"
+    args: [
+      "-c",
+      "/opt/s3proxy/run-docker-container.sh >/dev/null 2>&1 & sleep 5 && curl -X PUT --write-out %{http_code} http://localhost:9000/create-bucket-test-2022-01-09-attempt0"
+    ]
+    expectedOutput: ["200"]
+    exitCode: 0
 
 fileExistenceTests:
 - name: 'Test for run-docker-container.sh'

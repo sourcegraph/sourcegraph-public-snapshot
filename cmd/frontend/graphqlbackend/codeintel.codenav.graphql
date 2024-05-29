@@ -47,6 +47,170 @@ extend type GitBlob {
     Experimental: This API is likely to change in the future.
     """
     symbolInfo(line: Int!, character: Int!): SymbolInfo
+
+    """
+    Return the code graph data associated with this blob.
+
+    If there are multiple tools (i.e. name and version pairs) which
+    have uploaded precise indexes for this blob, then this API will
+    return multiple results even if
+    filter == { provenance: { equals: Precise } }.
+
+    Commit matching is done based on graph order.
+    For merge commits or their children, it is possible that the
+    same blob may have code graph data at different ancestors,
+    in which case this API will return multiple results.
+
+    EXPERIMENTAL: This API may change in the future.
+    """
+    codeGraphData(filter: CodeGraphDataFilter): [CodeGraphData!]
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+input CodeGraphDataFilter {
+    """
+    If this field is not set, then the codeGraphData API
+    will go through each provenance each provenance one by one
+    in the order Precise -> Syntactic -> SearchBased
+    and stop when some data is available.
+    """
+    provenance: CodeGraphDataProvenanceComparator
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+input CodeGraphDataProvenanceComparator {
+    """
+    Checks for exact equality.
+    """
+    equals: CodeGraphDataProvenance
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+
+TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
+before stabilizing this API.
+"""
+type CodeGraphData {
+    """
+    Coarse description of the data source for this code graph data.
+    """
+    provenance: CodeGraphDataProvenance!
+
+    """
+    The commit associated with this code graph data.
+
+    In general, this will be an ancestor of the commit at which code
+    graph data was requested, as code graph data may not be available
+    at the exact commit for the blob.
+    """
+    commit: String!
+
+    """
+    Information about the tool which generated this code graph data
+    """
+    toolInfo: CodeGraphToolInfo
+
+    """
+    Occurrences are guaranteed to be sorted by range. It is possible
+    for there to be multiple occurrences for the same exact source range.
+    """
+    occurrences(first: Int, after: String): SCIPOccurrenceConnection
+}
+
+"""
+Identifies the tool which generated some code graph data.
+"""
+type CodeGraphToolInfo {
+    """
+    The name of the tool, e.g. scip-java.
+    """
+    name: String
+    """
+    The version of the tool, e.g. v1.0.0 or some SHA.
+    """
+    version: String
+}
+
+"""
+Connection type for a list of occurrences.
+"""
+type SCIPOccurrenceConnection {
+    """
+    List of occurrences within a given page.
+    """
+    nodes: [SCIPOccurrence!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+enum CodeGraphDataProvenance {
+    """
+    Based on a compiler, a type-checker or a similar data source
+    which doesn't have false positives.
+    Generally, the results are specific to a particular build configuration,
+    such as for a specific OS or CPU, which can matter for
+    codebases having a large amount of platform-specific code.
+    """
+    PRECISE
+    """
+    Based on a data source that uses an abstract or concrete syntax
+    tree, but without access to reliable type information.
+    """
+    SYNTACTIC
+    """
+    Based on a data source that only does textual analysis, say
+    using regular expressions.
+    """
+    SEARCH_BASED
+}
+
+"""
+Metadata for a given (repo, commit, path, range) tuple.
+
+EXPERIMENTAL: This type may change in a backwards-incompatible way.
+"""
+type SCIPOccurrence {
+    """
+    Symbol name using syntax specified by the SCIP schema.
+    https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
+    """
+    symbol: String
+    """
+    Source range associated with this occurrence.
+    """
+    range: Range!
+    """
+    Description of the role a symbol plays at a particular source range.
+
+    The 'Definition' and 'Reference' roles are mutually exclusive (exactly
+    one of those will be present in the array below).
+    """
+    roles: [SymbolRole!]
+    # We can add diagnostics etc. here in the future if needed.
+}
+
+"""
+EXPERIMENTAL: This type may change in a backwards-compatible way.
+"""
+enum SymbolRole {
+    DEFINITION
+    REFERENCE
+    """
+    Applicable for forward declarations in languages with header files (C, C++ etc.)
+    as well as standalone signatures in languages with separate interface files (OCaml etc.).
+    """
+    FORWARD_DEFINITION
 }
 
 """
@@ -245,6 +409,334 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     SCIP snapshot data (similar to the additional information from the `scip snapshot` command) for each SCIP Occurrence.
     """
     snapshot(indexID: ID!): [SnapshotData!]
+}
+
+extend type Query {
+    """
+    Identify usages for either a semantic symbol, or the symbol(s) implied
+    by a source range.
+    Ordering and uniqueness guarantees:
+    1. The usages returned will already be de-duplicated.
+    2. Results for a single file are contiguous.
+    3. Results for a single repository are contiguous.
+    Related: See `codeGraphData` on GitBlob.
+
+    EXPERIMENTAL: This API may make backwards-incompatible changes in the future.
+    """
+    usagesForSymbol(
+        """
+        Symbol to perform the lookup for.
+        If provided, then the start and end position in `range` are optional.
+        If not provided, and if multiple symbols are detected at the same range,
+        the combined results for all symbols will be returned.
+        In that case, `Usage.symbol.name` can be used to group results.
+        """
+        symbol: SymbolComparator
+
+        """
+        Information about an existing source range for a usage of the symbol.
+        TODO: Specify behavior for various cases of overlap between LookupRange
+        and actual occurrence range.
+        """
+        range: RangeInput!
+
+        """
+        Filter to allow customization of returned results.
+        """
+        filter: UsagesFilter
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'UsageConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): UsageConnection!
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input SymbolComparator {
+    """
+    Describes how the symbol name should be compared.
+    """
+    name: SymbolNameComparator!
+    """
+    Describes the provenance of the symbol. This value should be based
+    on the provenance value obtained from the CodeGraphData type.
+    """
+    provenance: CodeGraphDataProvenanceComparator!
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input SymbolNameComparator {
+    # Implementation note: In the future, we may want to extend this
+    # to allow passing in a suffix or a "symbol pattern".
+    # See https://github.com/sourcegraph/sourcegraph/issues/59957
+    """
+    Checks for exact equality.
+    """
+    equals: String
+}
+
+"""
+A range inside a particular blob.
+
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input RangeInput {
+    """
+    Defaults to instance-wide search if the repo is not specified.
+    This field is necessary if SymbolComparator is a repository-local or
+    file-local symbol. It is mandatory for cross-repository symbols
+    due to implementation limitations.
+    """
+    repository: String!
+
+    """
+    Defaults to HEAD of the default branch if not specified.
+    """
+    revision: String
+
+    """
+    Defaults to repo-wide search if the path is not specified.
+    This field is necessary if SymbolComparator is a file-local symbol.
+    It is mandatory for repository-local and cross-repo symbols
+    due to implementation limitations.
+    """
+    path: String!
+
+    """
+    Start position of the range (inclusive)
+    """
+    start: PositionInput
+
+    """
+    End position of the range (exclusive)
+    """
+    end: PositionInput
+}
+
+"""
+Analogous to Position but as an input type.
+
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input PositionInput {
+    """
+    Zero-based count of newline (\n or \r\n) characters before this position.
+    """
+    line: Int!
+
+    """
+    Zero-based UTF-16 code unit offset from preceding newline (\n or \r\n) character.
+    """
+    character: Int!
+}
+
+# NOTE(id: filter-vs-comparator-terminology)
+#
+# 'Filter' is used for complex objects whereas 'Comparator' is used
+# for primitive objects.
+
+"""
+An empty filter allows all kinds of usages for all paths in all repositories.
+
+However, if the symbol used for lookup is a file-local symbol or a
+repository-local symbol, then usages will automatically be limited to the
+same file or same repository respectively.
+
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input UsagesFilter {
+    # Design Rationale:
+    #
+    # 1. The ref panel did separate queries for 'this repo' vs 'all other repos'
+    #    https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/codeintel/searchBased.ts?L105:13-105:23#tab=references
+    #    That requires `NOT` (at least for a `repo`).
+    # 2. The ref panel has a way to specify paths for filtering. This requires AND.
+    #    AND will not be part of the first implementation pass. However,
+    #    it would allow fetching less data instead of post-filtering client-side.
+    # 3. Currently, the ref panel has a setting for only showing precise results.
+    #    Once syntactic is added, if we want to allow the user to specify either
+    #    syntactic or precise (but not search-based), we'd need OR.
+    #    OR will also not be needed for the first implementation pass.
+    """
+    Negate another UsageFilter. For example, this can be used to find matches
+    outside of a specific repository.
+    """
+    not: UsagesFilter
+    """
+    Filter for limiting which repositories to find the usages in.
+    For cross-repository symbols as well as search-based results,
+    an empty value will find results across the Sourcegraph instance.
+    """
+    repository: RepositoryFilter
+    # TODO(id: usagesForSymbols-v2)
+    # and: [UsagesFilter!]
+    # or: [UsagesFilter!]
+    # path: PathFilter
+    # kind: SymbolUsageKindComparator
+    # provenance: CodeGraphDataProvenanceComparator
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input RepositoryFilter {
+    """
+    Compare the repository by name.
+    """
+    name: StringComparator!
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input StringComparator {
+    """
+    Checks for exact equality.
+    """
+    # EXTENSION: We may want to allow glob patterns in the future here,
+    # that could be used by both RepositoryFilter and PathFilter.
+    equals: String
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+type UsageConnection {
+    """
+    A single page of Usages.
+    """
+    nodes: [Usage!]!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+type UsageRange {
+    """
+    The repository this usage is present in.
+    """
+    repository: String!
+    """
+    TODO(issue: GRAPH-614): 'revision' field should have type GitCommit
+    before stabilizing this API.
+    """
+    revision: String!
+    """
+    The root relative path for the file this usage is present in.
+    """
+    path: String!
+    """
+    The source range for the usage.
+
+    CAUTION: Depending on the indexer where this data originated from,
+    this range may have zero length.
+    """
+    range: Range!
+}
+
+"""
+A place where a symbol is used (defined, referenced, forward-declared, etc.)
+
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+type Usage {
+    """
+    Information about the symbol itself.
+    """
+    symbol: SymbolInformation!
+
+    """
+    Information about where this usage is located.
+    """
+    # Q: Should we remove functionality from UsageRange and punt more
+    # functionality to `blob: GitBlob`?
+    # """
+    # Invariant: `range.path` == `blob.path`. The path is made available
+    # as part of this type for convenience.
+    # """
+    usageRange: UsageRange
+
+    # TODO: Add a blob: GitBlob field here for more flexibility?
+
+    """
+    Allows accessing a sub-span of the content using relative coordinates
+    from the range of this usage. If linesBefore or linesAfter is negative
+    or exceeds the number of available lines, the value is interpreted as
+    until the start/end of the file.
+    """
+    surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String
+}
+
+"""
+Type representing useful information about a symbol in code,
+based on 'SymbolInformation' in SCIP.
+
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+type SymbolInformation {
+    """
+    Symbol name using syntax specified by the SCIP schema.
+    https://github.com/sourcegraph/scip/blob/main/scip.proto#L147-L188
+    This value will generally be used in conjunction with
+    the `usagesBySymbol` API.
+    """
+    name: String!
+
+    """
+    Hover documentation for the symbol, in Markdown format.
+    The caller must take care to escape any particular strings,
+    such as raw HTML, as necessary.
+    The value is null when the hover documentation is not found
+    by 'dataSource'.
+    The value is empty when `dataSource` is confident that there
+    is no appropriate hover documentation to display.
+    """
+    documentation: [String!]
+
+    """
+    Coarse-grained information about the data source.
+    """
+    provenance: CodeGraphDataProvenance!
+
+    """
+    Opaque fine-grained information describing the data source.
+    Provided only for debugging.
+    This field should be ignored when checking structural equality.
+    """
+    dataSource: String
+}
+
+"""
+EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+"""
+input SurroundingLines {
+    """
+    The number of lines before the current line to include.
+    """
+    linesBefore: Int
+    """
+    The number of lines after the current line to include.
+    """
+    linesAfter: Int
 }
 
 """

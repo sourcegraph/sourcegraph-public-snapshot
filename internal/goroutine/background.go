@@ -35,5 +35,6 @@ var MonitorBackgroundRoutines = background.Monitor
 // CombinedRoutine is a list of routines which are started and stopped in unison.
 type CombinedRoutine = background.CombinedRoutine
 
-// NoopRoutine does nothing for start or stop.
+// NoopRoutine return a background routine that does nothing for start or stop.
+// If the name is empty, it will default to "noop".
 var NoopRoutine = background.NoopRoutine

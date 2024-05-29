@@ -10,8 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,6 +26,7 @@ func Test_Completions(t *testing.T) {
 				"anthropic": AnthropicGatewayFeatureClient{},
 				"fireworks": FireworksGatewayFeatureClient{},
 				"openai":    OpenAIGatewayFeatureClient{},
+				"google":    GoogleGatewayFeatureClient{},
 			} {
 				t.Run(name, func(t *testing.T) {
 					for _, stream := range []bool{false, true} {

@@ -150,6 +150,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+    smartContextWindow?: boolean
 }
 
 interface IsContextRequiredForChatQueryResponse {

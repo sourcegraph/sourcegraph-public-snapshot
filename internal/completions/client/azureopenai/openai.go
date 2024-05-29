@@ -277,6 +277,7 @@ func streamChat(
 	// Azure sends incremental deltas for each message in a chat stream
 	// build up the full message content over multiple responses
 	var content string
+
 	for {
 		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done
@@ -358,6 +359,7 @@ func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.Ch
 		Stop:           requestParams.StopSequences,
 		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
 		DeploymentName: &requestParams.Model,
+		User:           &requestParams.User,
 	}
 }
 
@@ -380,6 +382,7 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 		Stop:           requestParams.StopSequences,
 		MaxTokens:      intToInt32Ptr(requestParams.MaxTokensToSample),
 		DeploymentName: &requestParams.Model,
+		User:           &requestParams.User,
 	}, nil
 }
 

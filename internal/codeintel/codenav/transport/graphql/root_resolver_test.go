@@ -4,9 +4,15 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/scip/cmd/scip/tests/reprolang/bindings/go/repro"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -19,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestRanges(t *testing.T) {
@@ -396,5 +404,198 @@ func TestResolveLocations(t *testing.T) {
 	}
 	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
 		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/blob/p4?L42:43-44:45", url)
+	}
+}
+
+func sampleSourceFiles() []*scip.SourceFile {
+	testFiles := []struct {
+		path    string
+		content string
+	}{
+		{
+			path: "locals.repro",
+			content: `definition local_a
+reference local_a
+`,
+		},
+	}
+	out := []*scip.SourceFile{}
+	for _, testFile := range testFiles {
+		out = append(out, &scip.SourceFile{
+			AbsolutePath: "/var/myproject/" + testFile.path,
+			RelativePath: testFile.path,
+			Text:         testFile.content,
+			Lines:        strings.Split(testFile.content, "\n"),
+		})
+	}
+	return out
+}
+
+func unwrap[T any](v T, err error) func(*testing.T) T {
+	return func(t *testing.T) T {
+		require.NoError(t, err)
+		return v
+	}
+}
+
+func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
+	codeNavSvc := NewStrictMockCodeNavService()
+	index := unwrap(repro.Index("", "testpkg", sampleSourceFiles(), nil))(t)
+	errUploadNotFound := errors.New("upload not found")
+	errDocumentNotFound := errors.New("document not found")
+	testUpload := uploadsshared.CompletedUpload{ID: 82}
+	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, uploadID int, path string) (*scip.Document, error) {
+		if uploadID != testUpload.ID {
+			return nil, errUploadNotFound
+		}
+		for _, d := range index.Documents {
+			if path == d.RelativePath {
+				return d, nil
+			}
+		}
+		return nil, errDocumentNotFound
+	})
+
+	return newCodeGraphDataResolver(
+		codeNavSvc, testUpload,
+		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: "locals.repro"},
+		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
+}
+
+func TestOccurrences_BadArgs(t *testing.T) {
+	resolver := makeTestResolver(t)
+	bgCtx := context.Background()
+
+	t.Run("fetching with undeserializable 'after'", func(t *testing.T) {
+		badArgs := resolverstubs.OccurrencesArgs{After: pointers.Ptr("not-a-cursor")}
+		badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		_, err := occs.Nodes(bgCtx)
+		require.Error(t, err)
+	})
+
+	t.Run("fetching with out-of-bounds 'after'", func(t *testing.T) {
+		oobCursor := unwrap(marshalCursor(cursor{100}))(t)
+		badArgs := resolverstubs.OccurrencesArgs{After: oobCursor}
+		badArgs.Normalize(10)
+		occs := unwrap(resolver.Occurrences(bgCtx, &badArgs))(t)
+		nodes, err := occs.Nodes(bgCtx)
+		// TODO: I think this should be an out-of-bounds error, Slack discussion:
+		// https://sourcegraph.slack.com/archives/C02UC4WUX1Q/p1716378462737019
+		require.NoError(t, err)
+		require.Equal(t, 0, len(nodes))
+	})
+}
+
+func TestOccurrences_Pages(t *testing.T) {
+	resolver := makeTestResolver(t)
+	bgCtx := context.Background()
+
+	type TestCase struct {
+		name        string
+		initialArgs *resolverstubs.OccurrencesArgs
+		// Run with go test <path> -update to update the wantPages values
+		wantPages autogold.Value
+	}
+
+	type occurrenceNode struct {
+		Symbol string
+		Range  []int32
+		Roles  []string
+	}
+
+	testCases := []TestCase{
+		{
+			name:        "Single page",
+			initialArgs: (&resolverstubs.OccurrencesArgs{}).Normalize(10),
+			wantPages: autogold.Expect([][]occurrenceNode{{
+				{
+					Symbol: "local _a",
+					Range: []int32{
+						0,
+						11,
+						0,
+						18,
+					},
+					Roles: []string{"DEFINITION"},
+				},
+				{
+					Symbol: "local _a",
+					Range: []int32{
+						1,
+						10,
+						1,
+						17,
+					},
+					Roles: []string{"REFERENCE"},
+				},
+			}}),
+		},
+		{
+			name:        "Multiple pages",
+			initialArgs: (&resolverstubs.OccurrencesArgs{}).Normalize(1),
+			wantPages: autogold.Expect([][]occurrenceNode{
+				{
+					{
+						Symbol: "local _a",
+						Range: []int32{
+							0,
+							11,
+							0,
+							18,
+						},
+						Roles: []string{"DEFINITION"},
+					},
+				},
+				{{
+					Symbol: "local _a",
+					Range: []int32{
+						1,
+						10,
+						1,
+						17,
+					},
+					Roles: []string{"REFERENCE"},
+				}},
+			}),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			allOccurrences := [][]occurrenceNode{}
+			args := testCase.initialArgs
+			const maxIters = 10
+			i := 0
+			for ; i < maxIters; i++ {
+				connx := unwrap(resolver.Occurrences(bgCtx, args))(t)
+				occs := unwrap(connx.Nodes(bgCtx))(t)
+				var nodes []occurrenceNode
+				for _, occ := range occs {
+					s := unwrap(occ.Symbol())(t)
+					r := unwrap(occ.Range())(t)
+					roles := unwrap(occ.Roles())(t)
+					var rolesStrs []string
+					for _, role := range *roles {
+						rolesStrs = append(rolesStrs, string(role))
+					}
+					nodes = append(nodes, occurrenceNode{
+						Symbol: *s,
+						Range:  []int32{r.Start().Line(), r.Start().Character(), r.End().Line(), r.End().Character()},
+						Roles:  rolesStrs,
+					})
+				}
+				allOccurrences = append(allOccurrences, nodes)
+				pages := unwrap(connx.PageInfo(bgCtx))(t)
+				if pages.HasNextPage() {
+					endCursor := unwrap(pages.EndCursor())(t)
+					args.After = endCursor
+				} else {
+					break
+				}
+			}
+			require.Less(t, i, maxIters)
+			testCase.wantPages.Equal(t, allOccurrences)
+		})
 	}
 }

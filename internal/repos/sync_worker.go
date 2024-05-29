@@ -90,7 +90,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 	if opts.CleanupOldJobs {
 		janitor = newJobCleanerRoutine(ctx, database.NewDBWith(observationCtx.Logger, basestore.NewWithHandle(dbHandle)), opts.CleanupOldJobsInterval)
 	} else {
-		janitor = goroutine.NoopRoutine()
+		janitor = goroutine.NoopRoutine("noop sync worker")
 	}
 
 	return worker, resetter, janitor
