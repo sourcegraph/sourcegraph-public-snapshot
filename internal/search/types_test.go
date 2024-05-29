@@ -65,6 +65,7 @@ func TestZoektParameters(t *testing.T) {
 			params: &ZoektParameters{
 				Select:         []string{filter.Repository},
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Typ:            TextRequest,
 			},
 			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
 			// want to set normal limits so we respect things like low file
@@ -151,11 +152,12 @@ func TestZoektParameters(t *testing.T) {
 			},
 		},
 		{
-			name:    "test bm25 scoring",
+			name:    "test cody context",
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				PatternType:    query.SearchTypeCodyContext,
+				Typ:            TextRequest,
 			},
 			want: &zoekt.SearchOptions{
 				ShardMaxMatchCount:  100000,
@@ -166,6 +168,25 @@ func TestZoektParameters(t *testing.T) {
 				ChunkMatches:        true,
 				DocumentRanksWeight: 4500,
 				UseBM25Scoring:      true},
+		},
+		{
+			name:    "test cody context with symbol search",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				PatternType:    query.SearchTypeCodyContext,
+				Typ:            SymbolRequest,
+			},
+			// Should use default parameters and ignore BM25 scoring
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				MaxDocDisplayCount:  10000,
+				ChunkMatches:        true,
+				FlushWallTime:       500000000,
+				DocumentRanksWeight: 4500,
+			},
 		},
 	}
 
