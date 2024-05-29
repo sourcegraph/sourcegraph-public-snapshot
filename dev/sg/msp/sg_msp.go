@@ -1044,6 +1044,44 @@ This command supports completions on services and environments.
 			},
 		},
 		{
+			Name:   "validate",
+			Usage:  "Validate MSP configurations",
+			Before: msprepo.UseManagedServicesRepo,
+			Action: func(c *cli.Context) error {
+				services, err := msprepo.ListServices()
+				if err != nil {
+					return err
+				}
+				for _, svc := range services {
+					s, err := spec.Open(msprepo.ServiceYAMLPath(svc))
+					// HACK: Check nil instead of error so that we can get the
+					// itemized list of errors instead with s.Validate() for
+					// validation errors.
+					if s == nil {
+						std.Out.WriteFailuref("[%s] Could not open spec: %s", svc, err.Error())
+						continue
+					}
+					errs := s.Validate()
+					if len(errs) == 0 {
+						std.Out.WriteSuccessf("[%s] Validated", svc)
+						continue
+					}
+
+					std.Out.WriteFailuref("[%s] Found valdiation errors", svc)
+					var messages []string
+					for _, err := range errs {
+						messages = append(messages, fmt.Sprintf("- %s", err.Error()))
+					}
+					if err := std.Out.WriteMarkdown(strings.Join(messages, "\n")); err != nil {
+						return err
+					}
+				}
+
+				std.Out.Writef("Checked %d service specifications", len(services))
+				return nil
+			},
+		},
+		{
 			Name:   "fleet",
 			Usage:  "Summarize aspects of the MSP fleet",
 			Before: msprepo.UseManagedServicesRepo,
