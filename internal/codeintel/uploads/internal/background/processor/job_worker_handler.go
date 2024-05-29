@@ -243,9 +243,6 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 					}
 					return nil, errors.Wrap(err, "gitserverClient.ReadDir.Next")
 				}
-				if fd.IsDir() {
-					continue
-				}
 				if _, ok := seen[fd.Name()]; ok {
 					continue
 				}
