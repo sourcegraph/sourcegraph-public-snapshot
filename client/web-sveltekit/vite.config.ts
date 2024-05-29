@@ -1,11 +1,16 @@
 import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
+import AutoImport from 'unplugin-auto-import/vite'
+import IconsResolver from 'unplugin-icons/resolver'
+import Icons from 'unplugin-icons/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
 import inspect from 'vite-plugin-inspect'
 import type { UserConfig as VitestUserConfig } from 'vitest'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
+
+const BAZEL = !!process.env.BAZEL
 
 export default defineConfig(({ mode }) => {
     // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
@@ -14,6 +19,20 @@ export default defineConfig(({ mode }) => {
     let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
+            // Do not run AutoImport when using Bazel. It will try to update auto-imports.d.ts, which
+            // is not possible.
+            !BAZEL &&
+                AutoImport({
+                    dts: './src/auto-imports.d.ts',
+                    resolvers: [
+                        IconsResolver({
+                            prefix: 'i',
+                        }),
+                    ],
+                }),
+            Icons({
+                compiler: 'svelte',
+            }),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
             inspect(),
@@ -110,7 +129,7 @@ export default defineConfig(({ mode }) => {
         },
     }
 
-    if (process.env.BAZEL) {
+    if (BAZEL) {
         // Merge settings necessary to make the build work with bazel
         config = mergeConfig(config, {
             resolve: {

@@ -1,4 +1,5 @@
 <!--
+    @deprecated Use Icon2.svelte instead.
     @component
     Creates an SVG icon. You can overwrite the color by using the --color
     style directive:
