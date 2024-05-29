@@ -178,6 +178,13 @@ func (s Spec) Validate() []error {
 				env.ID, env.ProjectID))
 		}
 
+		if env.Category.IsProduction() {
+			if s.Service.NotionPageID == nil {
+				errs = append(errs, errors.Newf("environment %q in category %q requires 'service.notionPageID' to be set",
+					env.ID, env.Category))
+			}
+		}
+
 		if domain := pointers.DerefZero(env.EnvironmentServiceSpec).Domain.GetDNSName(); domain != "" {
 			_, exists := configuredDomains[domain]
 			if exists {
