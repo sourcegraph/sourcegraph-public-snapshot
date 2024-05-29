@@ -112,7 +112,7 @@ type Sourcer interface {
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
 	// ForExternalService returns a ChangesetSource based on the provided external service opts.
 	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
+	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts, as AuthenticationStrategy) (ChangesetSource, error)
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
@@ -227,7 +227,7 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts, as AuthenticationStrategy) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrMissingCredentials
@@ -248,6 +248,10 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
+	}
+	if as == AuthenticationStrategyGitHubApp {
+		// how do we get the owner
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, "")
 	}
 	return css.WithAuthenticator(au)
 }
@@ -371,7 +375,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	app, err := tx.GitHubAppsStore().GetByDomainAndKind(ctx, types.BatchesGitHubAppDomain, baseURL.String(), types.CommitSigningGitHubAppKind)
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}

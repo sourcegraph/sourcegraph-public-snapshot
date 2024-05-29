@@ -294,9 +294,14 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	fmt.Println("kind ===> ", kind)
-	// if kind == itypes.UserCredentialGitHubAppKind {
-	// 	//srv.db.UserCredentials()
-	// }
+
+	if kind != nil && *kind == types.UserCredentialGitHubAppKind {
+		// observationCtx := observation.NewContext(log.NoOp())
+		// bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
+		// svc := service.New(bstore)
+		// svc.CreateBatchChangesUserCredential(r.Context())
+		//srv.db.UserCredentials()
+	}
 
 	webhookDB := srv.db.Webhooks(keyring.Default().WebhookKey)
 	hook, err := webhookDB.GetByUUID(r.Context(), webhookUUID)

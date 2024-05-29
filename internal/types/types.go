@@ -111,6 +111,7 @@ func (s GitHubAppKind) ToGraphQL() string { return strings.ToUpper(string(s)) }
 const (
 	UserCredentialGitHubAppKind GitHubAppKind = "USER_CREDENTIAL"
 	CommitSigningGitHubAppKind  GitHubAppKind = "COMMIT_SIGNING"
+	RepoSyncGitHubAppKind       GitHubAppKind = "REPO_SYNC"
 )
 
 // RepoCommit is a record of a repo and a corresponding commit.
