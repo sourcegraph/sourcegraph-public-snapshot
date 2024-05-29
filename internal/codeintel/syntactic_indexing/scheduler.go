@@ -37,7 +37,7 @@ type syntacticJobScheduler struct {
 
 var _ SyntacticJobScheduler = &syntacticJobScheduler{}
 
-func NewSyntaticJobScheduler(repoSchedulingSvc reposcheduler.RepositorySchedulingService,
+func NewSyntacticJobScheduler(repoSchedulingSvc reposcheduler.RepositorySchedulingService,
 	policyMatcher policies.Matcher, policiesSvc policies.Service,
 	repoStore database.RepoStore, enqueuer IndexEnqueuer, config SchedulerConfig) (SyntacticJobScheduler, error) {
 
@@ -82,7 +82,7 @@ func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, fronten
 
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
-	return NewSyntaticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
+	return NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
 }
 
 // GetConfig implements SyntacticJobScheduler.

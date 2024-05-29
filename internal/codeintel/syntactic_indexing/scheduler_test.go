@@ -165,7 +165,7 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
-	scheduler, err := NewSyntaticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *config)
+	scheduler, err := NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *config)
 
 	require.NoError(t, err)
 

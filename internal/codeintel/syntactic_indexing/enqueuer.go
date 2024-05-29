@@ -82,16 +82,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 }
 
-// QueueIndexingJobs enqueues a set of index jobs for the following repository and commit. If a non-empty
-// configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
-// the configuration will be determined based on the regular index scheduling rules: first read any
-// in-repo configuration (e.g., sourcegraph.yaml), then look for any existing in-database configuration,
-// finally falling back to the automatically inferred configuration based on the repo contents at the
-// target commit.
-//
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.IsQueued
+// QueueIndexingJobs schedules a syntactic indexing job for a given repositoryID at given revision.
+// If options.force = true, then the job will be scheduled even if the same one already exists in the queue.
+// This method will return an array of jobs that were actually successfully scheduled.
+// The result can be nil iff the same job is already queued AND options.force is false.
 func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
 	ctx, trace, endObservation := s.operations.queueIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
@@ -113,11 +107,6 @@ func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commitID, options)
 }
 
-// queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
-//
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	commit := string(commitID)
 
