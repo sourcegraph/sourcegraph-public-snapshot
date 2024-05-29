@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
@@ -1781,6 +1782,54 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
+}
+
+func TestCheckErrCodeHostMaybeInaccessible(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "context deadline exceeded",
+			err:      context.DeadlineExceeded,
+			expected: true,
+		},
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "wrapped context deadline exceeded",
+			err:      errors.Wrap(context.DeadlineExceeded, "wrapped error"),
+			expected: true,
+		},
+		{
+			name:     "wrapped DNS error - not found",
+			err:      errors.Wrap(&net.DNSError{Err: "no such host", IsNotFound: true}, "wrapped error"),
+			expected: true,
+		},
+		{
+			name:     "wrapped DNS error - timeout",
+			err:      errors.Wrap(&net.DNSError{Err: "i/o timeout", IsTimeout: true}, "wrapped error"),
+			expected: false,
+		},
+		{
+			name:     "wrapped generic error",
+			err:      errors.Wrap(errors.New("some error"), "wrapped error"),
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := checkErrCodeHostMaybeInaccessible(test.err)
+			if result != test.expected {
+				t.Errorf("unexpected result. want=%v, got=%v", test.expected, result)
+			}
+		})
+	}
 }
 
 type handle struct {
