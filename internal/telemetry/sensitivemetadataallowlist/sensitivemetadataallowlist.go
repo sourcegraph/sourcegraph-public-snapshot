@@ -24,6 +24,7 @@ var additionalAllowedEventTypes = func() []EventType {
 
 // AllowedEventTypes denotes a list of all events allowed to export sensitive
 // telemetry metadata.
+// 🚨 Must get approval from data-analytics team before adding events to this list.
 func AllowedEventTypes() EventTypes {
 	return eventTypes(append(additionalAllowedEventTypes,
 		// Example event for testing.
