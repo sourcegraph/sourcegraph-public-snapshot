@@ -27,6 +27,7 @@ type operations struct {
 	ranges          *observation.Operation
 	snapshot        *observation.Operation
 	visibleIndexes  *observation.Operation
+	usagesForSymbol *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
