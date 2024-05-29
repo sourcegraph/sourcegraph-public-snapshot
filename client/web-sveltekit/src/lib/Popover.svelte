@@ -9,11 +9,13 @@
      * Show the popover when hovering over the trigger.
      */
     export let showOnHover = false
+    export let hoverDelay: number = 0
 
     let isOpen = false
     let trigger: HTMLElement | null
     let target: HTMLElement | undefined
     let popoverContainer: HTMLElement | null
+    let delayTimer: ReturnType<typeof setTimeout>
 
     function toggle(open?: boolean): void {
         isOpen = open === undefined ? !isOpen : open
@@ -33,12 +35,16 @@
         trigger = node
 
         function handleMouseEnterTrigger(): void {
-            isOpen = true
+            clearTimeout(delayTimer)
+            delayTimer = setTimeout(() => {
+                isOpen = true
+            }, hoverDelay)
         }
 
         function handleMouseLeaveTrigger(event: MouseEvent): void {
             // It should be possible to move the mouse from the trigger to the popover without closing it
             if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
+                clearTimeout(delayTimer)
                 isOpen = false
             }
         }

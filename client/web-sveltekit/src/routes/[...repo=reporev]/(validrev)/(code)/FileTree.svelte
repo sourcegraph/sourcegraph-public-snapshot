@@ -124,7 +124,7 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover let:registerTrigger placement="right-end" showOnHover>
+                <Popover let:registerTrigger placement="right-end" hover={{ enable: true, delayMillis: 500 }}>
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
                         on:click|preventDefault={() => {}}
@@ -140,7 +140,7 @@
                         {isRoot ? '..' : entry.name}
                     </a>
                     <svelte:fragment slot="content">
-                        {#await delay(fetchPopoverData({ repoName, revision, filePath: entry.path }), 300) then entry}
+                        {#await fetchPopoverData({ repoName, revision, filePath: entry.path }) then entry}
                             <FilePopover {repoName} {revision} {entry} />
                         {/await}
                     </svelte:fragment>
