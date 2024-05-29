@@ -3,8 +3,6 @@ package syntactic_indexing
 import (
 	"context"
 	"database/sql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,14 +13,15 @@ import (
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SyntacticJobScheduler interface {
-	// TODO: make it return job that were queued successfully?
 	Schedule(observationCtx *observation.Context, ctx context.Context, currentTime time.Time) error
 	GetConfig() *SchedulerConfig
 }
@@ -121,7 +120,7 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 				options := EnqueueOptions{force: false}
 
 				// Attempt to queue an index if one does not exist for each of the matching commits
-				if _, err := s.Enqueuer.QueueIndexes(ctx, int(repoToIndex.ID), commit, options); err != nil {
+				if _, err := s.Enqueuer.QueueIndexingJobs(ctx, int(repoToIndex.ID), commit, options); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 						continue
 					}

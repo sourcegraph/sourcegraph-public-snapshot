@@ -51,7 +51,7 @@ func (p policyIterator) ForEachPoliciesBatch(ctx context.Context, handle func([]
 			break
 		}
 		if handlerError := handle(policiesBatch); handlerError != nil {
-			return handlerError // propagate error from the handler
+			return handlerError
 		}
 		if offset = offset + len(policiesBatch); offset >= totalCount {
 			break
