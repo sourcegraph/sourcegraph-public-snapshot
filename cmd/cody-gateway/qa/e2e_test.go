@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,12 +42,12 @@ func Test_Completions(t *testing.T) {
 							if errors.Is(err, errNotImplemented) {
 								t.Skip(string(f), err)
 							}
-							assert.NoError(t, err)
+							require.NoError(t, err)
 							resp, err := http.DefaultClient.Do(req)
-							assert.NoError(t, err)
+							require.NoError(t, err)
 							body, err := io.ReadAll(resp.Body)
-							assert.NoError(t, err)
-							assert.Equal(t, resp.StatusCode, http.StatusOK, string(body))
+							require.NoError(t, err)
+							assert.Equal(t, http.StatusOK, resp.StatusCode, string(body))
 							if stream {
 								assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
 							}
