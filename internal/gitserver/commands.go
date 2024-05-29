@@ -374,7 +374,7 @@ func (c *clientImplementor) ReadDir(ctx context.Context, repo api.RepoName, comm
 				for _, d := range s.Details() {
 					fp, ok := d.(*proto.FileNotFoundPayload)
 					if ok {
-						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+						return nil, &os.PathError{Op: "open", Path: string(fp.Path), Err: os.ErrNotExist}
 					}
 				}
 			}
@@ -488,7 +488,7 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, repo api.RepoNa
 	req := &proto.BlameRequest{
 		RepoName:         string(repo),
 		Commit:           string(opt.NewestCommit),
-		Path:             path,
+		Path:             []byte(path), // The file path might not be utf-8 encoded.
 		IgnoreWhitespace: opt.IgnoreWhitespace,
 	}
 	if opt.Range != nil {
@@ -863,7 +863,7 @@ func (c *clientImplementor) Stat(ctx context.Context, repo api.RepoName, commit 
 				for _, d := range s.Details() {
 					fp, ok := d.(*proto.FileNotFoundPayload)
 					if ok {
-						return nil, &os.PathError{Op: "open", Path: fp.Path, Err: os.ErrNotExist}
+						return nil, &os.PathError{Op: "open", Path: string(fp.Path), Err: os.ErrNotExist}
 					}
 				}
 			}
