@@ -763,7 +763,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 	req := &proto.ReadFileRequest{
 		RepoName: string(repo),
 		Commit:   string(commit),
-		Path:     rel(name),
+		Path:     []byte(rel(name)),
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -786,7 +786,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 						cancel()
 						err = firstRespErr
 						endObservation(1, observation.Args{})
-						return nil, &os.PathError{Op: "open", Path: req.GetPath(), Err: os.ErrNotExist}
+						return nil, &os.PathError{Op: "open", Path: string(req.GetPath()), Err: os.ErrNotExist}
 					}
 				}
 			}

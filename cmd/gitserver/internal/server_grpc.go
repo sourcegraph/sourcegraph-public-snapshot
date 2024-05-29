@@ -988,7 +988,7 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 		ctx,
 		req.GetRepoName(),
 		log.String("commit", req.GetCommit()),
-		log.String("path", req.GetPath()),
+		log.String("path", string(req.GetPath())),
 	)
 
 	if req.GetRepoName() == "" {
@@ -1012,13 +1012,13 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 
 	backend := gs.gitBackendSource(repoDir, repoName)
 
-	r, err := backend.ReadFile(ctx, api.CommitID(req.GetCommit()), req.GetPath())
+	r, err := backend.ReadFile(ctx, api.CommitID(req.GetCommit()), string(req.GetPath()))
 	if err != nil {
 		if os.IsNotExist(err) {
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 				Repo:   req.GetRepoName(),
 				Commit: req.GetCommit(),
-				Path:   req.GetPath(),
+				Path:   string(req.GetPath()),
 			})
 			if err != nil {
 				return err
