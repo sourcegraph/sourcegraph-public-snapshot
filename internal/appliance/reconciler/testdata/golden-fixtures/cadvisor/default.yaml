@@ -1,0 +1,217 @@
+resources:
+  - apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 6ad4c69be1e1c5d02dbd71d1f427fc7d197bf3d18c4acb8d53092dc659455920
+        deprecated.daemonset.template.generation: "1"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 1
+      labels:
+        app.kubernetes.io/component: cadvisor
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: cadvisor
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      minReadySeconds: 10
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: cadvisor
+      template:
+        metadata:
+          annotations:
+            prometheus.io/port: "48080"
+            sourcegraph.prometheus/scrape: "true"
+          creationTimestamp: null
+          labels:
+            app: cadvisor
+            deploy: sourcegraph
+          name: cadvisor
+        spec:
+          automountServiceAccountToken: false
+          containers:
+            - args:
+                - --store_container_labels=false
+                - --whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid
+              image: index.docker.io/sourcegraph/cadvisor:5.3.2@sha256:3860cce1f7ef0278c0d785f66baf69dd2bece19610a2fd6eaa54c03095f2f105
+              imagePullPolicy: IfNotPresent
+              name: cadvisor
+              ports:
+                - containerPort: 48080
+                  name: http
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: 300m
+                  memory: 2000Mi
+                requests:
+                  cpu: 150m
+                  memory: 200Mi
+              securityContext:
+                privileged: true
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /rootfs
+                  name: rootfs
+                  readOnly: true
+                - mountPath: /var/run
+                  name: var-run
+                  readOnly: true
+                - mountPath: /sys
+                  name: sys
+                  readOnly: true
+                - mountPath: /var/lib/docker
+                  name: docker
+                  readOnly: true
+                - mountPath: /dev/disk
+                  name: disk
+                  readOnly: true
+                - mountPath: /dev/kmsg
+                  name: kmsg
+                  readOnly: true
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          serviceAccount: cadvisor
+          serviceAccountName: cadvisor
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - hostPath:
+                path: /
+                type: ""
+              name: rootfs
+            - hostPath:
+                path: /var/run
+                type: ""
+              name: var-run
+            - hostPath:
+                path: /sys
+                type: ""
+              name: sys
+            - hostPath:
+                path: /var/lib/docker
+                type: ""
+              name: docker
+            - hostPath:
+                path: /dev/disk
+                type: ""
+              name: disk
+            - hostPath:
+                path: /dev/kmsg
+                type: ""
+              name: kmsg
+      updateStrategy:
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
+        type: RollingUpdate
+    status:
+      currentNumberScheduled: 0
+      desiredNumberScheduled: 0
+      numberMisscheduled: 0
+      numberReady: 0
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
+
+          blobstore:
+            disabled: true
+
+          codeInsights:
+            disabled: true
+
+          codeIntel:
+            disabled: true
+
+          frontend:
+            disabled: true
+
+          gitServer:
+            disabled: true
+
+          indexedSearch:
+            disabled: true
+
+          indexedSearchIndexer:
+            disabled: true
+
+          pgsql:
+            disabled: true
+
+          postgresExporter:
+            disabled: true
+
+          preciseCodeIntel:
+            disabled: true
+
+          redisCache:
+            disabled: true
+
+          redisStore:
+            disabled: true
+
+          repoUpdater:
+            disabled: true
+
+          searcher:
+            disabled: true
+
+          symbols:
+            disabled: true
+
+          syntectServer:
+            disabled: true
+
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+
+          cadvisor:
+            disabled: false
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: 6ad4c69be1e1c5d02dbd71d1f427fc7d197bf3d18c4acb8d53092dc659455920
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: cadvisor
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING

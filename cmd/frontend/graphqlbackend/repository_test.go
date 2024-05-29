@@ -65,10 +65,10 @@ func TestRepository_Commit(t *testing.T) {
 }
 
 func TestRepository_Changelist(t *testing.T) {
-	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
+	repo := &types.Repo{ID: 2, Name: "perforce.sgdev.org/gorilla/mux", ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce}}
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoName("github.com/gorilla/mux"), repo)
+		assert.Equal(t, api.RepoName("perforce.sgdev.org/gorilla/mux"), repo)
 		return exampleCommitSHA1, nil
 	}
 
@@ -92,7 +92,7 @@ func TestRepository_Changelist(t *testing.T) {
 		Schema: mustParseGraphQLSchema(t, db),
 		Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
+					repository(name: "perforce.sgdev.org/gorilla/mux") {
 						changelist(cid: "123") {
 							cid
 							canonicalURL
@@ -108,7 +108,7 @@ func TestRepository_Changelist(t *testing.T) {
 					"repository": {
 						"changelist": {
 							"cid": "123",
-							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+							"canonicalURL": "/perforce.sgdev.org/gorilla/mux/-/changelist/123",
 "commit": {
 	"oid": "%s"
 }

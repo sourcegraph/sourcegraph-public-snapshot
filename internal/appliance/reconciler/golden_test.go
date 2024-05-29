@@ -74,6 +74,14 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}
+	daemonsets, err := suite.k8sClient.AppsV1().DaemonSets(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range daemonsets.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
 	ssets, err := suite.k8sClient.AppsV1().StatefulSets(namespace).List(suite.ctx, metav1.ListOptions{})
 	suite.Require().NoError(err)
 	for _, obj := range ssets.Items {
