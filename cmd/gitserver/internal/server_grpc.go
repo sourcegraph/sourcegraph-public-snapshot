@@ -1581,7 +1581,7 @@ func (gs *grpcServer) Stat(ctx context.Context, req *proto.StatRequest) (*proto.
 			s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 				Repo:   string(repoName),
 				Commit: string(req.GetCommitSha()),
-				Path:   []byte(path),
+				Path:   []byte(path), // In Unix, paths can be arbitrary byte sequences, and aren't guaranteed to be valid UTF-8.
 			})
 			if err != nil {
 				return nil, err
