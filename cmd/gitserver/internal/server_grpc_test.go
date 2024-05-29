@@ -46,13 +46,13 @@ func TestGRPCServer_Blame(t *testing.T) {
 	mockSS.ContextFunc.SetDefaultReturn(actor.WithActor(context.Background(), a))
 	t.Run("argument validation", func(t *testing.T) {
 		gs := &grpcServer{}
-		err := gs.Blame(&v1.BlameRequest{RepoName: "", Path: "thepath"}, mockSS)
+		err := gs.Blame(&v1.BlameRequest{RepoName: "", Path: []byte("thepath")}, mockSS)
 		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: ""}, mockSS)
 		require.ErrorContains(t, err, "commit must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: ""}, mockSS)
+		err = gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: []byte("")}, mockSS)
 		require.ErrorContains(t, err, "path must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
@@ -62,7 +62,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		locker := NewMockRepositoryLocker()
 		locker.StatusFunc.SetDefaultReturn("cloning", true)
 		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
-		err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
+		err := gs.Blame(&v1.BlameRequest{RepoName: "therepo", Commit: "deadbeef", Path: []byte("thepath")}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -91,7 +91,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 		r, err := cli.Blame(context.Background(), &v1.BlameRequest{
 			RepoName: "therepo",
 			Commit:   "deadbeef",
-			Path:     "thepath",
+			Path:     []byte("thepath"),
 		})
 		require.NoError(t, err)
 		for {
@@ -119,7 +119,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 			r, err = cli.Blame(context.Background(), &v1.BlameRequest{
 				RepoName: "therepo",
 				Commit:   "deadbeef",
-				Path:     "thepath",
+				Path:     []byte("thepath"),
 			})
 			require.NoError(t, err)
 
@@ -133,7 +133,7 @@ func TestGRPCServer_Blame(t *testing.T) {
 			r, err = cli.Blame(context.Background(), &v1.BlameRequest{
 				RepoName: "therepo",
 				Commit:   "deadbeef",
-				Path:     "thepath",
+				Path:     []byte("thepath"),
 			})
 			require.NoError(t, err)
 
