@@ -28,6 +28,9 @@ load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 # Enable race detection for all go_test rules.
 # gazelle:map_kind go_test go_test //dev:go_defs.bzl
 
+load("@rules_apko//apko:defs.bzl", "apko_bazelrc")
+load("@rules_apko//apko:toolchain.bzl", "apko_toolchain")
+
 package(default_visibility = ["//visibility:public"])
 
 npm_link_all_packages(name = "node_modules")
@@ -343,10 +346,6 @@ config_setting(
     },
 )
 
-load("@rules_apko//apko:defs.bzl", "apko_bazelrc")
-load("@rules_apko//apko:repositories.bzl", "apko_register_toolchains", "rules_apko_dependencies")
-load("@rules_apko//apko:toolchain.bzl", "apko_toolchain")
-
 apko_bazelrc(
     name = "apko_bazelrc",
     repositories = [
@@ -393,4 +392,35 @@ toolchain(
     ],
     toolchain = "//:apko",
     toolchain_type = "@rules_apko//apko:toolchain_type",
+)
+
+FILE_TYPES = [
+    ".json",
+    ".js",
+    ".ts",
+    ".tsx",
+    ".scss",
+    ".graphql",
+    ".md",
+    ".html",
+    ".css",
+]
+
+genrule(
+    name = "build-web",
+    srcs = glob(["client/**/*" + file_type for file_type in FILE_TYPES]) + [
+        "//dev/tools:pnpm",
+        "//dev/tools:node",
+        "package.json",
+        ".npmrc",
+    ],
+    outs = ["out1"],
+    cmd = " ".join([
+        "PATH=$$PATH:$(location //dev/tools:node)",
+        "$(location //dev/tools:pnpm)",
+        "run",
+        "full",
+    ]),
+    toolchains = ["@nodejs_toolchains//:resolved_toolchain"],
+    tools = ["@nodejs_toolchains//:resolved_toolchain"],
 )

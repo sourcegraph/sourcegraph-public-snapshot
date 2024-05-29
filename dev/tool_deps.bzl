@@ -65,6 +65,19 @@ filegroup(
 )
 """
 
+NODE_BUILDFILE = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["node", "npm", "npx", "corepack"])
+"""
+
+NODE_PATCH_CMDS = [
+    "ln -s node-v20.14.0-darwin-arm64/bin/node node",
+    "ln -s node-v20.14.0-darwin-arm64/bin/corepack corepack",
+    "ln -s node-v20.14.0-darwin-arm64/bin/npx npx",
+    "ln -s node-v20.14.0-darwin-arm64/bin/npm npm",
+]
+
 def tool_deps():
     "Repository rules to fetch third party tooling used for dev purposes"
 
@@ -339,4 +352,19 @@ def tool_deps():
         name = "linear-sdk-graphql-schema",
         url = "https://raw.githubusercontent.com/linear/linear/%40linear/sdk%40{0}/packages/sdk/src/schema.graphql".format(LINEAR_SDK_VERSION),
         integrity = "sha256-9WUYPWt4iWcE/fhm6guqrfbk41y+Hb3jIR9I0/yCzwk=",
+    )
+
+    http_file(
+        name = "pnpm-darwin-arm64",
+        url = "https://github.com/pnpm/pnpm/releases/download/v8.9.2/pnpm-macos-arm64",
+        executable = True,
+        integrity = "sha256-VcIzA2c0qFmh/8prDNygOnm1OUGYAs4Iq2HTJM2EfUw=",
+    )
+
+    http_archive(
+        name = "node-darwin-arm64",
+        url = "https://nodejs.org/dist/v20.14.0/node-v20.14.0-darwin-arm64.tar.gz",
+        build_file_content = NODE_BUILDFILE,
+        patch_cmds = NODE_PATCH_CMDS,
+        integrity = "sha256-0hSNeen/BNKYLQD66ulCzrpIjKMnqRBl5SgjUWe56dY=",
     )

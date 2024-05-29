@@ -109,3 +109,19 @@ alias(
     }),
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "pnpm",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_arm64": "@pnpm-darwin-arm64//file:downloaded",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+tool(
+    name = "node",
+    src = select({
+        "@bazel_tools//src/conditions:darwin_arm64": ["@node-darwin-arm64//:node"],
+    }),
+    visibility = ["//visibility:public"],
+)
