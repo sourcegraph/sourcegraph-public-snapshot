@@ -23,7 +23,7 @@ import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged } from 'rxj
 
 import type { DocumentHighlight } from '@sourcegraph/codeintellify'
 import type { Position } from '@sourcegraph/extension-api-types'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/codemirror/utils'
 import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { offsetToUIPosition, positionToOffset, preciseWordAtCoords, sortRangeValuesByStart } from './utils'

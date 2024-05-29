@@ -25,6 +25,12 @@ export type {
 export { type BlameHunk, type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
 export { blameData, showBlame } from '@sourcegraph/web/src/repo/blob/codemirror/blame-decorations'
 export {
+    search,
+    type SearchPanelView,
+    type SearchPanelViewCreationOptions,
+    type SearchPanelState,
+} from '@sourcegraph/web/src/repo/blob/codemirror/search'
+export {
     selectableLineNumbers,
     type SelectedLineRange,
     setSelectedLines,
