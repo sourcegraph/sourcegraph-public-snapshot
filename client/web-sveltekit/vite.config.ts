@@ -19,17 +19,16 @@ export default defineConfig(({ mode }) => {
     let config: UserConfig & VitestUserConfig = {
         plugins: [
             sveltekit(),
-            // Do not run AutoImport when using Bazel. It will try to update auto-imports.d.ts, which
-            // is not possible.
-            !BAZEL &&
-                AutoImport({
-                    dts: './src/auto-imports.d.ts',
-                    resolvers: [
-                        IconsResolver({
-                            prefix: 'i',
-                        }),
-                    ],
-                }),
+            AutoImport({
+                // Ignore TS when running Bazel. It would try to write to the file which is not
+                // possible in bazel.
+                dts: BAZEL ? false : './src/auto-imports.d.ts',
+                resolvers: [
+                    IconsResolver({
+                        prefix: 'i',
+                    }),
+                ],
+            }),
             Icons({
                 compiler: 'svelte',
             }),
