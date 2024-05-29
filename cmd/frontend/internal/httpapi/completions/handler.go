@@ -113,6 +113,7 @@ func newCompletionsHandler(
 		// TODO: Model is not configurable but technically allowed in the request body right now.
 		var err error
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
+		requestParams.User = completionsConfig.User
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

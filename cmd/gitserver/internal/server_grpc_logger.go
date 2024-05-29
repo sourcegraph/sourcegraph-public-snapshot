@@ -779,7 +779,7 @@ func readFileRequestToLogFields(req *proto.ReadFileRequest) []log.Field {
 	return []log.Field{
 		log.String("repoName", req.GetRepoName()),
 		log.String("commit", req.GetCommit()),
-		log.String("path", req.GetPath()),
+		log.String("path", string(req.GetPath())),
 	}
 }
 

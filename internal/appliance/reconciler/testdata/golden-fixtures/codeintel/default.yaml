@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -282,7 +282,7 @@ resources:
     kind: ConfigMap
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -372,7 +372,7 @@ resources:
     kind: PersistentVolumeClaim
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
       creationTimestamp: "2024-04-19T00:00:00Z"
       finalizers:
         - kubernetes.io/pvc-protection
@@ -408,7 +408,7 @@ resources:
     kind: Secret
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app.kubernetes.io/component: codeintel-db-auth
@@ -431,7 +431,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -450,7 +450,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 08a9f89fce0d5a0784d40c635aac4b63182af3bcf52068f2e8bc5941aa9706df
+        appliance.sourcegraph.com/configHash: e7053c9dc5c68dc937eb3ccad38acdb7e070b7a95ada6564027665296fb6bab6
         prometheus.io/port: "9187"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"

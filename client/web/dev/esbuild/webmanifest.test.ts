@@ -28,6 +28,7 @@ describe('webmanifest builder', () => {
             'main.css': 'main-BBB.css',
             'embed.js': 'embedMain-CCC.js',
             'embed.css': 'embedMain-DDD.css',
+            _marker: 'WEB_BUNDLE',
         }))
 
     test('bazel', () =>
@@ -55,5 +56,6 @@ describe('webmanifest builder', () => {
             'main.css': 'main-BBB.css',
             'embed.js': 'embedMain-CCC.js',
             'embed.css': 'embedMain-DDD.css',
+            _marker: 'WEB_BUNDLE',
         }))
 })

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/dev/sg/sams"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -300,6 +301,7 @@ var sg = &cli.App{
 		cloudCommand,
 		msp.Command,
 		securityCommand,
+		sams.Command,
 
 		// Util
 		analyticsCommand,

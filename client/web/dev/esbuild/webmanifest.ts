@@ -12,6 +12,9 @@ export interface WebBuildManifest {
 
     /** Embed CSS bundle. */
     'embed.css': string
+
+    /** Marker used in release test to check if the bundle is loaded in the binary. */
+    _marker: string
 }
 
 export const assetPathPrefix = '/.assets'
@@ -27,4 +30,5 @@ export const webManifestBuilder = new ManifestBuilder<WebBuildManifest>({
     'embed.js': (asset, output) => (/\/embed\/embedMain\.(tsx|js)$/.test(output.entryPoint ?? '') ? asset : undefined),
     'embed.css': (_asset, output) =>
         (/\/embed\/embedMain\.(tsx|js)$/.test(output.entryPoint ?? '') && output.cssBundle) || undefined,
+    _marker: (_asset, output) => 'WEB_BUNDLE',
 })

@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// SSCAPIProxy is an HTTP handler that essentially proxies API requests from the
+// APIProxyHandler is an HTTP handler that essentially proxies API requests from the
 // current Sourcegraph instance to the SSC backend, but exchanging the credentials
 // of the calling Sourcegraph user with an access token for their SAMS identity.
 //
@@ -81,7 +81,7 @@ func GetSAMSOAuthContext() (*oauthutil.OAuthContext, error) {
 	return nil, errors.New("no SAMS configuration found")
 }
 
-// getUserIDFromRequest extracts the Sourcegraph User ID from the incomming request,
+// getUserIDFromRequest extracts the Sourcegraph User ID from the incoming request,
 // or returns an error suitable for sending to the end user.
 func (p *APIProxyHandler) getUserIDFromContext(ctx context.Context) (int32, error) {
 	callingActor := actor.FromContext(ctx)
@@ -96,7 +96,7 @@ func (p *APIProxyHandler) getUserIDFromContext(ctx context.Context) (int32, erro
 	return callingActor.UID, nil
 }
 
-// buildProxyRequest converts the incomming HTTP request into what will be sent to the SSC backend.
+// buildProxyRequest converts the incoming HTTP request into what will be sent to the SSC backend.
 func (p *APIProxyHandler) buildProxyRequest(sourceReq *http.Request, token string) (*http.Request, error) {
 	// For simplicity, read the full request body before sending the proxy request.
 	var bodyReader io.Reader

@@ -290,10 +290,10 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		err := gs.ReadFile(&v1.ReadFileRequest{RepoName: ""}, mockSS)
 		require.ErrorContains(t, err, "repo must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Path: ""}, mockSS)
+		err = gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Path: []byte("")}, mockSS)
 		require.ErrorContains(t, err, "path must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
-		err = gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Path: "thepath", Commit: ""}, mockSS)
+		err = gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Path: []byte("thepath"), Commit: ""}, mockSS)
 		require.ErrorContains(t, err, "commit must be specified")
 		assertGRPCStatusCode(t, err, codes.InvalidArgument)
 	})
@@ -303,7 +303,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		locker := NewMockRepositoryLocker()
 		locker.StatusFunc.SetDefaultReturn("cloning", true)
 		gs := &grpcServer{svc: NewMockService(), fs: fs, locker: locker}
-		err := gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Commit: "deadbeef", Path: "thepath"}, mockSS)
+		err := gs.ReadFile(&v1.ReadFileRequest{RepoName: "therepo", Commit: "deadbeef", Path: []byte("thepath")}, mockSS)
 		require.Error(t, err)
 		assertGRPCStatusCode(t, err, codes.NotFound)
 		assertHasGRPCErrorDetailOfType(t, err, &proto.RepoNotFoundPayload{})
@@ -329,7 +329,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		r, err := cli.ReadFile(context.Background(), &v1.ReadFileRequest{
 			RepoName: "therepo",
 			Commit:   "deadbeef",
-			Path:     "thepath",
+			Path:     []byte("thepath"),
 		})
 		require.NoError(t, err)
 		for {
@@ -351,7 +351,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		cc, err := cli.ReadFile(context.Background(), &v1.ReadFileRequest{
 			RepoName: "therepo",
 			Commit:   "deadbeef",
-			Path:     "thepath",
+			Path:     []byte("thepath"),
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()
@@ -363,7 +363,7 @@ func TestGRPCServer_ReadFile(t *testing.T) {
 		cc, err = cli.ReadFile(context.Background(), &v1.ReadFileRequest{
 			RepoName: "therepo",
 			Commit:   "deadbeef",
-			Path:     "thepath",
+			Path:     []byte("thepath"),
 		})
 		require.NoError(t, err)
 		_, err = cc.Recv()

@@ -706,7 +706,7 @@ message ReadFileRequest {
   // Note: We use field ID 2 here to reserve 1 for a future repo int32 field.
   string repo_name = 2;
   string commit = 3;
-  string path = 4;
+  bytes path = 4;
 }
 
 message ReadFileResponse {

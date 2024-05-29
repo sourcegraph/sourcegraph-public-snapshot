@@ -22,6 +22,7 @@ go_library(
     srcs = [
         "subscriptions.pb.go",
         "subscriptions_grpc.pb.go",
+        "v1.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1",
     visibility = ["//visibility:public"],

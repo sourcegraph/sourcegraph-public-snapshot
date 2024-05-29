@@ -42,6 +42,7 @@ const (
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
 	CandidatesNoTest    // build one or all candidate images without testing
+	DockerImages        // build, test and push images on DockerHub registry with insider tags.
 	CloudEphemeral      // build all images and push to cloud ephemeral registry for use with cloud deployment
 
 	BazelDo // run a specific bazel command
@@ -175,6 +176,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "docker-images-candidates-notest/",
 		}
+	case DockerImages:
+		return &RunTypeMatcher{
+			Branch: "docker-images/",
+		}
 	case BazelDo:
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
@@ -217,6 +222,8 @@ func (t RunType) String() string {
 		return "Patch image without testing"
 	case CandidatesNoTest:
 		return "Build all candidates without testing"
+	case DockerImages:
+		return "Build all docker images without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
 	case BazelDo:
