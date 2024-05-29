@@ -60,6 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		ranges:          op("Ranges"),
 		snapshot:        op("Snapshot"),
 		visibleIndexes:  op("VisibleIndexes"),
+		usagesForSymbol: op("UsagesForSymbol"),
 	}
 }
 
