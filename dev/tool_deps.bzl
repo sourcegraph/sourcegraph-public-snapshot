@@ -352,7 +352,6 @@ def tool_deps():
     )
 
     # Chromium deps for playwright
-    # Only installed for CI, locally we use a system install
     # to find the update URLs try running:
     # npx playwright install --dry-run
     http_archive(
