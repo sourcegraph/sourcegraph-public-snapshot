@@ -30,6 +30,10 @@ type BlobstoreSpec struct {
 	StandardConfig
 }
 
+type CadvisorSpec struct {
+	StandardConfig
+}
+
 // CodeInsightsDBSpec defines the desired state of Code Insights database.
 type CodeInsightsDBSpec struct {
 	// Disabled defines if Code Insights is enabled or not.
@@ -224,6 +228,8 @@ type SourcegraphSpec struct {
 
 	// Blobstore defines the desired state of the Blobstore service.
 	Blobstore BlobstoreSpec `json:"blobstore,omitempty"`
+
+	Cadvisor CadvisorSpec `json:"cadvisor,omitempty"`
 
 	// CodeInsights defines the desired state of the Code Insights service.
 	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
