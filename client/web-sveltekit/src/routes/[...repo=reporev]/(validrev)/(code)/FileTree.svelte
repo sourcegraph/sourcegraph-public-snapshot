@@ -12,7 +12,7 @@
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
-    import { createForwardStore, delay } from '$lib/utils'
+    import { createForwardStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
 
     export let repoName: string
@@ -131,6 +131,8 @@
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
                         use:registerTrigger
+                        on:mouseover={/* Preload */ () =>
+                            fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >
                         {#if entry.isDirectory}
                             <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
