@@ -10,6 +10,7 @@
      */
     export let showOnHover = false
     export let hoverDelay: number = 0
+    export let hoverCloseDelay: number = 0
 
     let isOpen = false
     let trigger: HTMLElement | null
@@ -45,7 +46,9 @@
             // It should be possible to move the mouse from the trigger to the popover without closing it
             if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
                 clearTimeout(delayTimer)
-                isOpen = false
+                delayTimer = setTimeout(() => {
+                    isOpen = false
+                }, hoverCloseDelay)
             }
         }
 
@@ -84,15 +87,23 @@
         function handleMouseLeavePopover(event: MouseEvent): void {
             // It should be possible to move the mouse from the popover to the trigger without closing it
             if (event.relatedTarget && !trigger?.contains(event.relatedTarget as Node)) {
-                toggle(false)
+                delayTimer = setTimeout(() => toggle(false), hoverCloseDelay)
             }
         }
+
+        function handleMouseEnterPopover(): void {
+            // When the mouse enters the popover, cancel any pending close events
+            clearTimeout(delayTimer)
+        }
+
         if (showOnHover) {
+            node.addEventListener('mouseenter', handleMouseEnterPopover)
             node.addEventListener('mouseleave', handleMouseLeavePopover)
         }
         return {
             destroy() {
                 popoverContainer = null
+                node.removeEventListener('mouseenter', handleMouseEnterPopover)
                 node.removeEventListener('mouseleave', handleMouseLeavePopover)
             },
         }
