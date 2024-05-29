@@ -39,7 +39,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "suggested",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
@@ -49,7 +49,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "accepted",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
