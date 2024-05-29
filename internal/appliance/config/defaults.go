@@ -123,6 +123,12 @@ func NewDefaultConfig() Sourcegraph {
 					PrometheusPort: pointers.Ptr(48080),
 				},
 			},
+			Worker: WorkerSpec{
+				StandardConfig: StandardConfig{
+					PrometheusPort: pointers.Ptr(6060),
+				},
+				Replicas: 1,
+			},
 		},
 	}
 }
@@ -150,6 +156,7 @@ var defaultImagesForVersion_5_3_9104 = map[string]string{
 	"repo-updater":              "repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6",
 	"symbols":                   "symbols:5.3.2@sha256:dd7f923bdbd5dbd231b749a7483110d40d59159084477b9fff84afaf58aad98e",
 	"syntect-server":            "syntax-highlighter:5.3.2@sha256:3d16ab2a0203fea85063dcfe2e9d476540ef3274c28881dc4bbd5ca77933d8e8",
+	"worker":                    "worker:5.3.2@sha256:776168bb53a0b094f51bfec3d0d38e2938a07bb840b665b645ccf2637f0e779f",
 }
 
 func GetDefaultImage(sg *Sourcegraph, component string) (string, error) {

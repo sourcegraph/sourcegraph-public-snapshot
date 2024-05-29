@@ -17,6 +17,7 @@ go_library(
         "repo_updater.go",
         "symbols.go",
         "syntect.go",
+        "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/reconciler",
     tags = [TAG_INFRA_RELEASE],
@@ -77,6 +78,7 @@ go_test(
         "standard_config_test.go",
         "symbols_test.go",
         "syntect_test.go",
+        "worker_test.go",
     ],
     data = [
         ":testdata",
