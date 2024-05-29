@@ -23,7 +23,7 @@
     }
 
     function handleClickOutside(event: { detail: HTMLElement }): void {
-        if (event.detail !== trigger && !trigger?.contains(event.detail)) {
+        if (!showOnHover && event.detail !== trigger && !trigger?.contains(event.detail)) {
             toggle(false)
         }
     }
@@ -58,10 +58,16 @@
             toggle(false)
         }
 
+        function handleClick(): void {
+            clearTimeout(delayTimer)
+            toggle(false)
+        }
+
         if (showOnHover) {
             node.addEventListener('mouseenter', handleMouseEnterTrigger)
             node.addEventListener('mouseleave', handleMouseLeaveTrigger)
             node.addEventListener('mousemove', handleMouseMoveTrigger)
+            node.addEventListener('click', handleClick)
             window.addEventListener('blur', handleWindowLoseFocus)
         }
 
@@ -71,6 +77,7 @@
                 node.removeEventListener('mouseenter', handleMouseEnterTrigger)
                 node.removeEventListener('mouseleave', handleMouseLeaveTrigger)
                 node.removeEventListener('mousemove', handleMouseMoveTrigger)
+                node.removeEventListener('click', handleClick)
                 window.removeEventListener('blur', handleWindowLoseFocus)
             },
         }
