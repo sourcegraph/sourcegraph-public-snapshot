@@ -49,9 +49,17 @@
             }
         }
 
+        function handleMouseMoveTrigger(): void {
+            clearTimeout(delayTimer)
+            delayTimer = setTimeout(() => {
+                isOpen = true
+            }, hoverDelay)
+        }
+
         if (showOnHover) {
             node.addEventListener('mouseenter', handleMouseEnterTrigger)
             node.addEventListener('mouseleave', handleMouseLeaveTrigger)
+            node.addEventListener('mousemove', handleMouseMoveTrigger)
         }
 
         return {
@@ -59,6 +67,7 @@
                 trigger = null
                 node.removeEventListener('mouseenter', handleMouseEnterTrigger)
                 node.removeEventListener('mouseleave', handleMouseLeaveTrigger)
+                node.removeEventListener('mousemove', handleMouseMoveTrigger)
             },
         }
     }
