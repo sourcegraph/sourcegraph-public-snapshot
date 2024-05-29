@@ -84,4 +84,13 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	_, err = enqueuer.QueueIndexingJobs(ctx, mangosRepoId, testutils.MakeCommit(100), EnqueueOptions{})
 	require.Error(t, err)
 
+	// force: true in EnqueueOptions allows scheduling the same (repo, revision) twice
+	reinserted := unwrap(enqueuer.QueueIndexingJobs(ctx, tacosRepoId, tacosCommit, EnqueueOptions{force: true}))(t)
+	require.Equal(t, 1, len(reinserted))
+	require.NotEqual(t, reinserted[0].ID, scheduled[0].ID) // ensure it's actually a new job
+	require.Equal(t, reinserted[0].Commit, tacosCommit)
+	require.Equal(t, reinserted[0].RepositoryID, tacosRepoId)
+	require.Equal(t, reinserted[0].State, jobstore.Queued)
+	require.Equal(t, reinserted[0].RepositoryName, tacosRepoName)
+
 }
