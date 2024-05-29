@@ -140,6 +140,9 @@ func parseKind(s *string) (*itypes.GitHubAppKind, error) {
 	case "COMMIT_SIGNING":
 		kind := itypes.CommitSigningGitHubAppKind
 		return &kind, nil
+	case "REPO_SYNC":
+		kind := itypes.RepoSyncGitHubAppKind
+		return &kind, nil
 	default:
 		return nil, errors.Errorf("unknown kind %q", *s)
 	}

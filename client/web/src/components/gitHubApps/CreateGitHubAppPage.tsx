@@ -17,7 +17,7 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { GitHubAppDomain, GitHubAppKind } from '../../graphql-operations'
+import { GitHubAppDomain, type GitHubAppKind } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
@@ -173,7 +173,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL])
+    }, [submitForm, name, appDomain, url, originURL, appKind])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)

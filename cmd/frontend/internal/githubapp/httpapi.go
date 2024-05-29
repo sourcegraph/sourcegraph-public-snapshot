@@ -281,7 +281,7 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient)
+	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient, *kind)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -493,7 +493,7 @@ func generateRedirectURL(domain *string, installationID, appID *int, appName *st
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
-func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client) (*ghtypes.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client, kind types.GitHubAppKind) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
@@ -533,6 +533,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpCli
 		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:        htmlURL.String(),
 		Domain:        domain,
+		Kind:          kind,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }
