@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	codeinteldb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -37,14 +38,19 @@ func (j *syntacticIndexingSchedulerJob) Config() []env.Config {
 }
 
 func (j *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	rawDB, err := workerdb.InitRawDB(observationCtx)
+	frontendDB, err := workerdb.InitRawDB(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	codeintelDB, err := codeinteldb.InitRawDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	schedulerConfig.Load()
 
-	scheduler, err := BootstrapSyntacticJobScheduler(observationCtx, rawDB)
+	scheduler, err := BootstrapSyntacticJobScheduler(observationCtx, frontendDB, codeintelDB)
 
 	if err != nil {
 		return nil, err

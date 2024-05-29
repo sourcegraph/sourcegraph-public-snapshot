@@ -29,14 +29,15 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
 
 	// Bootstrap scheduler
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationCtx.Logger, sqlDB)
+	frontendRawDB := dbtest.NewDB(t)
+	codeintelRawDB := dbtest.NewCodeintelDB(t)
+	db := database.NewDB(observationCtx.Logger, frontendRawDB)
 	config := &SchedulerConfig{
 		PolicyBatchSize:     100,
 		RepositoryBatchSize: 2500,
 	}
 	gitserverClient := gitserver.NewMockClient()
-	scheduler, jobStore, policies := bootstrapScheduler(t, observationCtx, sqlDB, gitserverClient, config)
+	scheduler, jobStore, policies := bootstrapScheduler(t, observationCtx, frontendRawDB, codeintelRawDB, gitserverClient, config)
 
 	ctx := context.Background()
 
@@ -136,14 +137,14 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 }
 
 func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
-	sqlDB *sql.DB, gitserverClient gitserver.Client,
+	frontendRawDB *sql.DB, codeintelDB *sql.DB, gitserverClient gitserver.Client,
 	config *SchedulerConfig) (SyntacticJobScheduler, jobstore.SyntacticIndexingJobStore, *policies.Service) {
 
-	db := database.NewDB(observationCtx.Logger, sqlDB)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, sqlDB)
+	frontendDB := database.NewDB(observationCtx.Logger, frontendRawDB)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelDB)
 
-	uploadsSvc := uploads.NewService(observationCtx, db, codeIntelDB, gitserverClient.Scoped("uploads"))
-	policiesSvc := policies.NewService(observationCtx, db, uploadsSvc, gitserverClient.Scoped("policies"))
+	uploadsSvc := uploads.NewService(observationCtx, frontendDB, codeIntelDB, gitserverClient.Scoped("uploads"))
+	policiesSvc := policies.NewService(observationCtx, frontendDB, uploadsSvc, gitserverClient.Scoped("policies"))
 
 	schedulerConfig.Load()
 
@@ -154,13 +155,13 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 		true,
 	)
 
-	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendRawDB)
 	require.NoError(t, err)
 
-	repoStore := db.Repos()
+	repoStore := frontendDB.Repos()
 
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
