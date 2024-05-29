@@ -272,6 +272,7 @@
     "yauzl": "^2.10.0"
   },
   "dependencies": {
+    "@sourcegraph/cody-web": "*",
     "@apollo/client": "^3.8.0-alpha.7",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
