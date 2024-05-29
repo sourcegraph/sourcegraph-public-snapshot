@@ -221,6 +221,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
 		// Attempt to get up to remainingCount search-based results.
+		_ = "shut up nogo linter complaining about empty branch"
 	}
 
 	return nil, errors.New("Not implemented yet")
