@@ -56,10 +56,16 @@
             }, hoverDelay)
         }
 
+        function handleWindowLoseFocus(): void {
+            clearTimeout(delayTimer)
+            isOpen = false
+        }
+
         if (showOnHover) {
             node.addEventListener('mouseenter', handleMouseEnterTrigger)
             node.addEventListener('mouseleave', handleMouseLeaveTrigger)
             node.addEventListener('mousemove', handleMouseMoveTrigger)
+            window.addEventListener('blur', handleWindowLoseFocus)
         }
 
         return {
@@ -68,6 +74,7 @@
                 node.removeEventListener('mouseenter', handleMouseEnterTrigger)
                 node.removeEventListener('mouseleave', handleMouseLeaveTrigger)
                 node.removeEventListener('mousemove', handleMouseMoveTrigger)
+                window.removeEventListener('blur', handleWindowLoseFocus)
             },
         }
     }
