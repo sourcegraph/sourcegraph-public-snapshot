@@ -21,14 +21,15 @@ export default defineConfig(({ mode }) => {
             sveltekit(),
             // Do not run AutoImport when using Bazel. It will try to update auto-imports.d.ts, which
             // is not possible.
-            !BAZEL && AutoImport({
-                dts: './src/auto-imports.d.ts',
-                resolvers: [
-                    IconsResolver({
-                        prefix: 'i',
-                    }),
-                ],
-            }),
+            !BAZEL &&
+                AutoImport({
+                    dts: './src/auto-imports.d.ts',
+                    resolvers: [
+                        IconsResolver({
+                            prefix: 'i',
+                        }),
+                    ],
+                }),
             Icons({
                 compiler: 'svelte',
             }),
