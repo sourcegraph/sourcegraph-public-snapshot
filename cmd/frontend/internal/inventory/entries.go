@@ -12,15 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
-	gs := gitserver.NewClient("graphql.insights.inventory.all")
+func (c *Context) All(ctx context.Context, gs gitserver.Client) (inv Inventory, err error) {
 	r, err := gs.ArchiveReader(ctx, c.Repo, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatTar})
 	if err != nil {
 		return Inventory{}, err
 	}
 
 	invs := make([]Inventory, 0)
-	tr := tar.NewReader(r)
+	tr := c.NewTarReader(r)
 	for {
 		th, err := tr.Next()
 		if err != nil {
@@ -33,7 +32,7 @@ func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 
 		switch {
 		case entry.Mode().IsRegular():
-			inv, err := c.fileTar(ctx, th, tr)
+			inv, err := c.fileTar(ctx, th)
 			if err != nil {
 				return Inventory{}, err
 			}
@@ -81,14 +80,14 @@ func (c *Context) Entries(ctx context.Context, entries ...fs.FileInfo) (Inventor
 func (c *Context) tree(ctx context.Context, tree fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(tree)); ok {
+		if inv, ok := c.CacheGet(ctx, tree); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(tree), inv) // store in cache
+				c.CacheSet(ctx, tree, inv) // store in cache
 			}
 		}()
 	}
@@ -127,14 +126,14 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo) (inv Inventory, er
 func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file)); ok {
+		if inv, ok := c.CacheGet(ctx, file); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file), inv) // store in cache
+				c.CacheSet(ctx, file, inv) // store in cache
 			}
 		}()
 	}
@@ -149,24 +148,22 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, er
 	return Inventory{Languages: []Lang{lang}}, nil
 }
 
-func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader) (inv Inventory, err error) {
+func (c *Context) fileTar(ctx context.Context, file *tar.Header) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file.FileInfo())); ok {
+		if inv, ok := c.CacheGet(ctx, file.FileInfo()); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file.FileInfo()), inv) // store in cache
+				c.CacheSet(ctx, file.FileInfo(), inv) // store in cache
 			}
 		}()
 	}
 
-	lang, err := getLang(ctx, file.FileInfo(), func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return io.NopCloser(r), nil
-	})
+	lang, err := getLang(ctx, file.FileInfo(), c.NewFileReader)
 	if err != nil {
 		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.FileInfo().Name())
 	}
