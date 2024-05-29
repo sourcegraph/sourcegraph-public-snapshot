@@ -10703,6 +10703,8 @@ type Location {
 
 """
 A range inside a file. The start position is inclusive, and the end position is exclusive.
+
+Invariant: start <= end, where the start == end case is a zero-length range.
 """
 type Range {
     """

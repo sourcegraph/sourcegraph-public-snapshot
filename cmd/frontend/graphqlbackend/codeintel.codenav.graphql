@@ -466,7 +466,14 @@ extend type Query {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 input SymbolComparator {
+    """
+    Describes how the symbol name should be compared.
+    """
     name: SymbolNameComparator!
+    """
+    Describes the provenance of the symbol. This value should be based
+    on the provenance value obtained from the CodeGraphData type.
+    """
     provenance: CodeGraphDataProvenanceComparator!
 }
 
@@ -477,6 +484,9 @@ input SymbolNameComparator {
     # Implementation note: In the future, we may want to extend this
     # to allow passing in a suffix or a "symbol pattern".
     # See https://github.com/sourcegraph/sourcegraph/issues/59957
+    """
+    Checks for exact equality.
+    """
     equals: String
 }
 
@@ -562,7 +572,16 @@ input UsagesFilter {
     #    Once syntactic is added, if we want to allow the user to specify either
     #    syntactic or precise (but not search-based), we'd need OR.
     #    OR will also not be needed for the first implementation pass.
+    """
+    Negate another UsageFilter. For example, this can be used to find matches
+    outside of a specific repository.
+    """
     not: UsagesFilter
+    """
+    Filter for limiting which repositories to find the usages in.
+    For cross-repository symbols as well as search-based results,
+    an empty value will find results across the Sourcegraph instance.
+    """
     repository: RepositoryFilter
     # TODO(id: usagesForSymbols-v2)
     # and: [UsagesFilter!]
@@ -576,6 +595,9 @@ input UsagesFilter {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 input RepositoryFilter {
+    """
+    Compare the repository by name.
+    """
     name: StringComparator!
 }
 
@@ -583,6 +605,11 @@ input RepositoryFilter {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 input StringComparator {
+    """
+    Checks for exact equality.
+    """
+    # EXTENSION: We may want to allow glob patterns in the future here,
+    # that could be used by both RepositoryFilter and PathFilter.
     equals: String
 }
 
@@ -590,7 +617,13 @@ input StringComparator {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 type UsageConnection {
+    """
+    A single page of Usages.
+    """
     nodes: [Usage!]!
+    """
+    Pagination information.
+    """
     pageInfo: PageInfo!
 }
 
@@ -598,13 +631,25 @@ type UsageConnection {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 type UsageRange {
+    """
+    The repository this usage is present in.
+    """
     repository: String!
     """
     TODO(issue: GRAPH-614): 'revision' field should have type GitCommit
     before stabilizing this API.
     """
     revision: String!
+    """
+    The root relative path for the file this usage is present in.
+    """
     path: String!
+    """
+    The source range for the usage.
+
+    CAUTION: Depending on the indexer where this data originated from,
+    this range may have zero length.
+    """
     range: Range!
 }
 
@@ -619,6 +664,9 @@ type Usage {
     """
     symbol: SymbolInformation!
 
+    """
+    Information about where this usage is located.
+    """
     # Q: Should we remove functionality from UsageRange and punt more
     # functionality to `blob: GitBlob`?
     # """
@@ -681,7 +729,13 @@ type SymbolInformation {
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 input SurroundingLines {
+    """
+    The number of lines before the current line to include.
+    """
     linesBefore: Int
+    """
+    The number of lines after the current line to include.
+    """
     linesAfter: Int
 }
 
