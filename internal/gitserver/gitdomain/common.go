@@ -278,7 +278,7 @@ func HunkFromBlameProto(h *proto.BlameHunk) *Hunk {
 		Message:        h.GetMessage(),
 		Filename:       h.GetFilename(),
 		Author: Signature{
-			Name:  h.GetAuthor().GetName(),
+			Name:  string(h.GetAuthor().GetName()), // Note: This is not necessarily a valid UTF-8 string, as git does not enforce this.
 			Email: h.GetAuthor().GetEmail(),
 			Date:  h.GetAuthor().GetDate().AsTime(),
 		},
@@ -307,7 +307,7 @@ func (h *Hunk) ToProto() *proto.BlameHunk {
 		Message:        h.Message,
 		Filename:       h.Filename,
 		Author: &proto.BlameAuthor{
-			Name:  h.Author.Name,
+			Name:  []byte(h.Author.Name), // We can't guarantee this is valid UTF-8. So, we have to use []byte.
 			Email: h.Author.Email,
 			Date:  timestamppb.New(h.Author.Date),
 		},

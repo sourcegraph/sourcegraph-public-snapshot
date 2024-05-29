@@ -679,7 +679,7 @@ message BlameHunk {
 }
 
 message BlameAuthor {
-  string name = 1;
+  bytes name = 1;
   string email = 2;
   google.protobuf.Timestamp date = 3;
 }
