@@ -51,6 +51,7 @@ client/web-sveltekit/**/*.gql.ts
 client/web-sveltekit/**/graphql-operations.ts
 client/web-sveltekit/**/graphql-types.ts
 client/web-sveltekit/**/graphql-type-mocks.ts
+client/web-sveltekit/src/auto-imports.d.ts
 *.module.scss.d.ts
 .vscode-test
 

@@ -1,15 +1,15 @@
-$iconSize: var(--icon-size, 1.5rem);
-$iconInlineSize: var(--icon-inline-size, #{(16 / 14)}em);
+$icon-size: var(--icon-size, 1.5rem);
+$icon-inline-size: var(--icon-inline-size, #{(16 / 14)}em);
 
 svg.icon {
-    width: $iconSize;
-    height: $iconSize;
+    width: $icon-size;
+    height: $icon-size;
 
     color: var(--icon-fill-color, var(--color, inherit));
     fill: currentColor;
 }
 
 svg.icon-inline {
-    width: $iconInlineSize;
-    height: $iconInlineSize;
+    width: $icon-inline-size;
+    height: $icon-inline-size;
 }
