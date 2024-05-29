@@ -61,8 +61,6 @@ func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, fronten
 	uploadsSvc := uploads.NewService(observationCtx, database, codeIntelDB, gitserverClient.Scoped("uploads"))
 	policiesSvc := policies.NewService(observationCtx, database, uploadsSvc, gitserverClient.Scoped("policies"))
 
-	schedulerConfig.Load()
-
 	matcher := policies.NewMatcher(
 		gitserverClient,
 		policies.IndexingExtractor,

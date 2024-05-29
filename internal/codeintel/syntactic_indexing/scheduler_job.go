@@ -27,17 +27,17 @@ func NewSyntacticindexingSchedulerJob() job.Job {
 	return &syntacticIndexingSchedulerJob{}
 }
 
-func (j *syntacticIndexingSchedulerJob) Description() string {
+func (job *syntacticIndexingSchedulerJob) Description() string {
 	return ""
 }
 
-func (j *syntacticIndexingSchedulerJob) Config() []env.Config {
+func (job *syntacticIndexingSchedulerJob) Config() []env.Config {
 	return []env.Config{
 		schedulerConfig,
 	}
 }
 
-func (j *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (job *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	frontendDB, err := workerdb.InitRawDB(observationCtx)
 	if err != nil {
 		return nil, err
@@ -48,15 +48,13 @@ func (j *syntacticIndexingSchedulerJob) Routines(_ context.Context, observationC
 		return nil, err
 	}
 
-	schedulerConfig.Load()
-
 	scheduler, err := BootstrapSyntacticJobScheduler(observationCtx, frontendDB, codeintelDB)
 
 	if err != nil {
 		return nil, err
 	}
 
-	j.Scheduler = scheduler
+	job.Scheduler = scheduler
 
 	return []goroutine.BackgroundRoutine{
 		newSchedulerJob(
