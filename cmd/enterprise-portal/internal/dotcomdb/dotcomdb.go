@@ -70,6 +70,15 @@ type CodyGatewayAccessAttributes struct {
 	LicenseKeyHashes [][]byte
 }
 
+func (c CodyGatewayAccessAttributes) GetSubscriptionDisplayName() string {
+	for _, tag := range c.ActiveLicenseTags {
+		if strings.HasPrefix(tag, "customer:") {
+			return strings.TrimPrefix(tag, "customer:")
+		}
+	}
+	return ""
+}
+
 type CodyGatewayRateLimits struct {
 	ChatSource codyaccessv1.CodyGatewayRateLimitSource
 	Chat       licensing.CodyGatewayRateLimit

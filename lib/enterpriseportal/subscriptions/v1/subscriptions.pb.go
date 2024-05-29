@@ -253,7 +253,8 @@ type EnterpriseSubscription struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID is the external, prefixed UUID-format identifier for this subscription.
+	// ID is the external, prefixed UUID-format identifier for this subscription
+	// (e.g. "es_...").
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Timeline of key events corresponding to this subscription.
 	Conditions []*EnterpriseSubscriptionCondition `protobuf:"bytes,2,rep,name=conditions,proto3" json:"conditions,omitempty"`
@@ -1004,7 +1005,8 @@ type ListEnterpriseSubscriptionLicensesResponse struct {
 	// This field represents the pagination token to retrieve the next page of
 	// results. If the value is "", it means no further results for the request.
 	NextPageToken string `protobuf:"bytes,1,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-	// The list of licenses that matched the given query.
+	// The list of licenses that matched the given query, sorted by the most
+	// recently created licenses first.
 	Licenses []*EnterpriseSubscriptionLicense `protobuf:"bytes,2,rep,name=licenses,proto3" json:"licenses,omitempty"`
 }
 
