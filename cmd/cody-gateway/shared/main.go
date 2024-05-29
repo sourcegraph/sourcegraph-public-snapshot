@@ -204,7 +204,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 					codyaccessv1.NewCodyAccessServiceClient(conn),
 					subscriptionsv1.NewSubscriptionsServiceClient(conn),
 				},
-				cfg.Dotcom.InternalMode,
 				cfg.ActorConcurrencyLimit,
 			),
 		)

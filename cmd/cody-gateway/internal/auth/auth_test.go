@@ -2,7 +2,6 @@ package auth
 
 // pre-commit:ignore_sourcegraph_token
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -24,9 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
-	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -79,7 +75,6 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			},
 			nil,
 		)
-		client.ListEnterpriseSubscriptionLicensesFunc.PushReturn(nil, errors.New("not a fatal error"))
 
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.NotNil(t, actor.FromContext(r.Context()))
@@ -92,7 +87,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.Called(t, client.GetCodyGatewayAccessFunc)
@@ -116,7 +111,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.NotCalled(t, client.GetCodyGatewayAccessFunc)
@@ -136,7 +131,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
@@ -156,7 +151,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			(&Authenticator{
 				Logger:      logger,
 				EventLogger: events.NewStdoutLogger(logger),
-				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 			}).Middleware(next).ServeHTTP(w, r)
 			assert.Equal(t, http.StatusOK, w.Code)
 		})
@@ -168,7 +163,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			(&Authenticator{
 				Logger:      logger,
 				EventLogger: events.NewStdoutLogger(logger),
-				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
+				Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 			}).Middleware(next).ServeHTTP(w, r)
 			assert.Equal(t, http.StatusForbidden, w.Code)
 		})
@@ -188,7 +183,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 		mockrequire.Called(t, client.GetCodyGatewayAccessFunc)
@@ -208,158 +203,8 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	})
-
-	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
-		cache := NewMockListingCache()
-		client := productsubscriptiontest.NewMockEnterprisePortalClient()
-		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
-		client.GetCodyGatewayAccessFunc.PushReturn(
-			&codyaccessv1.GetCodyGatewayAccessResponse{
-				Access: &codyaccessv1.CodyGatewayAccess{
-					SubscriptionId: subscriptionID,
-					Enabled:        true,
-					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-				},
-			},
-			nil,
-		)
-		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
-			assert.EqualValues(t, 1, req.PageSize)
-			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
-			// Ensure second filter is for an archival state filter
-			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
-			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
-				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
-					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
-						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
-							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
-								Tags: []string{"foo"},
-							},
-						},
-					},
-				}},
-			}, nil
-		})
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
-			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusForbidden, w.Code)
-	})
-
-	t.Run("internal mode, authenticated dev license", func(t *testing.T) {
-		cache := NewMockListingCache()
-		client := productsubscriptiontest.NewMockEnterprisePortalClient()
-		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
-		client.GetCodyGatewayAccessFunc.PushReturn(
-			&codyaccessv1.GetCodyGatewayAccessResponse{
-				Access: &codyaccessv1.CodyGatewayAccess{
-					SubscriptionId: subscriptionID,
-					Enabled:        true,
-					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-				},
-			},
-			nil,
-		)
-		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
-			assert.EqualValues(t, 1, req.PageSize)
-			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
-			// Ensure second filter is for an archival state filter
-			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
-			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
-				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
-					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
-						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
-							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
-								Tags: []string{licensing.DevTag},
-							},
-						},
-					},
-				}},
-			}, nil
-		})
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
-			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
-	})
-
-	t.Run("internal mode, authenticated internal license", func(t *testing.T) {
-		cache := NewMockListingCache()
-		client := productsubscriptiontest.NewMockEnterprisePortalClient()
-		subscriptionID := "es_6452a8fc-e650-45a7-a0a2-357f776b3b46"
-		client.GetCodyGatewayAccessFunc.PushReturn(
-			&codyaccessv1.GetCodyGatewayAccessResponse{
-				Access: &codyaccessv1.CodyGatewayAccess{
-					SubscriptionId: subscriptionID,
-					Enabled:        true,
-					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-				},
-			},
-			nil,
-		)
-		client.ListEnterpriseSubscriptionLicensesFunc.PushHook(func(_ context.Context, req *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, _ ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error) {
-			assert.EqualValues(t, 1, req.PageSize)
-			assert.Equal(t, subscriptionID, req.Filters[0].GetSubscriptionId())
-			// Ensure second filter is for an archival state filter
-			assert.False(t, req.Filters[1].GetFilter().(*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived).IsArchived)
-			return &subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse{
-				Licenses: []*subscriptionsv1.EnterpriseSubscriptionLicense{{
-					License: &subscriptionsv1.EnterpriseSubscriptionLicense_Key{
-						Key: &subscriptionsv1.EnterpriseSubscriptionLicenseKey{
-							Info: &subscriptionsv1.EnterpriseSubscriptionLicenseKey_Info{
-								Tags: []string{licensing.InternalTag},
-							},
-						},
-					},
-				}},
-			}, nil
-		})
-
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
-			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }

@@ -9,7 +9,6 @@ go_library(
     deps = [
         "//cmd/cody-gateway/internal/actor/productsubscription",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",
-        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )

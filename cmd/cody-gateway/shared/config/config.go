@@ -31,7 +31,6 @@ type Config struct {
 	Dotcom struct {
 		URL                          string
 		AccessToken                  string
-		InternalMode                 bool
 		ActorRefreshCoolDownInterval time.Duration
 
 		// Prompts that get flagged are stored in Redis for a short-time, for
@@ -197,8 +196,6 @@ func (c *Config) Load() {
 	if _, err := url.Parse(c.Dotcom.URL); err != nil {
 		c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_DOTCOM_API_URL"))
 	}
-	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
-		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
 		"Cooldown period for refreshing the actor info from dotcom.")
 	c.Dotcom.FlaggedPromptRecorderTTL = c.GetInterval("CODY_GATEWAY_DOTCOM_FLAGGED_PROMPT_RECORDER_TTL", "1h",

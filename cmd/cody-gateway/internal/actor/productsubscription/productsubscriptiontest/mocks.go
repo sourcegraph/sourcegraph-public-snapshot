@@ -12,7 +12,6 @@ import (
 
 	productsubscription "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
 	v1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
-	v11 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	grpc "google.golang.org/grpc"
 )
 
@@ -27,10 +26,6 @@ type MockEnterprisePortalClient struct {
 	// ListCodyGatewayAccessesFunc is an instance of a mock function object
 	// controlling the behavior of the method ListCodyGatewayAccesses.
 	ListCodyGatewayAccessesFunc *EnterprisePortalClientListCodyGatewayAccessesFunc
-	// ListEnterpriseSubscriptionLicensesFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// ListEnterpriseSubscriptionLicenses.
-	ListEnterpriseSubscriptionLicensesFunc *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc
 }
 
 // NewMockEnterprisePortalClient creates a new mock of the
@@ -45,11 +40,6 @@ func NewMockEnterprisePortalClient() *MockEnterprisePortalClient {
 		},
 		ListCodyGatewayAccessesFunc: &EnterprisePortalClientListCodyGatewayAccessesFunc{
 			defaultHook: func(context.Context, *v1.ListCodyGatewayAccessesRequest, ...grpc.CallOption) (r0 *v1.ListCodyGatewayAccessesResponse, r1 error) {
-				return
-			},
-		},
-		ListEnterpriseSubscriptionLicensesFunc: &EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc{
-			defaultHook: func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (r0 *v11.ListEnterpriseSubscriptionLicensesResponse, r1 error) {
 				return
 			},
 		},
@@ -71,11 +61,6 @@ func NewStrictMockEnterprisePortalClient() *MockEnterprisePortalClient {
 				panic("unexpected invocation of MockEnterprisePortalClient.ListCodyGatewayAccesses")
 			},
 		},
-		ListEnterpriseSubscriptionLicensesFunc: &EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc{
-			defaultHook: func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error) {
-				panic("unexpected invocation of MockEnterprisePortalClient.ListEnterpriseSubscriptionLicenses")
-			},
-		},
 	}
 }
 
@@ -89,9 +74,6 @@ func NewMockEnterprisePortalClientFrom(i productsubscription.EnterprisePortalCli
 		},
 		ListCodyGatewayAccessesFunc: &EnterprisePortalClientListCodyGatewayAccessesFunc{
 			defaultHook: i.ListCodyGatewayAccesses,
-		},
-		ListEnterpriseSubscriptionLicensesFunc: &EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc{
-			defaultHook: i.ListEnterpriseSubscriptionLicenses,
 		},
 	}
 }
@@ -337,129 +319,5 @@ func (c EnterprisePortalClientListCodyGatewayAccessesFuncCall) Args() []interfac
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterprisePortalClientListCodyGatewayAccessesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc describes
-// the behavior when the ListEnterpriseSubscriptionLicenses method of the
-// parent MockEnterprisePortalClient instance is invoked.
-type EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc struct {
-	defaultHook func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error)
-	hooks       []func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error)
-	history     []EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListEnterpriseSubscriptionLicenses delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockEnterprisePortalClient) ListEnterpriseSubscriptionLicenses(v0 context.Context, v1 *v11.ListEnterpriseSubscriptionLicensesRequest, v2 ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error) {
-	r0, r1 := m.ListEnterpriseSubscriptionLicensesFunc.nextHook()(v0, v1, v2...)
-	m.ListEnterpriseSubscriptionLicensesFunc.appendCall(EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// ListEnterpriseSubscriptionLicenses method of the parent
-// MockEnterprisePortalClient instance is invoked and the hook queue is
-// empty.
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) SetDefaultHook(hook func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListEnterpriseSubscriptionLicenses method of the parent
-// MockEnterprisePortalClient instance invokes the hook at the front of the
-// queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) PushHook(hook func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) SetDefaultReturn(r0 *v11.ListEnterpriseSubscriptionLicensesResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) PushReturn(r0 *v11.ListEnterpriseSubscriptionLicensesResponse, r1 error) {
-	f.PushHook(func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) nextHook() func(context.Context, *v11.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*v11.ListEnterpriseSubscriptionLicensesResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) appendCall(r0 EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall objects
-// describing the invocations of this function.
-func (f *EnterprisePortalClientListEnterpriseSubscriptionLicensesFunc) History() []EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall is an
-// object that describes an invocation of method
-// ListEnterpriseSubscriptionLicenses on an instance of
-// MockEnterprisePortalClient.
-type EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *v11.ListEnterpriseSubscriptionLicensesRequest
-	// Arg2 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg2 []grpc.CallOption
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *v11.ListEnterpriseSubscriptionLicensesResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg2 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterprisePortalClientListEnterpriseSubscriptionLicensesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

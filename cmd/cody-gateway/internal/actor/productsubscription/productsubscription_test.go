@@ -20,17 +20,16 @@ func TestNewActor(t *testing.T) {
 		Interval:   24 * time.Hour,
 	}
 	type args struct {
-		access            *codyaccessv1.CodyGatewayAccess
-		activeLicenseTags []string
-		devLicensesOnly   bool
+		access *codyaccessv1.CodyGatewayAccess
 	}
 	tests := []struct {
-		name        string
-		args        args
+		name string
+		args args
+		// TODO add more coverage on created actor
 		wantEnabled bool
 	}{
 		{
-			name: "not dev only",
+			name: "enabled",
 			args: args{
 				&codyaccessv1.CodyGatewayAccess{
 					Enabled: true,
@@ -43,53 +42,13 @@ func TestNewActor(t *testing.T) {
 						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
-				nil,
-				false,
-			},
-			wantEnabled: true,
-		},
-		{
-			name: "dev only, not a dev license",
-			args: args{
-				&codyaccessv1.CodyGatewayAccess{
-					Enabled: true,
-					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-				},
-				nil,
-				true,
-			},
-			wantEnabled: false,
-		},
-		{
-			name: "dev only, is a dev license",
-			args: args{
-				&codyaccessv1.CodyGatewayAccess{
-					Enabled: true,
-					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
-						Limit:            10,
-						IntervalDuration: durationpb.New(10 * time.Second),
-					},
-				},
-				[]string{"dev"},
-				true,
 			},
 			wantEnabled: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.access, tt.args.activeLicenseTags, tt.args.devLicensesOnly, concurrencyConfig)
+			act := newActor(nil, "", tt.args.access, concurrencyConfig)
 			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
 		})
 	}

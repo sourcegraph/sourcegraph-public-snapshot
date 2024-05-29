@@ -12,7 +12,6 @@ go_library(
         "//internal/codygateway",
         "//internal/collections",
         "//internal/license",
-        "//internal/licensing",
         "//internal/productsubscription",
         "//internal/trace",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",

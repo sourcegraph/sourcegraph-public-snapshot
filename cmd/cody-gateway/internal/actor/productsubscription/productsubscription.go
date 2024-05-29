@@ -3,7 +3,6 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
-	"slices"
 	"strings"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
@@ -54,8 +52,6 @@ type EnterprisePortalClient interface {
 	// codyaccessv1 RPCs
 	GetCodyGatewayAccess(context.Context, *codyaccessv1.GetCodyGatewayAccessRequest, ...grpc.CallOption) (*codyaccessv1.GetCodyGatewayAccessResponse, error)
 	ListCodyGatewayAccesses(context.Context, *codyaccessv1.ListCodyGatewayAccessesRequest, ...grpc.CallOption) (*codyaccessv1.ListCodyGatewayAccessesResponse, error)
-	// subscriptionsv1 RPCs
-	ListEnterpriseSubscriptionLicenses(context.Context, *subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest, ...grpc.CallOption) (*subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse, error)
 }
 
 type Source struct {
@@ -63,10 +59,6 @@ type Source struct {
 	cache ListingCache // cache is expected to be something with automatic TTL
 
 	enterprisePortal EnterprisePortalClient
-
-	// internalMode, if true, indicates only dev and internal licenses may use
-	// this Cody Gateway instance.
-	internalMode bool
 
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
@@ -79,7 +71,6 @@ func NewSource(
 	logger log.Logger,
 	cache ListingCache,
 	enterprisePortal EnterprisePortalClient,
-	internalMode bool,
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig,
 ) *Source {
 	return &Source{
@@ -87,8 +78,6 @@ func NewSource(
 		cache: cache,
 
 		enterprisePortal: enterprisePortal,
-
-		internalMode: internalMode,
 
 		concurrencyConfig: concurrencyConfig,
 	}
@@ -180,12 +169,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			default:
 			}
 
-			var activeLicenseTags []string
-			if access.GetEnabled() {
-				activeLicenseTags = s.getActiveLicenseTags(ctx, access.SubscriptionId)
-			}
-
-			act := newActor(s, token.GetToken(), access, activeLicenseTags, s.internalMode, s.concurrencyConfig)
+			act := newActor(s, token.GetToken(), access, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
 				act.Logger(syncLog).Error("failed to marshal actor",
@@ -200,46 +184,6 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	}
 	removeUnseenTokens(seenTokens, s.cache, syncLog)
 	return seen, errs
-}
-
-// getActiveLicenseTags attempts to fetch the 'active license' for the given
-// subscription, returning the associated license tags.
-//
-// 🔔 In production (not internal-only mode), this should only be used for
-// diagnostics information. In the future, we will revisit the current use case
-// (identifying if a subscription is dev/internal, and finding a subscription's
-// display name) and replace this with one of:
-//
-// - subscriptionsv1.GetEnterpriseSubscription
-// - expanded codyaccessv1.GetCodyAccess
-// - more specialized codyaccessv2
-func (s *Source) getActiveLicenseTags(ctx context.Context, subscriptionID string) []string {
-	logger := sgtrace.Logger(ctx, s.log).
-		Scoped("getActiveLicenseTags").
-		With(log.String("subscriptionID", subscriptionID))
-
-	// Query for active license
-	licenses, err := s.enterprisePortal.ListEnterpriseSubscriptionLicenses(ctx, &subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest{
-		PageSize: 1, // only get the most recently created license
-		Filters: []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId{
-				SubscriptionId: subscriptionID,
-			},
-		}, {
-			Filter: &subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: false,
-			},
-		}},
-	})
-	if err != nil {
-		logger.Error("failed to get active license - this is not a critical failure", log.Error(err))
-		return nil
-	}
-	if len(licenses.GetLicenses()) == 0 {
-		logger.Error("found no active license - this is not a critical failure", log.Error(errors.New("no active license")))
-		return nil
-	}
-	return licenses.GetLicenses()[0].GetKey().GetInfo().Tags
 }
 
 func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLog log.Logger) {
@@ -268,29 +212,14 @@ func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLo
 	}
 }
 
-type accessDetails struct {
-	Access            *codyaccessv1.CodyGatewayAccess
-	ActiveLicenseTags []string
-}
-
-func (s *Source) checkAccessToken(ctx context.Context, token string) (*accessDetails, error) {
+func (s *Source) checkAccessToken(ctx context.Context, token string) (*codyaccessv1.CodyGatewayAccess, error) {
 	resp, err := s.enterprisePortal.GetCodyGatewayAccess(ctx, &codyaccessv1.GetCodyGatewayAccessRequest{
 		Query: &codyaccessv1.GetCodyGatewayAccessRequest_AccessToken{
 			AccessToken: token,
 		},
 	})
 	if err == nil {
-		result := &accessDetails{
-			Access: resp.GetAccess(),
-		}
-		if !result.Access.GetEnabled() {
-			// Fast-exit, no additional details are needed
-			return result, nil
-		}
-
-		result.ActiveLicenseTags = s.getActiveLicenseTags(ctx, result.Access.SubscriptionId)
-
-		return result, nil
+		return resp.GetAccess(), nil
 	}
 
 	// Inspect the error to see if it's not-found error.
@@ -309,14 +238,12 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = newActor(s, token, &codyaccessv1.CodyGatewayAccess{}, []string{}, s.internalMode, s.concurrencyConfig)
+		act = newActor(s, token, &codyaccessv1.CodyGatewayAccess{}, s.concurrencyConfig)
 	} else {
 		act = newActor(
 			s,
 			token,
-			resp.Access,
-			resp.ActiveLicenseTags,
-			s.internalMode,
+			resp,
 			s.concurrencyConfig,
 		)
 	}
@@ -351,18 +278,12 @@ func newActor(
 	source *Source,
 	token string,
 	s *codyaccessv1.CodyGatewayAccess,
-	activeLicenseTags []string,
-	internalMode bool,
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig,
 ) *actor.Actor {
-	name := getSubscriptionAccountName(activeLicenseTags)
+	name := s.GetSubscriptionDisplayName()
 	if name == "" {
 		name = s.GetSubscriptionId()
 	}
-
-	// In internal mode, only allow dev and internal licenses.
-	disallowedLicense := internalMode &&
-		!containsOneOf(activeLicenseTags, licensing.DevTag, licensing.InternalTag)
 
 	now := time.Now()
 	a := &actor.Actor{
@@ -372,9 +293,10 @@ func newActor(
 		ID: strings.TrimPrefix(s.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix),
 
 		Name:          name,
-		AccessEnabled: !disallowedLicense && s.GetEnabled(),
+		AccessEnabled: s.GetEnabled(),
 		EndpointAccess: map[string]bool{
-			"/v1/attribution": !disallowedLicense,
+			// always enabled even if !s.GetEnabled(), to allow BYOK customers
+			"/v1/attribution": true,
 		},
 		RateLimits:  map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated: &now,
@@ -411,13 +333,4 @@ func newActor(
 	}
 
 	return a
-}
-
-func containsOneOf(s []string, needles ...string) bool {
-	for _, needle := range needles {
-		if slices.Contains(s, needle) {
-			return true
-		}
-	}
-	return false
 }
