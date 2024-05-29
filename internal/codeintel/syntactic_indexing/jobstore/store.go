@@ -76,7 +76,7 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 
 func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, indexes []SyntacticIndexingJob) (jobs []SyntacticIndexingJob, err error) {
 
-	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := s.operations.insertIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("numIndexes", len(indexes)),
 	}})
 	endObservation(1, observation.Args{})
@@ -105,7 +105,7 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 		if err != nil {
 			return err
 		}
-		s.operations.indexesInserted.Add(float64(len(ids)))
+		s.operations.indexingJobsInserted.Add(float64(len(ids)))
 
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 		if err != nil {

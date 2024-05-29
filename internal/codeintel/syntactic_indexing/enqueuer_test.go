@@ -62,7 +62,7 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	require.NoError(t, err)
 
 	// Happy path
-	scheduled, err := enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
+	scheduled, err := enqueuer.QueueIndexingJobs(ctx, tacosRepoId, tacosCommit, EnqueueOptions{})
 
 	require.NoError(t, err)
 	require.Equal(t, 1, len(scheduled))
@@ -73,15 +73,15 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	// scheduling the same (repo, revision) twice doesn't return an error,
 	// but also doesn't insert a new job
-	result := unwrap(enqueuer.QueueIndexes(ctx, tacosRepoId, tacosCommit, EnqueueOptions{}))(t)
+	result := unwrap(enqueuer.QueueIndexingJobs(ctx, tacosRepoId, tacosCommit, EnqueueOptions{}))(t)
 	require.Empty(t, result)
 
 	// cannot schedule for non existent repositories
-	_, err = enqueuer.QueueIndexes(ctx, 250, tacosCommit, EnqueueOptions{})
+	_, err = enqueuer.QueueIndexingJobs(ctx, 250, tacosCommit, EnqueueOptions{})
 	require.Error(t, err)
 
 	// cannot schedule for non existent revisions
-	_, err = enqueuer.QueueIndexes(ctx, mangosRepoId, testutils.MakeCommit(100), EnqueueOptions{})
+	_, err = enqueuer.QueueIndexingJobs(ctx, mangosRepoId, testutils.MakeCommit(100), EnqueueOptions{})
 	require.Error(t, err)
 
 }

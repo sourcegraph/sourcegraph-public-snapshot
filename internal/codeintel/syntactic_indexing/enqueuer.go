@@ -16,7 +16,7 @@ import (
 )
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryId int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
+	QueueIndexingJobs(ctx context.Context, repositoryId int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
 }
 
 type EnqueueOptions struct {
@@ -52,7 +52,7 @@ func NewIndexEnqueuer(
 }
 
 type operations struct {
-	queueIndexes *observation.Operation
+	queueIndexingJobs *observation.Operation
 }
 
 var (
@@ -78,11 +78,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		queueIndexes: op("QueueIndexes"),
+		queueIndexingJobs: op("QueueIndexingJobs"),
 	}
 }
 
-// QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
+// QueueIndexingJobs enqueues a set of index jobs for the following repository and commit. If a non-empty
 // configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
 // the configuration will be determined based on the regular index scheduling rules: first read any
 // in-repo configuration (e.g., sourcegraph.yaml), then look for any existing in-database configuration,
@@ -92,8 +92,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.IsQueued
-func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
-	ctx, trace, endObservation := s.operations.queueIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
+	ctx, trace, endObservation := s.operations.queueIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 		attribute.String("rev", rev),
 	}})
@@ -121,26 +121,25 @@ func (s *indexEnqueuerImpl) QueueIndexes(ctx context.Context, repositoryID int, 
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	commit := string(commitID)
 
-	if !options.force {
+	values := []jobstore.SyntacticIndexingJob{
+		{
+			State:        jobstore.Queued,
+			Commit:       commit,
+			RepositoryID: repositoryID,
+		}}
+
+	if options.force {
+		return s.jobStore.InsertIndexes(ctx, values)
+	} else {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}
 		if isQueued {
 			return nil, nil
+		} else {
+			return s.jobStore.InsertIndexes(ctx, values)
 		}
+
 	}
-
-	if !options.force {
-		values := []jobstore.SyntacticIndexingJob{
-			{
-				State:        jobstore.Queued,
-				Commit:       commit,
-				RepositoryID: repositoryID,
-			}}
-
-		return s.jobStore.InsertIndexes(ctx, values)
-	}
-
-	return nil, nil
 }

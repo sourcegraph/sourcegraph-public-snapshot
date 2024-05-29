@@ -10,16 +10,16 @@ import (
 )
 
 type operations struct {
-	isQueued        *observation.Operation
-	insertIndexes   *observation.Operation
-	indexesInserted prometheus.Counter
+	isQueued             *observation.Operation
+	insertIndexingJobs   *observation.Operation
+	indexingJobsInserted prometheus.Counter
 }
 
 var (
 	indexesInsertedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
 		indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "src_codeintel_dbstore_syntactic_indexing_jobs_inserted",
-			Help: "The number of codeintel syntactic indexing records inserted.",
+			Help: "The number of codeintel syntactic indexing jobs inserted.",
 		})
 		r.MustRegister(indexesInsertedCounter)
 		return indexesInsertedCounter, nil
@@ -48,9 +48,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	indexesInsertedCounter, _ := indexesInsertedCounterMemo.Init(observationCtx.Registerer)
 
 	return &operations{
-		isQueued:      op("IsQueued"),
-		insertIndexes: op("InsertIndexes"),
+		isQueued:           op("IsQueued"),
+		insertIndexingJobs: op("InsertIndexingJobs"),
 
-		indexesInserted: indexesInsertedCounter,
+		indexingJobsInserted: indexesInsertedCounter,
 	}
 }
