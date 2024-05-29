@@ -22,13 +22,13 @@ export interface ReactFriendlyApiResponse<T> {
 export function useApiCaller<Resp>(call: Call<Resp>): ReactFriendlyApiResponse<Resp> {
     const { caller } = useContext(CodyProApiClientContext)
 
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [error, setError] = useState<Error | undefined>(undefined)
     const [data, setData] = useState<Resp | undefined>(undefined)
     const [response, setResponse] = useState<Response | undefined>(undefined)
 
     const callApi = useCallback(async () => {
-        setLoading(false)
+        setLoading(true)
         try {
             const callerResponse = await caller.call(call)
 
