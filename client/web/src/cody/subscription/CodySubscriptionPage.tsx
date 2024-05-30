@@ -27,7 +27,7 @@ import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -79,18 +79,18 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                     className="mb-4"
                     actions={
                         isProUser && (
-                            <Button
+                            <ButtonLink
                                 variant="primary"
+                                to={getManageSubscriptionPageURL()}
                                 onClick={() => {
                                     telemetryRecorder.recordEvent('cody.manageSubscription', 'click', {
                                         metadata: { tier: 1 },
                                     })
-                                    window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
                                 <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                 Manage subscription
-                            </Button>
+                            </ButtonLink>
                         )
                     }
                 >

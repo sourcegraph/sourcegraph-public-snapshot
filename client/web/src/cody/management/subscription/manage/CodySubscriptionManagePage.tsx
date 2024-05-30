@@ -17,6 +17,7 @@ import {
     type UserCodyPlanVariables,
 } from '../../../../graphql-operations'
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
+import { PageRoutes } from '../../../../routes.constants'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { Client } from '../../api/client'
 import { useApiCaller } from '../../api/hooks/useApiClient'
@@ -118,7 +119,7 @@ const PageContent: React.FC = () => {
             </PageHeader>
 
             <div className="my-3">
-                <Link to="/cody/manage" className={styles.link}>
+                <Link to={PageRoutes.CodyManagement} className={styles.link}>
                     <BackIcon />
                     Back to Cody Dashboard
                 </Link>
