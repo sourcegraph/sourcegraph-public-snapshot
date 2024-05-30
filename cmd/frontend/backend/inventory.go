@@ -53,14 +53,6 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
 
-	cacheKey := func(e fs.FileInfo) string {
-		info, ok := e.Sys().(gitdomain.ObjectInfo)
-		if !ok {
-			return "" // not cacheable
-		}
-		return info.OID().String()
-	}
-
 	gitServerSemaphore := semaphore.NewWeighted(int64(gitServerConcurrency))
 	redisSemaphore := semaphore.NewWeighted(int64(redisConcurrency))
 
@@ -111,14 +103,20 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 				gitServerSemaphore.Release(1)
 			}}, nil
 		},
-		CacheGet: func(ctx context.Context, e fs.FileInfo) (inventory.Inventory, bool) {
-			cacheKey := cacheKey(e)
+		CacheKey: func(e fs.FileInfo) string {
+			info, ok := e.Sys().(gitdomain.ObjectInfo)
+			if !ok {
+				return "" // not cacheable
+			}
+			return info.OID().String()
+		},
+		CacheGet: func(ctx context.Context, cacheKey string) (inventory.Inventory, bool) {
 			if cacheKey == "" {
 				return inventory.Inventory{}, false // not cacheable
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
-				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return inventory.Inventory{}, false
 			}
 			defer redisSemaphore.Release(1)
@@ -126,26 +124,25 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
-					logger.Warn("Failed to unmarshal cached JSON inventory.", log.String("path", e.Name()), log.Error(err))
+					logger.Warn("Failed to unmarshal cached JSON inventory.", log.String("cacheKey", cacheKey), log.Error(err))
 					return inventory.Inventory{}, false
 				}
 				return inv, true
 			}
 			return inventory.Inventory{}, false
 		},
-		CacheSet: func(ctx context.Context, e fs.FileInfo, inv inventory.Inventory) {
-			cacheKey := cacheKey(e)
+		CacheSet: func(ctx context.Context, cacheKey string, inv inventory.Inventory) {
 			if cacheKey == "" {
 				return // not cacheable
 			}
 			b, err := json.Marshal(&inv)
 			if err != nil {
-				logger.Warn("Failed to marshal JSON inventory for cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to marshal JSON inventory for cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return
 			}
 
 			if err := redisSemaphore.Acquire(ctx, 1); err != nil {
-				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("path", e.Name()), log.Error(err))
+				logger.Warn("Failed to acquire semaphore for redis cache.", log.String("cacheKey", cacheKey), log.Error(err))
 				return
 			}
 			defer redisSemaphore.Release(1)
