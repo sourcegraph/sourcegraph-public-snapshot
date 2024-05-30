@@ -112,15 +112,15 @@ const PageContent: React.FC = () => {
         <Page className="d-flex flex-column">
             <PageTitle title="Manage Subscription" />
             <PageHeader className="mt-4">
-                <PageHeader.Heading as="h2" styleAs="h1" className={classNames('mb-4', styles.title)}>
+                <PageHeader.Heading as="h2" styleAs="h1" className="mb-4 d-flex align-items-center">
                     <CodyIcon className="mr-2" />
                     <Text as="span">Manage Subscription</Text>
                 </PageHeader.Heading>
             </PageHeader>
 
             <div className="my-3">
-                <Link to={PageRoutes.CodyManagement} className={styles.link}>
-                    <BackIcon />
+                <Link to={PageRoutes.CodyManagement} className="d-flex align-items-center">
+                    <BackIcon className="mr-2" />
                     Back to Cody Dashboard
                 </Link>
             </div>
@@ -140,8 +140,15 @@ const PageContent: React.FC = () => {
     )
 }
 
-const BackIcon: React.FC = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+const BackIcon: React.FC<{ className?: string }> = props => (
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={props.className}
+    >
         <title>Back icon</title>
         <path
             d="M6.49967 12.8667L7.43967 11.9267L4.38634 8.86666H15.1663V7.53333H4.38634L7.44634 4.47333L6.49967 3.53333L1.83301 8.19999L6.49967 12.8667Z"

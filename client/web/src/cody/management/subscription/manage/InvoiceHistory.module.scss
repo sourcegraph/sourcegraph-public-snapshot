@@ -3,32 +3,14 @@
     margin-bottom: 1.125rem;
 }
 
-.invoice {
-    margin-top: 1rem;
+.label {
+    gap: 0.375rem;
+}
 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.price {
+    gap: 0.75rem;
+}
 
-    &-col {
-        display: flex;
-        align-items: center;
-
-        &:first-child {
-            gap: 0.375rem;
-        }
-
-        &:last-child {
-            gap: 0.75rem;
-        }
-    }
-
-    &-link {
-        display: flex;
-        align-items: center;
-
-        &-icon {
-            margin-left: 0.375rem;
-        }
-    }
+.icon {
+    margin-left: 0.375rem;
 }

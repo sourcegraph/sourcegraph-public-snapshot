@@ -63,13 +63,13 @@ export const InvoiceHistory: React.FC = () => {
 }
 
 const InvoiceItem: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
-    <li className={styles.invoice}>
-        <div className={classNames('text-muted', styles.invoiceCol)}>
+    <li className="mt-3 d-flex justify-content-between align-items-center">
+        <div className={classNames('d-flex align-items-center text-muted', styles.label)}>
             <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} />
             <Text as="span">{invoice.periodEnd ? humanizeDate(invoice.periodEnd) : '(no date)'}</Text>
         </div>
 
-        <div className={classNames('font-weight-medium', styles.invoiceCol)}>
+        <div className={classNames('d-flex align-items-center font-weight-medium', styles.price)}>
             <Text as="span" className="text-muted">
                 {usdCentsToHumanString(invoice.amountDue)}
             </Text>
@@ -77,9 +77,14 @@ const InvoiceItem: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
                 {invoice.status}
             </Text>
             {invoice.hostedInvoiceUrl ? (
-                <Link to={invoice.hostedInvoiceUrl} target="_blank" rel="noopener" className={styles.invoiceLink}>
+                <Link
+                    to={invoice.hostedInvoiceUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="d-flex align-items-center"
+                >
                     <Text as="span">Get Invoice</Text>
-                    <Icon aria-hidden={true} svgPath={mdiOpenInNew} className={styles.invoiceLinkIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiOpenInNew} className={styles.icon} />
                 </Link>
             ) : (
                 '-'
