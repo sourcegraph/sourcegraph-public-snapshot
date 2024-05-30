@@ -129,36 +129,25 @@ func unwrap[T any](v T, err error) func(*testing.T) T {
 func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 	frontendRawDB *sql.DB, codeintelDB *sql.DB, gitserverClient gitserver.Client,
 	config *SchedulerConfig) (SyntacticJobScheduler, jobstore.SyntacticIndexingJobStore, *policies.Service) {
-
 	frontendDB := database.NewDB(observationCtx.Logger, frontendRawDB)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelDB)
-
 	uploadsSvc := uploads.NewService(observationCtx, frontendDB, codeIntelDB, gitserverClient.Scoped("uploads"))
 	policiesSvc := policies.NewService(observationCtx, frontendDB, uploadsSvc, gitserverClient.Scoped("policies"))
 
 	schedulerConfig.Load()
-
 	matcher := policies.NewMatcher(
 		gitserverClient,
 		policies.IndexingExtractor,
 		true,
 		true,
 	)
-
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
-
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendRawDB)
-	require.NoError(t, err)
+	jobStore := unwrap(jobstore.NewStoreWithDB(observationCtx, frontendRawDB))(t)
 
 	repoStore := frontendDB.Repos()
-
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
-
-	scheduler, err := NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *config)
-
-	require.NoError(t, err)
-
+	scheduler := unwrap(NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *config))(t)
 	return scheduler, jobStore, policiesSvc
 }
 
