@@ -95,40 +95,27 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
 		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, schedulerConfig.PolicyBatchSize)
-
 		err := policyIterator.ForEachPoliciesBatch(ctx, func(policies []policiesshared.ConfigurationPolicy) error {
-
 			commitMap, err := s.PolicyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, currentTime)
-
 			if err != nil {
 				return err
 			}
-
 			for commit, policyMatches := range commitMap {
 				if len(policyMatches) == 0 {
 					continue
 				}
-
-				options := EnqueueOptions{force: false}
-
-				// Attempt to queue an index if one does not exist for each of the matching commits
-				if _, err := s.Enqueuer.QueueIndexingJobs(ctx, int(repoToIndex.ID), commit, options); err != nil {
+				if _, err := s.Enqueuer.QueueIndexingJobs(ctx, int(repoToIndex.ID), commit, EnqueueOptions{force: false}); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 						continue
 					}
-
 					return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
 				}
 			}
-
 			return nil
-
 		})
-
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }

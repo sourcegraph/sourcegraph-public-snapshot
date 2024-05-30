@@ -49,7 +49,6 @@ func (job *syntacticIndexingSchedulerJob) Routines(_ context.Context, observatio
 	}
 
 	scheduler, err := BootstrapSyntacticJobScheduler(observationCtx, frontendDB, codeintelDB)
-
 	if err != nil {
 		return nil, err
 	}
