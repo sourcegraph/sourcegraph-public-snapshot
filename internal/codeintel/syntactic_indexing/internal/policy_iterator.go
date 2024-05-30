@@ -2,10 +2,10 @@ package internal
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type PolicyType string
