@@ -178,7 +178,7 @@ type InstanceFeatures struct {
 	features map[string]string
 }
 
-func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
+func newInstanceStatus(src *cloudapiv1.InstanceState) *InstanceStatus {
 
 	status := InstanceStatus{}
 	var err error
@@ -200,16 +200,13 @@ func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
 		status.Status = InstanceStatusUnknown
 	}
 
-	return &status, nil
+	return &status
 }
 
 func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	details := src.GetInstanceDetails()
 	platform := src.GetPlatformDetails()
-	status, err := newInstanceStatus(src.GetInstanceState())
-	if err != nil {
-		return nil, err
-	}
+	status := newInstanceStatus(src.GetInstanceState())
 	features := newInstanceFeaturesFrom(details.GetInstanceFeatures())
 	expiresAt, err := features.GetEphemeralLeaseTime()
 	if err != nil && !errors.Is(err, ErrLeaseTimeNotSet) {
