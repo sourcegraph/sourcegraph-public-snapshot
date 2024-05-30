@@ -207,7 +207,8 @@ FROM product_subscriptions subscription
 		clauses = append(clauses, "HAVING "+conds.havingClause)
 	}
 	if opts.DevOnly {
-		c := fmt.Sprintf("('%s' = ANY(MAX(active_license.license_tags)) OR '%s' = ANY(MAX(active_license.license_tags)))",
+		// '&&' operator: overlap (have elements in common)
+		c := fmt.Sprintf("ARRAY['%s','%s'] && MAX(active_license.license_tags)",
 			licensing.DevTag, licensing.InternalTag)
 		if conds.havingClause != "" {
 			clauses = append(clauses, "AND "+c)
@@ -325,7 +326,8 @@ LEFT JOIN product_subscriptions subscriptions
 		clauses = append(clauses, "WHERE "+conds.whereClause)
 	}
 	if opts.DevOnly {
-		c := fmt.Sprintf("('%s' = ANY(licenses.license_tags) OR '%s' = ANY(licenses.license_tags))",
+		// '&&' operator: overlap (have elements in common)
+		c := fmt.Sprintf("ARRAY['%s','%s'] && licenses.license_tags",
 			licensing.DevTag, licensing.InternalTag)
 		if conds.whereClause != "" {
 			clauses = append(clauses, "AND "+c)
