@@ -5,6 +5,7 @@ go_library(
     name = "embeddings",
     srcs = [
         "handler.go",
+        "metadata.go",
         "models.go",
         "openai.go",
         "sourcegraph.go",
