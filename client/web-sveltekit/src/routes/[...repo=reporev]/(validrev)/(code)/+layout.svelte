@@ -35,7 +35,6 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon2 from '$lib/Icon2.svelte'
     import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -44,7 +43,6 @@
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
@@ -159,14 +157,6 @@
         }
     }
 
-    function handleGoToRoot(): void {
-        // Without this if we go to the root from the before scoped directory
-        // (and we were in the root before) fileTreeStore caching omits
-        // new file tree provider creating, this would lead to not updating
-        // file tree as we go to the root
-        fileTreeStore.resetTopPathCache(repoName, resolvedRevision.commitID)
-    }
-
     $: {
         if (selectedTab == null) {
             bottomPanel?.collapse()
@@ -209,16 +199,6 @@
                         getRepositoryCommits={data.getRepoCommits}
                         getRepositoryTags={data.getRepoTags}
                     />
-
-                    <Tooltip tooltip="Go to the repository root">
-                        <Button variant="secondary" outline size="sm">
-                            <svelte:fragment slot="custom" let:buttonClass>
-                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
-                                    <Icon2 icon={ILucideHome} inline />
-                                </a>
-                            </svelte:fragment>
-                        </Button>
-                    </Tooltip>
                 </div>
 
                 <div class="sidebar-action-row">
