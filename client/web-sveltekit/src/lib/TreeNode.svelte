@@ -112,15 +112,13 @@
                 <LoadingSpinner center={false} />
             </div>
         {:then treeProvider}
-            <div class="group-container">
-                <ul role="group">
-                    {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
-                        <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
-                            <slot {entry} {toggle} {expanded} />
-                        </svelte:self>
-                    {/each}
-                </ul>
-            </div>
+            <ul role="group">
+                {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
+                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
+                        <slot {entry} {toggle} {expanded} />
+                    </svelte:self>
+                {/each}
+            </ul>
         {:catch error}
             <slot name="error" {error} />
         {/await}
@@ -193,7 +191,7 @@
         display: flex;
     }
 
-    .group-container {
+    ul {
         position: relative;
         isolation: isolate;
         &::before {
