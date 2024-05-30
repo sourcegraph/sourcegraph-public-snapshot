@@ -204,18 +204,19 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {isProUser ? (
-                                    <Text
-                                        className="mb-0 text-muted d-inline cursor-pointer"
-                                        size="small"
+                                    <Link
+                                        to={getManageSubscriptionPageURL()}
+                                        className="mb-0 text-muted"
                                         onClick={() => {
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 0 },
                                             })
-                                            window.location.href = manageSubscriptionRedirectURL
                                         }}
                                     >
-                                        Manage subscription
-                                    </Text>
+                                        <Text as="span" size="small">
+                                            Manage subscription
+                                        </Text>
+                                    </Link>
                                 ) : useEmbeddedCodyUI ? (
                                     <>
                                         <Button
