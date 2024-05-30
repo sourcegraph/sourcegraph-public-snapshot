@@ -93,10 +93,6 @@ func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commitID, options)
-}
-
-func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	shouldInsert := true
 	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commitID)
