@@ -95,15 +95,14 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 
 	// Check if the deployment already exists
 	pending.Updatef("Checking if deployment %q already exists", name)
-	_, err = cloudClient.GetInstance(ctx, name)
-	if err != nil {
-		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
-		} else {
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
-			// Deployment exists
-			return ErrDeploymentExists
-		}
+	inst, err := cloudClient.GetInstance(ctx, name)
+	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
+		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
+	}
+	if inst != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
+		// Deployment exists
+		return ErrDeploymentExists
 	}
 
 	pending.Updatef("Fetching license key...")
@@ -119,7 +118,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 	)
 
 	pending.Updatef("Creating deployment %q for version %q", spec.Name, spec.Version)
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+	inst, err = cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to deploy %q of version %s", spec.Name, spec.Version)
