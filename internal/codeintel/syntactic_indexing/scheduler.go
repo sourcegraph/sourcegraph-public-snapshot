@@ -51,33 +51,27 @@ func NewSyntacticJobScheduler(repoSchedulingSvc reposcheduler.RepositoryScheduli
 	}, nil
 }
 
-func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendDB *sql.DB, codeintelDB *sql.DB) (SyntacticJobScheduler, error) {
-	database := database.NewDB(observationCtx.Logger, frontendDB)
-
+func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendSQLDB *sql.DB, codeintelSQLDB *sql.DB) (SyntacticJobScheduler, error) {
+	frontendDB := database.NewDB(observationCtx.Logger, frontendSQLDB)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelSQLDB)
 	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
-
-	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelDB)
-
-	uploadsSvc := uploads.NewService(observationCtx, database, codeIntelDB, gitserverClient.Scoped("uploads"))
-	policiesSvc := policies.NewService(observationCtx, database, uploadsSvc, gitserverClient.Scoped("policies"))
-
+	uploadsSvc := uploads.NewService(observationCtx, frontendDB, codeIntelDB, gitserverClient.Scoped("uploads"))
+	policiesSvc := policies.NewService(observationCtx, frontendDB, uploadsSvc, gitserverClient.Scoped("policies"))
 	matcher := policies.NewMatcher(
 		gitserverClient,
 		policies.IndexingExtractor,
 		true,
 		true,
 	)
-
-	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, database)
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSQLDB)
 	if err != nil {
 		return nil, err
 	}
 
-	repoStore := database.Repos()
-
+	repoStore := frontendDB.Repos()
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
 	return NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
