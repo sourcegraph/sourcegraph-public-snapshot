@@ -162,6 +162,9 @@ func transformPatterns(patterns []string) []string {
 	return transformedPatterns
 }
 
+var namespaceRegex = regexp.MustCompile(`::|->`)
+var camelCaseRegexp = regexp.MustCompile(`[a-z][A-Z]`)
+
 // findSymbols extracts patterns that look like symbols. It uses the following heuristics:
 //   - If the pattern contains an underscore or camelCase, it's probably a symbol
 //   - If the pattern contains a namespace marker, each component is probably a symbol
@@ -170,8 +173,10 @@ func transformPatterns(patterns []string) []string {
 func findSymbols(patterns []string) []string {
 	var symbols []string
 	for _, pattern := range patterns {
-		if strings.Contains(pattern, "::") {
-			symbols = append(symbols, strings.Split(pattern, "::")...)
+
+		split := namespaceRegex.Split(pattern, -1)
+		if len(split) > 1 {
+			symbols = append(symbols, split...)
 		} else if strings.Contains(pattern, ".") {
 			for _, split := range strings.Split(pattern, ".") {
 				if isLikelySymbol(split) {
@@ -185,8 +190,6 @@ func findSymbols(patterns []string) []string {
 
 	return symbols
 }
-
-var camelCaseRegexp = regexp.MustCompile(`[a-z][A-Z]`)
 
 func isLikelySymbol(pattern string) bool {
 	return strings.Contains(pattern, "_") || camelCaseRegexp.MatchString(pattern)

@@ -137,8 +137,8 @@ func TestFindSymbols(t *testing.T) {
 		},
 		{
 			name:     "namespaced patterns",
-			patterns: []string{"ns::foo", "bar::baz", "baz_quux"},
-			want:     []string{"ns", "foo", "bar", "baz", "baz_quux"},
+			patterns: []string{"ns::foo", "bar::baz", "baz_quux", "some->field", "other>field"},
+			want:     []string{"ns", "foo", "bar", "baz", "baz_quux", "some", "field"},
 		},
 	}
 
