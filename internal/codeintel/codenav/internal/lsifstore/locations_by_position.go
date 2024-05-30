@@ -367,18 +367,11 @@ func monikersToString(vs []precise.MonikerData) string {
 }
 
 func symbolHoverText(symbol *scip.SymbolInformation) []string {
-	if symbol.SignatureDocumentation != nil {
-		signature := symbol.SignatureDocumentation
-		if signature.Text != "" && signature.Language != "" {
-			signature := []string{fmt.Sprintf("```%s\n%s\n```", symbol.SignatureDocumentation.Language, symbol.SignatureDocumentation.Text)}
-			return append(signature, symbol.Documentation...)
-		} else {
-			return symbol.Documentation
-		}
-	} else {
-		return symbol.Documentation
+	if sigdoc := symbol.SignatureDocumentation; sigdoc != nil && sigdoc.Text != "" && sigdoc.Language != "" {
+		signature := []string{fmt.Sprintf("```%s\n%s\n```", sigdoc.Language, sigdoc.Text)}
+		return append(signature, symbol.Documentation...)
 	}
-
+	return symbol.Documentation
 }
 
 func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
