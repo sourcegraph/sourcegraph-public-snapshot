@@ -99,17 +99,15 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 		return err
 	}
 
-	revisionsToSchedule := make(map[api.RepoID]collections.Set[api.CommitID])
+	commitsToSchedule := make(map[api.RepoID]collections.Set[api.CommitID])
 	enqueueOptions := EnqueueOptions{force: false}
 
-	var errs errors.MultiError
+	var allErrors errors.MultiError
 
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
 		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, schedulerConfig.PolicyBatchSize)
-
 		err := policyIterator.ForEachPoliciesBatch(ctx, func(policies []policiesshared.ConfigurationPolicy) error {
-
 			commitMap, err := s.PolicyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, currentTime)
 
 			if err != nil {
@@ -120,33 +118,29 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 				if len(policyMatches) == 0 {
 					continue
 				}
-
-				if commits := revisionsToSchedule[repo.ID]; commits != nil {
+				if commits := commitsToSchedule[repo.ID]; commits != nil {
 					commits.Add(api.CommitID(commit))
 				} else {
-					revisionsToSchedule[repo.ID] = collections.NewSet(api.CommitID(commit))
+					commitsToSchedule[repo.ID] = collections.NewSet(api.CommitID(commit))
 				}
 			}
 
 			return nil
-
 		})
 
 		if err != nil {
-			errs = errors.Append(errs, errors.Newf("Failed to discover commits eligible for syntactic indexing for repo [%s]: %v", repo.Name, err))
+			allErrors = errors.Append(allErrors, errors.Newf("Failed to discover commits eligible for syntactic indexing for repo [%s]: %v", repo.Name, err))
 		}
 	}
 
-	fmt.Println(revisionsToSchedule)
-
-	for repoId, commits := range revisionsToSchedule {
+	for repoId, commits := range commitsToSchedule {
 		for _, commitId := range commits.Values() {
 			if _, err := s.Enqueuer.QueueIndexingJobs(ctx, repoId, commitId, enqueueOptions); err != nil {
-				errs = errors.Append(errs, errors.Newf("Failed to schedule syntactic indexing of repo [ID=%s], commit [%s]: %v", repoId, commitId, err))
+				allErrors = errors.Append(allErrors, errors.Newf("Failed to schedule syntactic indexing of repo [ID=%s], commit [%s]: %v", repoId, commitId, err))
 			}
 		}
 
 	}
 
-	return errs
+	return allErrors
 }
