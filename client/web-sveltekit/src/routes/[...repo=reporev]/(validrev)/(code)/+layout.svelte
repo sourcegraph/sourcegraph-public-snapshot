@@ -209,16 +209,6 @@
                         getRepositoryCommits={data.getRepoCommits}
                         getRepositoryTags={data.getRepoTags}
                     />
-
-                    <Tooltip tooltip="Go to the repository root">
-                        <Button variant="secondary" outline size="sm">
-                            <svelte:fragment slot="custom" let:buttonClass>
-                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
-                                    <Icon2 icon={ILucideHome} inline />
-                                </a>
-                            </svelte:fragment>
-                        </Button>
-                    </Tooltip>
                 </div>
 
                 <div class="sidebar-action-row">
