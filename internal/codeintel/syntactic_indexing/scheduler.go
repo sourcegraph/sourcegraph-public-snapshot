@@ -3,7 +3,6 @@ package syntactic_indexing
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -139,7 +138,6 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 				allErrors = errors.Append(allErrors, errors.Newf("Failed to schedule syntactic indexing of repo [ID=%s], commit [%s]: %v", repoId, commitId, err))
 			}
 		}
-
 	}
 
 	return allErrors
