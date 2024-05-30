@@ -101,7 +101,7 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 	commitsToSchedule := make(map[api.RepoID]collections.Set[api.CommitID])
 	enqueueOptions := EnqueueOptions{force: false}
 
-	var allErrors errors.MultiError
+	var allErrors error
 
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
