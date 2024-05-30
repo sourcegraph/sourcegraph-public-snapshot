@@ -27,14 +27,17 @@ label {
 }
 
 // Theme Light
-
-.theme-light {
+// Apparently ::backdrop element doesn't support CSS variable if they
+// are defined only on the root element, we have to define them for ::backdrop
+// pseudo selector as well
+.theme-light, .theme-light ::backdrop {
     // Colors
     --color-bg-1: var(--white);
     --text-body: var(--gray-08);
     --search-result-header-bg: #eef2f5;
     --line-number-color: var(--gray-06);
     --code-bg: var(--white);
+    --modal-bg: rgba(219, 226, 240, .5);;
     --code-selection-bg: rgba(231, 238, 250, 0.8);
 
     // Shadows
@@ -54,7 +57,7 @@ label {
 
 // Theme Dark
 
-.theme-dark {
+.theme-dark, .theme-dark ::backdrop {
     // Colors
     --color-bg-1: var(--gray-12);
     --text-body: var(--gray-05);
@@ -63,6 +66,7 @@ label {
     --line-number-color: var(--gray-07);
     --code-selection-bg: var(--color-bg-2);
     --code-bg: var(--gray-12);
+    --modal-bg: rgba(52, 58, 77, .5);
 
     // Shadows
     --sidebar-shadow: 0 240px 80px 0 rgba(12, 1, 19, 0.01), 0 160px 80px 0 rgba(12, 1, 19, 0.02),

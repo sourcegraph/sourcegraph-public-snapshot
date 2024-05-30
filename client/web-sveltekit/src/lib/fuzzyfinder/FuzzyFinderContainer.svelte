@@ -39,6 +39,7 @@
             return false
         },
     })
+
     registerHotkey({
         keys: symbolsHotkey,
         ignoreInputFields: false,
