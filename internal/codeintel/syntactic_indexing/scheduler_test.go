@@ -81,11 +81,9 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 
 	err := scheduler.Schedule(observationCtx, ctx, time.Now())
 	require.NoError(t, err)
-
 	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().QueuedCount(ctx, false))(t))
 
 	job1, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
-
 	require.NoError(t, err)
 	require.True(t, recordReturned)
 
@@ -108,6 +106,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 		tacosJob = job1
 		empanadasJob = job2
 	} else {
+		require.Equal(t, empanadasRepoName, job1.RepositoryName)
 		tacosJob = job2
 		empanadasJob = job1
 	}
