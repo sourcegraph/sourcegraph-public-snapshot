@@ -110,25 +110,22 @@ func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID 
 func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	commit := string(commitID)
 
-	values := []jobstore.SyntacticIndexingJob{
-		{
-			State:        jobstore.Queued,
-			Commit:       commit,
-			RepositoryID: repositoryID,
-		}}
+	values := []jobstore.SyntacticIndexingJob{{
+		State:        jobstore.Queued,
+		Commit:       commit,
+		RepositoryID: repositoryID,
+	}}
 
-	if options.force {
-		return s.jobStore.InsertIndexes(ctx, values)
-	} else {
+	shouldInsert := options.force
+	if !options.force {
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}
-		if isQueued {
-			return nil, nil
-		} else {
-			return s.jobStore.InsertIndexes(ctx, values)
-		}
-
+		shouldInsert = !isQueued
 	}
+	if shouldInsert {
+		return s.jobStore.InsertIndexes(ctx, values)
+	}
+	return nil, nil
 }
