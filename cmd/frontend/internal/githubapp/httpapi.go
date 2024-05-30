@@ -281,6 +281,11 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if kind == nil {
+		http.Error(w, "invalid kind provided", http.StatusBadRequest)
+		return
+	}
+
 	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient, *kind)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)

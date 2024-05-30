@@ -34,7 +34,15 @@ type UserCredential struct {
 	// we should remove the credential and SSHMigrationApplied fields.
 	SSHMigrationApplied bool
 
+	// If the user credential is tied to a github app, this is the ID of the
+	// github app.
+	GitHubAppID int64
+
 	Credential *EncryptableCredential
+}
+
+func (u *UserCredential) IsGitHubApp() bool {
+	return u.GitHubAppID == 0
 }
 
 type EncryptableCredential = encryption.Encryptable
@@ -151,6 +159,7 @@ type UserCredentialScope struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	GitHubAppID         int64
 }
 
 // Create creates a new user credential based on the given scope and
@@ -176,6 +185,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.ExternalServiceID,
 		encryptedCredential, // N.B.: is already a []byte
 		keyID,
+		dbutil.NewNullInt64(scope.GitHubAppID),
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -209,6 +219,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		keyID,
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
+		dbutil.NewNullInt64(credential.GitHubAppID),
 		credential.ID,
 		authz,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -391,6 +402,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("ssh_migration_applied"),
+	sqlf.Sprintf("github_app_id"),
 }
 
 // The more unwieldy queries are below rather than inline in the above methods
@@ -427,7 +439,8 @@ INSERT INTO
 		encryption_key_id,
 		created_at,
 		updated_at,
-		ssh_migration_applied
+		ssh_migration_applied,
+		github_app_id
 	)
 	VALUES (
 		%s,
@@ -438,7 +451,8 @@ INSERT INTO
 		%s,
 		NOW(),
 		NOW(),
-		TRUE
+		TRUE,
+		%s
 	)
 	RETURNING %s
 `
@@ -454,6 +468,7 @@ SET
 	encryption_key_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
+	github_app_id = %s
 WHERE
 	id = %s AND
 	%s -- authz query conds
@@ -482,6 +497,7 @@ func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scann
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,
+		&dbutil.NullInt64{N: &cred.GitHubAppID},
 	); err != nil {
 		return err
 	}

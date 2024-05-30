@@ -1938,7 +1938,7 @@ extend type Query {
     """
     Determines if a batch change credential is authorized for a code host.
     """
-    checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+    checkBatchChangesCredential(batchChangesCredential: ID!, isGitHubApp: Boolean): EmptyResponse!
 
     """
     Takes the batch spec as input and resolves the workspaces for it, without persisting them.

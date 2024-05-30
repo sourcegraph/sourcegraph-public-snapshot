@@ -53,6 +53,10 @@ enum GitHubAppKind {
     GitHub Apps that are configured for a user's batch changes credential.
     """
     USER_CREDENTIAL
+    """
+    GitHub Apps that are configured for repo syncing.
+    """
+    REPO_SYNC
 }
 
 """

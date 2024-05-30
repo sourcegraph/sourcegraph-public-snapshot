@@ -1261,7 +1261,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
-	})
+	}, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		return "", err
 	}
@@ -1288,7 +1288,7 @@ var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator, as sources.AuthenticationStrategy) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -1300,7 +1300,7 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
-	})
+	}, as)
 	if err != nil {
 		return err
 	}
@@ -1802,10 +1802,14 @@ func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType strin
 	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }
 
-func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (*database.UserCredential, error) {
+func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string, as sources.AuthenticationStrategy) (*database.UserCredential, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), userID); err != nil {
 		return nil, err
+	}
+
+	if as == "" {
+		return nil, errors.New("authentication strategy must be specified")
 	}
 
 	// Throw error documented in schema.graphql.
@@ -1824,10 +1828,11 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, external
 	}
 
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
-		externalServiceType: externalServiceType,
-		externalServiceURL:  externalServiceURL,
-		credential:          credential,
-		username:            username,
+		externalServiceType:    externalServiceType,
+		externalServiceURL:     externalServiceURL,
+		credential:             credential,
+		username:               username,
+		authenticationStrategy: as,
 	})
 	if err != nil {
 		return nil, err
@@ -1840,11 +1845,15 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, external
 	return cred, nil
 }
 
-func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (*btypes.SiteCredential, error) {
+func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string, as sources.AuthenticationStrategy) (*btypes.SiteCredential, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.store.DatabaseDB()); err != nil {
 		return nil, err
+	}
+
+	if as == "" {
+		return nil, errors.New("authentication strategy must be specified")
 	}
 
 	// Throw error documented in schema.graphql.
@@ -1880,10 +1889,11 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, external
 }
 
 type generateAuthenticatorForCredentialArgs struct {
-	externalServiceType string
-	externalServiceURL  string
-	credential          string
-	username            *string
+	externalServiceType    string
+	externalServiceURL     string
+	credential             string
+	username               *string
+	authenticationStrategy sources.AuthenticationStrategy
 }
 
 func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
@@ -1945,7 +1955,7 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	}
 
 	// Validate the newly created authenticator.
-	if err := s.ValidateAuthenticator(ctx, args.externalServiceURL, args.externalServiceType, a); err != nil {
+	if err := s.ValidateAuthenticator(ctx, args.externalServiceURL, args.externalServiceType, a, args.authenticationStrategy); err != nil {
 		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 	}
 	return a, nil

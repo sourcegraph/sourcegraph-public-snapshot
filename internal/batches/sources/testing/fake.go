@@ -33,7 +33,7 @@ func (s *fakeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid 
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts, as sources.AuthenticationStrategy) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 

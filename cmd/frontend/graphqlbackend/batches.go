@@ -624,6 +624,7 @@ type AvailableBulkOperationsArgs struct {
 
 type CheckBatchChangesCredentialArgs struct {
 	BatchChangesCredential graphql.ID
+	IsGitHubApp            bool
 }
 
 type GetChangesetsByIDsArgs struct {

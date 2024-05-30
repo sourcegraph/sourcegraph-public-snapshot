@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1122,14 +1123,14 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	svc := service.New(r.store)
 
 	if userID != 0 {
-		cred, err := svc.CreateBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
+		cred, err := svc.CreateBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
 		if err != nil {
 			return nil, err
 		}
 		return &batchChangesUserCredentialResolver{credential: cred}, nil
 	}
 
-	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
+	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		return nil, err
 	}
@@ -1936,8 +1937,13 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, err
 	}
 
+	as := sources.AuthenticationStrategyUserCredential
+	if args.IsGitHubApp {
+		as = sources.AuthenticationStrategyGitHubApp
+	}
+
 	svc := service.New(r.store)
-	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
+	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a, as); err != nil {
 		return nil, &service.ErrVerifyCredentialFailed{SourceErr: err}
 	}
 
