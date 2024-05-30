@@ -1,30 +1,25 @@
 <script lang="ts">
-    import {
-        mdiAccount,
-        mdiCodeTags,
-        mdiCog,
-        mdiHistory,
-        mdiSourceBranch,
-        mdiSourceCommit,
-        mdiTag,
-        mdiDotsHorizontal,
-    } from '@mdi/js'
+    import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
     import { page } from '$app/stores'
-    import { computeFit } from '$lib/dom'
-    import { getGraphQLClient } from '$lib/graphql'
+    import { sizeToFit } from '$lib/dom'
+    import Icon2 from '$lib/Icon2.svelte'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import Popover from '$lib/Popover.svelte'
-    import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
-    import { delay } from '$lib/utils'
-    import { Alert, DropdownMenu, MenuLink } from '$lib/wildcard'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
+    import { QueryState, queryStateStore } from '$lib/search/state'
+    import { repositoryInsertText } from '$lib/shared'
+    import { settings } from '$lib/stores'
+    import { default as TabsHeader } from '$lib/TabsHeader.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
-    import RepoSearchInput from './RepoSearchInput.svelte'
 
     interface MenuEntry {
         /**
@@ -64,10 +59,13 @@
         { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
     ]
 
-    let visibleNavEntries = navEntries.length
-    $: navEntriesToShow = visibleNavEntries === navEntries.length ? navEntries : navEntries.slice(0, visibleNavEntries)
-    $: overflowMenu = visibleNavEntries !== navEntries.length ? navEntries.slice(visibleNavEntries) : []
-    $: allMenuEntries = [...overflowMenu, ...menuEntries]
+    $: viewableNavEntries = navEntries.filter(
+        entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
+    )
+    $: visibleNavEntryCount = viewableNavEntries.length
+    $: navEntriesToShow = viewableNavEntries.slice(0, visibleNavEntryCount)
+    $: overflowNavEntries = viewableNavEntries.slice(visibleNavEntryCount)
+    $: allMenuEntries = [...overflowNavEntries, ...menuEntries]
 
     function isCodePage(repoURL: string, pathname: string) {
         return (
@@ -78,133 +76,125 @@
     function isActive(href: string, url: URL): boolean {
         return href === data.repoURL ? isCodePage(data.repoURL, $page.url.pathname) : url.pathname.startsWith(href)
     }
+    $: tabs = navEntriesToShow.map(entry => ({
+        id: entry.label,
+        title: entry.label,
+        icon: entry.icon,
+        href: data.repoURL + entry.path,
+    }))
+    $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
-    $: ({ repoName, displayRepoName } = data)
+    $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
+    $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
+    $: queryState = queryStateStore({ query }, $settings)
+    function handleSearchSubmit(state: QueryState): void {
+        SVELTE_LOGGER.log(
+            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
+            { source: 'repo', query: state.query },
+            { source: 'repo', patternType: state.patternType }
+        )
+        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['repo'] },
+        })
+    }
 </script>
 
 <GlobalHeaderPortal>
-    <nav aria-label="repository">
-        <Popover showOnHover placement="bottom-start" let:registerTrigger>
-            <h1 use:registerTrigger><a href="/{repoName}">{displayRepoName}</a></h1>
-            <svelte:fragment slot="content">
-                {#await delay(fetchRepoPopoverData(getGraphQLClient(), repoName), 200) then data}
-                    <RepoPopover {data} withHeader />
-                {:catch error}
-                    <Alert size="slim" variant="danger">{error}</Alert>
-                {/await}
-            </svelte:fragment>
-        </Popover>
-
-        <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
-            {#each navEntriesToShow as entry}
-                {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
-                    {@const href = data.repoURL + entry.path}
-                    <li>
-                        <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
-                            {#if entry.icon}
-                                <Icon svgPath={entry.icon} inline />
-                            {/if}
-                            <span>{entry.label}</span>
-                        </a>
-                    </li>
-                {/if}
-            {/each}
-        </ul>
-
-        <DropdownMenu
-            open={menuOpen}
-            triggerButtonClass={getButtonClassName({ variant: 'icon', outline: true, size: 'sm' })}
-            aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
-        >
-            <svelte:fragment slot="trigger">
-                <Icon svgPath={mdiDotsHorizontal} aria-label="More repo navigation items" />
-            </svelte:fragment>
-            {#each allMenuEntries as entry}
-                {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
-                    {@const href = data.repoURL + entry.path}
-                    <MenuLink {href}>
-                        <span class="overflow-entry" class:active={isActive(href, $page.url)}>
-                            {#if entry.icon}
-                                <Icon svgPath={entry.icon} inline />
-                            {/if}
-                            <span>{entry.label}</span>
-                        </span>
-                    </MenuLink>
-                {/if}
-            {/each}
-        </DropdownMenu>
-        <RepoSearchInput repoName={data.repoName} revision={data.displayRevision} />
-    </nav>
+    <div class="search-header">
+        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} />
+    </div>
 </GlobalHeaderPortal>
+
+<nav
+    aria-label="repository"
+    use:sizeToFit={{
+        grow() {
+            visibleNavEntryCount = Math.min(visibleNavEntryCount + 1, viewableNavEntries.length)
+            return visibleNavEntryCount === viewableNavEntries.length
+        },
+        shrink() {
+            visibleNavEntryCount = Math.max(visibleNavEntryCount - 1, 0)
+            return visibleNavEntryCount === 0
+        },
+    }}
+>
+    <a href={data.repoURL}>
+        <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
+        <h1>{displayRepoName}</h1>
+    </a>
+
+    <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
+
+    <DropdownMenu
+        open={menuOpen}
+        triggerButtonClass={getButtonClassName({ variant: 'icon', outline: true, size: 'sm' })}
+        aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
+    >
+        <svelte:fragment slot="trigger">
+            <Icon2 icon={ILucideEllipsis} aria-label="More repo navigation items" />
+        </svelte:fragment>
+        {#each allMenuEntries as entry}
+            {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
+                {@const href = data.repoURL + entry.path}
+                <MenuLink {href}>
+                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                        {#if entry.icon}
+                            <Icon svgPath={entry.icon} inline />
+                        {/if}
+                        <span>{entry.label}</span>
+                    </span>
+                </MenuLink>
+            {/if}
+        {/each}
+    </DropdownMenu>
+</nav>
 
 <slot />
 
 <style lang="scss">
+    .search-header {
+        width: 100%;
+        z-index: 1;
+    }
+
     nav {
+        flex: none;
+
+        color: var(--body-color);
         display: flex;
         align-items: stretch;
+        justify-items: flex-start;
         gap: 0.5rem;
         overflow: hidden;
-        flex: 1;
-        min-width: 0;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--color-bg-1);
 
         a {
-            color: var(--text-body);
-            text-decoration: none;
+            all: unset;
+
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1rem;
+            cursor: pointer;
+            &:hover {
+                background-color: var(--color-bg-2);
+            }
+
+            h1 {
+                display: contents;
+                font-size: 1rem;
+                white-space: nowrap;
+                color: var(--text-title);
+                font-weight: normal;
+            }
         }
 
         :global([data-dropdown-trigger]) {
             height: 100%;
             align-self: stretch;
             padding: 0.5rem;
-            fill: var(--icon-color);
-        }
-    }
-
-    h1 {
-        display: flex;
-        align-items: center;
-
-        margin: 0 1rem 0 0;
-        font-size: 1rem;
-        white-space: nowrap;
-
-        a {
-            color: var(--text-title);
-        }
-    }
-
-    ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        gap: 0.5rem;
-        overflow: hidden;
-        align-self: center;
-        flex: 1;
-
-        li a {
-            display: flex;
-            height: 100%;
-            align-items: center;
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--border-radius);
-            white-space: nowrap;
-            gap: 0.25rem;
-
-            &:hover {
-                background-color: var(--color-bg-2);
-            }
-
-            &[aria-current='page'] {
-                background-color: var(--color-bg-3);
-                color: var(--text-title);
-            }
-        }
-
-        :global([data-icon]) {
-            --color: var(--icon-color);
+            --icon-fill-color: var(--text-muted);
         }
     }
 
@@ -213,13 +203,5 @@
         display: inline-block;
         padding: 0 0.25rem;
         border-radius: var(--border-radius);
-    }
-
-    .active {
-        background-color: var(--color-bg-3);
-    }
-
-    nav {
-        color: var(--body-color);
     }
 </style>

@@ -11,6 +11,7 @@ import {
     type ShiftOptions,
     type FlipOptions,
 } from '@floating-ui/dom'
+import { tick } from 'svelte'
 import type { ActionReturn, Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
@@ -327,7 +328,7 @@ export const portal: Action<HTMLElement, { container?: HTMLElement | null } | un
 }
 
 /**
- * An action that messures the width of the element and adds the provided CSS class when the
+ * An action that measures the width of the element and adds the provided CSS class when the
  * content overflows (and vice versa). The assumption is that the CSS class will hide some elements
  * when the content overflows, therefore changing the size of the element. It's the responsibility
  * of the caller to ensure that the element is styled accordingly.
@@ -406,6 +407,55 @@ export const overflow: Action<HTMLElement, { class: string; measureClass?: strin
         destroy() {
             observer.disconnect()
             mutationObserver.disconnect()
+        },
+    }
+}
+
+/**
+ * An action that resizes an element with the provided grow and shrink callbacks until the target element no longer overflows.
+ *
+ * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating max size
+ * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating minimum size
+ * @returns An action that updates the overflow state of the element.
+ */
+export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () => boolean }> = (
+    target,
+    { grow, shrink }
+) => {
+    async function resize(): Promise<void> {
+        if (target.scrollWidth > target.clientWidth) {
+            // Shrink until we fit
+            while (target.scrollWidth > target.clientWidth) {
+                if (shrink()) {
+                    return
+                }
+                await tick()
+            }
+        } else {
+            // Grow until we overflow, then shrink once
+            while (target.scrollWidth <= target.clientWidth) {
+                if (grow()) {
+                    await tick()
+                    break
+                }
+                await tick()
+            }
+            if (target.scrollWidth > target.clientWidth) {
+                shrink()
+                await tick()
+            }
+        }
+    }
+
+    const observer = new ResizeObserver(resize)
+    observer.observe(target)
+    return {
+        update(params) {
+            grow = params.grow
+            shrink = params.shrink
+        },
+        destroy() {
+            observer.disconnect()
         },
     }
 }
