@@ -63,29 +63,20 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	})
 
 	gitserverClient.ListRefsFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
-
-		if string(repoName) == empanadasRepoName {
-			return []gitdomain.Ref{
-				{
-					Name:     "refs/head/main",
-					Type:     gitdomain.RefTypeBranch,
-					CommitID: api.CommitID(empanadasCommit),
-					IsHead:   true,
-				},
-			}, nil
-		} else if string(repoName) == tacosRepoName {
-			return []gitdomain.Ref{
-				{
-					Name:     "refs/head/main",
-					Type:     gitdomain.RefTypeBranch,
-					CommitID: api.CommitID(tacosCommit),
-					IsHead:   true,
-				},
-			}, nil
-		} else {
+		ref := gitdomain.Ref{
+			Name:   "refs/head/main",
+			Type:   gitdomain.RefTypeBranch,
+			IsHead: true,
+		}
+		switch string(repoName) {
+		case empanadasRepoName:
+			ref.CommitID = api.CommitID(empanadasCommit)
+		case tacosRepoName:
+			ref.CommitID = api.CommitID(tacosCommit)
+		default:
 			return nil, errors.New(fmt.Sprintf("Unexpected repo (`%s`) requested from gitserver's ListRef", repoName))
 		}
-
+		return []gitdomain.Ref{ref}, nil
 	})
 
 	err := scheduler.Schedule(observationCtx, ctx, time.Now())
