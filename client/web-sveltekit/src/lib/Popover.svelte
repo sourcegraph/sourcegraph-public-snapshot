@@ -22,6 +22,11 @@
         isOpen = open === undefined ? !isOpen : open
     }
 
+    function close(): void {
+        clearTimeout(delayTimer)
+        toggle(false)
+    }
+
     function handleClickOutside(event: { detail: HTMLElement }): void {
         if (!showOnHover && event.detail !== trigger && !trigger?.contains(event.detail)) {
             toggle(false)
@@ -53,22 +58,12 @@
             delayTimer = setTimeout(() => toggle(true), hoverDelay)
         }
 
-        function handleWindowLoseFocus(): void {
-            clearTimeout(delayTimer)
-            toggle(false)
-        }
-
-        function handleClick(): void {
-            clearTimeout(delayTimer)
-            toggle(false)
-        }
-
         if (showOnHover) {
             node.addEventListener('mouseenter', handleMouseEnterTrigger)
             node.addEventListener('mouseleave', handleMouseLeaveTrigger)
             node.addEventListener('mousemove', handleMouseMoveTrigger)
-            node.addEventListener('click', handleClick)
-            window.addEventListener('blur', handleWindowLoseFocus)
+            node.addEventListener('click', close)
+            window.addEventListener('blur', close)
         }
 
         return {
@@ -77,8 +72,8 @@
                 node.removeEventListener('mouseenter', handleMouseEnterTrigger)
                 node.removeEventListener('mouseleave', handleMouseLeaveTrigger)
                 node.removeEventListener('mousemove', handleMouseMoveTrigger)
-                node.removeEventListener('click', handleClick)
-                window.removeEventListener('blur', handleWindowLoseFocus)
+                node.removeEventListener('click', close)
+                window.removeEventListener('blur', close)
             },
         }
     }
