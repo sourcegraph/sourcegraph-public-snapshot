@@ -6,6 +6,7 @@ A component to display the keyboard shortcuts for the application.
     import { formatShortcutParts, type Keys } from '$lib/Hotkey'
 
     export let shorcut: Keys
+    export let inline: boolean = false
 
     const separator = isMacPlatform() ? '' : '+'
 
@@ -22,7 +23,7 @@ A component to display the keyboard shortcuts for the application.
     })()
 </script>
 
-<kbd>
+<kbd class:inline={inline}>
     {#each parts as part}
         <span>{part}</span>
     {/each}
@@ -33,5 +34,13 @@ A component to display the keyboard shortcuts for the application.
         display: inline-flex;
         align-items: center;
         gap: 0.125rem;
+    }
+
+    .inline {
+      margin: 0;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      background-color: transparent;
     }
 </style>

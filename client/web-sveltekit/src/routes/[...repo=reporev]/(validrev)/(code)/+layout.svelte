@@ -1,5 +1,6 @@
 <script context="module" lang="ts">
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
 
     enum TabPanels {
         History,
@@ -36,10 +37,12 @@
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte';
+    import Tooltip from '$lib/Tooltip.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
-    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
@@ -204,13 +207,20 @@
                 <div class="sidebar-action-row">
                     <Button variant="secondary" outline size="sm">
                         <svelte:fragment slot="custom" let:buttonClass>
-                            <button
-                                class={`${buttonClass} search-files-button`}
-                                on:click={() => openFuzzyFinder('files')}
-                            >
-                                <span>Search files</span>
-                                <KeyboardShortcut shorcut={filesHotkey} />
-                            </button>
+                            <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
+                                <button
+                                        class={`${buttonClass} search-files-button`}
+                                        on:click={() => openFuzzyFinder('files')}
+                                >
+                                    {#if isCollapsed}
+                                        <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
+                                    {:else}
+                                        <span>Search files</span>
+                                        <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
+                                    {/if}
+
+                                </button>
+                            </Tooltip>
                         </svelte:fragment>
                     </Button>
                 </div>
@@ -348,7 +358,15 @@
             width: 100%;
         }
 
-        .search-files-button,
+        // Hide action text and leave just icon for collapsed version
+        .search-files-button {
+          display: block;
+
+          span {
+            display: none;
+          }
+        }
+
         :global([data-repo-rev-picker-trigger]),
         .sidebar-file-tree {
             display: none;
@@ -391,12 +409,6 @@
                 flex-shrink: 1;
                 text-align: left;
             }
-
-            kbd {
-                display: flex;
-                margin: -0.1rem 0;
-                letter-spacing: 0.15rem;
-            }
         }
     }
 
@@ -435,9 +447,10 @@
         :global([data-tabs]) {
             flex: 1;
         }
+
         .last-commit {
             min-width: 0;
-            max-width: content;
+            max-width: min-content;
             margin-right: 0.5rem;
         }
     }
