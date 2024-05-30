@@ -27,6 +27,8 @@ type Context struct {
 
 	NewTarReader func(io.ReadCloser) *tar.Reader
 
+	ShouldSkipEnhancedLanguageDetection bool
+
 	// CacheSet, if set, stores the inventory in the cache for the given tree.
 	CacheSet func(context.Context, fs.FileInfo, Inventory)
 }

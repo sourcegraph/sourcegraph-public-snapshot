@@ -8,10 +8,9 @@ import (
 	"fmt"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+	"github.com/sourcegraph/log"
 	"io"
 	"io/fs"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,7 +40,7 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
-func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
+func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error), skipEnhancedLanguageDetection bool) (Lang, error) {
 	if file == nil {
 		return Lang{}, nil
 	}
@@ -63,7 +62,7 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 	matchedLang, safe := GetLanguageByFilename(file.Name())
 
 	// No content
-	if rc == nil {
+	if rc == nil || skipEnhancedLanguageDetection {
 		lang.Name = matchedLang
 		lang.TotalBytes = uint64(file.Size())
 		return lang, nil

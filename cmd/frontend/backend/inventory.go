@@ -154,14 +154,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 		NewTarReader: func(reader io.ReadCloser) *tar.Reader {
 			return tar.NewReader(reader)
 		},
-	}
-
-	if !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection {
-		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language. This means we won't calculate the number of lines per language.
-		invCtx.NewFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return nil, nil
-		}
+		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
 	}
 
 	return invCtx, nil

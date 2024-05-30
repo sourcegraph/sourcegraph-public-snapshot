@@ -32,7 +32,7 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client) (inv Inventory, 
 
 		switch {
 		case entry.Mode().IsRegular():
-			inv, err := c.fileTar(ctx, th)
+			inv, err := c.fileTar(ctx, th, tr)
 			if err != nil {
 				return Inventory{}, err
 			}
@@ -104,7 +104,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo) (inv Inventory, er
 			// Don't individually cache files that we found during tree traversal. The hit rate for
 			// those cache entries is likely to be much lower than cache entries for files whose
 			// inventory was directly requested.
-			lang, err := getLang(ctx, e, c.NewFileReader)
+			lang, err := getLang(ctx, e, c.NewFileReader, c.ShouldSkipEnhancedLanguageDetection)
 			return Inventory{Languages: []Lang{lang}}, err
 		case e.Mode().IsDir(): // subtree
 			subtreeInv, err := c.tree(ctx, e)
@@ -138,7 +138,7 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, er
 		}()
 	}
 
-	lang, err := getLang(ctx, file, c.NewFileReader)
+	lang, err := getLang(ctx, file, c.NewFileReader, c.ShouldSkipEnhancedLanguageDetection)
 	if err != nil {
 		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.Name())
 	}
@@ -148,7 +148,7 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, er
 	return Inventory{Languages: []Lang{lang}}, nil
 }
 
-func (c *Context) fileTar(ctx context.Context, file *tar.Header) (inv Inventory, err error) {
+func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(ctx, file.FileInfo()); ok {
@@ -163,7 +163,9 @@ func (c *Context) fileTar(ctx context.Context, file *tar.Header) (inv Inventory,
 		}()
 	}
 
-	lang, err := getLang(ctx, file.FileInfo(), c.NewFileReader)
+	lang, err := getLang(ctx, file.FileInfo(), func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return io.NopCloser(r), nil
+	}, c.ShouldSkipEnhancedLanguageDetection)
 	if err != nil {
 		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.FileInfo().Name())
 	}
