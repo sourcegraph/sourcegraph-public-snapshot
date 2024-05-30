@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +28,6 @@ type indexEnqueuerImpl struct {
 	jobStore            jobstore.SyntacticIndexingJobStore
 	repoSchedulingStore reposcheduler.RepositorySchedulingStore
 	repoStore           database.RepoStore
-	gitserverClient     gitserver.Client
 	operations          *operations
 }
 
@@ -40,12 +38,10 @@ func NewIndexEnqueuer(
 	jobStore jobstore.SyntacticIndexingJobStore,
 	store reposcheduler.RepositorySchedulingStore,
 	repoStore database.RepoStore,
-	gitserverClient gitserver.Client,
 ) IndexEnqueuer {
 	return &indexEnqueuerImpl{
 		repoSchedulingStore: store,
 		repoStore:           repoStore,
-		gitserverClient:     gitserverClient,
 		jobStore:            jobStore,
 		operations:          newOperations(observationCtx),
 	}

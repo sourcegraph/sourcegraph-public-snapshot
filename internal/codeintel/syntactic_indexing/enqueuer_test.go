@@ -2,8 +2,6 @@ package syntactic_indexing
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -36,27 +33,15 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 
 	repoStore := db.Repos()
 
-	gsClient := gitserver.NewMockClient()
-	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gsClient)
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore)
 
 	tacosRepoId, tacosRepoName, tacosCommit := api.RepoID(1), "tangy/tacos", testutils.MakeCommit(1)
-	empanadasRepoId, empanadasRepoName, empanadasCommit := api.RepoID(2), "salty/empanadas", testutils.MakeCommit(2)
+	empanadasRepoId, empanadasRepoName := api.RepoID(2), "salty/empanadas"
 	mangosRepoId, mangosRepoName := api.RepoID(3), "juicy/mangos"
 
 	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
-
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		isTacos := repo == api.RepoName(tacosRepoName) && rev == string(tacosCommit)
-		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == string(empanadasCommit)
-
-		if isTacos || isEmpanadas {
-			return api.CommitID(rev), nil
-		} else {
-			return api.CommitID("what"), errors.New(fmt.Sprintf("Unexpected repo (`%s`) and revision (`%s`) requested from gitserver: ", repo, rev))
-		}
-	})
 
 	isQueued, err := jobStore.IsQueued(ctx, tacosRepoId, tacosCommit)
 	require.False(t, isQueued)

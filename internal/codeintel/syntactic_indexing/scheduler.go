@@ -78,7 +78,7 @@ func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, fronten
 
 	repoStore := frontendDB.Repos()
 
-	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
+	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore)
 
 	return NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
 }
