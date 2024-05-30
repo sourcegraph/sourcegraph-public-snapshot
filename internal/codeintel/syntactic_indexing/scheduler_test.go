@@ -157,7 +157,6 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, polici
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	// store :=
 	query := `
 		INSERT INTO lsif_configuration_policies (
 			id,
@@ -189,6 +188,13 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, polici
 	`
 	unwrap(db.ExecContext(ctx, query))(t)
 
+	// Policy 1100 is the only one that contains repository patterns.
+	// For it to be matched against our repository, we need to update
+	// an extra bit of database state - a lookup table identifying
+	// policies and repositories that were matched by them
+	//
+	// The other two policies (1000 and 1003) have explicit repository_id set
+	// and don't need any extra database state to be returned by policy matcher.
 	for _, policyID := range []int{1100} {
 		policy, _, err := policies.GetConfigurationPolicyByID(ctx, policyID)
 		require.NoError(t, err)
