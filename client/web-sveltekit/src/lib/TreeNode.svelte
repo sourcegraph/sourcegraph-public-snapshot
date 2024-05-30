@@ -7,8 +7,8 @@
 </script>
 
 <script lang="ts" generics="T">
-    import { createEventDispatcher, getContext, setContext } from 'svelte'
     import { mdiChevronDown, mdiChevronRight, mdiImageFilterCenterFocusStrong } from '@mdi/js'
+    import { createEventDispatcher, getContext, setContext } from 'svelte'
 
     import Icon from '$lib/Icon.svelte'
     import { Button } from '$lib/wildcard'
@@ -81,27 +81,29 @@
 >
     <span bind:this={label} class="label" data-treeitem-label>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
-        <span class="expandable-icon-container" class:hidden={!expandable}>
-            <span class="scope-container">
-                <Button variant="icon" on:click={handleScopeChange}>
-                    <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
-                </Button>
-            </span>
+        {#if expandable}
+            <span class="expandable-icon-container">
+                <span class="scope-container">
+                    <Button variant="icon" on:click={handleScopeChange}>
+                        <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
+                    </Button>
+                </span>
 
-            <!-- We have to stop even propagation because the tree root listens for click events for
+                <!-- We have to stop even propagation because the tree root listens for click events for
                  selecting items. We don't want the item to be selected when the open/close button is pressed.
              -->
-            <Button
-                variant="icon"
-                on:click={event => {
-                    event.stopPropagation()
-                    toggleOpen()
-                }}
-                tabindex={-1}
-            >
-                <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
-            </Button>
-        </span>
+                <Button
+                    variant="icon"
+                    on:click={event => {
+                        event.stopPropagation()
+                        toggleOpen()
+                    }}
+                    tabindex={-1}
+                >
+                    <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
+                </Button>
+            </span>
+        {/if}
         <slot {entry} {expanded} toggle={toggleOpen} />
     </span>
     {#if expanded && children}
@@ -110,13 +112,15 @@
                 <LoadingSpinner center={false} />
             </div>
         {:then treeProvider}
-            <ul role="group">
-                {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
-                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
-                        <slot {entry} {toggle} {expanded} />
-                    </svelte:self>
-                {/each}
-            </ul>
+            <div class="group-container">
+                <ul role="group">
+                    {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
+                        <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
+                            <slot {entry} {toggle} {expanded} />
+                        </svelte:self>
+                    {/each}
+                </ul>
+            </div>
         {:catch error}
             <slot name="error" {error} />
         {/await}
@@ -189,14 +193,21 @@
         display: flex;
     }
 
-    .hidden {
-        visibility: hidden;
-
-        // If we're in the flat list we can omit expand icon rendering
-        // since none of items is expandable, hence there aren't any offsets
-        :global([data-tree-view-flat-list='true']) & {
-            width: 0;
-            margin-left: 0.5rem;
+    .group-container {
+        position: relative;
+        isolation: isolate;
+        &::before {
+            position: absolute;
+            content: '';
+            border-left: 1px solid var(--border-color);
+            height: 100%;
+            transform: translateX(
+                calc(
+                    var(--tree-node-nested-level) * 1.25rem + var(--tree-node-left-padding) + var(--icon-inline-size) /
+                        2 - 1px
+                )
+            );
+            z-index: 1;
         }
     }
 </style>
