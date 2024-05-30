@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal/testutils",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
         "//internal/database",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_stretchr_testify//require",

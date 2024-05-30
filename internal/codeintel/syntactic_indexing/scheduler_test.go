@@ -42,9 +42,9 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup repositories
-	tacosRepoId, tacosRepoName, tacosCommit := 1, "github.com/tangy/tacos", testutils.MakeCommit(1)
-	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "github.com/salty/empanadas", testutils.MakeCommit(2)
-	mangosRepoId, mangosRepoName, _ := 3, "gitlab.com/juicy/mangos", testutils.MakeCommit(3)
+	tacosRepoId, tacosRepoName, tacosCommit := api.RepoID(1), "github.com/tangy/tacos", testutils.MakeCommit(1)
+	empanadasRepoId, empanadasRepoName, empanadasCommit := api.RepoID(2), "github.com/salty/empanadas", testutils.MakeCommit(2)
+	mangosRepoId, mangosRepoName, _ := api.RepoID(3), "gitlab.com/juicy/mangos", testutils.MakeCommit(3)
 	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
@@ -52,8 +52,8 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	setupRepoPolicies(t, ctx, db, policiesSvc)
 
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
-		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == empanadasCommit
+		isTacos := repo == api.RepoName(tacosRepoName) && rev == string(tacosCommit)
+		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == string(empanadasCommit)
 
 		if isTacos || isEmpanadas {
 			return api.CommitID(rev), nil

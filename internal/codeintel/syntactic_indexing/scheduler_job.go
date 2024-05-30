@@ -15,9 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type syntacticIndexingSchedulerJob struct {
-	Scheduler SyntacticJobScheduler
-}
+type syntacticIndexingSchedulerJob struct{}
 
 var _ job.Job = &syntacticIndexingSchedulerJob{}
 
@@ -52,8 +50,6 @@ func (job *syntacticIndexingSchedulerJob) Routines(_ context.Context, observatio
 	if err != nil {
 		return nil, err
 	}
-
-	job.Scheduler = scheduler
 
 	return []goroutine.BackgroundRoutine{
 		newSchedulerJob(

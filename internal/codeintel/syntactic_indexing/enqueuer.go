@@ -16,7 +16,7 @@ import (
 )
 
 type IndexEnqueuer interface {
-	QueueIndexingJobs(ctx context.Context, repositoryId int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
+	QueueIndexingJobs(ctx context.Context, repositoryId api.RepoID, commitId api.CommitID, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error)
 }
 
 type EnqueueOptions struct {
@@ -86,32 +86,20 @@ func newOperations(observationCtx *observation.Context) *operations {
 // If options.force = true, then the job will be scheduled even if the same one already exists in the queue.
 // This method will return an array of jobs that were actually successfully scheduled.
 // The result can be nil iff the same job is already queued AND options.force is false.
-func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID int, rev string, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
-	ctx, trace, endObservation := s.operations.queueIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("rev", rev),
+func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID, options EnqueueOptions) (_ []jobstore.SyntacticIndexingJob, err error) {
+	ctx, _, endObservation := s.operations.queueIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", int(repositoryID)),
+		attribute.String("commitID", string(commitID)),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
-	if err != nil {
-		return nil, err
-	}
-
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
-	}
-	trace.AddEvent("ResolveRevision", attribute.String("commit", string(commitID)))
 
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commitID, options)
 }
 
-func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
-	commit := string(commitID)
+func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID, options EnqueueOptions) ([]jobstore.SyntacticIndexingJob, error) {
 	shouldInsert := true
 	if !options.force {
-		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commit)
+		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commitID)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
 		}
@@ -120,7 +108,7 @@ func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context
 	if shouldInsert {
 		return s.jobStore.InsertIndexingJobs(ctx, []jobstore.SyntacticIndexingJob{{
 			State:        jobstore.Queued,
-			Commit:       commit,
+			Commit:       commitID,
 			RepositoryID: repositoryID,
 		}})
 	}

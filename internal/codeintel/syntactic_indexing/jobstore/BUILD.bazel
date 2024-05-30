@@ -13,6 +13,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -40,6 +41,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/api",
         "//internal/codeintel/syntactic_indexing/internal/testutils",
         "//internal/database",
         "//internal/database/dbtest",

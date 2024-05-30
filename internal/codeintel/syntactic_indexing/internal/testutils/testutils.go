@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/stretchr/testify/require"
 )
 
-func InsertRepo(t testing.TB, db database.DB, id int, name string) {
+func InsertRepo(t testing.TB, db database.DB, id api.RepoID, name string) {
 	if name == "" {
 		name = fmt.Sprintf("n-%d", id)
 	}
@@ -44,6 +45,6 @@ func InsertRepo(t testing.TB, db database.DB, id int, name string) {
 	require.NoError(t, err, "unexpected error while upserting gitserver repository")
 }
 
-func MakeCommit(i int) string {
-	return fmt.Sprintf("%040d", i)
+func MakeCommit(i int) api.CommitID {
+	return api.CommitID(fmt.Sprintf("%040d", i))
 }

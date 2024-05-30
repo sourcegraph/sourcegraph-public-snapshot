@@ -3,6 +3,7 @@ package syntactic_indexing
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -14,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/internal"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -51,27 +52,33 @@ func NewSyntacticJobScheduler(repoSchedulingSvc reposcheduler.RepositoryScheduli
 	}, nil
 }
 
-func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendSQLDB *sql.DB, codeintelSQLDB *sql.DB) (SyntacticJobScheduler, error) {
-	frontendDB := database.NewDB(observationCtx.Logger, frontendSQLDB)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelSQLDB)
+func BootstrapSyntacticJobScheduler(observationCtx *observation.Context, frontendDB *sql.DB, codeintelDB *sql.DB) (SyntacticJobScheduler, error) {
+	database := database.NewDB(observationCtx.Logger, frontendDB)
+
 	gitserverClient := gitserver.NewClient("codeintel-syntactic-indexing")
-	uploadsSvc := uploads.NewService(observationCtx, frontendDB, codeIntelDB, gitserverClient.Scoped("uploads"))
-	policiesSvc := policies.NewService(observationCtx, frontendDB, uploadsSvc, gitserverClient.Scoped("policies"))
+
+	codeIntelDB := codeintelshared.NewCodeIntelDB(observationCtx.Logger, codeintelDB)
+
+	uploadsSvc := uploads.NewService(observationCtx, database, codeIntelDB, gitserverClient.Scoped("uploads"))
+	policiesSvc := policies.NewService(observationCtx, database, uploadsSvc, gitserverClient.Scoped("policies"))
+
 	matcher := policies.NewMatcher(
 		gitserverClient,
 		policies.IndexingExtractor,
 		true,
 		true,
 	)
-	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
+
+	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, database)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSQLDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendDB)
 	if err != nil {
 		return nil, err
 	}
 
-	repoStore := frontendDB.Repos()
+	repoStore := database.Repos()
+
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gitserverClient)
 
 	return NewSyntacticJobScheduler(repoSchedulingSvc, *matcher, *policiesSvc, repoStore, enqueuer, *schedulerConfig)
@@ -92,30 +99,54 @@ func (s *syntacticJobScheduler) Schedule(observationCtx *observation.Context, ct
 		return err
 	}
 
+	revisionsToSchedule := make(map[api.RepoID]collections.Set[api.CommitID])
+	enqueueOptions := EnqueueOptions{force: false}
+
+	var errs errors.MultiError
+
 	for _, repoToIndex := range repos {
 		repo, _ := s.RepoStore.Get(ctx, api.RepoID(repoToIndex.ID))
 		policyIterator := internal.NewPolicyIterator(s.PoliciesService, repoToIndex.ID, internal.SyntacticIndexing, schedulerConfig.PolicyBatchSize)
+
 		err := policyIterator.ForEachPoliciesBatch(ctx, func(policies []policiesshared.ConfigurationPolicy) error {
+
 			commitMap, err := s.PolicyMatcher.CommitsDescribedByPolicy(ctx, int(repoToIndex.ID), repo.Name, policies, currentTime)
+
 			if err != nil {
 				return err
 			}
+
 			for commit, policyMatches := range commitMap {
 				if len(policyMatches) == 0 {
 					continue
 				}
-				if _, err := s.Enqueuer.QueueIndexingJobs(ctx, int(repoToIndex.ID), commit, EnqueueOptions{force: false}); err != nil {
-					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-						continue
-					}
-					return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+
+				if commits := revisionsToSchedule[repo.ID]; commits != nil {
+					commits.Add(api.CommitID(commit))
+				} else {
+					revisionsToSchedule[repo.ID] = collections.NewSet(api.CommitID(commit))
 				}
 			}
+
 			return nil
+
 		})
+
 		if err != nil {
-			return err
+			errs = errors.Append(errs, errors.Newf("Failed to discover commits eligible for syntactic indexing for repo [%s]: %v", repo.Name, err))
 		}
 	}
-	return nil
+
+	fmt.Println(revisionsToSchedule)
+
+	for repoId, commits := range revisionsToSchedule {
+		for _, commitId := range commits.Values() {
+			if _, err := s.Enqueuer.QueueIndexingJobs(ctx, repoId, commitId, enqueueOptions); err != nil {
+				errs = errors.Append(errs, errors.Newf("Failed to schedule syntactic indexing of repo [ID=%s], commit [%s]: %v", repoId, commitId, err))
+			}
+		}
+
+	}
+
+	return errs
 }

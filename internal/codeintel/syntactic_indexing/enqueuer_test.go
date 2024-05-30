@@ -39,17 +39,17 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	gsClient := gitserver.NewMockClient()
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore, gsClient)
 
-	tacosRepoId, tacosRepoName, tacosCommit := 1, "tangy/tacos", testutils.MakeCommit(1)
-	empanadasRepoId, empanadasRepoName, empanadasCommit := 2, "salty/empanadas", testutils.MakeCommit(2)
-	mangosRepoId, mangosRepoName := 3, "juicy/mangos"
+	tacosRepoId, tacosRepoName, tacosCommit := api.RepoID(1), "tangy/tacos", testutils.MakeCommit(1)
+	empanadasRepoId, empanadasRepoName, empanadasCommit := api.RepoID(2), "salty/empanadas", testutils.MakeCommit(2)
+	mangosRepoId, mangosRepoName := api.RepoID(3), "juicy/mangos"
 
 	testutils.InsertRepo(t, db, tacosRepoId, tacosRepoName)
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
-		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == empanadasCommit
+		isTacos := repo == api.RepoName(tacosRepoName) && rev == string(tacosCommit)
+		isEmpanadas := repo == api.RepoName(empanadasRepoName) && rev == string(empanadasCommit)
 
 		if isTacos || isEmpanadas {
 			return api.CommitID(rev), nil
@@ -76,14 +76,6 @@ func TestSyntacticIndexingStoreEnqueue(t *testing.T) {
 	// but also doesn't insert a new job
 	result := unwrap(enqueuer.QueueIndexingJobs(ctx, tacosRepoId, tacosCommit, EnqueueOptions{}))(t)
 	require.Empty(t, result)
-
-	// cannot schedule for non existent repositories
-	_, err = enqueuer.QueueIndexingJobs(ctx, 250, tacosCommit, EnqueueOptions{})
-	require.Error(t, err)
-
-	// cannot schedule for non existent revisions
-	_, err = enqueuer.QueueIndexingJobs(ctx, mangosRepoId, testutils.MakeCommit(100), EnqueueOptions{})
-	require.Error(t, err)
 
 	// force: true in EnqueueOptions allows scheduling the same (repo, revision) twice
 	reinserted := unwrap(enqueuer.QueueIndexingJobs(ctx, tacosRepoId, tacosCommit, EnqueueOptions{force: true}))(t)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -19,7 +20,7 @@ import (
 type SyntacticIndexingJobStore interface {
 	DBWorkerStore() dbworkerstore.Store[*SyntacticIndexingJob]
 	InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) ([]SyntacticIndexingJob, error)
-	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
+	IsQueued(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID) (bool, error)
 }
 
 type syntacticIndexingJobStoreImpl struct {
@@ -119,11 +120,11 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, 
 	return indexingJobs, err
 }
 
-func (s *syntacticIndexingJobStoreImpl) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
+func (s *syntacticIndexingJobStoreImpl) IsQueued(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID) (bool, error) {
 	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
 		isQueuedQuery,
 		repositoryID,
-		commit,
+		commitID,
 	)))
 	return isQueued, err
 }
