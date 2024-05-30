@@ -119,6 +119,7 @@ func NewHandler(
 								}
 								return characters
 							}(),
+							"generate_metadata": body.GenerateMetadata,
 						},
 					},
 				)
@@ -126,6 +127,17 @@ func NewHandler(
 					logger.Error("failed to log event", log.Error(err))
 				}
 			}()
+
+			// Replace input with generated metadata text and embed that
+			if body.GenerateMetadata {
+				newBody, err := GenerateMetadata(body, logger)
+				if err != nil {
+					// TODO what do we do here
+
+					return
+				}
+				body = newBody
+			}
 
 			resp, ut, err := c.GenerateEmbeddings(r.Context(), body)
 			usedTokens = ut
