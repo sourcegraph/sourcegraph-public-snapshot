@@ -69,11 +69,11 @@ func TestRun(t *testing.T) {
 		}
 
 		codeMatches := result.Matches{
-			&result.FileMatch{File: result.File{Path: "file1.java"}},
-			&result.FileMatch{File: result.File{Path: "file2.java"}},
-			&result.FileMatch{File: result.File{Path: "file3.java"}},
-			&result.FileMatch{File: result.File{Path: "file4.java"}},
-			&result.FileMatch{File: result.File{Path: "file5.java"}},
+			&result.FileMatch{File: result.File{Path: "file1.go"}},
+			&result.FileMatch{File: result.File{Path: "file2.go"}},
+			&result.FileMatch{File: result.File{Path: "file6.go"}},
+			&result.FileMatch{File: result.File{Path: "file7.go"}},
+			&result.FileMatch{File: result.File{Path: "file8.go"}},
 		}
 
 		textMatches := result.Matches{
@@ -105,9 +105,10 @@ func TestRun(t *testing.T) {
 		require.NotNil(t, alert)
 		require.Nil(t, err)
 
-		// We should have 6 results total: 2 from text, 3 from symbols, 1 from non-symbols code.
+		// We should have 6 results total: 2 from text, 3 from symbols, 1 from non-symbols code. The
+		// first two code matches will be deduplicated, since the symbols job already returned them.
 		wantResults := append(textMatches[:2], symbolMatches[:SymbolResultsCount]...)
-		wantResults = append(wantResults, codeMatches[:1]...)
+		wantResults = append(wantResults, codeMatches[2:3]...)
 		require.Equal(t, wantResults, stream.Results)
 	}
 }
