@@ -142,7 +142,7 @@
 <style lang="scss">
     nav {
         display: flex;
-        align-items: baseline;
+        align-items: stretch;
         gap: 0.5rem;
         overflow: hidden;
         flex: 1;
@@ -162,6 +162,9 @@
     }
 
     h1 {
+        display: flex;
+        align-items: center;
+
         margin: 0 1rem 0 0;
         font-size: 1rem;
         white-space: nowrap;
