@@ -35,8 +35,8 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon from '$lib/Icon.svelte'
     import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -445,7 +445,7 @@
 
         display: flex;
         align-items: center;
-        flex-flow: row nowrap;
+        gap: 2rem;
         justify-content: space-between;
         overflow: hidden;
         height: 100%;
@@ -453,7 +453,12 @@
         color: var(--text-body);
 
         :global([data-tabs]) {
-            width: 100%;
+            flex: 1;
+        }
+        .last-commit {
+            min-width: 0;
+            max-width: content;
+            margin-right: 0.5rem;
         }
     }
 </style>
