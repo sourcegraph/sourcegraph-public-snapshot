@@ -497,9 +497,7 @@ export const routes: RouteObject[] = [
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
-                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                    isSourcegraphDotCom && licenseFeatures.isCodyEnabled
-                }
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom && isEmbeddedCodyProUIEnabled()}
             />
         ),
     },
