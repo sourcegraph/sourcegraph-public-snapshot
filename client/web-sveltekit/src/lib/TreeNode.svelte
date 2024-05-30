@@ -127,7 +127,7 @@
 
 <style lang="scss">
     [role='treeitem'] {
-        --tree-node-left-padding: 0.35rem;
+        --tree-node-left-padding: 1.25rem;
 
         border-radius: var(--border-radius);
 
@@ -137,10 +137,6 @@
             > .label {
                 box-shadow: var(--focus-box-shadow);
             }
-        }
-
-        :global([data-tree-view-flat-list='false']) & {
-            --tree-node-left-padding: 1.25rem;
         }
     }
 
