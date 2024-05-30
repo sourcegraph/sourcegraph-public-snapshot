@@ -368,8 +368,13 @@ func monikersToString(vs []precise.MonikerData) string {
 
 func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	if symbol.SignatureDocumentation != nil {
-		signature := []string{fmt.Sprintf("```%s\n%s\n```", symbol.SignatureDocumentation.Language, symbol.SignatureDocumentation.Text)}
-		return append(signature, symbol.Documentation...)
+		signature := symbol.SignatureDocumentation
+		if signature.Text != "" && signature.Language != "" {
+			signature := []string{fmt.Sprintf("```%s\n%s\n```", symbol.SignatureDocumentation.Language, symbol.SignatureDocumentation.Text)}
+			return append(signature, symbol.Documentation...)
+		} else {
+			return symbol.Documentation
+		}
 	} else {
 		return symbol.Documentation
 	}

@@ -610,6 +610,27 @@ func TestExtractOccurrenceData(t *testing.T) {
 					"it does the thing",
 				},
 			},
+			{
+				explanation: "#3: SignatureDocumentation is present, but Text/Language are empty",
+				document: &scip.Document{
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol:                 "react 17.1 main.go func1",
+							SignatureDocumentation: &scip.Document{},
+							Documentation: []string{
+								"it does the thing",
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1,
+				},
+				hoverText: []string{
+					"it does the thing",
+				},
+			},
 		}
 
 		for _, testCase := range testCases {
