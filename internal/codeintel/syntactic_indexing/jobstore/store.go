@@ -18,7 +18,7 @@ import (
 
 type SyntacticIndexingJobStore interface {
 	DBWorkerStore() dbworkerstore.Store[*SyntacticIndexingJob]
-	InsertIndexes(ctx context.Context, indexes []SyntacticIndexingJob) ([]SyntacticIndexingJob, error)
+	InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) ([]SyntacticIndexingJob, error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 }
 
@@ -74,54 +74,49 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 	}, nil
 }
 
-func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, indexes []SyntacticIndexingJob) (jobs []SyntacticIndexingJob, err error) {
-
+func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) (_ []SyntacticIndexingJob, err error) {
 	ctx, _, endObservation := s.operations.insertIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIndexes", len(indexes)),
+		attribute.Int("numIndexes", len(indexingJobs)),
 	}})
 	endObservation(1, observation.Args{})
 
-	if len(indexes) == 0 {
+	if len(indexingJobs) == 0 {
 		return nil, nil
 	}
 
-	actor := actor.FromContext(ctx)
-
-	values := make([]*sqlf.Query, 0, len(indexes))
-	for _, index := range indexes {
-		values = append(values, sqlf.Sprintf(
+	indexingJobsValues := make([]*sqlf.Query, 0, len(indexingJobs))
+	for _, index := range indexingJobs {
+		indexingJobsValues = append(indexingJobsValues, sqlf.Sprintf(
 			"(%s, %s, %s, %s)",
 			index.State,
 			index.Commit,
 			index.RepositoryID,
-			actor.UID,
+			actor.FromContext(ctx).UID,
 		))
 	}
 
-	indexes = []SyntacticIndexingJob{}
-
+	indexingJobs = []SyntacticIndexingJob{}
 	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
-		ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
+		insertedJobIds, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(indexingJobsValues, ","))))
 		if err != nil {
 			return err
 		}
-		s.operations.indexingJobsInserted.Add(float64(len(ids)))
+		s.operations.indexingJobsInserted.Add(float64(len(insertedJobIds)))
 
 		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 		if err != nil {
 			return err
 		}
 
-		queries := make([]*sqlf.Query, 0, len(ids))
-		for _, id := range ids {
-			queries = append(queries, sqlf.Sprintf("%d", id))
+		jobLookupQueries := make([]*sqlf.Query, 0, len(insertedJobIds))
+		for _, id := range insertedJobIds {
+			jobLookupQueries = append(jobLookupQueries, sqlf.Sprintf("%d", id))
 		}
-
-		indexes, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+		indexingJobs, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
 		return err
 	})
 
-	return indexes, err
+	return indexingJobs, err
 }
 
 func (s *syntacticIndexingJobStoreImpl) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {

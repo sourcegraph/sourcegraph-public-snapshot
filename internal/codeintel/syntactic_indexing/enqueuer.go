@@ -118,7 +118,7 @@ func (s *indexEnqueuerImpl) queueIndexForRepositoryAndCommit(ctx context.Context
 		shouldInsert = !isQueued
 	}
 	if shouldInsert {
-		return s.jobStore.InsertIndexes(ctx, []jobstore.SyntacticIndexingJob{{
+		return s.jobStore.InsertIndexingJobs(ctx, []jobstore.SyntacticIndexingJob{{
 			State:        jobstore.Queued,
 			Commit:       commit,
 			RepositoryID: repositoryID,
