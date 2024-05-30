@@ -224,7 +224,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		// ip: if not proxied through cloudflare
 		// cloudflare: if proxied through cloudflare
 		destination := ipNode
-		if env.Domain.Cloudflare != nil && env.Domain.Cloudflare.ShouldProxy() {
+		if env.Domain != nil && env.Domain.Cloudflare.ShouldProxy() {
 			var cloudflareNode string
 			graph, cloudflareNode, err = newCloudflareNode(graph)
 			if err != nil {
