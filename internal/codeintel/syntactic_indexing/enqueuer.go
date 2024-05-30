@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/reposcheduler"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,10 +50,20 @@ func NewIndexEnqueuer(
 }
 
 type operations struct {
-	queueIndexingJobs *observation.Operation
+	queueIndexingJobs          *observation.Operation
+	indexingJobsSkippedCounter prometheus.Counter
 }
 
 var (
+	indexingJobsSkippedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
+		indexesJobsSkippedCounter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "src_codeintel_dbstore_syntactic_indexing_jobs_skipped",
+			Help: "The number of codeintel syntactic indexing jobs skipped because they were already queued up",
+		})
+		r.MustRegister(indexesJobsSkippedCounter)
+		return indexesJobsSkippedCounter, nil
+	})
+
 	m = new(metrics.SingletonREDMetrics)
 )
 
@@ -73,8 +85,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
+	indexingJobsSkippedCounter, _ := indexingJobsSkippedCounterMemo.Init(observationCtx.Registerer)
+
 	return &operations{
-		queueIndexingJobs: op("QueueIndexingJobs"),
+		queueIndexingJobs:          op("QueueIndexingJobs"),
+		indexingJobsSkippedCounter: indexingJobsSkippedCounter,
 	}
 }
 
@@ -94,6 +109,9 @@ func (s *indexEnqueuerImpl) QueueIndexingJobs(ctx context.Context, repositoryID 
 		isQueued, err := s.jobStore.IsQueued(ctx, repositoryID, commitID)
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.IsQueued")
+		}
+		if isQueued {
+			s.operations.indexingJobsSkippedCounter.Add(float64(1))
 		}
 		shouldInsert = !isQueued
 	}
