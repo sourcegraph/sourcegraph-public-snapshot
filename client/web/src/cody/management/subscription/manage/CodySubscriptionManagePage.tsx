@@ -80,7 +80,9 @@ const PageContent: React.FC = () => {
         response,
     } = useApiCaller(currentSubscriptionCall)
 
-    if (loading) {
+    if (loading && !subscription) {
+        // Loading may be true when the subscription is being refetched.
+        // We want to show the page content, but not the loading spinner in this case.
         return <LoadingSpinner />
     }
 
@@ -115,14 +117,14 @@ const PageContent: React.FC = () => {
                 </PageHeader.Heading>
             </PageHeader>
 
-            <div className="my-4">
+            <div className="my-3">
                 <Link to="/cody/manage" className={styles.link}>
                     <BackIcon />
                     Back to Cody Dashboard
                 </Link>
             </div>
 
-            <Card className={classNames('my-4 p-4', styles.card)}>
+            <Card className={classNames('p-4', styles.card)}>
                 <SubscriptionDetails subscription={subscription} refetchSubscription={refetchSubscription} />
 
                 <hr className={styles.divider} />
