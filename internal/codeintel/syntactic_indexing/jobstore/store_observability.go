@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,11 +47,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	indexesInsertedCounter, _ := indexesInsertedCounterMemo.Init(observationCtx.Registerer)
-
 	return &operations{
-		isQueued:           op("IsQueued"),
-		insertIndexingJobs: op("InsertIndexingJobs"),
-
+		isQueued:             op("IsQueued"),
+		insertIndexingJobs:   op("InsertIndexingJobs"),
 		indexingJobsInserted: indexesInsertedCounter,
 	}
 }

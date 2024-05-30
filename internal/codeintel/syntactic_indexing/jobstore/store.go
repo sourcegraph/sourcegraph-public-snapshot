@@ -76,7 +76,7 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 
 func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) (_ []SyntacticIndexingJob, err error) {
 	ctx, _, endObservation := s.operations.insertIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIndexes", len(indexingJobs)),
+		attribute.Int("numIndexingJobs", len(indexingJobs)),
 	}})
 	endObservation(1, observation.Args{})
 
