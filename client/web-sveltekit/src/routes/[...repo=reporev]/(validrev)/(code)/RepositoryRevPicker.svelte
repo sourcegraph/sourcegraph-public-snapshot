@@ -206,7 +206,6 @@
         max-width: 40rem;
         width: 640px;
 
-        --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
 
         :global([data-tab-header]) {

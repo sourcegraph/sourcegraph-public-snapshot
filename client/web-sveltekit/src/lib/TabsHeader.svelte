@@ -65,7 +65,7 @@
         flex-flow: row nowrap;
         justify-content: center;
         white-space: nowrap;
-        gap: 0.5rem;
+        gap: 0.25rem;
         position: relative;
 
         &::after {
@@ -80,15 +80,23 @@
 
         &:hover {
             color: var(--text-title);
-            background-color: var(--color-bg-2);
+            background-color: var(--secondary-2);
         }
 
         &[aria-selected='true'] {
             font-weight: 500;
             color: var(--text-title);
+            background-color: var(--secondary-2);
+
+            :global(kbd) {
+              color: white;
+              box-shadow: none;
+              border-color: var(--primary);
+              background-color: var(--primary);
+            }
 
             &::after {
-                border-color: var(--brand-secondary);
+                border-color: var(--primary);
             }
         }
 
