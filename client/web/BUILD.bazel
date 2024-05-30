@@ -243,6 +243,7 @@ ts_project(
         "src/cody/management/api/types.ts",
         "src/cody/management/subscription/manage/CodySubscriptionManagePage.tsx",
         "src/cody/management/subscription/manage/InvoiceHistory.tsx",
+        "src/cody/management/subscription/manage/LoadingIconButton.tsx",
         "src/cody/management/subscription/manage/PaymentDetails.tsx",
         "src/cody/management/subscription/manage/SubscriptionDetails.tsx",
         "src/cody/management/subscription/manage/utils.ts",

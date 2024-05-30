@@ -4,12 +4,13 @@ import { mdiCancel, mdiCheck, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { Button, H1, H3, Icon, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, H1, H3, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import type { Subscription } from '../../api/teamSubscriptions'
 
+import { LoadingIconButton } from './LoadingIconButton'
 import { humanizeDate, usdCentsToHumanString } from './utils'
 
 import styles from './SubscriptionDetails.module.scss'
@@ -101,7 +102,15 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                     </Text>
                 </div>
                 {props.subscription.cancelAtPeriodEnd ? (
-                    <RenewSubscriptionButton isLoading={isLoading} onClick={() => updateSubscription('renew')} />
+                    <LoadingIconButton
+                        variant="primary"
+                        disabled={isLoading}
+                        isLoading={isLoading}
+                        onClick={() => updateSubscription('renew')}
+                        iconSvgPath={mdiRefresh}
+                    >
+                        Renew subscription
+                    </LoadingIconButton>
                 ) : (
                     <CancelSubscriptionButton
                         isLoading={isLoading}
@@ -115,20 +124,6 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
         </>
     )
 }
-
-const RenewSubscriptionButton: React.FC<{
-    isLoading: boolean
-    onClick: () => Promise<void>
-}> = props => (
-    <Button variant="primary" disabled={props.isLoading} className={styles.iconButton} onClick={props.onClick}>
-        {props.isLoading ? (
-            <LoadingSpinner className="mr-1" />
-        ) : (
-            <Icon aria-hidden={true} className="mr-1" svgPath={mdiRefresh} />
-        )}
-        Renew subscription
-    </Button>
-)
 
 const CancelSubscriptionButton: React.FC<{
     isLoading: boolean
@@ -149,7 +144,7 @@ const CancelSubscriptionButton: React.FC<{
                     <div className="pb-3">
                         <H3>Are you sure?</H3>
                         <Text className="mt-4">
-                            Canceling you subscription now means that you won't be able to use Cody with Pro features
+                            Canceling your subscription now means that you won't be able to use Cody with Pro features
                             after {humanizeDate(props.currentPeriodEnd)}.
                         </Text>
                         <Text className={classNames('mt-4 mb-0', styles.bold)}>Do you want to procceed?</Text>
@@ -158,19 +153,15 @@ const CancelSubscriptionButton: React.FC<{
                         <Button variant="secondary" outline={true} onClick={() => setIsConfirmationModalVisible(false)}>
                             No, I've changed my mind
                         </Button>
-                        <Button
+                        <LoadingIconButton
                             variant="primary"
                             disabled={props.isLoading}
-                            className={styles.iconButton}
+                            isLoading={props.isLoading}
                             onClick={() => props.onClick().finally(() => setIsConfirmationModalVisible(false))}
+                            iconSvgPath={mdiCheck}
                         >
-                            {props.isLoading ? (
-                                <LoadingSpinner className="mr-1" />
-                            ) : (
-                                <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                            )}
-                            <Text as="span">Yes, cancel</Text>
-                        </Button>
+                            Yes, cancel
+                        </LoadingIconButton>
                     </div>
                 </Modal>
             )}

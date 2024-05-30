@@ -20,11 +20,13 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import { Client } from '../../api/client'
 import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import type { Subscription } from '../../api/teamSubscriptions'
+
+import { LoadingIconButton } from './LoadingIconButton'
 
 import styles from './PaymentDetails.module.scss'
 
@@ -223,19 +225,16 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
                     <Button type="reset" variant="secondary" outline={true}>
                         Cancel
                     </Button>
-                    <Button
-                        disabled={isLoading}
+                    <LoadingIconButton
                         type="submit"
                         variant="primary"
-                        className={classNames('ml-2', styles.iconButton)}
+                        className="ml-2"
+                        disabled={isLoading}
+                        isLoading={isLoading}
+                        iconSvgPath={mdiCheck}
                     >
-                        {isLoading ? (
-                            <LoadingSpinner className="mr-1" />
-                        ) : (
-                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                        )}
-                        <Text as="span">Save</Text>
-                    </Button>
+                        Save
+                    </LoadingIconButton>
                 </div>
             </Form>
         </>
@@ -463,19 +462,16 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
                 <Button type="reset" variant="secondary" outline={true}>
                     Cancel
                 </Button>
-                <Button
-                    disabled={isLoading}
+                <LoadingIconButton
                     type="submit"
                     variant="primary"
-                    className={classNames('ml-2', styles.iconButton)}
+                    className="ml-2"
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    iconSvgPath={mdiCheck}
                 >
-                    {isLoading ? (
-                        <LoadingSpinner className="mr-1" />
-                    ) : (
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                    )}
-                    <Text as="span">Save</Text>
-                </Button>
+                    Save
+                </LoadingIconButton>
             </div>
         </Form>
     )
