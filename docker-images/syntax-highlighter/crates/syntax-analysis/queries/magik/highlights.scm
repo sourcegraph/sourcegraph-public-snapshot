@@ -43,11 +43,8 @@
 (documentation) @comment
 (comment) @comment
 
-; TODO(mmanela): Figure out why this doesn mark package name and instead
-;       still marks the keyword
-;       _package pp
-;       ^^^^^^^^ IdentifierNamespace
-;(package _ @variable.module)
+(package (identifier) @variable.module)
+
 
 ; Expression
 
@@ -192,5 +189,3 @@
  (slot_accessor)
  (label)
 ] @variable
-
-
