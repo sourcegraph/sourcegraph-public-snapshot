@@ -37,7 +37,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 		RepositoryBatchSize: 2500,
 	}
 	gitserverClient := gitserver.NewMockClient()
-	scheduler, jobStore, policies := bootstrapScheduler(t, observationCtx, frontendRawDB, codeintelRawDB, gitserverClient, config)
+	scheduler, jobStore, policiesSvc := bootstrapScheduler(t, observationCtx, frontendRawDB, codeintelRawDB, gitserverClient, config)
 
 	ctx := context.Background()
 
@@ -49,7 +49,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 	testutils.InsertRepo(t, db, empanadasRepoId, empanadasRepoName)
 	testutils.InsertRepo(t, db, mangosRepoId, mangosRepoName)
 
-	setupRepoPolicies(t, ctx, db, policies)
+	setupRepoPolicies(t, ctx, db, policiesSvc)
 
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, options gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		isTacos := repo == api.RepoName(tacosRepoName) && rev == tacosCommit
