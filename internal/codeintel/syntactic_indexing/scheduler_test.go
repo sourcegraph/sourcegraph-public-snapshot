@@ -182,29 +182,16 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, polici
 			--                        							              |    |    |     |      |      ↙ index_commit_max_age_hours
 			--                        							              |    |    |     |      |      |     ↙ index_intermediate_commits
 			(1000, 2,    'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  false,  0, false),
-
-			-- This policy is here to specifically disable syntactic indexing for repo with ID=3
-
+			-- Policy below specifically disables syntactic indexing for repo with ID=3
 			(1003, 3,    'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, false, false, 0,  false),
-
-			-- This policy is to enable syntactic indexing for all repositories starting with 'github.com'
-
+			-- Policy below enables syntactic indexing for all repositories starting with 'github.com'
 			(1100, NULL, 'policy 10 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  false, 0,  false)
 	`
-	if _, err := db.ExecContext(ctx, query); err != nil {
-		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
-	}
+	unwrap(db.ExecContext(ctx, query))(t)
 
-	for _, policyID := range []int{
-		1100,
-	} {
-
+	for _, policyID := range []int{1100} {
 		policy, _, err := policies.GetConfigurationPolicyByID(ctx, policyID)
 		require.NoError(t, err)
-
-		err = policies.UpdateReposMatchingPolicyPatterns(ctx, policy)
-		require.NoError(t, err)
-
+		require.NoError(t, policies.UpdateReposMatchingPolicyPatterns(ctx, policy))
 	}
-
 }
