@@ -125,13 +125,11 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexes(ctx context.Context, index
 }
 
 func (s *syntacticIndexingJobStoreImpl) IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error) {
-
 	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
 		isQueuedQuery,
 		repositoryID,
 		commit,
 	)))
-
 	return isQueued, err
 }
 
