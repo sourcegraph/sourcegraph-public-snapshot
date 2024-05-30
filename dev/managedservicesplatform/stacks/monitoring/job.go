@@ -3,10 +3,12 @@ package monitoring
 import (
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/monitoringalertpolicy"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/alertpolicy"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,7 +55,7 @@ func createJobAlerts(
 	}
 	alerts = append(alerts, alert.AlertPolicy)
 
-	interval, err := vars.JobSchedule.FindMaxCronInterval()
+	interval, err := vars.JobSchedule.FindMaxCronInterval(time.Now())
 	if err != nil {
 		return nil, errors.Wrap(err, "JobSchedule.FindMaxCronInterval")
 	}

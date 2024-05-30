@@ -401,6 +401,8 @@ commands:
       DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: debug
       GRPC_WEB_UI_ENABLED: 'true'
+      # Connects to local database, so include all licenses from local DB
+      DOTCOM_INCLUDE_PRODUCTION_LICENSES: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
       # client name: 'enterprise-portal-local-dev'

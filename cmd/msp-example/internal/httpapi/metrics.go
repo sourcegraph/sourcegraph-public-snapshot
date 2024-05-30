@@ -1,4 +1,4 @@
-package example
+package httpapi
 
 import (
 	"go.opentelemetry.io/otel"

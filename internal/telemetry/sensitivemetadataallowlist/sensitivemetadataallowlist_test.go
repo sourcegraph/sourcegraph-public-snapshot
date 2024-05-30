@@ -43,7 +43,7 @@ func TestIsAllowed(t *testing.T) {
 		{
 			name: "disallowed event with additional allowed event type",
 			event: &v1.Event{
-				Feature: "cody.completions",
+				Feature: "cody.completion",
 				Action:  "accepted",
 			},
 			expectAllowed: true,

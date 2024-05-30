@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "config.go",
+        "diagnostics.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/msp-example/internal/bigquery",
+        "//cmd/msp-example/internal/httpapi",
+        "//cmd/msp-example/internal/postgresql",
+        "//cmd/msp-example/internal/redis",
+        "//internal/version",
+        "//lib/background",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+    ],
+)

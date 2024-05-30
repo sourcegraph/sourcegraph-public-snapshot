@@ -652,7 +652,7 @@ message BlameRequest {
   string repo_name = 2;
   // commit is the commit sha to start the blame operation at.
   string commit = 3;
-  string path = 4;
+  bytes path = 4;
   bool ignore_whitespace = 5;
   optional BlameRange range = 8;
 }
@@ -679,7 +679,7 @@ message BlameHunk {
 }
 
 message BlameAuthor {
-  string name = 1;
+  bytes name = 1;
   string email = 2;
   google.protobuf.Timestamp date = 3;
 }
@@ -841,7 +841,7 @@ message RevisionNotFoundPayload {
 message FileNotFoundPayload {
   string repo = 1;
   string commit = 2;
-  string path = 3;
+  bytes path = 3;
 }
 
 message ExecStatusPayload {
