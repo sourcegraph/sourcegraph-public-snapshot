@@ -199,7 +199,7 @@ func (d *diagram) Generate(s *spec.Spec, e string) error {
 		}
 	}
 
-	if env.EnvironmentServiceSpec != nil {
+	if env.EnvironmentServiceSpec != nil && env.Domain != nil && env.Domain.Type != spec.EnvironmentDomainTypeNone {
 		var loadBalancerNode string
 		graph, loadBalancerNode, err = newLoadBalancerNode(graph, env)
 		if err != nil {
