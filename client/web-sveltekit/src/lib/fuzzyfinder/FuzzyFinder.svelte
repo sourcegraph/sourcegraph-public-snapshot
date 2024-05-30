@@ -206,7 +206,7 @@
                 </span>
             </TabsHeader>
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon svgPath={mdiClose} aria-label="Close" />
+                <Icon svgPath={mdiClose} aria-label="Close" inline />
             </Button>
         </header>
         <main>
@@ -284,15 +284,16 @@
 
 <style lang="scss">
     dialog {
-        background-color: var(--color-bg-1);
         width: 80vw;
         height: 80vh;
-        border: 1px solid var(--border-color);
         padding: 0;
         overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--body-bg);
 
         &::backdrop {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: var(--modal-bg);
         }
     }
 
