@@ -61,7 +61,7 @@ func Open(specPath string) (*Spec, error) {
 	}
 	spec, err := parse(specData)
 	if err != nil {
-		return nil, errors.Wrap(err, "spec.parse")
+		return spec, errors.Wrap(err, "spec.parse")
 	}
 
 	// Load extraneous resources
@@ -134,7 +134,7 @@ func parse(data []byte) (*Spec, error) {
 	}
 
 	if validationErrs := s.Validate(); len(validationErrs) > 0 {
-		return nil, errors.Append(nil, validationErrs...)
+		return &s, errors.Append(nil, validationErrs...)
 	}
 	return &s, nil
 }
