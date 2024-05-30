@@ -94,4 +94,7 @@ func TestRepositoryLanguageStats(t *testing.T) {
 			t.Errorf("unexpected total lines at position %d. want > 0, have=%d", i, res.Repository.LanguageStats[i].TotalLines)
 		}
 	}
+
+	// make it fail
+	t.Error("make it fail")
 }
