@@ -13,7 +13,6 @@
 
 "function" @keyword.function
 
-
 (scope_identifier) @keyword
 (visibility_modifier) @keyword
 
@@ -260,6 +259,17 @@
   (_) @variable.module
   .
   (_))
+
+; Eplxicitly handle NAN and INF since they are
+; not mentioned in grammar
+(qualified_identifier
+  . (identifier) @variable.builtin  .
+  (#eq? @variable.builtin "NAN"))
+
+(qualified_identifier
+  . (identifier) @variable.builtin  .
+  (#eq? @variable.builtin "INF"))
+
 
 ; Explicitly handle internal since it is
 ; not mentioned in grammar
