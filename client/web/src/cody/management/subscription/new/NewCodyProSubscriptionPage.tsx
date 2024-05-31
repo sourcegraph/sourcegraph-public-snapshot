@@ -22,7 +22,7 @@ import {
     type UserCodyPlanVariables,
     CodySubscriptionPlan,
 } from '../../../../graphql-operations'
-import { CodyProIcon } from '../../../components/CodyIcon'
+import { WhiteIcon } from '../../../components/WhiteIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 
@@ -70,7 +70,8 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             <PageHeader className="mb-4 mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <div className="d-inline-flex align-items-center">
-                        <CodyProIcon className="mr-2" /> {creatingTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
+                        <WhiteIcon name="cody-logo" className="mr-3" />{' '}
+                        {creatingTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
                     </div>
                 </PageHeader.Heading>
             </PageHeader>
