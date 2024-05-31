@@ -7959,6 +7959,13 @@ def go_dependencies():
         version = "v1.3.0",
     )
     go_repository(
+        name = "net_pgregory_rapid",
+        build_file_proto_mode = "disable_global",
+        importpath = "pgregory.net/rapid",
+        sum = "h1:CMa0sjHSru3puNx+J0MIAuiiEV4N0qj8/cMWGBBCsjw=",
+        version = "v1.1.0",
+    )
+    go_repository(
         name = "net_starlark_go",
         build_file_proto_mode = "disable_global",
         importpath = "go.starlark.net",
