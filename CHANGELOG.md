@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The default and recommended chat model for Anthropic and Cody Gateway configurations is now `claude-3-sonnet-20240229`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
 - The default and recommended autocomplete model for Cody Gateway configurations is now `fireworks/starcoder`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
+- Code Insights: Language Stats Insights now compute much faster and can handle vastly bigger repository sizes. [#62946](https://github.com/sourcegraph/sourcegraph/pull/62946)
 
 ### Fixed
 
