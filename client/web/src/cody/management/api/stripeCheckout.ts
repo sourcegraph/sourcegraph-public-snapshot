@@ -8,6 +8,8 @@ export interface CreateCheckoutSessionRequest {
     showPromoCodeField: boolean
 
     returnUrl?: string
+
+    customUI?: boolean
 }
 
 export interface CreateCheckoutSessionResponse {
