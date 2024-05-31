@@ -578,6 +578,8 @@ func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
 }
 
 type EnvironmentJobSpec struct {
+	// DeadlineSeconds of each job execution, in seconds. Defaults to 300.
+	DeadlineSeconds *int `yaml:"deadlineSeconds,omitempty"`
 	// Schedule configures a cron schedule for the service.
 	//
 	// Only supported for services of 'kind: job'.
@@ -602,8 +604,6 @@ type EnvironmentJobScheduleSpec struct {
 	//
 	// Protip: use https://crontab.guru
 	Cron string `yaml:"cron"`
-	// Deadline of each attempt, in seconds.
-	Deadline *int `yaml:"deadline,omitempty"`
 }
 
 func (s *EnvironmentJobScheduleSpec) Validate() []error {
