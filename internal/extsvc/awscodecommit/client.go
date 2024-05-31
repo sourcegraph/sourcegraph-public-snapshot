@@ -50,7 +50,7 @@ var ErrNotFound = errors.New("AWS CodeCommit repository not found")
 // IsNotFound reports whether err is a AWS CodeCommit API not-found error or the
 // equivalent cached response error.
 func IsNotFound(err error) bool {
-	return errors.Is(err, ErrNotFound) || errors.HasType(err, &codecommittypes.RepositoryDoesNotExistException{})
+	return errors.Is(err, ErrNotFound) || errors.HasTypeGeneric[*codecommittypes.RepositoryDoesNotExistException](err)
 }
 
 // IsUnauthorized reports whether err is a AWS CodeCommit API unauthorized error.

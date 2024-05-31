@@ -300,7 +300,7 @@ func (g *gitCLIBackend) Stat(ctx context.Context, commit api.CommitID, path stri
 	if path == "" || path == "." {
 		rev, err := g.revParse(ctx, string(commit)+"^{tree}")
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 				return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 			}
 			return nil, err

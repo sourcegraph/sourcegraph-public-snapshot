@@ -171,7 +171,7 @@ func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, time
 		} else {
 			status |= RepoStatusMissing
 		}
-	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
+	} else if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](searchErr) {
 		if len(revSpecs) == 0 || len(revSpecs) == 1 && revSpecs[0] == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

@@ -15,7 +15,7 @@ func validateNotebookWritePermissionsForUser(ctx context.Context, db database.DB
 	} else if notebook.NamespaceOrgID != 0 {
 		// Only members of the org have write access to the notebook
 		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, notebook.NamespaceOrgID, userID)
-		if errors.HasType(err, &database.ErrOrgMemberNotFound{}) || membership == nil {
+		if errors.HasTypeGeneric[*database.ErrOrgMemberNotFound](err) || membership == nil {
 			return errors.New("user is not a member of the notebook organization namespace")
 		} else if err != nil {
 			return err

@@ -147,7 +147,7 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	for i, rc := range repoCommits {
 		_, err := c.gitserverClient.GetCommit(ctx, rc.repoName, rc.commitID)
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 				exists[i] = false
 				continue
 			}

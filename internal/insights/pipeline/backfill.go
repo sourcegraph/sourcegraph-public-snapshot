@@ -241,7 +241,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		if len(bctx.execution.Revision) == 0 {
 			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime, "")
 			if revErr != nil {
-				if errors.HasType(revErr, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(revErr) {
+				if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](revErr) || gitdomain.IsRepoNotExist(revErr) {
 					return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 				}
 				err = errors.Append(err, errors.Wrap(revErr, "FindNearestCommit"))

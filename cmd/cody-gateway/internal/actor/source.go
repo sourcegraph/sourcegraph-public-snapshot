@@ -290,7 +290,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 		// If another instance is working on background syncs, we don't want to
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
-		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
+		if err := s.rmux.LockContext(ctx); errors.HasTypeGeneric[*redsync.ErrTaken](err) {
 			skippedReason = fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
 			handleLogger.Debug(skippedReason)
 			return nil // ignore lock contention errors

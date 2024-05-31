@@ -300,7 +300,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, r.name, args.Rev)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 			return nil, nil
 		}
 		return nil, err
@@ -401,7 +401,7 @@ func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitR
 
 	commit, err := r.gitserverClient.FirstEverCommit(ctx, repo.Name)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 			return nil, nil
 		}
 		return nil, err
@@ -649,7 +649,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitdomain.RevisionNotFoundError{})) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err)) {
 		return commit, err
 	}
 

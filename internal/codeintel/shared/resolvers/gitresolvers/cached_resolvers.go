@@ -60,7 +60,7 @@ func newCachedLocationResolver(
 	resolveCommit := func(ctx context.Context, repositoryResolver resolverstubs.RepositoryResolver, commit string) (resolverstubs.GitCommitResolver, error) {
 		commitID, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryResolver.Name()), commit, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 				return nil, nil
 			}
 			return nil, err

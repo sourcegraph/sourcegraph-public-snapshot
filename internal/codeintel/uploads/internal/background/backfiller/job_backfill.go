@@ -72,7 +72,7 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commitID string) (string, error) {
 	commit, err := s.gitserverClient.GetCommit(ctx, api.RepoName(repositoryName), api.CommitID(commitID))
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 			// Set a value here that we'll filter out on the query side so that we don't
 			// reprocess the same failing batch infinitely. We could alternatively soft
 			// delete the record, but it would be better to keep record deletion behavior

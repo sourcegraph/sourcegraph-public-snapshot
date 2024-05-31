@@ -247,7 +247,7 @@ func TestClient_StreamBlameFile(t *testing.T) {
 
 		_, err := c.StreamBlameFile(context.Background(), "repo", "file", &BlameOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 	t.Run("file not found errors are returned early", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
@@ -387,7 +387,7 @@ func TestClient_MergeBase(t *testing.T) {
 
 		_, err := c.MergeBase(context.Background(), "repo", "master", "b2")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -500,7 +500,7 @@ func TestClient_NewFileReader(t *testing.T) {
 
 		_, err := c.NewFileReader(context.Background(), "repo", "deadbeef", "file")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 	t.Run("empty file", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
@@ -565,7 +565,7 @@ func TestClient_GetCommit(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), actor.FromUser(1))
 		_, err := c.GetCommit(ctx, "repo", "deadbeef")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 	t.Run("checks for subrepo permissions some files visible", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
@@ -610,7 +610,7 @@ func TestClient_GetCommit(t *testing.T) {
 
 		_, err := c.GetCommit(context.Background(), "repo", "deadbeef")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -676,7 +676,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 		_, err := c.ArchiveReader(context.Background(), "repo", ArchiveOptions{Treeish: "deadbeef", Format: ArchiveFormatTar, Paths: []string{"file"}})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 	t.Run("checks for subrepo permissions enabled on the repo", func(t *testing.T) {
 		source := NewTestClientSource(t, []string{"gitserver"}, func(o *TestClientSourceOptions) {
@@ -804,7 +804,7 @@ index e5af166..d44c3fc 100644
 
 		_, err := c.Diff(context.Background(), "repo", DiffOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -848,11 +848,11 @@ func TestClient_ResolveRevision(t *testing.T) {
 		// First request fails with revision error
 		_, err := c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		// First request fails with clone error
 		_, err = c.ResolveRevision(context.Background(), "repo", "HEAD", ResolveRevisionOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err))
 	})
 }
 
@@ -908,7 +908,7 @@ func TestClient_RevAtTime(t *testing.T) {
 
 		_, _, err := c.RevAtTime(context.Background(), "repo", "HEAD", time.Now())
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -960,7 +960,7 @@ func TestClient_ListRefs(t *testing.T) {
 		// Should fail with clone error
 		_, err := c.ListRefs(context.Background(), "repo", ListRefsOpts{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err))
 	})
 }
 
@@ -1009,7 +1009,7 @@ func TestClient_ContributorCounts(t *testing.T) {
 
 		_, err := c.ContributorCount(context.Background(), "repo", ContributorOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 
@@ -1061,7 +1061,7 @@ func TestClient_FirstEverCommit(t *testing.T) {
 			// Should fail with clone error
 			_, err := c.FirstEverCommit(context.Background(), "repo")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err))
 		})
 
 		t.Run("empty repository", func(t *testing.T) {
@@ -1080,7 +1080,7 @@ func TestClient_FirstEverCommit(t *testing.T) {
 			// Should fail with RepositoryEmptyError
 			_, err := c.FirstEverCommit(context.Background(), "repo")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 	})
 }
@@ -1131,7 +1131,7 @@ func TestClient_GetBehindAhead(t *testing.T) {
 			// Should fail with clone error
 			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err))
 		})
 
 		t.Run("revision not found", func(t *testing.T) {
@@ -1150,7 +1150,7 @@ func TestClient_GetBehindAhead(t *testing.T) {
 			// Should fail with RevisionNotFoundError
 			_, err := c.BehindAhead(context.Background(), "repo", "left", "right")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 	})
 }
@@ -1226,8 +1226,8 @@ func TestClient_ChangedFiles(t *testing.T) {
 
 			// Check to see if either the initial error or the error from the iterator is a RepoNotExistError
 			require.True(t,
-				errors.HasType(initialErr, &gitdomain.RepoNotExistError{}) ||
-					errors.HasType(iterErr, &gitdomain.RepoNotExistError{}))
+				errors.HasTypeGeneric[*gitdomain.RepoNotExistError](initialErr) ||
+					errors.HasTypeGeneric[*gitdomain.RepoNotExistError](iterErr))
 		})
 
 		t.Run("revision not found", func(t *testing.T) {
@@ -1256,8 +1256,8 @@ func TestClient_ChangedFiles(t *testing.T) {
 
 			// Check to see if either the initial error or the error from the iterator is a RevisionNotFoundError
 			require.True(t,
-				errors.HasType(initialErr, &gitdomain.RevisionNotFoundError{}) ||
-					errors.HasType(iterErr, &gitdomain.RevisionNotFoundError{}))
+				errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](initialErr) ||
+					errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](iterErr))
 
 		})
 	})
@@ -1431,7 +1431,7 @@ func TestClient_GetObject(t *testing.T) {
 
 			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RepoNotExistError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err))
 		})
 
 		t.Run("object not found", func(t *testing.T) {
@@ -1449,7 +1449,7 @@ func TestClient_GetObject(t *testing.T) {
 
 			_, err := c.GetObject(context.Background(), "repo", "deadbeef")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 	})
 }
@@ -1496,7 +1496,7 @@ func TestClient_Stat(t *testing.T) {
 
 			_, err := c.Stat(context.Background(), "repo", "HEAD", "file")
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 
 		t.Run("FileNotFound", func(t *testing.T) {
@@ -1660,7 +1660,7 @@ func TestClient_ReadDir(t *testing.T) {
 
 			_, err := c.ReadDir(context.Background(), "repo", "HEAD", "file", true)
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 
 		t.Run("FileNotFound", func(t *testing.T) {
@@ -1816,7 +1816,7 @@ func TestClient_Commits(t *testing.T) {
 
 			_, err := c.Commits(context.Background(), "repo", CommitsOptions{AllRefs: true})
 			require.Error(t, err)
-			require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+			require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		})
 	})
 	t.Run("subrepo permissions", func(t *testing.T) {

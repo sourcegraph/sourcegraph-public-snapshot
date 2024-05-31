@@ -200,7 +200,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
 
-	if err != nil && errors.HasType(err, &query.UnsupportedError{}) {
+	if err != nil && errors.HasTypeGeneric[*query.UnsupportedError](err) {
 		eventWriter.Alert(search.AlertForQuery(inputs.OriginalQuery, err))
 		err = nil
 	}

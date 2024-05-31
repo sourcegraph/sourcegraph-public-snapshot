@@ -210,7 +210,7 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 	// An empty repository we treat as success. When searching HEAD we haven't
 	// yet validated the commit actually exists so we need to ignore at this
 	// point. We should consider
-	if repoRev.Revision == "HEAD" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if repoRev.Revision == "HEAD" && errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 		return nil
 	}
 

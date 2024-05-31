@@ -24,7 +24,7 @@ func TestGetRepo(t *testing.T) {
 		})
 
 		_, err := GetRepo(context.Background(), logger, dbmocks.NewMockDB(), map[string]string{"Repo": "repo1"})
-		if !errors.HasType(err, &URLMovedError{}) {
+		if !errors.HasTypeGeneric[*URLMovedError](err) {
 			t.Fatalf("err: want type *URLMovedError but got %T", err)
 		}
 	})

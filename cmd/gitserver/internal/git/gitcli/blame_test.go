@@ -126,12 +126,12 @@ func TestGitCLIBackend_Blame(t *testing.T) {
 		// Ambiguous ref, could be commit, could be a ref.
 		_, err := backend.Blame(ctx, "deadbeef", "foo.txt", git.BlameOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// Definitely a commit (yes, those yield different errors from git).
 		_, err = backend.Blame(ctx, "e3889dff4263a2273459471739aafabc10269885", "foo.txt", git.BlameOptions{})
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("file not found", func(t *testing.T) {

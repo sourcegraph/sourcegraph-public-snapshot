@@ -233,7 +233,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 	// log_statement='mod'.
 	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
-		if !errors.HasType(err, &RepoNotFoundErr{}) {
+		if !errors.HasTypeGeneric[*RepoNotFoundErr](err) {
 			return err
 		}
 		insert = true // missing

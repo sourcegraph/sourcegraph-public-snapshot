@@ -190,7 +190,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError
 			if errors.As(err, &urlMovedError) {
@@ -214,12 +214,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
 				// Revision does not exist.
 				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
+			if errors.HasTypeGeneric[*gitserver.RepoNotCloneableErr](err) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
 					serveError(w, r, db, err, http.StatusNotFound)

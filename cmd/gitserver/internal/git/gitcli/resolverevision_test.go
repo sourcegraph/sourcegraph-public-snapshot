@@ -53,7 +53,7 @@ func TestGitCLIBackend_ResolveRevision(t *testing.T) {
 		// Unknown commit:
 		_, err = backend.ResolveRevision(ctx, "dfcb84e522cab3c0b307a70917604c6d3da00dc8")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// Resolve abbrev commit:
 		commit, err = backend.ResolveRevision(ctx, "f372e36")
@@ -62,7 +62,7 @@ func TestGitCLIBackend_ResolveRevision(t *testing.T) {
 		// Unknown abbrev commit:
 		_, err = backend.ResolveRevision(ctx, "dfcb84e5")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// Resolve ref:
 		commit, err = backend.ResolveRevision(ctx, "refs/heads/master")
@@ -81,32 +81,32 @@ func TestGitCLIBackend_ResolveRevision(t *testing.T) {
 		// Unknown ref:
 		_, err = backend.ResolveRevision(ctx, "refs/heads/notfound")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		_, err = backend.ResolveRevision(ctx, "notfound")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// Resolve object that is not a commit: (this is the tree object of f372e36a91bc35e5d99df8be435bdcb1f0660bc5)
 		_, err = backend.ResolveRevision(ctx, "92cb0143f5166452f2d45ed974a818749bc4a13f")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// :file1 gets the object ID of the file called file1 at HEAD.
 		// We don't allow that, since it leaks the existence of the file.
 		_, err = backend.ResolveRevision(ctx, ":file1")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// HEAD:file1 gets the object ID of the file called file1 at HEAD.
 		// We don't allow that, since it leaks the existence of the file.
 		_, err = backend.ResolveRevision(ctx, "HEAD:file1")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 
 		// :/foo gets a commit by commit message, but we don't want that.
 		_, err = backend.ResolveRevision(ctx, ":/foo")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 		// HEAD^{/foo} is the same as the above.
 		// TODO: This currently passes, but it shouldn't need to.
 		// _, err = backend.ResolveRevision(ctx, "HEAD^{/foo}")
@@ -120,7 +120,7 @@ func TestGitCLIBackend_ResolveRevision(t *testing.T) {
 		// Not found range:
 		_, err = backend.ResolveRevision(ctx, "master..notfound")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("HEAD in empty repo", func(t *testing.T) {
@@ -128,6 +128,6 @@ func TestGitCLIBackend_ResolveRevision(t *testing.T) {
 
 		_, err := backend.ResolveRevision(ctx, "HEAD")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
 	})
 }
