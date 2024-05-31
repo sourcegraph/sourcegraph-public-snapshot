@@ -1,9 +1,7 @@
 <script lang="ts">
-    import { mdiDotsHorizontal } from '@mdi/js'
-
     import { resolveRoute } from '$app/paths'
     import { overflow } from '$lib/dom'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { DropdownMenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
@@ -84,7 +82,7 @@
                     aria-label="Show more actions"
                 >
                     <svelte:fragment slot="trigger">
-                        <Icon svgPath={mdiDotsHorizontal} inline />
+                        <Icon2 icon={ILucideEllipsis} inline />
                     </svelte:fragment>
                     <slot name="actionmenu" />
                 </DropdownMenu>

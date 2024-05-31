@@ -1,14 +1,4 @@
 <script lang="ts">
-    import {
-        mdiAccount,
-        mdiCodeTags,
-        mdiCog,
-        mdiHistory,
-        mdiSourceBranch,
-        mdiSourceCommit,
-        mdiTag,
-        mdiDotsHorizontal,
-    } from '@mdi/js'
     import { writable } from 'svelte/store'
 
     import { getButtonClassName } from '@sourcegraph/wildcard'
@@ -16,7 +6,7 @@
     import { page } from '$app/stores'
     import { computeFit } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2, { type IconPath } from '$lib/Icon2.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
@@ -38,7 +28,7 @@
         /**
          * The icon to display next to the title.
          */
-        icon?: string
+        icon?: IconPath
         /**
          * Who can see this entry.
          */
@@ -49,19 +39,19 @@
 
     const menuOpen = writable(false)
     const navEntries: MenuEntry[] = [
-        { path: '', icon: mdiCodeTags, label: 'Code', visibility: 'user' },
-        { path: '/-/commits', icon: mdiSourceCommit, label: 'Commits', visibility: 'user' },
-        { path: '/-/branches', icon: mdiSourceBranch, label: 'Branches', visibility: 'user' },
-        { path: '/-/tags', icon: mdiTag, label: 'Tags', visibility: 'user' },
-        { path: '/-/stats/contributors', icon: mdiAccount, label: 'Contributors', visibility: 'user' },
+        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user' },
+        { path: '/-/commits', icon: ILucideGitCommitVertical, label: 'Commits', visibility: 'user' },
+        { path: '/-/branches', icon: ILucideGitBranch, label: 'Branches', visibility: 'user' },
+        { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
+        { path: '/-/stats/contributors', icon: ILucideUser, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
-        { path: '/-/compare', icon: mdiHistory, label: 'Compare', visibility: 'user' },
-        { path: '/-/own', icon: mdiAccount, label: 'Ownership', visibility: 'admin' },
+        { path: '/-/compare', icon: ILucideHistory, label: 'Compare', visibility: 'user' },
+        { path: '/-/own', icon: ILucideUser, label: 'Ownership', visibility: 'admin' },
         { path: '/-/embeddings', label: 'Embeddings', visibility: 'admin' },
         { path: '/-/code-graph', label: 'Code graph data', visibility: 'admin' },
         { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
-        { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
+        { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
 
     let visibleNavEntries = navEntries.length
@@ -102,7 +92,7 @@
                     <li>
                         <a {href} aria-current={isActive(href, $page.url) ? 'page' : undefined}>
                             {#if entry.icon}
-                                <Icon svgPath={entry.icon} inline />
+                                <Icon2 icon={entry.icon} inline />
                             {/if}
                             <span>{entry.label}</span>
                         </a>
@@ -117,7 +107,7 @@
             aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
         >
             <svelte:fragment slot="trigger">
-                <Icon svgPath={mdiDotsHorizontal} aria-label="More repo navigation items" />
+                <Icon2 icon={ILucideEllipsis} aria-label="More repo navigation items" />
             </svelte:fragment>
             {#each allMenuEntries as entry}
                 {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
@@ -125,7 +115,7 @@
                     <MenuLink {href}>
                         <span class="overflow-entry" class:active={isActive(href, $page.url)}>
                             {#if entry.icon}
-                                <Icon svgPath={entry.icon} inline />
+                                <Icon2 icon={entry.icon} inline />
                             {/if}
                             <span>{entry.label}</span>
                         </span>

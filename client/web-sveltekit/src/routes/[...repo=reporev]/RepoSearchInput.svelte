@@ -1,15 +1,14 @@
 <script lang="ts">
-    import { tick } from 'svelte'
-    import { mdiMagnify } from '@mdi/js'
     import { createDialog } from '@melt-ui/svelte'
+    import { tick } from 'svelte'
 
-    import Icon from '$lib/Icon.svelte'
+    import { registerHotkey } from '$lib/Hotkey'
+    import Icon2 from '$lib/Icon2.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { QueryState, queryStateStore } from '$lib/search/state'
-    import { settings } from '$lib/stores'
     import { repositoryInsertText } from '$lib/shared'
+    import { settings } from '$lib/stores'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { registerHotkey } from '$lib/Hotkey'
 
     export let repoName: string
     /**
@@ -56,7 +55,7 @@
     </div>
 {/if}
 <button {...$trigger} use:trigger class:hidden={$open}>
-    <Icon svgPath={mdiMagnify} inline aria-hidden="true" />
+    <Icon2 icon={ILucideSearch} inline aria-hidden />
     Type <kbd>/</kbd> to search
 </button>
 

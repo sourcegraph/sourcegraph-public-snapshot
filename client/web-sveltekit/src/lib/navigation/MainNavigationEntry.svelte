@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { page } from '$app/stores'
     import { createDropdownMenu } from '@melt-ui/svelte'
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
+    import { page } from '$app/stores'
+    import Icon2 from '$lib/Icon2.svelte'
     import Icon from '$lib/Icon.svelte'
 
-    import MainNavigationLink from './MainNavigationLink.svelte'
     import { isCurrent, type NavigationEntry, type NavigationMenu } from './mainNavigation'
+    import MainNavigationLink from './MainNavigationLink.svelte'
 
     export let entry: NavigationEntry | NavigationMenu
 
@@ -37,7 +37,7 @@
                 <span class="icon"><svelte:component this={entry.icon} /></span>&nbsp;
             {/if}
             {entry.label}
-            <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} inline />
+            <Icon2 icon={$open ? ILucideChevronUp : ILucideChevronDown} inline />
         </button>
         <ul {...$menu} use:menu>
             {#each entry.children as subEntry (subEntry.label)}

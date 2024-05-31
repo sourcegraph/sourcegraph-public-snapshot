@@ -1,15 +1,17 @@
 <script lang="ts" context="module">
+    import type { IconPath } from './Icon2.svelte'
+
     export interface Tab {
         id: string
         title: string
-        icon?: string
+        icon?: IconPath
     }
 </script>
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
 
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from './Icon2.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -35,7 +37,7 @@
             role="tab"
             on:click={selectTab}
             data-tab
-            >{#if tab.icon}<Icon svgPath={tab.icon} aria-hidden inline /> {/if}<span data-tab-title={tab.title}
+            >{#if tab.icon}<Icon2 icon={tab.icon} aria-hidden inline /> {/if}<span data-tab-title={tab.title}
                 >{tab.title}</span
             ><slot name="after-title" {tab} /></button
         >

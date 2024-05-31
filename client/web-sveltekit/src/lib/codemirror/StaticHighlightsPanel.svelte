@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-
     import { pluralize } from '$lib/common'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { Button } from '$lib/wildcard'
 
     import type { HighlightedRange } from './static-highlights'
