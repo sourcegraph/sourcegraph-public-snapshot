@@ -3,6 +3,10 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"strings"
 	"sync"
 
@@ -22,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,6 +36,7 @@ type rootResolver struct {
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
+	searcherClient                 searchclient.SearchClient
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
 	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
@@ -47,6 +53,7 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
+	searcherClient searchclient.SearchClient,
 	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
 	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
@@ -65,6 +72,7 @@ func NewRootResolver(
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
+		searcherClient:                 searcherClient,
 		uploadLoaderFactory:            uploadLoaderFactory,
 		indexLoaderFactory:             indexLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
@@ -191,6 +199,11 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
+type matchingOccurrence struct {
+	occurrence  *scip.Occurrence
+	displayName string
+}
+
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 	numPreciseResults := 0
@@ -219,6 +232,118 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
+
+		// Find matching uploads for the coordinates in the request
+		repo, err := r.repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: Resolve revision?
+		revision := "HEAD"
+		if args.Range.Revision != nil {
+			revision = *args.Range.Revision
+		}
+
+		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
+			RepositoryID:       int(repo.ID),
+			Commit:             revision,
+			Path:               args.Range.Path,
+			RootToPathMatching: shared.RootMustEnclosePath,
+			Indexer:            shared.SyntacticIndexer,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		if uploads == nil || len(uploads) == 0 {
+			// TODO: probably just return 0 results instead?
+			return nil, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
+		}
+
+		if len(uploads) != 1 {
+			// TODO: Is seeing multiple syntactic uploads an error?
+		}
+
+		syntacticUpload := uploads[0]
+
+		doc, err := r.svc.SCIPDocument(ctx, syntacticUpload.ID, args.Range.Path)
+
+		matchingOccurrences := make([]matchingOccurrence, 0)
+		for _, occurrence := range doc.GetOccurrences() {
+			occRange := occurrence.GetRange()
+			var startLine, endLine, startCharacter, endCharacter int32
+			if len(occRange) == 3 {
+				startLine = occRange[0]
+				startCharacter = occRange[1]
+				endLine = occRange[0]
+				endCharacter = occRange[2]
+			} else {
+				startLine = occRange[0]
+				startCharacter = occRange[1]
+				endLine = occRange[2]
+				endCharacter = occRange[3]
+			}
+
+			// TODO: shouldn't need exact match, just overlap is enough
+			if args.Range.Start.Line == startLine && args.Range.End.Line == endLine &&
+				args.Range.Start.Character == startCharacter && args.Range.End.Character == endCharacter {
+
+				for _, symbol := range doc.GetSymbols() {
+					fmt.Printf("Symbol: %s: %s == %s\n", symbol.DisplayName, symbol.Symbol, occurrence.Symbol)
+					if symbol.Symbol == occurrence.Symbol {
+						matchingOccurrences = append(matchingOccurrences, matchingOccurrence{
+							occurrence:  occurrence,
+							displayName: symbol.DisplayName,
+						})
+					}
+				}
+
+			}
+		}
+
+		if len(matchingOccurrences) == 0 {
+			return nil, fmt.Errorf("no matching occurrences found for range")
+		}
+
+		// TODO: Overlapping occurrences should lead to the same display name, but be scored separately.
+		// (Meaning we just need a single Searcher/Zoekt search)
+		matchingOccurrence := matchingOccurrences[0]
+
+		fmt.Printf("Matching occurrence: %+v\n", matchingOccurrence)
+
+		var contextLines int32 = 0
+		patternType := "standard"
+		repoName := fmt.Sprintf("^%s$", repo.Name)
+		identifier := matchingOccurrence.displayName
+		searchQuery := fmt.Sprintf("repo:%s rev:%s %s", repoName, revision, identifier)
+
+		fmt.Printf("Sending: query=%s\n", searchQuery)
+
+		plan, err := r.searcherClient.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
+		if err != nil {
+			return nil, err
+		}
+		stream := streaming.NewAggregatingStream()
+		_, err = r.searcherClient.Execute(ctx, stream, plan)
+		if err != nil {
+			return nil, err
+		}
+		for _, match := range stream.Results {
+			t, ok := match.(*result.FileMatch)
+			if !ok {
+				continue
+			}
+			fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
+			for _, line := range t.ChunkMatches.AsLineMatches() {
+				fmt.Printf("  %d:%d-%d:%d %s\n",
+					line.LineNumber, line.OffsetAndLengths[0][0],
+					line.LineNumber, line.OffsetAndLengths[0][0]+line.OffsetAndLengths[0][1],
+					line.Preview,
+				)
+			}
+		}
 		remainingCount = remainingCount - numSyntacticResults
 	}
 
