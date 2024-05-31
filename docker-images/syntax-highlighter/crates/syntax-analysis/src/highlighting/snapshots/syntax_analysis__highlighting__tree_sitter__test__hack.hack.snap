@@ -653,6 +653,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ Identifier
 //     ^ IdentifierOperator
 //       ^ NumericLiteral
+//         ^^^ Keyword
 //             ^^^ IdentifierBuiltinType
 //                ^ PunctuationDelimiter
     $a = 1 as int;
@@ -1444,9 +1445,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^^^^^^^^^^^^^ StringLiteral
 //                            ^^^^^ IdentifierBuiltin
 //                                 ^^ IdentifierOperator
+//                                   ^^^^^^^ Identifier
 //                                           ^^^^^^^^^^ StringLiteral
 //                                                      ^^^^^ IdentifierBuiltin
 //                                                           ^^ IdentifierOperator
+//                                                             ^^^^^ Identifier
 //                                                                   ^^ Tag
 //                                                                     ^^^^^^ Tag
 //                                                                           ^ IdentifierOperator
