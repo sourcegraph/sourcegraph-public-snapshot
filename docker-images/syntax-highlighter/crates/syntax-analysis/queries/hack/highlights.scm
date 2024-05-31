@@ -29,6 +29,7 @@
   "yield"
   "is"
   "as"
+  "?as"
   "super"
   "where"
   "list"
@@ -253,7 +254,6 @@
 
 (selection_expression
     (_)
-    selection_operator: (_) @operator
     (xhp_class_identifier) @variable)
 
 (qualified_identifier
