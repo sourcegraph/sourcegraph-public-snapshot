@@ -1,8 +1,5 @@
 <script lang="ts">
-    import { mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
-
-    import Icon2 from '$lib/Icon2.svelte'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2, { type IconPath } from '$lib/Icon2.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
     import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
@@ -16,10 +13,10 @@
 
     const SEARCH_JOB_THRESHOLD = 10000
 
-    const icons: Record<string, string> = {
-        info: mdiInformationOutline,
-        warning: mdiAlert,
-        error: mdiAlertCircle,
+    const icons: Record<string, IconPath> = {
+        info: ILucideInfo,
+        warning: ILucideTriangleAlert,
+        error: ILucideCircleAlert,
     }
 
     $: elapsedDuration = progress.durationMs
@@ -41,7 +38,7 @@
     {#if loading}
         <LoadingSpinner --size="16px" />
     {:else}
-        <Icon svgPath={icons[severity]} --icon-size="16px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+        <Icon2 icon={icons[severity]} --icon-size="16px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
     {/if}
 
     <div class="messages">

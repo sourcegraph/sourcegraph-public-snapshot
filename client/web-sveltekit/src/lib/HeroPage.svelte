@@ -1,15 +1,17 @@
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
+    import Icon2, { type IconPath } from '$lib/Icon2.svelte'
 
     export let title: string
-    export let svgIconPath: string = ''
+    export let svgIconPath: IconPath | undefined = undefined
 </script>
 
 <div class="root">
     {#if svgIconPath || $$slots.icon}
         <div class="icon-wrapper">
             <slot name="icon">
-                <Icon svgPath={svgIconPath} aria-hidden="true" inline --icon-inline-size="4rem" />
+                {#if svgIconPath}
+                    <Icon2 icon={svgIconPath} aria-hidden="true" inline --icon-inline-size="4rem" />
+                {/if}
             </slot>
         </div>
     {/if}

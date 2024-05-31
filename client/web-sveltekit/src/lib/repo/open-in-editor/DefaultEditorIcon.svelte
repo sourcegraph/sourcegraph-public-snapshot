@@ -1,6 +1,5 @@
 <script>
-    import { mdiApplicationEditOutline } from '@mdi/js'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
 </script>
 
-<Icon aria-hidden svgPath={mdiApplicationEditOutline} inline />
+<Icon2 aria-hidden icon={ILucideAppWindow} inline />
