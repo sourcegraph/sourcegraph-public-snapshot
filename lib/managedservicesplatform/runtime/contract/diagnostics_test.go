@@ -56,8 +56,7 @@ func TestJobExecutionCheckIn(t *testing.T) {
 			time.Sleep(100 * time.Millisecond) // emulate some work
 
 			if failed {
-				err := errors.New("failed")
-				done(err)
+				done(errors.New("failed"))
 			} else {
 				done(nil)
 			}
