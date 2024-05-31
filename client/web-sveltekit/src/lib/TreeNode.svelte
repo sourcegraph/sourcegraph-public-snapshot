@@ -126,9 +126,8 @@
 </li>
 
 <style lang="scss">
+    $leftPadding: 1.25rem;
     [role='treeitem'] {
-        --tree-node-left-padding: 1.25rem;
-
         border-radius: var(--border-radius);
 
         &[tabindex='0']:focus {
@@ -142,7 +141,7 @@
 
     .loading {
         // Indent with two rem since loading represents next nested level
-        margin-left: calc(var(--tree-node-nested-level) * 1.25rem + 1.15rem + var(--tree-node-left-padding));
+        margin-left: calc(var(--tree-node-nested-level) * 1.25rem + 1.15rem + #{$leftPadding});
         margin-top: 0.25rem;
     }
 
@@ -152,7 +151,7 @@
         gap: 0.25rem;
         align-items: center;
         padding-right: 0.25rem;
-        padding-left: calc(var(--tree-node-nested-level) * 1.25rem + var(--tree-node-left-padding));
+        padding-left: calc(var(--tree-node-nested-level) * 1.25rem + #{$leftPadding});
 
         // Change icon color based on selected item state
         --icon-fill-color: var(--tree-node-expand-icon-color);
@@ -196,10 +195,7 @@
             border-left: 1px solid var(--border-color);
             height: 100%;
             transform: translateX(
-                calc(
-                    var(--tree-node-nested-level) * 1.25rem + var(--tree-node-left-padding) + var(--icon-inline-size) /
-                        2 - 1px
-                )
+                calc(var(--tree-node-nested-level) * 1.25rem + #{$leftPadding} + var(--icon-inline-size) / 2 - 1px)
             );
             z-index: 1;
         }
