@@ -29,6 +29,7 @@ import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import type { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyProRoutes } from '../cody/codyProRoutes'
 import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
@@ -373,7 +374,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         <NavDropdown
             key="cody"
             toggleItem={{
-                path: isSourcegraphDotCom ? PageRoutes.CodyManagement : PageRoutes.Cody,
+                path: isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.Cody,
                 icon: () => <CodyLogoWrapper />,
                 content: 'Cody AI',
                 variant: navLinkVariant,
@@ -381,7 +382,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             routeMatch={routeMatch}
             items={[
                 {
-                    path: isSourcegraphDotCom ? PageRoutes.CodyManagement : PageRoutes.Cody,
+                    path: isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.Cody,
                     content: 'Dashboard',
                 },
                 {

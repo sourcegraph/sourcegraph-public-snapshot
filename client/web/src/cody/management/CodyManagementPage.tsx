@@ -31,7 +31,6 @@ import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -41,7 +40,6 @@ export enum EditorStep {
 }
 
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -96,7 +94,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
+    if (!isCodyEnabled() || !subscription) {
         return null
     }
 
