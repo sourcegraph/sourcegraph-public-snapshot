@@ -444,6 +444,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^ IdentifierOperator
 //      ^^ Identifier
 //        ^ PunctuationDelimiter
+      continue;
+//    ^^^^^^^^ Keyword
+//            ^ PunctuationDelimiter
     }
   
     try {
@@ -718,11 +721,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^ Tag
 //                                         ^^^^^^ Tag
 //                                               ^ IdentifierOperator
-//                                                 StringLiteral 153:48..155:4
+//                                                 StringLiteral 154:48..156:4
       Text in the markup
       <!-- this is a comment -->
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-//                               StringLiteral 155:30..156:0
+//                               StringLiteral 156:30..157:0
   </tt>;
 //^^ Tag
 //  ^^ Tag
@@ -899,7 +902,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   $s = <<< 'ID'
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^^^^^ StringLiteral 188:5..190:2
+//     ^^^^^^^^ StringLiteral 189:5..191:2
       $('a') abc $(function{return;})
   ID;
 //  ^ PunctuationDelimiter
@@ -909,7 +912,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   $s = <<<ID
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^^ StringLiteral 193:5..195:2
+//     ^^^^^ StringLiteral 194:5..196:2
    $('a') abc $(function{return;})
   ID;
 //  ^ PunctuationDelimiter

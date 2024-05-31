@@ -90,6 +90,7 @@ function main(): void {
 
   for (; $i <= 5; ) {
     ++$i;
+    continue;
   }
 
   try {
