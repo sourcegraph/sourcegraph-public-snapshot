@@ -235,22 +235,29 @@ func TestGetCodyGatewayAccessAttributes(t *testing.T) {
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			tc := tc
-			t.Parallel() // parallel per newTestDotcomReader
-			dotcomdb, dotcomreader := newTestDotcomReader(t)
+			t.Parallel()
 
+			dotcomdb, dotcomreader := newTestDotcomReader(t)
 			// First, set up a subscription and license and some other rubbish
 			// data to ensure we only get the license we want.
 			mock := setupDBAndInsertMockLicense(t, dotcomdb, tc.info, &tc.cgAccess)
 
 			t.Run("by subscription ID", func(t *testing.T) {
+				t.Parallel()
+
 				attr, err := dotcomreader.GetCodyGatewayAccessAttributesBySubscription(ctx, mock.targetSubscriptionID)
 				require.NoError(t, err)
 				validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
 			})
 
 			t.Run("by access token", func(t *testing.T) {
+				t.Parallel()
+
 				for i, token := range mock.accessTokens {
 					t.Run(fmt.Sprintf("token %d", i), func(t *testing.T) {
+						token := token
+						t.Parallel()
+
 						attr, err := dotcomreader.GetCodyGatewayAccessAttributesByAccessToken(ctx, token)
 						require.NoError(t, err)
 						validateAccessAttributes(t, dotcomdb, mock, attr, tc.info)
@@ -309,7 +316,7 @@ func validateAccessAttributes(t *testing.T, dotcomdb database.DB, mock mockedDat
 }
 
 func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
-	t.Parallel() // parallel per newTestDotcomReader
+	t.Parallel()
 	dotcomdb, dotcomreader := newTestDotcomReader(t)
 
 	info := license.Info{
@@ -337,7 +344,8 @@ func TestGetAllCodyGatewayAccessAttributes(t *testing.T) {
 }
 
 func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
-	t.Parallel() // parallel per newTestDotcomReader
+	t.Parallel()
+
 	db, dotcomreader := newTestDotcomReader(t)
 	info := license.Info{
 		ExpiresAt: time.Now().Add(30 * time.Minute),
@@ -435,6 +443,9 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		},
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
+			tc := tc
+			t.Parallel()
+
 			licenses, err := dotcomreader.ListEnterpriseSubscriptionLicenses(ctx, tc.filters, tc.pageSize)
 			require.NoError(t, err)
 			for _, l := range licenses {
