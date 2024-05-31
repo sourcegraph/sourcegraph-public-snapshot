@@ -117,6 +117,8 @@ func ExecuteJob[
 	err = job.Execute(ctx, log.Scoped("job"), ctr, *config)
 	done(err)
 
+	// Logging the error is handled by `done(err)` above, so here we just exit
+	// with an appropriate exit code.
 	if err != nil {
 		os.Exit(1)
 	}
