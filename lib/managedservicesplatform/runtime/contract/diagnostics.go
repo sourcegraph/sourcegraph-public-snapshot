@@ -225,7 +225,7 @@ func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool
 //	func work(ctx context.Context) (err error) {
 //		done, err := c.Diagnostics.JobExecutionCheckIn(ctx)
 //		if err != nil { /* failed to register check-in */ }
-//		defer done(err)
+//		defer done(&err)
 //
 //		// ... do work
 //	}
@@ -234,7 +234,7 @@ func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool
 // Various contract environment variables MUST be set for Sentry monitor check-ins
 // to be enabled, otherwise this method will only render log entries - required
 // variables are set by MSP infrastructure.
-func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err error), error) {
+func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, func(err *error), error) {
 	// All values must be set by MSP infrastructure
 	useSentryCronMonitor := c.useSentry() &&
 		c.cronSchedule != nil &&
@@ -253,17 +253,19 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 	start := time.Now()
 	logger.Info("job execution starting")
 
-	logCompletion := func(err error) {
+	logCompletion := func(err *error) {
 		d := log.Duration("duration", time.Since(start))
-		if err != nil {
-			logger.Error("job execution failed", log.Error(err), d)
+
+		// we have *error so we need to deref it to get the actual error
+		if pointers.Deref(err, nil) != nil {
+			logger.Error("job execution failed", log.Error(*err), d)
 		} else {
 			logger.Info("job execution succeeded", d)
 		}
 	}
 
 	if !useSentryCronMonitor {
-		return logCompletion, nil
+		return executionID, logCompletion, nil
 	}
 
 	// Set up Sentry client with some metadata, similar to sourcegraph/log
@@ -279,7 +281,7 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "initialize Sentry client from configured DSN")
+		return executionID, logCompletion, errors.Wrap(err, "initialize Sentry client from configured DSN")
 	}
 
 	monitor := fmt.Sprintf("%s-%s", c.internal.service.Name(), c.internal.environmentID)
@@ -315,11 +317,12 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (func(err 
 		},
 		monitorConfig,
 		scope)
-	return func(err error) {
+	return executionID, func(err *error) {
 		defer sentryClient.Flush(time.Second)
 
 		status := sentry.CheckInStatusOK
-		if err != nil {
+		// we have *error so we need to deref it to get the actual error
+		if pointers.Deref(err, nil) != nil {
 			status = sentry.CheckInStatusError
 		}
 		logCompletion(err)

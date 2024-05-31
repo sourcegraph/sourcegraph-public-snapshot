@@ -9,9 +9,10 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/stretchr/testify/assert"
 
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 )
@@ -49,13 +50,14 @@ func TestJobExecutionCheckIn(t *testing.T) {
 				Start(context.Background(), "test")
 			t.Cleanup(func() { span.End() })
 
-			done, err := c.JobExecutionCheckIn(ctx)
+			_, done, err := c.JobExecutionCheckIn(ctx)
 			assert.NoError(t, err)
 
 			time.Sleep(100 * time.Millisecond) // emulate some work
 
 			if failed {
-				done(errors.New("failed"))
+				err := errors.New("failed")
+				done(&err)
 			} else {
 				done(nil)
 			}
