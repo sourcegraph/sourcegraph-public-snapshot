@@ -253,7 +253,7 @@ func TestIsFlaggedRequest(t *testing.T) {
 			require.NoError(t, err)
 			require.True(t, result.IsFlagged())
 			require.Equal(t, 1, len(result.reasons))
-			assert.Equal(t, "model_used", result.reasons)
+			assert.Equal(t, "model_used", result.reasons[0])
 		})
 	})
 }
