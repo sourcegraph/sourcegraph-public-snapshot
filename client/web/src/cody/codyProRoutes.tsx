@@ -42,7 +42,9 @@ export const codyProRoutes: RouteObject[] = routes.map(path => ({
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
-            condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom}
+            condition={({ isSourcegraphDotCom, licenseFeatures }) =>
+                isSourcegraphDotCom && licenseFeatures.isCodyEnabled
+            }
         />
     ),
 }))
