@@ -211,15 +211,13 @@
     }
 
     .scroll-container {
-        padding-top: 1.25rem;
-        height: 100%;
-        background-color: var(--color-bg-1);
-        overflow-y: auto;
-        box-shadow: var(--sidebar-shadow);
-
         display: flex;
         flex-direction: column;
+        height: 100%;
         gap: 1.5rem;
+        overflow-y: auto;
+        padding-top: 1.25rem;
+        background-color: var(--color-bg-1);
 
         .header {
             display: flex;
