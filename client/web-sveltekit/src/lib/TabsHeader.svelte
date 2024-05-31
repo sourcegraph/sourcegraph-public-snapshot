@@ -1,15 +1,16 @@
 <script lang="ts" context="module">
+    import type { Keys } from '$lib/Hotkey'
+
     export interface Tab {
         id: string
         title: string
-        icon?: string
+        shortcut?: Keys
     }
 </script>
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
-
-    import Icon from '$lib/Icon.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte';
 
     export let id: string
     export let tabs: Tab[]
@@ -35,10 +36,14 @@
             role="tab"
             on:click={selectTab}
             data-tab
-            >{#if tab.icon}<Icon svgPath={tab.icon} aria-hidden inline /> {/if}<span data-tab-title={tab.title}
-                >{tab.title}</span
-            ><slot name="after-title" {tab} /></button
-        >
+            >
+                <span data-tab-title={tab.title}>
+                    {tab.title}
+                </span>
+            {#if tab.shortcut}
+                <KeyboardShortcut shorcut={tab.shortcut} />
+            {/if}
+        </button>
     {/each}
 </div>
 

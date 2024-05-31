@@ -7,13 +7,15 @@
         id: string
         selectedTabID: Readable<string | null>
         register(tab: Tab): Unsubscriber
+        getTabs: () => Tab[]
+        selectTab: (selectedTabIndex: number) => void
     }
 
     export const KEY = {}
 </script>
 
 <script lang="ts">
-    import { createEventDispatcher, setContext } from 'svelte'
+    import {createEventDispatcher, setContext} from 'svelte'
     import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
 
@@ -50,6 +52,11 @@
                 tabs.update(tabs => tabs.filter(existingTab => existingTab.id !== tab.id))
             }
         },
+        getTabs: () => $tabs,
+        selectTab: (index: number): void => {
+            $selectedTab = $selectedTab === index && toggable ? null : index
+            dispatch('select', $selectedTab)
+        }
     })
 
     function selectTab(event: { detail: number }) {
