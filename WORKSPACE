@@ -284,6 +284,7 @@ load("@aspect_rules_esbuild//esbuild:repositories.bzl", "esbuild_register_toolch
 
 esbuild_register_toolchains(
     name = "esbuild",
+    # Note, this differs from the version noted in package.json, however we've been inadvertently building with this version for some time now so we'll stick with it and revisit.
     esbuild_version = "0.19.2",
 )
 
