@@ -5,7 +5,7 @@ import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { parseExtendedSearchURL } from '..'
 import { SearchCachePolicy, setCachePolicyInURL } from '../state'
 
-export type SectionItem = Omit<Filter, 'count'> & {
+export type SectionItemData = Omit<Filter, 'count'> & {
     count?: Filter['count']
     selected: boolean
 }
@@ -91,7 +91,7 @@ export const typeFilterIcons: Record<string, string> = {
     Diffs: mdiPlusMinus,
 }
 
-export type FilterGroups = Record<Filter['kind'], SectionItem[]>
+export type FilterGroups = Record<Filter['kind'], SectionItemData[]>
 
 export function groupFilters(streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
     const groupedFilters: FilterGroups = {

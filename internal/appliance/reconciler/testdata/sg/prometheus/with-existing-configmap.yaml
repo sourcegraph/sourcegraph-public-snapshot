@@ -54,3 +54,6 @@ spec:
 
   prometheus:
     existingConfigMap: some-out-of-band-config
+
+  embeddings:
+    disabled: true

@@ -529,6 +529,9 @@ resources:
 
           prometheus:
             privileged: true
+
+          embeddings:
+            disabled: true
     kind: ConfigMap
     metadata:
       annotations:

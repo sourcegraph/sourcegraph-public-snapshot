@@ -94,6 +94,7 @@ func TestAllowSignup(t *testing.T) {
 
 				&hubspot.ContactProperties{
 					AnonymousUserID:            "anonymous-user-id-123",
+					FirstSourceURL:             "https://example.com/",
 					LastSourceURL:              "https://example.com/",
 					LastPageSeenShort:          "https://example.com/",
 					LastPageSeenMid:            "https://example.com/",

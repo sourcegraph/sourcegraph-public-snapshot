@@ -1,6 +1,7 @@
 package codycontext
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -104,7 +105,7 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			q, err := queryStringToKeywordQuery(tt.query)
+			q, err := parseQuery(tt.query)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -113,7 +114,39 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 			}
 
 			tt.wantPatterns.Equal(t, q.patterns)
-			tt.wantQuery.Equal(t, query.StringHuman(q.query.ToParseTree()))
+			tt.wantQuery.Equal(t, query.StringHuman(q.keywordQuery.ToParseTree()))
+		})
+	}
+}
+
+func TestFindSymbols(t *testing.T) {
+	tests := []struct {
+		name     string
+		patterns []string
+		want     []string
+	}{
+		{
+			name:     "simple patterns",
+			patterns: []string{"fooBar", "baz", "foo_bar"},
+			want:     []string{"fooBar", "foo_bar"},
+		},
+		{
+			name:     "dotted patterns",
+			patterns: []string{"foo.bar_baz", "baz_baz.quux", "foo.BarBaz", "end.start"},
+			want:     []string{"bar_baz", "baz_baz", "BarBaz"},
+		},
+		{
+			name:     "namespaced patterns",
+			patterns: []string{"ns::foo", "bar::baz", "baz_quux", "some->field", "other>field"},
+			want:     []string{"ns", "foo", "bar", "baz", "baz_quux", "some", "field"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findSymbols(tt.patterns); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findSymbols() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
