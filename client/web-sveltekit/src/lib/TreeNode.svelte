@@ -138,7 +138,7 @@
 
     .loading {
         // Indent with two rem since loading represents next nested level
-        margin-left: calc(var(--tree-node-nested-level) * #{$shiftWidth} + 2 * var(--icon-inline-size) + 2 *#{$gap});
+        margin-left: calc(var(--tree-node-nested-level) * #{$shiftWidth} + 2 * var(--icon-inline-size) + 2 * #{$gap});
         margin-top: 0.25rem;
     }
 
