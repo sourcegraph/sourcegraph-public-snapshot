@@ -178,13 +178,12 @@
     }
 
     a {
-        flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-        padding: 0.2rem 0.25rem 0.2rem 0;
         color: inherit;
         text-decoration: none;
+        width: 100%;
 
         &:hover {
             color: inherit;
