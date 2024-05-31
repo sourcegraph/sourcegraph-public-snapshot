@@ -34,3 +34,29 @@
 # Enable JS generation throughout client/*
 # gazelle:js enabled
 # gazelle:js_generation_mode none
+
+FILE_TYPES = [
+    ".json",
+    ".js",
+    ".ts",
+    ".tsx",
+    ".scss",
+    ".graphql",
+    ".md",
+    ".html",
+    ".css",
+    "Dockerfile",
+    ".sh",
+]
+
+genrule(
+    name = "web-build",
+    srcs = glob(["**/*" + file_type for file_type in FILE_TYPES]),
+    outs = ["assets.tar.gz"],
+    cmd = """
+tar -czh -C client . | docker build -t client -
+
+docker create --name client-container client
+
+docker cp client-container:/app/assets.tar.gz $@""",
+)
