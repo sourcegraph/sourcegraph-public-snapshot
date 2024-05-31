@@ -19,7 +19,7 @@ func syncServices(ctx context.Context, services []*types.ExternalService, newRat
 	for _, svc := range services {
 		limit, err := extsvc.ExtractEncryptableRateLimit(ctx, svc.Config, svc.Kind)
 		if err != nil {
-			if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
+			if errors.HasTypeGeneric[extsvc.ErrRateLimitUnsupported](err) {
 				continue
 			}
 			errs = errors.Append(errs, errors.Wrap(err, "getting rate limit configuration"))

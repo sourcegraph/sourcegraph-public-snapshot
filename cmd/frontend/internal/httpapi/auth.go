@@ -145,7 +145,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 
 			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, opts)
 			if err != nil {
-				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
+				if err == database.ErrAccessTokenNotFound || errors.HasTypeGeneric[database.InvalidTokenError](err) {
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
 					if !anonCookieSet {
 						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure

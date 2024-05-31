@@ -1647,7 +1647,7 @@ index e5af166..d44c3fc 100644
 
 			// Execute BatchSpec by creating execution jobs
 			_, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
-			if !errors.HasType(err, ErrBatchSpecResolutionErrored{}) {
+			if !errors.HasTypeGeneric[ErrBatchSpecResolutionErrored](err) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
 		})

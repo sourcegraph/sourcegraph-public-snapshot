@@ -191,7 +191,7 @@ type featureNotActivatedError struct{ errcode.PresentationError }
 // a feature (e.g., Enterprise Starter not including an Enterprise-only feature).
 func IsFeatureNotActivated(err error) bool {
 	// Also check for the pointer type to guard against stupid mistakes.
-	return errors.HasType(err, featureNotActivatedError{}) || errors.HasTypeGeneric[*featureNotActivatedError](err)
+	return errors.HasTypeGeneric[featureNotActivatedError](err) || errors.HasTypeGeneric[*featureNotActivatedError](err)
 }
 
 // IsFeatureEnabledLenient reports whether the current license enables the given
