@@ -14,6 +14,7 @@
 "function" @keyword.function
 
 (scope_identifier) @keyword
+(visibility_modifier) @keyword
 
 [
   "implements"
@@ -29,6 +30,7 @@
   "as"
   "super"
   "where"
+  "list"
 ] @keyword
 
 [
@@ -65,9 +67,19 @@
 
 "return" @keyword.return
 
+(new_expression
+  . (_) @type)
+
+(new_expression
+  (qualified_identifier
+    (identifier) @type))
+
 (scoped_identifier
   (qualified_identifier
     (identifier) @type))
+
+(xhp_class_attribute
+    name: (xhp_identifier) @variable)
 
 [
   (abstract_modifier)
@@ -76,6 +88,7 @@
   (visibility_modifier)
   (xhp_modifier)
   (inout_modifier)
+  (reify_modifier)
 ] @keyword.modifier
 
 
@@ -93,10 +106,13 @@
   "mixed"
   "dynamic"
   "noreturn"
+  "nothing"
 ] @type.builtin
 
 
 (shape_type_specifier (open_modifier)) @type.builtin
+
+(field_specifier (optional_modifier) @identifier.operator)
 
 (null) @constant.builtin
 
@@ -111,8 +127,6 @@
   (like_modifier)
 ] @operator
 
-(new_expression
-  (_) @type)
 
 (alias_declaration
   "newtype"
@@ -208,6 +222,8 @@
   "@"
   "?"
   "~"
+  "?->"
+  "->"
 ] @operator
 
 (integer) @number
@@ -230,10 +246,21 @@
     (qualified_identifier
       (identifier) @function.call .)))
 
+(selection_expression
+    (_)
+    selection_operator: (_) @operator
+    (xhp_class_identifier) @variable)
+
 (qualified_identifier
   (_) @variable.module
   .
   (_))
+
+; Explicitly handle internal since it is
+; not mentioned in grammar
+(qualified_identifier
+  . (identifier) @keyword  .
+  (#eq? @keyword "internal"))
 
 (namespace_declaration
     name:  (qualified_identifier (identifier) @variable.module))
