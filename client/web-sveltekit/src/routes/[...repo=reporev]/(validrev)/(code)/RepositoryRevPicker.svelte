@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
+    import { mdiClose, mdiSourceBranch, mdiSourceCommit } from '@mdi/js'
 
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'

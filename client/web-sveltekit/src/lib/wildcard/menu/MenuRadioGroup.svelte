@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { mdiCheck } from '@mdi/js'
     import type { Writable } from 'svelte/store'
 
     import Icon2 from '$lib/Icon2.svelte'
