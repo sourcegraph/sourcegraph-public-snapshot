@@ -57,19 +57,22 @@ func TestContext_Entries(t *testing.T) {
 			}
 			return io.NopCloser(bytes.NewReader(data)), nil
 		},
-		CacheGet: func(ctx context.Context, e fs.FileInfo) (Inventory, bool) {
+		CacheGet: func(ctx context.Context, cacheKey string) (Inventory, bool) {
 			mu.Lock()
 			defer mu.Unlock()
-			cacheGetCalls = append(cacheGetCalls, e.Name())
+			cacheGetCalls = append(cacheGetCalls, cacheKey)
 			return Inventory{}, false
 		},
-		CacheSet: func(ctx context.Context, e fs.FileInfo, inv Inventory) {
+		CacheSet: func(ctx context.Context, cacheKey string, inv Inventory) {
 			mu.Lock()
 			defer mu.Unlock()
-			if _, ok := cacheSetCalls[e.Name()]; ok {
-				t.Fatalf("already stored %q in cache", e.Name())
+			if _, ok := cacheSetCalls[cacheKey]; ok {
+				t.Fatalf("already stored %q in cache", cacheKey)
 			}
-			cacheSetCalls[e.Name()] = inv
+			cacheSetCalls[cacheKey] = inv
+		},
+		CacheKey: func(e fs.FileInfo) string {
+			return e.Name()
 		},
 	}
 
