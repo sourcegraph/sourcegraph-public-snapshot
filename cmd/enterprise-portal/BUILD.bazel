@@ -7,6 +7,7 @@ go_library(
     name = "enterprise-portal_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/enterprise-portal/service",
@@ -17,6 +18,7 @@ go_library(
 go_binary(
     name = "enterprise-portal",
     embed = [":enterprise-portal_lib"],
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
 )
 
@@ -50,6 +52,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_CORESERVICES,
         "exclusive",
         "requires-network",
     ],

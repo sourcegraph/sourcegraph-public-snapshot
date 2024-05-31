@@ -1,0 +1,70 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "syntactic_indexing",
+    srcs = [
+        "enqueuer.go",
+        "scheduler.go",
+        "scheduler_config.go",
+        "scheduler_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeintel",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/codeintel/autoindexing",
+        "//internal/codeintel/policies",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/reposcheduler",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/syntactic_indexing/internal",
+        "//internal/codeintel/syntactic_indexing/jobstore",
+        "//internal/codeintel/uploads",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//internal/memo",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "syntactic_indexing_test",
+    srcs = [
+        "enqueuer_test.go",
+        "scheduler_test.go",
+    ],
+    embed = [":syntactic_indexing"],
+    tags = [
+        TAG_PLATFORM_GRAPH,
+        "requires-network",
+    ],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/policies",
+        "//internal/codeintel/reposcheduler",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/syntactic_indexing/internal/testutils",
+        "//internal/codeintel/syntactic_indexing/jobstore",
+        "//internal/codeintel/uploads",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_stretchr_testify//require",
+    ],
+)

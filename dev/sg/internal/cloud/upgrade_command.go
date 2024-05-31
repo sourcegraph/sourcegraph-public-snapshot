@@ -37,7 +37,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	}
 
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		"", // we don't need a license during upgrade
 	)

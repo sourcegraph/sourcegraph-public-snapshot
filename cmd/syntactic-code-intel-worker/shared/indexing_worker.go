@@ -38,6 +38,6 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 	logger.Info("Stub indexing worker handling record",
 		log.Int("id", record.ID),
 		log.String("repository name", record.RepositoryName),
-		log.String("commit", record.Commit))
+		log.String("commit", string(record.Commit)))
 	return nil
 }

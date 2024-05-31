@@ -17,6 +17,7 @@ go_library(
         "prometheus/default.yml.gotmpl",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -30,5 +31,6 @@ go_test(
     name = "config_test",
     srcs = ["dev_mode_test.go"],
     embed = [":config"],
+    tags = [TAG_INFRA_RELEASE],
     deps = ["@com_github_stretchr_testify//assert"],
 )
