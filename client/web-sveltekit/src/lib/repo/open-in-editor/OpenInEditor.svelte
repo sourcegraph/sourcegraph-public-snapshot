@@ -101,7 +101,7 @@
 {:else if editorSettingsErrorMessage}
     <Popover let:registerTrigger let:toggle placement="left-start">
         <Tooltip tooltip="Set your preferred editor">
-            <span use:registerTrigger on:click={() => toggle()}>
+            <span class="default-editor" use:registerTrigger on:click={() => toggle()}>
                 <DefaultEditorIcon />
                 <span data-action-label> Editor </span>
             </span>
@@ -171,6 +171,13 @@
         &:hover {
             color: var(--text-title);
         }
+    }
+
+    .default-editor {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
     }
 
     .open-in-editor-popover {

@@ -43,7 +43,7 @@
         { path: '/-/commits', icon: ILucideGitCommitVertical, label: 'Commits', visibility: 'user' },
         { path: '/-/branches', icon: ILucideGitBranch, label: 'Branches', visibility: 'user' },
         { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
-        { path: '/-/stats/contributors', icon: ILucideUser, label: 'Contributors', visibility: 'user' },
+        { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
         { path: '/-/compare', icon: ILucideHistory, label: 'Compare', visibility: 'user' },

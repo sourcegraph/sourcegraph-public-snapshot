@@ -2,13 +2,14 @@
     import { getContext, onDestroy } from 'svelte'
     import * as uuid from 'uuid'
 
+    import type { IconPath } from './Icon2.svelte'
     import { type TabsContext, KEY } from './Tabs.svelte'
 
     export let title: string
     /**
      * SVG path for the icon to display in the tab header.
      */
-    export let icon: string | undefined = undefined
+    export let icon: IconPath | undefined = undefined
 
     const context = getContext<TabsContext>(KEY)
     const id = uuid.v4()

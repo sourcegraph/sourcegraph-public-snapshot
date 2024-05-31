@@ -27,7 +27,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -188,7 +187,11 @@
                         on:click={toggleFileSidePanel}
                         aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                     >
-                        <Icon2 icon={!isCollapsed ? ILucideChevronsLeft : ILucideChevronsRight} inline />
+                        <Icon2
+                            icon={!isCollapsed ? ILucidePanelLeftClose : ILucidePanelLeftOpen}
+                            inline
+                            --icon-fill-color="var(--text-muted)"
+                        />
                     </Button>
 
                     <RepositoryRevPicker
@@ -263,7 +266,7 @@
             >
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                        <TabPanel title="History" icon={mdiHistory}>
+                        <TabPanel title="History" icon={ILucideHistory}>
                             {#key $page.params.path}
                                 <HistoryPanel
                                     bind:this={historyPanel}
@@ -275,7 +278,7 @@
                                 />
                             {/key}
                         </TabPanel>
-                        <TabPanel title="References" icon={mdiListBoxOutline}>
+                        <TabPanel title="References" icon={ILucideList}>
                             <ReferencePanel
                                 connection={references}
                                 loading={referencesLoading}
