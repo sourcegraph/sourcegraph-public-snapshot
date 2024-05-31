@@ -270,9 +270,9 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "46aab76044f040c1c0bd97672d56324619af4913cb9e96606ec37ddd4605831d",
-    strip_prefix = "rules_esbuild-0.16.0",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.16.0/rules_esbuild-v0.16.0.tar.gz",
+    sha256 = "82e6fa940760412eedfa0c4e3918c68424cf0432840de4bcc476d0b9869ff7b5",
+    strip_prefix = "rules_esbuild-0.20.1",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.20.1/rules_esbuild-v0.20.1.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
