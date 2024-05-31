@@ -69,7 +69,7 @@ func TestGitCLIBackend_ReadFile(t *testing.T) {
 	t.Run("non existent commit", func(t *testing.T) {
 		_, err := backend.ReadFile(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "file1")
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("special file paths", func(t *testing.T) {
@@ -195,7 +195,7 @@ func TestGitCLIBackend_GetCommit(t *testing.T) {
 	t.Run("non existent commit", func(t *testing.T) {
 		_, err := backend.GetCommit(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", false)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	// This test only exists because we sometimes pass non-commit ID strings to the
@@ -204,7 +204,7 @@ func TestGitCLIBackend_GetCommit(t *testing.T) {
 	t.Run("bad revision", func(t *testing.T) {
 		_, err := backend.GetCommit(ctx, "nonexisting", false)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	// This test only exists because we sometimes pass non-commit ID strings to the
@@ -214,7 +214,7 @@ func TestGitCLIBackend_GetCommit(t *testing.T) {
 		backend := BackendWithRepoCommands(t)
 		_, err := backend.GetCommit(ctx, "HEAD", false)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("read commit", func(t *testing.T) {
@@ -518,7 +518,7 @@ func TestGitCLIBackend_Stat(t *testing.T) {
 	t.Run("non existent commit", func(t *testing.T) {
 		_, err := backend.Stat(ctx, "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "file1")
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("stat root", func(t *testing.T) {
@@ -745,13 +745,13 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		t.Cleanup(func() { it.Close() })
 		_, err = it.Next()
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		// Read no entries:
 		it, err = backend.ReadDir(ctx, "notfound", "nested", false)
 		require.NoError(t, err)
 		err = it.Close()
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("non existent commit", func(t *testing.T) {
@@ -761,7 +761,7 @@ func TestGitCLIBackend_ReadDir(t *testing.T) {
 		_, err = it.Next()
 		require.Error(t, err)
 
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("read root", func(t *testing.T) {

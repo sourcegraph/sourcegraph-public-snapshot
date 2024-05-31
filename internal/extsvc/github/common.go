@@ -1658,7 +1658,7 @@ func (e OrgNotFoundError) NotFound() bool { return true }
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if errors.HasTypeGeneric[*RepoNotFoundError](err) || errors.HasTypeGeneric[*OrgNotFoundError](err) || errors.HasTypeGeneric[ErrPullRequestNotFound](err) ||
+	if errors.HasType[*RepoNotFoundError](err) || errors.HasType[*OrgNotFoundError](err) || errors.HasType[ErrPullRequestNotFound](err) ||
 		HTTPErrorCode(err) == http.StatusNotFound {
 		return true
 	}

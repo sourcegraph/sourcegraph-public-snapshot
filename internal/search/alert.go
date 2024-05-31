@@ -84,7 +84,7 @@ func (q *QueryDescription) QueryString() string {
 
 // AlertForQuery converts errors in the query to search alerts.
 func AlertForQuery(queryString string, err error) *Alert {
-	if errors.HasTypeGeneric[*query.ExpectedOperand](err) {
+	if errors.HasType[*query.ExpectedOperand](err) {
 		return &Alert{
 			PrometheusType: "unsupported_and_or_query",
 			Title:          "Unable To Process Query",

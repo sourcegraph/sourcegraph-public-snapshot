@@ -73,7 +73,7 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 	// We start by reading the first message to early-exit on potential errors.
 	firstResp, firstRespErr := cc.Recv()
 	if firstRespErr != nil {
-		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](firstRespErr) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](firstRespErr) {
 			cancel()
 			err = firstRespErr
 			endObservation(1, observation.Args{})
@@ -667,10 +667,10 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	})
 	if err != nil {
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
-		if errors.HasTypeGeneric[*gitdomain.RepoNotExistError](err) {
+		if errors.HasType[*gitdomain.RepoNotExistError](err) {
 			return "", "", nil
 		}
-		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			return "", "", nil
 		}
 		return "", "", err
@@ -791,7 +791,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName
 				}
 			}
 		}
-		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](firstRespErr) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](firstRespErr) {
 			cancel()
 			err = firstRespErr
 			endObservation(1, observation.Args{})
@@ -1294,7 +1294,7 @@ func (c *clientImplementor) ArchiveReader(ctx context.Context, repo api.RepoName
 	// ie. revision not found errors or invalid git command.
 	firstMessage, firstErr := cli.Recv()
 	if firstErr != nil {
-		if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](firstErr) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](firstErr) {
 			cancel()
 			err = firstErr
 			endObservation(1, observation.Args{})

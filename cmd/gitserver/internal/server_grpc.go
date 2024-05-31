@@ -1077,7 +1077,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	if err != nil {
 		// If that fails to resolve the revspec, try to ensure the revision exists,
 		// if requested by the caller.
-		if req.GetEnsureRevision() && errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+		if req.GetEnsureRevision() && errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			// We ensured the revision exists, so try to resolve it again.
 			if gs.svc.EnsureRevision(ctx, repoName, revspec) {
 				sha, err = backend.ResolveRevision(ctx, revspec)

@@ -151,5 +151,5 @@ func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) e
 }
 
 func isRequestError(err error) bool {
-	return errors.HasTypeGeneric[*smithyhttp.RequestSendError](err)
+	return errors.HasType[*smithyhttp.RequestSendError](err)
 }

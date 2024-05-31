@@ -271,7 +271,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 		commit, err := h.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(upload.Commit))
 		if err != nil {
-			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				return errCommitDoesNotExist
 			}
 			return errors.Wrap(err, "failed to determine commit date")
@@ -415,7 +415,7 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 	}
 
 	var reason string
-	if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+	if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 		reason = "commit not found"
 	} else if gitdomain.IsCloneInProgress(err) {
 		reason = "repository still cloning"

@@ -299,7 +299,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 	commit, err := wr.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 		EnsureRevision: false,
 	})
-	if err != nil && errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+	if err != nil && errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 		return nil, errors.Newf("no branch matching %q found for repository %s", branch, name)
 	}
 

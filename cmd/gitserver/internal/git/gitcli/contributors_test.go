@@ -142,25 +142,25 @@ func TestGitCLIBackend_ContributorCounts(t *testing.T) {
 			Range: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", // Invalid OID
 		})
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		_, err = backend.ContributorCounts(ctx, git.ContributorCountsOpts{
 			Range: "unknownbranch", // Invalid ref
 		})
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		_, err = backend.ContributorCounts(ctx, git.ContributorCountsOpts{
 			Range: "unknownbranch..HEAD", // Invalid left hand of range
 		})
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		_, err = backend.ContributorCounts(ctx, git.ContributorCountsOpts{
 			Range: "HEAD..unknownbranch", // Invalid right hand of range
 		})
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 

@@ -94,11 +94,11 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 
 		_, err := backend.RawDiff(ctx, "unknown", "test", git.GitDiffComparisonTypeOnlyInHead)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		_, err = backend.RawDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 	t.Run("files outside repository", func(t *testing.T) {
 		// We use git-diff-tree, but with git-diff you can diff any files on disk
@@ -250,7 +250,7 @@ func TestGitCLIBackend_ChangedFiles(t *testing.T) {
 
 		_, err := backend.ChangedFiles(ctx, "invalid", "HEAD")
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("invalid head", func(t *testing.T) {
@@ -264,7 +264,7 @@ func TestGitCLIBackend_ChangedFiles(t *testing.T) {
 
 		_, err := backend.ChangedFiles(ctx, "testbase", "invalid")
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("empty base and single commit", func(t *testing.T) {

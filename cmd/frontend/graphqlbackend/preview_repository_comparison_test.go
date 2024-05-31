@@ -110,7 +110,7 @@ index 9bd8209..d2acfa9 100644
 		if err == nil {
 			t.Fatal("unexpected empty err")
 		}
-		if !errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+		if !errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			t.Fatalf("incorrect err returned %T", err)
 		}
 	})

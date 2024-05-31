@@ -217,7 +217,7 @@ func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
 
 func mustRegisterOnce(c prometheus.Collector) {
 	err := registerer.Register(c)
-	if err != nil && !errors.HasTypeGeneric[prometheus.AlreadyRegisteredError](err) {
+	if err != nil && !errors.HasType[prometheus.AlreadyRegisteredError](err) {
 		panic(err)
 	}
 }

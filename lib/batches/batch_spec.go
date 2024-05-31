@@ -206,7 +206,7 @@ func (e BatchSpecValidationError) Error() string {
 }
 
 func IsValidationError(err error) bool {
-	return errors.HasTypeGeneric[*BatchSpecValidationError](err)
+	return errors.HasType[*BatchSpecValidationError](err)
 }
 
 // SkippedStepsForRepo calculates the steps required to run on the given repo.

@@ -1647,7 +1647,7 @@ index e5af166..d44c3fc 100644
 
 			// Execute BatchSpec by creating execution jobs
 			_, err := svc.ExecuteBatchSpec(adminCtx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
-			if !errors.HasTypeGeneric[ErrBatchSpecResolutionErrored](err) {
+			if !errors.HasType[ErrBatchSpecResolutionErrored](err) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
 		})
@@ -3412,7 +3412,7 @@ func assertAuthError(t *testing.T, err error) {
 	if err == nil {
 		t.Fatalf("expected error. got none")
 	}
-	if !errors.HasTypeGeneric[*auth.InsufficientAuthorizationError](err) {
+	if !errors.HasType[*auth.InsufficientAuthorizationError](err) {
 		t.Fatalf("wrong error: %s (%T)", err, err)
 	}
 }
@@ -3424,7 +3424,7 @@ func assertOrgOrAuthError(t *testing.T, err error) {
 		t.Fatal("expected org authorization error, got none")
 	}
 
-	if !errors.Is(err, auth.ErrNotAnOrgMember) && !errors.HasTypeGeneric[*auth.InsufficientAuthorizationError](err) {
+	if !errors.Is(err, auth.ErrNotAnOrgMember) && !errors.HasType[*auth.InsufficientAuthorizationError](err) {
 		t.Fatalf("expected authorization error, got %s", err.Error())
 	}
 }
@@ -3433,7 +3433,7 @@ func assertNoAuthError(t *testing.T, err error) {
 	t.Helper()
 
 	// Ignore other errors, we only want to check whether it's an auth error
-	if errors.HasTypeGeneric[*auth.InsufficientAuthorizationError](err) || errors.Is(err, auth.ErrNotAnOrgMember) {
+	if errors.HasType[*auth.InsufficientAuthorizationError](err) || errors.Is(err, auth.ErrNotAnOrgMember) {
 		t.Fatalf("got auth error")
 	}
 }

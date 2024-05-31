@@ -62,7 +62,6 @@ var (
 	// concrete type but with different data.
 	Is        = errors.Is
 	IsAny     = errors.IsAny
-	HasType   = errors.HasType
 	Cause     = errors.Cause
 	Unwrap    = errors.Unwrap
 	UnwrapAll = errors.UnwrapAll
@@ -109,9 +108,15 @@ func AsInterface[I any](err error, target *I) bool {
 	return errors.As(err, target)
 }
 
-func HasTypeGeneric[T error](err error) bool {
+// HasType checks if the error tree err has a node of type T.
+//
+// At the moment, the cockroachdb/errors package's implementation
+// of HasType does not correctly handle multi-errors, whereas As does,
+// so we implement HasType via As.
+// (See https://github.com/cockroachdb/errors/issues/145)
+func HasType[T error](err error) bool {
 	var zero T
-	return errors.As(err, &zero)
+	return As(err, &zero)
 }
 
 // Extend multiError to work with cockroachdb errors. Implement here to keep imports in

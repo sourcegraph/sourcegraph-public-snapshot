@@ -52,7 +52,7 @@ func getUserToInviteToOrganization(ctx context.Context, db database.DB, username
 
 	if _, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
 		return nil, "", errors.New("user is already a member of the organization")
-	} else if !errors.HasTypeGeneric[*database.ErrOrgMemberNotFound](err) {
+	} else if !errors.HasType[*database.ErrOrgMemberNotFound](err) {
 		return nil, "", err
 	}
 	return userToInvite, userEmailAddress, nil

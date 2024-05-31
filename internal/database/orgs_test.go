@@ -129,7 +129,7 @@ func TestOrgs_Delete(t *testing.T) {
 
 	// Org no longer exists.
 	_, err = db.Orgs().GetByID(ctx, org.ID)
-	if !errors.HasTypeGeneric[*OrgNotFoundError](err) {
+	if !errors.HasType[*OrgNotFoundError](err) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 	orgs, err := db.Orgs().List(ctx, &OrgsListOptions{Query: "a"})
@@ -142,7 +142,7 @@ func TestOrgs_Delete(t *testing.T) {
 
 	// Can't delete already-deleted org.
 	err = db.Orgs().Delete(ctx, org.ID)
-	if !errors.HasTypeGeneric[*OrgNotFoundError](err) {
+	if !errors.HasType[*OrgNotFoundError](err) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 }
@@ -164,7 +164,7 @@ func TestOrgs_HardDelete(t *testing.T) {
 
 	// Org no longer exists.
 	_, err = db.Orgs().GetByID(ctx, org.ID)
-	if !errors.HasTypeGeneric[*OrgNotFoundError](err) {
+	if !errors.HasType[*OrgNotFoundError](err) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 
@@ -176,7 +176,7 @@ func TestOrgs_HardDelete(t *testing.T) {
 
 	// Cannot hard delete an org that doesn't exist.
 	err = db.Orgs().HardDelete(ctx, org.ID)
-	if !errors.HasTypeGeneric[*OrgNotFoundError](err) {
+	if !errors.HasType[*OrgNotFoundError](err) {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
 

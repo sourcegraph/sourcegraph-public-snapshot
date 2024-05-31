@@ -155,13 +155,13 @@ func TestGitCLIBackend_ArchiveReader(t *testing.T) {
 	t.Run("non existent commit", func(t *testing.T) {
 		_, err := backend.ArchiveReader(ctx, "tar", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", nil)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	t.Run("non existent ref", func(t *testing.T) {
 		_, err := backend.ArchiveReader(ctx, "tar", "head-2", nil)
 		require.Error(t, err)
-		require.True(t, errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 
 	// Verify that if the context is canceled, the reader returns an error.

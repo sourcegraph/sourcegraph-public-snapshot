@@ -61,7 +61,7 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 	// For GlobalLimiter instances, we return a special error type for BlockAll,
 	// since we don't want to make two preflight redis calls to check limit and burst
 	// above. We map it back to ErrBlockAll here then.
-	if err != nil && errors.HasTypeGeneric[AllBlockedError](err) {
+	if err != nil && errors.HasType[AllBlockedError](err) {
 		return ErrBlockAll
 	}
 	d := time.Since(start)

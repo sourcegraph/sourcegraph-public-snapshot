@@ -514,7 +514,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 func SyncChangeset(ctx context.Context, syncStore SyncStore, client gitserver.Client, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
 	repoChangeset := &sources.Changeset{TargetRepo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
-		if !errors.HasTypeGeneric[sources.ChangesetNotFoundError](err) {
+		if !errors.HasType[sources.ChangesetNotFoundError](err) {
 			// Store the error as the syncer error.
 			errMsg := err.Error()
 			c.SyncErrorMessage = &errMsg

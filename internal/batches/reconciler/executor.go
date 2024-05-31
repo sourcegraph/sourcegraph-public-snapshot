@@ -330,7 +330,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (afterDon
 
 func (e *executor) syncChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
-		if !errors.HasTypeGeneric[sources.ChangesetNotFoundError](err) {
+		if !errors.HasType[sources.ChangesetNotFoundError](err) {
 			return err
 		}
 

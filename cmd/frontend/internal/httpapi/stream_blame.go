@@ -41,9 +41,9 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 
 		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
 		if err != nil {
-			if errors.HasTypeGeneric[*gitdomain.RevisionNotFoundError](err) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				w.WriteHeader(http.StatusNotFound)
-			} else if errors.HasTypeGeneric[*gitserver.RepoNotCloneableErr](err) && errcode.IsNotFound(err) {
+			} else if errors.HasType[*gitserver.RepoNotCloneableErr](err) && errcode.IsNotFound(err) {
 				w.WriteHeader(http.StatusNotFound)
 			} else if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				w.WriteHeader(http.StatusNotFound)
