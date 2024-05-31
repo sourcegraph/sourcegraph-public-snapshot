@@ -172,7 +172,7 @@ const completionPlugin = ViewPlugin.fromClass(
                 query
                     .fetch()
                     .then(result => this.view.dispatch({ effects: updateResultEffect.of({ query, result }) }))
-                    .catch(() => {})
+                    .catch(() => { })
                 this.timer = window.setTimeout(() => {
                     this.timer = null
                     if (this.next) {
@@ -253,7 +253,7 @@ enum QueryState {
  *
  * Because objects are always unique we can use them as IDs.
  */
-interface CompletionID {}
+interface CompletionID { }
 
 /**
  * Wrapper around the configered sources. Keeps track of the state and results.
@@ -264,7 +264,7 @@ class Query {
         public readonly state: QueryState,
         public readonly result: Result,
         private readonly completionID: CompletionID
-    ) {}
+    ) { }
 
     public update(transaction: Transaction): Query {
         // Aliasing this makes it easier to create new instances based on all
@@ -393,7 +393,7 @@ export function combineResults(results: (SuggestionResult | null)[]): Suggestion
  * Main suggestions state. Mangages of data source and selected option.
  */
 class SuggestionsState {
-    constructor(public readonly query: Query, public readonly open: boolean, public readonly selectedOption: number) {}
+    constructor(public readonly query: Query, public readonly open: boolean, public readonly selectedOption: number) { }
 
     public update(transaction: Transaction): SuggestionsState {
         // Aliasing makes it easier to update the state

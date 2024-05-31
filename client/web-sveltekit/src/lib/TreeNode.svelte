@@ -8,9 +8,8 @@
 
 <script lang="ts" generics="T">
     import { createEventDispatcher, getContext, setContext } from 'svelte'
-    import { mdiChevronDown, mdiChevronRight, mdiImageFilterCenterFocusStrong } from '@mdi/js'
 
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { Button } from '$lib/wildcard'
 
     import LoadingSpinner from './LoadingSpinner.svelte'
@@ -84,7 +83,7 @@
         <span class="expandable-icon-container" class:hidden={!expandable}>
             <span class="scope-container">
                 <Button variant="icon" on:click={handleScopeChange}>
-                    <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
+                    <Icon2 icon={ILucideFocus} inline />
                 </Button>
             </span>
 
@@ -99,7 +98,7 @@
                 }}
                 tabindex={-1}
             >
-                <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
+                <Icon2 icon={expanded ? ILucideChevronDown : ILucideChevronRight} inline />
             </Button>
         </span>
         <slot {entry} {expanded} toggle={toggleOpen} />
