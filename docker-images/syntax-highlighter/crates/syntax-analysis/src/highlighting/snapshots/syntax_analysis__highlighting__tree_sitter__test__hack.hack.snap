@@ -43,8 +43,37 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^ Keyword
 //    ^ Identifier
 //     ^ PunctuationDelimiter
-  
-  // NOTE: Tree-sitter grammar seems to not support module
+
+  // File includes
+//^^^^^^^^^^^^^^^^ Comment
+  require_once(__DIR__.'/file.hack');
+//^^^^^^^^^^^^ Keyword
+//             ^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^^^^^ StringLiteral
+//                                  ^ PunctuationDelimiter
+  require(__DIR__.'/file.hack');
+//^^^^^^^ Keyword
+//        ^^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                ^^^^^^^^^^^^ StringLiteral
+//                             ^ PunctuationDelimiter
+  include(__DIR__.'/file.hack');
+//^^^^^^^ Keyword
+//        ^^^^^^^ Identifier
+//               ^ IdentifierOperator
+//                ^^^^^^^^^^^^ StringLiteral
+//                             ^ PunctuationDelimiter
+  include_once(__DIR__.'/file.hack');
+//^^^^^^^^^^^^ Keyword
+//             ^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^^^^^ StringLiteral
+//                                  ^ PunctuationDelimiter
+
+  // NOTE: Hack tree-sitter grammar doest not support module
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  // https://github.com/slackhq/tree-sitter-hack/issues/70
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   module foo.bar.baz;
 //^^^^^^ Identifier
@@ -54,7 +83,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^ IdentifierOperator
 //               ^^^ Identifier
 //                  ^ PunctuationDelimiter
-  
+
   namespace Hack\Example\namespace {
 //^^^^^^^^^ Keyword
 //          ^^^^ IdentifierNamespace
@@ -62,7 +91,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^^^^^^^ IdentifierNamespace
 //                      ^ PunctuationDelimiter
 //                       ^^^^^^^^^ IdentifierNamespace
-  
+
       // Functions
 //    ^^^^^^^^^^^^ Comment
       function f(dynamic $d): void {}
@@ -79,9 +108,41 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                        ^^ IdentifierParameter
 //                           ^ PunctuationDelimiter
 //                             ^^^^ IdentifierBuiltinType
-  
-      // Shape constructor
-//    ^^^^^^^^^^^^^^^^^^^^ Comment
+      function h(num $a = 1): void {}
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^ IdentifierType
+//                   ^^ IdentifierParameter
+//                      ^ IdentifierOperator
+//                        ^ NumericLiteral
+//                          ^ PunctuationDelimiter
+//                            ^^^^ IdentifierBuiltinType
+
+      // Shapes
+//    ^^^^^^^^^ Comment
+      type Shape1 = shape('name' => string, ?'age' => int);
+//    ^^^^ Keyword
+//         ^^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                  ^^^^^ IdentifierBuiltinType
+//                        ^^^^^^ StringLiteral
+//                               ^^ IdentifierOperator
+//                                  ^^^^^^ IdentifierType
+//                                        ^ PunctuationDelimiter
+//                                          ^ IdentifierOperator
+//                                           ^^^^^ StringLiteral
+//                                                 ^^ IdentifierOperator
+//                                                    ^^^ IdentifierType
+//                                                        ^ PunctuationDelimiter
+      type Shape2 = shape('age' => int);
+//    ^^^^ Keyword
+//         ^^^^^^ IdentifierType
+//                ^ IdentifierOperator
+//                  ^^^^^ IdentifierBuiltinType
+//                        ^^^^^ StringLiteral
+//                              ^^ IdentifierOperator
+//                                 ^^^ IdentifierType
+//                                     ^ PunctuationDelimiter
       function foo(int $arg): shape(...){
 //    ^^^^^^^^ Keyword
 //             ^^^ IdentifierFunction
@@ -90,16 +151,43 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                          ^ PunctuationDelimiter
 //                            ^^^^^ IdentifierBuiltinType
 //                                  ^^^ IdentifierBuiltinType
-      return shape();
+
+      $a = shape();
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ IdentifierBuiltinType
+//                ^ PunctuationDelimiter
+      $a = shape('name' => 'db-01', 'age' => 365);
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^ IdentifierBuiltinType
+//               ^^^^^^ StringLiteral
+//                      ^^ IdentifierOperator
+//                         ^^^^^^^ StringLiteral
+//                                ^ PunctuationDelimiter
+//                                  ^^^^^ StringLiteral
+//                                        ^^ IdentifierOperator
+//                                           ^^^ NumericLiteral
+//                                               ^ PunctuationDelimiter
+      return $a;
 //    ^^^^^^ Keyword
-//           ^^^^^ IdentifierBuiltinType
-//                  ^ PunctuationDelimiter
+//           ^^ Identifier
+//             ^ PunctuationDelimiter
       }
   }
-  
-  
+
+  // Constants
+//^^^^^^^^^^^^ Comment
+  const int MAX_COUNT = 123;
+//^^^^^ Keyword
+//      ^^^ IdentifierBuiltinType
+//          ^^^^^^^^^ Identifier
+//                    ^ IdentifierOperator
+//                      ^^^ NumericLiteral
+//                         ^ PunctuationDelimiter
+
   /**
-//^^^ Comment 23:0..25:3
+//^^^ Comment 38:0..40:3
    * A doc comment starts with two asterisks.
    */
   function swap<T>(inout T $i1, inout T $i2): void {
@@ -122,7 +210,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^ IdentifierOperator
 //          ^^^ Identifier
 //             ^ PunctuationDelimiter
-  
+
     // Anonymous functions
 //  ^^^^^^^^^^^^^^^^^^^^^^ Comment
     $f = function($x) { return $x + 1; };
@@ -171,7 +259,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                              ^ NumericLiteral
 //                               ^ PunctuationDelimiter
   }
-  
+
   // Generators
 //^^^^^^^^^^^^^ Comment
   function squares(
@@ -228,7 +316,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     }
   }
-  
+
   <<__EntryPoint>>
 //^^ IdentifierOperator
 //  ^^^^^^^^^^^^ Identifier
@@ -256,6 +344,32 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^ IdentifierOperator
 //              ^^^^^ StringLiteral
 //                   ^ PunctuationDelimiter
+
+    // Built-ins
+//  ^^^^^^^^^^^^ Comment
+    $keyedcontainer = dict[];
+//  ^^^^^^^^^^^^^^^ Identifier
+//                  ^ IdentifierOperator
+//                    ^^^^ IdentifierBuiltinType
+//                          ^ PunctuationDelimiter
+    $r = idx($keyedcontainer, 'key', 23);
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ IdentifierFunction
+//           ^^^^^^^^^^^^^^^ Identifier
+//                          ^ PunctuationDelimiter
+//                            ^^^^^ StringLiteral
+//                                 ^ PunctuationDelimiter
+//                                   ^^ NumericLiteral
+//                                      ^ PunctuationDelimiter
+    invariant($a1 is string, "Object must have type B");
+//  ^^^^^^^^^ IdentifierFunction
+//            ^^^ Identifier
+//                ^^ Keyword
+//                   ^^^^^^ IdentifierBuiltinType
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                     ^ PunctuationDelimiter
     echo "\$v1 = ".$v1.", \$v2 = ".$v2."\n";
 //  ^^^^ Keyword
 //       ^^^^^^^^^ StringLiteral
@@ -268,11 +382,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                    ^ IdentifierOperator
 //                                     ^^^^ StringLiteral
 //                                         ^ PunctuationDelimiter
-  
+    exit ("Closing down\n");
+//  ^^^^ IdentifierFunction
+//        ^^^^^^^^^^^^^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+
     // NOTE: Tree-sitter grammar does not support
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     //       string interpolation
 //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    //       https://github.com/slackhq/tree-sitter-hack/issues/69
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     $y = "hello $x[0]";
 //  ^^ Identifier
 //     ^ IdentifierOperator
@@ -283,6 +403,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //     ^ IdentifierOperator
 //       ^^^^^^^^^^^^^^^ StringLiteral
 //                      ^ PunctuationDelimiter
+
+
     // Control Flow
 //  ^^^^^^^^^^^^^^^ Comment
     $i = 1;
@@ -302,7 +424,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //              ^^ IdentifierOperator
 //                 ^^ NumericLiteral
 //                    ^ PunctuationDelimiter
-  
+
     foreach (($array as vec[]) as $item) {}
 //  ^^^^^^^ Keyword
 //            ^^^^^^ Identifier
@@ -310,7 +432,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                      ^^^ IdentifierType
 //                             ^^ Keyword
 //                                ^^^^^ Identifier
-  
+
     for (; $i <= 5; ) {
 //  ^^^ Keyword
 //       ^ PunctuationDelimiter
@@ -323,23 +445,119 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^ Identifier
 //        ^ PunctuationDelimiter
     }
-  
+
+    try {
+//  ^^^ Keyword
+      echo "try this";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^ StringLiteral
+//                   ^ PunctuationDelimiter
+    } catch (Exception $ex) {
+//    ^^^^^ Keyword
+//           ^^^^^^^^^ IdentifierType
+//                     ^^^ Identifier
+      echo "Caught an Exception\n";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                ^ PunctuationDelimiter
+    } finally {
+//    ^^^^^^^ Keyword
+      echo "Finally\n";
+//    ^^^^ Keyword
+//         ^^^^^^^^^^^ StringLiteral
+//                    ^ PunctuationDelimiter
+    }
+
     using ($new = new Object(), $file = new File('using', '+using')) {}
 //  ^^^^^ Keyword
 //         ^^^^ Identifier
 //              ^ IdentifierOperator
 //                ^^^ Keyword
-//                    ^^^^^^ Identifier
+//                    ^^^^^^ IdentifierType
 //                            ^ PunctuationDelimiter
 //                              ^^^^^ Identifier
 //                                    ^ IdentifierOperator
 //                                      ^^^ Keyword
-//                                          ^^^^ Identifier
+//                                          ^^^^ IdentifierType
 //                                               ^^^^^^^ StringLiteral
 //                                                      ^ PunctuationDelimiter
-//                                                       ^ IdentifierType
 //                                                        ^^^^^^^^ StringLiteral
-  
+
+  final class C {
+//^^^^^ Keyword
+//      ^^^^^ Keyword
+//            ^ IdentifierType
+      function f(classname<C> $clsname): void {
+//    ^^^^^^^^ Keyword
+//             ^ IdentifierFunction
+//               ^^^^^^^^^ IdentifierType
+//                        ^ IdentifierOperator
+//                         ^ IdentifierType
+//                          ^ IdentifierOperator
+//                            ^^^^^^^^ IdentifierParameter
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^ IdentifierBuiltinType
+          $w = new $clsname();
+//        ^^ Identifier
+//           ^ IdentifierOperator
+//             ^^^ Keyword
+//                 ^^^^^^^^ IdentifierType
+//                           ^ PunctuationDelimiter
+      }
+     function cons_static() :mixed{
+//   ^^^^^^^^ Keyword
+//            ^^^^^^^^^^^ IdentifierFunction
+//                          ^ PunctuationDelimiter
+//                           ^^^^^ IdentifierBuiltinType
+       $a = new static(1, "x", 3);
+//     ^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^ Keyword
+//              ^^^^^^ Keyword
+//                     ^ NumericLiteral
+//                      ^ PunctuationDelimiter
+//                        ^^^ StringLiteral
+//                           ^ PunctuationDelimiter
+//                             ^ NumericLiteral
+//                               ^ PunctuationDelimiter
+     }
+     function cons_self(): void {
+//   ^^^^^^^^ Keyword
+//            ^^^^^^^^^ IdentifierFunction
+//                       ^ PunctuationDelimiter
+//                         ^^^^ IdentifierBuiltinType
+       $a = new self(1, "x", 3);
+//     ^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^ Keyword
+//              ^^^^ Keyword
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+//                      ^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+//                           ^ NumericLiteral
+//                             ^ PunctuationDelimiter
+     }
+     function cons_self(): void {
+//   ^^^^^^^^ Keyword
+//            ^^^^^^^^^ IdentifierFunction
+//                       ^ PunctuationDelimiter
+//                         ^^^^ IdentifierBuiltinType
+       $a = new parent(1, "x", 3);
+//     ^^ Identifier
+//        ^ IdentifierOperator
+//          ^^^ Keyword
+//              ^^^^^^ Keyword
+//                     ^ NumericLiteral
+//                      ^ PunctuationDelimiter
+//                        ^^^ StringLiteral
+//                           ^ PunctuationDelimiter
+//                             ^ NumericLiteral
+//                               ^ PunctuationDelimiter
+     }
+  }
+
+
     switch ($pos) {
 //  ^^^^^^ Keyword
 //          ^^^^ Identifier
@@ -353,9 +571,133 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^^^^ Keyword
 //           ^ PunctuationDelimiter
     }
-  
+
+    // Magic Constants (some of them)
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    $a = __CLASS__;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^^ Identifier
+//                ^ PunctuationDelimiter
+    $a = __DIR__;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^ Identifier
+//              ^ PunctuationDelimiter
+    $a = __FILE__;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+
     // Expressions
 //  ^^^^^^^^^^^^^^ Comment
+    $tuple = tuple('one', 'two', 'three');
+//  ^^^^^^ Identifier
+//         ^ IdentifierOperator
+//           ^^^^^ IdentifierBuiltinType
+//                 ^^^^^ StringLiteral
+//                      ^ PunctuationDelimiter
+//                        ^^^^^ StringLiteral
+//                             ^ PunctuationDelimiter
+//                               ^^^^^^^ StringLiteral
+//                                       ^ PunctuationDelimiter
+    list($one, $two, $three) = $tuple;
+//  ^^^^ Keyword
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//             ^^^^ Identifier
+//                 ^ PunctuationDelimiter
+//                   ^^^^^^ Identifier
+//                           ^ IdentifierOperator
+//                             ^^^^^^ Identifier
+//                                   ^ PunctuationDelimiter
+
+    // Ternary
+//  ^^^^^^^^^^ Comment
+    $x = foo() ?: bar();
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ IdentifierFunction
+//             ^^ IdentifierOperator
+//                ^^^ IdentifierFunction
+//                     ^ PunctuationDelimiter
+    $x = $tmp ? $tmp : bar();
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ Identifier
+//            ^ IdentifierOperator
+//              ^^^^ Identifier
+//                   ^ PunctuationDelimiter
+//                     ^^^ IdentifierFunction
+//                          ^ PunctuationDelimiter
+
+    // Coalescing
+//  ^^^^^^^^^^^^^ Comment
+    $a = $b ?? 4;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+    $a ??= $b;
+//  ^^ Identifier
+//     ^^^ IdentifierOperator
+//         ^^ Identifier
+//           ^ PunctuationDelimiter
+
+    // Type assertions
+//  ^^^^^^^^^^^^^^^^^^ Comment
+    $a = 1 ?as int;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//             ^^^ IdentifierBuiltinType
+//                ^ PunctuationDelimiter
+    $a = 1 as int;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^ Keyword
+//            ^^^ IdentifierBuiltinType
+//               ^ PunctuationDelimiter
+    $a = 1 is int;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^ Keyword
+//            ^^^ IdentifierBuiltinType
+//               ^ PunctuationDelimiter
+    $a = is_int(1);
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^ IdentifierFunction
+//              ^ NumericLiteral
+//                ^ PunctuationDelimiter
+    $a = is_bool(1);
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^ IdentifierFunction
+//               ^ NumericLiteral
+//                 ^ PunctuationDelimiter
+    $a = is_string(1);
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^^ IdentifierFunction
+//                 ^ NumericLiteral
+//                   ^ PunctuationDelimiter
+
+    $infile = @fopen("NoSuchFile.txt", 'r');
+//  ^^^^^^^ Identifier
+//          ^ IdentifierOperator
+//            ^ IdentifierOperator
+//             ^^^^^ IdentifierFunction
+//                   ^^^^^^^^^^^^^^^^ StringLiteral
+//                                   ^ PunctuationDelimiter
+//                                     ^^^ StringLiteral
+//                                         ^ PunctuationDelimiter
+
     $d = dict[];
 //  ^^ Identifier
 //     ^ IdentifierOperator
@@ -375,17 +717,24 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                       ^^ Tag
 //                                         ^^^^^^ Tag
 //                                               ^ IdentifierOperator
-//                                                 StringLiteral 79:48..81:4
+//                                                 StringLiteral 153:48..155:4
       Text in the markup
       <!-- this is a comment -->
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
-//                               StringLiteral 81:30..82:0
+//                               StringLiteral 155:30..156:0
   </tt>;
 //^^ Tag
 //  ^^ Tag
 //    ^ IdentifierOperator
 //     ^ PunctuationDelimiter
-  
+
+
+    // Literals
+//  ^^^^^^^^^^^ Comment
+    // Note: nameof missing from the tree-sitter grammar
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    //       https://github.com/slackhq/tree-sitter-hack/issues/68
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
     $d[nameof C] = 4;
 //  ^^ Identifier
 //     ^^^^^^ Identifier
@@ -403,6 +752,26 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //               ^ PunctuationDelimiter
 //                 ^ NumericLiteral
 //                   ^ PunctuationDelimiter
+    $k = keyset[2, 1];
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^ IdentifierBuiltinType
+//              ^ NumericLiteral
+//               ^ PunctuationDelimiter
+//                 ^ NumericLiteral
+//                   ^ PunctuationDelimiter
+    $d = dict['a' => 1, 'b' => 3];
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ IdentifierBuiltinType
+//            ^^^ StringLiteral
+//                ^^ IdentifierOperator
+//                   ^ NumericLiteral
+//                    ^ PunctuationDelimiter
+//                      ^^^ StringLiteral
+//                          ^^ IdentifierOperator
+//                             ^ NumericLiteral
+//                               ^ PunctuationDelimiter
     $v[0] = 42;
 //  ^^ Identifier
 //     ^ NumericLiteral
@@ -415,6 +784,35 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^^^ IdentifierBuiltinType
 //              ^ NumericLiteral
 //               ^ PunctuationDelimiter
+    $a = 0b101010;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ NumericLiteral
+//               ^ PunctuationDelimiter
+    $a = 0XAf;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^ NumericLiteral
+//           ^ PunctuationDelimiter
+    $f = 123.456 + 0.6E27 + 2.34e-3;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^ NumericLiteral
+//               ^ IdentifierOperator
+//                 ^^^^^^ NumericLiteral
+//                        ^ IdentifierOperator
+//                          ^^^^^^^ NumericLiteral
+//                                 ^ PunctuationDelimiter
+    $f = NAN;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ Identifier
+//          ^ PunctuationDelimiter
+    $f = INF;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ Identifier
+//          ^ PunctuationDelimiter
     $x = tuple(1, 2.0, null);
 //  ^^ Identifier
 //     ^ IdentifierOperator
@@ -469,17 +867,52 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //     ^ IdentifierOperator
 //       ^^^^^ BooleanLiteral
 //            ^ PunctuationDelimiter
-  
-  // heredoc
-//^^^^^^^^^^ Comment
-  $s = <<<EOT
+
+    // NOTE: Grammar does not support the _ separator properly
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    //       https://github.com/slackhq/tree-sitter-hack/issues/72
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    $a = 123_456;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ NumericLiteral
+//          ^^^^ Identifier
+//              ^ PunctuationDelimiter
+    $a = 0x49AD_DF30;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^ NumericLiteral
+//             ^^^^^ Identifier
+//                  ^ PunctuationDelimiter
+    $f = 123_456.49_30e-30_30;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^ NumericLiteral
+//          ^^^^ Identifier
+//              ^ IdentifierOperator
+//               ^^ NumericLiteral
+//                           ^ PunctuationDelimiter
+
+  // nowdoc
+//^^^^^^^^^ Comment
+  $s = <<< 'ID'
 //^^ Identifier
 //   ^ IdentifierOperator
-//     ^^^^^^ StringLiteral 97:5..99:3
+//     ^^^^^^^^ StringLiteral 188:5..190:2
+      $('a') abc $(function{return;})
+  ID;
+//  ^ PunctuationDelimiter
+
+  // heredoc
+//^^^^^^^^^^ Comment
+  $s = <<<ID
+//^^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^^ StringLiteral 193:5..195:2
    $('a') abc $(function{return;})
-  EOT;
-//   ^ PunctuationDelimiter
-  
+  ID;
+//  ^ PunctuationDelimiter
+
     // Pipe
 //  ^^^^^^^ Comment
     $x = vec[2,1,3]
@@ -510,9 +943,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //           ^^^^ IdentifierFunction
 //                ^^ Identifier
 //                   ^ PunctuationDelimiter
-  
-    // Arithmetic
-//  ^^^^^^^^^^^^^ Comment
+
+    // Operators
+//  ^^^^^^^^^^^^ Comment
     $a1 = -10 + 100;
 //  ^^^ Identifier
 //      ^ IdentifierOperator
@@ -521,6 +954,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^ IdentifierOperator
 //              ^^^ NumericLiteral
 //                 ^ PunctuationDelimiter
+    $a1 = 2 ** 10;
+//  ^^^ Identifier
+//      ^ IdentifierOperator
+//        ^ NumericLiteral
+//          ^^ IdentifierOperator
+//             ^^ NumericLiteral
+//               ^ PunctuationDelimiter
     $a1 = 100 + -3.4e2;
 //  ^^^ Identifier
 //      ^ IdentifierOperator
@@ -552,8 +992,130 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //          ^ IdentifierOperator
 //            ^ NumericLiteral
 //             ^ PunctuationDelimiter
+    $a = $a & ~0x20;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^ IdentifierOperator
+//            ^ IdentifierOperator
+//             ^^^^ NumericLiteral
+//                 ^ PunctuationDelimiter
+    $a = $a ^ ~0x20;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^ IdentifierOperator
+//            ^ IdentifierOperator
+//             ^^^^ NumericLiteral
+//                 ^ PunctuationDelimiter
+    $a = $a || $b;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^^ IdentifierOperator
+//             ^^ Identifier
+//               ^ PunctuationDelimiter
+    $a = $a && $b;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^^ IdentifierOperator
+//             ^^ Identifier
+//               ^ PunctuationDelimiter
+    $a = !$a;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ IdentifierOperator
+//        ^^ Identifier
+//          ^ PunctuationDelimiter
+    $a = $a++;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//         ^^ IdentifierOperator
+//           ^ PunctuationDelimiter
+    $a = $a--;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//         ^^ IdentifierOperator
+//           ^ PunctuationDelimiter
+    $a -= 1;
+//  ^^ Identifier
+//     ^^ IdentifierOperator
+//        ^ NumericLiteral
+//         ^ PunctuationDelimiter
+    $a +=1;
+//  ^^ Identifier
+//     ^^ IdentifierOperator
+//       ^ NumericLiteral
+//        ^ PunctuationDelimiter
+    $a **=1;
+//  ^^ Identifier
+//     ^^^ IdentifierOperator
+//        ^ NumericLiteral
+//         ^ PunctuationDelimiter
+
+    // Comparisons
+//  ^^^^^^^^^^^^^^ Comment
+    $a = 1 > 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^ IdentifierOperator
+//           ^ NumericLiteral
+//            ^ PunctuationDelimiter
+    $a = 1 < 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^ IdentifierOperator
+//           ^ NumericLiteral
+//            ^ PunctuationDelimiter
+    $a = 1 == 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^ IdentifierOperator
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+    $a = 1 != 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^ IdentifierOperator
+//            ^ NumericLiteral
+//             ^ PunctuationDelimiter
+    $a = 1 === 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+    $a = 1 !== 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+    $a = 1 <=> 2;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^ NumericLiteral
+//         ^^^ IdentifierOperator
+//             ^ NumericLiteral
+//              ^ PunctuationDelimiter
+    $a = $a is nonnull;
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^ Identifier
+//          ^^ Keyword
+//             ^^^^^^^ IdentifierBuiltinType
+//                    ^ PunctuationDelimiter
   }
-  
+
   // Types
 //^^^^^^^^ Comment
   type Complex = shape('real' => float, 'imag' => float);
@@ -577,7 +1139,66 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                      ^ PunctuationDelimiter
 //                        ^^^^^ IdentifierBuiltinType
 //                              ^ PunctuationDelimiter
-  
+
+  // return types
+//^^^^^^^^^^^^^^^ Comment
+  <<__Memoize>>
+//^^ IdentifierOperator
+//  ^^^^^^^^^ Identifier
+//           ^^ IdentifierOperator
+  function noreturn_example(): noreturn {
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^^ IdentifierFunction
+//                           ^ PunctuationDelimiter
+//                             ^^^^^^^^ IdentifierBuiltinType
+    throw new Exception('something went wrong');
+//  ^^^^^ Keyword
+//        ^^^ Keyword
+//            ^^^^^^^^^ IdentifierType
+//                      ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                             ^ PunctuationDelimiter
+  }
+  <<Contributors("John Doe", keyset["Core Library Team"])>>
+//^^ IdentifierOperator
+//  ^^^^^^^^^^^^ Identifier
+//               ^^^^^^^^^^ StringLiteral
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^ IdentifierBuiltinType
+//                                  ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                       ^^ IdentifierOperator
+  function nothing_example(): nothing {
+//^^^^^^^^ Keyword
+//         ^^^^^^^^^^^^^^^ IdentifierFunction
+//                          ^ PunctuationDelimiter
+//                            ^^^^^^^ IdentifierBuiltinType
+    throw new Exception('something went wrong');
+//  ^^^^^ Keyword
+//        ^^^ Keyword
+//            ^^^^^^^^^ IdentifierType
+//                      ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                             ^ PunctuationDelimiter
+  }
+  function f<<<__Newable>> reify T as A>(): T {
+//^^^^^^^^ Keyword
+//         ^ IdentifierFunction
+//          ^ IdentifierOperator
+//           ^^ IdentifierOperator
+//             ^^^^^^^^^ Identifier
+//                      ^^ IdentifierOperator
+//                         ^^^^^ Keyword
+//                               ^ IdentifierType
+//                                 ^^ Keyword
+//                                    ^ IdentifierType
+//                                     ^ IdentifierOperator
+//                                        ^ PunctuationDelimiter
+//                                          ^ IdentifierType
+    return new T();
+//  ^^^^^^ Keyword
+//         ^^^ Keyword
+//             ^ IdentifierType
+//                ^ PunctuationDelimiter
+  }
+
   // Async/await
 //^^^^^^^^^^^^^^ Comment
   async function main_async(): Awaitable<void> {
@@ -607,7 +1228,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                 ^ PunctuationDelimiter
      }
   }
-  
+
   // Enums
 //^^^^^^^^ Comment
   enum Position: int {
@@ -645,15 +1266,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //             ^^^^^ StringLiteral
 //                  ^ PunctuationDelimiter
   }
-  
+
   // Interfaces
 //^^^^^^^^^^^^^ Comment
-  interface StackLike<T> {
+  interface StackLike<+T> {
 //^^^^^^^^^ Keyword
 //          ^^^^^^^^^ IdentifierType
 //                   ^ IdentifierOperator
-//                    ^ IdentifierType
-//                     ^ IdentifierOperator
+//                     ^ IdentifierType
+//                      ^ IdentifierOperator
     public function push(T $element): void;
 //  ^^^^^^ Keyword
 //         ^^^^^^^^ Keyword
@@ -664,7 +1285,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                    ^^^^ IdentifierBuiltinType
 //                                        ^ PunctuationDelimiter
   }
-  
+
   // Traits
 //^^^^^^^^^ Comment
   trait T1 implements I1 {
@@ -672,22 +1293,26 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^ Identifier
 //         ^^^^^^^^^^ Keyword
 //                    ^^ IdentifierType
-    public static int $x = 0;
-//  ^^^^^^ Keyword
-//         ^^^^^^ Keyword
-//                ^^^ IdentifierBuiltinType
-//                    ^^ Identifier
-//                       ^ IdentifierOperator
-//                         ^ NumericLiteral
-//                          ^ PunctuationDelimiter
-  
-    public static function inc() : void {
-//  ^^^^^^ Keyword
-//         ^^^^^^ Keyword
-//                ^^^^^^^^ Keyword
-//                         ^^^ IdentifierFunction
-//                               ^ PunctuationDelimiter
-//                                 ^^^^ IdentifierBuiltinType
+     // NOTE: readonly is not supported properly in tree-sitter grammar
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+     //       https://github.com/slackhq/tree-sitter-hack/issues/71
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+     public static readonly int $x = 0;
+//   ^^^^^^ Keyword
+//          ^^^^^^ Keyword
+//                 ^^^^^^^^ IdentifierType
+//                          ^^^ IdentifierBuiltinType
+//                              ^^ Identifier
+//                                 ^ IdentifierOperator
+//                                   ^ NumericLiteral
+//                                    ^ PunctuationDelimiter
+
+     static function inc() : void {
+//   ^^^^^^ Keyword
+//          ^^^^^^^^ Keyword
+//                   ^^^ IdentifierFunction
+//                         ^ PunctuationDelimiter
+//                           ^^^^ IdentifierBuiltinType
       static::$x = static::$x + 1;
 //    ^^^^^^ Keyword
 //          ^^ PunctuationDelimiter
@@ -709,9 +1334,17 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                         ^^^ Keyword
 //                             ^^ IdentifierType
 //                               ^ PunctuationDelimiter
-  
+
   // Classes
 //^^^^^^^^^^ Comment
+  class B<reify T> {}
+//^^^^^ Keyword
+//      ^ IdentifierType
+//       ^ IdentifierOperator
+//        ^^^^^ Keyword
+//              ^ IdentifierType
+//               ^ IdentifierOperator
+
   abstract final class F<Ta as A, Tb super B<A, C>> extends B implements A\B<A, C>, C\D {
 //^^^^^^^^ Keyword
 //         ^^^^^ Keyword
@@ -763,14 +1396,70 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                        ^ PunctuationDelimiter
 //                                          ^^ IdentifierType
   }
-  
-  class StackUnderflowException extends \Exception {}
+
+  // XHP Attributes
+//^^^^^^^^^^^^^^^^^ Comment
+  final xhp class user_info extends x\element {
 //^^^^^ Keyword
-//      ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
-//                              ^^^^^^^ Keyword
-//                                      ^ PunctuationDelimiter
-//                                       ^^^^^^^^^ IdentifierType
-  
+//      ^^^ Keyword
+//          ^^^^^ Keyword
+//                ^^^^^^^^^ IdentifierType
+//                          ^^^^^^^ Keyword
+//                                  ^ IdentifierNamespace
+//                                   ^ PunctuationDelimiter
+//                                    ^^^^^^^ IdentifierType
+    attribute int userid @required;
+//  ^^^^^^^^^ Keyword
+//            ^^^ IdentifierBuiltinType
+//                ^^^^^^ Identifier
+//                                ^ PunctuationDelimiter
+    attribute string name = "";
+//  ^^^^^^^^^ Keyword
+//            ^^^^^^ IdentifierBuiltinType
+//                   ^^^^ Identifier
+//                        ^ IdentifierOperator
+//                          ^^ StringLiteral
+//                            ^ PunctuationDelimiter
+
+    protected async function renderAsync(): Awaitable<x\node> {
+//  ^^^^^^^^^ Keyword
+//            ^^^^^ Keyword
+//                  ^^^^^^^^ Keyword
+//                           ^^^^^^^^^^^ IdentifierFunction
+//                                        ^ PunctuationDelimiter
+//                                          ^^^^^^^^^ IdentifierType
+//                                                   ^ IdentifierOperator
+//                                                    ^ IdentifierNamespace
+//                                                     ^ PunctuationDelimiter
+//                                                      ^^^^ IdentifierType
+//                                                          ^ IdentifierOperator
+      return
+//    ^^^^^^ Keyword
+        <x:frag>User with id {$this->:userid} has name {$this->:name}</x:frag>;
+//      ^ IdentifierOperator
+//       ^^^^^^ Tag
+//             ^ IdentifierOperator
+//              ^^^^^^^^^^^^^ StringLiteral
+//                            ^^^^^ IdentifierBuiltin
+//                                 ^^ IdentifierOperator
+//                                           ^^^^^^^^^^ StringLiteral
+//                                                      ^^^^^ IdentifierBuiltin
+//                                                           ^^ IdentifierOperator
+//                                                                   ^^ Tag
+//                                                                     ^^^^^^ Tag
+//                                                                           ^ IdentifierOperator
+//                                                                            ^ PunctuationDelimiter
+    }
+  }
+
+  internal class StackUnderflowException extends \Exception {}
+//^^^^^^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+//                                       ^^^^^^^ Keyword
+//                                               ^ PunctuationDelimiter
+//                                                ^^^^^^^^^ IdentifierType
+
   class VecStack<T> implements StackLike<T> {
 //^^^^^ Keyword
 //      ^^^^^^^^ IdentifierType
@@ -787,7 +1476,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //          ^^^ IdentifierBuiltinType
 //              ^^^^^^^^^ Identifier
 //                       ^ PunctuationDelimiter
-  
+
     // Constraints
 //  ^^^^^^^^^^^^^^ Comment
     public function flatten<Tu>(): MyList<Tu> where T = MyList<Tu> {
@@ -812,11 +1501,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       throw new Exception('unimplemented');
 //    ^^^^^ Keyword
 //          ^^^ Keyword
-//              ^^^^^^^^^ Identifier
+//              ^^^^^^^^^ IdentifierType
 //                        ^^^^^^^^^^^^^^^ StringLiteral
 //                                        ^ PunctuationDelimiter
     }
-  
     public function __construct(private vec<T> $elements = vec[]) {
 //  ^^^^^^ Keyword
 //         ^^^^^^^^ Keyword
@@ -841,8 +1529,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                         ^ IdentifierOperator
 //                                           ^ NumericLiteral
 //                                            ^ PunctuationDelimiter
+      $a = $elements?->getX();
+//    ^^ Identifier
+//       ^ IdentifierOperator
+//         ^^^^^^^^^ Identifier
+//                  ^^^ IdentifierOperator
+//                     ^^^^ IdentifierFunction
+//                           ^ PunctuationDelimiter
     }
-  
+
     public function push(T $element): void {
 //  ^^^^^^ Keyword
 //         ^^^^^^^^ Keyword
