@@ -3,7 +3,6 @@
  * UI.
  */
 
-import type { ApolloClient } from '@apollo/client'
 import {
     findNext,
     findPrevious,
@@ -32,48 +31,16 @@ import {
     ViewPlugin,
     type ViewUpdate,
 } from '@codemirror/view'
-import {
-    mdiChevronLeft,
-    mdiChevronRight,
-    mdiClose,
-    mdiFormatLetterCase,
-    mdiInformationOutline,
-    mdiRegex,
-} from '@mdi/js'
 import classNames from 'classnames'
-import { createRoot, type Root } from 'react-dom/client'
-import type { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith, tap } from 'rxjs/operators'
 
-import { QueryInputToggle } from '@sourcegraph/branded'
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { pluralize } from '@sourcegraph/common'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/codemirror/utils'
+import { createElement } from '@sourcegraph/shared/src/util/dom'
 
-import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
-import { createElement } from '../../../util/dom'
-
-import { CodeMirrorContainer } from './react-interop'
 import { SearchPanelViewMode } from './types'
 
 import styles from './search.module.scss'
-
-const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
-
-const platformKeycombo = shortcutDisplayName('Mod+F')
-const tooltipContent = `When enabled, ${platformKeycombo} searches the file only. Disable to search the page, and press ${platformKeycombo} for changes to apply.`
-const searchKeybindingTooltip = (
-    <Tooltip content={tooltipContent}>
-        <Icon
-            className="cm-sg-search-info ml-1 align-textbottom"
-            svgPath={mdiInformationOutline}
-            aria-label="Search keybinding information"
-        />
-    </Tooltip>
-)
 
 // Match 'from' position -> 1-based serial number (index) of this match in the document.
 type SearchMatches = Map<number, number>
@@ -89,7 +56,7 @@ export interface SearchPanelConfig {
     mode: SearchPanelViewMode
 }
 
-interface SearchPanelState {
+export interface SearchPanelState {
     searchQuery: SearchQuery
     // The input value is usually derived from searchQuery. But we are
     // debouncing updating the searchQuery and without tracking the input value
@@ -102,20 +69,36 @@ interface SearchPanelState {
     mode: SearchPanelViewMode
 }
 
+export interface SearchPanelViewCreationOptions {
+    root: HTMLElement
+    initialState: SearchPanelState
+    onSearch: (search: string) => void
+    findNext: () => void
+    findPrevious: () => void
+    setCaseSensitive: (caseSensitive: boolean) => void
+    setRegexp: (regexp: boolean) => void
+    setOverrideBrowserSearch: (override: boolean) => void
+    close: () => void
+}
+
+export interface SearchPanelView {
+    input: HTMLInputElement | null
+    update(state: SearchPanelState): void
+    destroy(): void
+}
+
 class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
 
     private state: SearchPanelState
-    private root: Root | null = null
-    private input: HTMLInputElement | null = null
+    private panel: SearchPanelView | null = null
     private searchTerm = new Subject<string>()
     private subscriptions = new Subscription()
 
     constructor(
         private view: EditorView,
-        private navigate: NavigateFunction,
-        private graphQLClient: ApolloClient<any>,
+        private createPanelView: (options: SearchPanelViewCreationOptions) => SearchPanelView,
         config?: SearchPanelConfig
     ) {
         this.dom = createElement('div', {
@@ -148,7 +131,7 @@ class SearchPanel implements Panel {
                     // Immediately update input for fast feedback
                     tap(value => {
                         this.state = { ...this.state, inputValue: value }
-                        this.render(this.state)
+                        this.panel?.update(this.state)
                     }),
                     debounceTime(100)
                 )
@@ -185,7 +168,7 @@ class SearchPanel implements Panel {
 
         if (newState !== this.state) {
             this.state = newState
-            this.render(this.state)
+            this.panel?.update(this.state)
         }
 
         if (
@@ -193,133 +176,28 @@ class SearchPanel implements Panel {
                 transaction.effects.some(effect => effect.is(focusSearchInput) && effect.value)
             )
         ) {
-            this.input?.focus()
-            this.input?.select()
+            this.panel?.input?.focus()
+            this.panel?.input?.select()
         }
     }
 
     public mount(): void {
-        this.render(this.state)
+        this.panel = this.createPanelView({
+            root: this.dom,
+            initialState: this.state,
+            onSearch: search => this.searchTerm.next(search),
+            findNext: this.findNext,
+            findPrevious: this.findPrevious,
+            setCaseSensitive: caseSensitive => this.commit({ caseSensitive }),
+            setRegexp: regexp => this.commit({ regexp }),
+            setOverrideBrowserSearch: this.setOverrideBrowserSearch,
+            close: () => closeSearchPanel(this.view),
+        })
     }
 
     public destroy(): void {
         this.subscriptions.unsubscribe()
-    }
-
-    private render({
-        searchQuery,
-        inputValue,
-        overrideBrowserSearch,
-        currentMatchIndex,
-        matches,
-        mode,
-    }: SearchPanelState): void {
-        if (!this.root) {
-            this.root = createRoot(this.dom)
-        }
-
-        const totalMatches = matches.size
-        const isFullMode = mode === SearchPanelViewMode.FullSearch
-
-        this.root.render(
-            <CodeMirrorContainer
-                graphQLClient={this.graphQLClient}
-                navigate={this.navigate}
-                onMount={() => {
-                    this.input?.focus()
-                    this.input?.select()
-                }}
-            >
-                <div className={classNames('cm-sg-search-input', styles.input)}>
-                    <Input
-                        ref={element => (this.input = element)}
-                        type="search"
-                        name="search"
-                        variant="small"
-                        placeholder="Find..."
-                        autoComplete="off"
-                        inputClassName={searchQuery.search && totalMatches === 0 ? 'text-danger' : ''}
-                        value={inputValue}
-                        onChange={event => this.searchTerm.next(event.target.value)}
-                        main-field="true"
-                    />
-                    <QueryInputToggle
-                        isActive={searchQuery.caseSensitive}
-                        onToggle={() => this.commit({ caseSensitive: !searchQuery.caseSensitive })}
-                        iconSvgPath={mdiFormatLetterCase}
-                        title="Case sensitivity"
-                        className="cm-search-toggle test-blob-view-search-case-sensitive"
-                    />
-                    <QueryInputToggle
-                        isActive={searchQuery.regexp}
-                        onToggle={() => this.commit({ regexp: !searchQuery.regexp })}
-                        iconSvgPath={mdiRegex}
-                        title="Regular expression"
-                        className="cm-search-toggle test-blob-view-search-regexp"
-                    />
-                </div>
-                {totalMatches > 1 && (
-                    <div>
-                        <Button
-                            className={classNames(styles.bgroupLeft, 'p-1')}
-                            type="button"
-                            size="sm"
-                            outline={true}
-                            variant="secondary"
-                            onClick={this.findPrevious}
-                            data-testid="blob-view-search-previous"
-                            aria-label="previous result"
-                        >
-                            <Icon svgPath={mdiChevronLeft} aria-hidden={true} />
-                        </Button>
-
-                        <Button
-                            className={classNames(styles.bgroupRight, 'p-1')}
-                            type="button"
-                            size="sm"
-                            outline={true}
-                            variant="secondary"
-                            onClick={this.findNext}
-                            data-testid="blob-view-search-next"
-                            aria-label="next result"
-                        >
-                            <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-                        </Button>
-                    </div>
-                )}
-
-                {searchQuery.search ? (
-                    <Text className="cm-search-results m-0 small">
-                        {currentMatchIndex !== null && `${currentMatchIndex} of `}
-                        {totalMatches} {pluralize('result', totalMatches)}
-                    </Text>
-                ) : null}
-
-                {isFullMode && (
-                    <div className={styles.actions}>
-                        <Label className={styles.actionsLabel}>
-                            <Toggle
-                                className="mr-1 align-text-bottom"
-                                value={overrideBrowserSearch}
-                                onToggle={this.setOverrideBrowserSearch}
-                            />
-                            {searchKeybinding}
-                        </Label>
-                        {searchKeybindingTooltip}
-                        <span className={styles.closeButton}>
-                            <Icon
-                                className={classNames(styles.x)}
-                                onClick={() => closeSearchPanel(this.view)}
-                                size="sm"
-                                svgPath={mdiClose}
-                                aria-hidden={false}
-                                aria-label="close search"
-                            />
-                        </span>
-                    </div>
-                )}
-            </CodeMirrorContainer>
-        )
+        this.panel?.destroy()
     }
 
     private setOverrideBrowserSearch = (override: boolean): void =>
@@ -356,7 +234,7 @@ class SearchPanel implements Panel {
     private onkeydown = (event: KeyboardEvent): void => {
         if (runScopeHandlers(this.view, event, 'search-panel')) {
             event.preventDefault()
-        } else if (event.key === 'Enter' && event.target === this.input) {
+        } else if (event.key === 'Enter' && event.target === this.panel?.input) {
             event.preventDefault()
             if (event.shiftKey) {
                 this.findPrevious()
@@ -538,8 +416,7 @@ const theme = EditorView.theme({
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
-    navigate: NavigateFunction
-    graphQLClient: ApolloClient<any>
+    createPanel: (options: SearchPanelViewCreationOptions) => SearchPanelView
     initialState?: SearchPanelConfig
 }
 
@@ -585,7 +462,7 @@ export function search(config: SearchConfig): Extension {
         theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
-            createPanel: view => new SearchPanel(view, config.navigate, config.graphQLClient, config.initialState),
+            createPanel: view => new SearchPanel(view, config.createPanel, config.initialState),
         }),
         ViewPlugin.define(view => {
             // If we have some initial state for the search bar this means we want

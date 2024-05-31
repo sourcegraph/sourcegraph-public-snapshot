@@ -206,6 +206,7 @@ ts_project(
         "src/components/TeamAvatar.tsx",
         "src/components/UserAvatar.tsx",
         "src/components/VirtualList.tsx",
+        "src/components/codemirror/utils.ts",
         "src/components/icons.tsx",
         "src/components/languageIcons.tsx",
         "src/components/ranking/PerFileResultRanking.ts",
