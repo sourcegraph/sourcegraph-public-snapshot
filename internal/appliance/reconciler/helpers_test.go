@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/go-logr/stdr"
@@ -151,8 +152,18 @@ func (suite *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName stri
 	suite.Require().NoError(err)
 }
 
-// Synchronize test and controller code by counting ReconcileFinished events.
-// Some tests might want to wait for more than 1 to appear.
+// Synchronize test and controller code by counting ReconcileFinished events. We
+// expect exactly 2 from one initial creation or update of an SG ConfigMap. This
+// is because we update the ConfigMap at the end of the reconcile loop with
+// annotations. This triggers another reconcile loop. This all ends when the
+// changes are no-ops.
+func (suite *ApplianceTestSuite) awaitReconciliation(namespace string) {
+	events := suite.getConfigMapReconcileEventCount(namespace)
+	suite.Require().Eventually(func() bool {
+		return suite.getConfigMapReconcileEventCount(namespace) >= events+2
+	}, time.Second*10, time.Millisecond*200)
+}
+
 func (suite *ApplianceTestSuite) getConfigMapReconcileEventCount(namespace string) int32 {
 	t := suite.T()
 	events, err := suite.k8sClient.CoreV1().Events(namespace).List(suite.ctx, metav1.ListOptions{

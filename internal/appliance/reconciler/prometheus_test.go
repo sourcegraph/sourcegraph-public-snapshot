@@ -1,7 +1,5 @@
 package reconciler
 
-import "time"
-
 func (suite *ApplianceTestSuite) TestDeployPrometheus() {
 	for _, tc := range []struct {
 		name string
@@ -12,12 +10,7 @@ func (suite *ApplianceTestSuite) TestDeployPrometheus() {
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
-
-			// Wait for reconciliation to be finished.
-			suite.Require().Eventually(func() bool {
-				return suite.getConfigMapReconcileEventCount(namespace) > 0
-			}, time.Second*10, time.Millisecond*200)
-
+			suite.awaitReconciliation(namespace)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}
@@ -25,15 +18,9 @@ func (suite *ApplianceTestSuite) TestDeployPrometheus() {
 
 func (suite *ApplianceTestSuite) TestNonNamespacedResourcesRemainWhenDisabled() {
 	namespace := suite.createConfigMap("prometheus/privileged")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > 0
-	}, time.Second*10, time.Millisecond*200)
+	suite.awaitReconciliation(namespace)
 
-	eventsSeenSoFar := suite.getConfigMapReconcileEventCount(namespace)
 	suite.updateConfigMap(namespace, "standard/everything-disabled")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > eventsSeenSoFar
-	}, time.Second*10, time.Millisecond*200)
-
+	suite.awaitReconciliation(namespace)
 	suite.makeGoldenAssertions(namespace, "prometheus/subsequent-disable")
 }

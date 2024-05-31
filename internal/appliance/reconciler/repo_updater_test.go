@@ -1,9 +1,5 @@
 package reconciler
 
-import (
-	"time"
-)
-
 func (suite *ApplianceTestSuite) TestDeployRepoUpdater() {
 	for _, tc := range []struct {
 		name string
@@ -12,12 +8,7 @@ func (suite *ApplianceTestSuite) TestDeployRepoUpdater() {
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)
-
-			// Wait for reconciliation to be finished.
-			suite.Require().Eventually(func() bool {
-				return suite.getConfigMapReconcileEventCount(namespace) > 0
-			}, time.Second*10, time.Millisecond*200)
-
+			suite.awaitReconciliation(namespace)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}
