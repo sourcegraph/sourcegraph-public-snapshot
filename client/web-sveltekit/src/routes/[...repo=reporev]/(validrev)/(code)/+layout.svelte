@@ -34,9 +34,8 @@
 
     const referenceHotkey: Keys = {
         key: 'alt+r',
-        mac: '⌥+r'
+        mac: '⌥+r',
     }
-
 </script>
 
 <script lang="ts">
@@ -49,7 +48,7 @@
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
-    import Icon2 from '$lib/Icon2.svelte';
+    import Icon2 from '$lib/Icon2.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -221,8 +220,8 @@
                         <svelte:fragment slot="custom" let:buttonClass>
                             <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
                                 <button
-                                        class={`${buttonClass} search-files-button`}
-                                        on:click={() => openFuzzyFinder('files')}
+                                    class={`${buttonClass} search-files-button`}
+                                    on:click={() => openFuzzyFinder('files')}
                                 >
                                     {#if isCollapsed}
                                         <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
@@ -230,7 +229,6 @@
                                         <span>Search files</span>
                                         <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
                                     {/if}
-
                                 </button>
                             </Tooltip>
                         </svelte:fragment>
@@ -372,11 +370,11 @@
 
         // Hide action text and leave just icon for collapsed version
         .search-files-button {
-          display: block;
+            display: block;
 
-          span {
-            display: none;
-          }
+            span {
+                display: none;
+            }
         }
 
         :global([data-repo-rev-picker-trigger]),

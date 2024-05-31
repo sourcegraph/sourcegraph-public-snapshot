@@ -1,10 +1,10 @@
 <script lang="ts">
-    import {getContext, onDestroy } from 'svelte'
+    import { getContext, onDestroy } from 'svelte'
     import * as uuid from 'uuid'
 
-    import type { Keys } from '$lib/Hotkey';
+    import type { Keys } from '$lib/Hotkey'
     import { type TabsContext, KEY } from './Tabs.svelte'
-    import { registerHotkey } from '$lib/Hotkey';
+    import { registerHotkey } from '$lib/Hotkey'
 
     export let title: string
     export let shortcut: Keys | undefined = undefined
@@ -33,7 +33,7 @@
         context.register({
             id: tabId,
             title,
-            shortcut
+            shortcut,
         })
     )
     $: selectedId = context.selectedTabID

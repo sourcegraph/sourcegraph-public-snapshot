@@ -92,9 +92,8 @@
 </script>
 
 <FuzzyFinder
-        bind:this={finder}
-        {scope}
-        open={$fuzzyFinderState.open}
-        on:close={() => ($fuzzyFinderState.open = false)}
+    bind:this={finder}
+    {scope}
+    open={$fuzzyFinderState.open}
+    on:close={() => ($fuzzyFinderState.open = false)}
 />
-

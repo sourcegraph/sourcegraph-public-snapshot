@@ -25,7 +25,6 @@
         key: 'shift+c',
         mac: 'shift+c',
     }
-
 </script>
 
 <script lang="ts">

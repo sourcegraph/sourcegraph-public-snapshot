@@ -23,7 +23,7 @@ A component to display the keyboard shortcuts for the application.
     })()
 </script>
 
-<kbd class:inline={inline}>
+<kbd class:inline>
     {#each parts as part}
         <span>{part}</span>
     {/each}
@@ -37,10 +37,10 @@ A component to display the keyboard shortcuts for the application.
     }
 
     .inline {
-      margin: 0;
-      padding: 0;
-      border: none;
-      box-shadow: none;
-      background-color: transparent;
+        margin: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        background-color: transparent;
     }
 </style>

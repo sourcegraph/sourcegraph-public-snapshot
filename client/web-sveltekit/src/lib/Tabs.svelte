@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-    import {createEventDispatcher, setContext} from 'svelte'
+    import { createEventDispatcher, setContext } from 'svelte'
     import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
 
@@ -56,7 +56,7 @@
         selectTab: (index: number): void => {
             $selectedTab = $selectedTab === index && toggable ? null : index
             dispatch('select', $selectedTab)
-        }
+        },
     })
 
     function selectTab(event: { detail: number }) {

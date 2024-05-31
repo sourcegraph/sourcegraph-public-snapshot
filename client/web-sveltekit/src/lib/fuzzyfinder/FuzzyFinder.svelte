@@ -51,7 +51,7 @@
 
     const client = getGraphQLClient()
     const tabs: (Tab & { source: CompletionSource<FuzzyFinderResult> })[] = [
-        { id: 'repos', title: 'Repos', shortcut: reposHotkey,  source: createRepositorySource(client) },
+        { id: 'repos', title: 'Repos', shortcut: reposHotkey, source: createRepositorySource(client) },
         { id: 'symbols', title: 'Symbols', shortcut: symbolsHotkey, source: createSymbolSource(client, () => scope) },
         { id: 'files', title: 'Files', shortcut: filesHotkey, source: createFileSource(client, () => scope) },
     ]

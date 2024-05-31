@@ -10,7 +10,7 @@
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
-    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte';
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -36,10 +36,10 @@
             role="tab"
             on:click={selectTab}
             data-tab
-            >
-                <span data-tab-title={tab.title}>
-                    {tab.title}
-                </span>
+        >
+            <span data-tab-title={tab.title}>
+                {tab.title}
+            </span>
             {#if tab.shortcut}
                 <KeyboardShortcut shorcut={tab.shortcut} />
             {/if}
@@ -94,10 +94,10 @@
             background-color: var(--secondary-2);
 
             :global(kbd) {
-              color: white;
-              box-shadow: none;
-              border-color: var(--primary);
-              background-color: var(--primary);
+                color: white;
+                box-shadow: none;
+                border-color: var(--primary);
+                background-color: var(--primary);
             }
 
             &::after {
