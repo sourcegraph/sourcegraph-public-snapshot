@@ -52,8 +52,24 @@ var (
 	// - in Sentry reports.
 	WithSafeDetails = errors.WithSafeDetails
 
-	Is        = errors.Is
-	IsAny     = errors.IsAny
+	// Is checks if the error tree err is equal to the value target.
+	//
+	// For error types which do not contain any data, Is is equivalent to As.
+	//
+	// For error types which contain data, it's possible that Is
+	// returns true for a value other than the one returned by As,
+	// since an error tree can contain multiple errors of the same
+	// concrete type but with different data.
+	Is    = errors.Is
+	IsAny = errors.IsAny
+	// As checks if the error tree err is of type target, and if so,
+	// sets target to the value of the error.
+	//
+	// For error types which do not contain any data, As is equivalent to Is.
+	//
+	// For error types which contain data, As will return an arbitrary
+	// error of the target type, in case there are multiple errors of the
+	// same concrete type in the error tree.
 	As        = errors.As
 	HasType   = errors.HasType
 	Cause     = errors.Cause
