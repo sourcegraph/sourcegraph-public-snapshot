@@ -13,17 +13,14 @@
 
     const branchesHotkey: Keys = {
         key: 'shift+b',
-        mac: 'shift+b',
     }
 
     const tagsHotkey: Keys = {
         key: 'shift+t',
-        mac: 'shift+t',
     }
 
     const commitsHotkey: Keys = {
         key: 'shift+c',
-        mac: 'shift+c',
     }
 </script>
 

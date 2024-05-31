@@ -29,12 +29,10 @@
 
     const historyHotkey: Keys = {
         key: 'alt+h',
-        mac: '⌥+h',
     }
 
     const referenceHotkey: Keys = {
         key: 'alt+r',
-        mac: '⌥+r',
     }
 </script>
 
