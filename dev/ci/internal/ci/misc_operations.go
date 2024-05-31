@@ -54,7 +54,7 @@ func addSgLints(targets []string) func(*bk.Pipeline) {
 	)
 
 	formatCheck := ""
-	if runType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.CloudEphemeral) {
+	if runType.Is(runtype.MainBranch, runtype.MainDryRun, runtype.DockerImages, runtype.CloudEphemeral) {
 		formatCheck = "--skip-format-check "
 	}
 

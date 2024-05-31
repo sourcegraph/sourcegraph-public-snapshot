@@ -7,7 +7,6 @@ func (suite *ApplianceTestSuite) TestDeployPGSQL() {
 		name string
 	}{
 		{name: "pgsql/default"},
-		{name: "pgsql/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

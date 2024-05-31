@@ -21,6 +21,8 @@ var afs fs.FS = assetsFS
 
 var Assets http.FileSystem
 
+var assetsSubdir = "dist"
+
 var (
 	webBuildManifestOnce sync.Once
 	assetsOnce           sync.Once
@@ -65,9 +67,9 @@ func (p Provider) Assets() http.FileSystem {
 		// If we do detect a dist folder when running this code, we immediately substitute the root to that dist folder.
 		//
 		// Therefore, this code works with both the traditionnal build approach and when built with Bazel.
-		if _, err := assetsFS.ReadDir("dist"); err == nil {
+		if _, err := assetsFS.ReadDir(assetsSubdir); err == nil {
 			var err error
-			afs, err = fs.Sub(assetsFS, "dist")
+			afs, err = fs.Sub(assetsFS, assetsSubdir)
 			if err != nil {
 				panic("incorrect embed")
 			}

@@ -2,6 +2,7 @@ package spec
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -82,6 +83,20 @@ func (s ServiceSpec) Validate() []error {
 	}
 	if len(s.Description) == 0 {
 		errs = append(errs, errors.New("description is required"))
+	}
+	if s.NotionPageID != nil {
+		page := *s.NotionPageID
+		if len(page) == 0 {
+			errs = append(errs, errors.New("notionPageID cannot be empty"))
+		}
+		// Should not be 'www.notion.so' or 'sourcegraph.notion.site'
+		if strings.Contains(page, ".notion.") {
+			errs = append(errs, errors.New("notionPageID must be a page ID, not a URL"))
+		}
+		// Should not have URL query parameters appended by Notion
+		if strings.Contains(page, "?") {
+			errs = append(errs, errors.New("notionPageID must be a page ID, found what looks like a URL query '?'"))
+		}
 	}
 
 	if s.IAM != nil {

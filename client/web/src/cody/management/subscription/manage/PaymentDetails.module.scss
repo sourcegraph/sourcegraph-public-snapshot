@@ -12,53 +12,17 @@
     }
 }
 
-.title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    &-button {
-        margin-right: -0.75rem;
-    }
+.title-button {
+    margin-right: -0.75rem;
 }
 
 .payment-method {
-    &-content {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 1rem;
-    }
-
     &-number {
         font-size: 1rem;
     }
 
     &-form {
         margin-top: 1.5rem;
-
-        &-label {
-            display: block;
-        }
-
-        &-input {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-        }
-
-        &-row {
-            display: flex;
-        }
-
-        &-button-container {
-            display: flex;
-            justify-content: end;
-        }
-
-        &-submit-button {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
     }
 }
 
@@ -69,14 +33,6 @@
 
         &-button-container {
             margin-top: 2.25rem;
-
-            display: flex;
-            justify-content: end;
         }
     }
-}
-
-.icon-button {
-    display: flex;
-    align-items: center;
 }

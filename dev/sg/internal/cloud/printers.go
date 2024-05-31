@@ -43,24 +43,25 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			}
 		}
 
-		actionURL := "n/a"
-		if inst.Status.Reason.JobURL != "" {
-			actionURL = inst.Status.Reason.JobURL
-			if inst.Status.Reason.JobState != "" {
-				actionURL = " (" + inst.Status.Reason.JobState + ")"
-			}
-		}
 		expiresAt := "n/a"
 		if !inst.ExpiresAt.IsZero() {
 			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
 		}
 
+		var jobCount = inst.Status.Reason.JobCount
+		var overallJobStatus = inst.Status.Reason.Overall
+		if inst.Status.Status == InstanceStatusCompleted {
+			overallJobStatus = "completed"
+		} else if overallJobStatus == "" {
+			overallJobStatus = "n/a"
+		}
+
 		return []any{
-			name, expiresAt, status, actionURL,
+			name, expiresAt, status, jobCount, overallJobStatus,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-20s %s", "Name", "Expires At", "Status", "ActionURL")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %-5s %s", "Name", "Expires at", "Status", "Jobs", "Overall job status")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {
@@ -81,7 +82,7 @@ func (p *terminalInstancePrinter) Print(items ...*Instance) error {
 	std.Out.WriteLine(output.Line("", output.StyleBold, heading))
 	for _, inst := range items {
 		values := p.valueFunc(inst)
-		line := fmt.Sprintf("%-40s %-20s %-20s %s", values...)
+		line := fmt.Sprintf("%-40s %-20s %-40s %-5d %s", values...)
 		std.Out.WriteLine(output.Line("", output.StyleGrey, line))
 	}
 

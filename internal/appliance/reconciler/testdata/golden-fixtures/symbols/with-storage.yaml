@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c5a3d0a6ba37246cf3f9a5b26c0a98c5742e6024a9dffa6836d70eae7de13412
+        appliance.sourcegraph.com/configHash: 1b91f9ad9b2b92f50de93100c10a3d21c7879d700ba5436a6b90f94c7ab64c7e
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -211,7 +211,8 @@ resources:
             disabled: true
 
           symbols:
-            storageSize: "100Gi"
+            persistentVolumeConfig:
+              storageSize: "100Gi"
 
           syntectServer:
             disabled: true
@@ -220,6 +221,9 @@ resources:
             disabled: true
 
           prometheus:
+            disabled: true
+
+          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:
@@ -235,7 +239,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c5a3d0a6ba37246cf3f9a5b26c0a98c5742e6024a9dffa6836d70eae7de13412
+        appliance.sourcegraph.com/configHash: 1b91f9ad9b2b92f50de93100c10a3d21c7879d700ba5436a6b90f94c7ab64c7e
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -254,7 +258,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c5a3d0a6ba37246cf3f9a5b26c0a98c5742e6024a9dffa6836d70eae7de13412
+        appliance.sourcegraph.com/configHash: 1b91f9ad9b2b92f50de93100c10a3d21c7879d700ba5436a6b90f94c7ab64c7e
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"

@@ -5,6 +5,7 @@ go_library(
     name = "reconciler",
     srcs = [
         "blobstore.go",
+        "cadvisor.go",
         "codeintel.go",
         "gitserver.go",
         "kubernetes.go",
@@ -23,6 +24,7 @@ go_library(
         "//internal/appliance/config",
         "//internal/k8s/resource/configmap",
         "//internal/k8s/resource/container",
+        "//internal/k8s/resource/daemonset",
         "//internal/k8s/resource/deployment",
         "//internal/k8s/resource/pod",
         "//internal/k8s/resource/pvc",
@@ -61,6 +63,7 @@ go_test(
     name = "reconciler_test",
     srcs = [
         "blobstore_test.go",
+        "cadvisor_test.go",
         "codeintel_test.go",
         "gitserver_test.go",
         "golden_test.go",

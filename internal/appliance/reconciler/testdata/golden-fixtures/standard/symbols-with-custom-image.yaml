@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
+        appliance.sourcegraph.com/configHash: 2cd8b4623bf86e778add72b8e717d729f770668a196627f1187406962c2fc13c
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -224,6 +224,9 @@ resources:
 
           prometheus:
             disabled: true
+
+          embeddings:
+            disabled: true
     kind: ConfigMap
     metadata:
       annotations:
@@ -238,7 +241,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
+        appliance.sourcegraph.com/configHash: 2cd8b4623bf86e778add72b8e717d729f770668a196627f1187406962c2fc13c
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -257,7 +260,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 4310746eaab789e0d69f900836e6a3cea2979fe2e00be351e44120eb9cc43f29
+        appliance.sourcegraph.com/configHash: 2cd8b4623bf86e778add72b8e717d729f770668a196627f1187406962c2fc13c
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"

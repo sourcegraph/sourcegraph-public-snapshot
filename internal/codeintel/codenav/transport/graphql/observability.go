@@ -27,6 +27,7 @@ type operations struct {
 	ranges          *observation.Operation
 	snapshot        *observation.Operation
 	visibleIndexes  *observation.Operation
+	usagesForSymbol *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -59,6 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		ranges:          op("Ranges"),
 		snapshot:        op("Snapshot"),
 		visibleIndexes:  op("VisibleIndexes"),
+		usagesForSymbol: op("UsagesForSymbol"),
 	}
 }
 

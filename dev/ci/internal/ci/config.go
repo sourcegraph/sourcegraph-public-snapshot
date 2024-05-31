@@ -3,6 +3,7 @@ package ci
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -96,8 +97,12 @@ func NewConfig(now time.Time) Config {
 			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		// for testing
-		commit = "1234567890123456789012345678901234567890"
+		out, giterr := exec.Command("git", "rev-parse", "HEAD").Output()
+		if giterr != nil {
+			panic(err)
+		}
+
+		commit = strings.TrimSpace(string(out))
 		changedFiles, err = gitops.GetBranchChangedFiles("main", commit)
 	}
 

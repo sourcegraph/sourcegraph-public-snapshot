@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-import { Caller, CodyProApiCaller } from '../client'
+import { type Caller, CodyProApiCaller } from '../client'
 
 export interface CodyProApiClient {
     caller: Caller

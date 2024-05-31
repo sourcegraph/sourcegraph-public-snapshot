@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react'
 import { mdiCancel, mdiCheck, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, H1, H3, Icon, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
+import { Button, H1, H3, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
 import { getCodyProApiErrorMessage, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
+import { LoadingIconButton } from './LoadingIconButton'
 import { humanizeDate, usdCentsToHumanString } from './utils'
 
 import styles from './SubscriptionDetails.module.scss'
@@ -80,23 +81,19 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                     </Text>
                 </div>
                 {props.subscription.cancelAtPeriodEnd ? (
-                    <Button
+                    <LoadingIconButton
                         variant="primary"
                         disabled={updateCurrentSubscriptionMutation.isPending}
-                        className={styles.iconButton}
+                        isLoading={updateCurrentSubscriptionMutation.isPending}
                         onClick={() =>
                             updateCurrentSubscriptionMutation.mutate({
                                 subscriptionUpdate: { newCancelAtPeriodEnd: false },
                             })
                         }
+                        iconSvgPath={mdiRefresh}
                     >
-                        {updateCurrentSubscriptionMutation.isPending ? (
-                            <LoadingSpinner className="mr-1" />
-                        ) : (
-                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiRefresh} />
-                        )}
                         Renew subscription
-                    </Button>
+                    </LoadingIconButton>
                 ) : (
                     <>
                         <Button variant="secondary" onClick={() => setIsConfirmationModalVisible(true)}>
@@ -112,8 +109,8 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                                 <div className="pb-3">
                                     <H3>Are you sure?</H3>
                                     <Text className="mt-4">
-                                        Canceling you subscription now means that you won't be able to use Cody with Pro
-                                        features after {humanizeDate(props.subscription.currentPeriodEnd)}.
+                                        Canceling your subscription now means that you won't be able to use Cody with
+                                        Pro features after {humanizeDate(props.subscription.currentPeriodEnd)}.
                                     </Text>
                                     <Text className={classNames('mt-4 mb-0', styles.bold)}>
                                         Do you want to procceed?
@@ -127,24 +124,20 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                                     >
                                         No, I've changed my mind
                                     </Button>
-                                    <Button
+                                    <LoadingIconButton
                                         variant="primary"
                                         disabled={updateCurrentSubscriptionMutation.isPending}
-                                        className={styles.iconButton}
+                                        isLoading={updateCurrentSubscriptionMutation.isPending}
                                         onClick={() =>
                                             updateCurrentSubscriptionMutation.mutate(
                                                 { subscriptionUpdate: { newCancelAtPeriodEnd: true } },
                                                 { onSettled: () => setIsConfirmationModalVisible(false) }
                                             )
                                         }
+                                        iconSvgPath={mdiCheck}
                                     >
-                                        {updateCurrentSubscriptionMutation.isPending ? (
-                                            <LoadingSpinner className="mr-1" />
-                                        ) : (
-                                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                                        )}
-                                        <Text as="span">Yes, cancel</Text>
-                                    </Button>
+                                        Yes, cancel
+                                    </LoadingIconButton>
                                 </div>
                             </Modal>
                         )}

@@ -11,6 +11,10 @@ import (
 )
 
 func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Reader, error) {
+	readerOpts := dotcomdb.ReaderOptions{
+		DevOnly: !config.DotComDB.IncludeProductionLicenses,
+	}
+
 	if override := config.DotComDB.PGDSNOverride; override != nil {
 		config, err := pgx.ParseConfig(*override)
 		if err != nil {
@@ -20,7 +24,7 @@ func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Reader, erro
 		if err != nil {
 			return nil, errors.Wrapf(err, "pgx.ConnectConfig %q", *override)
 		}
-		return dotcomdb.NewReader(conn), nil
+		return dotcomdb.NewReader(conn, readerOpts), nil
 	}
 
 	// Use IAM auth to connect to the Cloud SQL database.
@@ -28,5 +32,5 @@ func newDotComDBConn(ctx context.Context, config Config) (*dotcomdb.Reader, erro
 	if err != nil {
 		return nil, errors.Wrap(err, "contract.GetPostgreSQLDB")
 	}
-	return dotcomdb.NewReader(conn), nil
+	return dotcomdb.NewReader(conn, readerOpts), nil
 }

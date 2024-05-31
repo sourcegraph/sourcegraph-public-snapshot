@@ -68,6 +68,17 @@ func NewVolumeFromConfigMap(name, configMapName string) corev1.Volume {
 	}
 }
 
+func NewVolumeHostPath(name, path string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: path,
+			},
+		},
+	}
+}
+
 func NewVolumeEmptyDir(name string) corev1.Volume {
 	return corev1.Volume{
 		Name: name,

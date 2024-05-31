@@ -85,6 +85,8 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
+			"google/gemini-1.5-flash-latest",
+			"google/gemini-1.5-pro-latest",
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",

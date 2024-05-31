@@ -1,41 +1,39 @@
-sh_binary(
+load(":tool.bzl", "tool")
+
+tool(
     name = "docsite",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@docsite_darwin_amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@docsite_darwin_arm64//file:downloaded"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@docsite_linux_amd64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "src-cli",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@src-cli-darwin-amd64//:src-cli-darwin-amd64"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@src-cli-darwin-arm64//:src-cli-darwin-arm64"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "universal-ctags",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@universal-ctags-darwin-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@universal-ctags-darwin-arm64//file:downloaded"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@universal-ctags-linux-amd64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "gcloud",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@gcloud-darwin-amd64//:gcloud"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@gcloud-darwin-arm64//:gcloud"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@gcloud-linux-amd64//:gcloud"],
     }),
-    visibility = ["//visibility:public"],
 )
 
 sh_binary(
@@ -48,64 +46,58 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "packer",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@packer-darwin-amd64//:packer-darwin-amd64"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@packer-darwin-arm64//:packer-darwin-arm64"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@packer-linux-amd64//:packer-linux-amd64"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "p4-fusion",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@p4-fusion-darwin-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@p4-fusion-darwin-arm64//file:downloaded"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@p4-fusion-linux-amd64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "gh",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:darwin_x86_64": ["@gh_darwin-amd64//:gh"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@gh_darwin-arm64//:gh"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@gh_linux-amd64//:gh"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "pg_dump",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:linux_x86_64": ["@pg_dump-linux-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_x86_64": ["@pg_dump-darwin-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@pg_dump-darwin-arm64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "createdb",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:linux_x86_64": ["@createdb-linux-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_x86_64": ["@createdb-darwin-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@createdb-darwin-arm64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
-sh_binary(
+tool(
     name = "dropdb",
-    srcs = select({
+    src = select({
         "@bazel_tools//src/conditions:linux_x86_64": ["@dropdb-linux-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_x86_64": ["@dropdb-darwin-amd64//file:downloaded"],
         "@bazel_tools//src/conditions:darwin_arm64": ["@dropdb-darwin-arm64//file:downloaded"],
     }),
-    visibility = ["//visibility:public"],
 )
 
 alias(

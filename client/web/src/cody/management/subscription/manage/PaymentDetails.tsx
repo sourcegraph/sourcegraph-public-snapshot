@@ -20,10 +20,12 @@ import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Form, Grid, H3, Icon, Label, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import { getCodyProApiErrorMessage, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
+
+import { LoadingIconButton } from './LoadingIconButton'
 
 import styles from './PaymentDetails.module.scss'
 
@@ -47,7 +49,7 @@ export const PaymentDetails: React.FC<PaymentDetailsProps> = props => (
             <PaymentMethod subscription={props.subscription} />
         </div>
         <div className={styles.gridItem}>
-            <BillingAddress subscription={props.subscription} />{' '}
+            <BillingAddress subscription={props.subscription} />
         </div>
     </Grid>
 )
@@ -76,7 +78,7 @@ const PaymentMethod: React.FC<PaymentDetailsProps> = props => {
 }
 
 const PaymentMethodMissing: React.FC<{ onAddButtonClick: () => void }> = props => (
-    <div className={styles.title}>
+    <div className="d-flex align-items-center justify-content-between">
         <H3>No payment method is available</H3>
         <Button variant="link" className={styles.titleButton} onClick={props.onAddButtonClick}>
             <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
@@ -88,13 +90,13 @@ const ActivePaymentMethod: React.FC<
     Required<Pick<Subscription, 'paymentMethod'>> & { onEditButtonClick: () => void }
 > = props => (
     <>
-        <div className={styles.title}>
+        <div className="d-flex align-items-center justify-content-between">
             <H3>Active credit card</H3>
             <Button variant="link" className={styles.titleButton} onClick={props.onEditButtonClick}>
                 <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
             </Button>
         </div>
-        <div className={styles.paymentMethodContent}>
+        <div className="mt-3 d-flex justify-content-between">
             <Text as="span" className={classNames('text-muted', styles.paymentMethodNumber)}>
                 <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod.last4}
             </Text>
@@ -114,7 +116,7 @@ const useStripeCardElementOptions = (): StripeCardElementOptions => {
             hidePostalCode: true,
 
             classes: {
-                base: classNames('form-control', styles.paymentMethodFormInput),
+                base: 'form-control py-2',
                 focus: 'focus-visible',
                 invalid: 'is-invalid',
             },
@@ -192,19 +194,19 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
 
             <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.paymentMethodForm}>
                 <div>
-                    <Label className={styles.paymentMethodFormLabel}>
+                    <Label className="d-block">
                         <Text className="mb-2">Card number</Text>
                         <CardNumberElement {...cardElementProps} />
                     </Label>
                 </div>
 
                 <Grid columnCount={2} className="mt-3 mb-0 pb-3">
-                    <Label className={styles.paymentMethodFormLabel}>
+                    <Label className="d-block">
                         <Text className="mb-2">Expiry date</Text>
                         <CardExpiryElement {...cardElementProps} />
                     </Label>
 
-                    <Label className={styles.paymentMethodFormLabel}>
+                    <Label className="d-block">
                         <Text className="mb-2">CVC</Text>
                         <CardCvcElement {...cardElementProps} />
                     </Label>
@@ -212,23 +214,20 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
 
                 {isErrorVisible && errorMessage ? <Text className="text-danger">{errorMessage}</Text> : null}
 
-                <div className={classNames('mt-4', styles.paymentMethodFormButtonContainer)}>
+                <div className="mt-4 d-flex justify-content-end">
                     <Button type="reset" variant="secondary" outline={true}>
                         Cancel
                     </Button>
-                    <Button
-                        disabled={isLoading}
+                    <LoadingIconButton
                         type="submit"
                         variant="primary"
-                        className={classNames('ml-2', styles.iconButton)}
+                        className="ml-2"
+                        disabled={isLoading}
+                        isLoading={isLoading}
+                        iconSvgPath={mdiCheck}
                     >
-                        {isLoading ? (
-                            <LoadingSpinner className="mr-1" />
-                        ) : (
-                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                        )}
-                        <Text as="span">Save</Text>
-                    </Button>
+                        Save
+                    </LoadingIconButton>
                 </div>
             </Form>
         </>
@@ -284,7 +283,7 @@ const BillingAddress: React.FC<PaymentDetailsProps> = props => {
 
     return (
         <div>
-            <div className={styles.title}>
+            <div className="d-flex align-items-center justify-content-between">
                 <H3>Billing address</H3>
                 <Button variant="link" className={styles.titleButton} onClick={() => setIsEditMode(true)}>
                     <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
@@ -426,20 +425,20 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
         )
     }
 
-    const options = useMemo((): StripeAddressElementOptions => {
-        const { postalCode, ...address } = props.subscription.address
-        return {
+    const options = useMemo(
+        (): StripeAddressElementOptions => ({
             mode: 'billing',
             display: { name: 'full' },
             defaultValues: {
                 name: props.subscription.name,
                 address: {
-                    ...address,
-                    postal_code: postalCode,
+                    ...props.subscription.address,
+                    postal_code: props.subscription.address.postalCode,
                 },
             },
-        }
-    }, [props.subscription])
+        }),
+        [props.subscription]
+    )
 
     return (
         <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
@@ -447,23 +446,20 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
 
             {isErrorVisible && errorMessage ? <Text className="mt-3 text-danger">{errorMessage}</Text> : null}
 
-            <div className={styles.billingAddressFormButtonContainer}>
+            <div className={classNames('d-flex justify-content-end', styles.billingAddressFormButtonContainer)}>
                 <Button type="reset" variant="secondary" outline={true}>
                     Cancel
                 </Button>
-                <Button
-                    disabled={isLoading}
+                <LoadingIconButton
                     type="submit"
                     variant="primary"
-                    className={classNames('ml-2', styles.iconButton)}
+                    className="ml-2"
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    iconSvgPath={mdiCheck}
                 >
-                    {isLoading ? (
-                        <LoadingSpinner className="mr-1" />
-                    ) : (
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiCheck} />
-                    )}
-                    <Text as="span">Save</Text>
-                </Button>
+                    Save
+                </LoadingIconButton>
             </div>
         </Form>
     )

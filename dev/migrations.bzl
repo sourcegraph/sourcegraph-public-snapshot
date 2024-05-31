@@ -41,20 +41,12 @@ fi
 # Dumping the schema requires running the squash operation first, as it reuses the database, so we do all of those operations
 # in a single step.
 def _generate_schemas_impl(ctx):
-    # for every entry in pgutils filegroup, there's two files:
-    # - one in external e.g. external/createdb-linux-amd64/file/downloaded
-    # - one in output base e.g. bazel-out/k8-opt-exec-ST-13d3ddad9198/bin/dev/tools/createdb
-    # only the one in output base can be picked up by-name in PATH, so we need to filter out the ones in external.
-    pgutils_path = ":".join([
-        f.path.rpartition("/")[0]
-        for f in ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list()
-        if not f.path.startswith("external")
-    ])
-
+    pgutils_path = ctx.attr._pg_utils[DefaultInfo].files.to_list()[0].path.rpartition("/")[0]
     runfiles = depset(direct = ctx.attr._sg[DefaultInfo].default_runfiles.files.to_list() + ctx.attr._pg_utils[DefaultInfo].default_runfiles.files.to_list())
 
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
+        tools = runfiles,
         outputs = [
             ctx.outputs.out_frontend_squash,
             ctx.outputs.out_codeintel_squash,
@@ -78,7 +70,7 @@ def _generate_schemas_impl(ctx):
         },
         command = """{cmd_preamble}
 
-        export PATH="{pgutils_path}:$PATH"
+        export PATH="{pgutils_path}"
 
         trap "dropdb --if-exists sg-squasher-frontend && echo 'temp db sg-squasher-frontend dropped'" EXIT
         trap "dropdb --if-exists sg-squasher-codeintel && echo 'temp db sg-squasher-codeintel dropped'" EXIT
@@ -110,7 +102,6 @@ def _generate_schemas_impl(ctx):
             out_codeintel_schema_md = ctx.outputs.out_codeintel_schema_md.path,
             out_codeinsights_schema_md = ctx.outputs.out_codeinsights_schema_md.path,
         ),
-        tools = runfiles,
     )
 
     return [
