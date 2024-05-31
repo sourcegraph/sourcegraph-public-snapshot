@@ -1,9 +1,13 @@
 <script lang="ts">
-    import { mdiAlertCircle, mdiAlert, mdiInformationOutline } from '@mdi/js'
+    import type { ComponentType, SvelteComponent } from 'svelte'
+    import type { SvelteHTMLElements } from 'svelte/elements'
+    import ILucideCircleAlert from '~icons/lucide/circle-alert'
+    import ILucideInfo from '~icons/lucide/info'
+    import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
 
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import Popover from '$lib/Popover.svelte'
     import ResultsIndicator from '$lib/search/resultsIndicator/ResultsIndicator.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
@@ -13,10 +17,10 @@
     export let progress: Progress
     export let state: 'complete' | 'error' | 'loading'
 
-    const icons: Record<string, string> = {
-        info: mdiInformationOutline,
-        warning: mdiAlert,
-        error: mdiAlertCircle,
+    const icons: Record<string, ComponentType<SvelteComponent<SvelteHTMLElements['svg']>>> = {
+        info: ILucideInfo,
+        warning: ILucideTriangleAlert,
+        error: ILucideCircleAlert,
     }
     let searchAgainDisabled = true
 
@@ -61,7 +65,7 @@
                 {@const open = openItems[index]}
                 <button type="button" class="toggle" aria-expanded={open} on:click={() => (openItems[index] = !open)}>
                     <h4>
-                        <Icon svgPath={icons[item.severity]} inline --icon-fill-color="var(--primary)" />
+                        <Icon2 icon={icons[item.severity]} inline --icon-fill-color="var(--primary)" />
                         <span class="title">{item.title}</span>
                         {#if item.message}
                             <Icon2 icon={open ? ILucideChevronDown : ILucideChevronLeft} inline />

@@ -11,7 +11,7 @@
     import Avatar from '$lib/Avatar.svelte'
     import { SourcegraphURL } from '$lib/common'
     import { scrollIntoViewOnMount } from '$lib/dom'
-    import Icon2 from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { replaceRevisionInURL } from '$lib/shared'

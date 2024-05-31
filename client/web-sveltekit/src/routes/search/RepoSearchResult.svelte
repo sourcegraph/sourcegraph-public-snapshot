@@ -42,7 +42,7 @@
         {/if}
         {#if result.private}
             <span class="info">
-                <Icon2 aria-label="Private repository" svgPath={ILucideLock} inline />
+                <Icon2 aria-label="Private repository" icon={ILucideLock} inline />
                 <small>Private</small>
             </span>
         {/if}
