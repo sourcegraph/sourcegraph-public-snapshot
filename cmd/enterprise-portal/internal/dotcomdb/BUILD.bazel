@@ -5,6 +5,7 @@ go_library(
     name = "dotcomdb",
     srcs = ["dotcomdb.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//internal/license",

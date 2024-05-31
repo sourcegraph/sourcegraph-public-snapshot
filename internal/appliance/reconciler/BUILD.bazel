@@ -19,6 +19,7 @@ go_library(
         "syntect.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/reconciler",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance/config",
@@ -85,6 +86,7 @@ go_test(
     env = {
         "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
     },
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/appliance/config",
         "//internal/appliance/yaml",
