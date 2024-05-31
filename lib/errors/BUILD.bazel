@@ -30,7 +30,6 @@ go_test(
         "invariants_test.go",
         "warning_test.go",
     ],
-    data = glob(["testdata/**"]),
     embed = [":errors"],
     tags = [TAG_INFRA_DEVINFRA],
     deps = [
