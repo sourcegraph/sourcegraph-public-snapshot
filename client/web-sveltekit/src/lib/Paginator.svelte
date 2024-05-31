@@ -1,11 +1,9 @@
 <script lang="ts">
-    import { mdiPageFirst, mdiPageLast, mdiChevronRight, mdiChevronLeft } from '@mdi/js'
-
     import { page } from '$app/stores'
 
-    import Icon from './Icon.svelte'
-    import { Button } from './wildcard'
+    import Icon2 from './Icon2.svelte'
     import { Param } from './Paginator'
+    import { Button } from './wildcard'
 
     type PageInfo =
         // Bidirection pagination
@@ -59,21 +57,21 @@
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a href={firstPageURL} class={buttonClass} aria-disabled={firstAndPreviousDisabled}>
-                <Icon svgPath={mdiPageFirst} inline />
+                <Icon2 icon={ILucideChevronFirst} inline />
             </a>
         </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a class={buttonClass} href={previousPageURL} aria-disabled={firstAndPreviousDisabled}>
-                <Icon svgPath={mdiChevronLeft} inline />Previous
+                <Icon2 icon={ILucideChevronLeft} inline />Previous
             </a>
         </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a class={buttonClass} href={nextPageURL} aria-disabled={nextAndLastDisabled}>
-                Next <Icon svgPath={mdiChevronRight} inline />
+                Next <Icon2 icon={ILucideChevronRight} inline />
             </a>
         </svelte:fragment>
     </Button>
@@ -81,7 +79,7 @@
         <Button variant="secondary" outline>
             <svelte:fragment slot="custom" let:buttonClass>
                 <a class={buttonClass} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
-                    <Icon svgPath={mdiPageLast} inline />
+                    <Icon2 icon={ILucideChevronLast} inline />
                 </a>
             </svelte:fragment>
         </Button>
