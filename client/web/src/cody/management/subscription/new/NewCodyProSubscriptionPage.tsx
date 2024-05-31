@@ -73,7 +73,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             </PageHeader>
 
             <Container>
-                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext()}>
+                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
                     <Elements stripe={stripePromise} options={{ appearance: stripeElementsAppearance }}>
                         <CodyProCheckoutForm
                             stripePromise={stripePromise}
