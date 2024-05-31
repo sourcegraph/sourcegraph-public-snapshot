@@ -66,6 +66,10 @@ type IngressSpec struct {
 	TLSSecret        string            `json:"tlsSecret,omitempty"`
 }
 
+type EmbeddingsSpec struct {
+	StandardConfig
+}
+
 // FrontendSpec defines the desired state of Frontend.
 type FrontendSpec struct {
 	// Replicas defines the number of Frontend pod replicas.
@@ -236,6 +240,8 @@ type SourcegraphSpec struct {
 
 	// CodeIntel defines the desired state of the Code Intel service.
 	CodeIntel CodeIntelSpec `json:"codeIntel,omitempty"`
+
+	Embeddings EmbeddingsSpec `json:"embeddings,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`

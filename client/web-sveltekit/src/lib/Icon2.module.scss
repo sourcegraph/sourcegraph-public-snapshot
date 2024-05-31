@@ -7,9 +7,19 @@ svg.icon {
 
     color: var(--icon-fill-color, var(--color, inherit));
     fill: currentColor;
+    stroke-width: var(--stroke-width, 2);
+
+    g,
+    path {
+        // Overwrites Lucide's/unplugin-icons' default stroke-width setting
+        stroke-width: inherit;
+    }
 }
 
 svg.icon-inline {
+    --stroke-width: 1.5;
+
     width: $icon-inline-size;
     height: $icon-inline-size;
+    vertical-align: text-bottom;
 }
