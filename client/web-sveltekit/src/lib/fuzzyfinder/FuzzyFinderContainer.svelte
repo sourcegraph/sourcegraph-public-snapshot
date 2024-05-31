@@ -66,6 +66,16 @@
         },
     })
 
+    registerHotkey({
+        keys: { key: 'Esc' },
+        ignoreInputFields: false,
+        handler: event => {
+            event.preventDefault()
+            fuzzyFinderState.update(state => ({ ...state, open: false }))
+            return false
+        },
+    })
+
     $: if ($fuzzyFinderState.selectedTabId !== '') {
         finder?.selectTab($fuzzyFinderState.selectedTabId)
     }
