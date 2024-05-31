@@ -280,11 +280,11 @@ load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependenc
 rules_esbuild_dependencies()
 
 # Register a toolchain containing esbuild npm package and native bindings
-load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_ESBUILD_VERSION", "esbuild_register_toolchains")
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "esbuild_register_toolchains")
 
 esbuild_register_toolchains(
     name = "esbuild",
-    esbuild_version = LATEST_ESBUILD_VERSION,
+    esbuild_version = "0.19.2",
 )
 
 # Go toolchain setup
