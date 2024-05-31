@@ -1,11 +1,9 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
-
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import type { RepositoryMatch } from '$lib/shared'
@@ -32,19 +30,19 @@
         <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
-                <Icon aria-label="Forked repository" svgPath={mdiSourceFork} inline />
+                <Icon2 aria-label="Forked repository" icon={ILucideGitFork} inline />
                 <small>Fork</small>
             </span>
         {/if}
         {#if result.archived}
             <span class="info">
-                <Icon aria-label="Archived repository" svgPath={mdiArchive} inline />
+                <Icon2 aria-label="Archived repository" icon={ILucideArchive} inline />
                 <small>Archive</small>
             </span>
         {/if}
         {#if result.private}
             <span class="info">
-                <Icon aria-label="Private repository" svgPath={mdiLock} inline />
+                <Icon2 aria-label="Private repository" svgPath={ILucideLock} inline />
                 <small>Private</small>
             </span>
         {/if}

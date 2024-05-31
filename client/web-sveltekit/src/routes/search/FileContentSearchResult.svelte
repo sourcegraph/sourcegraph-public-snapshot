@@ -7,11 +7,9 @@
 </script>
 
 <script lang="ts">
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-
     import CodeExcerpt from '$lib/CodeExcerpt.svelte'
     import { pluralize, SourcegraphURL } from '$lib/common'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
@@ -122,7 +120,7 @@
                 }}
                 class:expanded
             >
-                <Icon svgPath={expanded ? mdiChevronUp : mdiChevronDown} inline aria-hidden="true" />
+                <Icon2 icon={expanded ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden="true" />
                 <span>{expandButtonText}</span>
             </button>
         {/if}

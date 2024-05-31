@@ -27,7 +27,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline } from '@mdi/js'
+    import { mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -35,7 +35,7 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -188,7 +188,7 @@
                         on:click={toggleFileSidePanel}
                         aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                     >
-                        <Icon svgPath={!isCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight} inline />
+                        <Icon2 icon={!isCollapsed ? ILucideChevronsLeft : ILucideChevronsRight} inline />
                     </Button>
 
                     <RepositoryRevPicker

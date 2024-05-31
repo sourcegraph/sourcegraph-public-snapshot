@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-
     import { page } from '$app/stores'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
 
     import CountBadge from './CountBadge.svelte'
     import { updateFilterInURL, type SectionItemData } from './index'
@@ -24,7 +22,7 @@
     <CountBadge count={item.count} exhaustive={item.exhaustive} />
     {#if item.selected}
         <span class="close">
-            <Icon svgPath={mdiClose} inline />
+            <Icon2 icon={ILucideX} inline />
         </span>
     {/if}
 </a>

@@ -13,10 +13,9 @@
 </script>
 
 <script lang="ts">
-    import { mdiSourceMerge } from '@mdi/js'
-
     import Avatar from '$lib/Avatar.svelte'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
+    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -37,15 +36,15 @@
     {#if withHeader}
         <div class="header">
             <div class="left">
-                <Icon svgPath={mdiSourceMerge} --icon-fill-color="var(--primary)" />
+                <Icon2 icon={ILucideGitMerge} --icon-fill-color="var(--primary)" />
                 <h4>{displayRepoName(data.name)}</h4>
                 <Badge variant="outlineSecondary" small pill>
                     {data.isPrivate ? 'Private' : 'Public'}
                 </Badge>
             </div>
             <div class="right">
-                <Icon
-                    svgPath={getIconPathForCodeHost(data.externalRepository.serviceType)}
+                <CodeHostIcon
+                    icon={getIconPathForCodeHost(data.externalRepository.serviceType)}
                     --icon-fill-color="var(--text-body)"
                     --size={24}
                 />

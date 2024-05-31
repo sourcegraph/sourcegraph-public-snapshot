@@ -14,14 +14,13 @@
 </script>
 
 <script lang="ts">
-    import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
@@ -195,7 +194,7 @@
                     </ol>
                     {#if resultsToShow.length === 0 && state !== 'loading'}
                         <div class="message-container">
-                            <Icon svgPath={mdiCloseOctagonOutline} />
+                            <Icon2 icon={ILucideOctagonX} />
                             <p>No results found</p>
                         </div>
                     {/if}

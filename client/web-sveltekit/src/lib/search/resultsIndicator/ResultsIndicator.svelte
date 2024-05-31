@@ -54,7 +54,7 @@
         {/if}
     </div>
 
-    <Icon svgPath={mdiChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon2 icon={ILucideChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">

@@ -71,7 +71,7 @@
                         <Icon svgPath={icons[item.severity]} inline --icon-fill-color="var(--primary)" />
                         <span class="title">{item.title}</span>
                         {#if item.message}
-                            <Icon svgPath={open ? mdiChevronDown : mdiChevronLeft} inline />
+                            <Icon2 icon={open ? ILucideChevronDown : ILucideChevronLeft} inline />
                         {/if}
                     </h4>
                 </button>
@@ -101,7 +101,7 @@
                 <Button variant="primary">
                     <svelte:fragment slot="custom" let:buttonClass>
                         <button class="{buttonClass} search" disabled={searchAgainDisabled}>
-                            <Icon svgPath={mdiMagnify} />
+                            <Icon2 icon={ILucideSearch} />
                             <span>Search again</span>
                         </button>
                     </svelte:fragment>
