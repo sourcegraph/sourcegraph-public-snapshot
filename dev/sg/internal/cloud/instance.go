@@ -179,7 +179,6 @@ type InstanceFeatures struct {
 }
 
 func newInstanceStatus(src *cloudapiv1.InstanceState) *InstanceStatus {
-
 	status := InstanceStatus{}
 	var err error
 	status.Reason, err = newStatusReason(src.GetReason())
