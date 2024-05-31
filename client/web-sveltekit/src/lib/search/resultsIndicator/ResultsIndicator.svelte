@@ -2,6 +2,7 @@
     import { mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
 
     import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
     import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
