@@ -47,7 +47,7 @@ func TestInvariants(t *testing.T) {
 			if As(err, &check) {
 				require.True(t, Is(err, payloadLessStructError{}))
 				// This can be false, see Counter-example 2
-				//require.True(t, errors.HasType(err, payloadLessStructError{}))
+				//require.True(t, HasType(err, payloadLessStructError{}))
 			}
 		})
 	})
@@ -80,7 +80,7 @@ func TestInvariants(t *testing.T) {
 				require.True(t, HasType(err, errorWithOtherData))
 				require.True(t, HasType(err, withPayloadStructError{}))
 				// This can be false, see Counter-example 3
-				//require.True(t, errors.Is(err, errorOfInterest))
+				//require.True(t, Is(err, errorOfInterest))
 				var check withPayloadStructError
 				require.True(t, As(err, &check))
 				// This can be false, see Counter-example 4
@@ -95,6 +95,93 @@ func TestInvariants(t *testing.T) {
 				//require.True(t, HasType(err, errorOfInterest))
 				//require.True(t, HasType(err, errorWithOtherData))
 				//require.True(t, HasType(err, withPayloadStructError{}))
+			}
+		})
+	})
+
+	t.Run("payloadLessPtrError", func(t *testing.T) {
+		rapid.Check(t, func(t *rapid.T) {
+			err := errorTree(rapid.OneOf(
+				rapid.Just(error(&notTheErrorOfInterest{})),
+				rapid.Just(error(&payloadLessPtrError{})),
+			)).Draw(t, "err")
+			if Is(err, &payloadLessPtrError{}) {
+				// This can be false, see Counter-example 1
+				//require.True(t, HasType(err, &payloadLessPtrError{}))
+				require.Panics(t, func() {
+					var check payloadLessPtrError
+					require.True(t, As(err, &check))
+				})
+				var check *payloadLessPtrError
+				require.True(t, As(err, &check))
+			}
+			if HasType(err, &payloadLessPtrError{}) {
+				require.True(t, Is(err, &payloadLessPtrError{}))
+				require.Panics(t, func() {
+					var check payloadLessPtrError
+					require.True(t, As(err, &check))
+				})
+				var check *payloadLessPtrError
+				require.True(t, As(err, &check))
+			}
+			var check *payloadLessPtrError
+			if As(err, &check) {
+				require.True(t, Is(err, &payloadLessPtrError{}))
+				// This can be false, see Counter-example 2
+				//require.True(t, errors.HasType(err, &payloadLessPtrError{}))
+			}
+		})
+	})
+
+	t.Run("withPayloadPtrError", func(t *testing.T) {
+		rapid.Check(t, func(t *rapid.T) {
+			errorOfInterest := &withPayloadPtrError{data: 11}
+			errorWithOtherData := &withPayloadPtrError{data: 24}
+			err := errorTree(rapid.OneOf(
+				rapid.Just(error(&notTheErrorOfInterest{})),
+				rapid.Just(error(errorOfInterest)),
+				rapid.Just(error(errorWithOtherData)),
+			)).Draw(t, "err")
+
+			if Is(err, errorOfInterest) {
+				// This is false, see Counter-example 5
+				//require.False(t, Is(err, errorWithOtherData))
+				require.False(t, Is(err, &withPayloadPtrError{}))
+				// These can be false, see Counter-example 1
+				//require.True(t, HasType(err, errorOfInterest))
+				//require.True(t, HasType(err, errorWithOtherData))
+				//require.True(t, HasType(err, withPayloadStructError{}))
+				require.Panics(t, func() {
+					var check withPayloadPtrError
+					_ = As(err, &check)
+				})
+				var check *withPayloadPtrError
+				require.True(t, As(err, &check))
+				// This can be false, see Counter-example 6
+				//require.Equal(t, *errorOfInterest, *check)
+			}
+
+			if HasType(err, errorOfInterest) {
+				require.True(t, HasType(err, errorWithOtherData))
+				require.True(t, HasType(err, &withPayloadPtrError{}))
+				//This can be false, see Counter-example 3
+				//require.True(t, Is(err, errorOfInterest))
+				require.Panics(t, func() {
+					var check withPayloadPtrError
+					_ = As(err, &check)
+				})
+				var check *withPayloadPtrError
+				require.True(t, As(err, &check))
+				require.True(t, *check == *errorOfInterest || *check == *errorWithOtherData)
+			}
+
+			var check *withPayloadPtrError
+			if As(err, &check) {
+				require.True(t, *check == *errorOfInterest || *check == *errorWithOtherData)
+				require.True(t, Is(err, errorOfInterest) || Is(err, errorWithOtherData))
+				// These can be false, see Counter-example 2
+				//require.True(t, HasType(err, errorOfInterest))
+				//require.True(t, HasType(err, errorWithOtherData))
 			}
 		})
 	})
