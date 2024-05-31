@@ -3424,7 +3424,7 @@ func assertOrgOrAuthError(t *testing.T, err error) {
 		t.Fatal("expected org authorization error, got none")
 	}
 
-	if !errors.HasType(err, auth.ErrNotAnOrgMember) && !errors.HasTypeGeneric[*auth.InsufficientAuthorizationError](err) {
+	if !errors.Is(err, auth.ErrNotAnOrgMember) && !errors.HasTypeGeneric[*auth.InsufficientAuthorizationError](err) {
 		t.Fatalf("expected authorization error, got %s", err.Error())
 	}
 }

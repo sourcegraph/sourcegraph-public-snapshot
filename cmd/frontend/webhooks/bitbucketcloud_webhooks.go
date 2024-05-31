@@ -25,7 +25,7 @@ func (wr *Router) HandleBitbucketCloudWebhook(logger log.Logger, w http.Response
 	eventType := r.Header.Get("X-Event-Key")
 	e, err := bitbucketcloud.ParseWebhookEvent(eventType, payload)
 	if err != nil {
-		if errors.HasType(err, bitbucketcloud.UnknownWebhookEventKey("")) {
+		if errors.HasTypeGeneric[bitbucketcloud.UnknownWebhookEventKey](err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

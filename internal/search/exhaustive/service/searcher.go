@@ -231,6 +231,5 @@ func (s searchQuery) minimalRepo(ctx context.Context, repoID api.RepoID) (sgtype
 }
 
 func isReposMissingError(err error) bool {
-	var m repos.MissingRepoRevsError
-	return errors.Is(err, repos.ErrNoResolvedRepos) || errors.HasType(err, &m)
+	return errors.Is(err, repos.ErrNoResolvedRepos) || errors.HasTypeGeneric[*repos.MissingRepoRevsError](err)
 }
