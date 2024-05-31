@@ -1,7 +1,7 @@
-load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_files_to_bin_actions")
-load("//dev:js_lib.bzl", "gather_files_from_js_providers", "gather_runfiles")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "COPY_FILE_TO_BIN_TOOLCHAINS", "copy_files_to_bin_actions")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
+load("//dev:js_lib.bzl", "gather_files_from_js_providers", "gather_runfiles")
 
 def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_js_deps = []):
     """
@@ -147,6 +147,7 @@ _eslint_test_with_types = rule(
         "binary": attr.label(executable = True, cfg = "exec", allow_files = True),
         "report": attr.string(),
     },
+    toolchains = COPY_FILE_TO_BIN_TOOLCHAINS,
 )
 
 def eslint_test_with_types(name, **kwargs):

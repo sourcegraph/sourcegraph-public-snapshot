@@ -28,9 +28,9 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "d0529773764ac61184eb3ad3c687fb835df5bee01afedf07f0cf1a45515c96bc",
-    strip_prefix = "bazel-lib-1.42.3",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.42.3/bazel-lib-v1.42.3.tar.gz",
+    sha256 = "6d758a8f646ecee7a3e294fbe4386daafbe0e5966723009c290d493f227c390b",
+    strip_prefix = "bazel-lib-2.7.7",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
 )
 
 # rules_js defines an older rules_nodejs, so we override it here
@@ -156,11 +156,11 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
 
-register_jq_toolchains()
+aspect_bazel_lib_dependencies()
 
-register_expand_template_toolchains()
+aspect_bazel_lib_register_toolchains()
 
 http_archive(
     name = "rules_apko",
