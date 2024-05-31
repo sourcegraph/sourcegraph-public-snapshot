@@ -36,91 +36,86 @@ func ExecuteJob[
 	ConfigT any,
 	LoaderT ConfigLoader[ConfigT],
 ](job Job[ConfigT]) {
-	// To get around os.Exit not honoring defer we
-	// wrap the body in another function which we can safely defer inside
-	err := func() (err error) {
-		flag.Parse()
-		passSanityCheck(job)
+	flag.Parse()
+	passSanityCheck(job)
 
-		// Resource representing the job
-		res := log.Resource{
-			Name:       job.Name(),
-			Version:    job.Version(),
-			Namespace:  "",
-			InstanceID: "",
+	// Resource representing the job
+	res := log.Resource{
+		Name:       job.Name(),
+		Version:    job.Version(),
+		Namespace:  "",
+		InstanceID: "",
+	}
+
+	liblog := log.Init(res, log.NewSentrySink())
+	defer liblog.Sync()
+
+	ctx := context.Background()
+
+	// startLogger should only be used within Start - jobs should
+	// create a separate top-level startLogger for their usage.
+	startLogger := log.Scoped("msp.start")
+
+	env, err := contract.ParseEnv(os.Environ())
+	if err != nil {
+		startLogger.Fatal("failed to load environment", log.Error(err))
+	}
+
+	// Initialize LoaderT implementation as non-zero *ConfigT
+	var config LoaderT = new(ConfigT)
+
+	// Load configuration variables from environment
+	config.Load(env)
+	ctr := contract.New(log.Scoped("msp.contract"), job, env)
+
+	// Fast-exit with configuration facts if requested
+	if *showHelp {
+		renderHelp(job, env)
+		return
+	}
+
+	// Enable Sentry error log reporting
+	sentryEnabled := ctr.Diagnostics.ConfigureSentry(liblog)
+
+	// Check for environment errors
+	if err := env.Validate(); err != nil {
+		startLogger.Fatal("environment configuration error encountered", log.Error(err))
+	}
+
+	// Initialize things dependent on configuration being loaded
+	otelCleanup, err := opentelemetry.Init(ctx, log.Scoped("msp.otel"), ctr.Diagnostics.OpenTelemetry, res)
+	if err != nil {
+		startLogger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
+	}
+	defer otelCleanup()
+
+	if ctr.MSP {
+		if err := profiler.Start(profiler.Config{
+			Service:        job.Name(),
+			ServiceVersion: job.Version(),
+			// Options used in sourcegraph/sourcegraph
+			MutexProfiling: true,
+			AllocForceGC:   true,
+		}); err != nil {
+			// For now, keep this optional and don't prevent startup
+			startLogger.Error("failed to initialize profiler", log.Error(err))
+		} else {
+			startLogger.Debug("Cloud Profiler enabled")
 		}
+	}
 
-		liblog := log.Init(res, log.NewSentrySink())
-		defer liblog.Sync()
+	executionID, done, err := ctr.Diagnostics.JobExecutionCheckIn(ctx)
+	if err != nil {
+		startLogger.Warn("failed to register job execution check-in", log.Error(err))
+	}
+	startLogger.Info("starting job execution",
+		log.String("job", job.Name()),
+		log.String("executionID", executionID),
+		log.Bool("msp", ctr.MSP),
+		log.Bool("sentry", sentryEnabled))
 
-		ctx := context.Background()
-
-		// startLogger should only be used within Start - jobs should
-		// create a separate top-level startLogger for their usage.
-		startLogger := log.Scoped("msp.start")
-
-		env, err := contract.ParseEnv(os.Environ())
-		if err != nil {
-			startLogger.Fatal("failed to load environment", log.Error(err))
-		}
-
-		// Initialize LoaderT implementation as non-zero *ConfigT
-		var config LoaderT = new(ConfigT)
-
-		// Load configuration variables from environment
-		config.Load(env)
-		ctr := contract.New(log.Scoped("msp.contract"), job, env)
-
-		// Fast-exit with configuration facts if requested
-		if *showHelp {
-			renderHelp(job, env)
-			return nil
-		}
-
-		// Enable Sentry error log reporting
-		sentryEnabled := ctr.Diagnostics.ConfigureSentry(liblog)
-
-		// Check for environment errors
-		if err := env.Validate(); err != nil {
-			startLogger.Fatal("environment configuration error encountered", log.Error(err))
-		}
-
-		// Initialize things dependent on configuration being loaded
-		otelCleanup, err := opentelemetry.Init(ctx, log.Scoped("msp.otel"), ctr.Diagnostics.OpenTelemetry, res)
-		if err != nil {
-			startLogger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
-		}
-		defer otelCleanup()
-
-		if ctr.MSP {
-			if err := profiler.Start(profiler.Config{
-				Service:        job.Name(),
-				ServiceVersion: job.Version(),
-				// Options used in sourcegraph/sourcegraph
-				MutexProfiling: true,
-				AllocForceGC:   true,
-			}); err != nil {
-				// For now, keep this optional and don't prevent startup
-				startLogger.Error("failed to initialize profiler", log.Error(err))
-			} else {
-				startLogger.Debug("Cloud Profiler enabled")
-			}
-		}
-
-		executionID, done, err := ctr.Diagnostics.JobExecutionCheckIn(ctx)
-		if err != nil {
-			startLogger.Warn("failed to register job execution check-in", log.Error(err))
-		}
-		defer done(&err)
-
-		startLogger.Info("starting job execution",
-			log.String("job", job.Name()),
-			log.String("executionID", executionID),
-			log.Bool("msp", ctr.MSP),
-			log.Bool("sentry", sentryEnabled))
-
-		return job.Execute(ctx, log.Scoped("job"), ctr, *config)
-	}()
+	err = job.Execute(ctx, log.Scoped("job"), ctr, *config)
+	done(err)
 
 	if err != nil {
 		os.Exit(1)

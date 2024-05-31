@@ -57,7 +57,7 @@ func TestJobExecutionCheckIn(t *testing.T) {
 
 			if failed {
 				err := errors.New("failed")
-				done(&err)
+				done(err)
 			} else {
 				done(nil)
 			}

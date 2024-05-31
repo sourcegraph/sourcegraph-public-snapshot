@@ -225,16 +225,16 @@ func (c diagnosticsContract) ConfigureSentry(liblog *log.PostInitCallbacks) bool
 //	func work(ctx context.Context) (err error) {
 //		done, err := c.Diagnostics.JobExecutionCheckIn(ctx)
 //		if err != nil { /* failed to register check-in */ }
-//		defer done(&err)
-//
-//		// ... do work
+//		err = ... do work ...
+//		done(err)
+//		return
 //	}
 //
 // Note the use of named returns in order to correctly capture the final error.
 // Various contract environment variables MUST be set for Sentry monitor check-ins
 // to be enabled, otherwise this method will only render log entries - required
 // variables are set by MSP infrastructure.
-func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, func(err *error), error) {
+func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, func(err error), error) {
 	// All values must be set by MSP infrastructure
 	useSentryCronMonitor := c.useSentry() &&
 		c.cronSchedule != nil &&
@@ -253,12 +253,11 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 	start := time.Now()
 	logger.Info("job execution starting")
 
-	logCompletion := func(err *error) {
+	logCompletion := func(err error) {
 		d := log.Duration("duration", time.Since(start))
 
-		// we have *error so we need to deref it to get the actual error
-		if pointers.Deref(err, nil) != nil {
-			logger.Error("job execution failed", log.Error(*err), d)
+		if err != nil {
+			logger.Error("job execution failed", log.Error(err), d)
 		} else {
 			logger.Info("job execution succeeded", d)
 		}
@@ -317,12 +316,12 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 		},
 		monitorConfig,
 		scope)
-	return executionID, func(err *error) {
+	return executionID, func(err error) {
 		defer sentryClient.Flush(time.Second)
 
 		status := sentry.CheckInStatusOK
-		// we have *error so we need to deref it to get the actual error
-		if pointers.Deref(err, nil) != nil {
+
+		if err != nil {
 			status = sentry.CheckInStatusError
 		}
 		logCompletion(err)
