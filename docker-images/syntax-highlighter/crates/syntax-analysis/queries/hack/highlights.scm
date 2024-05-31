@@ -13,6 +13,7 @@
 
 "function" @keyword.function
 
+
 (scope_identifier) @keyword
 (visibility_modifier) @keyword
 
@@ -78,8 +79,11 @@
   (qualified_identifier
     (identifier) @type))
 
+
+
 (xhp_class_attribute
-    name: (xhp_identifier) @variable)
+    name: (xhp_identifier) @variable
+)
 
 [
   (abstract_modifier)
@@ -107,6 +111,7 @@
   "dynamic"
   "noreturn"
   "nothing"
+  "num"
 ] @type.builtin
 
 
@@ -155,7 +160,7 @@
   "@required"
   "@lateinit"
   (attribute_modifier)
-] @attribute
+] @identifier.attribute
 
 [
   "="
