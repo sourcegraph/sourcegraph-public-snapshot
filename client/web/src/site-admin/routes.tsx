@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
+import { isEmbeddingsEnabled } from '../cody/isCodyEnabled'
 import type { BatchSpecsPageProps } from '../enterprise/batches/BatchSpecsPage'
 import { CodeIntelConfigurationPolicyPage } from '../enterprise/codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
@@ -192,8 +193,6 @@ const CodyConfigurationPage = lazyComponent(
     () => import('../enterprise/cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
 )
-
-const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -494,24 +493,24 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         path: '/cody',
         render: () => <Navigate to="/site-admin/embeddings" />,
-        condition: codyIsEnabled,
+        condition: isEmbeddingsEnabled,
     },
     {
         exact: true,
         path: '/embeddings',
         render: props => <SiteAdminCodyPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
-        condition: codyIsEnabled,
+        condition: isEmbeddingsEnabled,
     },
     {
         exact: true,
         path: '/embeddings/configuration',
         render: props => <CodyConfigurationPage {...props} />,
-        condition: codyIsEnabled,
+        condition: isEmbeddingsEnabled,
     },
     {
         path: '/embeddings/configuration/:id',
         render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
-        condition: codyIsEnabled,
+        condition: isEmbeddingsEnabled,
     },
 
     // rbac-related routes
