@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_google_cloud_go_cloudsqlconn//:cloudsqlconn",
         "@io_opentelemetry_go_otel//:otel",
