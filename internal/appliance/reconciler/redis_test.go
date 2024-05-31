@@ -7,7 +7,6 @@ func (suite *ApplianceTestSuite) TestDeployRedis() {
 		name string
 	}{
 		{name: "redis/default"},
-		{name: "redis/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMap(tc.name)

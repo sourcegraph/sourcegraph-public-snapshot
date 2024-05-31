@@ -14,6 +14,7 @@ import (
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/helpers"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -94,9 +95,11 @@ var previewCommand = &cli.Command{
 	},
 }
 
+var bazelCommandHowTo = "https://www.notion.so/sourcegraph/Running-an-arbitrary-Bazel-command-in-CI-diagnosing-flakes-for-example-e0ae40ec6f3a4fd5a39a41d9681ec632"
 var bazelCommand = &cli.Command{
 	Name:      "bazel",
 	Usage:     "Fires a CI build running a given bazel command",
+	UsageText: fmt.Sprintf("See %s for more information", bazelCommandHowTo),
 	ArgsUsage: "[--web|--wait] [test|build] <target1> <target2> ... <bazel flags>",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -117,6 +120,16 @@ var bazelCommand = &cli.Command{
 	},
 	Action: func(cmd *cli.Context) (err error) {
 		args := cmd.Args().Slice()
+
+		if err := helpers.VerifyBazelCommand(strings.Join(args, " ")); err != nil {
+			std.Out.WriteWarningf(
+				"Given bazel commands/flags %q is not in allow-list for running in CI: %s",
+				strings.Join(args, " "),
+				err,
+			)
+			std.Out.WriteNoticef("Please see %s for more informations.", bazelCommandHowTo)
+			return err
+		}
 
 		if !cmd.Bool("staged") {
 			out, err := run.GitCmd("diff", "--cached")

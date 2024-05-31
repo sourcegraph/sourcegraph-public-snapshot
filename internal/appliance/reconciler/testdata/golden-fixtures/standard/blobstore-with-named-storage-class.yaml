@@ -3,7 +3,7 @@ resources:
     kind: Deployment
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+        appliance.sourcegraph.com/configHash: 4b2ab18e05ba5d188d2419b3d05d7bc57d505298a37147b66882a5b091bb370f
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -94,7 +94,9 @@ resources:
         spec:
           requestedVersion: "5.3.9104"
 
-          blobstore: {}
+          blobstore:
+            persistentVolumeConfig:
+              storageClassName: sourcegraph
 
           codeInsights:
             disabled: true
@@ -144,10 +146,10 @@ resources:
           worker:
             disabled: true
 
-          storageClass:
-            name: sourcegraph
-
           prometheus:
+            disabled: true
+
+          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:
@@ -163,7 +165,7 @@ resources:
     kind: PersistentVolumeClaim
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+        appliance.sourcegraph.com/configHash: 4b2ab18e05ba5d188d2419b3d05d7bc57d505298a37147b66882a5b091bb370f
       creationTimestamp: "2024-04-19T00:00:00Z"
       finalizers:
         - kubernetes.io/pvc-protection
@@ -194,7 +196,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: d33e42f7a0651e109c1a55ae881f9e3000e194cb5257dad1714cf26d5a370b3c
+        appliance.sourcegraph.com/configHash: 4b2ab18e05ba5d188d2419b3d05d7bc57d505298a37147b66882a5b091bb370f
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: blobstore

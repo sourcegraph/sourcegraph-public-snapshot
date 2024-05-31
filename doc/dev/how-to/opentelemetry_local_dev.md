@@ -25,6 +25,6 @@ Set `dev-private` site config to use `"observability.tracing": { "type": "opente
 
 ## Testing
 
-Use `sg start` to start services, and run a complex query with `&trace=1`, e.g. [`foobar(...) patterntype:structural`](https://sourcegraph.test:3443/search?q=context%3Aglobal+foobar%28...%29&patternType=structural&trace=1)—this will show the `View trace` button in the search results.
+Use `sg start` to start services, and run a complex query with `&trace=1`, e.g. [`foobar\(\w+\) patterntype:regexp`](https://sourcegraph.test:3443/search?q=context%3Aglobal+foobar%28...%29&patternType=regexp&trace=1)—this will show the `View trace` button in the search results.
 
 When using different backends, you can use `"urlTemplate"` in `"observability.tracing"` to configure the link.

@@ -63,6 +63,7 @@
         justify-content: center;
         position: relative;
         background: var(--secondary);
+        flex: none;
     }
 
     div::after {

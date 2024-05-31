@@ -46,6 +46,7 @@ export enum PageRoutes {
     CodyManagement = '/cody/manage',
     // The CodySubscriptions page is a comparison of different Cody product tiers.
     CodySubscription = '/cody/subscription',
+    CodySubscriptionManage = '/cody/subscription/manage',
 
     CodyManageTeam = '/cody/team/manage',
     // Accepts an invite to join a Cody team, then redirects to the Cody team page.

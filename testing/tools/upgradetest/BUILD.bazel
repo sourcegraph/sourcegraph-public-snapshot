@@ -37,12 +37,12 @@ sh_test(
     args = [
         "$(location :go_upgradetest)",
         "$(location //cmd/migrator:image_tarball)",
-        "$(location //cmd/frontend:image_tarball)",
+        "$(location //cmd/frontend:no_client_bundle.image_tarball)",
         "$(locations //internal/database:generate_schemas)",
     ],
     data = [
         ":go_upgradetest",
-        "//cmd/frontend:image_tarball",
+        "//cmd/frontend:no_client_bundle.image_tarball",
         "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
     ],
@@ -60,12 +60,12 @@ sh_binary(
     args = [
         "$(location :go_upgradetest)",
         "$(location //cmd/migrator:image_tarball)",
-        "$(location //cmd/frontend:image_tarball)",
+        "$(location //cmd/frontend:no_client_bundle.image_tarball)",
         "$(locations //internal/database:generate_schemas)",
     ],
     data = [
         ":go_upgradetest",
-        "//cmd/frontend:image_tarball",
+        "//cmd/frontend:no_client_bundle.image_tarball",
         "//cmd/migrator:image_tarball",
         "//internal/database:generate_schemas",
     ],

@@ -895,8 +895,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
 	}
 
-	if completionsConfig.SmartContext == "" {
-		completionsConfig.SmartContext = "enabled"
+	if completionsConfig.SmartContextWindow == "" {
+		completionsConfig.SmartContextWindow = "enabled"
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
@@ -904,12 +904,13 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		AccessToken:                      completionsConfig.AccessToken,
 		ChatModel:                        completionsConfig.ChatModel,
 		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		SmartContext:                     completionsConfig.SmartContext,
+		SmartContextWindow:               completionsConfig.SmartContextWindow,
 		FastChatModel:                    completionsConfig.FastChatModel,
 		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
 		CompletionModel:                  completionsConfig.CompletionModel,
 		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
+		User:                             completionsConfig.User,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
 		PerCommunityUserChatMonthlyLLMRequestLimit:             completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,

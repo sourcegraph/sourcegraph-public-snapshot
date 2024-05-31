@@ -32,20 +32,24 @@
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
+    import Popover from '$lib/Popover.svelte'
+    import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import Tooltip from '$lib/Tooltip.svelte'
+    import { delay } from '$lib/utils'
+    import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
     import HelpFooter from './HelpFooter.svelte'
     import {
         type URLQueryFilter,
-        type SectionItem,
+        type SectionItemData,
         staticTypeFilters,
         typeFilterIcons,
         groupFilters,
@@ -54,6 +58,7 @@
     } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
+    import SectionItem from './SectionItem.svelte'
 
     export let searchQuery: string
     export let streamFilters: Filter[]
@@ -61,7 +66,7 @@
     export let state: 'complete' | 'error' | 'loading'
 
     $: groupedFilters = groupFilters(streamFilters, selectedFilters)
-    $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItem => {
+    $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItemData => {
         const selectedOrStreamFilter = groupedFilters.type.find(
             typeFilter => typeFilter.label === staticTypeFilter.label
         )
@@ -83,7 +88,7 @@
         }
     }
 
-    function handleFilterSelect(kind: SectionItem['kind']): void {
+    function handleFilterSelect(kind: SectionItemData['kind']): void {
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
     }
 
@@ -119,13 +124,24 @@
             filterPlaceholder="Filter repositories"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="label" let:label>
-                <Tooltip tooltip={label} placement="right">
-                    <span>
-                        <CodeHostIcon disableTooltip repository={label} />
-                        <span>{displayRepoName(label)}</span>
-                    </span>
-                </Tooltip>
+            <svelte:fragment slot="item" let:item>
+                <Popover showOnHover let:registerTrigger placement="right-start">
+                    <div use:registerTrigger>
+                        <SectionItem {item}>
+                            <svelte:fragment slot="label" let:label>
+                                <CodeHostIcon disableTooltip repository={label} />
+                                <span>{displayRepoName(label)}</span>
+                            </svelte:fragment>
+                        </SectionItem>
+                    </div>
+                    <svelte:fragment slot="content">
+                        {#await delay(fetchRepoPopoverData(getGraphQLClient(), item.label), 200) then data}
+                            <RepoPopover {data} withHeader />
+                        {:catch error}
+                            <Alert size="slim" variant="danger">{error}</Alert>
+                        {/await}
+                    </svelte:fragment>
+                </Popover>
             </svelte:fragment>
         </Section>
         <Section

@@ -1753,8 +1753,8 @@ github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240524154739-8718936
 github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240524154739-87189364d07f/go.mod h1:+yFgPzr01Ks+pcvFlStxKtUp4Wq//BqQEJDnZczD3h0=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20240514170004-fe8f2a3d9cab h1:9g0lbxps+Yr99nE2Y8RnhPwV6HUYUxEpHfB+RISFfdU=
-github.com/sourcegraph/zoekt v0.0.0-20240514170004-fe8f2a3d9cab/go.mod h1:K7dYKxtKLPBRwu55Useje/JUZEuWgzlu5O1F8VFHfwE=
+github.com/sourcegraph/zoekt v0.0.0-20240528215134-640102a4a30e h1:p2PMQkXe01gWBLgYqpQKnbg6OzR62/Py1CK2YDbaRCU=
+github.com/sourcegraph/zoekt v0.0.0-20240528215134-640102a4a30e/go.mod h1:K7dYKxtKLPBRwu55Useje/JUZEuWgzlu5O1F8VFHfwE=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
