@@ -17,8 +17,9 @@ svg.icon {
 }
 
 svg.icon-inline {
+    --stroke-width: 1.5;
+
     width: $icon-inline-size;
     height: $icon-inline-size;
     vertical-align: text-bottom;
-    --stroke-width: 1.5;
 }

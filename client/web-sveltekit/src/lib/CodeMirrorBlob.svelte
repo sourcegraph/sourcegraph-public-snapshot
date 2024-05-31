@@ -207,7 +207,6 @@
             // fall back to browser's find in page
         },
         allowDefault: true,
-        ignoreInputFields: false,
     })
 
     let container: HTMLDivElement | null = null

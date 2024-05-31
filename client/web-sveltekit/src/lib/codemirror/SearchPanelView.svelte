@@ -1,6 +1,8 @@
 <svelte:options accessors={true} />
 
 <script lang="ts">
+    import { onMount } from 'svelte'
+
     import { pluralize } from '$lib/common'
     import { formatShortcut } from '$lib/Hotkey'
     import Icon2 from '$lib/Icon2.svelte'
@@ -35,9 +37,16 @@
     function handleOverrideBrowserSearchChange(event: Event) {
         setOverrideBrowserSearch((event.target as HTMLInputElement).checked)
     }
+
+    onMount(() => {
+        // CodeMirror doesn't focus the input element when the search panel is opened
+        // the first time.
+        input.focus()
+        input.select()
+    })
 </script>
 
-<span class="input cm-sg-search-input" class:no-match={searchQuery && totalMatches === 0}>
+<span class="input cm-sg-search-input" class:no-match={inputValue && totalMatches === 0}>
     <input
         bind:this={input}
         placeholder="Find..."
@@ -102,7 +111,7 @@
 <style lang="scss">
     .input {
         display: flex;
-        padding: 0.125rem 0.5rem;
+        padding: 0 0.5rem;
         gap: 0.25rem;
 
         &:focus-within {
