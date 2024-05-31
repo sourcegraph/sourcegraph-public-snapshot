@@ -5,7 +5,6 @@ use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
-use walkdir::DirEntry;
 
 use crate::{
     evaluate::Evaluator,
@@ -132,28 +131,17 @@ pub fn index_command(
         }
         IndexMode::Workspace { location } => {
             let extensions = ParserId::language_extensions(&p);
-            let is_valid = |entry: &DirEntry| {
-                entry.file_type().is_dir()
-                    || entry
-                        .file_name()
-                        .to_str()
-                        .map(|s| {
-                            s.split('.')
-                                .last()
-                                .filter(|ext| extensions.contains(ext))
-                                .is_some()
-                        })
-                        .unwrap_or(false)
-            };
-
             let bar = create_spinner();
 
-            for entry in walkdir::WalkDir::new(location)
-                .into_iter()
-                .filter_entry(is_valid)
-            {
-                let entry = entry.unwrap();
-                if !entry.file_type().is_dir() {
+            for entry in walkdir::WalkDir::new(location) {
+                let Ok(entry) = entry else { continue };
+                if entry.file_type().is_dir() {
+                    continue;
+                }
+                let Some(extension) = entry.path().extension().and_then(|p| p.to_str()) else {
+                    continue;
+                };
+                if extensions.contains(extension) {
                     bar.set_message(entry.path().display().to_string());
                     index_file(&entry.into_path())?;
                     bar.tick();
