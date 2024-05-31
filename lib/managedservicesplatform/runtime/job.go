@@ -119,8 +119,7 @@ func ExecuteJob[
 			log.Bool("msp", ctr.MSP),
 			log.Bool("sentry", sentryEnabled))
 
-		err = job.Execute(ctx, log.Scoped("job"), ctr, *config)
-		return
+		return job.Execute(ctx, log.Scoped("job"), ctr, *config)
 	}()
 
 	if err != nil {
