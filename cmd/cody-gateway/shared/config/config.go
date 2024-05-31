@@ -45,6 +45,7 @@ type Config struct {
 
 	Fireworks FireworksConfig
 
+	// Prefixed model names
 	AllowedEmbeddingsModels []string
 
 	AllowAnonymous bool
@@ -88,12 +89,14 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	FlaggingConfig FlaggingConfig
 }
 
 type FireworksConfig struct {
+	// Non-prefixed model names
 	AllowedModels                          []string
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
@@ -102,6 +105,7 @@ type FireworksConfig struct {
 }
 
 type OpenAIConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	OrgID          string
