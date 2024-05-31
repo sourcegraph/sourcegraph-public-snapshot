@@ -1,5 +1,6 @@
 <script context="module" lang="ts">
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
 
     enum TabPanels {
@@ -25,10 +26,21 @@
             return
         }
     }
+
+    const historyHotkey: Keys = {
+        key: 'alt+h',
+        mac: '⌥+h',
+    }
+
+    const referenceHotkey: Keys = {
+        key: 'alt+r',
+        mac: '⌥+r'
+    }
+
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline } from '@mdi/js'
+    import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -273,7 +285,7 @@
             >
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                        <TabPanel title="History" icon={mdiHistory}>
+                        <TabPanel title="History" shortcut={historyHotkey}>
                             {#key $page.params.path}
                                 <HistoryPanel
                                     bind:this={historyPanel}
@@ -285,7 +297,7 @@
                                 />
                             {/key}
                         </TabPanel>
-                        <TabPanel title="References" icon={mdiListBoxOutline}>
+                        <TabPanel title="References" shortcut={referenceHotkey}>
                             <ReferencePanel
                                 connection={references}
                                 loading={referencesLoading}
