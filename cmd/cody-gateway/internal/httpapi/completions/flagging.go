@@ -25,7 +25,7 @@ type flaggingConfig struct {
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
 
-	// FlaggedModelNames is a slice of LLM model names, e.g. "gtp-3.5-turbo",
+	// FlaggedModelNames is a slice of LLM model names, e.g. "gpt-3.5-turbo",
 	// that will lead to the request getting flagged.
 	FlaggedModelNames []string
 
