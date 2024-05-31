@@ -112,7 +112,7 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return err
 	}
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		license,
 	)
@@ -185,7 +185,7 @@ func determineDeploymentName(originalName, version, email, branch string) string
 		deploymentName = branch
 	}
 
-	return deploymentName
+	return sanitizeInstanceName(deploymentName)
 
 }
 
