@@ -1,5 +1,4 @@
-use std::path::PathBuf;
-use std::process;
+use std::{path::PathBuf, process};
 
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
