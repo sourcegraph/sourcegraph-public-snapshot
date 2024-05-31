@@ -19,8 +19,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { Alert, Button } from '$lib/wildcard'
 
     export let variant: 'info' | 'warning' | 'danger' | 'success'
@@ -49,7 +48,7 @@
             {#if partialStorageKey}
                 <div class="button-wrapper">
                     <Button variant="icon" aria-label="Dismiss alert" on:click={handleDismissClick}>
-                        <Icon aria-hidden inline svgPath={mdiClose} />
+                        <Icon2 aria-hidden inline icon={ILucideX} />
                     </Button>
                 </div>
             {/if}

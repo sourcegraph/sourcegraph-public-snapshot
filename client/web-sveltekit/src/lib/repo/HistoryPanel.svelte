@@ -5,14 +5,13 @@
 </script>
 
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiNotebookOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { page } from '$app/stores'
     import Avatar from '$lib/Avatar.svelte'
     import { SourcegraphURL } from '$lib/common'
     import { scrollIntoViewOnMount } from '$lib/dom'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -92,7 +91,7 @@
                         <td>
                             <Tooltip tooltip={selected ? 'Close commit' : 'View at commit'}>
                                 <a href={selected ? closeURL : `?rev=${commit.oid}`}
-                                    ><Icon svgPath={mdiFileDocumentOutline} inline /></a
+                                    ><Icon2 icon={ILucideFileText} inline /></a
                                 >
                             </Tooltip>
                         </td>
@@ -103,7 +102,7 @@
                                 href={replaceRevisionInURL(
                                     SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
                                     commit.oid
-                                )}><Icon svgPath={mdiNotebookOutline} inline /></a
+                                )}><Icon2 icon={ILucideNotebook} inline /></a
                             >
                         </Tooltip>
                     </td>

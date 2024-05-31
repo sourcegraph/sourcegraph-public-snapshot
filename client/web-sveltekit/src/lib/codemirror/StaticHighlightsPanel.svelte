@@ -27,7 +27,7 @@
                     data-testid="blob-view-static-previous"
                     aria-label="previous result"
                 >
-                    <Icon inline svgPath={mdiChevronLeft} aria-hidden={true} />
+                    <Icon2 inline icon={ILucideChevronLeft} aria-hidden />
                 </Button>
             </div>
             <div class="right">
@@ -39,7 +39,7 @@
                     data-testid="blob-view-static-next"
                     aria-label="next result"
                 >
-                    <Icon inline svgPath={mdiChevronRight} aria-hidden={true} />
+                    <Icon2 inline icon={ILucideChevronRight} aria-hidden />
                 </Button>
             </div>
         </div>

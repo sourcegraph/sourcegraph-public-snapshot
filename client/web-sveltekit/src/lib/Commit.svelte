@@ -1,10 +1,8 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiDotsHorizontal } from '@mdi/js'
-
     import Avatar from '$lib/Avatar.svelte'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -50,7 +48,7 @@
             <a class="subject" href={commit.canonicalURL}>{commit.subject}</a>
             {#if !alwaysExpanded && commit.body}
                 <button type="button" on:click={() => (expanded = !expanded)}>
-                    <Icon svgPath={mdiDotsHorizontal} inline />
+                    <Icon2 icon={ILucideEllipsis} inline />
                 </button>
             {/if}
         </span>

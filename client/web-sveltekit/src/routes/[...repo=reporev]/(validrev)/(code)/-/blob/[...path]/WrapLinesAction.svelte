@@ -5,9 +5,7 @@
 </script>
 
 <script lang="ts">
-    import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
-
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
     $: tooltip = ($lineWrap ? 'Disable' : 'Enable') + ' wrapping long lines'
@@ -15,7 +13,7 @@
 
 <Tooltip {tooltip}>
     <button on:click={() => lineWrap.update(wrap => !wrap)}
-        ><Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline /></button
+        ><Icon2 icon={$lineWrap ? ILucideWrapText : ILucideText} inline /></button
     >
 </Tooltip>
 

@@ -1,12 +1,5 @@
 <script lang="ts">
-    import {
-        mdiAlertCircle,
-        mdiAlert,
-        mdiChevronDown,
-        mdiChevronLeft,
-        mdiInformationOutline,
-        mdiMagnify,
-    } from '@mdi/js'
+    import { mdiAlertCircle, mdiAlert, mdiInformationOutline } from '@mdi/js'
 
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'

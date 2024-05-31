@@ -15,7 +15,7 @@
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
     import Icon2 from '$lib/Icon2.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -43,8 +43,8 @@
                 </Badge>
             </div>
             <div class="right">
-                <CodeHostIcon
-                    icon={getIconPathForCodeHost(data.externalRepository.serviceType)}
+                <Icon
+                    svgPath={getIconPathForCodeHost(data.externalRepository.serviceType)}
                     --icon-fill-color="var(--text-body)"
                     --size={24}
                 />
