@@ -23,7 +23,7 @@ go_library(
         "//lib/managedservicesplatform/cloudsql",
         "//lib/managedservicesplatform/runtime",
         "@com_connectrpc_grpcreflect//:grpcreflect",
-        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",

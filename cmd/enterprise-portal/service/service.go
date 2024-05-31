@@ -120,10 +120,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		background.CallbackRoutine{
 			StopFunc: func(ctx context.Context) error {
 				start := time.Now()
-				if err := dotcomDB.Close(ctx); err != nil {
-					return errors.Wrap(err, "dotcomDB.Close")
-				}
-				logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
+				dotcomDB.Close()
+				logger.Info("database connection pool closed", log.Duration("elapsed", time.Since(start)))
 				return nil
 			},
 		},

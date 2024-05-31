@@ -7,7 +7,7 @@ import (
 	"time"
 
 	pgxstdlibv4 "github.com/jackc/pgx/v4/stdlib"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -58,7 +58,7 @@ func newTestDotcomReader(t *testing.T) (database.DB, *dotcomdb.Reader) {
 
 	// Now create a new connection using the conn string 😎
 	t.Logf("pgx.Connect %q", connString)
-	conn, err := pgx.Connect(ctx, connString)
+	conn, err := pgxpool.New(ctx, connString)
 	require.NoError(t, err)
 
 	// Make sure it works!

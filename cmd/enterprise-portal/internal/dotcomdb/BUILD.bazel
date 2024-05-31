@@ -14,6 +14,7 @@ go_library(
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
         "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
     ],
 )
 
@@ -36,7 +37,7 @@ go_test(
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/pointers",
         "@com_github_jackc_pgx_v4//stdlib",
-        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
