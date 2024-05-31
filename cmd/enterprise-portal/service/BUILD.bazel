@@ -9,6 +9,7 @@ go_library(
         "state.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/service",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/enterprise-portal/internal/codyaccessservice",
