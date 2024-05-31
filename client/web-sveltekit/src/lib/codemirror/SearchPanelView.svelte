@@ -1,5 +1,3 @@
-<svelte:options accessors={true} />
-
 <script lang="ts">
     import { onMount } from 'svelte'
 
@@ -27,7 +25,12 @@
     /**
      * Exported for the caller to control the input element.
      */
-    export let input: HTMLInputElement
+    export function getInput(): HTMLInputElement {
+        return input
+
+    }
+
+    let input: HTMLInputElement
 
     $: ({ matches, inputValue, searchQuery, currentMatchIndex } = searchPanelState)
     $: totalMatches = matches.size

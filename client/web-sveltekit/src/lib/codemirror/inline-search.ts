@@ -28,7 +28,7 @@ export class SearchPanel implements SearchPanelView {
     }
 
     public get input(): HTMLInputElement {
-        return this.panel.input
+        return this.panel.getInput()
     }
 
     public update(state: SearchPanelState): void {
