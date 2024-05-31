@@ -3,13 +3,14 @@ import type { BillingInterval } from './teamSubscriptions'
 export interface CreateCheckoutSessionRequest {
     interval: BillingInterval
     seats: number
+    adjustableSeatCount?: boolean
 
     customerEmail?: string
     showPromoCodeField: boolean
 
     returnUrl?: string
 
-    customUI?: boolean
+    stripeUiMode?: 'embedded' | 'custom'
 }
 
 export interface CreateCheckoutSessionResponse {

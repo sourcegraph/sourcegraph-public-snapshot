@@ -6,7 +6,7 @@ export interface CodyProApiClient {
     caller: Caller
 }
 
-export const defaultCodyProApiClientContext: { caller: Caller } = { caller: new CodyProApiCaller()}
+export const defaultCodyProApiClientContext: { caller: Caller } = { caller: new CodyProApiCaller() }
 
 // Context for supplying a Cody Pro API client to a React component tree.
 //

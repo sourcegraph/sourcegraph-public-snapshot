@@ -1,0 +1,32 @@
+.line-height-loading-spinner {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+}
+
+.seat-count-selector-value {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    width: 2rem;
+    text-align: center;
+}
+
+.payment-data-error-message {
+    color: var(--danger);
+    margin: 0.5rem 0;
+}
+
+.pay-button {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    width: 100%;
+    text-align: center;
+    margin-top: 1rem;
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+}

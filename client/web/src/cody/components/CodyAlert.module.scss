@@ -9,7 +9,17 @@
     }
 }
 
-.purple-success-alert {
+.purple-no-icon {
+    padding-left: 1.5rem;
+    background-color: var(--violet-02);
+    color: var(--violet-06);
+    :global(.theme-dark) & {
+        background-color: var(--pink);
+        color: var(--gray-08);
+    }
+}
+
+.purple-success {
     background-color: var(--violet-02);
     color: var(--violet-06);
     :global(.theme-dark) & {
@@ -22,7 +32,7 @@
     }
 }
 
-.green-success-alert {
+.green-success {
     background-color: #e0f9d5;
     color: #054410;
     :global(.theme-dark) & {
@@ -55,7 +65,7 @@
     }
 }
 
-.error-alert {
+.error {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     padding-left: calc(1.5rem + 124px + 1.5rem);
     overflow: hidden;

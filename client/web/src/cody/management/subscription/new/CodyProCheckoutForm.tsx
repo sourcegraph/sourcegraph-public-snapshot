@@ -1,75 +1,175 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
-import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
-import type { Stripe } from '@stripe/stripe-js'
-import { useSearchParams } from 'react-router-dom'
+import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
+import { useCustomCheckout, PaymentElement, AddressElement } from '@stripe/react-stripe-js'
+import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
+import { useDebouncedCallback } from 'use-debounce'
 
-import { H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import {
+    Form,
+    Link,
+    Button,
+    Grid,
+    H2,
+    Text,
+    Container,
+    Icon,
+    Input,
+    Label,
+    LoadingSpinner,
+    H3,
+} from '@sourcegraph/wildcard'
 
-import { Client } from '../../api/client'
-import { useApiCaller } from '../../api/hooks/useApiClient'
-import type { CreateCheckoutSessionRequest } from '../../api/types'
+import { CodyAlert } from '../../../components/CodyAlert'
 
-/**
- * CodyProCheckoutForm is essentially an iframe that the Stripe Elements library will
- * render an iframe into, that will host a Stripe Checkout-hosted form.
- */
+import { PayButton } from './PayButton'
+
+import styles from './NewCodyProSubscriptionPage.module.scss'
+
 export const CodyProCheckoutForm: React.FunctionComponent<{
-    stripePromise: Promise<Stripe | null>
+    creatingTeam: boolean
     customerEmail: string | undefined
-}> = ({ stripePromise, customerEmail }) => {
-    const [urlSearchParams] = useSearchParams()
-    const creatingTeam = urlSearchParams.get('team') === '1'
-    // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which, if present,
-    // will display a "promotional code" element in the Stripe Checkout UI.
-    const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
+}> = ({ creatingTeam, customerEmail }) => {
+    const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
 
-    // Make the API call to create the Stripe Checkout session.
-    const call = useMemo(() => {
-        const requestBody: CreateCheckoutSessionRequest = {
-            interval: 'monthly',
-            // If creating a team, we set seatCount=0, which means the user can adjust the seat count.
-            seats: creatingTeam ? 0 : 1,
-            customerEmail,
-            showPromoCodeField,
+    const navigate = useNavigate()
 
-            // URL the user is redirected to when the checkout process is complete.
-            //
-            // CHECKOUT_SESSION_ID will be replaced by Stripe with the correct value,
-            // when the user finishes the Stripe-hosted checkout form.
-            //
-            // BUG: Due to the race conditions between Stripe, the SSC backend,
-            // and Sourcegraph.com, immediately loading the Dashboard page isn't
-            // going to show the right data reliably. We will need to instead show
-            // some prompt, to give the backends an opportunity to sync.
-            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}&welcome=1`,
+    const { total, lineItems, updateLineItemQuantity, email, updateEmail, status } = useCustomCheckout()
+
+    const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+    const [displayErrorMessage, setDisplayErrorMessage] = React.useState(false)
+    const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
+
+    const setAndDisplayErrorMessage = useCallback(
+        (message: string) => {
+            setErrorMessage(message)
+            setDisplayErrorMessage(true)
+        },
+        [setErrorMessage, setDisplayErrorMessage]
+    )
+
+    const debouncedUpdateSeatCount = useDebouncedCallback(async newSeatCount => {
+        if (lineItems.length === 1) {
+            await updateLineItemQuantity({
+                lineItem: lineItems[0].id,
+                quantity: newSeatCount,
+            })
+            setUpdatingSeatCount(false)
         }
-        return Client.createStripeCheckoutSession(requestBody)
-    }, [creatingTeam, customerEmail, showPromoCodeField])
-    const { loading, error, data } = useApiCaller(call)
+    }, 800)
 
-    // Show a spinner while we wait for the Checkout session to be created.
-    if (loading) {
-        return <LoadingSpinner />
-    }
+    const handlePlusClick = useCallback(
+        (diff: number): void => {
+            const newSeatCount = Math.min(Math.max(1, seatCount + diff), 50)
+            if (newSeatCount === seatCount) {
+                return
+            }
+            setSeatCount(newSeatCount)
+            setUpdatingSeatCount(true)
+            void debouncedUpdateSeatCount(newSeatCount)
+        },
+        [debouncedUpdateSeatCount, seatCount]
+    )
 
-    // Error page if we aren't able to show the Checkout session.
-    if (error) {
-        return (
-            <div>
-                <H3>Awe snap!</H3>
-                <Text>There was an error creating the checkout session: {error.message}</Text>
-            </div>
-        )
-    }
+    useEffect(() => {
+        if (lineItems.length === 1) {
+            setSeatCount(lineItems[0].quantity)
+        }
+    }, [lineItems])
+
+    useEffect(() => {
+        if (customerEmail) {
+            updateEmail(customerEmail)
+        }
+    }, [customerEmail, updateEmail])
+
+    useEffect(() => {
+        if (status.type === 'complete') {
+            navigate('/cody/manage?welcome=1')
+        } else if (status.type === 'expired') {
+            setErrorMessage('Session expired. Please refresh the page.')
+        }
+    }, [navigate, status.type])
 
     return (
-        <div>
-            {data?.clientSecret && (
-                <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret: data.clientSecret }}>
-                    <EmbeddedCheckout />
-                </EmbeddedCheckoutProvider>
+        <>
+            {seatCount >= 30 && (
+                <CodyAlert variant="purple">
+                    <H3>Explore an enterprise plan</H3>
+                    <Text className="mb-0">
+                        Team plans are limited to 50 users.{' '}
+                        <Link to="https://sourcegraph.com/contact/sales/">Contact sales</Link> to learn more.
+                    </Text>
+                </CodyAlert>
             )}
-        </div>
+            <Container>
+                <Grid columnCount={2} spacing={4}>
+                    <div>
+                        <H2>{creatingTeam ? 'Add seats' : 'Select number of seats'}</H2>
+                        <div className="d-flex flex-row align-items-center pb-3 mb-4 border-bottom">
+                            <div className="flex-1">$9 per seat / month</div>
+                            <Button onClick={() => handlePlusClick(-1)}>
+                                <Icon aria-hidden={true} svgPath={mdiMinusThick} />
+                            </Button>
+                            <div className={styles.seatCountSelectorValue}>{seatCount}</div>
+                            <Button onClick={() => handlePlusClick(1)}>
+                                <Icon aria-hidden={true} svgPath={mdiPlusThick} />
+                            </Button>
+                        </div>
+                        <H2>Summary</H2>
+                        <div className="d-flex flex-row align-items-center mb-4">
+                            <div className="flex-1">
+                                {creatingTeam ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
+                            </div>
+                            <div>
+                                <strong>
+                                    {updatingSeatCount ? (
+                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                    ) : (
+                                        `$${total.total / 100} / month`
+                                    )}
+                                </strong>
+                            </div>
+                        </div>
+                        <Text size="small">
+                            <em>Each seat is pro-rated this month, and will be charged at the full rate next month.</em>
+                        </Text>
+                    </div>
+                    <div>
+                        <H2>
+                            Purchase {seatCount} {pluralize('seat', seatCount)}
+                        </H2>
+                        <Label>Email</Label>
+                        <Input value={email || ''} disabled={true} className="mb-4" />
+                        <Form>
+                            <PaymentElement options={{ layout: 'accordion' }} className="mb-4" />
+                            <AddressElement options={{ mode: 'billing' }} />
+                            {errorMessage && displayErrorMessage && (
+                                <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
+                            )}
+
+                            <PayButton
+                                setErrorMessage={setAndDisplayErrorMessage}
+                                className={classNames('d-block w-100 mb-4', styles.payButton)}
+                            >
+                                Subscribe
+                            </PayButton>
+                            <div>
+                                <Text>
+                                    By clicking the button, you agree to the{' '}
+                                    <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
+                                    <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription will
+                                    renew automatically by charging your payment method on file until you{' '}
+                                    <Link to="/docs/cody/usage-and-pricing#downgrading-from-pro-to-free">cancel</Link>.
+                                    You may cancel at any time prior to the next billing cycle.
+                                </Text>
+                            </div>
+                        </Form>
+                    </div>
+                </Grid>
+            </Container>
+        </>
     )
 }
