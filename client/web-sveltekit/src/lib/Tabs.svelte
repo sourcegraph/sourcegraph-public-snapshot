@@ -7,6 +7,8 @@
         id: string
         selectedTabID: Readable<string | null>
         register(tab: Tab): Unsubscriber
+        getTabs: () => Tab[]
+        selectTab: (selectedTabIndex: number) => void
     }
 
     export const KEY = {}
@@ -49,6 +51,11 @@
             return () => {
                 tabs.update(tabs => tabs.filter(existingTab => existingTab.id !== tab.id))
             }
+        },
+        getTabs: () => $tabs,
+        selectTab: (index: number): void => {
+            $selectedTab = $selectedTab === index && toggable ? null : index
+            dispatch('select', $selectedTab)
         },
     })
 

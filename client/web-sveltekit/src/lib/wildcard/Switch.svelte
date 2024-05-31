@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { HTMLInputAttributes } from "svelte/elements"
+    import type { HTMLInputAttributes } from 'svelte/elements'
 
     type $$Props = HTMLInputAttributes
 </script>
 
-<input { ...$$restProps } type="checkbox" role="switch" on:change />
+<input {...$$restProps} type="checkbox" role="switch" on:change />
 
 <style lang="scss">
     input {
@@ -39,7 +39,7 @@
         }
 
         &::before {
-            content: "";
+            content: '';
             grid-area: track;
             inline-size: var(--thumb-size);
             block-size: var(--thumb-size);
