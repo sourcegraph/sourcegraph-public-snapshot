@@ -27,12 +27,15 @@ go_test(
     srcs = [
         "errors_test.go",
         "filter_test.go",
+        "invariants_test.go",
         "warning_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":errors"],
     tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@net_pgregory_rapid//:go_default_library",
     ],
 )
