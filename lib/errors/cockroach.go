@@ -109,6 +109,11 @@ func AsInterface[I any](err error, target *I) bool {
 	return errors.As(err, target)
 }
 
+func HasTypeGeneric[T error](err error) bool {
+	var zero T
+	return errors.As(err, &zero)
+}
+
 // Extend multiError to work with cockroachdb errors. Implement here to keep imports in
 // one place.
 
