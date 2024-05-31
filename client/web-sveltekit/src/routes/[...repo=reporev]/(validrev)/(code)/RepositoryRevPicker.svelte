@@ -105,7 +105,7 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiSourceBranch}
+                        iconPath={ILucideGitBranch}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     >
@@ -132,7 +132,7 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiTagOutline}
+                        iconPath={ILucideTag}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     />
@@ -150,7 +150,7 @@
                     }}
                     let:value
                 >
-                    <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
+                    <RepositoryRevPickerItem label="" iconPath={ILucideGitCommitVertical} author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon svgPath={mdiSourceCommit} inline />
                             <Badge variant="link">{value.abbreviatedOID}</Badge>

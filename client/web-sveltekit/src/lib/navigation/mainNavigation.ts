@@ -1,6 +1,8 @@
 import type { Page } from '@sveltejs/kit'
 import type { ComponentType } from 'svelte'
 
+import type { IconPath } from '../Icon2.svelte'
+
 /**
  * Indicates to the UI to show a status badge next to the navigation entry.
  */
@@ -24,7 +26,7 @@ export interface NavigationEntry {
     /**
      * An optional icon to display next to the label.
      */
-    icon?: string | ComponentType
+    icon?: IconPath
     /**
      * An optional status to display next to the label. See {@link Status}.
      */
