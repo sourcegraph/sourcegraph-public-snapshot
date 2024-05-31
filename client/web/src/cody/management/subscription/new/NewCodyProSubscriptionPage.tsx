@@ -7,7 +7,7 @@ import { Elements } from '@stripe/react-stripe-js'
 // the lazily loaded router module.
 import * as stripeJs from '@stripe/stripe-js'
 import classNames from 'classnames'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -42,6 +42,9 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     authenticatedUser,
     telemetryRecorder,
 }) => {
+    const [urlSearchParams] = useSearchParams()
+    const creatingTeam = urlSearchParams.get('team') === '1'
+
     useEffect(() => {
         telemetryRecorder.recordEvent('cody.new-subscription-checkout', 'view')
     }, [telemetryRecorder])
@@ -67,7 +70,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             <PageHeader className="mb-4 mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <div className="d-inline-flex align-items-center">
-                        <CodyProIcon className="mr-2" /> Give your team Cody Pro
+                        <CodyProIcon className="mr-2" /> {creatingTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
                     </div>
                 </PageHeader.Heading>
             </PageHeader>
