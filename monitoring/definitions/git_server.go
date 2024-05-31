@@ -266,28 +266,6 @@ func GitServer() *monitoring.Dashboard {
 					},
 					{
 						{
-							Name:        "echo_command_duration_test",
-							Description: "echo test command duration",
-							Query:       "max(src_gitserver_echo_duration_seconds)",
-							Warning:     monitoring.Alert().GreaterOrEqual(0.020).For(30 * time.Second),
-							Critical:    monitoring.Alert().GreaterOrEqual(1).For(1 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("running commands").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-							A high value here likely indicates a problem, especially if consistently high.
-							You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
-							On a healthy linux node, this number should be less than 5ms, ideally closer to 2ms.
-							A high process spawning overhead will affect latency of gitserver APIs.
-
-							Various factors can affect process spawning overhead, but the most common we've seen is IOPS contention on the underlying volume, or high CPU throttling.
-							`,
-							NextSteps: `
-								- **Single container deployments:** Upgrade to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
-								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
-								- If your persistent volume is slow, you may want to provision more IOPS, usually by increasing the volume size.
-							`,
-						},
-						{
 							Name:        "repo_corrupted",
 							Description: "number of times a repo corruption has been identified",
 							Query:       `sum(rate(src_gitserver_repo_corrupted[5m]))`,
