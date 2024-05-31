@@ -25,6 +25,7 @@
     "lint:css:all": "pnpm _lint:css 'client/*/src/**/*.scss'",
     "lint:graphql": "graphql-schema-linter",
     "full": "pnpm install && pnpm build-ts && echo \"hello\" > out1",
+    "build": "pnpm -r build",
     "build-ts": "tsc --build tsconfig.json --emitDeclarationOnly",
     "build-web": "pnpm --filter @sourcegraph/web run build",
     "watch-web": "pnpm --filter @sourcegraph/web run watch",
