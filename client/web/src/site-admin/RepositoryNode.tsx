@@ -40,6 +40,7 @@ import {
     Position,
 } from '@sourcegraph/wildcard'
 
+import { isEmbeddingsEnabled } from '../cody/isCodyEnabled'
 import type {
     RecloneRepositoryResult,
     RecloneRepositoryVariables,
@@ -227,15 +228,17 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiSearchWeb} className="mr-1" />
                                     Search indexing
                                 </MenuItem>
-                                <MenuItem
-                                    as={Button}
-                                    disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
-                                    className="p-2"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings
-                                </MenuItem>
+                                {isEmbeddingsEnabled() && (
+                                    <MenuItem
+                                        as={Button}
+                                        disabled={!repoClonedAndHealthy(node)}
+                                        onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
+                                        className="p-2"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                        Embeddings
+                                    </MenuItem>
+                                )}
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}

@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher, useDebounce } from '@sourcegraph/wildcard'
 
+import { isEmbeddingsEnabled } from '../cody/isCodyEnabled'
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
@@ -362,7 +363,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                         return newValues
                     }),
             },
-            {
+        ]
+
+        if (isEmbeddingsEnabled()) {
+            items.push({
                 value: data.repositoryStats.embedded,
                 description: 'Embedded',
                 color: 'var(--body-color)',
@@ -374,8 +378,9 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                         newValues.set('status', STATUS_FILTERS.Embedded)
                         return newValues
                     }),
-            },
-        ]
+            })
+        }
+
         if (data.repositoryStats.corrupted > 0) {
             items.push({
                 value: data.repositoryStats.corrupted,
