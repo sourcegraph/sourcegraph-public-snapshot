@@ -810,12 +810,12 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     $f = NAN;
 //  ^^ Identifier
 //     ^ IdentifierOperator
-//       ^^^ Identifier
+//       ^^^ IdentifierBuiltin
 //          ^ PunctuationDelimiter
     $f = INF;
 //  ^^ Identifier
 //     ^ IdentifierOperator
-//       ^^^ Identifier
+//       ^^^ IdentifierBuiltin
 //          ^ PunctuationDelimiter
     $x = tuple(1, 2.0, null);
 //  ^^ Identifier
