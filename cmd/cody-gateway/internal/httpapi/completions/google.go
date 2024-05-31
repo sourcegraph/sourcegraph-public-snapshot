@@ -108,8 +108,9 @@ func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 
 func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, req googleRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(
-		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
+		nil, // tokenizer, meaning token counts aren't considered when for flagging consideration.
 		flaggingRequest{
+			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
 			MaxTokens:       int(req.GenerationConfig.MaxOutputTokens),
 		},
