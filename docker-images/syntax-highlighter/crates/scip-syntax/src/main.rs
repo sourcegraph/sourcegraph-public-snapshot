@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::process;
 
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
@@ -111,10 +112,17 @@ pub fn main() -> anyhow::Result<()> {
         } => {
             let index_mode = {
                 match workspace {
-                    None => IndexMode::Files { list: filenames },
+                    None => {
+                        if filenames.is_empty() {
+                            eprintln!("either specify --workspace or provide a list of files");
+                            process::exit(1)
+                        }
+                        IndexMode::Files { list: filenames }
+                    }
                     Some(location) => {
                         if !filenames.is_empty() {
-                            panic!("--workspace option cannot be combined with a list of files");
+                            eprintln!("--workspace option cannot be combined with a list of files");
+                            process::exit(1)
                         } else {
                             IndexMode::Workspace {
                                 location: location.into(),
