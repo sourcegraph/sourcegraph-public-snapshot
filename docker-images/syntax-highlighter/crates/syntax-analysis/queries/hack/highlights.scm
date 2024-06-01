@@ -271,11 +271,14 @@
   (#eq? @variable.builtin "INF"))
 
 
-; Explicitly handle internal since it is
+; Explicitly handle internal amd module since they are not
 ; not mentioned in grammar
 (qualified_identifier
   . (identifier) @keyword  .
   (#eq? @keyword "internal"))
+  (qualified_identifier
+  . (identifier) @keyword  .
+  (#eq? @keyword "module"))
 
 (namespace_declaration
     name:  (qualified_identifier (identifier) @variable.module))

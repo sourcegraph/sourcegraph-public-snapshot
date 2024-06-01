@@ -4,7 +4,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   new module foo.bar.baz{};
 //^^^ Keyword
-//    ^^^^^^ Identifier
+//    ^^^^^^ Keyword
 //           ^^^ Identifier
 //              ^ IdentifierOperator
 //               ^^^ Identifier
@@ -16,7 +16,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   // https://github.com/slackhq/tree-sitter-hack/issues/70
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   module foo.bar.baz;
-//^^^^^^ Identifier
+//^^^^^^ Keyword
 //       ^^^ Identifier
 //          ^ IdentifierOperator
 //           ^^^ Identifier
