@@ -1456,11 +1456,26 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
     // XHP Attributes
 //  ^^^^^^^^^^^^^^^^^ Comment
-    final xhp class user_info  {
-//  ^^^^^ Keyword
-//        ^^^ Keyword
-//            ^^^^^ Keyword
-//                  ^^^^^^^^^ IdentifierType
+  use namespace Facebook\XHP\Core as x;
+//^^^ Keyword
+//    ^^^^^^^^^ Keyword
+//              ^^^^^^^^ IdentifierNamespace
+//                      ^ PunctuationDelimiter
+//                       ^^^ IdentifierNamespace
+//                          ^ PunctuationDelimiter
+//                           ^^^^ IdentifierNamespace
+//                                ^^ Keyword
+//                                   ^ IdentifierNamespace
+//                                    ^ PunctuationDelimiter
+  final xhp class user_info extends x\element {
+//^^^^^ Keyword
+//      ^^^ Keyword
+//          ^^^^^ Keyword
+//                ^^^^^^^^^ IdentifierType
+//                          ^^^^^^^ Keyword
+//                                  ^ IdentifierNamespace
+//                                   ^ PunctuationDelimiter
+//                                    ^^^^^^^ IdentifierType
       attribute int userid @required;
 //    ^^^^^^^^^ Keyword
 //              ^^^ IdentifierBuiltinType
