@@ -296,7 +296,8 @@ ID;
   }
 
   // XHP Attributes
-  final xhp class user_info  {
+use namespace Facebook\XHP\Core as x;
+final xhp class user_info extends x\element {
     attribute int userid @required;
     attribute string name = "";
 
