@@ -26,24 +26,32 @@ func errorTree(leafError *rapid.Generator[error]) *rapid.Generator[error] {
 }
 
 func TestInvariants(t *testing.T) {
+	// Check the behavior of the various error-checking
+	// functions for different kinds of error types -
+	// value receiver vs pointer receiver,
+	// and errors without data vs with data.
+
 	t.Run("payloadLessStruct", func(t *testing.T) {
 		rapid.Check(t, func(t *rapid.T) {
 			err := errorTree(rapid.OneOf(
 				rapid.Just(error(&notTheErrorOfInterest{})),
 				rapid.Just(error(payloadLessStructError{})),
 			)).Draw(t, "err")
+			// Is implies As for errors without data
 			if Is(err, payloadLessStructError{}) {
 				// This can be false, see Counter-example 1
 				//require.True(t, HasType(err, payloadLessStructError{}))
 				var check payloadLessStructError
 				require.True(t, As(err, &check))
 			}
+			// HasType implies Is and As for errors without data
 			if HasType(err, payloadLessStructError{}) {
 				require.True(t, Is(err, payloadLessStructError{}))
 				var check payloadLessStructError
 				require.True(t, As(err, &check))
 			}
 			var check payloadLessStructError
+			// As implies Is for errors without data
 			if As(err, &check) {
 				require.True(t, Is(err, payloadLessStructError{}))
 				// This can be false, see Counter-example 2
@@ -62,6 +70,7 @@ func TestInvariants(t *testing.T) {
 				rapid.Just(error(errorWithOtherData)),
 			)).Draw(t, "err")
 
+			// Is implies As for errors with data
 			if Is(err, errorOfInterest) {
 				// This is false, see Counter-example 5
 				//require.False(t, Is(err, errorWithOtherData))
@@ -76,6 +85,7 @@ func TestInvariants(t *testing.T) {
 				//require.Equal(t, errorOfInterest, check)
 			}
 
+			// HasType implies As for errors with data
 			if HasType(err, errorOfInterest) {
 				require.True(t, HasType(err, errorWithOtherData))
 				require.True(t, HasType(err, withPayloadStructError{}))
@@ -87,6 +97,7 @@ func TestInvariants(t *testing.T) {
 				//require.Equal(t, errorOfInterest, check)
 			}
 
+			// As implies a limited form of Is for errors with data
 			var check withPayloadStructError
 			if As(err, &check) {
 				require.True(t, check == errorOfInterest || check == errorWithOtherData)
@@ -105,6 +116,7 @@ func TestInvariants(t *testing.T) {
 				rapid.Just(error(&notTheErrorOfInterest{})),
 				rapid.Just(error(&payloadLessPtrError{})),
 			)).Draw(t, "err")
+			// Is implies As for errors without data
 			if Is(err, &payloadLessPtrError{}) {
 				// This can be false, see Counter-example 1
 				//require.True(t, HasType(err, &payloadLessPtrError{}))
@@ -115,6 +127,7 @@ func TestInvariants(t *testing.T) {
 				var check *payloadLessPtrError
 				require.True(t, As(err, &check))
 			}
+			// HasType implies Is and As for errors without data
 			if HasType(err, &payloadLessPtrError{}) {
 				require.True(t, Is(err, &payloadLessPtrError{}))
 				require.Panics(t, func() {
@@ -125,6 +138,7 @@ func TestInvariants(t *testing.T) {
 				require.True(t, As(err, &check))
 			}
 			var check *payloadLessPtrError
+			// As implies Is for errors without data
 			if As(err, &check) {
 				require.True(t, Is(err, &payloadLessPtrError{}))
 				// This can be false, see Counter-example 2
@@ -143,6 +157,7 @@ func TestInvariants(t *testing.T) {
 				rapid.Just(error(errorWithOtherData)),
 			)).Draw(t, "err")
 
+			// Is implies As for errors with data
 			if Is(err, errorOfInterest) {
 				// This is false, see Counter-example 5
 				//require.False(t, Is(err, errorWithOtherData))
@@ -161,6 +176,7 @@ func TestInvariants(t *testing.T) {
 				//require.Equal(t, *errorOfInterest, *check)
 			}
 
+			// HasType implies As for errors with data
 			if HasType(err, errorOfInterest) {
 				require.True(t, HasType(err, errorWithOtherData))
 				require.True(t, HasType(err, &withPayloadPtrError{}))
@@ -175,6 +191,7 @@ func TestInvariants(t *testing.T) {
 				require.True(t, *check == *errorOfInterest || *check == *errorWithOtherData)
 			}
 
+			// As implies a limited form of Is for errors with data
 			var check *withPayloadPtrError
 			if As(err, &check) {
 				require.True(t, *check == *errorOfInterest || *check == *errorWithOtherData)

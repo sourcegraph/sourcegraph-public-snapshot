@@ -63,7 +63,14 @@ var (
 	Is    = errors.Is
 	IsAny = errors.IsAny
 	// As checks if the error tree err is of type target, and if so,
-	// sets target to the value of the error.
+	// sets target to the value of the error. This can be used in two ways:
+	//
+	// 1. If looking for an error of concrete type T, then the second
+	//    argument must be a non-nil pointer of type *T. This implies that
+	//    if the error interface is implemented with a pointer receiver,
+	//    then target must be of type **MyConcreteType.
+	// 2. If looking for an error satisfying an interface I (with a value
+	//    or pointer receiver), then the second argument must be of type I.
 	//
 	// For error types which do not contain any data, As is equivalent to Is.
 	//
