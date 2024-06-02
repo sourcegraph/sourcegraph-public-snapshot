@@ -70,19 +70,19 @@ func TestInvariants(t *testing.T) {
 
 			// Is implies HasType and As for errors with data
 			if Is(err, errorOfInterest) {
-				// This is false, see Counter-example 5
+				// This is false, see Counter-example 2
 				//require.False(t, Is(err, errorWithOtherData))
 				require.False(t, Is(err, withPayloadStructError{}))
 				require.True(t, HasType[withPayloadStructError](err))
 				var check withPayloadStructError
 				require.True(t, As(err, &check))
-				// This can be false, see Counter-example 6
+				// This can be false, see Counter-example 3
 				//require.Equal(t, errorOfInterest, check)
 			}
 
 			// HasType implies As for errors with data
 			if HasType[withPayloadStructError](err) {
-				// This can be false, see Counter-example 3
+				// This can be false, see Counter-example 1
 				//require.True(t, Is(err, errorOfInterest))
 				var check withPayloadStructError
 				require.True(t, As(err, &check))
@@ -137,19 +137,19 @@ func TestInvariants(t *testing.T) {
 
 			// Is implies HasType and As for errors with data
 			if Is(err, errorOfInterest) {
-				// This is false, see Counter-example 5
+				// This is false, see Counter-example 2
 				//require.False(t, Is(err, errorWithOtherData))
 				require.False(t, Is(err, &withPayloadPtrError{}))
 				require.True(t, HasType[*withPayloadPtrError](err))
 				var check *withPayloadPtrError
 				require.True(t, As(err, &check))
-				// This can be false, see Counter-example 6
+				// This can be false, see Counter-example 3
 				//require.Equal(t, *errorOfInterest, *check)
 			}
 
 			// HasType implies As for errors with data
 			if HasType[*withPayloadPtrError](err) {
-				//This can be false, see Counter-example 3
+				//This can be false, see Counter-example 1
 				//require.True(t, Is(err, errorOfInterest))
 				var check *withPayloadPtrError
 				require.True(t, As(err, &check))
@@ -167,19 +167,19 @@ func TestInvariants(t *testing.T) {
 	})
 
 	t.Run("Counter-examples", func(t *testing.T) {
-		// Counter-example 3. HasType does not imply Is
+		// Counter-example 1. HasType does not imply Is
 		{
 			err := error(withPayloadStructError{data: 3})
 			require.True(t, HasType[withPayloadStructError](err))
 			require.False(t, Is(err, withPayloadStructError{data: 1}))
 		}
-		// Counter-example 5. Is can return true for distinct values
+		// Counter-example 2. Is can return true for distinct values
 		{
 			err := Append(withPayloadStructError{data: 3}, withPayloadStructError{data: 1})
 			require.True(t, Is(err, withPayloadStructError{data: 3}))
 			require.True(t, Is(err, withPayloadStructError{data: 1}))
 		}
-		// Counter-example 6. As can return a different value than the one passed to Is
+		// Counter-example 3. As can return a different value than the one passed to Is
 		{
 			err := Append(withPayloadStructError{data: 3}, withPayloadStructError{data: 1})
 			var check withPayloadStructError
