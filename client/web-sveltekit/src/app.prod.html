@@ -1,19 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        {{.Injected.HeadTop}}
         <meta charset="utf-8" />
         <meta http-equiv="x-ua-compatible" content="ie=edge" />
+        <meta name="google" content="notranslate">
         <meta http-equiv="Content-Language" content="en" />
-        <meta name="google" content="notranslate" />
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
-        <meta name="referrer" content="origin-when-cross-origin" />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
         <meta name="color-scheme" content="light dark" />
+
+        {{- with .Metadata }}
+        <meta name='description' content="{{.Description}}" />
+            {{if .ShowPreview }}
+        <meta name='twitter:title' content="{{.Title}}" />
+        <meta name='twitter:description' content="{{.Description}}" />
+        <meta property="og:type" content="website" />
+        <meta property='og:title' content="{{.Title}}" />
+        <meta property='og:description' content="{{.Description}}" />
+                {{- if .PreviewImage }}
+        <meta name='twitter:card' content='summary_large_image' />
+        <meta name="twitter:image" content="{{.PreviewImage}}" />
+        <meta property="og:image" content="{{.PreviewImage}}" />
+                {{- else }}
+        <meta name='twitter:card' content='summary' />
+                {{- end }}
+            {{- end }}
+        {{- end}}
+
         <title>{{.Title}}</title>
+
+        <!--TODO: do we need this with Svelte?-->
+        <!--{{if .Manifest.MainCSSBundlePath}}<link rel="stylesheet" href="{{assetURL .Manifest.MainCSSBundlePath}}">{{end}}-->
+
+        <link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
+        <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+
+        {{- if .PreloadedAssets}}
+            {{- range .PreloadedAssets}}
+        <link rel="preload" href="{{.Href}}" as="{{.As}}" />
+            {{- end}}
+        {{- end}}
+
+        {{- if .Context.SourcegraphDotComMode }}
+        <!-- Google Tag Manager -->
+        <script ignore-csp>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.defer=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
+        <!-- End Google Tag Manager -->
+        <!-- Sentry -->
+        <script src='https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js' crossorigin="anonymous"></script>
+        <!-- Plausible -->
+        <script src="https://plausible.io/js/plausible.js" defer data-domain="sourcegraph.com"></script>
+        {{- end }}
 
         <script ignore-csp>
             window.context = {{ .Context }}
             window.pageError = {{ .Error }}
         </script>
+
+        {{.Injected.HeadBottom}}
+        <!--TODO: continue here-->
 
         %sveltekit.head%
 
