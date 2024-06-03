@@ -1,4 +1,8 @@
 import { gql } from '@urql/core'
+
+import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import { sessionTracker } from '@sourcegraph/shared/src/telemetry/web/sessionTracker'
+import { userTracker } from '@sourcegraph/shared/src/telemetry/web/userTracker'
 import {
     type MarketingTrackingProvider,
     type TelemetryEventMarketingTrackingInput,
@@ -8,13 +12,9 @@ import {
     TelemetryRecorderProvider as BaseTelemetryRecorderProvider,
 } from '@sourcegraph/telemetry'
 
-import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
 import type { GraphQLClient } from '$lib/graphql'
-import type { ExportTelemetryEventsResult } from '$lib/graphql-operations'
-
 import { getGraphQLClient } from '$lib/graphql'
-import { userTracker } from '@sourcegraph/shared/src/telemetry/web/userTracker'
-import { sessionTracker } from '@sourcegraph/shared/src/telemetry/web/sessionTracker'
+import type { ExportTelemetryEventsResult } from '$lib/graphql-operations'
 
 /**
  * TelemetryRecorderProvider is the default provider implementation for the
