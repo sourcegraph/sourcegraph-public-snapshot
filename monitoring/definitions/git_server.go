@@ -277,6 +277,7 @@ func GitServer() *monitoring.Dashboard {
 							You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
 							On a healthy linux node, this number should be less than 5ms, ideally closer to 2ms.
 							A high process spawning overhead will affect latency of gitserver APIs.
+
 							Various factors can affect process spawning overhead, but the most common we've seen is IOPS contention on the underlying volume, or high CPU throttling.
 							`,
 							NextSteps: `
