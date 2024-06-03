@@ -71,7 +71,7 @@ func (s *notificationsSubscriber) Routines(ctx context.Context, observationCtx *
 		}
 	}
 	if samsProvider == nil {
-		logger.Debug("worker disabled because SAMS provider is not configured")
+		logger.Info("worker disabled because SAMS provider is not configured")
 		return nil, nil
 	}
 
