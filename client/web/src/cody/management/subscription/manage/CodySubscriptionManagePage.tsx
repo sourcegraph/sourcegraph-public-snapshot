@@ -19,8 +19,7 @@ import {
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
-import { QueryClientProvider } from '../../api/react-query/QueryClientProvider'
-import { getCodyProApiErrorMessage, useCurrentSubscription } from '../../api/react-query/subscriptions'
+import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 
 import { InvoiceHistory } from './InvoiceHistory'
 import { PaymentDetails } from './PaymentDetails'
@@ -68,15 +67,9 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
     }
 
     return (
-        // TODO: Move `QueryClientProvider` higher in the component tree.
-        // We want to wrap any component that relies on `useResource` or `useUpdateResource`
-        // from client/web/src/cody/management/api/react-query folder to be wrapped with `QueryClientProvider`.
-        // This wrapper is here only for demo PR purposes.
-        <QueryClientProvider>
-            <Page className="d-flex flex-column">
-                <PageContent />
-            </Page>
-        </QueryClientProvider>
+        <Page className="d-flex flex-column">
+            <PageContent />
+        </Page>
     )
 }
 
@@ -87,12 +80,11 @@ const PageContent: React.FC = () => {
         return <LoadingSpinner className="mx-auto" />
     }
 
-    const errorMessage = getCodyProApiErrorMessage(subscriptionQueryResult.error, 'Failed to fetch subscription data')
-    if (errorMessage) {
-        return <Alert variant="danger">{errorMessage}</Alert>
+    if (subscriptionQueryResult.isError) {
+        return <Alert variant="danger">Failed to fetch subscription data</Alert>
     }
 
-    const subscription = subscriptionQueryResult?.data?.data
+    const subscription = subscriptionQueryResult?.data
     if (!subscription) {
         return <Alert variant="warning">Subscription data is not available</Alert>
     }
