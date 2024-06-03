@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider as ReactQueryClientProvider } from '@tanstack/react-query'
 
+// Tweak the default queries and mutations behavior.
+// See defaults here: https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
