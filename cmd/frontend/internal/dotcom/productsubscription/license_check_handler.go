@@ -59,9 +59,9 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 }
 
 const multipleInstancesSameKeySlackFmt = `
-The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> has been updated from ` + "`%s` to `%s`." + `
+The site ID for ` + "`%s`" + `'s license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> is registered as ` + "`%s`, but is attempting to be used by the site ID `%s`." + `
 
-If this is a regular occurence, it could mean that the license key is being used on multiple Sourcegraph instances.
+This could mean that the license key is attempting to be used on multiple Sourcegraph instances.
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
@@ -203,23 +203,15 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
-				// TODO: revert this to false again in the future, once most customers have a separate
-				// license key per instance
 				Data: &licensing.LicenseCheckResponseData{
-					IsValid: true,
+					IsValid: false,
 					Reason:  ReasonLicenseIsAlreadyInUseMsg,
 				},
 			})
 
-			oldSiteID := *license.SiteID
-			if license, err = lStore.AssignSiteID(r.Context(), license, siteID); err != nil {
-				logger.Error("failed to update site ID associated with license", log.String("licenseID", license.ID), log.String("siteID", siteID), log.Error(err))
-				return
-			}
-
 			customerName := getCustomerNameFromLicense(r.Context(), logger, db, license)
 
-			sendSlackMessage(logger, license, customerName, oldSiteID)
+			sendSlackMessage(logger, license, customerName, *license.SiteID)
 			return
 		}
 
