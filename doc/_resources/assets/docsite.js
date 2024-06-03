@@ -117,19 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })
 
-// Cloud CTA clicks
-document.addEventListener('DOMContentLoaded', () => {
-  const cloudCTAs = document.querySelectorAll('.cloud-cta')
-
-  cloudCTAs.forEach(cloudCTA => {
-    cloudCTA.addEventListener('click', () => {
-      if (window && window.plausible) {
-        window.plausible('ClickedOnFreeTrialCTA')
-      }
-    })
-  })
-})
-
 // Promise to wait on for DOMContentLoaded
 const domContentLoadedPromise = new Promise(resolve => {
   if (document.readyState === 'loading') {
