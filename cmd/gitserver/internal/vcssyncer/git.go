@@ -42,18 +42,10 @@ func (s *gitRepoSyncer) Type() string {
 	return "git"
 }
 
-// TestGitRepoExists is a test fixture that overrides the return value for
-// GitRepoSyncer.IsCloneable when it is set.
-var TestGitRepoExists func(ctx context.Context, repoName api.RepoName) error
-
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName) (err error) {
 	if isAlwaysCloningTest(repoName) {
 		return nil
-	}
-
-	if TestGitRepoExists != nil {
-		return TestGitRepoExists(ctx, repoName)
 	}
 
 	source, err := s.getRemoteURLSource(ctx, repoName)
