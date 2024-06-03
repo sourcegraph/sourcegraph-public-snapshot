@@ -3,7 +3,19 @@ import React, { useCallback, useState, type FC } from 'react'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form, Select, ButtonLink } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Modal,
+    Link,
+    Code,
+    Label,
+    Text,
+    Input,
+    ErrorAlert,
+    Form,
+    Select,
+    ButtonLink,
+} from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, type Scalars } from '../../../graphql-operations'
@@ -79,7 +91,7 @@ type Step = 'add-token' | 'get-ssh-key'
 
 const AuthenticationStrategy = {
     PERSONAL_ACCESS_TOKEN: 'PERSONAL_ACCESS_TOKEN',
-    GITHUB_APP: 'GITHUB_APP'
+    GITHUB_APP: 'GITHUB_APP',
 } as const
 
 type AuthenticationStrategyType = typeof AuthenticationStrategy[keyof typeof AuthenticationStrategy]
@@ -99,7 +111,9 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     const [sshPublicKey, setSSHPublicKey] = useState<string>()
     const [username, setUsername] = useState<string>('')
     const [step, setStep] = useState<Step>(initialStep)
-    const [authStrategy, setAuthStrategy] = useState<AuthenticationStrategyType>(AuthenticationStrategy.PERSONAL_ACCESS_TOKEN)
+    const [authStrategy, setAuthStrategy] = useState<AuthenticationStrategyType>(
+        AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
+    )
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
@@ -168,7 +182,9 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                         value={authStrategy}
                         onChange={event => setAuthStrategy(event.target.value as AuthenticationStrategyType)}
                     >
-                        <option value={AuthenticationStrategy.PERSONAL_ACCESS_TOKEN} defaultChecked={true}>Personal Access Token</option>
+                        <option value={AuthenticationStrategy.PERSONAL_ACCESS_TOKEN} defaultChecked={true}>
+                            Personal Access Token
+                        </option>
                         <option value={AuthenticationStrategy.GITHUB_APP}>GitHub App</option>
                     </Select>
                 )}
@@ -240,7 +256,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
 
 const computeCredentialLabel = (
     externalServiceKind: ExternalServiceKind,
-    authStrategy: AuthenticationStrategyType,
+    authStrategy: AuthenticationStrategyType
 ): string => {
     if (externalServiceKind === ExternalServiceKind.PERFORCE) {
         return 'Ticket'
@@ -292,7 +308,9 @@ const AddToken: FC<AddTokenProps> = ({
 }) => {
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
-    const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(externalServiceURL)}&kind=credential`
+    const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(
+        externalServiceURL
+    )}&kind=credential`
 
     if (step === 'add-token') {
         return (
@@ -344,7 +362,7 @@ const AddToken: FC<AddTokenProps> = ({
                             </Text>
                         </div>
                     )}
-                    <div className="d-flex justify-content-end">
+                    <div className="d-flex justify-content-end align-items-center">
                         <Button
                             disabled={loading}
                             className="mr-2"
@@ -365,11 +383,16 @@ const AddToken: FC<AddTokenProps> = ({
                                 label={requiresSSH ? 'Next' : 'Add credential'}
                             />
                         ) : (
-                            <ButtonLink to={createGitHubAppURL} className="text-nowrap" variant="primary" as={Link} size="sm">
+                            <ButtonLink
+                                to={createGitHubAppURL}
+                                className="text-nowrap"
+                                variant="primary"
+                                as={Link}
+                                size="sm"
+                            >
                                 Create GitHub App
                             </ButtonLink>
-                        ) }
-
+                        )}
                     </div>
                 </Form>
             </>
