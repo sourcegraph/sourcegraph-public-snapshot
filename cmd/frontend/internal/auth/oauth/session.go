@@ -103,6 +103,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		anonymousId, _ := cookie.AnonymousUID(r)
 		newUserCreated, actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, &hubspot.ContactProperties{
 			AnonymousUserID:            anonymousId,
+			FirstSourceURL:             getCookie("first_page_seen_url"),
 			LastSourceURL:              getCookie("last_page_seen_url"),
 			LastPageSeenShort:          getCookie("last_page_seen_short"),
 			LastPageSeenMid:            getCookie("last_page_seen_mid"),

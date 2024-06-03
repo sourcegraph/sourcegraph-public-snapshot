@@ -15,9 +15,13 @@
 
     import { page } from '$app/stores'
     import { computeFit } from '$lib/dom'
+    import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import Popover from '$lib/Popover.svelte'
+    import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
+    import { delay } from '$lib/utils'
+    import { Alert, DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
     import RepoSearchInput from './RepoSearchInput.svelte'
@@ -80,7 +84,16 @@
 
 <GlobalHeaderPortal>
     <nav aria-label="repository">
-        <h1><a href="/{repoName}">{displayRepoName}</a></h1>
+        <Popover showOnHover placement="bottom-start" let:registerTrigger>
+            <h1 use:registerTrigger><a href="/{repoName}">{displayRepoName}</a></h1>
+            <svelte:fragment slot="content">
+                {#await delay(fetchRepoPopoverData(getGraphQLClient(), repoName), 200) then data}
+                    <RepoPopover {data} withHeader />
+                {:catch error}
+                    <Alert size="slim" variant="danger">{error}</Alert>
+                {/await}
+            </svelte:fragment>
+        </Popover>
 
         <ul use:computeFit on:fit={event => (visibleNavEntries = event.detail.itemCount)}>
             {#each navEntriesToShow as entry}
@@ -129,7 +142,7 @@
 <style lang="scss">
     nav {
         display: flex;
-        align-items: baseline;
+        align-items: stretch;
         gap: 0.5rem;
         overflow: hidden;
         flex: 1;
@@ -149,6 +162,9 @@
     }
 
     h1 {
+        display: flex;
+        align-items: center;
+
         margin: 0 1rem 0 0;
         font-size: 1rem;
         white-space: nowrap;

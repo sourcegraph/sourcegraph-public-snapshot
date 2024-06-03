@@ -51,6 +51,7 @@ BUILD_DEPS = [
     "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/autocomplete",
     "//:node_modules/@codemirror/commands",
+    "//:node_modules/@codemirror/search",
     "//:node_modules/@codemirror/state",
     "//:node_modules/@codemirror/view",
     "//:node_modules/@mdi/js",

@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -103,24 +104,28 @@ func Open(
 	if err != nil {
 		return nil, errors.Wrap(err, "get CloudSQL connection config")
 	}
-	return sql.Open("pgx", stdlib.RegisterConnConfig(config))
+	return sql.Open("pgx", stdlib.RegisterConnConfig(config.ConnConfig))
 }
 
-// Connect opens a *pgx.Conn connection to the CloudSQL instance specified by
-// the ConnConfig.
+// GetConnectionPool is an alternative to OpenDatabase that returns a
+// github.com/jackc/pgx/v5/pgxpool to the CloudSQL instance specified by
+// the ConnConfig, for services that prefer to use 'pgx' directly. A pool returns
+// without waiting for any connections to be established. Acquire a connection
+// immediately after creating the pool to check if a connection can successfully
+// be established.
 //
 // 🔔 If you are connecting to a MSP-provisioned Cloud SQL instance,
-// DO NOT use this - instead, use runtime.Contract.PostgreSQL.OpenDatabase
+// DO NOT use this - instead, use runtime.Contract.PostgreSQL.GetConnectionPool
 // instead.
-func Connect(
+func GetConnectionPool(
 	ctx context.Context,
 	cfg ConnConfig,
-) (*pgx.Conn, error) {
+) (*pgxpool.Pool, error) {
 	config, err := getCloudSQLConnConfig(ctx, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "get CloudSQL connection config")
 	}
-	return pgx.ConnectConfig(ctx, config)
+	return pgxpool.NewWithConfig(ctx, config)
 }
 
 // getCloudSQLConnConfig generates a pgx connection configuration for using
@@ -128,14 +133,14 @@ func Connect(
 func getCloudSQLConnConfig(
 	ctx context.Context,
 	cfg ConnConfig,
-) (*pgx.ConnConfig, error) {
+) (*pgxpool.Config, error) {
 	if cfg.ConnectionName == nil || cfg.User == nil {
 		return nil, errors.New("missing required PostgreSQL configuration")
 	}
 
 	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
 	dsn := fmt.Sprintf("user=%s dbname=%s", *cfg.User, cfg.Database)
-	config, err := pgx.ParseConfig(dsn)
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx.ParseConfig")
 	}
@@ -149,11 +154,11 @@ func getCloudSQLConnConfig(
 	}
 	// Use the Cloud SQL connector to handle connecting to the instance.
 	// This approach does *NOT* require the Cloud SQL proxy.
-	config.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
+	config.ConnConfig.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
 		return customDialer.Dial(ctx, *cfg.ConnectionName)
 	}
 	// Attach tracing
-	config.Tracer = pgxTracer{}
+	config.ConnConfig.Tracer = pgxTracer{}
 
 	return config, nil
 }

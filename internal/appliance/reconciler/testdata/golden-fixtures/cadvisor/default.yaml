@@ -186,6 +186,9 @@ resources:
 
           cadvisor:
             disabled: false
+
+          embeddings:
+            disabled: true
     kind: ConfigMap
     metadata:
       annotations:

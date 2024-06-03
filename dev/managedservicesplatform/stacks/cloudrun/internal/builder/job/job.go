@@ -99,7 +99,10 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 	}
 
 	schedule := pointers.DerefZero(vars.Environment.EnvironmentJobSpec).Schedule
-	scheduleDeadlineSeconds := pointers.Deref(schedule.Deadline, 320)
+	deadlineSeconds := pointers.Deref(
+		pointers.DerefZero(vars.Environment.EnvironmentJobSpec).DeadlineSeconds,
+		300,
+	)
 
 	job := cloudrunv2job.NewCloudRunV2Job(stack, pointers.Ptr("cloudrun"), &cloudrunv2job.CloudRunV2JobConfig{
 		Name:      pointers.Ptr(name),
@@ -116,24 +119,9 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 				// Connect to VPC connector for talking to other GCP services.
 				VpcAccess: vpcAccess,
 
-				// Set a high limit that matches our default Cloudflare zone's
-				// timeout:
-				//
-				//   export CF_API_TOKEN=$(gcloud secrets versions access latest --secret CLOUDFLARE_API_TOKEN --project sourcegraph-secrets)
-				//   curl -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/zones | jq '.result[]  | select(.name == "sourcegraph.com") | .id'
-				//   curl -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/settings | jq '.result[] | select(.id == "proxy_read_timeout")'
-				//
-				// Result should be something like:
-				//
-				//   {
-				//     "id": "proxy_read_timeout",
-				//     "value": "300",
-				//     "modified_on": "2022-02-08T23:10:35.772888Z",
-				//     "editable": true
-				//   }
-				//
-				// The service should implement tighter timeouts on its own if desired.
-				Timeout: pointers.Ptr("300s"),
+				// Timeout is the maximum amount of time a job execution is
+				// allowed to run.
+				Timeout: pointers.Stringf("%ds", deadlineSeconds),
 
 				// Configuration for the single service container.
 				Containers: []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainers{{
@@ -164,7 +152,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 							},
 							&cloudrunv2job.CloudRunV2JobTemplateTemplateContainersEnv{
 								Name:  pointers.Ptr("JOB_EXECUTION_DEADLINE"),
-								Value: pointers.Ptr(fmt.Sprintf("%ds", scheduleDeadlineSeconds)),
+								Value: pointers.Ptr(fmt.Sprintf("%ds", deadlineSeconds)),
 							},
 						)
 					}(),
@@ -197,7 +185,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 			Name:            job.Name(),
 			Schedule:        pointers.Ptr(schedule.Cron),
 			TimeZone:        pointers.Ptr("Etc/UTC"),
-			AttemptDeadline: pointers.Ptr(fmt.Sprintf("%ds", scheduleDeadlineSeconds)),
+			AttemptDeadline: pointers.Ptr(fmt.Sprintf("%ds", deadlineSeconds)),
 			Region:          &vars.GCPRegion,
 			HttpTarget: &cloudschedulerjob.CloudSchedulerJobHttpTarget{
 				HttpMethod: pointers.Ptr(http.MethodPost),

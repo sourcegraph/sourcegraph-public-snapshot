@@ -1,5 +1,7 @@
 <script context="module" lang="ts">
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import type { Keys } from '$lib/Hotkey'
+    import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
 
     enum TabPanels {
         History,
@@ -24,10 +26,18 @@
             return
         }
     }
+
+    const historyHotkey: Keys = {
+        key: 'alt+h',
+    }
+
+    const referenceHotkey: Keys = {
+        key: 'alt+r',
+    }
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline } from '@mdi/js'
+    import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -37,14 +47,14 @@
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
     import Icon from '$lib/Icon.svelte'
     import Icon2 from '$lib/Icon2.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
-    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
@@ -159,14 +169,6 @@
         }
     }
 
-    function handleGoToRoot(): void {
-        // Without this if we go to the root from the before scoped directory
-        // (and we were in the root before) fileTreeStore caching omits
-        // new file tree provider creating, this would lead to not updating
-        // file tree as we go to the root
-        fileTreeStore.resetTopPathCache(repoName, resolvedRevision.commitID)
-    }
-
     $: {
         if (selectedTab == null) {
             bottomPanel?.collapse()
@@ -209,28 +211,24 @@
                         getRepositoryCommits={data.getRepoCommits}
                         getRepositoryTags={data.getRepoTags}
                     />
-
-                    <Tooltip tooltip="Go to the repository root">
-                        <Button variant="secondary" outline size="sm">
-                            <svelte:fragment slot="custom" let:buttonClass>
-                                <a class={buttonClass} href="/{repoName}" on:click={handleGoToRoot}>
-                                    <Icon2 icon={ILucideHome} inline />
-                                </a>
-                            </svelte:fragment>
-                        </Button>
-                    </Tooltip>
                 </div>
 
                 <div class="sidebar-action-row">
                     <Button variant="secondary" outline size="sm">
                         <svelte:fragment slot="custom" let:buttonClass>
-                            <button
-                                class={`${buttonClass} search-files-button`}
-                                on:click={() => openFuzzyFinder('files')}
-                            >
-                                <span>Search files</span>
-                                <KeyboardShortcut shorcut={filesHotkey} />
-                            </button>
+                            <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
+                                <button
+                                    class={`${buttonClass} search-files-button`}
+                                    on:click={() => openFuzzyFinder('files')}
+                                >
+                                    {#if isCollapsed}
+                                        <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
+                                    {:else}
+                                        <span>Search files</span>
+                                        <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
+                                    {/if}
+                                </button>
+                            </Tooltip>
                         </svelte:fragment>
                     </Button>
                 </div>
@@ -283,7 +281,7 @@
             >
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                        <TabPanel title="History" icon={mdiHistory}>
+                        <TabPanel title="History" shortcut={historyHotkey}>
                             {#key $page.params.path}
                                 <HistoryPanel
                                     bind:this={historyPanel}
@@ -295,7 +293,7 @@
                                 />
                             {/key}
                         </TabPanel>
-                        <TabPanel title="References" icon={mdiListBoxOutline}>
+                        <TabPanel title="References" shortcut={referenceHotkey}>
                             <ReferencePanel
                                 connection={references}
                                 loading={referencesLoading}
@@ -368,7 +366,15 @@
             width: 100%;
         }
 
-        .search-files-button,
+        // Hide action text and leave just icon for collapsed version
+        .search-files-button {
+            display: block;
+
+            span {
+                display: none;
+            }
+        }
+
         :global([data-repo-rev-picker-trigger]),
         .sidebar-file-tree {
             display: none;
@@ -411,12 +417,6 @@
                 flex-shrink: 1;
                 text-align: left;
             }
-
-            kbd {
-                display: flex;
-                margin: -0.1rem 0;
-                letter-spacing: 0.15rem;
-            }
         }
     }
 
@@ -445,7 +445,7 @@
 
         display: flex;
         align-items: center;
-        flex-flow: row nowrap;
+        gap: 2rem;
         justify-content: space-between;
         overflow: hidden;
         height: 100%;
@@ -453,7 +453,13 @@
         color: var(--text-body);
 
         :global([data-tabs]) {
-            width: 100%;
+            flex: 1;
+        }
+
+        .last-commit {
+            min-width: 0;
+            max-width: min-content;
+            margin-right: 0.5rem;
         }
     }
 </style>

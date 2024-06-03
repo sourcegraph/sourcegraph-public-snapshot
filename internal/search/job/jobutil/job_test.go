@@ -1969,6 +1969,7 @@ func runRepoSubsetTextSearch(
 
 	zoektParams := &search.ZoektParameters{
 		FileMatchLimit:  patternInfo.FileMatchLimit,
+		Typ:             typ,
 		Select:          patternInfo.Select,
 		NumContextLines: 0,
 	}
@@ -1976,7 +1977,7 @@ func runRepoSubsetTextSearch(
 	zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 		Repos:       indexed,
 		Query:       zoektQuery,
-		Typ:         search.TextRequest,
+		Typ:         typ,
 		ZoektParams: zoektParams,
 		Since:       nil,
 	}

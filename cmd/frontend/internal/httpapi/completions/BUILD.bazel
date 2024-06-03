@@ -51,6 +51,7 @@ go_test(
     name = "completions_test",
     srcs = ["handler_test.go"],
     embed = [":completions"],
+    tags = [TAG_CODY_CORE],
     deps = [
         "//internal/completions/types",
         "//internal/conf",

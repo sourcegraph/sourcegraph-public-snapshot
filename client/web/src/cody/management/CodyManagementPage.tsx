@@ -23,7 +23,7 @@ import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { manageSubscriptionRedirectURL } from '../util'
+import { getManageSubscriptionPageURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -144,11 +144,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     variant="primary"
                                     size="sm"
-                                    href={manageSubscriptionRedirectURL}
-                                    onClick={event => {
-                                        event.preventDefault()
+                                    to={getManageSubscriptionPageURL()}
+                                    onClick={() => {
                                         telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                        window.location.href = manageSubscriptionRedirectURL
                                     }}
                                 >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />

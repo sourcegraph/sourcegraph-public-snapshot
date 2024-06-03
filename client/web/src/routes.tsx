@@ -80,6 +80,10 @@ const CodySubscriptionPage = lazyComponent(
     () => import('./cody/subscription/CodySubscriptionPage'),
     'CodySubscriptionPage'
 )
+const CodySubscriptionManagePage = lazyComponent(
+    () => import('./cody/management/subscription/manage/CodySubscriptionManagePage'),
+    'CodySubscriptionManagePage'
+)
 const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
 const CodyDashboardPage = lazyComponent(() => import('./cody/dashboard/CodyDashboardPage'), 'CodyDashboardPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
@@ -480,6 +484,20 @@ export const routes: RouteObject[] = [
                     <CodySubscriptionPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.CodySubscriptionManage,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <CodySubscriptionManagePage
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.platformContext.telemetryRecorder}
+                    />
+                )}
+                condition={({ isSourcegraphDotCom }) => isSourcegraphDotCom && isEmbeddedCodyProUIEnabled()}
             />
         ),
     },

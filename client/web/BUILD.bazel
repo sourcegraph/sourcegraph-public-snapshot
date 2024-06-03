@@ -1,4 +1,3 @@
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
@@ -7,7 +6,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
-load("//dev:esbuild.bzl", "esbuild_web_app")
+load("//dev:esbuild.bzl", "esbuild", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
@@ -241,6 +240,12 @@ ts_project(
         "src/cody/management/api/teamMembers.ts",
         "src/cody/management/api/teamSubscriptions.ts",
         "src/cody/management/api/types.ts",
+        "src/cody/management/subscription/manage/CodySubscriptionManagePage.tsx",
+        "src/cody/management/subscription/manage/InvoiceHistory.tsx",
+        "src/cody/management/subscription/manage/LoadingIconButton.tsx",
+        "src/cody/management/subscription/manage/PaymentDetails.tsx",
+        "src/cody/management/subscription/manage/SubscriptionDetails.tsx",
+        "src/cody/management/subscription/manage/utils.ts",
         "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
         "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
@@ -1317,7 +1322,8 @@ ts_project(
         "src/repo/blob/codemirror/occurrence-utils.ts",
         "src/repo/blob/codemirror/react-interop.tsx",
         "src/repo/blob/codemirror/scip-snapshot.ts",
-        "src/repo/blob/codemirror/search.tsx",
+        "src/repo/blob/codemirror/search.ts",
+        "src/repo/blob/codemirror/search/SearchPanel.tsx",
         "src/repo/blob/codemirror/static-highlights.tsx",
         "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/HovercardView.tsx",
