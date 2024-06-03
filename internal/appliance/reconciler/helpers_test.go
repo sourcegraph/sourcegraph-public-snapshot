@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/go-logr/stdr"
@@ -128,7 +129,7 @@ func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
 	return strings.TrimSpace(envtestOut.String())
 }
 
-func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string {
+func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
 	// Create a random namespace for each test
 	namespace := "test-appliance-" + suite.randomSlug()
 	ns := &corev1.Namespace{
@@ -140,19 +141,34 @@ func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string 
 	suite.Require().NoError(err)
 
 	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	_, err = suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
-	suite.Require().NoError(err)
+	suite.awaitReconciliation(namespace, func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+		suite.Require().NoError(err)
+	})
 	return namespace
 }
 
-func (suite *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName string) {
+func (suite *ApplianceTestSuite) updateConfigMapAndAwaitReconciliation(namespace, fixtureFileName string) {
 	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
-	suite.Require().NoError(err)
+	suite.awaitReconciliation(namespace, func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
+		suite.Require().NoError(err)
+	})
 }
 
-// Synchronize test and controller code by counting ReconcileFinished events.
-// Some tests might want to wait for more than 1 to appear.
+// Synchronize test and controller code by counting ReconcileFinished events. We
+// expect exactly 2 from one initial creation or update of an SG ConfigMap. This
+// is because we update the ConfigMap at the end of the reconcile loop with
+// annotations. This triggers another reconcile loop. This all ends when the
+// changes are no-ops.
+func (suite *ApplianceTestSuite) awaitReconciliation(namespace string, op func()) {
+	events := suite.getConfigMapReconcileEventCount(namespace)
+	op()
+	suite.Require().Eventually(func() bool {
+		return suite.getConfigMapReconcileEventCount(namespace) >= events+2
+	}, time.Second*10, time.Millisecond*200)
+}
+
 func (suite *ApplianceTestSuite) getConfigMapReconcileEventCount(namespace string) int32 {
 	t := suite.T()
 	events, err := suite.k8sClient.CoreV1().Events(namespace).List(suite.ctx, metav1.ListOptions{
