@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"strings"
 	"sync"
 
@@ -232,131 +233,33 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
-
-		// TODO: Move to args.normalize
-		// Find matching uploads for the coordinates in the request
-		repo, err := r.repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
+		repo, revision, err := r.resolveRepoAndRevision(ctx, args)
 		if err != nil {
 			return nil, err
 		}
 
-		// TODO: Resolve revision?
-		revision := "HEAD"
-		if args.Range.Revision != nil {
-			revision = *args.Range.Revision
-		}
-
-		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
-			RepositoryID:       int(repo.ID),
-			Commit:             revision,
-			Path:               args.Range.Path,
-			RootToPathMatching: shared.RootMustEnclosePath,
-			Indexer:            shared.SyntacticIndexer,
-		})
-
+		symbols, err := r.getSyntacticSymbolsAtRange(ctx, repo, revision, args.Range)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(uploads) == 0 {
-			// TODO: probably just return 0 results instead?
-			return nil, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
-		}
-
-		if len(uploads) != 1 {
-			// TODO: Is seeing multiple syntactic uploads an error?
-		}
-
-		syntacticUpload := uploads[0]
-
-		doc, err := r.svc.SCIPDocument(ctx, syntacticUpload.ID, args.Range.Path)
-
-		matchingOccurrences := make([]matchingOccurrence, 0)
-		for _, occurrence := range doc.GetOccurrences() {
-			occRange := occurrence.GetRange()
-			// TODO: use range stuff from scip binding
-			var startLine, endLine, startCharacter, endCharacter int32
-			if len(occRange) == 3 {
-				startLine = occRange[0]
-				startCharacter = occRange[1]
-				endLine = occRange[0]
-				endCharacter = occRange[2]
-			} else {
-				startLine = occRange[0]
-				startCharacter = occRange[1]
-				endLine = occRange[2]
-				endCharacter = occRange[3]
-			}
-
-			// TODO: shouldn't need exact match, just overlap is enough
-			// If SymbolComparator is given: use that
-			// otherwise use ranges
-			if args.Range.Start.Line == startLine && args.Range.End.Line == endLine &&
-				args.Range.Start.Character == startCharacter && args.Range.End.Character == endCharacter {
-				parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
-				if err != nil {
-					// TODO: Log this failure
-					continue
-				}
-				lastDescriptor := ""
-				if len(parsedSymbol.Descriptors) > 0 {
-					lastDescriptor = parsedSymbol.Descriptors[len(parsedSymbol.Descriptors)-1].Name
-				}
-
-				if lastDescriptor != "" {
-					matchingOccurrences = append(matchingOccurrences, matchingOccurrence{
-						occurrence:  occurrence,
-						displayName: lastDescriptor,
-					})
-				}
-			}
-		}
-
-		if len(matchingOccurrences) == 0 {
+		if len(symbols) == 0 {
 			return nil, fmt.Errorf("no matching occurrences found for range")
 		}
 
 		// Overlapping occurrences should lead to the same display name, but be scored separately.
 		// (Meaning we just need a single Searcher/Zoekt search)
 		// TODO: Assert this?
-		matchingOccurrence := matchingOccurrences[0]
-
-		// TODO: Get Language from library function or require scip-syntax to set it on the document
-		var contextLines int32 = 0
-		patternType := "standard"
-		repoName := fmt.Sprintf("^%s$", repo.Name)
-		identifier := matchingOccurrence.displayName
-		countLimit := 500
-		searchQuery := fmt.Sprintf("repo:%s rev:%s count:%d %s", repoName, revision, countLimit, identifier)
-
-		fmt.Printf("Sending: query=%s\n", searchQuery)
-
-		plan, err := r.searcherClient.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
-		if err != nil {
-			return nil, err
+		matchingSymbol := symbols[0]
+		symbolName := nameFromSymbol(matchingSymbol)
+		if symbolName == "" {
+			return nil, fmt.Errorf("no matching occurrences found for range")
 		}
-		stream := streaming.NewAggregatingStream()
-		_, err = r.searcherClient.Execute(ctx, stream, plan)
-		if err != nil {
-			return nil, err
-		}
-		for _, match := range stream.Results {
-			fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
 
-			// TODO: Do we care about the ranges on individual matches?
-			// (Might let us speed up search in the syntactic indexes as we can use binary search on the ordered list of occurrences)
-			t, ok := match.(*result.FileMatch)
-			if !ok {
-				continue
-			}
-			for _, line := range t.ChunkMatches.AsLineMatches() {
-				fmt.Printf("  %d:%d-%d:%d %s\n",
-					line.LineNumber, line.OffsetAndLengths[0][0],
-					line.LineNumber, line.OffsetAndLengths[0][0]+line.OffsetAndLengths[0][1],
-					line.Preview,
-				)
-			}
-		}
+		candidateMatches, err := r.findCandidateOccurencesWithZearcher(ctx, repo, symbolName, revision)
+
+		fmt.Printf("candidateMatches: %#v", candidateMatches)
+
 		remainingCount = remainingCount - numSyntacticResults
 	}
 
@@ -366,6 +269,128 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 
 	return nil, errors.New("Not implemented yet")
+}
+
+func (r *rootResolver) findCandidateOccurencesWithZearcher(
+	ctx context.Context,
+	repo *types.Repo,
+	symbolName string,
+	revision *api.CommitID,
+) (map[string][]result.Range, error) {
+	var contextLines int32 = 0
+	patternType := "standard"
+	// TODO: Once we handle languages with ambiguous file extensions we'll need to be smarter about this.
+	// Figure out why the enry call isn't working
+	language := "java" // enry.GetLanguageByFilename(filepath.Base(args.Range.Path))
+	repoName := fmt.Sprintf("^%s$", repo.Name)
+	identifier := symbolName
+	countLimit := 500
+	searchQuery := fmt.Sprintf("repo:%s rev:%s language:%s count:%d %s", repoName, string(*revision), language, countLimit, identifier)
+
+	// fmt.Printf("Sending: query=%s\n", searchQuery)
+
+	plan, err := r.searcherClient.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
+	if err != nil {
+		return nil, err
+	}
+	stream := streaming.NewAggregatingStream()
+	_, err = r.searcherClient.Execute(ctx, stream, plan)
+	if err != nil {
+		return nil, err
+	}
+
+	matches := make(map[string][]result.Range)
+	for _, match := range stream.Results {
+		fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
+
+		// TODO: Do we care about the ranges on individual matches?
+		// (Might let us speed up search in the syntactic indexes as we can use binary search on the ordered list of occurrences)
+		t, ok := match.(*result.FileMatch)
+		if !ok {
+			continue
+		}
+		for _, chunkMatch := range t.ChunkMatches {
+			for _, matchRange := range chunkMatch.Ranges {
+				path := match.Key().Path
+				if matches[path] == nil {
+					matches[path] = []result.Range{}
+				}
+				matches[path] = append(matches[path], matchRange)
+			}
+		}
+	}
+	return matches, nil
+}
+
+func nameFromSymbol(symbol *scip.Symbol) string {
+	lastDescriptor := ""
+	if len(symbol.Descriptors) > 0 {
+		lastDescriptor = symbol.Descriptors[len(symbol.Descriptors)-1].Name
+	}
+	return lastDescriptor
+}
+
+// TODO: Move to args.normalize
+func (r *rootResolver) resolveRepoAndRevision(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (repo *types.Repo, commitId *api.CommitID, err error) {
+	// Find matching uploads for the coordinates in the request
+	repo, err = r.repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resolvedRevision, err := r.gitserverClient.ResolveRevision(ctx, repo.Name, *args.Range.Revision, gitserver.ResolveRevisionOptions{EnsureRevision: true})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return repo, &resolvedRevision, err
+}
+
+func (r *rootResolver) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
+	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
+		RepositoryID:       int(repo.ID),
+		Commit:             string(*revision),
+		Path:               rangeInput.Path,
+		RootToPathMatching: shared.RootMustEnclosePath,
+		Indexer:            shared.SyntacticIndexer,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(uploads) == 0 {
+		// TODO: probably just return 0 results instead?
+		return nil, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
+	}
+
+	if len(uploads) != 1 {
+		// TODO: Is seeing multiple syntactic uploads an error?
+	}
+
+	syntacticUpload := uploads[0]
+
+	doc, err := r.svc.SCIPDocument(ctx, syntacticUpload.ID, rangeInput.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols = make([]*scip.Symbol, 0)
+	for _, occurrence := range doc.GetOccurrences() {
+		occRange := scip.NewRange(occurrence.GetRange())
+		// TODO: Shouldn't need exact match, just overlap is enough
+		// TODO: Needs to handle differing text encodings to get the character positions right
+		if rangeInput.Start.Line == occRange.Start.Line && rangeInput.End.Line == occRange.End.Line &&
+			rangeInput.Start.Character == occRange.Start.Character && rangeInput.End.Character == occRange.End.Character {
+			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+			if err != nil {
+				// TODO: Log this failure?
+				continue
+			}
+			symbols = append(symbols, parsedSymbol)
+		}
+	}
+	return symbols, nil
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
