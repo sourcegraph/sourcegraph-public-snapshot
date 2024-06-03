@@ -42,10 +42,17 @@ func Listen() {
 			os.Exit(1)
 		}()
 
-		// Execute all hooks
+		// Concurrently execute all hooks
+		var wg sync.WaitGroup
 		for _, h := range hooks {
-			h()
+			wg.Add(1)
+			fn := h
+			go func() {
+				fn()
+				wg.Done()
+			}()
 		}
+		wg.Wait()
 		close(closed)
 	}()
 }
