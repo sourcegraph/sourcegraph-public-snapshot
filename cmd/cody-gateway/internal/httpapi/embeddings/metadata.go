@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"context"
+
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
