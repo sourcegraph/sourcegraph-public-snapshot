@@ -1,3 +1,9 @@
 load("//wolfi-images:defs.bzl", "wolfi_base")
 
+oci_push(
+    name = "candidate_push",
+    image = ":base_image",
+    repository = image_repository("sourcegraph-dev"),
+)
+
 wolfi_base(target = "sourcegraph-dev")
