@@ -25,7 +25,7 @@ import (
 
 type Event struct {
 	Name               string    `json:"name"`
-	CodeFreezeDate     time.Time `json:"codeFreezeDate"`
+	BranchCutDate      time.Time `json:"branchCutDate"`
 	MonthlyReleaseDate time.Time `json:"monthlyReleaseDate"`
 	PatchReleaseDate   time.Time `json:"patchReleaseDate"`
 }
@@ -65,12 +65,11 @@ func generateCalendarEvents(cctx *cli.Context) error {
 			continue
 		}
 
-		p.Updatef("Creating Code Freeze event for %q", e.Name)
-		codeFreezeEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Code Freeze: (%s)", e.Name), e.CodeFreezeDate)
-		_, err := client.Events.Insert("primary", codeFreezeEvt).Context(cctx.Context).Do()
+		p.Updatef("Creating Branch Cut event for %q", e.Name)
+		branchCutEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Branch Cut: (%s)", e.Name), e.BranchCutDate)
+		_, err := client.Events.Insert("primary", branchCutEvt).Context(cctx.Context).Do()
 		if err != nil {
 			p.Destroy()
-			fmt.Println(err.Error(), "<===")
 			return errors.Wrapf(err, "Failed to create Code Freeze event for %q", e.Name)
 		}
 
