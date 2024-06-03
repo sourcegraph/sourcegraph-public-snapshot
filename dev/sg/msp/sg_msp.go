@@ -485,7 +485,10 @@ This command supports completions on services and environments.
 								return errors.Wrap(err, "failed to get Notion token")
 							}
 						}
-						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
+						notionClient := notionapi.NewClient(
+							notionapi.Token(notionToken),
+							// Retry 429 errors
+							notionapi.WithRetry(3))
 
 						type task struct {
 							svc          *spec.Spec
