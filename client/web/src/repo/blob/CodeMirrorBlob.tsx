@@ -60,6 +60,7 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { CodeMirrorContainer } from './codemirror/react-interop'
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
+import { SearchPanel } from './codemirror/search/SearchPanel'
 import { staticHighlights, type Range } from './codemirror/static-highlights'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
@@ -380,8 +381,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
                 initialState: searchPanelConfig,
-                graphQLClient: apolloClient,
-                navigate,
+                createPanel: config => new SearchPanel(config, apolloClient, navigate),
             }),
             themeExtension,
         ],

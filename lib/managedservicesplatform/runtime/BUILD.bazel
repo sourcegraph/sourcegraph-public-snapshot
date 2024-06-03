@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "config.go",
         "contract.go",
+        "job.go",
         "sanitycheck.go",
         "service.go",
     ],

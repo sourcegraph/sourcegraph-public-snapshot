@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -172,6 +173,7 @@ func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, l
 func (a *AnthropicMessagesHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicMessagesRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(a.tokenizer,
 		flaggingRequest{
+			ModelName:       ar.Model,
 			FlattenedPrompt: ar.BuildPrompt(),
 			MaxTokens:       int(ar.MaxTokens),
 		},

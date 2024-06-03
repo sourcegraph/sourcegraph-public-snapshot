@@ -4,6 +4,7 @@ go_library(
     name = "connectutil",
     srcs = ["connectutil.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//internal/trace",

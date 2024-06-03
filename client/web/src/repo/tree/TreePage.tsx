@@ -47,7 +47,7 @@ import type { AuthenticatedUser } from '../../auth'
 import type { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import type { CodeIntelligenceProps } from '../../codeintel'
-import { isCodyEnabled } from '../../cody/isCodyEnabled'
+import { isCodyEnabled, isEmbeddingsEnabled } from '../../cody/isCodyEnabled'
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import type { FileCommitsResult, FileCommitsVariables, RepositoryFields } from '../../graphql-operations'
@@ -302,7 +302,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    {window.context?.codyEnabled && window.context?.embeddingsEnabled && (
+                    {isEmbeddingsEnabled() && (
                         <Tooltip content="Embeddings">
                             <Button
                                 className="flex-shrink-0"

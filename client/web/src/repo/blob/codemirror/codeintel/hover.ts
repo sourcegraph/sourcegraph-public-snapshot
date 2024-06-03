@@ -3,7 +3,7 @@ import { type EditorView, type PluginValue, ViewPlugin, getTooltip, type Tooltip
 import { from, fromEvent, Subscription, timer, race } from 'rxjs'
 import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/codemirror/utils'
 
 import { preciseOffsetAtCoords } from '../utils'
 

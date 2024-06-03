@@ -5,6 +5,8 @@
   Use Lucide icons by referring to them as `ILucide<IconName>`. For example:
 
       <Icon2 icon={ILucideChevronDown} />
+
+  See https://lucide.dev/icons/ for a list of available icons.
 -->
 <script lang="ts">
     // todo(@fkling): Rename to Icon.svelte once all references to the old Icon.svelte have been removed.
@@ -27,6 +29,5 @@
     export let icon: ComponentType<SvelteComponent<SvelteHTMLElements['svg']>>
     export let inline: boolean = false
 </script>
-
 
 <svelte:component this={icon} class="{style.icon} {inline ? style.iconInline : ''}" />

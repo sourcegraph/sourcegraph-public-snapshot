@@ -71,7 +71,8 @@ func stopAll(ctx context.Context, wg *sync.WaitGroup, routines ...Routine) error
 			defer wg.Done()
 			if err := r.Stop(ctx); err != nil {
 				stopErrsLock.Lock()
-				stopErrs = errors.Append(stopErrs, errors.Wrapf(err, "stop routine %q", r.Name()))
+				stopErrs = errors.Append(stopErrs,
+					errors.Wrapf(err, "stop routine %q", errors.Safe(r.Name())))
 				stopErrsLock.Unlock()
 			}
 		})
@@ -167,7 +168,8 @@ func (r LIFOStopRoutine) Stop(ctx context.Context) error {
 	for i := len(r) - 1; i >= 0; i -= 1 {
 		err := r[i].Stop(ctx)
 		if err != nil {
-			stopErr = errors.Append(stopErr, errors.Wrapf(err, "stop routine %q", r[i].Name()))
+			stopErr = errors.Append(stopErr,
+				errors.Wrapf(err, "stop routine %q", errors.Safe(r[i].Name())))
 		}
 	}
 	return stopErr

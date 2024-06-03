@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -19,7 +20,11 @@ import (
 
 type RateLimit struct {
 	// AllowedModels is a set of models in Cody Gateway's model configuration
-	// format, "$PROVIDER/$MODEL_NAME".
+	// format, "$PROVIDER/$MODEL_NAME". A single-item slice with value '*' means
+	// that all models in the 'master allowlist' are allowed.
+	//
+	// DO NOT USE DIRECTLY when enforcing permissions: use EvaluateAllowedModels(...)
+	// instead.
 	AllowedModels []string `json:"allowedModels"`
 
 	Limit    int64         `json:"limit"`
@@ -56,6 +61,26 @@ func NewRateLimitWithPercentageConcurrency(limit int64, interval time.Duration, 
 
 func (r *RateLimit) IsValid() bool {
 	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
+}
+
+// EvaluateAllowedModels returns the intersection of a 'master' allowlist and
+// the actor's allowlist, where only values on the 'master' allowlist are returned.
+// The provided allowlist MUST be prefixed with the provider name (e.g. "anthropic/").
+//
+// If the actor's allowlist is a single value '*', then the master allowlist is
+// returned (i.e. all models are allowed).
+func (r *RateLimit) EvaluateAllowedModels(prefixedMasterAllowlist []string) []string {
+	if len(r.AllowedModels) == 1 && r.AllowedModels[0] == "*" {
+		return prefixedMasterAllowlist // all models allowed
+	}
+
+	var result []string
+	for _, val := range r.AllowedModels {
+		if slices.Contains(prefixedMasterAllowlist, val) {
+			result = append(result, val)
+		}
+	}
+	return result
 }
 
 type concurrencyLimiter struct {
