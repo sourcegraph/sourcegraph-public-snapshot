@@ -24,7 +24,13 @@ type DotComDB interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
 }
 
-func RegisterV1(logger log.Logger, mux *http.ServeMux, samsClient samsm2m.TokenIntrospector, dotcom DotComDB) {
+func RegisterV1(
+	logger log.Logger,
+	mux *http.ServeMux,
+	samsClient samsm2m.TokenIntrospector,
+	dotcom DotComDB,
+	opts ...connect.HandlerOption,
+) {
 	mux.Handle(subscriptionsv1connect.NewSubscriptionsServiceHandler(&handlerV1{
 		logger:     logger.Scoped("subscriptions.v1"),
 		samsClient: samsClient,
