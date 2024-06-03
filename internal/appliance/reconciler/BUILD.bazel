@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "blobstore.go",
         "cadvisor.go",
+        "codeinsights.go",
         "codeintel.go",
         "gitserver.go",
         "kubernetes.go",
@@ -66,6 +67,7 @@ go_test(
     srcs = [
         "blobstore_test.go",
         "cadvisor_test.go",
+        "codeinsights_test.go",
         "codeintel_test.go",
         "gitserver_test.go",
         "golden_test.go",

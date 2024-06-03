@@ -34,24 +34,7 @@ type CadvisorSpec struct {
 	StandardConfig
 }
 
-// CodeInsightsDBSpec defines the desired state of Code Insights database.
-type CodeInsightsDBSpec struct {
-	// Disabled defines if Code Insights is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for CodeInsights DB credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// Database allows for custom database connection details.
-	Database *DatabaseConnectionSpec `json:"database,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
-}
-
-// CodeIntelSpec defines the desired state of Code Intel database.
-type CodeIntelSpec struct {
+type CodeDBSpec struct {
 	StandardConfig
 
 	// Database allows for custom database connection details.
@@ -235,10 +218,10 @@ type SourcegraphSpec struct {
 	Cadvisor CadvisorSpec `json:"cadvisor,omitempty"`
 
 	// CodeInsights defines the desired state of the Code Insights service.
-	CodeInsights CodeInsightsDBSpec `json:"codeInsights,omitempty"`
+	CodeInsights CodeDBSpec `json:"codeInsights,omitempty"`
 
 	// CodeIntel defines the desired state of the Code Intel service.
-	CodeIntel CodeIntelSpec `json:"codeIntel,omitempty"`
+	CodeIntel CodeDBSpec `json:"codeIntel,omitempty"`
 
 	Embeddings EmbeddingsSpec `json:"embeddings,omitempty"`
 
