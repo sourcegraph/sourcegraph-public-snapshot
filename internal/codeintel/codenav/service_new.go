@@ -80,27 +80,6 @@ func (s *Service) GetPrototypes(
 	)
 }
 
-func (s *Service) GetDefinitionsBySymbolNames(
-	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	symbolNames []string,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocationsBySymbolNames(
-		ctx, args, requestState, Cursor{},
-
-		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		symbolNames,
-	)
-
-	return locations, err
-}
-
-//
-//
-
 type LocationExtractor interface {
 	// Extract converts a location key (a location within a particular index's text document) into a
 	// set of locations within _that specific document_ related to the symbol at that position, as well
@@ -206,70 +185,6 @@ outer:
 			}
 			allLocations = append(allLocations, locations...)
 		}
-	}
-
-	return allLocations, cursor, nil
-}
-
-func (s *Service) gatherLocationsBySymbolNames(
-	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	cursor Cursor,
-	operation *observation.Operation,
-	tableName string,
-	includeReferencingIndexes bool,
-	symbolNames []string,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-	}})
-	defer endObservation()
-
-	if cursor.Phase == "" {
-		cursor.Phase = "remote"
-	}
-
-	if len(cursor.SymbolNames) == 0 {
-		// Set cursor symbol names if we haven't yet
-		cursor.SymbolNames = symbolNames
-	}
-
-	// The following loop calls to fill additional results into the currently-being-constructed page.
-	// Such a loop exists as each invocation of either phase may produce fewer results than the requested
-	// page size. For example, if there are many references to a symbol over a large number of indexes but
-	// each index has only a small number of locations, they can all be combined into a single page.
-	// Running each phase multiple times and combining the results will create a full page, if the result
-	// set was not exhausted), on each round-trip call to this service's method.
-
-	for cursor.Phase != "done" {
-		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
-
-		if len(allLocations) >= args.Limit {
-			// we've filled our page, exit with current results
-			break
-		}
-
-		var locations []shared.UploadLocation
-
-		// N.B.: cursor is purposefully re-assigned here
-		locations, cursor, err = s.gatherRemoteLocations(
-			ctx,
-			trace,
-			args,
-			requestState,
-			cursor,
-			tableName,
-			includeReferencingIndexes,
-			args.Limit-len(allLocations), // remaining space in the page
-		)
-		if err != nil {
-			return nil, Cursor{}, err
-		}
-		allLocations = append(allLocations, locations...)
 	}
 
 	return allLocations, cursor, nil
@@ -638,9 +553,6 @@ func (s *Service) prepareCandidateUploads(
 
 	return cursor, fallback, nil
 }
-
-//
-//
 
 func symbolsToMonikers(symbolNames []string) ([]precise.QualifiedMonikerData, error) {
 	var monikers []precise.QualifiedMonikerData
