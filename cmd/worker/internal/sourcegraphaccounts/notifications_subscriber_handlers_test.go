@@ -23,8 +23,8 @@ func TestHandleOnUserDeleted(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 		store := NewMockNotificationsSubscriberStore()
 		store.GetSAMSUserByIDFunc.SetDefaultReturn(&clientsv1.User{}, nil)
-		h := handleOnUserDeleted(logger, store, samsProvider)
-		err := h(ctx, &notificationsv1.UserDeletedData{AccountID: "018d21f2-14d7-7c3b-8714-10cdd32dd1ab"})
+		hs := newNotificationsSubscriberHandlers(logger, store, samsProvider)
+		err := hs.onUserDeleted()(ctx, &notificationsv1.UserDeletedData{AccountID: "018d21f2-14d7-7c3b-8714-10cdd32dd1ab"})
 		require.NoError(t, err)
 
 		foundLog := false
@@ -46,8 +46,8 @@ func TestHandleOnUserDeleted(t *testing.T) {
 			},
 			nil,
 		)
-		h := handleOnUserDeleted(logtest.NoOp(t), store, samsProvider)
-		err := h(ctx, &notificationsv1.UserDeletedData{AccountID: "018d21f2-14d7-7c3b-8714-10cdd32dd1ab"})
+		hs := newNotificationsSubscriberHandlers(logtest.NoOp(t), store, samsProvider)
+		err := hs.onUserDeleted()(ctx, &notificationsv1.UserDeletedData{AccountID: "018d21f2-14d7-7c3b-8714-10cdd32dd1ab"})
 		require.NoError(t, err)
 		mockrequire.Called(t, store.ListUserExternalAccountsFunc)
 		mockrequire.Called(t, store.HardDeleteUsersFunc)
