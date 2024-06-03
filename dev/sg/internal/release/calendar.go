@@ -63,6 +63,11 @@ func generateCalendarEvents(cctx *cli.Context) error {
 
 		patchEventsToCreate := make([]time.Time, len(e.PatchReleaseDates))
 
+		if e.MonthlyReleaseDate.Before(now) {
+			p.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "Skipping event: %q because the monthly release date is in the past.", e.Name))
+			continue
+		}
+
 		for i, patchReleaseDate := range e.PatchReleaseDates {
 			if patchReleaseDate.Before(now) {
 				continue
