@@ -3,7 +3,7 @@ import type { BillingInterval } from './teamSubscriptions'
 export interface CreateCheckoutSessionRequest {
     interval: BillingInterval
     seats: number
-    adjustableSeatCount?: boolean
+    canChangeSeatCount?: boolean
 
     customerEmail?: string
     showPromoCodeField: boolean

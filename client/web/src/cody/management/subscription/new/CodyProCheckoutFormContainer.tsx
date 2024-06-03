@@ -30,7 +30,7 @@ export const CodyProCheckoutFormContainer: React.FunctionComponent<{
         const requestBody: CreateCheckoutSessionRequest = {
             interval: 'monthly',
             seats: initialSeatCount,
-            adjustableSeatCount: true, // Seat count is always adjustable.
+            canChangeSeatCount: true, // Seat count is always adjustable.
             customerEmail,
 
             showPromoCodeField,
