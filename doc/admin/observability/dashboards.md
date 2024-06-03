@@ -6435,7 +6435,7 @@ sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count{instance=~`${shard:
 
 
 
-Refer to the [alerts reference](./alerts.md#gitserver-echo-command-duration-test) for 2 alerts related to this panel.
+Refer to the [alerts reference](./alerts.md#gitserver-echo-command-duration-test) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100040` on your Sourcegraph instance.
 
