@@ -45,6 +45,7 @@ type Config struct {
 
 	Fireworks FireworksConfig
 
+	// Prefixed model names
 	AllowedEmbeddingsModels []string
 
 	AllowAnonymous bool
@@ -88,12 +89,14 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	FlaggingConfig FlaggingConfig
 }
 
 type FireworksConfig struct {
+	// Non-prefixed model names
 	AllowedModels                          []string
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
@@ -102,6 +105,7 @@ type FireworksConfig struct {
 }
 
 type OpenAIConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	OrgID          string
@@ -145,6 +149,10 @@ type FlaggingConfig struct {
 	// MaxTokensToSampleFlaggingLimit is a soft-cap, used to flag requests. (But not necessarily block.)
 	// So MaxTokensToSampleFlaggingLimit should be <= MaxTokensToSample.
 	MaxTokensToSampleFlaggingLimit int
+
+	// FlaggedModelNames is a list of provider-specific model names (e.g. "gtp-3.5")
+	// that if used will lead to the request being flagged.
+	FlaggedModelNames []string
 
 	// ResponseTokenBlockingLimit is the maximum number of tokens we allow before outright blocking
 	// a response. e.g. the client sends a request desiring a response with 100 max tokens, we will
@@ -359,6 +367,8 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
 	cfg.PromptTokenFlaggingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "4000", "Maximum number of completion tokens to allow without blocking.")
+
+	cfg.FlaggedModelNames = maybeLoadLowercaseSlice("FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
 }
 
 // splitMaybe splits the provided string on commas, but returns nil if given the empty string.

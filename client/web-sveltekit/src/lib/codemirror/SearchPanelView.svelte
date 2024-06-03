@@ -27,7 +27,6 @@
      */
     export function getInput(): HTMLInputElement {
         return input
-
     }
 
     let input: HTMLInputElement

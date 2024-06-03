@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
     import type { Action } from 'svelte/action'
+    import { registerHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
 
@@ -11,12 +12,25 @@
     export let showOnHover: boolean = false
     export let hoverDelay: number = 500
     export let hoverCloseDelay: number = 150
+    export let closeOnEsc: boolean = true
 
     let isOpen = false
     let trigger: HTMLElement | null
     let target: HTMLElement | undefined
     let popoverContainer: HTMLElement | null
     let delayTimer: ReturnType<typeof setTimeout>
+
+    if (closeOnEsc) {
+        registerHotkey({
+            keys: { key: 'Esc' },
+            ignoreInputFields: false,
+            handler: event => {
+                event.preventDefault()
+                close()
+                return false
+            },
+        })
+    }
 
     function toggle(open?: boolean): void {
         isOpen = open === undefined ? !isOpen : open

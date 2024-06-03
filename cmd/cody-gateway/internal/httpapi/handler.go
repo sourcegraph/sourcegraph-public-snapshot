@@ -158,7 +158,8 @@ func NewHandler(
 			attributesOpenAICompletions,
 			openAIHandler)
 
-		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models", embeddings.NewListHandler())
+		registerSimpleGETEndpoint("v1.embeddings.models", "/embeddings/models",
+			embeddings.NewListHandler(config.EmbeddingsAllowedModels))
 
 		factoryMap := embeddings.ModelFactoryMap{
 			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),

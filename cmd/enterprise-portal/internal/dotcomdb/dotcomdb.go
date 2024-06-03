@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -24,7 +25,7 @@ import (
 )
 
 type Reader struct {
-	conn *pgx.Conn
+	db   *pgxpool.Pool
 	opts ReaderOptions
 }
 
@@ -40,21 +41,28 @@ type ReaderOptions struct {
 //
 // 👷 This is intended to be a short-lived mechanism, and should be removed
 // as part of https://linear.app/sourcegraph/project/12f1d5047bd2/overview.
-func NewReader(conn *pgx.Conn, opts ReaderOptions) *Reader {
-	return &Reader{conn: conn, opts: opts}
+func NewReader(db *pgxpool.Pool, opts ReaderOptions) *Reader {
+	return &Reader{db: db, opts: opts}
 }
 
 func (r *Reader) Ping(ctx context.Context) error {
-	if err := r.conn.Ping(ctx); err != nil {
+	// Execute ping steps within a single connection.
+	conn, err := r.db.Acquire(ctx)
+	if err != nil {
+		return errors.Wrap(err, "db.Acquire")
+	}
+	defer conn.Release()
+
+	if err := conn.Ping(ctx); err != nil {
 		return errors.Wrap(err, "sqlDB.PingContext")
 	}
-	if _, err := r.conn.Exec(ctx, "SELECT current_user;"); err != nil {
+	if _, err := conn.Exec(ctx, "SELECT current_user;"); err != nil {
 		return errors.Wrap(err, "sqlDB.Exec SELECT current_user")
 	}
 	return nil
 }
 
-func (r *Reader) Close(ctx context.Context) error { return r.conn.Close(ctx) }
+func (r *Reader) Close() { r.db.Close() }
 
 type CodyGatewayAccessAttributes struct {
 	SubscriptionID string
@@ -237,7 +245,7 @@ func (r *Reader) GetCodyGatewayAccessAttributesBySubscription(ctx context.Contex
 	query := newCodyGatewayAccessQuery(queryConditions{
 		whereClause: "subscription.id = $1",
 	}, r.opts)
-	row := r.conn.QueryRow(ctx, query,
+	row := r.db.QueryRow(ctx, query,
 		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 	return scanCodyGatewayAccessAttributes(row)
 }
@@ -259,7 +267,7 @@ func (r *Reader) GetCodyGatewayAccessAttributesByAccessToken(ctx context.Context
 	query := newCodyGatewayAccessQuery(queryConditions{
 		havingClause: "$1 = ANY(array_agg(tokens.license_key_hash))",
 	}, r.opts)
-	row := r.conn.QueryRow(ctx, query, decoded)
+	row := r.db.QueryRow(ctx, query, decoded)
 	return scanCodyGatewayAccessAttributes(row)
 }
 
@@ -289,7 +297,7 @@ func scanCodyGatewayAccessAttributes(row pgx.Row) (*CodyGatewayAccessAttributes,
 
 func (r *Reader) GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*CodyGatewayAccessAttributes, error) {
 	query := newCodyGatewayAccessQuery(queryConditions{}, r.opts)
-	rows, err := r.conn.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
 	}
@@ -427,7 +435,7 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 	}
 
 	query := newLicensesQuery(conds, r.opts)
-	rows, err := r.conn.Query(ctx, query, args...)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
 	}
