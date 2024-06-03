@@ -48,9 +48,23 @@ type googleContentMessage struct {
 type googleRequest struct {
 	Model            string                 `json:"model"`
 	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig struct {
-		MaxOutputTokens int `json:"maxOutputTokens,omitempty"`
-	} `json:"generationConfig,omitempty"`
+	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
+	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
+}
+
+// googleGenerationConfig request object for google endpoint https://ai.google.dev/gemini-api/docs/models/generative-models#model-parameters
+type googleGenerationConfig struct {
+	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
+	TopP            float32  `json:"top_p,omitempty"`           // request.TopP
+	TopK            float32  `json:"top_k,omitempty"`           // request.TopK
+	StopSequences   []string `json:"stop_sequences,omitempty"`  // request.StopSequences
+	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
+}
+
+// googleSafetySettings us the adjustable safety settings available for the Gemini API endpoint https://ai.google.dev/gemini-api/docs/safety-settings
+type googleSafetySettings struct {
+	Category  string `json:"category"`
+	Threshold string `json:"threshold"`
 }
 
 func (r googleRequest) ShouldStream() bool {
