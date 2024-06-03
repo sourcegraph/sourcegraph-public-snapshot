@@ -1776,37 +1776,6 @@ commandsets:
     bazelCommands:
       - cody-gateway
 
-  enterprise-bazel-sveltekit:
-    <<: *enterprise_bazel_set
-    env:
-      SVELTEKIT: true
-
-  enterprise-sveltekit:
-    <<: *enterprise_set
-    # Keep in sync with &enterprise_set.commands
-    commands:
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - web-sveltekit
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - caddy
-      - symbols
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
-      - syntax-highlighter
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - embeddings
-    env:
-      SVELTEKIT: true
-
 tests:
   # These can be run with `sg test [name]`
   backend:
