@@ -52,10 +52,14 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
 
     const debouncedUpdateSeatCount = useDebouncedCallback(async newSeatCount => {
         if (lineItems.length === 1) {
-            await updateLineItemQuantity({
-                lineItem: lineItems[0].id,
-                quantity: newSeatCount,
-            })
+            try {
+                await updateLineItemQuantity({
+                    lineItem: lineItems[0].id,
+                    quantity: newSeatCount,
+                })
+            } catch(error) {
+                setAndDisplayErrorMessage('Failed to update seat count. Please change the number of seats to try again.')
+            }
             setUpdatingSeatCount(false)
         }
     }, 800)
