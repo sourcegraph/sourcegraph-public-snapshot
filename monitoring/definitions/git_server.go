@@ -14,8 +14,9 @@ import (
 
 func GitServer() *monitoring.Dashboard {
 	const (
-		containerName   = "gitserver"
-		grpcServiceName = "gitserver.v1.GitserverService"
+		containerName             = "gitserver"
+		grpcGitServiceName        = "gitserver.v1.GitserverService"
+		grpcRepositoryServiceName = "gitserver.v1.GitserverRepositoryService"
 	)
 
 	scrapeJobRegex := fmt.Sprintf(".*%s", containerName)
@@ -31,7 +32,8 @@ func GitServer() *monitoring.Dashboard {
 
 	vcsSyncerVariableName := "vcsSyncerType"
 
-	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
+	grpcGitServiceMethodVariable := shared.GRPCMethodVariable("Git Service", grpcGitServiceName)
+	grpcRepositoryServiceMethodVariable := shared.GRPCMethodVariable("Repository Service", grpcRepositoryServiceName)
 
 	titleCaser := cases.Title(language.English)
 
@@ -120,7 +122,8 @@ func GitServer() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcGitServiceMethodVariable,
+			grpcRepositoryServiceMethodVariable,
 			{
 				Label: "VCS Syncer Kind",
 				Name:  vcsSyncerVariableName,
@@ -589,6 +592,7 @@ func GitServer() *monitoring.Dashboard {
 
 			shared.GitServer.NewBackendGroup(containerName, true),
 			shared.GitServer.NewClientGroup("*"),
+			shared.GitServer.NewRepoClientGroup("*"),
 
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
@@ -603,32 +607,62 @@ func GitServer() *monitoring.Dashboard {
 				monitoring.ObservableOwnerSource,
 			),
 
+			// GitService
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: grpcServiceName,
+					HumanServiceName:   "Git Service",
+					RawGRPCServiceName: grpcGitServiceName,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcGitServiceMethodVariable.Name),
 					InstanceFilterRegex:  `${shard:regex}`,
 					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSource),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: grpcServiceName,
+					HumanServiceName:   "Git Service",
+					RawGRPCServiceName: grpcGitServiceName,
 					Namespace:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcGitServiceMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),
 
 			shared.NewGRPCRetryMetricsGroup(
 				shared.GRPCRetryMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: grpcServiceName,
+					HumanServiceName:   "Git Service",
+					RawGRPCServiceName: grpcGitServiceName,
 					Namespace:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcGitServiceMethodVariable.Name),
+				}, monitoring.ObservableOwnerSource),
+
+			// RepositoryService
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					HumanServiceName:   "Repository Service",
+					RawGRPCServiceName: grpcRepositoryServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcRepositoryServiceMethodVariable.Name),
+					InstanceFilterRegex:  `${shard:regex}`,
+					MessageSizeNamespace: "src",
+				}, monitoring.ObservableOwnerSource),
+
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "Repository Service",
+					RawGRPCServiceName: grpcRepositoryServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcRepositoryServiceMethodVariable.Name),
+				}, monitoring.ObservableOwnerSource),
+
+			shared.NewGRPCRetryMetricsGroup(
+				shared.GRPCRetryMetricsOptions{
+					HumanServiceName:   "Repository Service",
+					RawGRPCServiceName: grpcRepositoryServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcRepositoryServiceMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),
 
 			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{

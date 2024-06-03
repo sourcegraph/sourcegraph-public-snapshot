@@ -109,7 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient())
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient("repoupdater.scheduler"))
 	server := &repoupdater.Server{
 		Logger:    logger,
 		Store:     store,
