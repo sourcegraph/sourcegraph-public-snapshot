@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,14 +25,7 @@ func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolve
 		Line:      int(args.Line),
 		Character: int(args.Character),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", requestArgs.RepositoryID),
-		attribute.String("commit", requestArgs.Commit),
-		attribute.String("path", requestArgs.Path),
-		attribute.Int("line", requestArgs.Line),
-		attribute.Int("character", requestArgs.Character),
-		attribute.Int("limit", requestArgs.Limit),
-	}})
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{Attrs: requestArgs.Attrs()})
 	defer endObservation()
 
 	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)

@@ -273,11 +273,7 @@ func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIF
 }
 
 func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", r.requestState.RepositoryID),
-		attribute.String("commit", r.requestState.Commit),
-		attribute.String("path", r.requestState.Path),
-	}})
+	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: r.requestState.Attrs()})
 	defer endObservation(1, observation.Args{})
 
 	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState)

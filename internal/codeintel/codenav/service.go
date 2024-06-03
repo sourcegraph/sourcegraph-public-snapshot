@@ -54,15 +54,7 @@ func newService(
 
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-	}})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{Attrs: append(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
@@ -375,14 +367,8 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploads
 const DefinitionsLimit = 100
 
 func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("limit", args.Limit),
-	}})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold,
+		observation.Args{Attrs: append(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	visibleUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
@@ -483,11 +469,7 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 }
 
 func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (uploads []uploadsshared.CompletedUpload, err error) {
-	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("path", requestState.Path),
-		attribute.String("commit", requestState.Commit),
-		attribute.Int("repositoryID", requestState.RepositoryID),
-	}})
+	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: requestState.Attrs()})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 			attribute.Int("numUploads", len(uploads)),
@@ -531,15 +513,11 @@ func (s *Service) getUploadPaths(ctx context.Context, path string, requestState 
 }
 
 func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getRanges, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("startLine", startLine),
-		attribute.Int("endLine", endLine),
-	}})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getRanges, serviceObserverThreshold,
+		observation.Args{Attrs: append(requestState.Attrs(),
+			attribute.Int("startLine", startLine),
+			attribute.Int("endLine", endLine))},
+	)
 	defer endObservation()
 
 	uploadsWithPath, err := s.getUploadPaths(ctx, args.Path, requestState)
@@ -613,13 +591,7 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs
 
 // GetStencil returns the set of locations defining the symbol at the given position.
 func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (adjustedRanges []shared.Range, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-	}})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: requestState.Attrs()})
 	defer endObservation()
 
 	adjustedUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
