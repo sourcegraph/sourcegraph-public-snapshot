@@ -49,9 +49,13 @@ func (s *notificationsSubscriber) Config() []env.Config {
 }
 
 func (s *notificationsSubscriber) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	logger := observationCtx.Logger.Scoped("sourcegraphAccounts.notificationsSubscriber")
-	if !dotcom.SourcegraphDotComMode() || s.config.GCP.CredentialsFile == "" {
-		logger.Debug("worker disabled because it is not running on Sourcegraph.com or missing GCP credentials file")
+	if !dotcom.SourcegraphDotComMode() {
+		return nil, nil // Not relevant
+	}
+
+	logger := observationCtx.Logger
+	if s.config.GCP.CredentialsFile == "" {
+		logger.Info("worker disabled because SOURCEGRAPH_ACCOUNTS_CREDENTIALS_FILE is not set")
 		return nil, nil
 	}
 
