@@ -70,14 +70,11 @@ func Listen() {
 		// Concurrently execute all hooks
 		var wg sync.WaitGroup
 		std.Out.WriteWarningf("Executing %d 'cleanup' hooks for graceful shutdown...", len(hooks[InterruptCleanup]))
-		for i, h := range hooks[InterruptCleanup] {
+		for _, h := range hooks[InterruptCleanup] {
 			wg.Add(1)
 			fn := h
-			idx := i
 			go func() {
-				println("+", idx)
 				fn()
-				println("-", idx)
 				wg.Done()
 			}()
 		}
