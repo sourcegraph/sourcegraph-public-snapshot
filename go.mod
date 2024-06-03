@@ -249,6 +249,7 @@ require (
 	cloud.google.com/go/artifactregistry v1.14.8
 	connectrpc.com/connect v1.16.1
 	connectrpc.com/grpcreflect v1.2.0
+	connectrpc.com/otelconnect v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
@@ -320,7 +321,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	cloud.google.com/go/trace v1.10.5 // indirect
-	connectrpc.com/otelconnect v0.7.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
