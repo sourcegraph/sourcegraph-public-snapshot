@@ -4,7 +4,11 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "sourcegraphaccounts",
-    srcs = ["notifications_subscriber.go"],
+    srcs = [
+        "notifications_subscriber.go",
+        "notifications_subscriber_handlers.go",
+        "notifications_subscriber_store.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts",
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
@@ -33,7 +37,7 @@ go_test(
     name = "sourcegraphaccounts_test",
     srcs = [
         "mocks_test.go",
-        "notifications_subscriber_test.go",
+        "notifications_subscriber_handlers_test.go",
     ],
     embed = [":sourcegraphaccounts"],
     deps = [
