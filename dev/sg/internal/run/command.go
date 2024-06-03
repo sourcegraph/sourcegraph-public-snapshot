@@ -324,6 +324,7 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	sc.cancel = func() {
+		println("x", opts.name)
 		// The default cancel function will use a SIGKILL (9) which does
 		// not allow processes to cleanup. If they have spawned child processes
 		// those child processes will be orphaned and continue running.
@@ -347,7 +348,7 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 		cancel()
 	}
 	// Register an interrupt handler
-	interrupt.Register(sc.cancel)
+	interrupt.RegisterCleanup(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir
