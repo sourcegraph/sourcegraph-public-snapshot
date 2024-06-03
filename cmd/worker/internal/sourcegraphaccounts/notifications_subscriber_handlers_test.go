@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestHandleOnUserDeleted(t *testing.T) {
+func TestNotificationsSubscriberHandlers_onUserDeleted(t *testing.T) {
 	ctx := context.Background()
 	samsProvider := &schema.OpenIDConnectAuthProvider{}
 	t.Run("user still exists", func(t *testing.T) {
