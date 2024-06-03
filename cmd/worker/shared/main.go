@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -132,6 +133,8 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 
 		"repo-perms-syncer":          workerauthz.NewPermsSyncerJob(),
 		"perforce-changelist-mapper": perforce.NewPerforceChangelistMappingJob(),
+
+		"sourcegraph-accounts-notifications-subscriber": sourcegraphaccounts.NewNotificationsSubscriber(),
 	}
 
 	var config Config
