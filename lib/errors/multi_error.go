@@ -2,6 +2,8 @@ package errors
 
 import (
 	"fmt"
+
+	"github.com/cockroachdb/errors" //nolint:depguard // needed for implementation of multiError.As
 )
 
 // MultiError is a container for groups of errors.
@@ -100,7 +102,7 @@ func (e *multiError) As(target any) bool {
 		return true
 	}
 	for _, err := range e.errs {
-		if As(err, target) {
+		if errors.As(err, target) {
 			return true
 		}
 	}
