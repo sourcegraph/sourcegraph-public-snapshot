@@ -94,7 +94,13 @@ pub fn index_command(
             .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?;
         let relative_path = filepath
             .strip_prefix(canonical_project_root.clone())
-            .expect("Failed to strip project root prefix");
+            .with_context(|| {
+                format!(
+                    "Failed to strip project root prefix: root={} file={}",
+                    canonical_project_root.display(),
+                    filepath.display()
+                )
+            })?;
 
         match index_content(&contents, p, &options) {
             Ok(mut document) => {
