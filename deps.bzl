@@ -5668,8 +5668,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_notionreposync",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/notionreposync",
-        sum = "h1:XB04N3LJEZaJFzI9+q3qxSXNRNw3UvwPL5zbIFvLvaM=",
-        version = "v0.0.0-20240510213306-87052870048d",
+        sum = "h1:1uwYDdt1HGBwl+5a1/zyUehFX4/1969Uv34vKlmltcY=",
+        version = "v0.0.0-20240517090426-98b2d4b017d7",
     )
     go_repository(
         name = "com_github_sourcegraph_run",

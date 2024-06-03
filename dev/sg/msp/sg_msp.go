@@ -540,6 +540,10 @@ This command supports completions on services and environments.
 							s := svc.Service.ID
 
 							wg.Go(func() (err error) {
+								// Reset the status bar to indicate the real
+								// start time, given concurrency limits.
+								prog.StatusBarResetf(i, svc.Service.ID, "Starting...")
+
 								defer func() {
 									if err != nil {
 										prog.StatusBarFailf(i, err.Error())
