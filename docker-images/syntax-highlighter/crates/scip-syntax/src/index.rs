@@ -89,9 +89,13 @@ pub fn index_command(
     let mut index_file = |filepath: &Path| -> Result<()> {
         let contents = std::fs::read_to_string(filepath)
             .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
-        let filepath = filepath
-            .canonicalize()
-            .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?;
+        let filepath = if filepath.is_absolute() {
+            filepath.to_owned()
+        } else {
+            filepath.canonicalize().with_context(|| {
+                format!("Failed to canonicalize file path: {}", filepath.display())
+            })?
+        };
         let relative_path = filepath
             .strip_prefix(canonical_project_root.clone())
             .with_context(|| {
