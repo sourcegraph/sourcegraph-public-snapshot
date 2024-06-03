@@ -129,7 +129,7 @@ func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
 	return strings.TrimSpace(envtestOut.String())
 }
 
-func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string {
+func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
 	// Create a random namespace for each test
 	namespace := "test-appliance-" + suite.randomSlug()
 	ns := &corev1.Namespace{
@@ -141,15 +141,19 @@ func (suite *ApplianceTestSuite) createConfigMap(fixtureFileName string) string 
 	suite.Require().NoError(err)
 
 	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	_, err = suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
-	suite.Require().NoError(err)
+	suite.awaitReconciliation(namespace, func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
+		suite.Require().NoError(err)
+	})
 	return namespace
 }
 
-func (suite *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName string) {
+func (suite *ApplianceTestSuite) updateConfigMapAndAwaitReconciliation(namespace, fixtureFileName string) {
 	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
-	_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
-	suite.Require().NoError(err)
+	suite.awaitReconciliation(namespace, func() {
+		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Update(suite.ctx, cfgMap, metav1.UpdateOptions{})
+		suite.Require().NoError(err)
+	})
 }
 
 // Synchronize test and controller code by counting ReconcileFinished events. We
@@ -157,8 +161,9 @@ func (suite *ApplianceTestSuite) updateConfigMap(namespace, fixtureFileName stri
 // is because we update the ConfigMap at the end of the reconcile loop with
 // annotations. This triggers another reconcile loop. This all ends when the
 // changes are no-ops.
-func (suite *ApplianceTestSuite) awaitReconciliation(namespace string) {
+func (suite *ApplianceTestSuite) awaitReconciliation(namespace string, op func()) {
 	events := suite.getConfigMapReconcileEventCount(namespace)
+	op()
 	suite.Require().Eventually(func() bool {
 		return suite.getConfigMapReconcileEventCount(namespace) >= events+2
 	}, time.Second*10, time.Millisecond*200)

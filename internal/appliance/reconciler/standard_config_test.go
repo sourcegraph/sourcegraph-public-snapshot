@@ -18,8 +18,7 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 		{name: "standard/symbols-with-custom-image"},
 	} {
 		suite.Run(tc.name, func() {
-			namespace := suite.createConfigMap(tc.name)
-			suite.awaitReconciliation(namespace)
+			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}
@@ -28,10 +27,8 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 // More complex test cases involving updates to the configmap can have their own
 // test blocks
 func (suite *ApplianceTestSuite) TestResourcesDeletedWhenDisabled() {
-	namespace := suite.createConfigMap("blobstore/default")
-	suite.awaitReconciliation(namespace)
+	namespace := suite.createConfigMapAndAwaitReconciliation("blobstore/default")
 
-	suite.updateConfigMap(namespace, "standard/everything-disabled")
-	suite.awaitReconciliation(namespace)
+	suite.updateConfigMapAndAwaitReconciliation(namespace, "standard/everything-disabled")
 	suite.makeGoldenAssertions(namespace, "standard/blobstore-subsequent-disable")
 }

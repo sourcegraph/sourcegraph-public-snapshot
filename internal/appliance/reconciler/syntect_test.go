@@ -8,8 +8,7 @@ func (suite *ApplianceTestSuite) TestDeploySyntect() {
 		{name: "syntect/with-replicas"},
 	} {
 		suite.Run(tc.name, func() {
-			namespace := suite.createConfigMap(tc.name)
-			suite.awaitReconciliation(namespace)
+			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}

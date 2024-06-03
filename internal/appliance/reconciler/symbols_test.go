@@ -11,8 +11,7 @@ func (suite *ApplianceTestSuite) TestDeploySymbols() {
 		{name: "symbols/with-storage"},
 	} {
 		suite.Run(tc.name, func() {
-			namespace := suite.createConfigMap(tc.name)
-			suite.awaitReconciliation(namespace)
+			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}

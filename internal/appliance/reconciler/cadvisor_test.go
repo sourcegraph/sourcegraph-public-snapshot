@@ -7,8 +7,7 @@ func (suite *ApplianceTestSuite) TestDeployCadvisor() {
 		{name: "cadvisor/default"},
 	} {
 		suite.Run(tc.name, func() {
-			namespace := suite.createConfigMap(tc.name)
-			suite.awaitReconciliation(namespace)
+			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}
