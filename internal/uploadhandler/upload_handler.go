@@ -13,6 +13,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -75,7 +76,10 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
 	payload, statusCode, err := func() (_ any, statusCode int, err error) {
-		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
+		// Always enable tracing for uploads, since a typical Sourcegraph instance doesn't
+		// have that many uploads, and lack of traces by default makes debugging harder.
+		ctx := policy.WithShouldTrace(r.Context(), true)
+		ctx, trace, endObservation := h.operations.handleEnqueue.With(ctx, &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 				attribute.Int("statusCode", statusCode),
@@ -86,17 +90,7 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			return nil, statusCode, err
 		}
-		trace.AddEvent(
-			"finished constructUploadState",
-			attribute.Int("uploadID", uploadState.uploadID),
-			attribute.Int("numParts", uploadState.numParts),
-			attribute.Int("numUploadedParts", len(uploadState.uploadedParts)),
-			attribute.Bool("multipart", uploadState.multipart),
-			attribute.Bool("suppliedIndex", uploadState.suppliedIndex),
-			attribute.Int("index", uploadState.index),
-			attribute.Bool("done", uploadState.done),
-			attribute.String("metadata", fmt.Sprintf("%#v", uploadState.metadata)),
-		)
+		trace.AddEvent("finished constructUploadState", uploadState.Attrs()...)
 
 		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {
 			return uploadHandlerFunc(ctx, uploadState, r.Body)
