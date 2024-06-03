@@ -233,6 +233,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
 
+		// TODO: Move to args.normalize
 		// Find matching uploads for the coordinates in the request
 		repo, err := r.repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
 		if err != nil {
@@ -257,7 +258,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			return nil, err
 		}
 
-		if uploads == nil || len(uploads) == 0 {
+		if len(uploads) == 0 {
 			// TODO: probably just return 0 results instead?
 			return nil, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
 		}
@@ -273,6 +274,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		matchingOccurrences := make([]matchingOccurrence, 0)
 		for _, occurrence := range doc.GetOccurrences() {
 			occRange := occurrence.GetRange()
+			// TODO: use range stuff from scip binding
 			var startLine, endLine, startCharacter, endCharacter int32
 			if len(occRange) == 3 {
 				startLine = occRange[0]
@@ -287,19 +289,26 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 
 			// TODO: shouldn't need exact match, just overlap is enough
+			// If SymbolComparator is given: use that
+			// otherwise use ranges
 			if args.Range.Start.Line == startLine && args.Range.End.Line == endLine &&
 				args.Range.Start.Character == startCharacter && args.Range.End.Character == endCharacter {
-
-				for _, symbol := range doc.GetSymbols() {
-					fmt.Printf("Symbol: %s: %s == %s\n", symbol.DisplayName, symbol.Symbol, occurrence.Symbol)
-					if symbol.Symbol == occurrence.Symbol {
-						matchingOccurrences = append(matchingOccurrences, matchingOccurrence{
-							occurrence:  occurrence,
-							displayName: symbol.DisplayName,
-						})
-					}
+				parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+				if err != nil {
+					// TODO: Log this failure
+					continue
+				}
+				lastDescriptor := ""
+				if len(parsedSymbol.Descriptors) > 0 {
+					lastDescriptor = parsedSymbol.Descriptors[len(parsedSymbol.Descriptors)-1].Name
 				}
 
+				if lastDescriptor != "" {
+					matchingOccurrences = append(matchingOccurrences, matchingOccurrence{
+						occurrence:  occurrence,
+						displayName: lastDescriptor,
+					})
+				}
 			}
 		}
 
@@ -307,17 +316,18 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			return nil, fmt.Errorf("no matching occurrences found for range")
 		}
 
-		// TODO: Overlapping occurrences should lead to the same display name, but be scored separately.
+		// Overlapping occurrences should lead to the same display name, but be scored separately.
 		// (Meaning we just need a single Searcher/Zoekt search)
+		// TODO: Assert this?
 		matchingOccurrence := matchingOccurrences[0]
 
-		fmt.Printf("Matching occurrence: %+v\n", matchingOccurrence)
-
+		// TODO: Get Language from library function or require scip-syntax to set it on the document
 		var contextLines int32 = 0
 		patternType := "standard"
 		repoName := fmt.Sprintf("^%s$", repo.Name)
 		identifier := matchingOccurrence.displayName
-		searchQuery := fmt.Sprintf("repo:%s rev:%s %s", repoName, revision, identifier)
+		countLimit := 500
+		searchQuery := fmt.Sprintf("repo:%s rev:%s count:%d %s", repoName, revision, countLimit, identifier)
 
 		fmt.Printf("Sending: query=%s\n", searchQuery)
 
@@ -331,11 +341,14 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			return nil, err
 		}
 		for _, match := range stream.Results {
+			fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
+
+			// TODO: Do we care about the ranges on individual matches?
+			// (Might let us speed up search in the syntactic indexes as we can use binary search on the ordered list of occurrences)
 			t, ok := match.(*result.FileMatch)
 			if !ok {
 				continue
 			}
-			fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
 			for _, line := range t.ChunkMatches.AsLineMatches() {
 				fmt.Printf("  %d:%d-%d:%d %s\n",
 					line.LineNumber, line.OffsetAndLengths[0][0],
