@@ -119,6 +119,7 @@ func NewHandler(
 								}
 								return characters
 							}(),
+							"is_query": body.IsQuery,
 						},
 					},
 				)
@@ -127,16 +128,22 @@ func NewHandler(
 				}
 			}()
 
-			// Hacky experiment: Replace embedding model input with generated metadata text.
+			// Hacky experiment: Replace embedding model input with generated metadata text when indexing.
 			if body.Model == string(ModelNameSourcegraphMetadataGen) {
-				newInput, err := GenerateMetadata(body, logger, completionsClient)
-				if err != nil {
-					logger.Error("failed to generate metadata", log.Error(err))
-					return
+				newInput := body.Input
+				// Generate metadata if we are indexing, not querying.
+				if !body.IsQuery {
+					var err error
+					newInput, err = GenerateMetadata(body, logger, completionsClient)
+					if err != nil {
+						logger.Error("failed to generate metadata", log.Error(err))
+						return
+					}
 				}
 				body = codygateway.EmbeddingsRequest{
-					Model: string(ModelNameSourcegraphSTMultiQA),
-					Input: newInput,
+					Model:   string(ModelNameSourcegraphSTMultiQA),
+					Input:   newInput,
+					IsQuery: body.IsQuery,
 				}
 			}
 

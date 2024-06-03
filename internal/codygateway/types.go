@@ -46,6 +46,8 @@ type EmbeddingsRequest struct {
 	Model string `json:"model"`
 	// Input is the list of strings to generate embeddings for.
 	Input []string `json:"input"`
+	// IsQuery is true if the request is used for querying, false if it used for indexing.
+	IsQuery bool `json:"isQuery"`
 }
 
 type Embedding struct {
