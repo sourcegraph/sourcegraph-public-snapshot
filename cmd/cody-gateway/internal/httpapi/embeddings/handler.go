@@ -3,6 +3,7 @@ package embeddings
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"net/http"
 	"slices"
 	"strconv"
@@ -35,6 +36,7 @@ func NewHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	mf ModelFactory,
 	allowedModels []string,
+	completionsClient types.CompletionsClient,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("embeddingshandler")
 
@@ -128,12 +130,11 @@ func NewHandler(
 				}
 			}()
 
-			// Replace input with generated metadata text and embed that
+			// Hacky experiment: Replace embedding model input with generated metadata text.
 			if body.GenerateMetadata {
-				newBody, err := GenerateMetadata(body, logger)
+				newBody, err := GenerateMetadata(body, logger, completionsClient)
 				if err != nil {
-					// TODO what do we do here
-
+					logger.Error("failed to generate metadata", log.Error(err))
 					return
 				}
 				body = newBody

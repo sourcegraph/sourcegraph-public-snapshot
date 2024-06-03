@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"net/http"
 
 	"github.com/Khan/genqlient/graphql"
@@ -164,13 +166,18 @@ func NewHandler(
 			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
 			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
+
+		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		fireworksClient := fireworks.NewClient(httpcli.UncachedExternalDoer, completionsConfig.Endpoint, completionsConfig.AccessToken)
+
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			factoryMap,
-			config.EmbeddingsAllowedModels)
+			config.EmbeddingsAllowedModels,
+			fireworksClient)
 		// TODO: If embeddings.ModelFactoryMap includes more than just OpenAI, we might want to
 		// revisit how we count concurrent requests into the handler. (Instead of assuming they are
 		// all OpenAI-related requests. (i.e. maybe we should use something other than
