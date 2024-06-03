@@ -15,21 +15,13 @@ type metadataClient struct {
 	completionsClient types.CompletionsClient
 }
 
-func GenerateMetadata(req codygateway.EmbeddingsRequest, logger log.Logger, completionsClient types.CompletionsClient) (codygateway.EmbeddingsRequest, error) {
+func GenerateMetadata(req codygateway.EmbeddingsRequest, logger log.Logger, completionsClient types.CompletionsClient) ([]string, error) {
 	c := metadataClient{
 		logger:            logger.Scoped("metadata_gen"),
 		completionsClient: completionsClient,
 	}
 
-	generated, err := iter.MapErr(req.Input, c.generateMetadataForChunk)
-	if err != nil {
-		logger.Error("failed to generate metadata", log.Error(err))
-		return codygateway.EmbeddingsRequest{}, err
-	}
-
-	metadataReq := req
-	metadataReq.Input = generated
-	return metadataReq, nil
+	return iter.MapErr(req.Input, c.generateMetadataForChunk)
 }
 
 func (c *metadataClient) generateMetadataForChunk(input *string) (string, error) {

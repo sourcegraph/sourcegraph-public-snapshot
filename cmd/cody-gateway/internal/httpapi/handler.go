@@ -162,8 +162,9 @@ func NewHandler(
 			embeddings.NewListHandler(config.EmbeddingsAllowedModels))
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
+			embeddings.ModelNameOpenAIAda:              embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA:   embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
+			embeddings.ModelNameSourcegraphMetadataGen: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
 
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())

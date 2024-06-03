@@ -46,8 +46,6 @@ type EmbeddingsRequest struct {
 	Model string `json:"model"`
 	// Input is the list of strings to generate embeddings for.
 	Input []string `json:"input"`
-	// GenerateMetadata is a hacky way of deciding whether to embed generated metadata or the original text.
-	GenerateMetadata bool `json:"generate_metadata"`
 }
 
 type Embedding struct {

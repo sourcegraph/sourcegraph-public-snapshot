@@ -119,7 +119,6 @@ func NewHandler(
 								}
 								return characters
 							}(),
-							"generate_metadata": body.GenerateMetadata,
 						},
 					},
 				)
@@ -129,13 +128,16 @@ func NewHandler(
 			}()
 
 			// Hacky experiment: Replace embedding model input with generated metadata text.
-			if body.GenerateMetadata {
-				newBody, err := GenerateMetadata(body, logger, completionsClient)
+			if body.Model == string(ModelNameSourcegraphMetadataGen) {
+				newInput, err := GenerateMetadata(body, logger, completionsClient)
 				if err != nil {
 					logger.Error("failed to generate metadata", log.Error(err))
 					return
 				}
-				body = newBody
+				body = codygateway.EmbeddingsRequest{
+					Model: string(ModelNameSourcegraphSTMultiQA),
+					Input: newInput,
+				}
 			}
 
 			resp, ut, err := c.GenerateEmbeddings(r.Context(), body)
