@@ -200,7 +200,6 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
-        "src/cody/CodyProPage.tsx",
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
