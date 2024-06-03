@@ -28,6 +28,9 @@ interface CodyProPageProps extends Pick<LegacyLayoutRouteContext, 'authenticated
 
 /**
  * Renders the appropriate Cody Pro page component for the given route path.
+ *
+ * This is to more easily isolate the Cody Pro-specific functionality (which
+ * only applies to non-Enterprise users) from the rest of the Sourcegraph UI.
  */
 export const CodyProPage: React.FC<CodyProPageProps> = props => {
     const Component = routeComponents[props.path]
