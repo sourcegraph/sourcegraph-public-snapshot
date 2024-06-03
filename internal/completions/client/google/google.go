@@ -162,11 +162,8 @@ func (c *googleCompletionStreamClient) Stream(
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	rpc := "generateContent"
-	sse := ""
-
 	if stream {
 		rpc = "streamContent"
-		sse = "alt=sse&"
 	}
 
 	prompt, err := getPrompt(requestParams.Messages)
@@ -189,11 +186,25 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	if err != nil {
 		return nil, err
 	}
-	url, err := url.Parse(c.endpoint)
+
+	endpoint, err := url.JoinPath(c.endpoint, "v1/models", requestParams.Model)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
+		return nil, errors.Wrap(err, "failed to construct endpoint URL")
 	}
-	url.Path = "v1/models/" + requestParams.Model + ":" + rpc + "?" + sse + "key=" + c.accessToken
+
+	query := url.Values{
+		"key": {c.accessToken},
+	}
+	if stream {
+		query.Set("alt", "sse")
+	}
+
+	url := url.URL{
+		Scheme:   "https",
+		Host:     endpoint,
+		Path:     rpc,
+		RawQuery: query.Encode(),
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
 	if err != nil {
