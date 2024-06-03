@@ -229,7 +229,7 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts, as AuthenticationStrategy) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
-	if au == nil {
+	if au == nil && as != AuthenticationStrategyGitHubApp {
 		return nil, ErrMissingCredentials
 	}
 
@@ -250,7 +250,7 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 		return nil, err
 	}
 	if as == AuthenticationStrategyGitHubApp {
-		// how do we get the owner
+		// how do we get the owner??
 		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, "")
 	}
 	return css.WithAuthenticator(au)

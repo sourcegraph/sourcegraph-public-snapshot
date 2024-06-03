@@ -55,7 +55,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         setOpenModal('add')
     }, [])
     const onClickCheck = useCallback<React.MouseEventHandler>(async () => {
-        await checkCred({ variables: { id: node?.credential?.id ?? '' } })
+        await checkCred({ variables: { id: node?.credential?.id ?? '', isGitHubApp: false } })
     }, [node, checkCred])
     const onClickRemove = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()

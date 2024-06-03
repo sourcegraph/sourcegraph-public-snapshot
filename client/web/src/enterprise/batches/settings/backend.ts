@@ -187,8 +187,8 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
     })
 
 export const CHECK_BATCH_CHANGES_CREDENTIAL = gql`
-    query CheckBatchChangesCredential($id: ID!) {
-        checkBatchChangesCredential(batchChangesCredential: $id) {
+    query CheckBatchChangesCredential($id: ID!, $isGitHubApp: Boolean!) {
+        checkBatchChangesCredential(batchChangesCredential: $id, isGitHubApp: $isGitHubApp) {
             alwaysNil
         }
     }
