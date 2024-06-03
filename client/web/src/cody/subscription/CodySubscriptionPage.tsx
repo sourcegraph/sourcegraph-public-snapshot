@@ -34,12 +34,10 @@ import { USER_CODY_PLAN } from './queries'
 import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -65,7 +63,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
+    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
         return null
     }
 

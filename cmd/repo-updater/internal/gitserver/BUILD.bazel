@@ -5,6 +5,7 @@ go_library(
     name = "gitserver",
     srcs = [
         "mocks_temp.go",
+        "observability.go",
         "repositoryservice.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver",
@@ -15,6 +16,10 @@ go_library(
         "//internal/gitserver/connection",
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc/defaults",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
