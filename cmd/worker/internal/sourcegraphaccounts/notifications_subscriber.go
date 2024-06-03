@@ -74,6 +74,10 @@ func (s *notificationsSubscriber) Routines(ctx context.Context, observationCtx *
 		logger.Info("worker disabled because SAMS provider is not configured")
 		return nil, nil
 	}
+	logger.Info("worker enabled",
+		log.String("samsProvider.Issuer", samsProvider.Issuer),
+		log.String("samsProvider.ClientID", samsProvider.ClientID),
+	)
 
 	connConfig := sams.ConnConfig{
 		ExternalURL: samsProvider.Issuer,
