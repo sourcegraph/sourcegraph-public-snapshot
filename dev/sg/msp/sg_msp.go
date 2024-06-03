@@ -521,8 +521,9 @@ This command supports completions on services and environments.
 						concurrency := c.Int("concurrency")
 						prog := std.Out.ProgressWithStatusBars(
 							[]output.ProgressBar{{
-								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
-								Max:   float64(len(services)),
+								Label: fmt.Sprintf("Generating Notion pages for %d services (concurrency: %d)",
+									len(services), concurrency),
+								Max: float64(len(services)),
 							}},
 							statusBars,
 							nil)
