@@ -270,7 +270,6 @@ func GitServer() *monitoring.Dashboard {
 							Description: "echo test command duration",
 							Query:       "max(src_gitserver_echo_duration_seconds)",
 							Warning:     monitoring.Alert().GreaterOrEqual(0.020).For(30 * time.Second),
-							Critical:    monitoring.Alert().GreaterOrEqual(1).For(1 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("running commands").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSource,
 							Interpretation: `

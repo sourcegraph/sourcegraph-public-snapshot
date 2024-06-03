@@ -1,6 +1,7 @@
 package precise
 
 import (
+	"cmp"
 	"sort"
 )
 
@@ -26,39 +27,19 @@ func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
 // Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
 // Returns 0 if they're exactly equal. Returns 1 otherwise.
 func CompareLocations(a LocationData, b LocationData) int {
-	if a.StartLine < b.StartLine {
-		return -1
+	if v := cmp.Compare(a.StartLine, b.StartLine); v != 0 {
+		return v
 	}
 
-	if a.StartLine > b.StartLine {
-		return 1
+	if v := cmp.Compare(a.StartCharacter, b.StartCharacter); v != 0 {
+		return v
 	}
 
-	if a.StartCharacter < b.StartCharacter {
-		return -1
+	if v := cmp.Compare(a.EndLine, b.EndLine); v != 0 {
+		return v
 	}
 
-	if a.StartCharacter > b.StartCharacter {
-		return 1
-	}
-
-	if a.EndLine < b.EndLine {
-		return -1
-	}
-
-	if a.EndLine > b.EndLine {
-		return 1
-	}
-
-	if a.EndCharacter < b.EndCharacter {
-		return -1
-	}
-
-	if a.EndCharacter > b.EndCharacter {
-		return 1
-	}
-
-	return 0
+	return cmp.Compare(a.EndCharacter, b.EndCharacter)
 }
 
 // ComparePosition compares the range r with the position constructed from line and character.
