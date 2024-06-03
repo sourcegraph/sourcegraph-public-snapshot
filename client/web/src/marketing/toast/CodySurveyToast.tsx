@@ -13,6 +13,7 @@ import { Checkbox, Form, H3, Modal, Text, Button, Icon, AnchorLink } from '@sour
 import type { AuthenticatedUser } from '../../auth'
 import { getReturnTo } from '../../auth/SignInSignUpCommon'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
+import { CodyProRoutes } from '../../cody/codyProRoutes'
 import { LoaderButton } from '../../components/LoaderButton'
 import type {
     SubmitCodySurveyResult,
@@ -20,7 +21,6 @@ import type {
     SetCompletedPostSignupVariables,
     SetCompletedPostSignupResult,
 } from '../../graphql-operations'
-import { PageRoutes } from '../../routes.constants'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 import { HubSpotForm } from '../components/HubSpotForm'
 
@@ -341,7 +341,7 @@ export const CodySurveyToast: React.FC<
 
     const handleSubmitEnd = (): void => {
         // Redirects once user submits the post-sign-up form
-        const returnTo = getReturnTo(location, PageRoutes.CodyManagement)
+        const returnTo = getReturnTo(location, CodyProRoutes.Manage)
         window.location.replace(returnTo)
     }
 
