@@ -21,17 +21,20 @@ export enum CodyProRoutes {
 }
 
 /**
- * Defines the routes to be rendered in the Cody Pro UI.
- * If the embedded Cody Pro UI is enabled, all available routes are rendered.
- * Otherwise, only the Manage and Subscription routes are rendered.
+ * Generally available Cody Pro routes.
  */
-const routes = isEmbeddedCodyProUIEnabled()
-    ? Object.values(CodyProRoutes)
-    : [CodyProRoutes.Manage, CodyProRoutes.Subscription]
+const stableRoutes = new Set([CodyProRoutes.Manage, CodyProRoutes.Subscription])
+
+/**
+ * Determines if a given Cody Pro route should be rendered.
+ * If the embedded Cody Pro UI is enabled, all routes including experimental are rendered.
+ * Otherwise, only the generally available routes are rendered.
+ */
+const isRouteEnabled = (path: CodyProRoutes): boolean => (isEmbeddedCodyProUIEnabled() ? true : stableRoutes.has(path))
 
 const CodyProPage = lazyComponent(() => import('./CodyProPage'), 'CodyProPage')
 
-export const codyProRoutes: RouteObject[] = routes.map(path => ({
+export const codyProRoutes: RouteObject[] = Object.values(CodyProRoutes).map(path => ({
     path,
     element: (
         <LegacyRoute
@@ -43,7 +46,7 @@ export const codyProRoutes: RouteObject[] = routes.map(path => ({
                 />
             )}
             condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                isSourcegraphDotCom && licenseFeatures.isCodyEnabled
+                isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isRouteEnabled(path)
             }
         />
     ),
