@@ -29,6 +29,7 @@ go_test(
     name = "alertpolicy_test",
     srcs = [
         "conditionbuilder_test.go",
+        "customalert_test.go",
         "responsecode_test.go",
     ],
     embed = [":alertpolicy"],
