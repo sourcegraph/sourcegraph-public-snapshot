@@ -36,48 +36,27 @@
 
 <div class="tabs-header" role="tablist" data-tab-header>
     {#each tabs as tab, index (tab.id)}
-        {#if tab.href}
-            <a
-                id="{id}--tab--{index}"
-                aria-controls={tab.id}
-                aria-selected={selected === index}
-                tabindex={selected === index ? 0 : -1}
-                role="tab"
-                on:click={selectTab}
-                data-tab
-                href={tab.href}
-            >
-                {#if tab.icon}
-                    <Icon svgPath={tab.icon} aria-hidden inline />
-                {/if}
-                <span data-tab-title={tab.title}>
-                    {tab.title}
-                </span>
-                {#if tab.shortcut}
-                    <KeyboardShortcut shorcut={tab.shortcut} />
-                {/if}
-            </a>
-        {:else}
-            <button
-                id="{id}--tab--{index}"
-                aria-controls={tab.id}
-                aria-selected={selected === index}
-                tabindex={selected === index ? 0 : -1}
-                role="tab"
-                on:click={selectTab}
-                data-tab
-            >
-                {#if tab.icon}
-                    <Icon svgPath={tab.icon} aria-hidden inline />
-                {/if}
-                <span data-tab-title={tab.title}>
-                    {tab.title}
-                </span>
-                {#if tab.shortcut}
-                    <KeyboardShortcut shorcut={tab.shortcut} />
-                {/if}
-            </button>
-        {/if}
+        <svelte:element
+            this={tab.href ? 'a' : 'button'}
+            id="{id}--tab--{index}"
+            aria-controls={tab.id}
+            aria-selected={selected === index}
+            tabindex={selected === index ? 0 : -1}
+            role="tab"
+            on:click={selectTab}
+            data-tab
+            href={tab.href}
+        >
+            {#if tab.icon}
+                <Icon svgPath={tab.icon} aria-hidden inline />
+            {/if}
+            <span data-tab-title={tab.title}>
+                {tab.title}
+            </span>
+            {#if tab.shortcut}
+                <KeyboardShortcut shorcut={tab.shortcut} />
+            {/if}
+        </svelte:element>
     {/each}
 </div>
 
