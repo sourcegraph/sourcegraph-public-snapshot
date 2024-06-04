@@ -17,9 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/concurrencylimiter"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -204,6 +206,8 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		conn, err := defaults.Dial(
 			addr,
 			clientLogger,
+			grpc.WithChainUnaryInterceptor(concurrencylimiter.UnaryClientInterceptor(lim)),
+			grpc.WithChainStreamInterceptor(concurrencylimiter.StreamClientInterceptor(lim)),
 		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
@@ -217,5 +221,10 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		}
 	}
 }
+
+var (
+	concurrencyLimit = env.MustGetInt("SRC_GITSERVER_CLIENT_CONCURRENCY_LIMIT", 500, "maximum number of concurrent gitserver client connections")
+	lim              = limiter.New(concurrencyLimit)
+)
 
 var _ AddressWithConn = &connAndErr{}
