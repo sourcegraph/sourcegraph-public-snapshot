@@ -2,6 +2,7 @@
     import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
+    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
     import { page } from '$app/stores'
@@ -110,11 +111,11 @@
     use:sizeToFit={{
         grow() {
             visibleNavEntryCount = Math.min(visibleNavEntryCount + 1, viewableNavEntries.length)
-            return visibleNavEntryCount === viewableNavEntries.length
+            return visibleNavEntryCount < viewableNavEntries.length
         },
         shrink() {
             visibleNavEntryCount = Math.max(visibleNavEntryCount - 1, 0)
-            return visibleNavEntryCount === 0
+            return visibleNavEntryCount > 0
         },
     }}
 >

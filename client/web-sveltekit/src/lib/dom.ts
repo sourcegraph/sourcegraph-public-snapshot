@@ -426,14 +426,14 @@ export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () =>
         if (target.scrollWidth > target.clientWidth) {
             // Shrink until we fit
             while (target.scrollWidth > target.clientWidth) {
-                if (shrink()) {
+                if (!shrink()) {
                     return
                 }
                 await tick()
             }
         } else {
             // Grow until we overflow, then shrink once
-            while (target.scrollWidth <= target.clientWidth && !grow()) {
+            while (target.scrollWidth <= target.clientWidth && grow()) {
                 await tick()
             }
             await tick()
