@@ -1,6 +1,11 @@
 (program
     (package_declaration
-        (scoped_identifier) @descriptor.namespace @scope))
+        [
+            (scoped_identifier)
+            (identifier)
+        ] @descriptor.namespace @kind.package
+    )
+) @scope
 
 (class_declaration name: (_) @descriptor.type) @scope
 (interface_declaration name: (_) @descriptor.type) @scope

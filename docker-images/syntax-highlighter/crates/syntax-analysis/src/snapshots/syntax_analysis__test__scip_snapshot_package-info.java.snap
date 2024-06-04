@@ -4,8 +4,8 @@ expression: dumped
 ---
   @Deprecated
   package foo.bar;
-//        ^^^^^^^ definition scip-ctags `foo.bar`/
+//        ^^^^^^^ definition(Package) scip-ctags `foo.bar`/
   
   class Baz {}
-//      ^^^ definition scip-ctags Baz#
+//      ^^^ definition scip-ctags `foo.bar`/Baz#
 
