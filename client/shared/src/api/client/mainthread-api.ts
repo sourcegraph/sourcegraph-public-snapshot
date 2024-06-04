@@ -53,6 +53,7 @@ export const initMainThreadAPI = (
         | 'requestGraphQL'
         | 'getStaticExtensions'
         | 'telemetryService'
+        | 'telemetryRecorder'
         | 'clientApplication'
     >
 ): { api: MainThreadAPI; exposedToClient: ExposedToClient; subscription: Subscription } => {
@@ -140,6 +141,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(of([]))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
+        getTelemetryRecorder: () => platformContext.telemetryRecorder,
         logExtensionMessage: (...data) => logger.log(...data),
     }
 

@@ -24,10 +24,10 @@ import (
 )
 
 type Event struct {
-	Name               string    `json:"name"`
-	BranchCutDate      time.Time `json:"branchCutDate"`
-	MonthlyReleaseDate time.Time `json:"monthlyReleaseDate"`
-	PatchReleaseDate   time.Time `json:"patchReleaseDate"`
+	Name               string      `json:"name"`
+	BranchCutDate      time.Time   `json:"branchCutDate"`
+	MonthlyReleaseDate time.Time   `json:"monthlyReleaseDate"`
+	PatchReleaseDates  []time.Time `json:"patchReleaseDates"`
 }
 
 type CalendarConfig struct {
@@ -60,8 +60,23 @@ func generateCalendarEvents(cctx *cli.Context) error {
 	now := time.Now()
 	for _, e := range cc.Events {
 		p := std.Out.Pending(output.Styledf(output.StylePending, "Processing Calendar event: %q", e.Name))
-		if e.MonthlyReleaseDate.Before(now) || e.PatchReleaseDate.Before(now) {
-			p.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "Skipping event: %q because the date is in the past.", e.Name))
+
+		patchEventsToCreate := make([]time.Time, len(e.PatchReleaseDates))
+
+		if e.MonthlyReleaseDate.Before(now) {
+			p.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "Skipping event: %q because the monthly release date is in the past.", e.Name))
+			continue
+		}
+
+		for i, patchReleaseDate := range e.PatchReleaseDates {
+			if patchReleaseDate.Before(now) {
+				continue
+			}
+			patchEventsToCreate[i] = patchReleaseDate
+		}
+
+		if len(patchEventsToCreate) == 0 {
+			p.Complete(output.Linef(output.EmojiWarning, output.StyleWarning, "Skipping event: %q because there are no patch release dates for the month.", e.Name))
 			continue
 		}
 
@@ -81,12 +96,14 @@ func generateCalendarEvents(cctx *cli.Context) error {
 			return errors.Wrapf(err, "Failed to create monthly release event for %q", e.Name)
 		}
 
-		p.Updatef("Creating Patch Release event for %q", e.Name)
-		patchReleaseEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Patch Release: (%s)", e.Name), e.PatchReleaseDate)
-		_, err = client.Events.Insert("primary", patchReleaseEvt).Context(cctx.Context).Do()
-		if err != nil {
-			p.Destroy()
-			return errors.Wrapf(err, "Failed to create patch release event for %q", e.Name)
+		p.Updatef("Creating Patch Release events for %q", e.Name)
+		for _, prd := range patchEventsToCreate {
+			patchReleaseEvt := createReleaseEvent(cc.TeamEmail, fmt.Sprintf("Patch Release: (%s)", e.Name), prd)
+			_, err = client.Events.Insert("primary", patchReleaseEvt).Context(cctx.Context).Do()
+			if err != nil {
+				p.Destroy()
+				return errors.Wrapf(err, "Failed to create patch release event for %q. Patch release date: %s", e.Name, prd)
+			}
 		}
 
 		p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Sent and created event: %q", e.Name))

@@ -5,6 +5,7 @@ import type { GraphQLResult } from '@sourcegraph/http-client'
 
 import type { PlatformContext } from '../../platform/context'
 import type { Settings, SettingsCascade } from '../../settings/settings'
+import type { TelemetryV2Props } from '../../telemetry'
 
 /**
  * Represents a location inside a resource, such as a line
@@ -377,7 +378,8 @@ export function updateCodeIntelContext(newContext: CodeIntelContext): void {
     context = newContext
 }
 
-export interface CodeIntelContext extends Pick<PlatformContext, 'requestGraphQL' | 'telemetryService'> {
+export interface CodeIntelContext
+    extends Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'telemetryRecorder'> {
     settings: SettingsGetter
 }
 
@@ -418,4 +420,8 @@ export function logTelemetryEvent(
     eventProperties: { durationMs: number; languageId: string; repositoryId: number }
 ): void {
     context?.telemetryService?.log(eventName, eventProperties)
+}
+
+export function getTelemetryRecorder(): TelemetryV2Props['telemetryRecorder'] | undefined {
+    return context?.telemetryRecorder
 }

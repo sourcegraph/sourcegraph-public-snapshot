@@ -105,13 +105,6 @@ type ResponseCodeMetric struct {
 	DurationMinutes *uint
 }
 
-// CustomAlert for alerting on a custom mql or promql query
-type CustomAlert struct {
-	Type            spec.CustomAlertQueryType
-	Query           string
-	DurationMinutes *uint
-}
-
 // DescriptionSuffix points to the service page and environment anchor expected to be
 // generated at https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform/,
 // and should be added as a suffix to all alert descriptions.
@@ -150,7 +143,7 @@ type Config struct {
 	ThresholdAggregation *ThresholdAggregation
 	MetricAbsence        *MetricAbsence
 	ResponseCodeMetric   *ResponseCodeMetric
-	CustomAlert          *CustomAlert
+	CustomAlert          *spec.CustomAlertCondition
 }
 
 // makeDocsSubject prefixes the name with the service and environment for ease
