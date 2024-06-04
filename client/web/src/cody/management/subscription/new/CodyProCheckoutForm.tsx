@@ -4,7 +4,6 @@ import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
 import { useCustomCheckout, PaymentElement, AddressElement } from '@stripe/react-stripe-js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
-import { useDebouncedCallback } from 'use-debounce'
 
 import { pluralize } from '@sourcegraph/common'
 import {
@@ -20,6 +19,7 @@ import {
     Label,
     LoadingSpinner,
     H3,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
@@ -28,19 +28,43 @@ import { PayButton } from './PayButton'
 
 import styles from './NewCodyProSubscriptionPage.module.scss'
 
+const MIN_SEAT_COUNT = 1
+const MAX_SEAT_COUNT = 50
+
 export const CodyProCheckoutForm: React.FunctionComponent<{
     creatingTeam: boolean
     customerEmail: string | undefined
 }> = ({ creatingTeam, customerEmail }) => {
-    const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
-
     const navigate = useNavigate()
 
     const { total, lineItems, updateLineItemQuantity, email, updateEmail, status } = useCustomCheckout()
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     const [displayErrorMessage, setDisplayErrorMessage] = React.useState(false)
+    const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
     const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
+    const debouncedSeatCount = useDebounce(seatCount, 800)
+
+    useEffect(() => {
+        const updateSeatCount = async () => {
+            setUpdatingSeatCount(true)
+            try {
+                await updateLineItemQuantity({
+                    lineItem: lineItems[0].id,
+                    quantity: debouncedSeatCount,
+                })
+            } catch (error) {
+                setAndDisplayErrorMessage(
+                    'Failed to update seat count. Please change the number of seats to try again.'
+                )
+            }
+            setUpdatingSeatCount(false)
+        }
+
+        void updateSeatCount()
+    }, [lineItems[0].id, debouncedSeatCount])
+
+    const isPriceLoading = seatCount !== debouncedSeatCount || updatingSeatCount
 
     const setAndDisplayErrorMessage = useCallback(
         (message: string) => {
@@ -50,45 +74,22 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
         [setErrorMessage, setDisplayErrorMessage]
     )
 
-    const debouncedUpdateSeatCount = useDebouncedCallback(async newSeatCount => {
-        if (lineItems.length === 1) {
-            try {
-                await updateLineItemQuantity({
-                    lineItem: lineItems[0].id,
-                    quantity: newSeatCount,
-                })
-            } catch(error) {
-                setAndDisplayErrorMessage('Failed to update seat count. Please change the number of seats to try again.')
-            }
-            setUpdatingSeatCount(false)
-        }
-    }, 800)
-
-    const handlePlusClick = useCallback(
-        (diff: number): void => {
-            const newSeatCount = Math.min(Math.max(1, seatCount + diff), 50)
-            if (newSeatCount === seatCount) {
-                return
-            }
-            setSeatCount(newSeatCount)
-            setUpdatingSeatCount(true)
-            void debouncedUpdateSeatCount(newSeatCount)
-        },
-        [debouncedUpdateSeatCount, seatCount]
-    )
-
+    // Set initial seat count.
     useEffect(() => {
         if (lineItems.length === 1) {
             setSeatCount(lineItems[0].quantity)
         }
     }, [lineItems])
 
+    // Set customer email to initial value.
     useEffect(() => {
         if (customerEmail) {
             updateEmail(customerEmail)
         }
     }, [customerEmail, updateEmail])
 
+    // Redirect once we're done.
+    // Display an error message if the session is expired.
     useEffect(() => {
         if (status.type === 'complete') {
             navigate('/cody/manage?welcome=1')
@@ -114,11 +115,17 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                         <H2>{creatingTeam ? 'Add seats' : 'Select number of seats'}</H2>
                         <div className="d-flex flex-row align-items-center pb-3 mb-4 border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
-                            <Button onClick={() => handlePlusClick(-1)}>
+                            <Button
+                                disabled={seatCount === MIN_SEAT_COUNT}
+                                onClick={() => setSeatCount(c => (c > MIN_SEAT_COUNT ? c - 1 : c))}
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiMinusThick} />
                             </Button>
                             <div className={styles.seatCountSelectorValue}>{seatCount}</div>
-                            <Button onClick={() => handlePlusClick(1)}>
+                            <Button
+                                disabled={seatCount === MAX_SEAT_COUNT}
+                                onClick={() => setSeatCount(c => (c < MAX_SEAT_COUNT ? c + 1 : c))}
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiPlusThick} />
                             </Button>
                         </div>
@@ -129,7 +136,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                             </div>
                             <div>
                                 <strong>
-                                    {updatingSeatCount ? (
+                                    {isPriceLoading ? (
                                         <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
                                     ) : (
                                         `$${total.total / 100} / month`
