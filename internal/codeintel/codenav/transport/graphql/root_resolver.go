@@ -205,8 +205,8 @@ type matchingOccurrence struct {
 	displayName string
 }
 
-func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
