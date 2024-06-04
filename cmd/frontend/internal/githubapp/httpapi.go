@@ -205,6 +205,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	fmt.Println("random state: ", s)
 	srv.cache.Set(s, stateDetails)
 
 	resp := struct {
@@ -247,7 +248,6 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 		return
 	}
-	// Wait until we've validated the type of state before deleting it from the cache.
 	srv.cache.Delete(state)
 
 	webhookUUID, err := uuid.Parse(stateDetails.WebhookUUID)

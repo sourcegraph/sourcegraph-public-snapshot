@@ -155,15 +155,15 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     throw new Error(error)
                 }
             }
-            const state = (await response.json()) as StateResponse
+            const jsonResponse = (await response.json()) as StateResponse
             let webhookURL: string | undefined
-            if (state.webhookUUID?.length) {
-                webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
+            if (jsonResponse.webhookUUID?.length) {
+                webhookURL = new URL(`/.api/webhooks/${jsonResponse.webhookUUID}`, originURL).href
             }
-            if (!state.state?.length) {
+            if (!jsonResponse.state?.length) {
                 throw new Error('Response from server missing state parameter')
             }
-            submitForm({ state: state.state, webhookURL, name })
+            submitForm({ state: jsonResponse.state, webhookURL, name })
         } catch (error_) {
             if (error_ instanceof Error) {
                 setError(error_.message)
