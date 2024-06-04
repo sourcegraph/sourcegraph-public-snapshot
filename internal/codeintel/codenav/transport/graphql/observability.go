@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -94,12 +92,5 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 }
 
 func getObservationArgs(args codenav.PositionalRequestArgs) observation.Args {
-	return observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-		attribute.Int("limit", args.Limit),
-	}}
+	return observation.Args{Attrs: args.Attrs()}
 }
