@@ -89,7 +89,7 @@ func Listen() {
 		mux.Lock()
 
 		go func() {
-			// If we receive a second interrupt, forcibly exit.
+			// Count the interrupts and exit after 5
 			count := 0
 			for count < 5 {
 				select {
