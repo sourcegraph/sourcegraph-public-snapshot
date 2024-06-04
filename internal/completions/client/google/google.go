@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -111,6 +110,7 @@ func (c *googleCompletionStreamClient) Stream(
 	dec := NewDecoder(resp.Body)
 	var content string
 	var ev types.CompletionResponse
+
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -148,12 +148,6 @@ func (c *googleCompletionStreamClient) Stream(
 }
 
 func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) string {
-	// NOTE: Cody Gateway expects model names in <provider>/<model> format,
-	// but if we're connecting directly to the Google API, we need to strip the "google" provider prefix
-	if components := strings.Split(requestParams.Model, "/"); components[0] == "google" {
-		requestParams.Model = strings.Join(components[1:], "/")
-	}
-
 	rpc := "generateContent"
 	sseSuffix := ""
 	if stream {
@@ -165,6 +159,11 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+	// Ensure TopK and TopP are non-negative
+	requestParams.TopK = max(0, requestParams.TopK)
+	requestParams.TopP = max(0, requestParams.TopP)
+
+	// Generate the prompt
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
