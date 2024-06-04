@@ -971,13 +971,6 @@ func TestSyncRun(t *testing.T) {
 	// Ignore fields store adds
 	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
 
-	// The first thing sent down Synced is the list of repos in store during
-	// initialisation
-	diff := <-syncer.Synced
-	if d := cmp.Diff(types.RepoSyncDiff{Unmodified: stored}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
-	}
-
 	// Once we receive on lockChan we know our syncer is running
 	<-lockChan
 
@@ -985,7 +978,7 @@ func TestSyncRun(t *testing.T) {
 	lockChan <- struct{}{}
 
 	// Next up it should find the existing repo and send it down Synced
-	diff = <-syncer.Synced
+	diff := <-syncer.Synced
 	if d := cmp.Diff(types.RepoSyncDiff{
 		Modified: types.ReposModified{
 			{Repo: sourced[0], Modified: types.RepoModifiedDescription},
@@ -1126,15 +1119,6 @@ func TestSyncerMultipleServices(t *testing.T) {
 		assert.EqualError(t, err, "unable to stop routines gracefully: context canceled")
 		done <- struct{}{}
 	}()
-
-	// Ignore fields store adds
-	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
-
-	// The first thing sent down Synced is an empty list of repos in store.
-	diff := <-syncer.Synced
-	if d := cmp.Diff(types.RepoSyncDiff{}, diff, ignore); d != "" {
-		t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
-	}
 
 	// we poll, so lets set an aggressive deadline
 	deadline := time.Now().Add(10 * time.Second)
