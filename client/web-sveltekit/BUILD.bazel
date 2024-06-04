@@ -86,6 +86,7 @@ BUILD_DEPS = [
     ":node_modules/@sourcegraph/shared",
     ":node_modules/@sourcegraph/web",
     ":node_modules/@sourcegraph/wildcard",
+    ":node_modules/@sourcegraph/telemetry",
     ":node_modules/@storybook/svelte",
     ":node_modules/@sveltejs/adapter-static",
     ":node_modules/@sveltejs/kit",

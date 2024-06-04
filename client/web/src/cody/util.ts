@@ -1,7 +1,7 @@
 // The URL to direct users in order to manage their Cody Pro subscription.
 import { useState, useEffect } from 'react'
 
-import { PageRoutes } from '../routes.constants'
+import { CodyProRoutes } from './codyProRoutes'
 
 // URL the user needs to navigate to in order to modify their Cody Pro subscription.
 export const manageSubscriptionRedirectURL = `${
@@ -24,7 +24,7 @@ export function isEmbeddedCodyProUIEnabled(): boolean {
  * getManageSubscriptionPageURL returns the URL to direct the user to in order to manage their Cody Pro subscription.
  */
 export function getManageSubscriptionPageURL(): string {
-    return isEmbeddedCodyProUIEnabled() ? PageRoutes.CodySubscriptionManage : manageSubscriptionRedirectURL
+    return isEmbeddedCodyProUIEnabled() ? CodyProRoutes.SubscriptionManage : manageSubscriptionRedirectURL
 }
 
 /**

@@ -7,6 +7,7 @@ import { getGraphQLClient as getGraphQLClientBase, type SuccessGraphQLResult } f
 import { cache } from '../../backend/apolloCache'
 import type { PlatformContext } from '../../platform/context'
 import type { SettingsCascade } from '../../settings/settings'
+import { noOpTelemetryRecorder } from '../../telemetry'
 import type { FlatExtensionHostAPI } from '../contract'
 import { pretendRemote } from '../util'
 
@@ -23,13 +24,19 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'clientApplication'
+                | 'telemetryRecorder'
             > = {
                 settings: EMPTY,
                 getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 clientApplication: 'other',
+                telemetryRecorder: noOpTelemetryRecorder,
             }
 
             const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
@@ -56,13 +63,19 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'clientApplication'
+                | 'telemetryRecorder'
             > = {
                 settings: EMPTY,
                 getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 clientApplication: 'other',
+                telemetryRecorder: noOpTelemetryRecorder,
             }
 
             const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
@@ -82,7 +95,12 @@ describe('MainThreadAPI', () => {
             }
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getGraphQLClient' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'requestGraphQL'
+                | 'getGraphQLClient'
+                | 'clientApplication'
+                | 'telemetryRecorder'
             > = {
                 settings: of({
                     subjects: [
@@ -116,6 +134,7 @@ describe('MainThreadAPI', () => {
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 clientApplication: 'other',
+                telemetryRecorder: noOpTelemetryRecorder,
             }
 
             const { api } = initMainThreadAPI(
@@ -147,13 +166,19 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'clientApplication'
+                | 'telemetryRecorder'
             > = {
                 getGraphQLClient,
                 settings: of(...values),
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL: () => EMPTY,
                 clientApplication: 'other',
+                telemetryRecorder: noOpTelemetryRecorder,
             }
 
             const passedToExtensionHost: SettingsCascade<object>[] = []
@@ -173,13 +198,19 @@ describe('MainThreadAPI', () => {
             const values = new Subject<SettingsCascade<{ a: string }>>()
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'clientApplication'
+                | 'telemetryRecorder'
             > = {
                 settings: values.asObservable(),
                 updateSettings: () => Promise.resolve(),
                 getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 clientApplication: 'other',
+                telemetryRecorder: noOpTelemetryRecorder,
             }
             const passedToExtensionHost: SettingsCascade<object>[] = []
             const { subscription } = initMainThreadAPI(

@@ -3,13 +3,16 @@
     import { mdiMagnify } from '@mdi/js'
     import { createDialog } from '@melt-ui/svelte'
 
-    import Icon from '$lib/Icon.svelte'
-    import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { QueryState, queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
+    import { registerHotkey } from '$lib/Hotkey'
     import { repositoryInsertText } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { registerHotkey } from '$lib/Hotkey'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+    import { QueryState, queryStateStore } from '$lib/search/state'
+
+    import Icon from '$lib/Icon.svelte'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
 
     export let repoName: string
     /**
@@ -35,6 +38,9 @@
             { source: 'repo', query: state.query },
             { source: 'repo', patternType: state.patternType }
         )
+        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['repo'] },
+        })
     }
 
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `

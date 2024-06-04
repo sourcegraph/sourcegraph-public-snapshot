@@ -161,7 +161,7 @@ func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryE
 		}
 	}
 	for i := range values {
-		values[i].Locations = deduplicate(values[i].Locations, locationDataKey)
+		values[i].Locations = deduplicateBy(values[i].Locations, locationDataKey)
 	}
 
 	return values, nil

@@ -5,6 +5,7 @@ import type * as H from 'history'
 import { subtypeOf } from '@sourcegraph/common'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
+import { noOpTelemetryRecorder } from '../telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemComponentProps, type ActionItemProps } from './ActionItem'
@@ -27,6 +28,7 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     location: LOCATION,
     extensionsController: EXTENSIONS_CONTROLLER,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    telemetryRecorder: noOpTelemetryRecorder,
     iconClassName: 'icon-inline',
     active: true,
 })
@@ -42,7 +44,7 @@ export default config
 export const NoopAction: StoryFn = () => (
     <ActionItem
         {...commonProps}
-        action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
+        action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' }, telemetryProps: { feature: 'a' } }}
         variant="actionItem"
     />
 )
@@ -52,7 +54,7 @@ NoopAction.storyName = 'Noop action'
 export const CommandAction: StoryFn = () => (
     <ActionItem
         {...commonProps}
-        action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+        action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL, telemetryProps: { feature: 'a' } }}
         telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
@@ -76,6 +78,7 @@ export const LinkAction: StoryFn = () => (
             command: 'open',
             commandArguments: ['javascript:alert("link clicked")'],
             actionItem: { label: 'Hello' },
+            telemetryProps: { feature: 'a' },
         }}
         variant="actionItem"
         onDidExecute={onDidExecute}
@@ -95,7 +98,7 @@ export const Executing: StoryFn = () => {
     return (
         <ActionItemExecuting
             {...commonProps}
-            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL, telemetryProps: { feature: 'a' } }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
         />
@@ -113,7 +116,7 @@ export const _Error: StoryFn = () => {
     return (
         <ActionItemWithError
             {...commonProps}
-            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL, telemetryProps: { feature: 'a' } }}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
         />

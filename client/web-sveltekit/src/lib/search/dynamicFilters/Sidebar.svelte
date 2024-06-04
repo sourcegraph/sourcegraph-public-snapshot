@@ -42,6 +42,8 @@
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_V2_FILTER_TYPES } from '@sourcegraph/shared/src/search/stream'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -90,6 +92,9 @@
 
     function handleFilterSelect(kind: SectionItemData['kind']): void {
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
+        TELEMETRY_V2_RECORDER.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[kind] },
+        })
     }
 
     onMount(() => {

@@ -29,11 +29,7 @@ func createCustomAlerts(
 			Description: config.Description,
 			Severity:    config.SeverityLevel,
 
-			CustomAlert: &alertpolicy.CustomAlert{
-				Type:            config.Condition.Type,
-				Query:           config.Condition.Query,
-				DurationMinutes: config.Condition.Duration,
-			},
+			CustomAlert: &config.Condition,
 
 			// Shared configuration
 			Service:              vars.Service,

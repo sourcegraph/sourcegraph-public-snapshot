@@ -203,6 +203,7 @@ ts_project(
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
+        "src/cody/codyProRoutes.tsx",
         "src/cody/components/ChatUI/ChatUi.tsx",
         "src/cody/components/ChatUI/index.tsx",
         "src/cody/components/CodeMirrorEditor.ts",
