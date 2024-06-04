@@ -13,7 +13,7 @@
 
         {{- with .Metadata }}
         <meta name='description' content="{{.Description}}" />
-            {{if .ShowPreview }}
+            {{- if .ShowPreview }}
         <meta name='twitter:title' content="{{.Title}}" />
         <meta name='twitter:description' content="{{.Description}}" />
         <meta property="og:type" content="website" />
