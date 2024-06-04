@@ -5,8 +5,9 @@ module foo.bar.baz;
 
 namespace Hack\Example\namespace {
     // imports
-    use namespace HH\Lib\{C, Vec};
-    use const Space\Const\C;
+    use namespace HH\Lib\{C as D, Vec as E};
+    use type HH\Lib\{C1 as D1, Vec1 as E1};
+    use const Space\Const\C as X;
     use type Space\Type\T;
     use function UseNS\ff;
     use D;
@@ -49,7 +50,7 @@ namespace {
 
     // Anonymous functions
     $f = function($x) { return $x + 1; };
-    $f = function($x) use($y) { return $x + $y; };
+    $f = function(num $x) use($y) { return $x + $y; };
     $f = $x ==> $x + 1;
     $f = (int $x): int ==> $x + 1;
   }
@@ -63,6 +64,14 @@ namespace {
     for ($i = $start; $i <= $end; ++$i) {
       yield $keyPrefix.$i => $i * $i; // specify a key/value pair
     }
+  }
+
+  // Function Pointers
+  internal function f() : void {
+      echo "Internal f\n";
+  }
+  public function getF(): (function():void) {
+      return f<>;
   }
 
   <<__EntryPoint>>
@@ -83,7 +92,6 @@ namespace {
     //       https://github.com/slackhq/tree-sitter-hack/issues/69
     $y = "hello $x[0]";
     $y = "hello $x->foo";
-
 
     // Control Flow
     $i = 1;
@@ -142,15 +150,16 @@ namespace {
 
     $d = dict[];
     $xhp = <tt>Hello <strong>{$user_name}</strong>
+      <elt attr="string">Hello</elt>
+      <p id="foo"/>
       Text in the markup
       <!-- this is a comment -->
   </tt>;
 
-
     // Literals
-    // Note: nameof missing from the tree-sitter grammar
-    //       https://github.com/slackhq/tree-sitter-hack/issues/68
-    // Note: also doesnt seem to compile correctly
+    // NOTE(issue: https://github.com/facebook/hhvm/issues/9447)
+    // nameof code example is based on official docs, but doesn't seem to compile
+    // properly with hhvm/hhvm or parse properly with tree-sitter-hack
     $d[nameof C] = 4; // Not compiling, not sure why
     $v = vec[1, 2, 3];
     $k = keyset[2, 1];
