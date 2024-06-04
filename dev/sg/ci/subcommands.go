@@ -391,7 +391,7 @@ var listBuildsCommand = &cli.Command{
 				}
 				commit := pointers.DerefZero(b.Commit)
 				if len(commit) > 12 {
-					commit = commit[:12] + "..."
+					commit = commit[:12]
 				}
 				std.Out.WriteLine(output.Styledf(output.StyleGrey, "%-8d%-10s%-25s%-16s%s", pointers.DerefZero(b.Number), pointers.DerefZero(b.State), author, commit, pointers.DerefZero(b.WebURL)))
 			}
