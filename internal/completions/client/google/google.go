@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 
 	"github.com/sourcegraph/log"
 
@@ -22,12 +23,6 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.Completions
 	}
 }
 
-type googleCompletionStreamClient struct {
-	cli         httpcli.Doer
-	accessToken string
-	endpoint    string
-}
-
 func (c *googleCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
@@ -35,6 +30,10 @@ func (c *googleCompletionStreamClient) Complete(
 	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
 ) (*types.CompletionResponse, error) {
+	if !isSupportedFeature(feature) {
+		return nil, errors.Newf("feature %q is currently not supported for Google", feature)
+	}
+
 	var resp *http.Response
 	var err error
 	defer (func() {
@@ -42,10 +41,6 @@ func (c *googleCompletionStreamClient) Complete(
 			resp.Body.Close()
 		}
 	})()
-
-	if feature == types.CompletionsFeatureCode {
-		return nil, errors.Newf("feature %q is currently not supported for Google", feature)
-	}
 
 	resp, err = c.makeRequest(ctx, requestParams, false)
 	if err != nil {
@@ -68,6 +63,8 @@ func (c *googleCompletionStreamClient) Complete(
 		return &types.CompletionResponse{}, nil
 	}
 
+	// NOTE:  Candidates can be used to get multiple completions when CandidateCount is set,
+	// which is not currently supported by Cody. For now, we only return the first completion.
 	return &types.CompletionResponse{
 		Completion: response.Candidates[0].Content.Parts[0].Text,
 		StopReason: response.Candidates[0].FinishReason,
@@ -82,6 +79,10 @@ func (c *googleCompletionStreamClient) Stream(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
+	if !isSupportedFeature(feature) {
+		return errors.Newf("feature %q is currently not supported for Google", feature)
+	}
+
 	var resp *http.Response
 	var err error
 
@@ -90,10 +91,6 @@ func (c *googleCompletionStreamClient) Stream(
 			resp.Body.Close()
 		}
 	})()
-
-	if feature == types.CompletionsFeatureCode {
-		return errors.Newf("feature %q is currently not supported for Google", feature)
-	}
 
 	resp, err = c.makeRequest(ctx, requestParams, true)
 	if err != nil {
@@ -140,20 +137,6 @@ func (c *googleCompletionStreamClient) Stream(
 	return nil
 }
 
-// In the latest API Docs, the model name and API key must be used in the API endpoint URL.
-// Ref: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#gemini_and_content_based_apis
-func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) string {
-	rpc := "generateContent"
-	sseSuffix := ""
-
-	if stream {
-		rpc = "streamGenerateContent"
-		sseSuffix = "&alt=sse"
-	}
-
-	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", requestParams.Model, rpc, c.accessToken, sseSuffix)
-}
-
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	// Ensure TopK and TopP are non-negative
@@ -184,12 +167,18 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 
 	apiURL := c.getAPIURL(requestParams, stream)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	// Vertex AI API requires an Authorization header with the access token.
+	// Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini#sample-requests
+	if !isDefaultAPIEndpoint(apiURL) {
+		req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	}
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
@@ -203,53 +192,54 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	return resp, nil
 }
 
-type googleRequest struct {
-	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
-	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
+// In the latest API Docs, the model name and API key must be used with the default API endpoint URL.
+// Ref: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#gemini_and_content_based_apis
+func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) *url.URL {
+	apiURL, err := url.Parse(c.endpoint)
+	if err != nil {
+		apiURL = &url.URL{
+			Scheme: "https",
+			Host:   defaultAPIHost,
+			Path:   defaultAPIPath,
+		}
+	}
+
+	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream)
+
+	// We need to append the API key to the default API endpoint URL.
+	if isDefaultAPIEndpoint(apiURL) {
+		query := apiURL.Query()
+		query.Set("key", c.accessToken)
+		if stream {
+			query.Set("alt", "sse")
+		}
+		apiURL.RawQuery = query.Encode()
+	}
+
+	return apiURL
 }
 
-type googleContentMessage struct {
-	Role  string                     `json:"role"`
-	Parts []googleContentMessagePart `json:"parts"`
+// getgRPCMethod returns the gRPC method name based on the stream flag.
+func getgRPCMethod(stream bool) string {
+	if stream {
+		return "streamGenerateContent"
+	}
+	return "generateContent"
 }
 
-type googleContentMessagePart struct {
-	Text string `json:"text"`
+// isSupportedFeature checks if the given CompletionsFeature is supported.
+// Currently, only the CompletionsFeatureChat feature is supported.
+func isSupportedFeature(feature types.CompletionsFeature) bool {
+	switch feature {
+	case types.CompletionsFeatureChat:
+		return true
+	default:
+		return false
+	}
 }
 
-// Configuration options for model generation and outputs.
-// Ref: https://ai.google.dev/api/rest/v1/GenerationConfig
-type googleGenerationConfig struct {
-	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
-	TopP            float32  `json:"topP,omitempty"`            // request.TopP
-	TopK            int      `json:"topK,omitempty"`            // request.TopK
-	StopSequences   []string `json:"stopSequences,omitempty"`   // request.StopSequences
-	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
-	CandidateCount  int      `json:"candidateCount,omitempty"`  // request.CandidateCount
-}
-
-type googleResponse struct {
-	Model      string `json:"model"`
-	Candidates []struct {
-		Content      googleContentMessage
-		FinishReason string `json:"finishReason"`
-	} `json:"candidates"`
-
-	UsageMetadata  googleUsage            `json:"usageMetadata"`
-	SafetySettings []googleSafetySettings `json:"safetySettings,omitempty"`
-}
-
-// Safety setting, affecting the safety-blocking behavior.
-// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
-type googleSafetySettings struct {
-	Category  string `json:"category"`
-	Threshold string `json:"threshold"`
-}
-
-type googleUsage struct {
-	PromptTokenCount int `json:"promptTokenCount"`
-	// Use the same name we use elsewhere (completion instead of candidates)
-	CompletionTokenCount int `json:"candidatesTokenCount"`
-	TotalTokenCount      int `json:"totalTokenCount"`
+// isDefaultAPIEndpoint checks if the given API endpoint URL is the default API endpoint.
+// The default API endpoint is determined by the defaultAPIHost constant.
+func isDefaultAPIEndpoint(endpoint *url.URL) bool {
+	return endpoint.Host == defaultAPIHost
 }

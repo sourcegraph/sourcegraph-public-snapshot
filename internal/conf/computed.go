@@ -871,7 +871,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameGoogle) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://generativelanguage.googleapis.com"
+			completionsConfig.Endpoint = "https://generativelanguage.googleapis.com/v1beta/models"
 		}
 
 		// If not access token is set, we cannot talk to Google. Bail.
@@ -891,6 +891,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
+			// Code completion is not supported by Google
 			completionsConfig.CompletionModel = google.Gemini15FlashLatest
 		}
 	}

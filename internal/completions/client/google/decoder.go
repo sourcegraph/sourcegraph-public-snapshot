@@ -55,30 +55,21 @@ func (d *decoder) Scan() bool {
 		return false
 	}
 	for d.scanner.Scan() {
-		// event: $_name
-		// data: json($data)|[DONE]
-
-		lines := bytes.Split(d.scanner.Bytes(), []byte("\n"))
-		for _, line := range lines {
-			typ, data := splitColon(line)
-
-			switch {
-			case bytes.Equal(typ, []byte("data")):
-				d.data = data
-				// Check for special sentinel value used by the Anthropic API to
-				// indicate that the stream is done.
-				if bytes.Equal(data, doneBytes) {
-					d.done = true
-					return false
-				}
-				return true
-			case bytes.Equal(typ, []byte("event")):
-				// Anthropic sends the event name in the data payload as well so we ignore it for snow
-				continue
-			default:
-				d.err = errors.Errorf("malformed data, expected data: %s %q", typ, line)
+		line := d.scanner.Bytes()
+		typ, data := splitColon(line)
+		switch {
+		case bytes.Equal(typ, []byte("data")):
+			d.data = data
+			// Check for special sentinel value used by the Google API to
+			// indicate that the stream is done.
+			if bytes.Equal(data, doneBytes) {
+				d.done = true
 				return false
 			}
+			return true
+		default:
+			d.err = errors.Errorf("malformed data, expected data: %s", typ)
+			return false
 		}
 	}
 

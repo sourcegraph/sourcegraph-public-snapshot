@@ -6,8 +6,6 @@ import (
 
 	"bytes"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 )
@@ -129,8 +127,8 @@ data: {"usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 20}}`,
 						CompletionTokenCount: completionTokens,
 					},
 				}
-				if diff := cmp.Diff(got, tt.want); diff != "" {
-					t.Errorf("parseGoogleTokenUsage() mismatch (-want +got):\n%s", diff)
+				if !assert.ObjectsAreEqual(got, tt.want) {
+					t.Errorf("parseGoogleTokenUsage() mismatch (-want +got):\n%v", assert.ObjectsAreEqual(got, tt.want))
 				}
 			}
 		})

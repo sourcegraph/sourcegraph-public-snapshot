@@ -4,6 +4,12 @@ package google
 // See: https://ai.google.dev/gemini-api/docs/models/gemini
 const providerName = "google"
 
+// Default API endpoint URL
+const (
+	defaultAPIHost = "generativelanguage.googleapis.com"
+	defaultAPIPath = "/v1beta/models"
+)
+
 // Latest stable versions
 const Gemini15Flash = "gemini-1.5-flash"
 const Gemini15Pro = "gemini-1.5-pro"

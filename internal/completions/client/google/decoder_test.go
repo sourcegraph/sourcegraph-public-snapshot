@@ -37,6 +37,12 @@ func TestDecoder(t *testing.T) {
 		require.Equal(t, events, []event{{data: "b"}, {data: "c"}})
 	})
 
+	t.Run("Multiple with new line within data", func(t *testing.T) {
+		events, err := decodeAll("data:line1\nline2\nline3\n\ndata:second-data\n\ndata: [DONE]\n\n")
+		require.NoError(t, err)
+		require.Equal(t, events, []event{{data: "line1\nline2\nline3"}, {data: "second-data"}})
+	})
+
 	t.Run("ErrExpectedData", func(t *testing.T) {
 		_, err := decodeAll("datas:b\n\n")
 		require.Contains(t, err.Error(), "malformed data, expected data")
