@@ -185,12 +185,11 @@ type SyntectServerSpec struct {
 }
 
 type WorkerSpec struct {
+	StandardConfig
+
 	// Replicas defines the number of Worker pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type StorageClassSpec struct {

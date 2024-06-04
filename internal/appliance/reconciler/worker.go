@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,22 +19,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func (r *Reconciler) reconcilePreciseCodeIntel(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	if err := r.reconcilePreciseCodeIntelDeployment(ctx, sg, owner); err != nil {
+func (r *Reconciler) reconcileWorker(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	if err := r.reconcileWorkerDeployment(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Deployment")
 	}
-	if err := r.reconcilePreciseCodeIntelService(ctx, sg, owner); err != nil {
+	if err := r.reconcileWorkerService(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling Service")
 	}
-	if err := r.reconcilePreciseCodeIntelServiceAccount(ctx, sg, owner); err != nil {
+	if err := r.reconcileWorkerExecutorsService(ctx, sg, owner); err != nil {
+		return errors.Wrap(err, "reconciling executors Service")
+	}
+	if err := r.reconcileWorkerServiceAccount(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling ServiceAccount")
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	name := "precise-code-intel-worker"
-	cfg := sg.Spec.PreciseCodeIntel
+func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	name := "worker"
+	cfg := sg.Spec.Worker
 
 	defaultImage, err := config.GetDefaultImage(sg, name)
 	if err != nil {
@@ -55,24 +57,25 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 		},
 	})
 
+	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
+	ctr.Env = addPreciseCodeIntelBlobstoreVars(ctr.Env, sg)
+	if !sg.Spec.Embeddings.Disabled && !sg.Spec.Blobstore.Disabled {
+		ctr.Env = append(
+			ctr.Env,
+			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_BACKEND", Value: "blobstore"},
+			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
+		)
+	}
 	ctr.Env = append(
 		ctr.Env,
-
-		// This doesn't appear to be used in this repository, but it is included
-		// in order for parity with Helm. It might be read from a library
-		// dependency.
-		corev1.EnvVar{Name: "NUM_WORKERS", Value: fmt.Sprintf("%d", cfg.NumWorkers)},
-
 		container.NewEnvVarFieldRef("POD_NAME", "metadata.name"),
 	)
-
-	ctr.Env = addPreciseCodeIntelBlobstoreVars(ctr.Env, sg)
-
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
 
 	ctr.Ports = []corev1.ContainerPort{
-		{Name: "http", ContainerPort: 3188},
+		{Name: "http", ContainerPort: 3189},
 		{Name: "debug", ContainerPort: 6060},
+		{Name: "prom", ContainerPort: 6996},
 	}
 	ctr.LivenessProbe = &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -94,15 +97,9 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 		PeriodSeconds:  5,
 		TimeoutSeconds: 5,
 	}
-	ctr.VolumeMounts = []corev1.VolumeMount{
-		{Name: "tmpdir", MountPath: "/tmp"},
-	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
-	podTemplate.Template.Spec.Volumes = []corev1.Volume{
-		pod.NewVolumeEmptyDir("tmpdir"),
-	}
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Replicas = pointers.Ptr(cfg.Replicas)
@@ -115,37 +112,42 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	name := "precise-code-intel-worker"
-	cfg := sg.Spec.PreciseCodeIntel
+func (r *Reconciler) reconcileWorkerService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	name := "worker"
+	cfg := sg.Spec.Worker
 
 	svc := service.NewService(name, sg.Namespace, cfg)
 	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "http", Port: 3188, TargetPort: intstr.FromString("http")},
+		{Name: "http", Port: 3189, TargetPort: intstr.FromString("http")},
 		{Name: "debug", Port: 6060, TargetPort: intstr.FromString("debug")},
 	}
 	svc.Spec.Selector = map[string]string{
-		"app": "precise-code-intel-worker",
+		"app": name,
 	}
 
 	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
-func (r *Reconciler) reconcilePreciseCodeIntelServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cfg := sg.Spec.PreciseCodeIntel
-	sa := serviceaccount.NewServiceAccount("precise-code-intel-worker", sg.Namespace, cfg)
-	return reconcileObject(ctx, r, cfg, &sa, &corev1.ServiceAccount{}, sg, owner)
+func (r *Reconciler) reconcileWorkerExecutorsService(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.Worker
+
+	svc := service.NewService("worker-executors", sg.Namespace, nil)
+	svc.Spec.Ports = []corev1.ServicePort{
+		{Name: "prom", Port: 6996, TargetPort: intstr.FromString("prom")},
+	}
+	svc.Spec.Selector = map[string]string{
+		"app": "worker",
+	}
+	svc.SetAnnotations(map[string]string{
+		"prometheus.io/port":            "6996",
+		"sourcegraph.prometheus/scrape": "true",
+	})
+
+	return reconcileObject(ctx, r, cfg, &svc, &corev1.Service{}, sg, owner)
 }
 
-func addPreciseCodeIntelBlobstoreVars(env []corev1.EnvVar, sg *config.Sourcegraph) []corev1.EnvVar {
-	// Only set these when the internal blobstore is enabled. Otherwise, callers
-	// can supply env vars for external blobstores via ContainerConfig.
-	if !sg.Spec.Blobstore.Disabled {
-		env = append(
-			env,
-			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_BACKEND", Value: "blobstore"},
-			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
-		)
-	}
-	return env
+func (r *Reconciler) reconcileWorkerServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
+	cfg := sg.Spec.Worker
+	sa := serviceaccount.NewServiceAccount("worker", sg.Namespace, cfg)
+	return reconcileObject(ctx, r, cfg, &sa, &corev1.ServiceAccount{}, sg, owner)
 }
