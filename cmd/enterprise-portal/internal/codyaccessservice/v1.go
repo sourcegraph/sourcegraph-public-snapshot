@@ -34,11 +34,16 @@ func RegisterV1(
 	dotcom DotComDB,
 	opts ...connect.HandlerOption,
 ) {
-	mux.Handle(codyaccessv1connect.NewCodyAccessServiceHandler(&handlerV1{
-		logger:     logger.Scoped("codyaccess.v1"),
-		samsClient: samsClient,
-		dotcom:     dotcom,
-	}))
+	mux.Handle(
+		codyaccessv1connect.NewCodyAccessServiceHandler(
+			&handlerV1{
+				logger:     logger.Scoped("codyaccess.v1"),
+				samsClient: samsClient,
+				dotcom:     dotcom,
+			},
+			opts...,
+		),
+	)
 }
 
 type handlerV1 struct {

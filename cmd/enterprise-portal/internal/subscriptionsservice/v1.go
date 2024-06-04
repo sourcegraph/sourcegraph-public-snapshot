@@ -31,11 +31,16 @@ func RegisterV1(
 	dotcom DotComDB,
 	opts ...connect.HandlerOption,
 ) {
-	mux.Handle(subscriptionsv1connect.NewSubscriptionsServiceHandler(&handlerV1{
-		logger:     logger.Scoped("subscriptions.v1"),
-		samsClient: samsClient,
-		dotcom:     dotcom,
-	}))
+	mux.Handle(
+		subscriptionsv1connect.NewSubscriptionsServiceHandler(
+			&handlerV1{
+				logger:     logger.Scoped("subscriptions.v1"),
+				samsClient: samsClient,
+				dotcom:     dotcom,
+			},
+			opts...,
+		),
+	)
 }
 
 type handlerV1 struct {

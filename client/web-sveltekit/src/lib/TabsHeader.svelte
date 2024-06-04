@@ -4,13 +4,21 @@
     export interface Tab {
         id: string
         title: string
+        // An icon for the tab. Shown to the left of the title.
+        icon?: string
+        // A shortcut to activate the tab. Shown to the right of the title.
         shortcut?: Keys
+        // If provided, will cause the tab to be rendered as a link
+        href?: string
     }
 </script>
 
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
+
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+
+    import Icon from './Icon.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -28,7 +36,8 @@
 
 <div class="tabs-header" role="tablist" data-tab-header>
     {#each tabs as tab, index (tab.id)}
-        <button
+        <svelte:element
+            this={tab.href ? 'a' : 'button'}
             id="{id}--tab--{index}"
             aria-controls={tab.id}
             aria-selected={selected === index}
@@ -36,14 +45,18 @@
             role="tab"
             on:click={selectTab}
             data-tab
+            href={tab.href}
         >
+            {#if tab.icon}
+                <Icon svgPath={tab.icon} aria-hidden inline />
+            {/if}
             <span data-tab-title={tab.title}>
                 {tab.title}
             </span>
             {#if tab.shortcut}
                 <KeyboardShortcut shorcut={tab.shortcut} />
             {/if}
-        </button>
+        </svelte:element>
     {/each}
 </div>
 
@@ -55,7 +68,6 @@
         align-items: stretch;
         justify-content: var(--align-tabs, center);
         gap: var(--tabs-gap, 0);
-        border-bottom: 1px solid var(--border-color);
     }
 
     [role='tab'] {
@@ -78,7 +90,6 @@
             display: block;
             position: absolute;
             bottom: 0;
-            transform: translateY(50%);
             width: 100%;
             border-bottom: 2px solid transparent;
         }
