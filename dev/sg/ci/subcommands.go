@@ -3,6 +3,7 @@ package ci
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 var previewCommand = &cli.Command{
@@ -311,6 +313,88 @@ var statusCommand = &cli.Command{
 		if failed {
 			std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
 				"Some jobs have failed - try using 'sg ci logs' to see what went wrong, or go to the build page: %s", *build.WebURL))
+		}
+
+		return nil
+	},
+}
+
+var listBuildsCommand = &cli.Command{
+	Name:        "list-builds",
+	Usage:       "List all builds that match the given state and pipeline",
+	Description: "List builds for the given pipeline",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "pipeline",
+			Usage:   "pipeline to list builds for",
+			Value:   "sourcegraph",
+			Aliases: []string{"p"},
+		},
+		&cli.StringFlag{
+			Name:  "state",
+			Value: "running",
+			Usage: "what state the build should be in (one of 'running', 'pending', 'passed', 'finished', 'failed', 'canceled')",
+		},
+		&cli.IntFlag{
+			Name:  "limit",
+			Value: 50,
+			Usage: "limit the number of builds returned - does not apply when using json formatting",
+		},
+		&cli.StringFlag{
+			Name:  "format",
+			Usage: "Output format (one of 'json', or 'terminal')",
+			Value: "terminal",
+		},
+	},
+	Action: func(cmd *cli.Context) error {
+		ctx := cmd.Context
+		client, err := bk.NewClient(ctx, std.Out)
+		if err != nil {
+			return err
+		}
+
+		var state string
+		switch cmd.String("state") {
+		case "running", "pending", "finished", "passed", "failed", "canceled":
+			state = cmd.String("state")
+		default:
+			return errors.Newf("invalid state %q, must be one of 'running', 'pending', 'passed', 'finished', 'failed', 'canceled'", cmd.String("state"))
+		}
+
+		// in case the format is set to json, we don't want to print status messages to std out, so we create output that prints to stderr and use that instead
+		out := std.NewOutput(os.Stderr, false)
+		pending := out.Pending(output.Styledf(output.StylePending, "Fetching builds for %q pipeline...", cmd.String("pipeline")))
+		builds, err := client.ListBuilds(cmd.Context, cmd.String("pipeline"), state)
+		if err != nil {
+			pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed to fetch builds for %q pipeline", cmd.String("pipeline")))
+			return err
+		}
+		pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Fetched %d builds for %q pipeline", len(builds), cmd.String("pipeline")))
+
+		switch cmd.String("format") {
+		case "json":
+			enc := json.NewEncoder(os.Stdout)
+			return enc.Encode(builds)
+		case "terminal":
+			std.Out.WriteLine(output.Styledf(output.StyleBold, "Pipeline:%s %s", output.StyleReset, cmd.String("pipeline")))
+			std.Out.WriteLine(output.Styledf(output.StyleBold, "%-8s%-10s%-25s%-16s%s", "Build", "Status", "Author", "Commit", "Link"))
+			if len(builds) == 0 {
+				std.Out.WriteLine(output.Styledf(output.StyleGrey, "No builds found with state %q", state))
+			}
+			for i, b := range builds {
+				if i > cmd.Int("limit") {
+					break
+				}
+				author := "n/a"
+				if b.Author != nil {
+					author = b.Author.Name
+				}
+				commit := pointers.DerefZero(b.Commit)
+				if len(commit) > 12 {
+					commit = commit[:12] + "..."
+				}
+				std.Out.WriteLine(output.Styledf(output.StyleGrey, "%-8d%-10s%-25s%-16s%s", pointers.DerefZero(b.Number), pointers.DerefZero(b.State), author, commit, pointers.DerefZero(b.WebURL)))
+			}
 		}
 
 		return nil
