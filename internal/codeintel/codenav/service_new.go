@@ -408,10 +408,6 @@ func (s *Service) gatherRemoteLocations(
 		return nil, exhaustedCursor, nil
 	}
 
-	// Ensure we have a batch of upload ids over which to perform a symbol search, if such
-	// a batch exists. This batch must be hydrated in the associated request data loader.
-	// See the function body for additional complaints on this subject.
-	//
 	// N.B.: cursor is purposefully re-assigned here
 	var includeFallbackLocations bool
 	cursor, includeFallbackLocations, err = s.prepareCandidateUploads(
@@ -428,7 +424,7 @@ func (s *Service) gatherRemoteLocations(
 	}
 
 	// If we have no upload ids stashed in our cursor at this point then there are no more
-	// uploads to search in and we've reached the end of our our result set. Congratulations!
+	// uploads to search in, and we've reached the end of our result set. Congratulations!
 	if len(cursor.UploadIDs) == 0 {
 		return nil, exhaustedCursor, nil
 	}
@@ -466,6 +462,17 @@ func (s *Service) gatherRemoteLocations(
 	return adjustedLocations, cursor, nil
 }
 
+// prepareCandidateUploads returns a bunch of upload IDs (via cursor.UploadIDs) which
+// can be used to search for symbol definitions/references/etc.
+//
+//  1. If the uploads containing the definitions of the monikers are not known,
+//     it identifies them and adds them to the returned cursor's DefinitionIDs and UploadIDs.
+//  2. If referencing indexes are also needed (e.g. for triggering Find references
+//     or for Find implementations), it will get the next page of UploadsIDs if the current
+//     page is exhausted.
+//
+// Post-condition: The upload IDs identified are guaranteed to be loaded in
+// the request data loader.
 func (s *Service) prepareCandidateUploads(
 	ctx context.Context,
 	trace observation.TraceLogger,
