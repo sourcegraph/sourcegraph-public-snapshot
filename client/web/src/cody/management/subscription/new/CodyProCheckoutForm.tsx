@@ -43,23 +43,24 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
     const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
     const debouncedSeatCount = useDebounce(seatCount, 800)
+    const firstLineItemId = lineItems[0]?.id
 
     useEffect(() => {
-        const updateSeatCount = async () => {
+        const updateSeatCount = async (): Promise<void> => {
             setUpdatingSeatCount(true)
             try {
                 await updateLineItemQuantity({
-                    lineItem: lineItems[0].id,
+                    lineItem: firstLineItemId,
                     quantity: debouncedSeatCount,
                 })
-            } catch (error) {
+            } catch {
                 setErrorMessage('Failed to update seat count. Please change the number of seats to try again.')
             }
             setUpdatingSeatCount(false)
         }
 
         void updateSeatCount()
-    }, [lineItems[0].id, debouncedSeatCount])
+    }, [firstLineItemId, debouncedSeatCount, updateLineItemQuantity])
 
     const isPriceLoading = seatCount !== debouncedSeatCount || updatingSeatCount
 
