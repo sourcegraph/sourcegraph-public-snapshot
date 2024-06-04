@@ -60,7 +60,7 @@ func TestGetDefinitions(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
@@ -145,7 +145,7 @@ func TestGetDefinitions(t *testing.T) {
 			Character: 20,
 		}
 		remoteUploads := uploads2
-		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}

@@ -19,17 +19,15 @@ func (s *Service) GetDefinitions(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocations(
-		ctx, args, requestState, Cursor{},
-
+	cursor Cursor,
+) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+	return s.gatherLocations(
+		ctx, args, requestState, cursor,
 		s.operations.getDefinitions, // operation
 		"definitions",               // tableName
 		false,                       // includeReferencingIndexes
 		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
 	)
-
-	return locations, err
 }
 
 func (s *Service) GetReferences(
@@ -40,7 +38,6 @@ func (s *Service) GetReferences(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getReferences, // operation
 		"references",               // tableName
 		true,                       // includeReferencingIndexes
@@ -56,7 +53,6 @@ func (s *Service) GetImplementations(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getImplementations, // operation
 		"implementations",               // tableName
 		true,                            // includeReferencingIndexes
@@ -72,7 +68,6 @@ func (s *Service) GetPrototypes(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getPrototypes, // operation
 		"definitions",              // N.B.: we're looking for definitions of interfaces
 		false,                      // includeReferencingIndexes
