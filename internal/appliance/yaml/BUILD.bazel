@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "yaml",
+    srcs = ["yaml.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/yaml",
+    tags = [TAG_INFRA_RELEASE],
+    visibility = ["//:__subpackages__"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
+)
+
+go_test(
+    name = "yaml_test",
+    srcs = ["yaml_test.go"],
+    tags = [TAG_INFRA_RELEASE],
+    deps = [
+        ":yaml",
+        "@com_github_stretchr_testify//require",
+    ],
+)

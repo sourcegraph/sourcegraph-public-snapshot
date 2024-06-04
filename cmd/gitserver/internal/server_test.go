@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"container/list"
 	"context"
 	"fmt"
 	"io"
@@ -28,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -187,15 +185,6 @@ func TestExecRequest(t *testing.T) {
 		return false, nil
 	})
 
-	vcssyncer.TestGitRepoExists = func(ctx context.Context, repoName api.RepoName) error {
-		if strings.Contains(string(repoName), "nicksnyder/go-i18n") {
-			return nil
-		}
-
-		return errors.New("not cloneable")
-	}
-	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
-
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			ss := gitserver.NewMockGitserverService_ExecServer()
@@ -327,7 +316,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		Locker:                  NewRepositoryLocker(),
 		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
-		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	})
 
 	s.ctx = ctx
@@ -450,17 +438,6 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
 		wantErr      string
 	}{
-		{
-			name: "Not cloneable",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-				m := vcssyncer.NewMockVCSSyncer()
-				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName) error {
-					return errors.New("not_cloneable")
-				})
-				return m, nil
-			},
-			wantErr: "failed to clone example.com/foo/bar: error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable",
-		},
 		{
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {

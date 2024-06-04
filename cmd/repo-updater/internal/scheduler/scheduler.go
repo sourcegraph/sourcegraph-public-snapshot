@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -93,20 +94,102 @@ func NewUpdateScheduler(logger log.Logger, db database.DB, gitserverClient gitse
 	}
 }
 
+func (s *UpdateScheduler) Name() string {
+	return "UpdateScheduler"
+}
+
 func (s *UpdateScheduler) Start() {
 	// Make sure the update scheduler acts as an internal actor, so it can see all
 	// repos.
 	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
 	s.cancelCtx = cancel
 
+	if !dotcom.SourcegraphDotComMode() {
+		s.logger.Info("hydrating update scheduler")
+
+		// Hydrate the scheduler with the initial set of repos.
+		// This is done to preset the intervals from the database state, so that
+		// repos that haven't changed in a while don't need to be refetched once
+		// after a restart until we restore the previous schedule.
+		var nextCursor int
+		errors := 0
+		for {
+			var (
+				rs  []types.RepoGitserverStatus
+				err error
+			)
+			rs, nextCursor, err = s.db.GitserverRepos().IterateRepoGitserverStatus(ctx, database.IterateRepoGitserverStatusOptions{
+				NextCursor: nextCursor,
+				BatchSize:  1000,
+			})
+			if err != nil {
+				errors++
+				s.logger.Error("failed to iterate gitserver repos", log.Error(err), log.Int("errors", errors))
+				if errors > 5 {
+					s.logger.Error("too many errors, stopping initial hydration of update queue, the queue will build up lazily")
+					return
+				}
+				time.Sleep(time.Second)
+				continue
+			}
+			for _, r := range rs {
+				cr := configuredRepo{
+					ID:   r.ID,
+					Name: r.Name,
+				}
+				if !s.schedule.upsert(cr) {
+					interval := initialInterval(r)
+					s.schedule.updateInterval(cr, interval)
+				}
+			}
+			if nextCursor == 0 {
+				break
+			}
+		}
+
+		s.logger.Info("hydrated update scheduler")
+	}
+
 	go s.runUpdateLoop(ctx)
 	go s.runScheduleLoop(ctx)
 }
 
-func (s *UpdateScheduler) Stop() {
+// initialInterval determines the initial interval used for the scheduler:
+// (Any values outside of [45s, 8h] are capped)
+// Last changed: 2h30m ago
+// Last fetched: 2h ago
+// Time since last changed: 2:30h
+// Interval between last fetch and last change: 30 min
+// The next fetch will be due at: 2h ago (last fetched) + 30min/2
+// = 1:45h ago.
+// Since this time is in the past, it will be scheduled immediately.
+// Another example:
+// Last Changed: 2h ago
+// Last fetched: 30 min ago
+// Interval between last fetch and last change: 1h:30 min
+// The next fetch will be due at: 30 min ago (last fetched) + 90min/2
+// = in 15 minutes.
+func initialInterval(r types.RepoGitserverStatus) time.Duration {
+	interval := r.LastFetched.Sub(r.LastChanged) / 2
+	if interval < minDelay {
+		interval = minDelay
+	} else if interval > maxDelay {
+		interval = maxDelay
+	}
+	interval = time.Until(r.LastFetched.Add(interval))
+	if interval < minDelay {
+		interval = minDelay
+	} else if interval > maxDelay {
+		interval = maxDelay
+	}
+	return interval
+}
+
+func (s *UpdateScheduler) Stop(context.Context) error {
 	if s.cancelCtx != nil {
 		s.cancelCtx()
 	}
+	return nil
 }
 
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
@@ -281,8 +364,11 @@ func (s *UpdateScheduler) UpdateFromDiff(diff types.RepoSyncDiff) {
 	for _, r := range diff.Added {
 		s.upsert(r, true)
 	}
-	for _, r := range diff.Modified.Repos() {
-		s.upsert(r, true)
+	for _, r := range diff.Modified {
+		// Modified repos only need to be updated immediately if their name changed,
+		// otherwise we just make sure they're part of the scheduler, but don't
+		// trigger a repo update.
+		s.upsert(r.Repo, r.Modified&types.RepoModifiedName == types.RepoModifiedName)
 	}
 
 	known := len(diff.Added) + len(diff.Modified)

@@ -2,20 +2,27 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"sync"
 
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type rootResolver struct {
@@ -111,6 +118,115 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	), nil
 }
 
+func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.CodeGraphDataOpts) (_ *[]resolverstubs.CodeGraphDataResolver, err error) {
+	ctx, _, endObservation := r.operations.codeGraphData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
+		indexer := ""
+		if prov == resolverstubs.ProvenanceSyntactic {
+			indexer = shared.SyntacticIndexer
+		}
+		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
+			RepositoryID:       int(opts.Repo.ID),
+			Commit:             string(opts.Commit),
+			Path:               opts.Path,
+			RootToPathMatching: shared.RootMustEnclosePath,
+			Indexer:            indexer,
+		})
+		if err != nil || len(uploads) == 0 {
+			return nil, err
+		}
+		resolvers := []resolverstubs.CodeGraphDataResolver{}
+		for _, upload := range preferUploadsWithLongestRoots(uploads) {
+			resolvers = append(resolvers, newCodeGraphDataResolver(r.svc, upload, opts, prov, r.operations))
+		}
+		return resolvers, nil
+	}
+
+	provs := opts.Args.ProvenancesForSCIPData()
+	if provs.Precise {
+		preciseResolvers, err := makeResolvers(resolverstubs.ProvenancePrecise)
+		if len(preciseResolvers) != 0 || err != nil {
+			return &preciseResolvers, err
+		}
+	}
+
+	if provs.Syntactic {
+		syntacticResolvers, err := makeResolvers(resolverstubs.ProvenanceSyntactic)
+		if len(syntacticResolvers) != 0 || err != nil {
+			return &syntacticResolvers, err
+		}
+
+		// Enhancement idea: if a syntactic SCIP index is unavailable,
+		// but the language is supported by scip-syntax, we could generate
+		// a syntactic SCIP index on-the-fly by having the syntax-highlighter
+		// analyze the file.
+	}
+
+	// We do not currently have any way of generating SCIP data
+	// during purely textual means.
+
+	return &[]resolverstubs.CodeGraphDataResolver{}, nil
+}
+
+func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.CompletedUpload {
+	// Use orderedmap instead of a map to preserve the order of the uploads
+	// and to avoid introducing non-determinism.
+	sortedMap := orderedmap.New[string, shared.CompletedUpload]()
+	for _, upload := range uploads {
+		key := fmt.Sprintf("%s:%s", upload.Indexer, upload.Commit)
+		if val, found := sortedMap.Get(key); found {
+			if len(val.Root) < len(upload.Root) {
+				sortedMap.Set(key, upload)
+			}
+		} else {
+			sortedMap.Set(key, upload)
+		}
+	}
+	out := make([]shared.CompletedUpload, 0, sortedMap.Len())
+	for pair := sortedMap.Oldest(); pair != nil; pair = pair.Next() {
+		out = append(out, pair.Value)
+	}
+	return out
+}
+
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
+	numPreciseResults := 0
+	numSyntacticResults := 0
+	numSearchBasedResults := 0
+	defer func() {
+		endObservation.OnCancel(ctx, 1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("results.precise", numPreciseResults),
+			attribute.Int("results.syntactic", numSyntacticResults),
+			attribute.Int("results.searchBased", numSearchBasedResults),
+		}})
+	}()
+
+	const maxUsagesCount = 100
+	args.Normalize(maxUsagesCount)
+	remainingCount := int(*args.First)
+	provsForSCIPData := args.ProvenancesForSCIPData()
+
+	if provsForSCIPData.Precise {
+		// Attempt to get up to remainingCount precise results.
+		remainingCount = remainingCount - numPreciseResults
+	}
+
+	if remainingCount > 0 && provsForSCIPData.Syntactic {
+		// Attempt to get up to remainingCount syntactic results.
+		remainingCount = remainingCount - numSyntacticResults
+	}
+
+	if remainingCount > 0 && provsForSCIPData.SearchBased {
+		// Attempt to get up to remainingCount search-based results.
+		_ = "shut up nogo linter complaining about empty branch"
+	}
+
+	return nil, errors.New("Not implemented yet")
+}
+
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
@@ -157,11 +273,7 @@ func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIF
 }
 
 func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", r.requestState.RepositoryID),
-		attribute.String("commit", r.requestState.Commit),
-		attribute.String("path", r.requestState.Path),
-	}})
+	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: r.requestState.Attrs()})
 	defer endObservation(1, observation.Args{})
 
 	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState)
@@ -188,4 +300,61 @@ func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]reso
 	}
 
 	return &resolvers, nil
+}
+
+type codeGraphDataResolver struct {
+	// Retrieved data/state
+	retrievedDocument      sync.Once
+	document               *scip.Document
+	documentRetrievalError error
+
+	// Arguments
+	svc        CodeNavService
+	upload     shared.CompletedUpload
+	opts       *resolverstubs.CodeGraphDataOpts
+	provenance resolverstubs.CodeGraphDataProvenance
+
+	// O11y
+	operations *operations
+}
+
+func newCodeGraphDataResolver(
+	svc CodeNavService,
+	upload shared.CompletedUpload,
+	opts *resolverstubs.CodeGraphDataOpts,
+	provenance resolverstubs.CodeGraphDataProvenance,
+	operations *operations,
+) resolverstubs.CodeGraphDataResolver {
+	return &codeGraphDataResolver{
+		sync.Once{},
+		/*document*/ nil,
+		/*documentRetrievalError*/ nil,
+		svc,
+		upload,
+		opts,
+		provenance,
+		operations,
+	}
+}
+
+func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
+	// NOTE(id: scip-doc-optimization): In the case of pagination, if we retrieve the document ID
+	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
+	// and codeintel_scip_documents
+	c.retrievedDocument.Do(func() {
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.ID, c.opts.Path)
+	})
+	return c.document, c.documentRetrievalError
+}
+
+func (c *codeGraphDataResolver) Provenance(_ context.Context) (resolverstubs.CodeGraphDataProvenance, error) {
+	return c.provenance, nil
+}
+
+func (c *codeGraphDataResolver) Commit(_ context.Context) (string, error) {
+	return c.upload.Commit, nil
+}
+
+func (c *codeGraphDataResolver) ToolInfo(_ context.Context) (*resolverstubs.CodeGraphToolInfo, error) {
+	return &resolverstubs.CodeGraphToolInfo{Name_: &c.upload.Indexer, Version_: &c.upload.IndexerVersion}, nil
 }

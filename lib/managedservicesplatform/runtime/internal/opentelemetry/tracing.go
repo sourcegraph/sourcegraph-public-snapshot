@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	gcptraceexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
@@ -19,6 +17,9 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/embedded"
+	apioption "google.golang.org/api/option"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,6 +40,9 @@ func configureTracing(ctx context.Context, logger log.Logger, config Config, res
 			gcptraceexporter.WithErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 				logger.Warn("gcptraceexporter error", log.Error(err))
 			})),
+			gcptraceexporter.WithTraceClientOptions([]apioption.ClientOption{
+				apioption.WithTelemetryDisabled(),
+			}),
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "gcptraceexporter.New")

@@ -22,6 +22,9 @@ test.describe('cloned repository', () => {
                 repositoryRedirect: {
                     id: '1',
                     name: repoName,
+                    commit: {
+                        oid: '123456789',
+                    },
                 },
             }),
         })
@@ -32,9 +35,8 @@ test.describe('cloned repository', () => {
         await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
     })
 
-    test.skip('has search button', async ({ page }) => {
-        await page.getByRole('button', { name: 'Search', exact: true }).click()
-        await expect(page.getByRole('textbox')).toHaveText(String.raw`repo:^github\.com/sourcegraph/sourcegraph$ `)
+    test('has prepopulated search bar', async ({ page }) => {
+        await expect(page.getByText('repo:^github\\.com/sourcegraph')).toBeVisible()
     })
 })
 

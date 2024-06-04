@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -75,8 +76,15 @@ func createOrUpdateObject[R client.Object](
 	annotations[config.AnnotationKeyConfigHash] = cfgHash
 	obj.SetAnnotations(annotations)
 
-	if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
-		return errors.Newf("setting controller reference: %w", err)
+	// Namespaced objects can't own non-namespaced objects. Trying to
+	// SetControllerReference on cluster-scoped resources gives the following
+	// error: "cluster-scoped resource must not have a namespace-scoped owner".
+	// non-namespaced resources will therefore not be garbage-collected when the
+	// ConfigMap is deleted.
+	if !isNamespaced(obj) {
+		if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
+			return errors.Newf("setting controller reference: %w", err)
+		}
 	}
 
 	existingRes := objKind
@@ -105,6 +113,16 @@ func createOrUpdateObject[R client.Object](
 
 	logger.Info("Found existing object with spec that matches the desired state. Will do nothing.")
 	return nil
+}
+
+func isNamespaced(obj client.Object) bool {
+	if _, ok := obj.(*rbacv1.ClusterRole); ok {
+		return true
+	}
+	if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+		return true
+	}
+	return false
 }
 
 func (r *Reconciler) ensureObjectDeleted(ctx context.Context, obj client.Object) error {

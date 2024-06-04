@@ -10,6 +10,7 @@ import (
 	"context"
 	"sync"
 
+	scip "github.com/sourcegraph/scip/bindings/go/scip"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -206,6 +207,9 @@ type MockCodeNavService struct {
 	// GetStencilFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStencil.
 	GetStencilFunc *CodeNavServiceGetStencilFunc
+	// SCIPDocumentFunc is an instance of a mock function object controlling
+	// the behavior of the method SCIPDocument.
+	SCIPDocumentFunc *CodeNavServiceSCIPDocumentFunc
 	// SnapshotForDocumentFunc is an instance of a mock function object
 	// controlling the behavior of the method SnapshotForDocument.
 	SnapshotForDocumentFunc *CodeNavServiceSnapshotForDocumentFunc
@@ -224,7 +228,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) (r0 []shared1.UploadLocation, r1 error) {
+			defaultHook: func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) (r0 []shared1.UploadLocation, r1 codenav.Cursor, r2 error) {
 				return
 			},
 		},
@@ -263,6 +267,11 @@ func NewMockCodeNavService() *MockCodeNavService {
 				return
 			},
 		},
+		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
+			defaultHook: func(context.Context, int, string) (r0 *scip.Document, r1 error) {
+				return
+			},
+		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
 			defaultHook: func(context.Context, int, string, string, int) (r0 []shared1.SnapshotData, r1 error) {
 				return
@@ -286,7 +295,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
-			defaultHook: func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
+			defaultHook: func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error) {
 				panic("unexpected invocation of MockCodeNavService.GetDefinitions")
 			},
 		},
@@ -323,6 +332,11 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.Range, error) {
 				panic("unexpected invocation of MockCodeNavService.GetStencil")
+			},
+		},
+		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
+			defaultHook: func(context.Context, int, string) (*scip.Document, error) {
+				panic("unexpected invocation of MockCodeNavService.SCIPDocument")
 			},
 		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
@@ -369,6 +383,9 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: i.GetStencil,
+		},
+		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
+			defaultHook: i.SCIPDocument,
 		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
 			defaultHook: i.SnapshotForDocument,
@@ -495,24 +512,24 @@ func (c CodeNavServiceGetClosestCompletedUploadsForBlobFuncCall) Results() []int
 // GetDefinitions method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceGetDefinitionsFunc struct {
-	defaultHook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)
-	hooks       []func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)
+	defaultHook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error)
+	hooks       []func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error)
 	history     []CodeNavServiceGetDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDefinitions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.PositionalRequestArgs, v2 codenav.RequestState) ([]shared1.UploadLocation, error) {
-	r0, r1 := m.GetDefinitionsFunc.nextHook()(v0, v1, v2)
-	m.GetDefinitionsFunc.appendCall(CodeNavServiceGetDefinitionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 codenav.PositionalRequestArgs, v2 codenav.RequestState, v3 codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error) {
+	r0, r1, r2 := m.GetDefinitionsFunc.nextHook()(v0, v1, v2, v3)
+	m.GetDefinitionsFunc.appendCall(CodeNavServiceGetDefinitionsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the GetDefinitions
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error)) {
 	f.defaultHook = hook
 }
 
@@ -520,7 +537,7 @@ func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Cont
 // GetDefinitions method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error)) {
+func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -528,20 +545,20 @@ func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, c
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []shared1.UploadLocation, r1 error) {
-	f.SetDefaultHook(func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
-		return r0, r1
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []shared1.UploadLocation, r1 codenav.Cursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []shared1.UploadLocation, r1 error) {
-	f.PushHook(func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
-		return r0, r1
+func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []shared1.UploadLocation, r1 codenav.Cursor, r2 error) {
+	f.PushHook(func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState) ([]shared1.UploadLocation, error) {
+func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, codenav.PositionalRequestArgs, codenav.RequestState, codenav.Cursor) ([]shared1.UploadLocation, codenav.Cursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -583,24 +600,30 @@ type CodeNavServiceGetDefinitionsFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 codenav.RequestState
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 codenav.Cursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 codenav.Cursor
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeNavServiceGetDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeNavServiceGetDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // CodeNavServiceGetDiagnosticsFunc describes the behavior when the
@@ -1416,6 +1439,117 @@ func (c CodeNavServiceGetStencilFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceSCIPDocumentFunc describes the behavior when the
+// SCIPDocument method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceSCIPDocumentFunc struct {
+	defaultHook func(context.Context, int, string) (*scip.Document, error)
+	hooks       []func(context.Context, int, string) (*scip.Document, error)
+	history     []CodeNavServiceSCIPDocumentFuncCall
+	mutex       sync.Mutex
+}
+
+// SCIPDocument delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavService) SCIPDocument(v0 context.Context, v1 int, v2 string) (*scip.Document, error) {
+	r0, r1 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2)
+	m.SCIPDocumentFunc.appendCall(CodeNavServiceSCIPDocumentFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SCIPDocument method
+// of the parent MockCodeNavService instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, string) (*scip.Document, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SCIPDocument method of the parent MockCodeNavService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavServiceSCIPDocumentFunc) PushHook(hook func(context.Context, int, string) (*scip.Document, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceSCIPDocumentFunc) SetDefaultReturn(r0 *scip.Document, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceSCIPDocumentFunc) PushReturn(r0 *scip.Document, r1 error) {
+	f.PushHook(func(context.Context, int, string) (*scip.Document, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceSCIPDocumentFunc) nextHook() func(context.Context, int, string) (*scip.Document, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceSCIPDocumentFunc) appendCall(r0 CodeNavServiceSCIPDocumentFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceSCIPDocumentFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavServiceSCIPDocumentFunc) History() []CodeNavServiceSCIPDocumentFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceSCIPDocumentFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceSCIPDocumentFuncCall is an object that describes an
+// invocation of method SCIPDocument on an instance of MockCodeNavService.
+type CodeNavServiceSCIPDocumentFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *scip.Document
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceSCIPDocumentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceSCIPDocumentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

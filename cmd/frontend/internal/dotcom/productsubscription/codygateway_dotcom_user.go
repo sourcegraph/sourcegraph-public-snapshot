@@ -61,7 +61,7 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		return nil, err
 	}
 
-	dbTokens := newDBTokens(r.DB)
+	dbTokens := NewTokensDB(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -279,8 +279,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
-
-	models := allowedModels(scope, subscription.ApplyProRateLimits)
+	models := allowedModels(scope, true)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -373,7 +372,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			}
 		}
 
-		return []string{
+		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
@@ -383,6 +382,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
+			"google/gemini-1.5-pro-latest",
+			"google/gemini-1.5-flash-latest",
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
@@ -393,6 +394,8 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
 		}
+		return chatModels
+
 	case types.CompletionsFeatureCode:
 		return allCodeCompletionModels
 	default:

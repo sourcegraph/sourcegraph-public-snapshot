@@ -1,13 +1,16 @@
-import { BillingInterval } from './teamSubscriptions'
+import type { BillingInterval } from './teamSubscriptions'
 
 export interface CreateCheckoutSessionRequest {
     interval: BillingInterval
     seats: number
+    canChangeSeatCount?: boolean
 
     customerEmail?: string
     showPromoCodeField: boolean
 
     returnUrl?: string
+
+    stripeUiMode?: 'embedded' | 'custom'
 }
 
 export interface CreateCheckoutSessionResponse {

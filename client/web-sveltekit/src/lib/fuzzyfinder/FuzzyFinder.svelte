@@ -17,7 +17,6 @@
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
@@ -52,9 +51,9 @@
 
     const client = getGraphQLClient()
     const tabs: (Tab & { source: CompletionSource<FuzzyFinderResult> })[] = [
-        { id: 'repos', title: 'Repos', source: createRepositorySource(client) },
-        { id: 'symbols', title: 'Symbols', source: createSymbolSource(client, () => scope) },
-        { id: 'files', title: 'Files', source: createFileSource(client, () => scope) },
+        { id: 'repos', title: 'Repos', shortcut: reposHotkey, source: createRepositorySource(client) },
+        { id: 'symbols', title: 'Symbols', shortcut: symbolsHotkey, source: createSymbolSource(client, () => scope) },
+        { id: 'files', title: 'Files', shortcut: filesHotkey, source: createFileSource(client, () => scope) },
     ]
 
     function selectNext() {
@@ -194,19 +193,9 @@
                     selectedOption = 0
                     input?.focus()
                 }}
-            >
-                <span slot="after-title" let:tab>
-                    {#if tab.id === 'repos'}
-                        <KeyboardShortcut shorcut={reposHotkey} />
-                    {:else if tab.id === 'symbols'}
-                        <KeyboardShortcut shorcut={symbolsHotkey} />
-                    {:else if tab.id === 'files'}
-                        <KeyboardShortcut shorcut={filesHotkey} />
-                    {/if}
-                </span>
-            </TabsHeader>
+            />
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon svgPath={mdiClose} aria-label="Close" />
+                <Icon svgPath={mdiClose} aria-label="Close" inline />
             </Button>
         </header>
         <main>
@@ -284,15 +273,16 @@
 
 <style lang="scss">
     dialog {
-        background-color: var(--color-bg-1);
         width: 80vw;
         height: 80vh;
-        border: 1px solid var(--border-color);
         padding: 0;
         overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--body-bg);
 
         &::backdrop {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: var(--modal-bg);
         }
     }
 
@@ -322,6 +312,7 @@
             margin: 0;
             padding: 0;
             overflow-y: auto;
+            list-style: none;
         }
 
         [role='option'] {

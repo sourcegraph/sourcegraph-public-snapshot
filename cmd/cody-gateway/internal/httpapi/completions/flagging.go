@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
@@ -24,6 +25,10 @@ type flaggingConfig struct {
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
 
+	// FlaggedModelNames is a slice of LLM model names, e.g. "gpt-3.5-turbo",
+	// that will lead to the request getting flagged.
+	FlaggedModelNames []string
+
 	// If false, flaggingResult.shouldBlock will always be false when returned by isFlaggedRequest.
 	RequestBlockingEnabled bool
 }
@@ -31,6 +36,7 @@ type flaggingConfig struct {
 // makeFlaggingConfig converts the config.FlaggingConfig into the type used in this package.
 // (This just avoids taking a hard dependency, allowing the config package to change independently, etc.)
 func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
+
 	return flaggingConfig{
 		AllowedPromptPatterns:          cfg.AllowedPromptPatterns,
 		BlockedPromptPatterns:          cfg.BlockedPromptPatterns,
@@ -38,11 +44,15 @@ func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
 		PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
 		MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
 		ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		FlaggedModelNames:              cfg.FlaggedModelNames,
 		RequestBlockingEnabled:         cfg.RequestBlockingEnabled,
 	}
 }
 
 type flaggingRequest struct {
+	// ModelName is the slug for the specific LLM model.
+	// e.g. "llama-v2-13b-code"
+	ModelName       string
 	FlattenedPrompt string
 	MaxTokens       int
 }
@@ -57,11 +67,15 @@ type flaggingResult struct {
 
 // isFlaggedRequest inspects the request and determines if it should be "flagged". This is how we
 // perform basic abuse-detection and filtering. The implementation should err on the side of efficency,
-// as the goal isn't for 100% accuracy. But to catch obvious abuse patterns, and let other backend
-// systems do a more through review async.
+// as the goal isn't for 100% accuracy - isFlaggedRequest should catch obvious abuse patterns, and let other backend
+// systems do a more thorough review async.
 func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
+
+	if r.ModelName != "" && slices.Contains(cfg.FlaggedModelNames, r.ModelName) {
+		reasons = append(reasons, "model_used")
+	}
 
 	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
 		reasons = append(reasons, "unknown_prompt")
@@ -87,15 +101,16 @@ func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingCon
 		}
 	}
 
-	if len(reasons) == 0 {
-		return nil, nil
-	}
-
 	// The request has been flagged. Now we determine if it is serious enough to outright block the request.
 	var blocked bool
 	hasBlockedPhrase, phrase := containsAny(prompt, cfg.BlockedPromptPatterns)
 	if tokenCount > cfg.PromptTokenBlockingLimit || r.MaxTokens > cfg.ResponseTokenBlockingLimit || hasBlockedPhrase {
 		blocked = true
+		reasons = append(reasons, "blocked_phrase")
+	}
+
+	if len(reasons) == 0 {
+		return nil, nil
 	}
 
 	// Maximum number of characters of the prompt prefix we include in logs and telemetry.

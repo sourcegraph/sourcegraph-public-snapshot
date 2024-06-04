@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "perforce",
+    srcs = [
+        "config.go",
+        "job.go",
+        "mapper.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/perforce",
+    tags = [TAG_PLATFORM_SOURCE],
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/env",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/perforce",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "perforce_test",
+    srcs = ["mapper_test.go"],
+    embed = [":perforce"],
+    tags = [
+        "requires-network",
+        TAG_PLATFORM_SOURCE,
+    ],
+    deps = [
+        "//internal/api",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/database/dbutil",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/types",
+        "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +15,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -62,7 +63,7 @@ var hopHeaders = map[string]struct{}{
 // Methods do not need to be concurrency-safe, as they are only called sequentially.
 type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// getAPIURLByFeature returns the upstream API endpoint to call for the given feature.
-	getAPIURLByFeature(codygateway.Feature) string
+	getAPIURL(codygateway.Feature, ReqT) string
 
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// This is where we enforce things like character/token limits, etc. Any non-nil errors
@@ -74,7 +75,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 
 	// shouldFlagRequest is called after the request has been validated, and is where we
 	// run various heuristics to check if the request is abusive in nature. (e.g. suspiciously
-	// long, contains words/phrases from a blocklist, etc.)
+	// long, contains words/phrases from a blocklist, known bad actor etc.)
 	//
 	// All implementations of this function should call isFlaggedRequest(...), along with
 	// any LLM or provider-specific logic.
@@ -113,6 +114,15 @@ type UpstreamRequest interface {
 	BuildPrompt() string
 }
 
+type UpstreamHandlerConfig struct {
+	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
+	// limit events in case a retry-after is not provided by the upstream
+	// response.
+	DefaultRetryAfterSeconds    int
+	AutoFlushStreamingResponses bool
+	IdentifiersToLogFor         collections.Set[string]
+}
+
 // makeUpstreamHandler a big deal. This method will produce an http.Handler that will handle converting
 // the Cody Gateway user's request to the backing LLM ("upstream provider"). This is how we provide a
 // consistent way for providing logging, telemetry, rate limiting, etc. across multiple upstream providers.
@@ -126,27 +136,23 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
-
+	// unprefixed upstream model names
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
 	flaggedPromptRecorder PromptRecorder,
 
-	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
-	// limit events in case a retry-after is not provided by the upstream
-	// response.
-	defaultRetryAfterSeconds int,
-	autoFlushStreamingResponses bool,
+	config UpstreamHandlerConfig,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName)
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
 	// for rate limits from actor sources.
-	clonedAllowedModels := make([]string, len(allowedModels))
-	copy(clonedAllowedModels, allowedModels)
-	for i := range clonedAllowedModels {
-		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
+	prefixedAllowedModels := make([]string, len(allowedModels))
+	copy(prefixedAllowedModels, allowedModels)
+	for i := range prefixedAllowedModels {
+		prefixedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, prefixedAllowedModels[i])
 	}
 
 	// upstreamHandler is the actual HTTP handle that will perform "all of the things"
@@ -193,6 +199,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// This isn't very robust, but should tide us through a brief transition
 		// period until everything deploys and our caches refresh.
 		for i := range rateLimit.AllowedModels {
+			if rateLimit.AllowedModels[i] == "*" {
+				continue // special wildcard value
+			}
 			if !strings.Contains(rateLimit.AllowedModels[i], "/") {
 				rateLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, rateLimit.AllowedModels[i])
 			}
@@ -279,7 +288,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}
 
 		// Create a new request to send upstream, making sure we retain the same context.
-		upstreamURL := methods.getAPIURLByFeature(feature)
+		upstreamURL := methods.getAPIURL(feature, body)
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
@@ -298,7 +307,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// the prefix yet when extracted - we need to add it back here. This
 		// full gatewayModel is also used in events tracking.
 		gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-		if allowed := intersection(clonedAllowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+		if allowed := rateLimit.EvaluateAllowedModels(prefixedAllowedModels); !isAllowedModel(allowed, gatewayModel) {
 			response.JSONError(logger, w, http.StatusBadRequest,
 				errors.Newf("model %q is not allowed, allowed: [%s]",
 					gatewayModel, strings.Join(allowed, ", ")))
@@ -326,6 +335,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 			if flaggingResult.IsFlagged() {
 				requestMetadata = events.MergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
+			}
+			if act.IsDotComActor() && config.IdentifiersToLogFor.Has(act.ID) {
+				requestMetadata["full_prompt"] = body.BuildPrompt()
 			}
 			usageData := map[string]any{
 				"prompt_character_count":           promptUsage.characters,
@@ -436,7 +448,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
 				w.Header().Set("retry-after", upstreamRetryAfter)
 			} else {
-				w.Header().Set("retry-after", strconv.Itoa(defaultRetryAfterSeconds))
+				w.Header().Set("retry-after", strconv.Itoa(config.DefaultRetryAfterSeconds))
 			}
 		}
 
@@ -449,7 +461,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 		// (so events are sent to the client as soon as possible)
 		var responseWriter io.Writer = w
-		if autoFlushStreamingResponses && body.ShouldStream() {
+		if config.AutoFlushStreamingResponses && body.ShouldStream() {
 			if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 				responseWriter = fw
 			} else {
@@ -524,13 +536,4 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 	}
 	return false
-}
-
-func intersection(a, b []string) (c []string) {
-	for _, val := range a {
-		if slices.Contains(b, val) {
-			c = append(c, val)
-		}
-	}
-	return c
 }

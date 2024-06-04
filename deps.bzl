@@ -45,6 +45,13 @@ def go_dependencies():
         version = "v1.16.1",
     )
     go_repository(
+        name = "com_connectrpc_grpcreflect",
+        build_file_proto_mode = "disable_global",
+        importpath = "connectrpc.com/grpcreflect",
+        sum = "h1:Q6og1S7HinmtbEuBvARLNwYmTbhEGRpHDhqrPNlmK+U=",
+        version = "v1.2.0",
+    )
+    go_repository(
         name = "com_connectrpc_otelconnect",
         build_file_proto_mode = "disable_global",
         importpath = "connectrpc.com/otelconnect",
@@ -5661,8 +5668,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_notionreposync",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/notionreposync",
-        sum = "h1:XB04N3LJEZaJFzI9+q3qxSXNRNw3UvwPL5zbIFvLvaM=",
-        version = "v0.0.0-20240510213306-87052870048d",
+        sum = "h1:1uwYDdt1HGBwl+5a1/zyUehFX4/1969Uv34vKlmltcY=",
+        version = "v0.0.0-20240517090426-98b2d4b017d7",
     )
     go_repository(
         name = "com_github_sourcegraph_run",
@@ -5683,6 +5690,12 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
+        patch_args = ["-p1"],
+        # For some reason, this isn't being included automatically, causing a test failure
+        # when we try to use the dependency.
+        patches = [
+            "//third_party/com_github_sourcegraph_scip:add_parser_h_to_srcs.patch",
+        ],
         sum = "h1:3EOkChYOntwHl0pPSAju7rj0oRuujh8owC4vjGDEr0s=",
         version = "v0.3.3",
     )
@@ -5690,11 +5703,12 @@ def go_dependencies():
         name = "com_github_sourcegraph_sourcegraph_accounts_sdk_go",
         build_directives = [
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+            "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/background @//lib/background",
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph-accounts-sdk-go",
-        sum = "h1:lOQJ+wDbQ5lSBuAv6GgCuoFKucte5k2bPf1a7navsd0=",
-        version = "v0.0.0-20240426173441-db5b0a145ceb",
+        sum = "h1:+7J5NMA9FJDaf0IhNpIcTEg+Gzu/GN5dRT40wdFU10I=",
+        version = "v0.0.0-20240531163352-fe74c17cf0d1",
     )
     go_repository(
         name = "com_github_sourcegraph_zoekt",
@@ -5704,8 +5718,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:9g0lbxps+Yr99nE2Y8RnhPwV6HUYUxEpHfB+RISFfdU=",
-        version = "v0.0.0-20240514170004-fe8f2a3d9cab",
+        sum = "h1:p2PMQkXe01gWBLgYqpQKnbg6OzR62/Py1CK2YDbaRCU=",
+        version = "v0.0.0-20240528215134-640102a4a30e",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",
@@ -6316,8 +6330,8 @@ def go_dependencies():
         name = "com_google_cloud_go",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go",
-        sum = "h1:tpFCD7hpHFlQ8yPwT3x+QeXqc2T6+n6T+hmABHfDUSM=",
-        version = "v0.112.0",
+        sum = "h1:uJSeirPke5UNZHIb4SxfZklVSiWWVqW4oXlETwZziwM=",
+        version = "v0.112.1",
     )
     go_repository(
         name = "com_google_cloud_go_accessapproval",
@@ -6918,8 +6932,8 @@ def go_dependencies():
         name = "com_google_cloud_go_pubsub",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/pubsub",
-        sum = "h1:dfEPuGCHGbWUhaMCTHUFjfroILEkx55iUmKBZTP5f+Y=",
-        version = "v1.36.1",
+        sum = "h1:0uEEfaB1VIJzabPpwpZf44zWAKAme3zwKKxHk7vJQxQ=",
+        version = "v1.37.0",
     )
     go_repository(
         name = "com_google_cloud_go_pubsublite",
@@ -7044,8 +7058,8 @@ def go_dependencies():
         name = "com_google_cloud_go_storage",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/storage",
-        sum = "h1:WI8CsaFO8Q9KjPVtsZ5Cmi0dXV25zMoX0FklT7c3Jm4=",
-        version = "v1.37.0",
+        sum = "h1:Az68ZRGlnNTpIBbLjSMIV2BDcwwXYlRlQzis0llkpJg=",
+        version = "v1.38.0",
     )
     go_repository(
         name = "com_google_cloud_go_storagetransfer",
@@ -7945,6 +7959,13 @@ def go_dependencies():
         version = "v1.3.0",
     )
     go_repository(
+        name = "net_pgregory_rapid",
+        build_file_proto_mode = "disable_global",
+        importpath = "pgregory.net/rapid",
+        sum = "h1:CMa0sjHSru3puNx+J0MIAuiiEV4N0qj8/cMWGBBCsjw=",
+        version = "v1.1.0",
+    )
+    go_repository(
         name = "net_starlark_go",
         build_file_proto_mode = "disable_global",
         importpath = "go.starlark.net",
@@ -8053,8 +8074,8 @@ def go_dependencies():
         name = "org_golang_google_protobuf",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/protobuf",
-        sum = "h1:uNO2rsAINq/JlFpSdYEKIZ0uKD/R9cpdv0T+yoGwGmI=",
-        version = "v1.33.0",
+        sum = "h1:Qo/qEd2RZPCf2nKuorzksSknv0d3ERwp1vFG38gSmH4=",
+        version = "v1.34.0",
     )
     go_repository(
         name = "org_golang_x_crypto",

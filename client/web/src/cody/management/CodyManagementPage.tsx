@@ -18,11 +18,12 @@ import {
     type UserCodyUsageVariables,
     CodySubscriptionPlan,
 } from '../../graphql-operations'
+import { CodyAlert } from '../components/CodyAlert'
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { manageSubscriptionRedirectURL } from '../util'
+import { getManageSubscriptionPageURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -30,7 +31,6 @@ import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -40,7 +40,6 @@ export enum EditorStep {
 }
 
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -62,6 +61,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate(`/cody/switch-account/${codyClientUser}`)
         }
     }, [accountSwitchRequired, codyClientUser, navigate])
+
+    const welcomeToPro = parameters.get('welcome') === '1'
 
     const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
@@ -93,7 +94,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
+    if (!isCodyEnabled() || !subscription) {
         return null
     }
 
@@ -103,6 +104,14 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
+                {welcomeToPro && (
+                    <CodyAlert variant="purpleCodyPro">
+                        <H2 className="mt-4">Welcome to Cody Pro</H2>
+                        <Text size="small" className="mb-0">
+                            You now have Cody Pro with access to unlimited autocomplete, chats, and commands.
+                        </Text>
+                    </CodyAlert>
+                )}
                 <PageHeader className="mb-4 mt-4">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
@@ -133,11 +142,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     variant="primary"
                                     size="sm"
-                                    href={manageSubscriptionRedirectURL}
-                                    onClick={event => {
-                                        event.preventDefault()
+                                    to={getManageSubscriptionPageURL()}
+                                    onClick={() => {
                                         telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                        window.location.href = manageSubscriptionRedirectURL
                                     }}
                                 >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />

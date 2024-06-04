@@ -17,6 +17,10 @@ requirements:
     only: # We only need this to create CI builds.
       - internal.create
       - promoteToPublic.create
+  - name: GitHub Token to submit changelogs
+    env: DEVX_SERVICE_GH_TOKEN
+    only:
+      - promoteToPublic.finalize
 
 internal:
   create:
@@ -87,6 +91,33 @@ test:
           echo "❌ Tag '{{version}}' already exists"
           exit 1
         fi
+    - name: 'check:frontend and server image contain bundle'
+      cmd: |
+        set -eu
+
+        REGISTRY="${PROD_REGISTRY:-''}"
+
+        # the reason this is not in the requirements check of the release yaml is because those checks also
+        # apply when running the release tooling locally, and the testing steps are supposed to run in CI
+        if [ -z ${REGISTRY} ]; then
+          echo "PROD_REGISTRY is not set - unable to check frontend/server image"
+          exit 1
+        fi
+
+        for image in frontend server; do
+          IMAGE="${REGISTRY}/$image:{{tag}}"
+
+          # Pull the image so that we can inspect it
+          echo "pulling $image image ${IMAGE}"
+          # docker pull "${IMAGE}"
+
+          echo "checking $image binary in $image image for web bundle"
+          marker=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "strings $image | grep WEB_BUNDLE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          if [[ "$marker" != '"_marker": "WEB_BUNDLE"' ]]; then
+            echo "$image:{{tag}} does not contain the web bundle marker string: '$marker'"
+            exit 1
+          fi
+        done
     - name: 'check:migrator-schemas'
       cmd: |
         set -eu
@@ -151,25 +182,25 @@ test:
 promoteToPublic:
   create:
     steps:
-      #      - name: 'validate promotion criteria'
-      #        cmd: |
-      #          echo "validating promotion criteria"
-      #          body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
-      #          exit_code=$?
+      # - name: 'validate promotion criteria'
+      #   cmd: |
+      #     echo "validating promotion criteria"
+      #     body=$(wget --content-on-error -O- --header="Content-Type: application/json" "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}")
+      #     exit_code=$?
       #
-      #          if [ $exit_code != 0 ]; then
-      #            echo "❌ Failed to fetch release on release registry, got:"
-      #            echo "--- raw body ---"
-      #            echo $body
-      #            echo "--- raw body ---"
-      #            exit $exit_code
-      #          fi
+      #     if [ $exit_code != 0 ]; then
+      #       echo "❌ Failed to fetch release on release registry, got:"
+      #       echo "--- raw body ---"
+      #       echo $body
+      #       echo "--- raw body ---"
+      #       exit $exit_code
+      #     fi
       #
-      #          is_development=$(echo "$body" | jq -r '.is_development')
-      #          if [ "$is_development" = "true" ]; then
-      #            echo "cannot promote a development release"
-      #            exit 1
-      #          fi
+      #     is_development=$(echo "$body" | jq -r '.is_development')
+      #     if [ "$is_development" = "true" ]; then
+      #       echo "cannot promote a development release"
+      #       exit 1
+      #     fi
       - name: 'buildkite'
         cmd: |
           # We set DISABLE_ASPECT_WORKFLOWS to true, because the promotion is purely about retagging images
@@ -287,3 +318,38 @@ promoteToPublic:
               echo "Posted to slack."
             fi
           done
+      - name: 'Generate and submit changelog pull request on sourcegraph/docs'
+        cmd: |
+          set -eu -o pipefail
+
+          # Cleanup after ourselves.
+          trap 'rm ./changelog 2>/dev/null || true' EXIT
+
+          # Find the asset id for the changelog binary on sourcegraph/devx-service latest release
+          asset_id=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DEVX_SERVICE_GH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/sourcegraph/devx-service/releases/latest | jq '.assets[] | select(.name=="changelog") | .id')
+
+          # Download the binary
+          curl -L \
+            -H "Accept: application/octet-stream" \
+            -H "Authorization: Bearer $DEVX_SERVICE_GH_TOKEN"\
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o changelog \
+            "https://api.github.com/repos/sourcegraph/devx-service/releases/assets/${asset_id}"
+
+          chmod +x changelog
+
+          pr_url=$(./changelog \
+            --github.token="$DEVX_GH_TOKEN" \
+            update-as-pr \
+            --github.repo="sourcegraph/sourcegraph" \
+            --output.repo="sourcegraph/docs" \
+            --output.repo.base="main" \
+            --output.changelog="docs/CHANGELOG.mdx" \
+            --output.changelog.marker='{/* CHANGELOG_START */}' \
+            --releaseregistry.token="$RELEASE_REGISTRY_TOKEN" \
+            --releaseregistry.name="sourcegraph" \
+            --releaseregistry.version={{version}})
+
+          cat << EOF | buildkite-agent annotate --style info
+          Succesfully submitted [changelog pull request for {{version}}]($pr_url)
+          EOF

@@ -2,6 +2,8 @@
     import { setContext, onMount } from 'svelte'
 
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore, QueryState } from '$lib/search/state'
@@ -20,6 +22,7 @@
 
     onMount(() => {
         SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewHomePage)
+        TELEMETRY_V2_RECORDER.recordEvent('home', 'view')
     })
 
     function handleSubmit(state: QueryState) {
@@ -28,6 +31,9 @@
             { source: 'home', query: state.query },
             { source: 'home', patternType: state.patternType }
         )
+        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['home'] },
+        })
     }
 </script>
 

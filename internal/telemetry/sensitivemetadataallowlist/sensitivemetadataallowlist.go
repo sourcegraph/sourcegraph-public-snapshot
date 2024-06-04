@@ -24,6 +24,8 @@ var additionalAllowedEventTypes = func() []EventType {
 
 // AllowedEventTypes denotes a list of all events allowed to export sensitive
 // telemetry metadata.
+//
+// 🚨 SECURITY: Must get approval from data-analytics team before adding events to this list.
 func AllowedEventTypes() EventTypes {
 	return eventTypes(append(additionalAllowedEventTypes,
 		// Example event for testing.
@@ -39,7 +41,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "suggested",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
@@ -49,7 +51,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "accepted",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
@@ -76,13 +78,13 @@ func eventTypes(types ...EventType) EventTypes {
 //
 // 🚨 SECURITY: Be very careful with the redaction modes used here, as it impacts
 // what data we export from customer Sourcegraph instances.
-func (e EventTypes) Redact(event *telemetrygatewayv1.Event) {
+func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 	if dotcom.SourcegraphDotComMode() {
-		redactEvent(event, redactNothing, nil)
+		return redactEvent(event, redactNothing, nil)
 	} else if keys, allowed := e.IsAllowed(event); allowed {
-		redactEvent(event, redactMarketingAndUnallowedPrivateMetadataKeys, keys)
+		return redactEvent(event, redactMarketingAndUnallowedPrivateMetadataKeys, keys)
 	}
-	redactEvent(event, redactAllSensitive, nil)
+	return redactEvent(event, redactAllSensitive, nil)
 }
 
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that

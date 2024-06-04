@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -15,6 +13,8 @@ import (
 
 type operations struct {
 	gitBlobLsifData *observation.Operation
+	codeGraphData   *observation.Operation
+	occurrences     *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -25,6 +25,7 @@ type operations struct {
 	ranges          *observation.Operation
 	snapshot        *observation.Operation
 	visibleIndexes  *observation.Operation
+	usagesForSymbol *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -45,6 +46,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		gitBlobLsifData: op("GitBlobLsifData"),
+		codeGraphData:   op("CodeGraphData"),
+		occurrences:     op("Occurrences"),
 		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
@@ -55,6 +58,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		ranges:          op("Ranges"),
 		snapshot:        op("Snapshot"),
 		visibleIndexes:  op("VisibleIndexes"),
+		usagesForSymbol: op("UsagesForSymbol"),
 	}
 }
 
@@ -88,12 +92,5 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 }
 
 func getObservationArgs(args codenav.PositionalRequestArgs) observation.Args {
-	return observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-		attribute.Int("limit", args.Limit),
-	}}
+	return observation.Args{Attrs: args.Attrs()}
 }

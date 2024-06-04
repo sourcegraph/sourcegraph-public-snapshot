@@ -97,7 +97,7 @@ if [ "$response" != "PONG" ]; then
   echo "$response"
   exit 1
 fi
-					`,
+`,
 				},
 			},
 		},
@@ -160,11 +160,10 @@ func (r *Reconciler) reconcileRedisService(ctx context.Context, sg *config.Sourc
 
 func (r *Reconciler) reconcileRedisPVC(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
-	storageSize, err := resource.ParseQuantity(cfg.StorageSize)
+	pvc, err := pvc.NewPersistentVolumeClaim(name, sg.Namespace, cfg)
 	if err != nil {
-		return errors.Wrap(err, "parsing storage size")
+		return err
 	}
-	pvc := pvc.NewPersistentVolumeClaim(name, sg.Namespace, storageSize, sg.Spec.StorageClass.Name)
 	return reconcileObject(ctx, r, cfg, &pvc, &corev1.PersistentVolumeClaim{}, sg, owner)
 }
 

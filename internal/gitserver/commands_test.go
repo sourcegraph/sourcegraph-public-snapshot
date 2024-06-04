@@ -254,7 +254,7 @@ func TestClient_StreamBlameFile(t *testing.T) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				c := NewMockGitserverServiceClient()
 				bc := NewMockGitserverService_BlameClient()
-				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{Repo: "repo", Commit: "deadbeef", Path: "file"})
+				s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{Repo: "repo", Commit: "deadbeef", Path: []byte("file")})
 				require.NoError(t, err)
 				bc.RecvFunc.PushReturn(nil, s.Err())
 				c.BlameFunc.SetDefaultReturn(bc, nil)
@@ -1505,7 +1505,7 @@ func TestClient_Stat(t *testing.T) {
 					c := NewMockGitserverServiceClient()
 					s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 						Repo: "repo",
-						Path: "file",
+						Path: []byte("file"),
 					})
 					require.NoError(t, err)
 					c.StatFunc.PushReturn(nil, s.Err())
@@ -1670,7 +1670,7 @@ func TestClient_ReadDir(t *testing.T) {
 					ss := NewMockGitserverService_ReadDirClient()
 					s, err := status.New(codes.NotFound, "file not found").WithDetails(&proto.FileNotFoundPayload{
 						Repo: "repo",
-						Path: "file",
+						Path: []byte("file"),
 					})
 					ss.RecvFunc.SetDefaultReturn(nil, s.Err())
 					require.NoError(t, err)

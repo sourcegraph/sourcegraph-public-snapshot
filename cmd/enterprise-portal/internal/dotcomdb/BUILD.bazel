@@ -5,21 +5,27 @@ go_library(
     name = "dotcomdb",
     srcs = ["dotcomdb.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//internal/license",
         "//internal/licensing",
         "//internal/productsubscription",
         "//lib/enterpriseportal/codyaccess/v1:codyaccess",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
         "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
     ],
 )
 
 go_test(
     name = "dotcomdb_test",
     srcs = ["dotcomdb_test.go"],
-    tags = ["requires-network"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
     deps = [
         ":dotcomdb",
         "//cmd/frontend/dotcomproductsubscriptiontest",
@@ -29,9 +35,10 @@ go_test(
         "//internal/database/dbtest",
         "//internal/license",
         "//internal/licensing",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/pointers",
         "@com_github_jackc_pgx_v4//stdlib",
-        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

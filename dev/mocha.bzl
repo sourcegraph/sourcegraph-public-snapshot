@@ -1,6 +1,6 @@
-load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 
 NON_BUNDLED = [
     # Dependencies loaded by mocha itself before the tests.
@@ -49,6 +49,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
                 ".node": "copy",
             },
         },
+        # TODO: work through build failures when sandbox plugin is enabled so that bundling is hermetic
+        bazel_sandbox_plugin = False,
     )
 
     args = [

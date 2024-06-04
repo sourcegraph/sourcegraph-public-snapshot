@@ -28,10 +28,12 @@ import (
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/own"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -115,6 +117,8 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 		"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
+		//"codeintel-syntactic-indexing-scheduler": syntactic_indexing.NewSyntacticindexingSchedulerJob(),
+
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
 		"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
@@ -127,7 +131,10 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 
 		"exhaustive-search-job": search.NewSearchJob(),
 
-		"repo-perms-syncer": workerauthz.NewPermsSyncerJob(),
+		"repo-perms-syncer":          workerauthz.NewPermsSyncerJob(),
+		"perforce-changelist-mapper": perforce.NewPerforceChangelistMappingJob(),
+
+		"sourcegraph-accounts-notifications-subscriber": sourcegraphaccounts.NewNotificationsSubscriber(),
 	}
 
 	var config Config
@@ -205,8 +212,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		allRoutines = append(allRoutines, r.Routine)
 	}
 
-	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
 }
 
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.

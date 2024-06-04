@@ -25,21 +25,21 @@ import (
 
 // This implements the newer `/messages` API by Anthropic
 // https://docs.anthropic.com/claude/reference/messages_post
-func NewAnthropicMessagesHandler(
-	baseLogger log.Logger,
-	eventLogger events.Logger,
-	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	httpClient httpcli.Doer,
-	config config.AnthropicConfig,
-	promptRecorder PromptRecorder,
-	autoFlushStreamingResponses bool,
-) (http.Handler, error) {
+func NewAnthropicMessagesHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.AnthropicConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
 	if err != nil {
 		return nil, err
 	}
+
+	// Anthropic primarily uses concurrent requests to rate-limit spikes
+	// in requests, so set a default retry-after that is likely to be
+	// acceptable for Sourcegraph clients to retry (the default
+	// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
+	// able to circumvent concurrents limits without raising an error to the
+	// user.
+	upstreamConfig.DefaultRetryAfterSeconds = 2
+
 	return makeUpstreamHandler[anthropicMessagesRequest](
 		baseLogger,
 		eventLogger,
@@ -50,15 +50,7 @@ func NewAnthropicMessagesHandler(
 		config.AllowedModels,
 		&AnthropicMessagesHandlerMethods{config: config, tokenizer: tokenizer},
 		promptRecorder,
-
-		// Anthropic primarily uses concurrent requests to rate-limit spikes
-		// in requests, so set a default retry-after that is likely to be
-		// acceptable for Sourcegraph clients to retry (the default
-		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
-		// able to circumvent concurrents limits without raising an error to the
-		// user.
-		2, // seconds
-		autoFlushStreamingResponses,
+		upstreamConfig,
 	), nil
 }
 
@@ -161,7 +153,7 @@ type AnthropicMessagesHandlerMethods struct {
 	config    config.AnthropicConfig
 }
 
-func (a *AnthropicMessagesHandlerMethods) getAPIURLByFeature(feature codygateway.Feature) string {
+func (a *AnthropicMessagesHandlerMethods) getAPIURL(feature codygateway.Feature, _ anthropicMessagesRequest) string {
 	return "https://api.anthropic.com/v1/messages"
 }
 
@@ -181,6 +173,7 @@ func (a *AnthropicMessagesHandlerMethods) validateRequest(ctx context.Context, l
 func (a *AnthropicMessagesHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicMessagesRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(a.tokenizer,
 		flaggingRequest{
+			ModelName:       ar.Model,
 			FlattenedPrompt: ar.BuildPrompt(),
 			MaxTokens:       int(ar.MaxTokens),
 		},

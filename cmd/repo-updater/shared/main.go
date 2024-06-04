@@ -109,7 +109,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		repos.ObservedSource(sourcerLogger, sourceMetrics),
 	)
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient())
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, repogitserver.NewRepositoryServiceClient("repoupdater.scheduler"))
 	server := &repoupdater.Server{
 		Logger:    logger,
 		Store:     store,
@@ -180,9 +180,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// after being unblocked.
 	ready()
 
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
-
-	return nil
+	return goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
 func getDB(observationCtx *observation.Context) (database.DB, error) {
@@ -361,6 +359,10 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 			// Next, move any repos managed by the scheduler that are uncloned to the front
 			// of the queue.
 			managed := sched.ListRepoIDs()
+
+			if len(managed) == 0 {
+				return nil
+			}
 
 			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 			if err != nil {

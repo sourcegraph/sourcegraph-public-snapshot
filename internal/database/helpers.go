@@ -198,6 +198,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	return queryArgs
 }
 
+// Pre-condition: values in args.After and args.Before should have type 'int'.
 func OffsetBasedCursorSlice[T any](nodes []T, args *PaginationArgs) ([]T, int, error) {
 	start := 0
 	end := 0

@@ -1,9 +1,9 @@
 <script lang="ts">
     import classNames from 'classnames'
 
-    import type { BUTTON_GROUP_DIRECTION } from './Button'
-
     import styles from './Button.module.scss'
+
+    const BUTTON_GROUP_DIRECTION = ['vertical', 'horizontal'] as const
 
     export let direction: typeof BUTTON_GROUP_DIRECTION[number] = 'horizontal'
 

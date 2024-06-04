@@ -80,6 +80,7 @@ go_library(
         "//dev/sg/linters",
         "//dev/sg/msp",
         "//dev/sg/root",
+        "//dev/sg/sams",
         "//dev/team",
         "//internal/database",
         "//internal/database/basestore",

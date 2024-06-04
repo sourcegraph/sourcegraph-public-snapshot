@@ -37,7 +37,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	}
 
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		"", // we don't need a license during upgrade
 	)
@@ -95,7 +95,7 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	deploymentName := createDeploymentName(ctx.String("name"), version, email, currentBranch)
+	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)
 
 	err = upgradeDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {

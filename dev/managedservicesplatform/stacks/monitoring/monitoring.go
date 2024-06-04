@@ -160,8 +160,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 	// Prepare GCP monitoring channels on which to notify on when an alert goes
 	// off.
-	channels := make(map[alertpolicy.SeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
-	addChannel := func(level alertpolicy.SeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
+	channels := make(map[spec.AlertSeverityLevel][]monitoringnotificationchannel.MonitoringNotificationChannel)
+	addChannel := func(level spec.AlertSeverityLevel, c monitoringnotificationchannel.MonitoringNotificationChannel) {
 		channels[level] = append(channels[level], c)
 	}
 
@@ -235,7 +235,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 						*integration.ApiKey()),
 				},
 			})
-		addChannel(alertpolicy.SeverityLevelCritical, channel)
+		addChannel(spec.AlertSeverityLevelCritical, channel)
 		opsgenieChannels = append(opsgenieChannels, channel)
 	}
 
@@ -265,14 +265,16 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 
 		var slackChannel slackconversation.Conversation
 		if channel.ProvisionChannel {
-			description := pointers.Stringf(
-				"Alerts from %s (%s) deployed on Managed Services Platform",
+			description := fmt.Sprintf("Alerts from %s (%s) deployed on Managed Services Platform.",
 				vars.Service.GetName(), vars.EnvironmentID)
+			if vars.Service.NotionPageID != nil {
+				description += fmt.Sprintf(" Operational handbook: %s", vars.Service.GetHandbookPageURL())
+			}
 			// https://registry.terraform.io/providers/pablovarela/slack/latest/docs/resources/conversation#argument-reference
 			slackChannel = slackconversation.NewConversation(stack, id.TerraformID("channel"), &slackconversation.ConversationConfig{
 				Name:             pointers.Ptr(strings.TrimPrefix(channel.Name, "#")),
-				Topic:            description,
-				Purpose:          description,
+				Topic:            &description,
+				Purpose:          &description,
 				IsPrivate:        pointers.Ptr(false),
 				PermanentMembers: pointers.Ptr(pointers.Slice([]string{mspRolloutsBotSlackUserID})),
 				// Do not kick out other users in the channel
@@ -325,8 +327,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 				}(),
 			})
 
-		addChannel(alertpolicy.SeverityLevelWarning, notificationChannel)
-		addChannel(alertpolicy.SeverityLevelCritical, notificationChannel)
+		addChannel(spec.AlertSeverityLevelWarning, notificationChannel)
+		addChannel(spec.AlertSeverityLevelCritical, notificationChannel)
 		slackChannels = append(slackChannels, notificationChannel)
 	}
 
@@ -398,6 +400,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		alertGroups["Cloud Run Job Alerts"] = jobAlerts
 	default:
 		return nil, errors.New("unknown service kind")
+	}
+
+	if vars.Monitoring.Alerts.CustomAlerts != nil {
+		customAlerts, err := createCustomAlerts(stack, id.Group("custom"), vars, channels)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create custom alerts")
+		}
+		alertGroups["Custom Alerts"] = customAlerts
 	}
 
 	if vars.RedisInstanceID != nil {

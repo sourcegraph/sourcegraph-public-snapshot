@@ -556,6 +556,90 @@ func TestExtractOccurrenceData(t *testing.T) {
 		}
 	})
 
+	t.Run("documentation and signature documentation", func(t *testing.T) {
+		testCases := []struct {
+			explanation string
+			document    *scip.Document
+			occurrence  *scip.Occurrence
+			hoverText   []string
+		}{
+			{
+				explanation: "#1 backwards compatibility: SignatureDocumentation is absent, Documentation is present",
+				document: &scip.Document{
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func1",
+							Documentation: []string{
+								"```go\nfunc1()\n```",
+								"it does the thing",
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1,
+				},
+				hoverText: []string{
+					"```go\nfunc1()\n```",
+					"it does the thing",
+				},
+			},
+			{
+				explanation: "#2: SignatureDocumentation is present",
+				document: &scip.Document{
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func1",
+							SignatureDocumentation: &scip.Document{
+								Language: "go",
+								Text:     "func1()",
+							},
+							Documentation: []string{
+								"it does the thing",
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1,
+				},
+				hoverText: []string{
+					"```go\nfunc1()\n```",
+					"it does the thing",
+				},
+			},
+			{
+				explanation: "#3: SignatureDocumentation is present, but Text/Language are empty",
+				document: &scip.Document{
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol:                 "react 17.1 main.go func1",
+							SignatureDocumentation: &scip.Document{},
+							Documentation: []string{
+								"it does the thing",
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1",
+					SymbolRoles: 1,
+				},
+				hoverText: []string{
+					"it does the thing",
+				},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.hoverText, extractOccurrenceData(testCase.document, testCase.occurrence).hoverText); diff != "" {
+				t.Errorf("unexpected documentation (-want +got):\n%s -- %s", diff, testCase.explanation)
+			}
+		}
+	})
+
 	t.Run("implementations", func(t *testing.T) {
 		testCases := []struct {
 			explanation    string

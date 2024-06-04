@@ -613,7 +613,8 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			},
 			finalQueue: []*repoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
-				{Repo: b, Seq: 2, Updating: false},
+				// Note: Repo b is not in here, because modified repos are not added to
+				// immediate update queue.
 			},
 		},
 		{
@@ -1608,4 +1609,63 @@ func TestGetCustomInterval(t *testing.T) {
 			}
 		})
 	}
+}
+func TestInitialInterval(t *testing.T) {
+	now := time.Now()
+	cases := []struct {
+		name        string
+		lastChanged time.Time
+		lastFetched time.Time
+		expected    time.Duration
+	}{
+		{
+			name:        "changed an hour ago",
+			lastChanged: now.Add(-1 * time.Hour),
+			lastFetched: now,
+			expected:    30 * time.Minute,
+		},
+		{
+			name: "not fetched a long time",
+			// The interval here will be 8h, but we haven't fetched in 10h, so
+			// the next fetch is due immediately.
+			lastChanged: now.Add(-100 * time.Hour),
+			lastFetched: now.Add(-10 * time.Hour),
+			expected:    minDelay,
+		},
+		{
+			name:        "both equal",
+			lastChanged: now,
+			lastFetched: now,
+			expected:    minDelay,
+		},
+		{
+			name:        "both equal long ago",
+			lastChanged: now.Add(-100 * time.Hour),
+			lastFetched: now.Add(-100 * time.Hour),
+			expected:    minDelay,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := types.RepoGitserverStatus{
+				GitserverRepo: &types.GitserverRepo{
+					LastChanged: tc.lastChanged,
+					LastFetched: tc.lastFetched,
+				},
+			}
+			actual := initialInterval(r)
+			// Due to rounding errors, we accept up to 1 second of difference when comparing:
+			if diff := abs(actual - tc.expected); diff > 1*time.Second {
+				t.Errorf("expected %v, got %v", tc.expected, actual)
+			}
+		})
+	}
+}
+
+func abs(x time.Duration) time.Duration {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

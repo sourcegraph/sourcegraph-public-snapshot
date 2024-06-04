@@ -1,7 +1,9 @@
 spec:
   requestedVersion: "5.3.9104"
 
-  blobstore: {}
+  blobstore:
+    persistentVolumeConfig:
+      storageClassName: sourcegraph
 
   codeInsights:
     disabled: true
@@ -51,5 +53,8 @@ spec:
   worker:
     disabled: true
 
-  storageClass:
-    name: sourcegraph
+  prometheus:
+    disabled: true
+
+  embeddings:
+    disabled: true

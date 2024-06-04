@@ -52,9 +52,16 @@ var (
 	// - in Sentry reports.
 	WithSafeDetails = errors.WithSafeDetails
 
+	// Is checks if the error tree err is equal to the value target.
+	//
+	// For error types which do not contain any data, Is is equivalent to As.
+	//
+	// For error types which contain data, it's possible that Is
+	// returns true for a value other than the one returned by As,
+	// since an error tree can contain multiple errors of the same
+	// concrete type but with different data.
 	Is        = errors.Is
 	IsAny     = errors.IsAny
-	As        = errors.As
 	HasType   = errors.HasType
 	Cause     = errors.Cause
 	Unwrap    = errors.Unwrap
@@ -62,6 +69,45 @@ var (
 
 	BuildSentryReport = errors.BuildSentryReport
 )
+
+// As checks if the error tree err is of type target, and if so,
+// sets target to the value of the error.
+//
+// If looking for an error of concrete type T, then the second
+// argument must be a non-nil pointer of type *T. This implies that
+// if the error interface is implemented with a pointer receiver,
+// then target must be of type **MyConcreteType.
+//
+// For error types which do not contain any data, As is equivalent to Is.
+//
+// For error types which contain data, As will return an arbitrary
+// error of the target type, in case there are multiple errors of the
+// same concrete type in the error tree.
+//
+// Compared to errors.As, this method uses a generic argument to prevent
+// a runtime panic when target is not a pointer to an error type.
+//
+// Use AsInterface over this function for interface targets.
+func As[T error](err error, target *T) bool {
+	return errors.As(err, target)
+}
+
+// AsInterface checks if the error tree err is of type target (which must be
+// an interface type), and if so, sets target to the value of the error.
+//
+// In general, 'I' may be any interface, not just an error interface.
+// See internal/errcode/code.go for some examples.
+//
+// Use As over this function for concrete types.
+func AsInterface[I any](err error, target *I) bool {
+	if target == nil {
+		panic("Expected non-nil pointer to interface")
+	}
+	if typ := reflect.TypeOf(target); typ.Elem().Kind() != reflect.Interface {
+		panic("Expected pointer to interface")
+	}
+	return errors.As(err, target)
+}
 
 // Extend multiError to work with cockroachdb errors. Implement here to keep imports in
 // one place.

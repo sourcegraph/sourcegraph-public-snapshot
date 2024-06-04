@@ -1,11 +1,21 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", _esbuild = "esbuild")
+
+def esbuild(name, **kwargs):
+    _esbuild(
+        name,
+        # TODO: work through build failures when sandbox plugin is enabled so that bundling is hermetic
+        bazel_sandbox_plugin = False,
+        **kwargs
+    )
 
 def esbuild_web_app(name, **kwargs):
     bundle_name = "%s_bundle" % name
 
-    esbuild(
+    _esbuild(
         name = bundle_name,
+        # TODO: work through build failures when sandbox plugin is enabled so that bundling is hermetic
+        bazel_sandbox_plugin = False,
         **kwargs
     )
 

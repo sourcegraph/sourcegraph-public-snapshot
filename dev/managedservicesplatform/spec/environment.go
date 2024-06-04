@@ -524,6 +524,9 @@ func (s *EnvironmentServiceHealthProbesSpec) Validate() []error {
 	if s.GetTimeoutSeconds() > s.GetLivenessIntervalSeconds() {
 		errs = append(errs, errors.New("livenessInterval must be greater than or equal to timeout"))
 	}
+	if s.GetLivenessIntervalSeconds() > 3600 {
+		errs = append(errs, errors.New("livenessInterval must be less than or equal to 3600 seconds"))
+	}
 
 	return errs
 }
@@ -575,6 +578,8 @@ func (s *EnvironmentServiceHealthProbesSpec) GetTimeoutSeconds() int {
 }
 
 type EnvironmentJobSpec struct {
+	// DeadlineSeconds of each job execution, in seconds. Defaults to 300.
+	DeadlineSeconds *int `yaml:"deadlineSeconds,omitempty"`
 	// Schedule configures a cron schedule for the service.
 	//
 	// Only supported for services of 'kind: job'.
@@ -594,10 +599,11 @@ func (s *EnvironmentJobSpec) Validate() []error {
 type EnvironmentJobScheduleSpec struct {
 	// Cron is a cron schedule in the form of "* * * * *".
 	//
+	// The smallest interval must be greater than 15 minutes, and more frequent
+	// than once a week.
+	//
 	// Protip: use https://crontab.guru
 	Cron string `yaml:"cron"`
-	// Deadline of each attempt, in seconds.
-	Deadline *int `yaml:"deadline,omitempty"`
 }
 
 func (s *EnvironmentJobScheduleSpec) Validate() []error {
@@ -606,7 +612,7 @@ func (s *EnvironmentJobScheduleSpec) Validate() []error {
 	}
 
 	var errs []error
-	if _, err := s.FindMaxCronInterval(); err != nil {
+	if _, err := s.FindMaxCronInterval(time.Now()); err != nil {
 		errs = append(errs, errors.Wrap(err, "schedule.cron: invalid schedule"))
 	}
 	return errs
@@ -614,7 +620,7 @@ func (s *EnvironmentJobScheduleSpec) Validate() []error {
 
 // FindMaxCronInterval tries to find the largest gap between events in the cron
 // schedule. It may return 'nil, nil' if no configuration is available.
-func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, error) {
+func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval(now time.Time) (*time.Duration, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -624,12 +630,13 @@ func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, erro
 		return nil, errors.Wrap(err, "invalid cron schedule")
 	}
 
-	// get 64 scheduled events to try and see what the largest gap is - this
+	// Get nScheduled events to try and see what the largest gap is - this
 	// is not performance sensitive, we just need to be able to reliably find
 	// the largest interval. some silly crons won't generate reliable intervals
 	// but this will hopefully give us a realistic indicator that we can error
 	// out on below.
-	scheduled := expr.NextN(time.Now(), 64)
+	nScheduled := 24 * 7 * 4 // up to every 4 times per hour (15 minutes) every day per week
+	scheduled := expr.NextN(now, uint(nScheduled))
 
 	// scheduled is in chronological order, so we can compare subsequent events
 	// to find the largest gap in this cron.
@@ -643,15 +650,15 @@ func (s *EnvironmentJobScheduleSpec) FindMaxCronInterval() (*time.Duration, erro
 		}
 	}
 
-	// should not be possible to have <1m schedule
-	if maxGap < time.Minute {
-		return nil, errors.Newf("the longest interval must be >1m, got %s", maxGap.String())
+	// should not be possible to have <15m schedule for costs
+	if maxGap < 15*time.Minute {
+		return nil, errors.Newf("the longest interval must be >15m, got %s", maxGap.String())
 	}
 
-	// once we get into the monthly territory, things might get funky - forbid
-	// these very long intervals for now
-	if maxGap > 27*24*time.Hour {
-		return nil, errors.Newf("the longest interval must be <28 days, got %s", maxGap.String())
+	// once we get into the longer-than-weekly territory, things might get funky;
+	// forbid these very long intervals for now
+	if maxGap > 8*24*time.Hour {
+		return nil, errors.Newf("the longest interval must be <8 days, got %s", maxGap.String())
 	}
 
 	return &maxGap, nil

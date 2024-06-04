@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -12,35 +11,45 @@ import (
 func TestInstanceStatus(t *testing.T) {
 	tt := []struct {
 		name       string
-		actionURL  string
+		jobURL     string
+		jobState   string
+		step       string
+		phase      string
 		statusEnum cloudapiv1.InstanceStatus
 		statusText string
 		reason     string
 		errText    string
 	}{
 		{
-			name:       "failed with actionURL and status",
-			actionURL:  "http://test.com/action/123",
-			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_FAILED,
-			statusText: "failed",
-			reason:     "url:http://test.com/action/123, status: failed",
+			name:       "in_progress with jobURL and status",
+			jobURL:     "https://github.com/sourcegraph/cloud/actions/runs/9209264595",
+			jobState:   "in_progress",
+			step:       "1/3",
+			phase:      "creating instance",
+			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_PROGRESSING,
+			statusText: "in-progress",
+			reason:     "step 1/3:creating instance, job-url:https://github.com/sourcegraph/cloud/actions/runs/9209264595, state:in_progress",
 		},
 		{
 			name:       "completed with no actionURL and no status",
-			actionURL:  "",
+			jobURL:     "",
 			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_OK,
 			statusText: "completed",
 			reason:     "",
 		},
 		{
-			name:    "incorrect reason format",
-			reason:  "https://test.com/action/123",
-			errText: "invalid status reason format",
+			name:       "incorrect reason format",
+			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
+			statusText: "unspecified",
+			reason:     "https://test.com/action/123",
+			errText:    `failed to parse status reason: "https://test.com/action/123"`,
 		},
 		{
-			name:    "incorrect reason field format",
-			reason:  "actionURL=https://test.com/action/123, status=completed",
-			errText: "field error",
+			name:       "incorrect reason field format",
+			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
+			statusText: "unspecified",
+			reason:     "actionURL=https://test.com/action/123, status=completed",
+			errText:    `failed to parse status reason: "actionURL=https://test.com/action/123, status=completed"`,
 		},
 	}
 	for _, tc := range tt {
@@ -50,18 +59,22 @@ func TestInstanceStatus(t *testing.T) {
 				Reason:         &tc.reason,
 			}
 
-			instanceSatus, err := newInstanceStatus(src)
-			if err != nil {
-				if tc.errText == "" {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), tc.errText) {
-					t.Errorf("incorrect error. want=%s have=%s", tc.errText, err.Error())
-				}
-				return
+			instanceSatus := newInstanceStatus(src)
+			if tc.errText != "" && instanceSatus.Error != tc.errText {
+				t.Errorf("incorrect error. want=%s have=%s", tc.errText, instanceSatus.Error)
 			}
 
-			if instanceSatus.ActionURL != tc.actionURL {
-				t.Errorf("incorrect action url. want=%s have=%s", tc.actionURL, instanceSatus.ActionURL)
+			if instanceSatus.Reason.JobURL != tc.jobURL {
+				t.Errorf("incorrect action url. want=%s have=%s", tc.jobURL, instanceSatus.Reason.JobURL)
+			}
+			if instanceSatus.Reason.JobState != tc.jobState {
+				t.Errorf("incorrect action url. want=%s have=%s", tc.jobState, instanceSatus.Reason.JobState)
+			}
+			if instanceSatus.Reason.Step != tc.step {
+				t.Errorf("incorrect reason step. want=%s have=%s", tc.step, instanceSatus.Reason.Step)
+			}
+			if instanceSatus.Reason.Phase != tc.phase {
+				t.Errorf("incorrect action url. want=%s have=%s", tc.phase, instanceSatus.Reason.Phase)
 			}
 			if instanceSatus.Status != tc.statusText {
 				t.Errorf("incorrect status. want=%s have=%s", tc.statusText, instanceSatus.Status)

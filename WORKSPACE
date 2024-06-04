@@ -28,38 +28,30 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "f2c1f91cc0a55f7a44c94b8a79974f21349b844075740c01045acaa49e731307",
-    strip_prefix = "bazel-lib-1.40.3",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.40.3/bazel-lib-v1.40.3.tar.gz",
-)
-
-# rules_js defines an older rules_nodejs, so we override it here
-http_archive(
-    name = "rules_nodejs",
-    sha256 = "162f4adfd719ba42b8a6f16030a20f434dc110c65dc608660ef7b3411c9873f9",
-    strip_prefix = "rules_nodejs-6.0.2",
-    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.2/rules_nodejs-v6.0.2.tar.gz",
+    sha256 = "6d758a8f646ecee7a3e294fbe4386daafbe0e5966723009c290d493f227c390b",
+    strip_prefix = "bazel-lib-2.7.7",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "76a04ef2120ee00231d85d1ff012ede23963733339ad8db81f590791a031f643",
-    strip_prefix = "rules_js-1.34.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.34.1/rules_js-v1.34.1.tar.gz",
+    sha256 = "25e06ac98ce2dd44d74e728e63e1c88e707d0972db20d7e7339c8e458335b4e3",
+    strip_prefix = "rules_js-2.0.0-rc2",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc2/rules_js-v2.0.0-rc2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "c77f0dfa78c407893806491223c1264c289074feefbf706721743a3556fa7cea",
-    strip_prefix = "rules_ts-2.2.0",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.2.0/rules_ts-v2.2.0.tar.gz",
+    sha256 = "3ea5cdb825d5dbffe286b3d9c5197a2648cf04b5e6bd8b913a45823cdf0ae960",
+    strip_prefix = "rules_ts-3.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v3.0.0-rc0/rules_ts-v3.0.0-rc0.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_swc",
-    sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
-    strip_prefix = "rules_swc-1.1.0",
-    url = "https://github.com/aspect-build/rules_swc/releases/download/v1.1.0/rules_swc-v1.1.0.tar.gz",
+    sha256 = "c085647585c3d01bee3966eb9ba433a1efbb0ee79bb1b8c67882a81d82a9b37f",
+    strip_prefix = "rules_swc-2.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v2.0.0-rc0/rules_swc-v2.0.0-rc0.tar.gz",
 )
 
 http_archive(
@@ -156,11 +148,11 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
 
-register_jq_toolchains()
+aspect_bazel_lib_dependencies()
 
-register_expand_template_toolchains()
+aspect_bazel_lib_register_toolchains()
 
 http_archive(
     name = "rules_apko",
@@ -207,16 +199,12 @@ load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
 
-# node toolchain setup ==========================
-load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
 
-nodejs_register_toolchains(
-    name = "nodejs",
-    node_version = "20.8.0",
-)
+rules_js_register_toolchains(node_version = "20.8.0")
 
 # rules_js npm setup ============================
-load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
@@ -270,9 +258,9 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "84419868e43c714c0d909dca73039e2f25427fc04f352d2f4f7343ca33f60deb",
-    strip_prefix = "rules_esbuild-0.15.3",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.15.3/rules_esbuild-v0.15.3.tar.gz",
+    sha256 = "ef7163a2e8e319f8a9a70560788dd899126aebf3538c76f8bc1f0b4b52ba4b56",
+    strip_prefix = "rules_esbuild-0.21.0-rc1",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.21.0-rc1/rules_esbuild-v0.21.0-rc1.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
@@ -280,19 +268,20 @@ load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependenc
 rules_esbuild_dependencies()
 
 # Register a toolchain containing esbuild npm package and native bindings
-load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_ESBUILD_VERSION", "esbuild_register_toolchains")
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "esbuild_register_toolchains")
 
 esbuild_register_toolchains(
     name = "esbuild",
-    esbuild_version = LATEST_ESBUILD_VERSION,
+    # Note, this differs from the version noted in package.json, however we've been inadvertently building with this version for some time now so we'll stick with it and revisit.
+    esbuild_version = "0.19.2",
 )
 
 # Go toolchain setup
 
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
-load("//:linter_deps.bzl", "linter_dependencies")
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("//:deps.bzl", "go_dependencies")
+load("//:linter_deps.bzl", "linter_dependencies")
 
 go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
@@ -355,7 +344,7 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_regi
 
 rules_rust_dependencies()
 
-rust_version = "1.73.0"
+rust_version = "1.78.0"
 
 rust_register_toolchains(
     edition = "2021",
@@ -451,8 +440,8 @@ rules_proto_dependencies()
 rules_proto_toolchains()
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
-load("@rules_proto_grpc//go:repositories.bzl", rules_proto_grpc_go_repos = "go_repos")
 load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "doc_repos")
+load("@rules_proto_grpc//go:repositories.bzl", rules_proto_grpc_go_repos = "go_repos")
 
 rules_proto_grpc_toolchains()
 

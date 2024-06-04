@@ -386,6 +386,8 @@ commands:
 
   enterprise-portal:
     cmd: |
+      # Connect to local development database, with the assumption that it will
+      # have dotcom database tables.
       export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
       .bin/enterprise-portal
     install: |
@@ -398,6 +400,19 @@ commands:
       PORT: '6081'
       DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: debug
+      GRPC_WEB_UI_ENABLED: 'true'
+      # Connects to local database, so include all licenses from local DB
+      DOTCOM_INCLUDE_PRODUCTION_LICENSES: 'true'
+      # Used for authentication
+      SAMS_URL: https://accounts.sgdev.org
+    externalSecrets:
+      ENTERPRISE_PORTAL_SAMS_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_ID
+      ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_SECRET
+
     watch:
       - lib
       - cmd/enterprise-portal
@@ -1861,7 +1876,7 @@ tests:
       TEST_USER_PASSWORD: supersecurepassword
       SOURCEGRAPH_BASE_URL: https://sourcegraph.test:3443
       BROWSER: chrome
-    external_secrets:
+    externalSecrets:
       GH_TOKEN:
         project: 'sourcegraph-ci'
         name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'

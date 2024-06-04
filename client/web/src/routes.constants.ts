@@ -39,16 +39,6 @@ export enum PageRoutes {
     CodySearch = '/search/cody',
     Cody = '/cody',
     CodyChat = '/cody/chat',
-
-    // The checkout form for a new Cody Pro subscription.
-    CodyNewProSubscription = '/cody/manage/subscription/new',
-    // The CodyManagement page is labeled as the "Dashboard" page.
-    CodyManagement = '/cody/manage',
-    // The CodySubscriptions page is a comparison of different Cody product tiers.
-    CodySubscription = '/cody/subscription',
-
-    CodyManageTeam = '/cody/team/manage',
-
     CodySwitchAccount = '/cody/switch-account/:username',
     Own = '/own',
 }

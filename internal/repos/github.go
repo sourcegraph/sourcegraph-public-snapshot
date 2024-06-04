@@ -409,8 +409,9 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
+	metadata.Visibility = github.Visibility(strings.ToLower(string(r.Visibility)))
 
-	if github.Visibility(strings.ToLower(string(r.Visibility))) == github.VisibilityInternal && s.markInternalReposAsPublic {
+	if metadata.Visibility == github.VisibilityInternal && s.markInternalReposAsPublic {
 		r.IsPrivate = false
 	}
 

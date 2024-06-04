@@ -144,10 +144,6 @@ func EnvVarsPostgresExporter(secretName string) []corev1.EnvVar {
 			Name:  "DATA_SOURCE_URI",
 			Value: "127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable",
 		},
-		{
-			Name:  "PG_EXPORTER_EXTEND_QUERY_PATH",
-			Value: "/config/queries.yaml",
-		},
 	}
 }
 

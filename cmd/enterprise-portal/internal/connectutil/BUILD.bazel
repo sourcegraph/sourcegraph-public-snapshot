@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "connectutil",
+    srcs = ["connectutil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//internal/trace",
+        "//lib/errors",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

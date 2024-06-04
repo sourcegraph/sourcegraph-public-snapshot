@@ -45,7 +45,7 @@ func deployUpgradeSuggestion(name, version string) string {
 		"- Create a new deployment with a different name by running\n" +
 		"\n```sg cloud deploy --name <new-name>```\n\n" +
 		"- Upgrade the existing deployment with the new version once the build completes by running\n" +
-		"\n```sg cloud upgrade --name \"%s\"--version \"%s\"```\n"
+		"\n```sg cloud upgrade --name \"%s\" --version \"%s\"```\n"
 	return fmt.Sprintf(text, name, version)
 }
 
@@ -95,12 +95,11 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 
 	// Check if the deployment already exists
 	pending.Updatef("Checking if deployment %q already exists", name)
-	_, err = cloudClient.GetInstance(ctx, name)
-	if err != nil {
-		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
-		}
-	} else {
+	inst, err := cloudClient.GetInstance(ctx, name)
+	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
+		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
+	}
+	if inst != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
 		// Deployment exists
 		return ErrDeploymentExists
@@ -113,13 +112,13 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return err
 	}
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		license,
 	)
 
 	pending.Updatef("Creating deployment %q for version %q", spec.Name, spec.Version)
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+	inst, err = cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to deploy %q of version %s", spec.Name, spec.Version)
@@ -173,7 +172,7 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	return nil
 }
 
-func createDeploymentName(originalName, version, email, branch string) string {
+func determineDeploymentName(originalName, version, email, branch string) string {
 	var deploymentName string
 	if originalName != "" {
 		deploymentName = originalName
@@ -186,7 +185,7 @@ func createDeploymentName(originalName, version, email, branch string) string {
 		deploymentName = branch
 	}
 
-	return deploymentName
+	return sanitizeInstanceName(deploymentName)
 
 }
 
@@ -236,7 +235,7 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 	}
 
 	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
-	deploymentName := createDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
+	deploymentName := determineDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {

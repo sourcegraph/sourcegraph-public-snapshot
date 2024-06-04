@@ -10,3 +10,5 @@ export const isCodyEnabled = (): boolean => {
 }
 
 export const isSignInRequiredForCody = (): boolean => !window.context.isAuthenticatedUser
+
+export const isEmbeddingsEnabled = (): boolean => window.context?.codyEnabled && window.context?.embeddingsEnabled

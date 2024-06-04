@@ -5,7 +5,7 @@ description: |
 
 # Find all repositories that contain the `fmt.Sprintf` statement using structural search
 on:
-  - repositoriesMatchingQuery: lang:go fmt.Sprintf("%d", :[v]) patterntype:structural
+  - repositoriesMatchingQuery: lang:go fmt.Sprintf\("%d", \w+\) patterntype:regexp
 
 steps:
   # Run Comby (https://comby.dev) to replace the Go statements...
