@@ -89,9 +89,9 @@ func Listen() {
 		mux.Lock()
 
 		go func() {
-			// Count the interrupts and exit after 5
+			// Count the interrupts and exit after MaxInterruptCount.
 			count := 0
-			for count < 5 {
+			for count < MaxInterruptCount {
 				select {
 				case <-interrupt:
 					count++
