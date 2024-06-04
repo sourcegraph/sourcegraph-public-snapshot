@@ -18,10 +18,6 @@ import (
 )
 
 func TestNewActor(t *testing.T) {
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{
-		Percentage: 50,
-		Interval:   24 * time.Hour,
-	}
 	type args struct {
 		access *codyaccessv1.CodyGatewayAccess
 	}
@@ -75,7 +71,7 @@ func TestNewActor(t *testing.T) {
       "concurrentRequestsInterval": 86400000000000
     }
   },
-  "lastUpdated": "2024-06-03T20:03:07.948696-07:00"
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
 }`),
 		},
 		{
@@ -110,7 +106,7 @@ func TestNewActor(t *testing.T) {
       "concurrentRequestsInterval": 86400000000000
     }
   },
-  "lastUpdated": "2024-06-03T20:03:08.144909-07:00"
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
 }`),
 		},
 		{
@@ -131,13 +127,19 @@ func TestNewActor(t *testing.T) {
     "/v1/attribution": true
   },
   "rateLimits": {},
-  "lastUpdated": "2024-06-03T20:03:08.147318-07:00"
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
 }`),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "sekret_token", tt.args.access, concurrencyConfig)
+			now := time.Date(2024, 6, 3, 20, 3, 7, 0, time.FixedZone("PDT", -25200))
+			act := newActor(&Source{
+				concurrencyConfig: codygateway.ActorConcurrencyLimitConfig{
+					Percentage: 50,
+					Interval:   24 * time.Hour,
+				},
+			}, "sekret_token", tt.args.access, now)
 			// Assert against JSON representation, because that's what we end
 			// up caching.
 			actData, err := json.MarshalIndent(act, "", "  ")

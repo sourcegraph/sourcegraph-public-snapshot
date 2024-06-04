@@ -172,7 +172,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			default:
 			}
 
-			act := newActor(s, token.GetToken(), access, s.concurrencyConfig)
+			act := newActor(s, token.GetToken(), access, time.Now())
 			data, err := json.Marshal(act)
 			if err != nil {
 				act.Logger(syncLog).Error("failed to marshal actor",
@@ -241,13 +241,13 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = newActor(s, token, &codyaccessv1.CodyGatewayAccess{}, s.concurrencyConfig)
+		act = newActor(s, token, &codyaccessv1.CodyGatewayAccess{}, time.Now())
 	} else {
 		act = newActor(
 			s,
 			token,
 			resp,
-			s.concurrencyConfig,
+			time.Now(),
 		)
 	}
 
@@ -281,14 +281,13 @@ func newActor(
 	source *Source,
 	token string,
 	s *codyaccessv1.CodyGatewayAccess,
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig,
+	now time.Time,
 ) *actor.Actor {
 	name := s.GetSubscriptionDisplayName()
 	if name == "" {
 		name = s.GetSubscriptionId()
 	}
 
-	now := time.Now()
 	a := &actor.Actor{
 		Key: token,
 
@@ -311,7 +310,7 @@ func newActor(
 			int64(rl.Limit),
 			rl.IntervalDuration.AsDuration(),
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
@@ -320,7 +319,7 @@ func newActor(
 			int64(rl.Limit),
 			rl.IntervalDuration.AsDuration(),
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
@@ -331,7 +330,7 @@ func newActor(
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
 			// TODO: Once we split interactive and on-interactive, we want to apply
 			// stricter limits here than percentage based for this heavy endpoint.
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
