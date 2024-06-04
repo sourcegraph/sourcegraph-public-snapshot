@@ -50,6 +50,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit
 
 		"google/gemini-1.5-pro-latest",
 		"google/gemini-1.5-flash-latest",
+		"google/gemini-pro-latest",
 	}
 	switch plan {
 	// TODO: This is just an example for now.
