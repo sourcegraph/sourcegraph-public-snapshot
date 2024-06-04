@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type CodeNavServiceResolver interface {
@@ -307,13 +308,16 @@ func (args *UsagesForSymbolArgs) ProvenancesForSCIPData() ForEachProvenance[bool
 	return out
 }
 
-// Normalize sets the First field to a non-null value.
+// Normalize sets the First and After fields to non-null.
 func (args *UsagesForSymbolArgs) Normalize(maxPageSize int32) {
 	if args == nil {
 		*args = UsagesForSymbolArgs{}
 	}
 	if args.First == nil || *args.First > maxPageSize {
 		args.First = &maxPageSize
+	}
+	if args.After == nil {
+		args.After = pointers.Ptr("")
 	}
 }
 
