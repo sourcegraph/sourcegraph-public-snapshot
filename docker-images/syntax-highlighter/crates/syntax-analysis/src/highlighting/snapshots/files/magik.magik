@@ -49,6 +49,12 @@ a << :hello
 b << :|hello world|
 
 
+# Function calls
+:sym_func()
+some_func(1, 2)
+
+
+
 # Objects
 def_slotted_exemplar(:my_object,
  {
@@ -56,6 +62,19 @@ def_slotted_exemplar(:my_object,
     {:slot_b, "hello"}
  }, {:parent_object_a, :parent_object_b})
 
+# Class directive
+def_slotted_exemplar(:exemplar,
+                     {},
+                     {},
+                     {_class |com.gesmallworld.magik.language.MagikFinalisable|})
+
+# Mixin
+def_mixin(:my_mixin)
+def_mixin(:my_variant_of_their_mixin,{their_mixin})
+
+my_mixin.define_shared_variable(:a_var,:test,:public)
+
+my_mixin.method(:a_var).value << :changed
 
 # Operators
 x << a ** b
@@ -104,6 +123,14 @@ _catch :error
   >> _true
 _endcatch
 
+_catch "error"
+  >> _true
+_endcatch
+
+_catch @error
+  >> _true
+_endcatch
+
 
 # Methods
 _pragma(classify_level=restricted)
@@ -114,14 +141,15 @@ _method my_object.my_method(a, b)
     _return a + b
 _endmethod
 
-$
+# Abstract Method
+_abstract _method my_class.my_method
+    ## whatever this method should do...
+_endmethod
 
 # New method
 _method person.new(name, age)
   _return _clone.init(name, age)
 _endmethod
-
-$
 
 # Initialise method.
 _private _method person.init(name, age)
@@ -150,6 +178,7 @@ _loop @outer_loop
 _endloop
 
 _block
+    _import x
     _constant a1 << 0
     _constant _local a2 << 0
     _local _constant a3 << 0
@@ -190,10 +219,20 @@ _iter _method my_object.even_elements()
   _endloop
 _endmethod
 
-
+_for _gather vals _over {:a,:b,:c}.fast_keys_and_elements()
+_loop
+  show(_scatter vals)
+_endloop
 
 # Procedures
-my_procedure << _proc @my_procedure(a, b, c)
+my_procedure << _proc @my_procedure(a, b, _optional c)
   _return a + b + c
 _endproc
 x << my_procedure(1, 2, 3)
+
+
+# Regex
+# NOTE(issue: https://github.com/krn-robin/tree-sitter-magik/issues/48): Tree sitter grammar does not support regexes
+_if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
+    write("Got a match!")
+_endif

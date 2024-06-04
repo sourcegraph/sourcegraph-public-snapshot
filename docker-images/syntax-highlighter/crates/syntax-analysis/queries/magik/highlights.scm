@@ -4,50 +4,17 @@
 (method
   exemplarname: (identifier) @type)
 (method
-  name: (identifier) @function.method)
+  name: (identifier) @function)
 
-(procedure (label) @function.method)
+(procedure (label) @function)
 
-
-; Literals
-[
-  (number)
-] @number
-
-[
-  (string_literal)
-] @string
-
-
-[
-  (true)
-  (false)
-] @boolean
-
-[
-  (maybe)
-  (unset)
-] @constant.builtin
-
-[
- (self)
- (super)
- (clone)
-] @variable.builtin
-
-[
- (symbol)
- (character_literal)
-] @constant
 
 (documentation) @comment
 (comment) @comment
 
-(package (identifier) @variable.module)
-
+(package (identifier) @identifier.module)
 
 ; Expression
-
 [
     "<<"
     ">>"
@@ -85,7 +52,6 @@
     "+^<<"
 ] @operator
 
-
 (relational_operator
     operator: _ @operator)
 
@@ -98,18 +64,31 @@
 (unary_operator
     operator: _ @operator)
 
+(class _ @keyword) @type
+
 (invoke
-  receiver: (variable) @function.call)
+  receiver: (variable) @function.builtin
+  (#eq? @function.builtin "def_slotted_exemplar"))
+
+(invoke
+  receiver: (variable) @function.builtin
+  (#eq? @function.builtin "def_mixin"))
+
+(invoke
+  receiver: (_) @function)
 
 (call
   receiver: (variable) @variable )
 (call
   operator: "." @operator)
 (call
-  message: (identifier) @function.call)
+  message: (identifier) @function
+  "(")
+(call
+  message: (identifier) @variable)
+
 
 ; Keywords
-
 [
   "_iter"
   "_while"
@@ -122,6 +101,7 @@
   "_endtry"
   "_throw"
   "_catch"
+  "_endcatch"
   "_primitive"
   "_finally"
   "_default"
@@ -133,33 +113,25 @@
   "_loopbody"
   "_gather"
   "_continue"
-
   "_allresults"
   "_dynamic"
-
   "_handling"
   "_leave"
   "_primitive"
-
   "_block"
   "_endblock"
-
   "_protect"
   "_protection"
   "_endprotect"
-
   "_if"
   "_then"
   "_elif"
   "_else"
   "_endif"
-
   "_thisthread"
-
   "_return"
-
   "_lock"
-
+  "_endlock"
   "_abstract"
   "_private"
   "_constant"
@@ -167,24 +139,56 @@
   "_global"
   "_proc"
   "_endproc"
+  "_cf"
+  "_scatter"
+  "_import"
+  "_optional"
 ] @keyword
 
 [
  "_package"
 ] @include
 
-
-[
- "_pragma"
-] @function.builtin
-
+; NOTE(issues: https://github.com/krn-robin/tree-sitter-magik/issues/49): Grammar does not support traversing to the children in the pragma
+(pragma) @identifier.attribute
 
 (argument) @identifier.parameter
+
+; Literals
+[
+  (number)
+] @number
+
+[
+  (string_literal)
+] @string
+
+[
+  (true)
+  (false)
+] @boolean
+
+[
+  (maybe)
+  (unset)
+] @constant.builtin
+
+[
+ (self)
+ (super)
+ (clone)
+] @variable.builtin
+
+[
+ (symbol)
+ (character_literal)
+] @constant
 
 [
  (variable)
  (dynamic_variable)
  (global_variable)
+ (global_reference)
  (identifier)
  (slot_accessor)
  (label)

@@ -7,7 +7,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   _package pp
 //^^^^^^^^ Keyword
 //         ^^ IdentifierNamespace
-  
+
   # Literals
 //^^^^^^^^^^ Comment
   _true
@@ -58,11 +58,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^ StringLiteral
   'string'
 //^^^^^^^^ StringLiteral
-  
+
   _primitive 512
 //^^^^^^^^^^ Keyword
 //           ^^^ NumericLiteral
-  
+
   # Assignments
 //^^^^^^^^^^^^^ Comment
   a << 1.234
@@ -141,11 +141,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                  ^^^^^^^^^^^^^^ Identifier
 //                                 ^^ IdentifierOperator
 //                                    ^^^^^^ IdentifierBuiltin
-  
+
   write(a)
 //^^^^^ IdentifierFunction
 //      ^ Identifier
-  
+
   # Symbols
 //^^^^^^^^^ Comment
   a << :hello
@@ -156,12 +156,23 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^ Identifier
 //  ^^ IdentifierOperator
 //     ^^^^^^^^^^^^^^ IdentifierConstant
-  
-  
+
+
+  # Function calls
+//^^^^^^^^^^^^^^^^ Comment
+  :sym_func()
+//^^^^^^^^^ IdentifierFunction
+  some_func(1, 2)
+//^^^^^^^^^ IdentifierFunction
+//          ^ NumericLiteral
+//             ^ NumericLiteral
+
+
+
   # Objects
 //^^^^^^^^^ Comment
   def_slotted_exemplar(:my_object,
-//^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
 //                     ^^^^^^^^^^ IdentifierConstant
    {
       {:slot_a, 34},
@@ -173,8 +184,46 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
    }, {:parent_object_a, :parent_object_b})
 //     ^^^^^^^^^^^^^^^^ IdentifierConstant
 //                       ^^^^^^^^^^^^^^^^ IdentifierConstant
-  
-  
+
+  # Class directive
+//^^^^^^^^^^^^^^^^^ Comment
+  def_slotted_exemplar(:exemplar,
+//^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
+//                     ^^^^^^^^^ IdentifierConstant
+                       {},
+                       {},
+                       {_class |com.gesmallworld.magik.language.MagikFinalisable|})
+//                      ^^^^^^ Keyword
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType
+
+  # Mixin
+//^^^^^^^ Comment
+  def_mixin(:my_mixin)
+//^^^^^^^^^ IdentifierBuiltin
+//          ^^^^^^^^^ IdentifierConstant
+  def_mixin(:my_variant_of_their_mixin,{their_mixin})
+//^^^^^^^^^ IdentifierBuiltin
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierConstant
+//                                      ^^^^^^^^^^^ Identifier
+
+  my_mixin.define_shared_variable(:a_var,:test,:public)
+//^^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                ^^^^^^ IdentifierConstant
+//                                       ^^^^^ IdentifierConstant
+//                                             ^^^^^^^ IdentifierConstant
+
+  my_mixin.method(:a_var).value << :changed
+//^^^^^^^^ Identifier
+//        ^ IdentifierOperator
+//         ^^^^^^ IdentifierFunction
+//                ^^^^^^ IdentifierConstant
+//                       ^ IdentifierOperator
+//                        ^^^^^ Identifier
+//                              ^^ IdentifierOperator
+//                                 ^^^^^^^^ IdentifierConstant
+
   # Operators
 //^^^^^^^^^^^ Comment
   x << a ** b
@@ -254,7 +303,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ IdentifierOperator
 //     ^^^^ IdentifierOperator
 //          ^ Identifier
-  
+
   # Handling
 //^^^^^^^^^^ Comment
   _handling error _with _default
@@ -262,7 +311,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //          ^^^^^ Identifier
 //                ^^^^^ Keyword
 //                      ^^^^^^^^ Keyword
-  
+
   # Block
 //^^^^^^^ Comment
   _block
@@ -276,7 +325,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                     ^^^^^^^^^^ Identifier
   _endblock
 //^^^^^^^^^ Keyword
-  
+
   _block
 //^^^^^^ Keyword
     _if _true _then >> _unset _endif
@@ -288,7 +337,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                            ^^^^^^ Keyword
   _endblock
 //^^^^^^^^^ Keyword
-  
+
   _block @ label1?
 //^^^^^^ Keyword
 //       ^^^^^^^^^ Identifier
@@ -298,9 +347,10 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
           _return
 //        ^^^^^^^ Keyword
       _endlock
+//    ^^^^^^^^ Keyword
   _endblock
 //^^^^^^^^^ Keyword
-  
+
   _block
 //^^^^^^ Keyword
       _protect
@@ -320,7 +370,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 // ^^^^^^^^^^^ Keyword
   _endblock
 //^^^^^^^^^ Keyword
-  
+
   # Catch
 //^^^^^^^ Comment
   _catch :error
@@ -330,12 +380,31 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^ IdentifierOperator
 //     ^^^^^ BooleanLiteral
   _endcatch
-  
-  
+//^^^^^^^^^ Keyword
+
+  _catch "error"
+//^^^^^^ Keyword
+//       ^^^^^^^ StringLiteral
+    >> _true
+//  ^^ IdentifierOperator
+//     ^^^^^ BooleanLiteral
+  _endcatch
+//^^^^^^^^^ Keyword
+
+  _catch @error
+//^^^^^^ Keyword
+//       ^^^^^^ Identifier
+    >> _true
+//  ^^ IdentifierOperator
+//     ^^^^^ BooleanLiteral
+  _endcatch
+//^^^^^^^^^ Keyword
+
+
   # Methods
 //^^^^^^^^^ Comment
   _pragma(classify_level=restricted)
-//^^^^^^^ IdentifierBuiltin
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierAttribute
   _method my_object.my_method(a, b)
 //^^^^^^^ Keyword
 //        ^^^^^^^^^ IdentifierType
@@ -343,7 +412,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                            ^ IdentifierParameter
 //                               ^ IdentifierParameter
    ## multi
-// ^^^^^^^^ Comment 110:1..112:17
+// ^^^^^^^^ Comment 137:1..139:17
    ## line
    ## documentation
       _return a + b
@@ -353,9 +422,19 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                ^ Identifier
   _endmethod
 //^^^^^^^^^^ Keyword
-  
-  $
-  
+
+  # Abstract Method
+//^^^^^^^^^^^^^^^^^ Comment
+  _abstract _method my_class.my_method
+//^^^^^^^^^ Keyword
+//          ^^^^^^^ Keyword
+//                  ^^^^^^^^ IdentifierType
+//                           ^^^^^^^^^ IdentifierFunction
+      ## whatever this method should do...
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  _endmethod
+//^^^^^^^^^^ Keyword
+
   # New method
 //^^^^^^^^^^^^ Comment
   _method person.new(name, age)
@@ -373,9 +452,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                            ^^^ Identifier
   _endmethod
 //^^^^^^^^^^ Keyword
-  
-  $
-  
+
   # Initialise method.
 //^^^^^^^^^^^^^^^^^^^^ Comment
   _private _method person.init(name, age)
@@ -414,14 +491,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^^^^^ IdentifierBuiltin
   _endmethod
 //^^^^^^^^^^ Keyword
-  
-  
+
+
   # Method calls
 //^^^^^^^^^^^^^^ Comment
   object.getName
 //^^^^^^ Identifier
 //      ^ IdentifierOperator
-//       ^^^^^^^ IdentifierFunction
+//       ^^^^^^^ Identifier
   object.method()
 //^^^^^^ Identifier
 //      ^ IdentifierOperator
@@ -429,23 +506,23 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   object.method<< _unset
 //^^^^^^ Identifier
 //      ^ IdentifierOperator
-//       ^^^^^^ IdentifierFunction
+//       ^^^^^^ Identifier
 //             ^^ IdentifierOperator
 //                ^^^^^^ IdentifierBuiltin
   object.method1.method2
 //^^^^^^ Identifier
 //      ^ IdentifierOperator
-//       ^^^^^^^ IdentifierFunction
+//       ^^^^^^^ Identifier
 //              ^ IdentifierOperator
-//               ^^^^^^^ IdentifierFunction
-  
+//               ^^^^^^^ Identifier
+
   _thisthread.sleep(10)
 //^^^^^^^^^^^ Keyword
 //           ^ IdentifierOperator
 //            ^^^^^ IdentifierFunction
 //                  ^^ NumericLiteral
-  
-  
+
+
   # Iteration
 //^^^^^^^^^^^ Comment
   _loop @outer_loop
@@ -456,9 +533,12 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^^^^^^^^^^^ Identifier
   _endloop
 //^^^^^^^^ Keyword
-  
+
   _block
 //^^^^^^ Keyword
+      _import x
+//    ^^^^^^^ Keyword
+//            ^ Identifier
       _constant a1 << 0
 //    ^^^^^^^^^ Keyword
 //              ^^ Identifier
@@ -513,7 +593,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //   ^ Identifier
   _endblock
 //^^^^^^^^^ Keyword
-  
+
   _method my_object.my_method(_gather values)
 //^^^^^^^ Keyword
 //        ^^^^^^^^^ IdentifierType
@@ -573,8 +653,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                      ^ NumericLiteral
 //                         ^^^ NumericLiteral
 //                              ^ NumericLiteral
-  
-  
+
+
   _iter _method my_object.even_elements()
 //^^^^^ Keyword
 //      ^^^^^^^ Keyword
@@ -593,7 +673,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //    ^^^ Keyword
 //        ^ Identifier
 //         ^ IdentifierOperator
-//          ^^^^^ IdentifierFunction
+//          ^^^^^ Identifier
 //                ^^^ IdentifierOperator
 //                    ^^^^^ BooleanLiteral
       _then
@@ -607,19 +687,37 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //  ^^^^^^^^ Keyword
   _endmethod
 //^^^^^^^^^^ Keyword
-  
-  
-  
+
+  _for _gather vals _over {:a,:b,:c}.fast_keys_and_elements()
+//^^^^ Keyword
+//     ^^^^^^^ Keyword
+//             ^^^^ Identifier
+//                  ^^^^^ Keyword
+//                         ^^ IdentifierConstant
+//                            ^^ IdentifierConstant
+//                               ^^ IdentifierConstant
+//                                  ^ IdentifierOperator
+//                                   ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+  _loop
+//^^^^^ Keyword
+    show(_scatter vals)
+//  ^^^^ IdentifierFunction
+//       ^^^^^^^^ Keyword
+//                ^^^^ Identifier
+  _endloop
+//^^^^^^^^ Keyword
+
   # Procedures
 //^^^^^^^^^^^^ Comment
-  my_procedure << _proc @my_procedure(a, b, c)
+  my_procedure << _proc @my_procedure(a, b, _optional c)
 //^^^^^^^^^^^^ Identifier
 //             ^^ IdentifierOperator
 //                ^^^^^ Keyword
 //                      ^^^^^^^^^^^^^ IdentifierFunction
 //                                    ^ IdentifierParameter
 //                                       ^ IdentifierParameter
-//                                          ^ IdentifierParameter
+//                                          ^^^^^^^^^ Keyword
+//                                                    ^ IdentifierParameter
     _return a + b + c
 //  ^^^^^^^ Keyword
 //          ^ Identifier
@@ -636,3 +734,28 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                  ^ NumericLiteral
 //                     ^ NumericLiteral
 //                        ^ NumericLiteral
+
+
+  # Regex
+//^^^^^^^ Comment
+  # NOTE(issue: https://github.com/krn-robin/tree-sitter-magik/issues/48): Tree sitter grammar does not support regexes
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  _if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
+//^^^ Keyword
+//    ^ IdentifierOperator
+//     ^^^^^ Identifier
+//             ^ IdentifierFunction
+//              ^^ IdentifierFunction
+//                ^ Identifier
+//                 ^ IdentifierFunction
+//                  ^ IdentifierOperator
+//                   ^ IdentifierFunction
+//                    ^ IdentifierOperator
+//                     ^^^^^^^^^ Identifier
+//                               ^^^^^^^^^^^^^^^ StringLiteral
+//                                                ^^^^^ Keyword
+      write("Got a match!")
+//    ^^^^^ IdentifierFunction
+//          ^^^^^^^^^^^^^^ StringLiteral
+  _endif
+//^^^^^^ Keyword
