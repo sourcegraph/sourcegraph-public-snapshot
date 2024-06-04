@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, H1, H3, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
-import { getCodyProApiErrorMessage, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import { LoadingIconButton } from './LoadingIconButton'
