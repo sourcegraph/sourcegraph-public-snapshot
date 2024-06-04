@@ -17,6 +17,7 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../../auth'
 import { GitHubAppDomain, type GitHubAppKind } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
@@ -65,6 +66,8 @@ export interface CreateGitHubAppPageProps extends TelemetryV2Props {
      * or a string with an error message reason if not.
      */
     validateURL?: (url: string) => true | string
+    /** The currently authenticated user */
+    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -82,6 +85,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     validateURL,
     telemetryRecorder,
     appKind,
+    authenticatedUser,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
@@ -147,7 +151,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}&kind=${appKind}`
+                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}&kind=${appKind}&userID=${authenticatedUser.databaseID}`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {
@@ -173,7 +177,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL, appKind])
+    }, [submitForm, name, appDomain, url, originURL, appKind, authenticatedUser.databaseID])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)
@@ -235,9 +239,9 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
-                    you will be routed to {baseURL || 'GitHub'} to create the App and choose which repositories to grant
-                    it access to. Once created on {baseURL || 'GitHub'}, you'll be redirected back here to finish
-                    connecting it to Sourcegraph.
+                    you will be routed to <strong>{baseURL || 'GitHub'}</strong> to create the App and choose which
+                    repositories to grant it access to. Once created on <strong>{baseURL || 'GitHub'}</strong>, you'll
+                    be redirected back here to finish connecting it to Sourcegraph.
                 </Text>
                 <Label className="w-100">
                     <Text alignment="left" className="mb-2">

@@ -19,6 +19,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -27,6 +30,7 @@ import (
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -124,6 +128,7 @@ type gitHubAppStateDetails struct {
 	AppID       int    `json:"app_id,omitempty"`
 	BaseURL     string `json:"base_url,omitempty"`
 	Kind        string `json:"kind,omitempty"`
+	UserID      int32  `json:"user_id,omitempty"`
 }
 
 func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request) {
@@ -176,6 +181,7 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 	domain := r.URL.Query().Get("domain")
 	baseURL := r.URL.Query().Get("baseURL")
 	kind := r.URL.Query().Get("kind")
+	userID := r.URL.Query().Get("userID")
 
 	var webhookUUID string
 	if webhookURN != "" {
@@ -194,18 +200,24 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	numericUserID, err := strconv.ParseInt(userID, 10, 32)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unexpected error while parsing userID: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+
 	stateDetails, err := json.Marshal(gitHubAppStateDetails{
 		WebhookUUID: webhookUUID,
 		Domain:      domain,
 		BaseURL:     baseURL,
 		Kind:        kind,
+		UserID:      int32(numericUserID),
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Println("random state: ", s)
 	srv.cache.Set(s, stateDetails)
 
 	resp := struct {
@@ -298,14 +310,21 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	fmt.Println("kind ===> ", kind)
-
-	if kind != nil && *kind == types.UserCredentialGitHubAppKind {
-		// observationCtx := observation.NewContext(log.NoOp())
-		// bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
-		// svc := service.New(bstore)
-		// svc.CreateBatchChangesUserCredential(r.Context())
-		//srv.db.UserCredentials()
+	if *kind == types.UserCredentialGitHubAppKind {
+		observationCtx := observation.NewContext(log.NoOp())
+		bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
+		svc := service.New(bstore)
+		_, err := svc.CreateBatchChangesUserCredential(r.Context(), sources.AuthenticationStrategyGitHubApp, service.CreateBatchChangesUserCredentialArgs{
+			GitHubAppID:         id,
+			ExternalServiceURL:  app.BaseURL,
+			Credential:          strconv.Itoa(app.AppID),
+			UserID:              stateDetails.UserID,
+			ExternalServiceType: extsvc.VariantGitHub.AsType(),
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error while creating batch changes user credential: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	webhookDB := srv.db.Webhooks(keyring.Default().WebhookKey)

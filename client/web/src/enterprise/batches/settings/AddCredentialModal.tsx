@@ -18,7 +18,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExternalServiceKind, type Scalars } from '../../../graphql-operations'
+import { ExternalServiceKind, type Scalars, GitHubAppKind } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
@@ -310,7 +310,7 @@ const AddToken: FC<AddTokenProps> = ({
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(
         externalServiceURL
-    )}&kind=credential`
+    )}&kind=${GitHubAppKind.USER_CREDENTIAL}`
 
     if (step === 'add-token') {
         return (

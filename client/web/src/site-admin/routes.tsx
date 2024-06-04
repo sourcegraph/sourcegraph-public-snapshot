@@ -419,7 +419,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/batch-changes/github-apps/new',
-        render: () => <BatchChangesCreateGitHubAppPage />,
+        render: ({ authenticatedUser }) => <BatchChangesCreateGitHubAppPage authenticatedUser={authenticatedUser} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {

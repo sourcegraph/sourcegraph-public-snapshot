@@ -1802,9 +1802,18 @@ func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType strin
 	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
 }
 
-func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string, as sources.AuthenticationStrategy) (*database.UserCredential, error) {
+type CreateBatchChangesUserCredentialArgs struct {
+	ExternalServiceURL  string
+	ExternalServiceType string
+	UserID              int32
+	Credential          string
+	Username            *string
+	GitHubAppID         int
+}
+
+func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), args.UserID); err != nil {
 		return nil, err
 	}
 
@@ -1812,12 +1821,16 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, external
 		return nil, errors.New("authentication strategy must be specified")
 	}
 
+	if as == sources.AuthenticationStrategyGitHubApp && args.GitHubAppID == 0 {
+		return nil, errors.New("githubAppID must be specified")
+	}
+
 	// Throw error documented in schema.graphql.
 	userCredentialScope := database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
-		UserID:              userID,
+		ExternalServiceID:   args.ExternalServiceURL,
+		ExternalServiceType: args.ExternalServiceType,
+		UserID:              args.UserID,
 	}
 	existing, err := s.store.UserCredentials().GetByScope(ctx, userCredentialScope)
 	if err != nil && !errcode.IsNotFound(err) {
@@ -1828,10 +1841,10 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, external
 	}
 
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
-		externalServiceType:    externalServiceType,
-		externalServiceURL:     externalServiceURL,
-		credential:             credential,
-		username:               username,
+		externalServiceType:    args.ExternalServiceType,
+		externalServiceURL:     args.ExternalServiceURL,
+		credential:             args.Credential,
+		username:               args.Username,
 		authenticationStrategy: as,
 	})
 	if err != nil {

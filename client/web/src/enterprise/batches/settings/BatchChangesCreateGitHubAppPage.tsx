@@ -1,7 +1,8 @@
-import { useCallback } from 'react'
+import { useCallback, type FC } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { FeedbackBadge, Link } from '@sourcegraph/wildcard'
 
@@ -26,7 +27,11 @@ const computeGitHubAppKind = (kind: string): GitHubAppKind => {
     return GitHubAppKind.COMMIT_SIGNING
 }
 
-export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
+interface BatchChangesCreateGitHubAppPageProps {
+    authenticatedUser: AuthenticatedUser
+}
+
+export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPageProps> = ({ authenticatedUser }) => {
     const location = useLocation()
     const searchParams = new URLSearchParams(location.search)
     const baseURL = searchParams.get('baseURL')
@@ -90,6 +95,7 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
             baseURL={baseURL?.length ? baseURL : undefined}
             validateURL={validateURL}
             telemetryRecorder={noOpTelemetryRecorder}
+            authenticatedUser={authenticatedUser}
         />
     )
 }

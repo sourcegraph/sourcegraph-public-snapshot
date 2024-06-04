@@ -1123,7 +1123,13 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	svc := service.New(r.store)
 
 	if userID != 0 {
-		cred, err := svc.CreateBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
+		cred, err := svc.CreateBatchChangesUserCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesUserCredentialArgs{
+			ExternalServiceURL:  args.ExternalServiceURL,
+			ExternalServiceType: extsvc.KindToType(kind),
+			UserID:              userID,
+			Credential:          args.Credential,
+			Username:            args.Username,
+		})
 		if err != nil {
 			return nil, err
 		}
