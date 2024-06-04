@@ -118,7 +118,26 @@ type CodeGraphData {
     """
     Occurrences are guaranteed to be sorted by range. It is possible
     for there to be multiple occurrences for the same exact source range.
+
+    At the moment, using higher values of 'first:' should not cause
+    significantly worst performance.
+
+    As an example, for a large C++ codebase, here are the percentiles
+    for number of occurrences per document.
+
+    | Percentile | Occurrences count |
+    |       50   |               241 |
+    |       90   |              2443 |
+    |       95   |              4554 |
+    |       99   |             15869 |
+    |       99.9 |             94465 |
+    |      100   |            707850 |
     """
+    # Tip: One can get the percentiles above using the scip CLI's 'stats'
+    # subcommand. (https://github.com/sourcegraph/scip/blob/main/docs/CLI.md#scip-stats)
+    #
+    # TODO(issue: GRAPH-635): Allow passing a filter here to only get
+    # occurrences for specific lines.
     occurrences(first: Int, after: String): SCIPOccurrenceConnection
 }
 
