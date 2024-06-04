@@ -1,8 +1,8 @@
 package codenav
 
 import (
+	"cmp"
 	"context"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -493,18 +493,15 @@ func (s *Service) prepareCandidateUploads(
 		if err != nil {
 			return Cursor{}, false, err
 		}
-		idMap := make(map[int]struct{}, len(uploads)+len(cursor.VisibleUploads))
+
+		idSet := collections.NewSet[int]()
 		for _, upload := range cursor.VisibleUploads {
-			idMap[upload.UploadID] = struct{}{}
+			idSet.Add(upload.UploadID)
 		}
 		for _, upload := range uploads {
-			idMap[upload.ID] = struct{}{}
+			idSet.Add(upload.ID)
 		}
-		ids := make([]int, 0, len(idMap))
-		for id := range idMap {
-			ids = append(ids, id)
-		}
-		sort.Ints(ids)
+		ids := idSet.Sorted(cmp.Less[int])
 
 		fallback = false
 		cursor.UploadIDs = ids
