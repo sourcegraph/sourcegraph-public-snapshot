@@ -299,7 +299,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			[]string{"*"}, // allow all models allowlisted by Cody Gateway
+			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
 			concurrencyConfig,
 		)
 	}
@@ -308,7 +308,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			[]string{"*"}, // allow all models allowlisted by Cody Gateway
+			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
 			concurrencyConfig,
 		)
 	}
@@ -317,7 +317,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
-			[]string{"*"}, // allow all models allowlisted by Cody Gateway
+			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
 			// TODO: Once we split interactive and on-interactive, we want to apply
 			// stricter limits here than percentage based for this heavy endpoint.
 			concurrencyConfig,
