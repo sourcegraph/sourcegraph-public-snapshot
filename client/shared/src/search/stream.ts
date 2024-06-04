@@ -284,7 +284,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
-export const V2FilterTypes: { [key in Filter['kind']]: number } = {
+export const TELEMETRY_V2_FILTER_TYPES: { [key in Filter['kind']]: number } = {
     file: 1,
     repo: 2,
     lang: 3,

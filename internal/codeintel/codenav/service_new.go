@@ -1,8 +1,8 @@
 package codenav
 
 import (
+	"cmp"
 	"context"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -19,17 +19,15 @@ func (s *Service) GetDefinitions(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocations(
-		ctx, args, requestState, Cursor{},
-
+	cursor Cursor,
+) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+	return s.gatherLocations(
+		ctx, args, requestState, cursor,
 		s.operations.getDefinitions, // operation
 		"definitions",               // tableName
 		false,                       // includeReferencingIndexes
 		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
 	)
-
-	return locations, err
 }
 
 func (s *Service) GetReferences(
@@ -40,7 +38,6 @@ func (s *Service) GetReferences(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getReferences, // operation
 		"references",               // tableName
 		true,                       // includeReferencingIndexes
@@ -56,7 +53,6 @@ func (s *Service) GetImplementations(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getImplementations, // operation
 		"implementations",               // tableName
 		true,                            // includeReferencingIndexes
@@ -72,34 +68,12 @@ func (s *Service) GetPrototypes(
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
-
 		s.operations.getPrototypes, // operation
 		"definitions",              // N.B.: we're looking for definitions of interfaces
 		false,                      // includeReferencingIndexes
 		LocationExtractorFunc(s.lsifstore.ExtractPrototypeLocationsFromPosition),
 	)
 }
-
-func (s *Service) GetDefinitionsBySymbolNames(
-	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	symbolNames []string,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocationsBySymbolNames(
-		ctx, args, requestState, Cursor{},
-
-		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		symbolNames,
-	)
-
-	return locations, err
-}
-
-//
-//
 
 type LocationExtractor interface {
 	// Extract converts a location key (a location within a particular index's text document) into a
@@ -206,70 +180,6 @@ outer:
 			}
 			allLocations = append(allLocations, locations...)
 		}
-	}
-
-	return allLocations, cursor, nil
-}
-
-func (s *Service) gatherLocationsBySymbolNames(
-	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	cursor Cursor,
-	operation *observation.Operation,
-	tableName string,
-	includeReferencingIndexes bool,
-	symbolNames []string,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-	}})
-	defer endObservation()
-
-	if cursor.Phase == "" {
-		cursor.Phase = "remote"
-	}
-
-	if len(cursor.SymbolNames) == 0 {
-		// Set cursor symbol names if we haven't yet
-		cursor.SymbolNames = symbolNames
-	}
-
-	// The following loop calls to fill additional results into the currently-being-constructed page.
-	// Such a loop exists as each invocation of either phase may produce fewer results than the requested
-	// page size. For example, if there are many references to a symbol over a large number of indexes but
-	// each index has only a small number of locations, they can all be combined into a single page.
-	// Running each phase multiple times and combining the results will create a full page, if the result
-	// set was not exhausted), on each round-trip call to this service's method.
-
-	for cursor.Phase != "done" {
-		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
-
-		if len(allLocations) >= args.Limit {
-			// we've filled our page, exit with current results
-			break
-		}
-
-		var locations []shared.UploadLocation
-
-		// N.B.: cursor is purposefully re-assigned here
-		locations, cursor, err = s.gatherRemoteLocations(
-			ctx,
-			trace,
-			args,
-			requestState,
-			cursor,
-			tableName,
-			includeReferencingIndexes,
-			args.Limit-len(allLocations), // remaining space in the page
-		)
-		if err != nil {
-			return nil, Cursor{}, err
-		}
-		allLocations = append(allLocations, locations...)
 	}
 
 	return allLocations, cursor, nil
@@ -493,10 +403,6 @@ func (s *Service) gatherRemoteLocations(
 		return nil, exhaustedCursor, nil
 	}
 
-	// Ensure we have a batch of upload ids over which to perform a symbol search, if such
-	// a batch exists. This batch must be hydrated in the associated request data loader.
-	// See the function body for additional complaints on this subject.
-	//
 	// N.B.: cursor is purposefully re-assigned here
 	var includeFallbackLocations bool
 	cursor, includeFallbackLocations, err = s.prepareCandidateUploads(
@@ -513,7 +419,7 @@ func (s *Service) gatherRemoteLocations(
 	}
 
 	// If we have no upload ids stashed in our cursor at this point then there are no more
-	// uploads to search in and we've reached the end of our our result set. Congratulations!
+	// uploads to search in, and we've reached the end of our result set. Congratulations!
 	if len(cursor.UploadIDs) == 0 {
 		return nil, exhaustedCursor, nil
 	}
@@ -551,6 +457,17 @@ func (s *Service) gatherRemoteLocations(
 	return adjustedLocations, cursor, nil
 }
 
+// prepareCandidateUploads returns a bunch of upload IDs (via cursor.UploadIDs) which
+// can be used to search for symbol definitions/references/etc.
+//
+//  1. If the uploads containing the definitions of the monikers are not known,
+//     it identifies them and adds them to the returned cursor's DefinitionIDs and UploadIDs.
+//  2. If referencing indexes are also needed (e.g. for triggering Find references
+//     or for Find implementations), it will get the next page of UploadsIDs if the current
+//     page is exhausted.
+//
+// Post-condition: The upload IDs identified are guaranteed to be loaded in
+// the request data loader.
 func (s *Service) prepareCandidateUploads(
 	ctx context.Context,
 	trace observation.TraceLogger,
@@ -578,18 +495,15 @@ func (s *Service) prepareCandidateUploads(
 		if err != nil {
 			return Cursor{}, false, err
 		}
-		idMap := make(map[int]struct{}, len(uploads)+len(cursor.VisibleUploads))
+
+		idSet := collections.NewSet[int]()
 		for _, upload := range cursor.VisibleUploads {
-			idMap[upload.UploadID] = struct{}{}
+			idSet.Add(upload.UploadID)
 		}
 		for _, upload := range uploads {
-			idMap[upload.ID] = struct{}{}
+			idSet.Add(upload.ID)
 		}
-		ids := make([]int, 0, len(idMap))
-		for id := range idMap {
-			ids = append(ids, id)
-		}
-		sort.Ints(ids)
+		ids := idSet.Sorted(cmp.Less[int])
 
 		fallback = false
 		cursor.UploadIDs = ids
@@ -638,9 +552,6 @@ func (s *Service) prepareCandidateUploads(
 
 	return cursor, fallback, nil
 }
-
-//
-//
 
 func symbolsToMonikers(symbolNames []string) ([]precise.QualifiedMonikerData, error) {
 	var monikers []precise.QualifiedMonikerData

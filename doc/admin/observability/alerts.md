@@ -1484,7 +1484,6 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> gitserver: 0.02s+ echo test command duration for 30s
-- <span class="badge badge-critical">critical</span> gitserver: 1s+ echo test command duration for 1m0s
 
 **Next steps**
 
@@ -1496,8 +1495,7 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_echo_command_duration_test",
-  "critical_gitserver_echo_command_duration_test"
+  "warning_gitserver_echo_command_duration_test"
 ]
 ```
 
@@ -1507,8 +1505,6 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((max(src_gitserver_echo_duration_seconds)) >= 0.02)`
-
-Generated query for critical alert: `max((max(src_gitserver_echo_duration_seconds)) >= 1)`
 
 </details>
 

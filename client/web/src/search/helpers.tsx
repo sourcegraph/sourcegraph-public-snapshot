@@ -1,25 +1,12 @@
 import { FILTERS_URL_KEY } from '@sourcegraph/branded/src/search-ui/results/filters/hooks'
 import { compatNavigate } from '@sourcegraph/common'
-import type { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
+import { type SubmitSearchParameters, TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results/components/aggregation/constants'
-
-const v2SearchSourceType: { [key in SubmitSearchParameters['source']]: number } = {
-    home: 1,
-    nav: 2,
-    repo: 3,
-    tree: 4,
-    filter: 5,
-    type: 6,
-    scopePage: 7,
-    communitySearchContextPage: 8,
-    excludedResults: 9,
-    smartSearchDisabled: 10,
-}
 
 /**
  * By default {@link submitSearch} overrides all existing query parameters.
@@ -85,7 +72,7 @@ export function submitSearch({
         },
         { source, patternType }
     )
-    telemetryRecorder.recordEvent('search', 'submit', { metadata: { source: v2SearchSourceType[source] } })
+    telemetryRecorder.recordEvent('search', 'submit', { metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE[source] } })
 
     const state = {
         ...(typeof location.state === 'object' ? location.state : null),

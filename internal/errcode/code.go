@@ -37,7 +37,7 @@ func HTTP(err error) int {
 	}
 
 	var e interface{ HTTPStatusCode() int }
-	if errors.As(err, &e) {
+	if errors.AsInterface(err, &e) {
 		return e.HTTPStatusCode()
 	}
 
@@ -103,40 +103,40 @@ func (e *Mock) NotFound() bool {
 // HTTPStatusCode into not found.
 func IsNotFound(err error) bool {
 	var e interface{ NotFound() bool }
-	return errors.As(err, &e) && e.NotFound()
+	return errors.AsInterface(err, &e) && e.NotFound()
 }
 
 // IsUnauthorized will check if err or one of its causes is an unauthorized
 // error.
 func IsUnauthorized(err error) bool {
 	var e interface{ Unauthorized() bool }
-	return errors.As(err, &e) && e.Unauthorized()
+	return errors.AsInterface(err, &e) && e.Unauthorized()
 }
 
 // IsForbidden will check if err or one of its causes is a forbidden error.
 func IsForbidden(err error) bool {
 	var e interface{ Forbidden() bool }
-	return errors.As(err, &e) && e.Forbidden()
+	return errors.AsInterface(err, &e) && e.Forbidden()
 }
 
 // IsAccountSuspended will check if err or one of its causes was due to the
 // account being suspended
 func IsAccountSuspended(err error) bool {
 	var e interface{ AccountSuspended() bool }
-	return errors.As(err, &e) && e.AccountSuspended()
+	return errors.AsInterface(err, &e) && e.AccountSuspended()
 }
 
 // IsUnavailableForLegalReasons will check if err or one of its causes was due to
 // legal reasons.
 func IsUnavailableForLegalReasons(err error) bool {
 	var e interface{ UnavailableForLegalReasons() bool }
-	return errors.As(err, &e) && e.UnavailableForLegalReasons()
+	return errors.AsInterface(err, &e) && e.UnavailableForLegalReasons()
 }
 
 // IsBadRequest will check if err or one of its causes is a bad request.
 func IsBadRequest(err error) bool {
 	var e interface{ BadRequest() bool }
-	return errors.As(err, &e) && e.BadRequest()
+	return errors.AsInterface(err, &e) && e.BadRequest()
 }
 
 // IsTemporary will check if err or one of its causes is temporary. A
@@ -144,12 +144,12 @@ func IsBadRequest(err error) bool {
 // temporary interface.
 func IsTemporary(err error) bool {
 	var e interface{ Temporary() bool }
-	return errors.As(err, &e) && e.Temporary()
+	return errors.AsInterface(err, &e) && e.Temporary()
 }
 
 func IsRepoDenied(err error) bool {
 	var e interface{ IsRepoDenied() bool }
-	return errors.As(err, &e) && e.IsRepoDenied()
+	return errors.AsInterface(err, &e) && e.IsRepoDenied()
 }
 
 // IsArchived will check if err or one of its causes is an archived error.
@@ -157,26 +157,26 @@ func IsRepoDenied(err error) bool {
 // archived.)
 func IsArchived(err error) bool {
 	var e interface{ Archived() bool }
-	return errors.As(err, &e) && e.Archived()
+	return errors.AsInterface(err, &e) && e.Archived()
 }
 
 // IsBlocked will check if err or one of its causes is a blocked error.
 func IsBlocked(err error) bool {
 	var e interface{ Blocked() bool }
-	return errors.As(err, &e) && e.Blocked()
+	return errors.AsInterface(err, &e) && e.Blocked()
 }
 
 // IsTimeout will check if err or one of its causes is a timeout. Many errors
 // in the go stdlib implement the timeout interface.
 func IsTimeout(err error) bool {
 	var e interface{ Timeout() bool }
-	return errors.As(err, &e) && e.Timeout()
+	return errors.AsInterface(err, &e) && e.Timeout()
 }
 
 // IsNonRetryable will check if err or one of its causes is a error that cannot be retried.
 func IsNonRetryable(err error) bool {
 	var e interface{ NonRetryable() bool }
-	return errors.As(err, &e) && e.NonRetryable()
+	return errors.AsInterface(err, &e) && e.NonRetryable()
 }
 
 // MakeNonRetryable makes any error non-retryable.

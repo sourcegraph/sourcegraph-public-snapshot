@@ -27,7 +27,13 @@ type DotComDB interface {
 	GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*dotcomdb.CodyGatewayAccessAttributes, error)
 }
 
-func RegisterV1(logger log.Logger, mux *http.ServeMux, samsClient samsm2m.TokenIntrospector, dotcom DotComDB) {
+func RegisterV1(
+	logger log.Logger,
+	mux *http.ServeMux,
+	samsClient samsm2m.TokenIntrospector,
+	dotcom DotComDB,
+	opts ...connect.HandlerOption,
+) {
 	mux.Handle(codyaccessv1connect.NewCodyAccessServiceHandler(&handlerV1{
 		logger:     logger.Scoped("codyaccess.v1"),
 		samsClient: samsClient,

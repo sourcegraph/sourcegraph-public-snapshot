@@ -9,6 +9,7 @@ import { type InitData, startExtensionHost } from '../api/extension/extensionHos
 import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import type { TextDocumentData, ViewerData } from '../api/viewerTypes'
 import type { EndpointPair, PlatformContext } from '../platform/context'
+import { noOpTelemetryRecorder } from '../telemetry'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)
@@ -38,7 +39,12 @@ const FIXTURE_INIT_DATA: TestInitData = {
 interface Mocks
     extends Pick<
         PlatformContext,
-        'settings' | 'updateSettings' | 'getGraphQLClient' | 'requestGraphQL' | 'clientApplication'
+        | 'settings'
+        | 'updateSettings'
+        | 'getGraphQLClient'
+        | 'requestGraphQL'
+        | 'clientApplication'
+        | 'telemetryRecorder'
     > {}
 
 const NOOP_MOCKS: Mocks = {
@@ -47,6 +53,7 @@ const NOOP_MOCKS: Mocks = {
     getGraphQLClient: () => Promise.reject(new Error('Mocks#getGraphQLClient not implemented')),
     requestGraphQL: () => throwError(() => new Error('Mocks#queryGraphQL not implemented')),
     clientApplication: 'sourcegraph',
+    telemetryRecorder: noOpTelemetryRecorder,
 }
 
 /**

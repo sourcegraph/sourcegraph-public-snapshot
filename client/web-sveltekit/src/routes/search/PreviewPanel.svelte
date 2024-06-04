@@ -13,6 +13,8 @@
     import { mdiClose } from '@mdi/js'
     import { from } from 'rxjs'
 
+    import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
@@ -49,6 +51,7 @@
         requestGraphQL(options) {
             return from(client.query(options.request, options.variables).then(toGraphQLResult))
         },
+        telemetryRecorder: noOpTelemetryRecorder,
     })
 
     $: blobStore = toReadable(
