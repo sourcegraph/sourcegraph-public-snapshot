@@ -106,13 +106,9 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/rules_oci:no_xattr.patch",
-    ],
-    sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
-    strip_prefix = "rules_oci-1.4.3",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
+    sha256 = "647f4c6fd092dc7a86a7f79892d4b1b7f1de288bdb4829ca38f74fd430fcd2fe",
+    strip_prefix = "rules_oci-1.7.6",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.6/rules_oci-v1.7.6.tar.gz",
 )
 
 http_archive(
