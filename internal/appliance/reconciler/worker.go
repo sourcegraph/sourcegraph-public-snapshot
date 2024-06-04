@@ -39,10 +39,7 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 	name := "worker"
 	cfg := sg.Spec.Worker
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

@@ -36,10 +36,7 @@ func (r *Reconciler) reconcileSyntectDeployment(ctx context.Context, sg *config.
 	name := "syntect-server"
 	cfg := sg.Spec.SyntectServer
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, "syntax-highlighter")
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
