@@ -71,7 +71,7 @@ var (
 )
 
 // As checks if the error tree err is of type target, and if so,
-// sets target to the value of the error. This can be used in two ways:
+// sets target to the value of the error.
 //
 // If looking for an error of concrete type T, then the second
 // argument must be a non-nil pointer of type *T. This implies that
@@ -86,13 +86,19 @@ var (
 //
 // Compared to errors.As, this method uses a generic argument to prevent
 // a runtime panic when target is not a pointer to an error type.
+//
+// Use AsInterface over this function for interface targets.
 func As[T error](err error, target *T) bool {
 	return errors.As(err, target)
 }
 
-// AsInterface checks if the error tree err is of type target, and if so,
+// AsInterface checks if the error tree err is of type target (which must be
+// an interface type), and if so, sets target to the value of the error.
 //
-// Use As for concrete types instead.
+// In general, 'I' may be any interface, not just an error interface.
+// See internal/errcode/code.go for some examples.
+//
+// Use As over this function for concrete types.
 func AsInterface[I any](err error, target *I) bool {
 	if target == nil {
 		panic("Expected non-nil pointer to interface")
