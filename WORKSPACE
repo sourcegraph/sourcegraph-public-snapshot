@@ -33,33 +33,25 @@ http_archive(
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
 )
 
-# rules_js defines an older rules_nodejs, so we override it here
-http_archive(
-    name = "rules_nodejs",
-    sha256 = "3e8369256ad63197959d2253c473a9dcc57c2841d176190e59b91d25d4fe9e67",
-    strip_prefix = "rules_nodejs-6.1.1",
-    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.1.1/rules_nodejs-v6.1.1.tar.gz",
-)
-
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "2cfb3875e1231cefd3fada6774f2c0c5a99db0070e0e48ea398acbff7c6c765b",
-    strip_prefix = "rules_js-1.42.3",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.42.3/rules_js-v1.42.3.tar.gz",
+    sha256 = "25e06ac98ce2dd44d74e728e63e1c88e707d0972db20d7e7339c8e458335b4e3",
+    strip_prefix = "rules_js-2.0.0-rc2",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc2/rules_js-v2.0.0-rc2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "da6620683ab2c28014e9c82e8a8fdbb724cd67f6a1d27317f42a8ceb14048b9b",
-    strip_prefix = "rules_ts-2.4.1",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.4.1/rules_ts-v2.4.1.tar.gz",
+    sha256 = "3ea5cdb825d5dbffe286b3d9c5197a2648cf04b5e6bd8b913a45823cdf0ae960",
+    strip_prefix = "rules_ts-3.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v3.0.0-rc0/rules_ts-v3.0.0-rc0.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_swc",
-    sha256 = "1908691bde56321423c3f3beaf37f5fc21c51614869572e5f626cea058649373",
-    strip_prefix = "rules_swc-1.2.3",
-    url = "https://github.com/aspect-build/rules_swc/releases/download/v1.2.3/rules_swc-v1.2.3.tar.gz",
+    sha256 = "c085647585c3d01bee3966eb9ba433a1efbb0ee79bb1b8c67882a81d82a9b37f",
+    strip_prefix = "rules_swc-2.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v2.0.0-rc0/rules_swc-v2.0.0-rc0.tar.gz",
 )
 
 http_archive(
@@ -207,16 +199,12 @@ load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
 
-# node toolchain setup ==========================
-load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
 
-nodejs_register_toolchains(
-    name = "nodejs",
-    node_version = "20.8.0",
-)
+rules_js_register_toolchains(node_version = "20.8.0")
 
 # rules_js npm setup ============================
-load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
@@ -270,9 +258,9 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "82e6fa940760412eedfa0c4e3918c68424cf0432840de4bcc476d0b9869ff7b5",
-    strip_prefix = "rules_esbuild-0.20.1",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.20.1/rules_esbuild-v0.20.1.tar.gz",
+    sha256 = "ef7163a2e8e319f8a9a70560788dd899126aebf3538c76f8bc1f0b4b52ba4b56",
+    strip_prefix = "rules_esbuild-0.21.0-rc1",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.21.0-rc1/rules_esbuild-v0.21.0-rc1.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")

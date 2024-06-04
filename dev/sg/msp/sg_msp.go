@@ -437,7 +437,7 @@ This command supports completions on services and environments.
 					Flags: []cli.Flag{
 						&cli.IntFlag{
 							Name:  "concurrency",
-							Value: 3,
+							Value: 5,
 							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
@@ -485,7 +485,10 @@ This command supports completions on services and environments.
 								return errors.Wrap(err, "failed to get Notion token")
 							}
 						}
-						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
+						notionClient := notionapi.NewClient(
+							notionapi.Token(notionToken),
+							// Retry 429 errors
+							notionapi.WithRetry(3))
 
 						type task struct {
 							svc          *spec.Spec
@@ -518,8 +521,9 @@ This command supports completions on services and environments.
 						concurrency := c.Int("concurrency")
 						prog := std.Out.ProgressWithStatusBars(
 							[]output.ProgressBar{{
-								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
-								Max:   float64(len(services)),
+								Label: fmt.Sprintf("Generating Notion pages for %d services (concurrency: %d)",
+									len(services), concurrency),
+								Max: float64(len(services)),
 							}},
 							statusBars,
 							nil)
@@ -537,6 +541,10 @@ This command supports completions on services and environments.
 							s := svc.Service.ID
 
 							wg.Go(func() (err error) {
+								// Reset the status bar to indicate the real
+								// start time, given concurrency limits.
+								prog.StatusBarResetf(i, svc.Service.ID, "Starting...")
+
 								defer func() {
 									if err != nil {
 										prog.StatusBarFailf(i, err.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -108,6 +109,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}
 	if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, externalService); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
+		if checkErrCodeHostMaybeInaccessible(err) {
+			res.warning = fmt.Sprintf("%s\n\n%s", res.warning, codeHostInaccessibleWarning)
+		}
 	}
 
 	return res, nil
@@ -227,6 +231,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		// editor if not.
 		if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, es); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
+			if checkErrCodeHostMaybeInaccessible(err) {
+				res.warning = fmt.Sprintf("%s\n\n%s", res.warning, codeHostInaccessibleWarning)
+			}
 		}
 	}
 
@@ -245,6 +252,26 @@ var mockExternalServicesService backend.ExternalServicesService
 type excludeRepoFromExternalServiceArgs struct {
 	ExternalServices []graphql.ID
 	Repo             graphql.ID
+}
+
+var codeHostInaccessibleWarning = strings.TrimSpace(`
+This error might indicate that the code host is not reachable over the network from your Sourcegraph instance.
+
+This could be due to a network issue or a misconfiguration of the code host.
+Please see [our troubleshooting documentation page](https://sourcegraph.com/docs/admin/repo/add#troubleshooting) for more information.
+`)
+
+func checkErrCodeHostMaybeInaccessible(err error) bool {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	var e *net.DNSError
+	if errors.As(err, &e) && e.IsNotFound {
+		return true
+	}
+
+	return false
 }
 
 // ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.

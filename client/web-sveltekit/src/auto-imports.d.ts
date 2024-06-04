@@ -12,5 +12,6 @@ declare global {
   const ILucideHome: typeof import('~icons/lucide/home')['default']
   const ILucideInfo: typeof import('~icons/lucide/info')['default']
   const ILucideRegex: typeof import('~icons/lucide/regex')['default']
+  const ILucideSquareSlash: typeof import('~icons/lucide/square-slash')['default']
   const ILucideX: typeof import('~icons/lucide/x')['default']
 }

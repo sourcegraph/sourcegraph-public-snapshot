@@ -30,5 +30,4 @@
     export let inline: boolean = false
 </script>
 
-
 <svelte:component this={icon} class="{style.icon} {inline ? style.iconInline : ''}" />

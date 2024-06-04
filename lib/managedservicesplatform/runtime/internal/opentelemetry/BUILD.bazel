@@ -38,5 +38,6 @@ go_library(
         "@io_opentelemetry_go_otel_sdk_metric//metricdata",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@io_opentelemetry_go_otel_trace//embedded",
+        "@org_golang_google_api//option",
     ],
 )

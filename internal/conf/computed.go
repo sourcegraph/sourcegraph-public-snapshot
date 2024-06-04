@@ -618,7 +618,7 @@ func AuthLockout() *schema.AuthLockout {
 	return val
 }
 
-const defaultGitLongCommandTimeout = time.Hour
+const defaultGitLongCommandTimeout = 2 * time.Hour
 
 // GitLongCommandTimeout returns the maximum amount of time in seconds that a
 // long Git command (e.g. clone or remote update) is allowed to execute. If not

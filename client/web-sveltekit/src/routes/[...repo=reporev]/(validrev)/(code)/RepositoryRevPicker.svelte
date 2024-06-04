@@ -1,4 +1,5 @@
 <script context="module" lang="ts">
+    import type { Keys } from '$lib/Hotkey'
     import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
@@ -9,6 +10,18 @@
 
     export type RepositoryCommits = { nodes: RevPickerGitCommit[] }
     export type RepositoryGitCommit = RevPickerGitCommit
+
+    const branchesHotkey: Keys = {
+        key: 'shift+b',
+    }
+
+    const tagsHotkey: Keys = {
+        key: 'shift+t',
+    }
+
+    const commitsHotkey: Keys = {
+        key: 'shift+c',
+    }
 </script>
 
 <script lang="ts">
@@ -92,7 +105,7 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            <TabPanel title="Branches">
+            <TabPanel title="Branches" shortcut={branchesHotkey}>
                 <Picker
                     name="branches"
                     seeAllItemsURL={`${repoURL}/-/branches`}
@@ -119,7 +132,7 @@
                     </RepositoryRevPickerItem>
                 </Picker>
             </TabPanel>
-            <TabPanel title="Tags">
+            <TabPanel title="Tags" shortcut={tagsHotkey}>
                 <Picker
                     name="tags"
                     seeAllItemsURL={`${repoURL}/-/tags`}
@@ -138,7 +151,7 @@
                     />
                 </Picker>
             </TabPanel>
-            <TabPanel title="Commits">
+            <TabPanel title="Commits" shortcut={commitsHotkey}>
                 <Picker
                     name="commits"
                     seeAllItemsURL={`${repoURL}/-/commits`}
@@ -206,7 +219,6 @@
         max-width: 40rem;
         width: 640px;
 
-        --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
 
         :global([data-tab-header]) {

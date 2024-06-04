@@ -67,7 +67,7 @@
         {/if}
     </nav>
 
-    <Popover let:registerTrigger showOnHover>
+    <Popover let:registerTrigger showOnHover hoverDelay={100} hoverCloseDelay={50}>
         <span class="web-next-badge" use:registerTrigger>
             <Badge variant="warning">Experimental</Badge>
         </span>

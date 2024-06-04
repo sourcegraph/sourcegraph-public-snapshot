@@ -1,7 +1,7 @@
 package precise
 
 import (
-	"context"
+	"cmp"
 	"sort"
 )
 
@@ -23,99 +23,23 @@ func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
 	return filtered
 }
 
-// FindRangesInWIndow filters the given ranges and returns those that intersect with the
-// given window of lines. Ranges are returned in reading order (top-down/left-right).
-func FindRangesInWindow(ranges map[ID]RangeData, startLine, endLine int) []RangeData {
-	var filtered []RangeData
-	for _, r := range ranges {
-		if RangeIntersectsSpan(r, startLine, endLine) {
-			filtered = append(filtered, r)
-		}
-	}
-
-	sort.Slice(filtered, func(i, j int) bool {
-		return CompareRanges(filtered[i], filtered[j]) < 0
-	})
-
-	return filtered
-}
-
-// CompareRanges compares two ranges.
-// Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
-// Returns 0 if they're exactly equal. Returns 1 otherwise.
-func CompareRanges(a RangeData, b RangeData) int {
-	if a.StartLine < b.StartLine {
-		return -1
-	}
-
-	if a.StartLine > b.StartLine {
-		return 1
-	}
-
-	if a.StartCharacter < b.StartCharacter {
-		return -1
-	}
-
-	if a.StartCharacter > b.StartCharacter {
-		return 1
-	}
-
-	if a.EndLine < b.EndLine {
-		return -1
-	}
-
-	if a.EndLine > b.EndLine {
-		return 1
-	}
-
-	if a.EndCharacter < b.EndCharacter {
-		return -1
-	}
-
-	if a.EndCharacter > b.EndCharacter {
-		return 1
-	}
-
-	return 0
-}
-
 // CompareLocations compares two locations.
 // Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
 // Returns 0 if they're exactly equal. Returns 1 otherwise.
 func CompareLocations(a LocationData, b LocationData) int {
-	if a.StartLine < b.StartLine {
-		return -1
+	if v := cmp.Compare(a.StartLine, b.StartLine); v != 0 {
+		return v
 	}
 
-	if a.StartLine > b.StartLine {
-		return 1
+	if v := cmp.Compare(a.StartCharacter, b.StartCharacter); v != 0 {
+		return v
 	}
 
-	if a.StartCharacter < b.StartCharacter {
-		return -1
+	if v := cmp.Compare(a.EndLine, b.EndLine); v != 0 {
+		return v
 	}
 
-	if a.StartCharacter > b.StartCharacter {
-		return 1
-	}
-
-	if a.EndLine < b.EndLine {
-		return -1
-	}
-
-	if a.EndLine > b.EndLine {
-		return 1
-	}
-
-	if a.EndCharacter < b.EndCharacter {
-		return -1
-	}
-
-	if a.EndCharacter > b.EndCharacter {
-		return 1
-	}
-
-	return 0
+	return cmp.Compare(a.EndCharacter, b.EndCharacter)
 }
 
 // ComparePosition compares the range r with the position constructed from line and character.
@@ -145,91 +69,6 @@ func ComparePosition(r RangeData, line, character int) int {
 // given start and end lines.
 func RangeIntersectsSpan(r RangeData, startLine, endLine int) bool {
 	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)
-}
-
-// CAUTION: Data is not deep copied.
-func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
-	documentChan := make(chan KeyedDocumentData, len(maps.Documents))
-	go func() {
-		defer close(documentChan)
-		for path, doc := range maps.Documents {
-			select {
-			case documentChan <- KeyedDocumentData{
-				Path:     path,
-				Document: doc,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	resultChunkChan := make(chan IndexedResultChunkData, len(maps.ResultChunks))
-	go func() {
-		defer close(resultChunkChan)
-
-		for idx, chunk := range maps.ResultChunks {
-			select {
-			case resultChunkChan <- IndexedResultChunkData{
-				Index:       idx,
-				ResultChunk: chunk,
-			}:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	monikerDefsChan := make(chan MonikerLocations)
-	go func() {
-		defer close(monikerDefsChan)
-
-		for kind, kindMap := range maps.Definitions {
-			for scheme, identMap := range kindMap {
-				for ident, locations := range identMap {
-					select {
-					case monikerDefsChan <- MonikerLocations{
-						Kind:       kind,
-						Scheme:     scheme,
-						Identifier: ident,
-						Locations:  locations,
-					}:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}
-	}()
-	monikerRefsChan := make(chan MonikerLocations)
-	go func() {
-		defer close(monikerRefsChan)
-
-		for kind, kindMap := range maps.References {
-			for scheme, identMap := range kindMap {
-				for ident, locations := range identMap {
-					select {
-					case monikerRefsChan <- MonikerLocations{
-						Kind:       kind,
-						Scheme:     scheme,
-						Identifier: ident,
-						Locations:  locations,
-					}:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}
-	}()
-
-	return &GroupedBundleDataChans{
-		Meta:              maps.Meta,
-		Documents:         documentChan,
-		ResultChunks:      resultChunkChan,
-		Definitions:       monikerDefsChan,
-		References:        monikerRefsChan,
-		Packages:          maps.Packages,
-		PackageReferences: maps.PackageReferences,
-	}
 }
 
 // CAUTION: Data is not deep copied.

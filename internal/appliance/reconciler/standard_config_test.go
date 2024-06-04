@@ -1,7 +1,5 @@
 package reconciler
 
-import "time"
-
 // Use this file to test features available in StandardConfig (see
 // development.md and config subpackage).
 
@@ -20,13 +18,7 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 		{name: "standard/symbols-with-custom-image"},
 	} {
 		suite.Run(tc.name, func() {
-			namespace := suite.createConfigMap(tc.name)
-
-			// Wait for reconciliation to be finished.
-			suite.Require().Eventually(func() bool {
-				return suite.getConfigMapReconcileEventCount(namespace) > 0
-			}, time.Second*10, time.Millisecond*200)
-
+			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)
 			suite.makeGoldenAssertions(namespace, tc.name)
 		})
 	}
@@ -35,16 +27,8 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 // More complex test cases involving updates to the configmap can have their own
 // test blocks
 func (suite *ApplianceTestSuite) TestResourcesDeletedWhenDisabled() {
-	namespace := suite.createConfigMap("blobstore/default")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > 0
-	}, time.Second*10, time.Millisecond*200)
+	namespace := suite.createConfigMapAndAwaitReconciliation("blobstore/default")
 
-	eventsSeenSoFar := suite.getConfigMapReconcileEventCount(namespace)
-	suite.updateConfigMap(namespace, "standard/everything-disabled")
-	suite.Require().Eventually(func() bool {
-		return suite.getConfigMapReconcileEventCount(namespace) > eventsSeenSoFar
-	}, time.Second*10, time.Millisecond*200)
-
+	suite.updateConfigMapAndAwaitReconciliation(namespace, "standard/everything-disabled")
 	suite.makeGoldenAssertions(namespace, "standard/blobstore-subsequent-disable")
 }
