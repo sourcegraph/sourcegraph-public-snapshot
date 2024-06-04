@@ -237,6 +237,7 @@ ts_project(
         "src/cody/management/api/components/CodyProApiClient.ts",
         "src/cody/management/api/hooks/useApiClient.tsx",
         "src/cody/management/api/react-query/QueryClientProvider.tsx",
+        "src/cody/management/api/react-query/callCodyProApi.ts",
         "src/cody/management/api/react-query/subscriptions.ts",
         "src/cody/management/api/stripeCheckout.ts",
         "src/cody/management/api/teamInvites.ts",
