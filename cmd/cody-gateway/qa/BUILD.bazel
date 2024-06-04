@@ -18,6 +18,7 @@ go_test(
         "//internal/completions/client/fireworks",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
 
