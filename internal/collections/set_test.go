@@ -70,10 +70,10 @@ func TestSet(t *testing.T) {
 		require.True(t, a.IsSupersetOf(NewSet(1, 2, 3)))
 		require.False(t, a.IsSupersetOf(b))
 
-		// set always contains self
+		// a set is a superset of itself
 		require.True(t, a.IsSupersetOf(a))
 
-		// empty set is always contained
+		// a set is always the superset of an empty set
 		require.True(t, a.IsSupersetOf(NewSet[int]()))
 	})
 
