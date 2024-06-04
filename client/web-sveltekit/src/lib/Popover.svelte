@@ -150,6 +150,7 @@
         background-color: var(--dropdown-bg);
         color: var(--body-color);
         box-shadow: var(--popover-shadow);
+        z-index: 1;
 
         border: 1px solid var(--dropdown-border-color);
         border-radius: var(--popover-border-radius);

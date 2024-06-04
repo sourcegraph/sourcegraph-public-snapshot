@@ -22,6 +22,7 @@ go_library(
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/uploads/shared",
+        "//internal/collections",
         "//internal/database/basestore",
         "//internal/database/dbutil",
         "//internal/metrics",

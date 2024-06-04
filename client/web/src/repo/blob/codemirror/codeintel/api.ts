@@ -340,6 +340,9 @@ export class CodeIntelAPIAdapter {
                             disabledTitle:
                                 definition.type === 'none' ? 'No definition found' : 'You are at the definition',
                             command: 'open',
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 } else if (definition.type === 'initial') {
@@ -350,6 +353,9 @@ export class CodeIntelAPIAdapter {
                             title: 'Go to definition',
                             command: 'invokeFunction-new',
                             commandArguments: [() => this.goToDefinitionAtOccurrence(view, occurrence)],
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 } else {
@@ -377,6 +383,9 @@ export class CodeIntelAPIAdapter {
                                     return false
                                 },
                             ],
+                            telemetryProps: {
+                                feature: 'blob.goToDefinition',
+                            },
                         },
                     })
                 }
@@ -389,6 +398,9 @@ export class CodeIntelAPIAdapter {
                         commandArguments: [
                             () => this.config.openReferences(view, this.config.documentInfo, occurrence),
                         ],
+                        telemetryProps: {
+                            feature: 'blob.findReferences',
+                        },
                     },
                 })
 
@@ -402,6 +414,9 @@ export class CodeIntelAPIAdapter {
                             commandArguments: [
                                 () => this.config.openImplementations(view, this.config.documentInfo, occurrence),
                             ],
+                            telemetryProps: {
+                                feature: 'blob.findImplementations',
+                            },
                         },
                     })
                 }
@@ -412,6 +427,9 @@ export class CodeIntelAPIAdapter {
                         title: '?', // special marker for the MDI "Help" icon.
                         description: `Go to definition with ${modifierClickDescription}, long-click, or by pressing Enter with the keyboard. Display this popover by pressing Space with the keyboard.`,
                         command: '',
+                        telemetryProps: {
+                            feature: 'blob.goToDefinition.help',
+                        },
                     },
                 })
                 return actions

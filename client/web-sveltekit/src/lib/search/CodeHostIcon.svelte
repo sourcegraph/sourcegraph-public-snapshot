@@ -1,13 +1,14 @@
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
     import { getIconPathForCodeHost } from '$lib/repo/shared/codehost'
+    import Tooltip from '$lib/Tooltip.svelte'
 
     export let repository: string
+    export let codeHost: string | undefined = undefined
     export let disableTooltip: boolean = false
 
     $: hostName = repository.split('/')[0]
-    $: svgPath = getIconPathForCodeHost(hostName)
+    $: svgPath = getIconPathForCodeHost(codeHost ?? hostName)
 </script>
 
 {#if svgPath}

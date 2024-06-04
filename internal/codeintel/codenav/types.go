@@ -3,6 +3,8 @@ package codenav
 import (
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -54,11 +56,27 @@ type RequestArgs struct {
 	RawCursor    string
 }
 
+func (args *RequestArgs) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.Int("limit", args.Limit),
+	}
+}
+
 type PositionalRequestArgs struct {
 	RequestArgs
 	Path      string
 	Line      int
 	Character int
+}
+
+func (args *PositionalRequestArgs) Attrs() []attribute.KeyValue {
+	return append(args.RequestArgs.Attrs(),
+		attribute.String("path", args.Path),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	)
 }
 
 // DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
