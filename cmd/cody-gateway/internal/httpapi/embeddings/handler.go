@@ -134,7 +134,7 @@ func NewHandler(
 				// Generate metadata if we are indexing, not querying.
 				if !body.IsQuery {
 					var err error
-					newInput, err = GenerateMetadata(body, logger, completionsClient)
+					newInput, err = generateMetadata(body, logger, completionsClient)
 					if err != nil {
 						logger.Error("failed to generate metadata", log.Error(err))
 						return
