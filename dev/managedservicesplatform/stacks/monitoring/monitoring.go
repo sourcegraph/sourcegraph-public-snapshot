@@ -390,7 +390,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create response code metrics")
 			}
-			alertGroups["Response Code Ratio Alerts"] = responseCodeRatioAlerts
+			alertGroups[responseCodeRatioAlertsGroupName] = responseCodeRatioAlerts
 		}
 	case spec.ServiceKindJob:
 		jobAlerts, err := createJobAlerts(stack, id.Group("job"), vars, channels)
@@ -407,7 +407,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create custom alerts")
 		}
-		alertGroups["Custom Alerts"] = customAlerts
+		alertGroups[customAlertsGroupName] = customAlerts
 	}
 
 	if vars.RedisInstanceID != nil {
