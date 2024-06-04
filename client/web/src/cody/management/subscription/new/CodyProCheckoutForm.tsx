@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
 import { useCustomCheckout, PaymentElement, AddressElement } from '@stripe/react-stripe-js'
@@ -40,7 +40,6 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     const { total, lineItems, updateLineItemQuantity, email, updateEmail, status } = useCustomCheckout()
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-    const [displayErrorMessage, setDisplayErrorMessage] = React.useState(false)
     const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
     const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
     const debouncedSeatCount = useDebounce(seatCount, 800)
@@ -54,9 +53,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                     quantity: debouncedSeatCount,
                 })
             } catch (error) {
-                setAndDisplayErrorMessage(
-                    'Failed to update seat count. Please change the number of seats to try again.'
-                )
+                setErrorMessage('Failed to update seat count. Please change the number of seats to try again.')
             }
             setUpdatingSeatCount(false)
         }
@@ -65,14 +62,6 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     }, [lineItems[0].id, debouncedSeatCount])
 
     const isPriceLoading = seatCount !== debouncedSeatCount || updatingSeatCount
-
-    const setAndDisplayErrorMessage = useCallback(
-        (message: string) => {
-            setErrorMessage(message)
-            setDisplayErrorMessage(true)
-        },
-        [setErrorMessage, setDisplayErrorMessage]
-    )
 
     // Set initial seat count.
     useEffect(() => {
@@ -157,12 +146,12 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                         <Form>
                             <PaymentElement options={{ layout: 'accordion' }} className="mb-4" />
                             <AddressElement options={{ mode: 'billing' }} />
-                            {errorMessage && displayErrorMessage && (
+                            {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
 
                             <PayButton
-                                setErrorMessage={setAndDisplayErrorMessage}
+                                setErrorMessage={setErrorMessage}
                                 className={classNames('d-block w-100 mb-4', styles.payButton)}
                             >
                                 Subscribe
