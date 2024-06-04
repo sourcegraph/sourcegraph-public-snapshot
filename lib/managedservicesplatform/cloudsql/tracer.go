@@ -81,7 +81,21 @@ func (pgxTracer) TraceConnectEnd(ctx context.Context, data pgx.TraceConnectEndDa
 	}
 }
 
+// Number of SQL arguments allowed to enable argument instrumentation
+const argsAttributesCountLimit = 24
+
+// Maximum size to use in heuristics of SQL arguments size in argument
+// instrumentation before they are truncated. This is NOT a hard cap on bytes
+// size of values.
+const argsAttributesValueLimit = 240
+
 func argsAsAttributes(args []any) []attribute.KeyValue {
+	if len(args) > argsAttributesCountLimit {
+		return []attribute.KeyValue{
+			attribute.String("db.args", "too many args"),
+		}
+	}
+
 	attrs := make([]attribute.KeyValue, len(args))
 	for i, arg := range args {
 		key := "db.args.$" + strconv.Itoa(i)
@@ -117,11 +131,6 @@ func argsAsAttributes(args []any) []attribute.KeyValue {
 // utf8Replace is the same value as used in other strings.ToValidUTF8 callsites
 // in sourcegraph/sourcegraph.
 const utf8Replace = "�"
-
-// Maximum size to use in heuristics of SQL arguments size in argument
-// instrumentation before they are truncated. This is NOT a hard cap on bytes
-// size of values.
-const argsAttributesValueLimit = 240
 
 // truncateStringValue should be used on all string attributes in the otelsql
 // instrumentation. It ensures the length of v is within argsAttributesValueLimit,
