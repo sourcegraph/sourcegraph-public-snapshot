@@ -65,16 +65,16 @@ func TestSet(t *testing.T) {
 		require.Equal(t, []int{1}, s.Values())
 	})
 
-	t.Run("Contains returns true if set contains the other set", func(t *testing.T) {
-		require.True(t, a.Contains(NewSet(1, 2)))
-		require.True(t, a.Contains(NewSet(1, 2, 3)))
-		require.False(t, a.Contains(b))
+	t.Run("IsSupersetOf returns true if set contains the other set", func(t *testing.T) {
+		require.True(t, a.IsSupersetOf(NewSet(1, 2)))
+		require.True(t, a.IsSupersetOf(NewSet(1, 2, 3)))
+		require.False(t, a.IsSupersetOf(b))
 
 		// set always contains self
-		require.True(t, a.Contains(a))
+		require.True(t, a.IsSupersetOf(a))
 
 		// empty set is always contained
-		require.True(t, a.Contains(NewSet[int]()))
+		require.True(t, a.IsSupersetOf(NewSet[int]()))
 	})
 
 	t.Run("Union creates a new set with all values from both sets", func(t *testing.T) {
