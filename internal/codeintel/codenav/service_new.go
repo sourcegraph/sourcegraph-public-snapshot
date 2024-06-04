@@ -107,7 +107,7 @@ func (s *Service) gatherLocations(
 	extractor LocationExtractor,
 ) (allLocations []shared.UploadLocation, _ Cursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold,
-		observation.Args{Attrs: append(args.Attrs(), requestState.Attrs()...)})
+		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	if cursor.Phase == "" {

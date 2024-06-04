@@ -54,7 +54,8 @@ func newService(
 
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{Attrs: append(args.Attrs(), requestState.Attrs()...)})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold,
+		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
@@ -368,7 +369,7 @@ const DefinitionsLimit = 100
 
 func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold,
-		observation.Args{Attrs: append(args.Attrs(), requestState.Attrs()...)})
+		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	visibleUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
