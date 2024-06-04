@@ -43,7 +43,10 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
 }) => {
     const [urlSearchParams] = useSearchParams()
     const initialSeatCount = useMemo(() => {
+        // Team=1 means the user is purchasing a subscription for a team.
+        // Any other value means an individual subscription, except if seats is explicitly set to > 1.
         const defaultSeatCount = urlSearchParams.get('team') === '1' ? 2 : 1
+        // If set, we'll use the value set here as the initial seat count.
         const seatCountString = urlSearchParams.get('seats') || defaultSeatCount.toString()
         return parseInt(seatCountString, 10) || defaultSeatCount
     }, [urlSearchParams])
