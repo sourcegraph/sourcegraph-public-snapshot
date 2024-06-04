@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { mdiDotsHorizontal } from '@mdi/js'
+    import { writable } from 'svelte/store'
 
     import { resolveRoute } from '$app/paths'
-    import { overflow } from '$lib/dom'
-    import Icon from '$lib/Icon.svelte'
-    import { DropdownMenu } from '$lib/wildcard'
+    import { sizeToFit } from '$lib/dom'
+    import Icon2 from '$lib/Icon2.svelte'
+    import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
@@ -35,29 +35,55 @@
         event.clipboardData?.setData('text/plain', selection.toString().replaceAll(/\n?\/\n?/g, '/'))
         event.preventDefault()
     }
+
+    const breadcrumbMenuOpen = writable(false)
+    $: compact = false
+    $: visibleBreadcrumbCount = breadcrumbs.length
+    $: collapsedBreadcrumbCount = breadcrumbs.length - visibleBreadcrumbCount
+    function grow(): boolean {
+        // Expand the breadcrumbs first, then the actions
+        if (visibleBreadcrumbCount < breadcrumbs.length) {
+            visibleBreadcrumbCount += 1
+            return true
+        }
+        compact = false
+        return false
+    }
+    function shrink(): boolean {
+        // Collapse the actions first, then the breadcrumbs
+        if (!compact) {
+            compact = true
+            return visibleBreadcrumbCount > 1
+        }
+        if (visibleBreadcrumbCount > 1) {
+            visibleBreadcrumbCount -= 1
+        }
+        return visibleBreadcrumbCount > 1
+    }
 </script>
 
-<div class="header">
+<div class="header" use:sizeToFit={{ grow, shrink }}>
     <h2 on:copy={stripSpaces}>
-        {#each breadcrumbs as [name, path], index}
-            {@const last = index === breadcrumbs.length - 1}
-            <!--
-                The elements are arranged like this because we want to
-                ensure that the leading / before a segment always stays with
-                the segment. I.e.
-
-                    path / to / file
-
-                is wrapped as
-
-                    path
-                    / to
-                    / file
-
-                However, without the following space the path wouldn't break/wrap
-                at all.
-            -->
-            {' '}
+        {#if collapsedBreadcrumbCount > 0}
+            <DropdownMenu
+                open={breadcrumbMenuOpen}
+                triggerButtonClass={getButtonClassName({ variant: 'icon', outline: true, size: 'sm' })}
+                aria-label="{$breadcrumbMenuOpen ? 'Close' : 'Open'} collapsed path elements"
+            >
+                <svelte:fragment slot="trigger">
+                    <Icon2 inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
+                </svelte:fragment>
+                {#each breadcrumbs.slice(0, collapsedBreadcrumbCount) as [name, path]}
+                    <MenuLink href={path}>
+                        <Icon2 inline icon={ILucideFolder} aria-label="Collapsed path elements" />
+                        {name}
+                    </MenuLink>
+                {/each}
+            </DropdownMenu>
+            <span class="slash">/</span>
+        {/if}
+        {#each breadcrumbs.slice(collapsedBreadcrumbCount) as [name, path], index}
+            {@const last = index === breadcrumbs.length - collapsedBreadcrumbCount - 1}
             <span class:last>
                 {#if index > 0}
                     <span class="slash">/</span>
@@ -72,9 +98,9 @@
                 {/if}
             </span>
         {/each}
+        <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
     </h2>
-    <span class="copy-button"><CopyButton value={path} label="Copy path to clipboard" /></span>
-    <div class="actions" use:overflow={{ class: 'compact', measureClass: 'measure' }}>
+    <div class="actions" class:compact>
         <slot name="actions" />
         {#if $$slots.actionmenu}
             <div class="divider" />
@@ -84,7 +110,7 @@
                     aria-label="Show more actions"
                 >
                     <svelte:fragment slot="trigger">
-                        <Icon svgPath={mdiDotsHorizontal} inline />
+                        <Icon2 inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
                     </svelte:fragment>
                     <slot name="actionmenu" />
                 </DropdownMenu>
@@ -96,28 +122,26 @@
 <style lang="scss">
     .header {
         display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
         align-items: center;
         padding: 0.25rem 0.5rem;
         background-color: var(--color-bg-1);
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
-        gap: 0.5rem;
-
-        .copy-button {
-            visibility: hidden;
-        }
-        &:hover .copy-button {
-            visibility: visible;
-        }
+        gap: 1rem;
     }
 
     h2 {
+        flex: 1;
+
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 0.375em;
         span {
             display: flex;
             gap: inherit;
+            white-space: nowrap;
         }
 
         font-weight: 400;
@@ -137,93 +161,29 @@
             color: var(--text-disabled);
         }
 
-        span {
-            white-space: nowrap;
-        }
-
         .last {
             color: var(--text-title);
+        }
+
+        .copy-button {
+            visibility: hidden;
+        }
+        &:hover .copy-button {
+            visibility: visible;
         }
     }
 
     .actions {
         --color: var(--icon-color);
 
-        // Ensures that the actions are centered vertically when the header expands
-        // due to path name wrapping.
-        align-self: center;
-
-        // In order to hide action labels when necessary (i.e. when there wouldn't be
-        // enough space to display the path). We use the `overflow` action to measure
-        // the space available for the actions. For this to work we need to setup th
-        // CSS rules accordingly.
-
-        // Ensures that the element takes up as much space as available.
-        flex: 1;
-        // Allows the element to shrink past it's content size. This allows us, together
-        // with the .measure CSS class, to determine whether the actions would use more
-        // space if the labels are visible.
-        overflow: hidden;
-        // Due to flex: 1 the element will take up all available space, but we want
-        // the actions to appear as far to the right as possible.
-        justify-content: right;
-
-        // Here is how this works togther: The header starts out with enough space.
-        // The actions take up all remaining space, due to `flex: 1`.
-        //
-        //   ┌──────────────────┐┌──────────────────────────────┐
-        //   │ path / to / file ││          [a] Label [b] Label │
-        //   └──────────────────┘└──────────────────────────────┘
-        //
-        // As the header shrinks, the actions will use less space and eventually the content
-        // will be hidden due to `overflow: hidden`.
-        //
-        //   ┌──────────────────────────────┐┌──────────────────┐
-        //   │ path / to / file             ││] Label [b] Label │
-        //   └──────────────────────────────┘└──────────────────┘
-        //
-        // At this point the overflow action will "trigger" and compare the current size of the
-        // actions element with the size after applying the `.measure` class. The measure class
-        // Removes the `overflow: hidden` rule, to prevent the actions element to shrink past
-        // its content size. Therefore the overflow action measures the following:
-        //
-        //                                    (without .measure)
-        //   ┌──────────────────────────────┐┌──────────────────┐
-        //   │ path / to / file             ││] Label [b] Label │
-        //   └──────────────────────────────┘└──────────────────┘
-        //                                 .measure
-        //   ┌───────────────────────────┐┌─────────────────────┐
-        //   │ path / to / file          ││ [a] Label [b] Label │
-        //   └───────────────────────────┘└─────────────────────┘
-        //
-        // It determines that the actions element would use more space if fully displayed and
-        // therefore adds the `.compact` class to the actions element, which hides the labels.
-        //
-        //                                    .compact
-        //   ┌──────────────────────────────┐┌──────────────────┐
-        //   │ path / to / file             ││          [a] [b] │
-        //   └──────────────────────────────┘└──────────────────┘
-        //
-
-        // To make the actions menu button appear visually "centered"
-        margin-right: 0.5rem;
-
         display: flex;
+        justify-content: space-evenly;
         gap: 1rem;
+        padding-right: 0.5rem;
         align-items: center;
 
-        // With overflow:visible the actions won't shrink past their content size,
-        // and this allows us to measure the space needed to show actions fully.
-        &:global(.measure) {
-            overflow: visible;
-        }
-
         // When the actions are "compact" we hide the labels.
-        &:global(.compact) {
-            // This is necessary to prevent shrinking the actions even past its
-            // "compact" size.
-            overflow: visible;
-
+        &.compact {
             :global([data-action-label]) {
                 display: none;
             }
@@ -232,10 +192,6 @@
         .divider {
             border-left: 1px solid var(--border-color);
             align-self: stretch;
-        }
-
-        .more {
-            align-self: center;
         }
     }
 </style>
