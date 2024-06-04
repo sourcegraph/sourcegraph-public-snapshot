@@ -25,7 +25,7 @@ import (
 var (
 	licenseCheckStarted = false
 	store               = redispool.Store
-	baseUrl             = env.Get("SOURCEGRAPH_API_URL", "http://localhost:7080", "Base URL for license check API")
+	baseUrl             = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
 )
 
 const (
@@ -171,12 +171,12 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db databa
 		cancel()
 		ctxWithCancel, cancel = context.WithCancel(originalCtx)
 
-		// prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
+		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
 		licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
 		var initialWaitInterval time.Duration = 0
-		// 		if prevLicenseToken == licenseToken {
-		// 			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())
-		// 		}
+		if prevLicenseToken == licenseToken {
+			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())
+		}
 
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
