@@ -104,7 +104,7 @@
         <slot name="actions" />
         {#if $$slots.actionmenu}
             <div class="divider" />
-            <div class="more">
+            <div>
                 <DropdownMenu
                     triggerButtonClass={getButtonClassName({ variant: 'icon' })}
                     aria-label="Show more actions"
@@ -125,7 +125,7 @@
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0 0.25rem 0.5rem;
         background-color: var(--color-bg-1);
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
@@ -179,7 +179,7 @@
         display: flex;
         justify-content: space-evenly;
         gap: 1rem;
-        padding-right: 0.5rem;
+        padding-right: 1rem;
         align-items: center;
 
         // When the actions are "compact" we hide the labels.
