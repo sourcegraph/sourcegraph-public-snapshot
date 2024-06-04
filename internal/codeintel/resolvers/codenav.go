@@ -2,12 +2,21 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -288,34 +297,95 @@ type UsagesForSymbolArgs struct {
 	After  *string
 }
 
-func (args *UsagesForSymbolArgs) ProvenancesForSCIPData() ForEachProvenance[bool] {
-	var out ForEachProvenance[bool]
-	if args == nil || args.Symbol == nil || args.Symbol.Provenance.Equals == nil {
-		out.Precise = true
-		out.Syntactic = true
-		out.SearchBased = true
+// Resolve checks the well-formedness of args, and records the common information
+// that will be needed by precise, syntactic and search-based code nav.
+func (args *UsagesForSymbolArgs) Resolve(ctx context.Context, repoStore database.RepoStore, client gitserver.Client, maxPageSize int32) (out UsagesForSymbolResolvedArgs, err error) {
+	repo, err := repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
+	if err != nil {
+		return out, err
+	}
+	commitish := "HEAD"
+	if rev := args.Range.Revision; rev != nil && *rev != "" {
+		if _, err = api.NewCommitID(*rev); err != nil {
+			return out, err
+		}
+		commitish = *rev
+	}
+	commitID, err := client.ResolveRevision(ctx, repo.Name, commitish, gitserver.ResolveRevisionOptions{})
+	if err != nil {
+		return out, err
+	}
+	if args.Range.Path == "" || path.IsAbs(args.Range.Path) {
+		return out, errors.New("relative path to document containing one reference is required")
+	}
+	remainingCount := maxPageSize
+	if args.First != nil {
+		remainingCount = min(max(*args.First, 0), maxPageSize)
+	}
+	var cursor UsagesCursor
+	if args.After != nil {
+		bytes, err := base64.StdEncoding.DecodeString(*args.After)
+		if err != nil {
+			return out, errors.Wrap(err, "invalid after: cursor")
+		}
+		if err = json.Unmarshal(bytes, &cursor); err != nil {
+			return out, errors.Wrap(err, "invalid after: cursor")
+		}
 	} else {
-		switch p := *args.Symbol.Provenance.Equals; p {
-		case ProvenancePrecise:
-			out.Precise = true
-		case ProvenanceSyntactic:
-			out.Syntactic = true
-		case ProvenanceSearchBased:
-			out.SearchBased = true
+		cursor.PreciseCursorType = DefinitionsCursor
+	}
+	if args.Symbol != nil {
+		sym := args.Symbol.Name.Equals
+		prov := args.Symbol.Provenance.Equals
+		if sym == nil || prov == nil {
+			return out, errors.New("name.equals and provenance.equals must be specified if SymbolComparator is provided")
+		}
+		if *sym == "" {
+			return out, errors.New("symbol name should be non-empty")
+		}
+		if _, err := scip.ParseSymbol(*sym); err != nil { // parsing is cheap, so don't keep the parsed value
+			return out, errors.Wrap(err, "malformed symbol name")
 		}
 	}
-	return out
+	return UsagesForSymbolResolvedArgs{
+		args.Symbol,
+		*repo,
+		commitID,
+		args.Range.Path,
+		args.Range.Start,
+		args.Range.End,
+		args.Filter,
+		remainingCount,
+		cursor,
+	}, nil
 }
 
-// Normalize sets the First field to a non-null value.
-func (args *UsagesForSymbolArgs) Normalize(maxPageSize int32) {
-	if args == nil {
-		*args = UsagesForSymbolArgs{}
-	}
-	if args.First == nil || *args.First > maxPageSize {
-		args.First = &maxPageSize
-	}
+type UsagesForSymbolResolvedArgs struct {
+	Symbol *SymbolComparator
+	Repo types.Repo
+	CommitID api.CommitID
+	Path string
+	Start PositionInput
+	End PositionInput
+	Filter *UsagesFilter
+
+	RemainingCount int32
+	Cursor UsagesCursor
 }
+
+type UsagesCursor struct {
+	PreciseCursorType `json:"ty"`
+	PreciseCursor     codenav.Cursor `json:"pc"`
+}
+
+type PreciseCursorType string
+
+const (
+	DefinitionsCursor     PreciseCursorType = "definitions"
+	ImplementationsCursor PreciseCursorType = "implementations"
+	PrototypesCursor      PreciseCursorType = "prototypes"
+	ReferencesCursor      PreciseCursorType = "references"
+)
 
 func (args *UsagesForSymbolArgs) Attrs() (out []attribute.KeyValue) {
 	out = append(append(args.Symbol.Attrs(), args.Range.Attrs()...), attribute.String("filter", args.Filter.DebugString()))
@@ -329,6 +399,25 @@ func (args *UsagesForSymbolArgs) Attrs() (out []attribute.KeyValue) {
 type SymbolComparator struct {
 	Name       SymbolNameComparator
 	Provenance CodeGraphDataProvenanceComparator
+}
+
+func (c *SymbolComparator) ProvenancesForSCIPData() ForEachProvenance[bool] {
+	var out ForEachProvenance[bool]
+	if c == nil || c.Provenance.Equals == nil {
+		out.Precise = true
+		out.Syntactic = true
+		out.SearchBased = true
+	} else {
+		switch p := *c.Provenance.Equals; p {
+		case ProvenancePrecise:
+			out.Precise = true
+		case ProvenanceSyntactic:
+			out.Syntactic = true
+		case ProvenanceSearchBased:
+			out.SearchBased = true
+		}
+	}
+	return out
 }
 
 func (c *SymbolComparator) Attrs() (out []attribute.KeyValue) {

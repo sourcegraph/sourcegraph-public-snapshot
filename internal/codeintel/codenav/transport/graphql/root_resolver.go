@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -205,9 +208,12 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	}()
 
 	const maxUsagesCount = 100
-	args.Normalize(maxUsagesCount)
+	resolvedArgs, err := args.Resolve(ctx, r.repoStore, r.gitserverClient, maxUsagesCount)
+	if err != nil {
+		return nil, err
+	}
 	remainingCount := int(*args.First)
-	provsForSCIPData := args.ProvenancesForSCIPData()
+	provsForSCIPData := resolvedArgs.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
 		// Attempt to get up to remainingCount precise results.
