@@ -414,8 +414,8 @@ export const overflow: Action<HTMLElement, { class: string; measureClass?: strin
 /**
  * An action that resizes an element with the provided grow and shrink callbacks until the target element no longer overflows.
  *
- * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating max size
- * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating minimum size
+ * @param grow A callback to increase the size of the contained contents. Returns a boolean indicating more growth is possible.
+ * @param shrink A callback to reduce the size of the contained contents. Returns a boolean indicating more shrinking is possible.
  * @returns An action that updates the overflow state of the element.
  */
 export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () => boolean }> = (
