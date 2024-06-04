@@ -2,6 +2,7 @@ package ssc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -303,13 +304,23 @@ func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// For any SSC 5xx errors, surface that as a 502 from this Sourcegraph instance,
+	// For any SSC 5xx errors, esnure error message is of proper shape,
+	// and surface that as a 502 from this Sourcegraph instance,
 	// to make it clear that the underlying error didn't happen "here".
 	if proxyResponse.StatusCode >= 500 {
 		p.Logger.Error(
 			"received 5xx response from SSC backend",
 			log.String("responseBody", string(bodyBytes)))
-		http.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
+		http.Error(w, toErrorWithMessageAndCause(bodyBytes, http.StatusBadGateway), http.StatusBadGateway)
+		return
+	}
+
+	// For any SSC 4xx errors, ensure the response body contains error of proper shape.
+	if proxyResponse.StatusCode >= 400 {
+		p.Logger.Debug(
+			"received 4xx response from SSC backend",
+			log.String("responseBody", string(bodyBytes)))
+		http.Error(w, toErrorWithMessageAndCause(bodyBytes, proxyResponse.StatusCode), proxyResponse.StatusCode)
 		return
 	}
 
@@ -321,4 +332,27 @@ func (p *APIProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, err = w.Write(bodyBytes); err != nil {
 		p.Logger.Error("writing proxied response body", log.Error(err))
 	}
+}
+
+// toErrorWithMessageAndCause returns a JSON string representation of the error
+// response from the SSC server. If the response body contains a JSON object
+// with "message" and optionally "cause" fields, it returns the original JSON string.
+// If the JSON object cannot be unmarshalled, it returns a JSON object with the
+// HTTP status text as the "message" field, ensuring a consistent error response structure.
+func toErrorWithMessageAndCause(body []byte, statusCode int) string {
+	// some SSC handlers return
+	restErr := struct {
+		Message string `json:"message"`
+		Cause   string `json:"cause,omitempty"`
+	}{}
+	// Try to unmarshal the response body into the predefined error structure
+	err := json.Unmarshal(body, &restErr)
+	if err == nil {
+		// Unmarshalled successfully, return the original JSON string
+		return string(body)
+	}
+	// Unmarshalling failed, construct a new error response with the status text
+	restErr.Message = http.StatusText(statusCode)
+	b, _ := json.Marshal(restErr)
+	return string(b)
 }
