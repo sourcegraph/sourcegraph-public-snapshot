@@ -8,7 +8,6 @@
 
 (procedure (label) @function)
 
-
 (documentation) @comment
 (comment) @comment
 
@@ -86,7 +85,6 @@
   "(")
 (call
   message: (identifier) @variable)
-
 
 ; Keywords
 [

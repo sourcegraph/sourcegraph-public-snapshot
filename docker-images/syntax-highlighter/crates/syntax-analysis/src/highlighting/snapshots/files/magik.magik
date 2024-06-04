@@ -48,12 +48,9 @@ write(a)
 a << :hello
 b << :|hello world|
 
-
 # Function calls
 :sym_func()
 some_func(1, 2)
-
-
 
 # Objects
 def_slotted_exemplar(:my_object,
@@ -131,7 +128,6 @@ _catch @error
   >> _true
 _endcatch
 
-
 # Methods
 _pragma(classify_level=restricted)
 _method my_object.my_method(a, b)
@@ -162,7 +158,6 @@ _private _method person.init(name, age)
 _return _self
 _endmethod
 
-
 # Method calls
 object.getName
 object.method()
@@ -170,7 +165,6 @@ object.method<< _unset
 object.method1.method2
 
 _thisthread.sleep(10)
-
 
 # Iteration
 _loop @outer_loop
@@ -208,7 +202,6 @@ _endmethod
 m << my_object.new()
 x << m.my_method(1.0, 2, 3.0, 4)
 
-
 _iter _method my_object.even_elements()
   _for a _over _self.elements()
   _loop
@@ -229,7 +222,6 @@ my_procedure << _proc @my_procedure(a, b, _optional c)
   _return a + b + c
 _endproc
 x << my_procedure(1, 2, 3)
-
 
 # Regex
 # NOTE(issue: https://github.com/krn-robin/tree-sitter-magik/issues/48): Tree sitter grammar does not support regexes
