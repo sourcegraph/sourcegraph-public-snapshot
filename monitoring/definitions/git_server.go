@@ -333,6 +333,19 @@ func GitServer() *monitoring.Dashboard {
 								It does not indicate any problems with the instance.
 							`,
 						},
+						{
+							Name:        "src_gitserver_client_concurrent_requests",
+							Description: "number of concurrent requests running against gitserver client",
+							Query:       "sum by (job, instance) (src_gitserver_client_concurrent_requests)",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{job}} {{instance}}"),
+							Owner:       monitoring.ObservableOwnerSource,
+							Interpretation: `
+								This metric is only for informational purposes. It indicates the current number of concurrently running requests by process against gitserver gRPC.
+
+								It does not indicate any problems with the instance, but can give a good indication of load spikes or request throttling.
+							`,
+						},
 					},
 				},
 			},

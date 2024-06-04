@@ -223,8 +223,27 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 }
 
 var (
-	concurrencyLimit = env.MustGetInt("SRC_GITSERVER_CLIENT_CONCURRENCY_LIMIT", 500, "maximum number of concurrent gitserver client connections")
-	lim              = limiter.New(concurrencyLimit)
+	concurrencyLimit = env.MustGetInt("SRC_GITSERVER_CLIENT_CONCURRENCY_LIMIT", 500, "maximum number of concurrent gitserver RPC calls")
+	lim              = &observedLimiter{Limiter: limiter.New(concurrencyLimit)}
 )
+
+var concurrentRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "src_gitserver_client_concurrent_requests",
+	Help: "Current number of concurrent requests running against gitserver client.",
+})
+
+type observedLimiter struct {
+	limiter.Limiter
+}
+
+func (l *observedLimiter) Acquire() {
+	l.Limiter.Acquire()
+	concurrentRequestsGauge.Inc()
+}
+
+func (l *observedLimiter) Release() {
+	l.Limiter.Release()
+	concurrentRequestsGauge.Dec()
+}
 
 var _ AddressWithConn = &connAndErr{}
