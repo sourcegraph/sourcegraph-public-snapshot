@@ -131,7 +131,7 @@ type FlaggingConfig struct {
 	AllowedPromptPatterns []string
 
 	// Phrases we look for in a flagged request to consider blocking the response.
-	// Each phrase is lower case. Can be empty (to disable blocking).
+	// Each phrase is converted to lower case. Can be empty (to disable blocking).
 	BlockedPromptPatterns []string
 
 	// Identifiers (of actors) for which we will log all prompts
@@ -352,7 +352,7 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 
 	// Loads a comma-separated env var, and converts it to lower-case.
 	maybeLoadLowercaseSlice := func(envVar, description string) []string {
-		value := c.GetOptional(envVarPrefix+envVar, description)
+		value := c.GetOptional(envVar, description)
 		values := splitMaybe(value)
 		return toLower(values)
 	}
@@ -368,7 +368,7 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.PromptTokenFlaggingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "4000", "Maximum number of completion tokens to allow without blocking.")
 
-	cfg.FlaggedModelNames = maybeLoadLowercaseSlice("FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
+	cfg.FlaggedModelNames = maybeLoadLowercaseSlice(envVarPrefix+"FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
 }
 
 // splitMaybe splits the provided string on commas, but returns nil if given the empty string.
