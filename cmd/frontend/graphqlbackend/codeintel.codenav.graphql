@@ -539,12 +539,14 @@ input RangeInput {
     """
     Start position of the range (inclusive)
     """
-    start: PositionInput
+    # TODO(id: usagesForSymbol-v2) Make this input optional
+    start: PositionInput!
 
     """
     End position of the range (exclusive)
     """
-    end: PositionInput
+    # TODO(id: usagesForSymbol-v2) Make this input optional
+    end: PositionInput!
 }
 
 """
@@ -602,7 +604,7 @@ input UsagesFilter {
     an empty value will find results across the Sourcegraph instance.
     """
     repository: RepositoryFilter
-    # TODO(id: usagesForSymbols-v2)
+    # TODO(id: usagesForSymbol-v2)
     # and: [UsagesFilter!]
     # or: [UsagesFilter!]
     # path: PathFilter
