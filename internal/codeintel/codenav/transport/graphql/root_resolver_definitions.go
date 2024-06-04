@@ -37,7 +37,8 @@ func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolve
 	}})
 	defer endObservation()
 
-	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)
+	// NOTE: We don't support pagination for definitions in the GraphQL API.
+	def, _, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState, codenav.Cursor{})
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetDefinitions")
 	}
