@@ -1,4 +1,4 @@
-package insecureoauth
+package grpcoauth
 
 import (
 	"context"
@@ -28,7 +28,7 @@ func (ts TokenSource) GetRequestMetadata(ctx context.Context, uri ...string) (ma
 	if !env.InsecureDev {
 		ri, _ := credentials.RequestInfoFromContext(ctx)
 		if err = credentials.CheckSecurityLevel(ri.AuthInfo, credentials.PrivacyAndIntegrity); err != nil {
-			return nil, errors.Newf("unable to transfer TokenSource PerRPCCredentials: %v", err)
+			return nil, errors.Newf("unable to transfer TokenSource PerRPCCredentials: %w", err)
 		}
 	}
 	return map[string]string{
@@ -37,6 +37,7 @@ func (ts TokenSource) GetRequestMetadata(ctx context.Context, uri ...string) (ma
 }
 
 // RequireTransportSecurity indicates whether the credentials requires transport security.
+// For this implementation, we disable it if the INSECURE_DEV environment variable is set.
 func (ts TokenSource) RequireTransportSecurity() bool {
 	return !env.InsecureDev
 }

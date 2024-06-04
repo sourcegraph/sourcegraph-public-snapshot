@@ -150,8 +150,11 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	seenTokens := collections.NewSet[string]()
 
 	resp, err := s.enterprisePortal.ListCodyGatewayAccesses(ctx, &codyaccessv1.ListCodyGatewayAccessesRequest{
-		// The implementation currently returns all accesses, because pagination
-		// is not yet implemented: https://linear.app/sourcegraph/issue/CORE-134
+		// TODO(https://linear.app/sourcegraph/issue/CORE-134): Once the
+		// Enterprise Portal supports pagination in its API responses we need to
+		// update this callsite to make repeated requests with a continuation
+		// token, etc. For now, we assume that we are fetching all licenses in
+		// a single call.
 	})
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -230,7 +233,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*codyacces
 		}
 	}
 
-	return nil, err
+	return nil, errors.Wrap(err, "verifying token via Enterprise Portal")
 }
 
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
@@ -264,7 +267,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 // getSubscriptionAccountName attempts to get the account name from the product
 // subscription. It returns an empty string if no account name is available.
 func getSubscriptionAccountName(activeLicenseTags []string) string {
-	// Check if the special "customer:" tag is present
+	// Check if the special "customer:" tag is present.
 	for _, tag := range activeLicenseTags {
 		if strings.HasPrefix(tag, "customer:") {
 			return strings.TrimPrefix(tag, "customer:")
@@ -289,13 +292,13 @@ func newActor(
 	a := &actor.Actor{
 		Key: token,
 
-		// Maintain consistency with existing non-prefixed IDs
+		// Maintain consistency with existing non-prefixed IDs.
 		ID: strings.TrimPrefix(s.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix),
 
 		Name:          name,
 		AccessEnabled: s.GetEnabled(),
 		EndpointAccess: map[string]bool{
-			// always enabled even if !s.GetEnabled(), to allow BYOK customers
+			// Always enabled even if !s.GetEnabled(), to allow BYOK customers.
 			"/v1/attribution": true,
 		},
 		RateLimits:  map[codygateway.Feature]actor.RateLimit{},

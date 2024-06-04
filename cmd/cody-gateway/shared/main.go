@@ -22,17 +22,12 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"golang.org/x/oauth2"
-	"google.golang.org/grpc"
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	grpcoauth "github.com/sourcegraph/sourcegraph/internal/grpc/grpcoauth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,13 +41,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
-	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription/enterpriseportal"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -174,7 +169,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	var backgroundRoutines []background.Routine
 	if cfg.EnterprisePortal.URL != nil {
 		obctx.Logger.Info("enterprise subscriptions actor source enabled")
-		conn, err := dialEnterprisePortal(
+		conn, err := enterpriseportal.Dial(
 			ctx,
 			obctx.Logger.Scoped("enterpriseportal"),
 			cfg.EnterprisePortal.URL,
@@ -200,10 +195,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			productsubscription.NewSource(
 				obctx.Logger,
 				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
-				enterprisePortalServices{
-					codyaccessv1.NewCodyAccessServiceClient(conn),
-					subscriptionsv1.NewSubscriptionsServiceClient(conn),
-				},
+				codyaccessv1.NewCodyAccessServiceClient(conn),
 				cfg.ActorConcurrencyLimit,
 			),
 		)
@@ -407,30 +399,3 @@ func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error 
 	key := fmt.Sprintf("prompt:%s:%s:%s", traceID, feature, reqActor.ID)
 	return p.redis.SetEx(key, p.ttlSeconds, prompt)
 }
-
-func dialEnterprisePortal(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.TokenSource) (*grpc.ClientConn, error) {
-	insecureTarget := addr.Scheme != "https"
-	if insecureTarget && !env.InsecureDev {
-		return nil, errors.New("insecure export address used outside of dev mode")
-	}
-	opts := []grpc.DialOption{
-		grpc.WithPerRPCCredentials(grpcoauth.TokenSource{TokenSource: ts}),
-	}
-	if insecureTarget {
-		opts = append(opts, defaults.DialOptions(logger)...)
-	} else {
-		opts = append(opts, defaults.ExternalDialOptions(logger)...)
-	}
-	conn, err := grpc.DialContext(ctx, addr.Host, opts...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to connect to Enterprise Portal gRPC service at %s", addr.String())
-	}
-	return conn, nil
-}
-
-type enterprisePortalServices struct {
-	codyaccessv1.CodyAccessServiceClient
-	subscriptionsv1.SubscriptionsServiceClient
-}
-
-var _ productsubscription.EnterprisePortalClient = (*enterprisePortalServices)(nil)

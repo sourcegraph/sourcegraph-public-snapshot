@@ -1,11 +1,14 @@
 package productsubscription
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/types/known/durationpb"
 
@@ -23,16 +26,17 @@ func TestNewActor(t *testing.T) {
 		access *codyaccessv1.CodyGatewayAccess
 	}
 	tests := []struct {
-		name string
-		args args
-		// TODO add more coverage on created actor
-		wantEnabled bool
+		name      string
+		args      args
+		wantActor autogold.Value
 	}{
 		{
-			name: "enabled",
+			name: "enabled, no embeddings",
 			args: args{
 				&codyaccessv1.CodyGatewayAccess{
-					Enabled: true,
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 true,
 					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
 						Limit:            10,
 						IntervalDuration: durationpb.New(10 * time.Second),
@@ -43,13 +47,102 @@ func TestNewActor(t *testing.T) {
 					},
 				},
 			},
-			wantEnabled: true,
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": true,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {
+    "chat_completions": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    },
+    "code_completions": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    }
+  },
+  "lastUpdated": "2024-06-03T20:03:07.948696-07:00"
+}`),
+		},
+		{
+			name: "enabled, only embeddings",
+			args: args{
+				&codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 true,
+					EmbeddingsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+				},
+			},
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": true,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {
+    "embeddings": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    }
+  },
+  "lastUpdated": "2024-06-03T20:03:08.144909-07:00"
+}`),
+		},
+		{
+			name: "disabled",
+			args: args{
+				&codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 false,
+				},
+			},
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": false,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {},
+  "lastUpdated": "2024-06-03T20:03:08.147318-07:00"
+}`),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.access, concurrencyConfig)
-			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
+			act := newActor(nil, "sekret_token", tt.args.access, concurrencyConfig)
+			// Assert against JSON representation, because that's what we end
+			// up caching.
+			actData, err := json.MarshalIndent(act, "", "  ")
+			require.NoError(t, err)
+			tt.wantActor.Equal(t, string(actData))
 		})
 	}
 }
