@@ -120,20 +120,12 @@ func TestInvariants(t *testing.T) {
 			if Is(err, &payloadLessPtrError{}) {
 				// This can be false, see Counter-example 1
 				//require.True(t, HasType(err, &payloadLessPtrError{}))
-				require.Panics(t, func() {
-					var check payloadLessPtrError
-					require.True(t, As(err, &check))
-				})
 				var check *payloadLessPtrError
 				require.True(t, As(err, &check))
 			}
 			// HasType implies Is and As for errors without data
 			if HasType(err, &payloadLessPtrError{}) {
 				require.True(t, Is(err, &payloadLessPtrError{}))
-				require.Panics(t, func() {
-					var check payloadLessPtrError
-					require.True(t, As(err, &check))
-				})
 				var check *payloadLessPtrError
 				require.True(t, As(err, &check))
 			}
@@ -166,10 +158,6 @@ func TestInvariants(t *testing.T) {
 				//require.True(t, HasType(err, errorOfInterest))
 				//require.True(t, HasType(err, errorWithOtherData))
 				//require.True(t, HasType(err, withPayloadStructError{}))
-				require.Panics(t, func() {
-					var check withPayloadPtrError
-					_ = As(err, &check)
-				})
 				var check *withPayloadPtrError
 				require.True(t, As(err, &check))
 				// This can be false, see Counter-example 6
@@ -182,10 +170,6 @@ func TestInvariants(t *testing.T) {
 				require.True(t, HasType(err, &withPayloadPtrError{}))
 				//This can be false, see Counter-example 3
 				//require.True(t, Is(err, errorOfInterest))
-				require.Panics(t, func() {
-					var check withPayloadPtrError
-					_ = As(err, &check)
-				})
 				var check *withPayloadPtrError
 				require.True(t, As(err, &check))
 				require.True(t, *check == *errorOfInterest || *check == *errorWithOtherData)
@@ -294,4 +278,14 @@ var _ error = &notTheErrorOfInterest{}
 
 func (p *notTheErrorOfInterest) Error() string {
 	return "notTheErrorOfInterest{}"
+}
+
+func TestAsInterface(t *testing.T) {
+	require.Panics(t, func() {
+		p := &payloadLessPtrError{}
+		err := error(&payloadLessPtrError{})
+		AsInterface(err, &p)
+	})
+	var e error
+	require.True(t, AsInterface(error(&payloadLessPtrError{}), &e))
 }
