@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -50,12 +50,6 @@ func (c *googleCompletionStreamClient) Complete(
 			resp.Body.Close()
 		}
 	})()
-
-	// NOTE: Cody Gateway expects model names in <provider>/<model> format,
-	// but if we're connecting directly to the Google API, we need to strip the "google" provider prefix
-	if components := strings.Split(requestParams.Model, "/"); components[0] == "google" {
-		requestParams.Model = strings.Join(components[1:], "/")
-	}
 
 	if feature == types.CompletionsFeatureCode {
 		return nil, errors.Newf("feature %q is currently not supported for Google", feature)
@@ -105,12 +99,6 @@ func (c *googleCompletionStreamClient) Stream(
 		}
 	})()
 
-	// NOTE: Cody Gateway expects model names in <provider>/<model> format,
-	// but if we're connecting directly to the Google API, we need to strip the "google" provider prefix
-	if components := strings.Split(requestParams.Model, "/"); components[0] == "google" {
-		requestParams.Model = strings.Join(components[1:], "/")
-	}
-
 	if feature == types.CompletionsFeatureCode {
 		return errors.Newf("feature %q is currently not supported for Google", feature)
 	}
@@ -159,13 +147,24 @@ func (c *googleCompletionStreamClient) Stream(
 	return nil
 }
 
-// makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	rpc := "generateContent"
-	if stream {
-		rpc = "streamContent"
+func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) string {
+	// NOTE: Cody Gateway expects model names in <provider>/<model> format,
+	// but if we're connecting directly to the Google API, we need to strip the "google" provider prefix
+	if components := strings.Split(requestParams.Model, "/"); components[0] == "google" {
+		requestParams.Model = strings.Join(components[1:], "/")
 	}
 
+	rpc := "generateContent"
+	sseSuffix := ""
+	if stream {
+		rpc = "streamGenerateContent"
+		sseSuffix = "&alt=sse"
+	}
+	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", requestParams.Model, rpc, c.accessToken, sseSuffix)
+}
+
+// makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
+func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
@@ -187,26 +186,9 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 		return nil, err
 	}
 
-	endpoint, err := url.JoinPath(c.endpoint, "v1/models", requestParams.Model)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct endpoint URL")
-	}
+	apiURL := c.getAPIURL(requestParams, stream)
 
-	query := url.Values{
-		"key": {c.accessToken},
-	}
-	if stream {
-		query.Set("alt", "sse")
-	}
-
-	url := url.URL{
-		Scheme:   "https",
-		Host:     endpoint,
-		Path:     rpc,
-		RawQuery: query.Encode(),
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
