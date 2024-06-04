@@ -12,6 +12,7 @@ go_library(
         "//internal/collections",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
+        "//internal/completions/client/google",
         "//internal/env",
         "//internal/trace/policy",
         "//lib/errors",

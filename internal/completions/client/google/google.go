@@ -14,13 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Stable models
-const Gemini15Flash = "gemini-1.5-flash"
-const Gemini15Pro = "gemini-1.5-pro"
-
-const Gemini15FlashLatest = "gemini-1.5-flash-latest"
-const Gemini15ProLatest = "gemini-1.5-pro-latest"
-
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &googleCompletionStreamClient{
 		cli:         cli,
@@ -147,13 +140,17 @@ func (c *googleCompletionStreamClient) Stream(
 	return nil
 }
 
+// In the latest API Docs, the model name and API key must be used in the API endpoint URL.
+// Ref: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#gemini_and_content_based_apis
 func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) string {
 	rpc := "generateContent"
 	sseSuffix := ""
+
 	if stream {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
 	}
+
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", requestParams.Model, rpc, c.accessToken, sseSuffix)
 }
 
@@ -206,16 +203,6 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	return resp, nil
 }
 
-type googleResponse struct {
-	Model      string `json:"model"`
-	Candidates []struct {
-		Content      googleContentMessage
-		FinishReason string `json:"finishReason"`
-	} `json:"candidates"`
-
-	UsageMetadata googleUsage `json:"usageMetadata"`
-}
-
 type googleRequest struct {
 	Contents         []googleContentMessage `json:"contents"`
 	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
@@ -231,16 +218,30 @@ type googleContentMessagePart struct {
 	Text string `json:"text"`
 }
 
-// googleGenerationConfig request object for google endpoint https://ai.google.dev/gemini-api/docs/models/generative-models#model-parameters
+// Configuration options for model generation and outputs.
+// Ref: https://ai.google.dev/api/rest/v1/GenerationConfig
 type googleGenerationConfig struct {
 	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
-	TopP            float32  `json:"top_p,omitempty"`           // request.TopP
-	TopK            int      `json:"top_k,omitempty"`           // request.TopK
-	StopSequences   []string `json:"stop_sequences,omitempty"`  // request.StopSequences
+	TopP            float32  `json:"topP,omitempty"`            // request.TopP
+	TopK            int      `json:"topK,omitempty"`            // request.TopK
+	StopSequences   []string `json:"stopSequences,omitempty"`   // request.StopSequences
 	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
+	CandidateCount  int      `json:"candidateCount,omitempty"`  // request.CandidateCount
 }
 
-// googleSafetySettings us the adjustable safety settings available for the Gemini API endpoint https://ai.google.dev/gemini-api/docs/safety-settings
+type googleResponse struct {
+	Model      string `json:"model"`
+	Candidates []struct {
+		Content      googleContentMessage
+		FinishReason string `json:"finishReason"`
+	} `json:"candidates"`
+
+	UsageMetadata  googleUsage            `json:"usageMetadata"`
+	SafetySettings []googleSafetySettings `json:"safetySettings,omitempty"`
+}
+
+// Safety setting, affecting the safety-blocking behavior.
+// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
 type googleSafetySettings struct {
 	Category  string `json:"category"`
 	Threshold string `json:"threshold"`

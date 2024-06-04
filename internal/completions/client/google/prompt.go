@@ -9,35 +9,32 @@ func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 	googleMessages := make([]googleContentMessage, 0, len(messages))
 
 	for i, message := range messages {
-		speaker := message.Speaker
-		text := message.Text
+		var googleRole string
 
-		googleRole := message.Speaker
-
-		switch speaker {
+		switch message.Speaker {
 		case types.SYSTEM_MESSAGE_SPEAKER:
 			if i != 0 {
 				return nil, errors.New("system role can only be used in the first message")
 			}
+			googleRole = message.Speaker
 		case types.ASSISTANT_MESSAGE_SPEAKER:
 			if i == 0 {
-				return nil, errors.New("assistant role can only be used in the first message")
-			} else {
-				googleRole = "model"
+				return nil, errors.New("assistant role cannot be used in the first message")
 			}
+			googleRole = "model"
 		case types.HUMAN_MESSAGE_SPEAKER:
 			googleRole = "user"
 		default:
-			return nil, errors.Errorf("unexpected role: %s", text)
+			return nil, errors.Errorf("unexpected role: %s", message.Text)
 		}
 
-		if text == "" {
+		if message.Text == "" {
 			return nil, errors.New("message content cannot be empty")
 		}
 
 		googleMessages = append(googleMessages, googleContentMessage{
 			Role:  googleRole,
-			Parts: []googleContentMessagePart{{Text: text}},
+			Parts: []googleContentMessagePart{{Text: message.Text}},
 		})
 	}
 

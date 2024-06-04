@@ -38,13 +38,8 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 	)
 }
 
-type googleContentMessage struct {
-	Role  string `json:"role"`
-	Parts []struct {
-		Text string `json:"text"`
-	} `json:"parts"`
-}
-
+// The request body for Google completions.
+// Ref: https://ai.google.dev/api/rest/v1/models/generateContent#request-body
 type googleRequest struct {
 	Model            string                 `json:"model"`
 	Contents         []googleContentMessage `json:"contents"`
@@ -52,16 +47,26 @@ type googleRequest struct {
 	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
 }
 
-// googleGenerationConfig request object for google endpoint https://ai.google.dev/gemini-api/docs/models/generative-models#model-parameters
-type googleGenerationConfig struct {
-	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
-	TopP            float32  `json:"top_p,omitempty"`           // request.TopP
-	TopK            float32  `json:"top_k,omitempty"`           // request.TopK
-	StopSequences   []string `json:"stop_sequences,omitempty"`  // request.StopSequences
-	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
+type googleContentMessage struct {
+	Role  string `json:"role"`
+	Parts []struct {
+		Text string `json:"text"`
+	} `json:"parts"`
 }
 
-// googleSafetySettings us the adjustable safety settings available for the Gemini API endpoint https://ai.google.dev/gemini-api/docs/safety-settings
+// Configuration options for model generation and outputs.
+// Ref: https://ai.google.dev/api/rest/v1/GenerationConfig
+type googleGenerationConfig struct {
+	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
+	TopP            float32  `json:"topP,omitempty"`            // request.TopP
+	TopK            int      `json:"topK,omitempty"`            // request.TopK
+	StopSequences   []string `json:"stopSequences,omitempty"`   // request.StopSequences
+	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
+	CandidateCount  int      `json:"candidateCount,omitempty"`  // request.CandidateCount
+}
+
+// Safety setting, affecting the safety-blocking behavior.
+// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
 type googleSafetySettings struct {
 	Category  string `json:"category"`
 	Threshold string `json:"threshold"`
@@ -166,11 +171,8 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	}
 
 	// Otherwise, we have to parse the event stream.
-	promptUsage.tokens = -1
-	promptUsage.tokenizerTokens = -1
-	completionUsage.tokens = -1
-	completionUsage.tokenizerTokens = -1
-
+	promptUsage.tokens, completionUsage.tokens = -1, -1
+	promptUsage.tokenizerTokens, completionUsage.tokenizerTokens = -1, -1
 	promptTokens, completionTokens, err := parseGoogleTokenUsage(r, logger)
 	if err != nil {
 		logger.Error("failed to decode Google streaming response", log.Error(err))
@@ -187,35 +189,22 @@ const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 func parseGoogleTokenUsage(r io.Reader, logger log.Logger) (promptTokens int, completionTokens int, err error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
-	// bufio.ScanLines, except we look for \r\n\r\n which separate events.
-	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-		if i := bytes.Index(data, []byte("\r\n\r\n")); i >= 0 {
-			return i + 4, data[:i], nil
-		}
-		if i := bytes.Index(data, []byte("\n\n")); i >= 0 {
-			return i + 2, data[:i], nil
-		}
-		// If we're at EOF, we have a final, non-terminated event. This should
-		// be empty.
-		if atEOF {
-			return len(data), data, nil
-		}
-		// Request more data.
-		return 0, nil, nil
-	}
-	scanner.Split(split)
-	// skip to the last event
-	var lastEvent []byte
+	scanner.Split(bufio.ScanLines)
+
+	var lastLine []byte
 	for scanner.Scan() {
-		lastEvent = scanner.Bytes()
+		lastLine = scanner.Bytes()
 	}
-	var res googleResponse
-	if err := json.NewDecoder(bytes.NewReader(lastEvent[5:])).Decode(&res); err != nil {
-		logger.Error("failed to parse Google response as JSON", log.Error(err))
-		return -1, -1, err
+
+	if bytes.HasPrefix(bytes.TrimSpace(lastLine), []byte("data: ")) {
+		event := lastLine[5:]
+		var res googleResponse
+		if err := json.NewDecoder(bytes.NewReader(event)).Decode(&res); err != nil {
+			logger.Error("failed to parse Google response as JSON", log.Error(err))
+			return -1, -1, err
+		}
+		return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
 	}
-	return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
+
+	return -1, -1, errors.New("no Google response found")
 }
