@@ -14,7 +14,10 @@ proto_library(
     srcs = ["subscriptions.proto"],
     strip_import_prefix = "/lib",  # keep
     visibility = ["//visibility:public"],
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = [
+        "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
 )
 
 go_library(

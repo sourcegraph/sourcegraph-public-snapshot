@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package enterpriseportal.subscriptions.v1;
 
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1";
@@ -35,6 +36,18 @@ service SubscriptionsService {
   rpc ListEnterpriseSubscriptionLicenses(ListEnterpriseSubscriptionLicensesRequest) returns (ListEnterpriseSubscriptionLicensesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
+  // Only properties specified by the update_mask are applied.
+  rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // UpdateSubscriptionMembership updates a subscription membership. It creates
+  // a new one if it does not exist and allow_missing is set to true.
+  rpc UpdateSubscriptionMembership(UpdateSubscriptionMembershipRequest) returns (UpdateSubscriptionMembershipResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message EnterpriseSubscriptionCondition {
@@ -63,6 +76,8 @@ message EnterpriseSubscription {
   repeated EnterpriseSubscriptionCondition conditions = 2;
   // Display name of this subscription, e.g. "Acme, Inc."
   string display_name = 3;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string domain = 4;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
@@ -192,6 +207,11 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions whose license key contains this
     // substring.
     string license_key_substring = 4;
+    // Return only product subscriptions contains the member with given SAMS
+    // account ID.
+    string member_sams_account_id = 5;
+    // Return only product subscriptions contains the member with the given role.
+    string member_role = 6;
   }
 }
 
@@ -224,3 +244,40 @@ message ListEnterpriseSubscriptionLicensesResponse {
   // recently created licenses first.
   repeated EnterpriseSubscriptionLicense licenses = 2;
 }
+
+message UpdateEnterpriseSubscriptionRequest {
+  // The subscription to update.
+  // The field "id" is used to identify the subscription to update.
+  EnterpriseSubscription subscription = 1;
+
+  // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
+  // Updatable fields are:
+  //  - subscription.display_name
+  //  - subscription.domain
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateEnterpriseSubscriptionResponse {
+  // The updated subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message UpdateSubscriptionMembershipRequest {
+  // Query specifies the subscription lookup strategy for this update request.
+  oneof subscription_query {
+    // Look up a subscription using its external, prefixed UUID-format identifier.
+    string id = 1;
+    // Look up a subscription using its instance domain.
+    string domain = 2;
+  }
+
+  // Look up a member using its SAMS account ID.
+  string member_sams_account_id = 3;
+  // The new roles for the member.
+  repeated string member_roles = 4;
+
+  // If set to true, and the membership is not found, a new membership will be created.
+  bool allow_missing = 5;
+}
+
+message UpdateSubscriptionMembershipResponse {}
