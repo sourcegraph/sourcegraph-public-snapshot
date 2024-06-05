@@ -28,9 +28,13 @@ export interface ExternalAccountsModalProps extends TelemetryV2Props {
 // If the active auth providers contain an auth provider that has not yet
 // been seen by the user, true is returned. Otherwise false is returned.
 const shouldShowExternalAccountsModal = (
-    activeAuthProviders: AuthProvider[],
+    activeAuthProviders: AuthProvider[] | null,
     seenAuthProviders: SeenAuthProvider[] | undefined
 ): boolean => {
+    if (activeAuthProviders === null) {
+        return false
+    }
+
     for (const activeProvider of activeAuthProviders) {
         // Skip the builtin provider
         if (activeProvider.isBuiltin) {
@@ -74,9 +78,13 @@ function userAccountConnected(authProvider: AuthProvider, userExternalAccounts: 
 }
 
 function filterAuthProviders(
-    authProviders: AuthProvider[],
+    authProviders: AuthProvider[] | null,
     userExternalAccounts: UserExternalAccount[]
 ): AuthProvider[] {
+    if (authProviders === null) {
+        return []
+    }
+
     return authProviders.filter(
         provider =>
             !provider.isBuiltin && provider.requiredForAuthz && !userAccountConnected(provider, userExternalAccounts)
