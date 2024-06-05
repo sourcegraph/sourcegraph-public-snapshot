@@ -224,7 +224,6 @@ _endproc
 x << my_procedure(1, 2, 3)
 
 # Regex
-# NOTE(issue: https://github.com/krn-robin/tree-sitter-magik/issues/48): Tree sitter grammar does not support regexes
 _if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
     write("Got a match!")
 _endif

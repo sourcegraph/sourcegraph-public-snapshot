@@ -730,20 +730,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   # Regex
 //^^^^^^^ Comment
-  # NOTE(issue: https://github.com/krn-robin/tree-sitter-magik/issues/48): Tree sitter grammar does not support regexes
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   _if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
 //^^^ Keyword
-//    ^ IdentifierOperator
-//     ^^^^^ Identifier
-//             ^ IdentifierFunction
-//              ^^ IdentifierFunction
-//                ^ Identifier
-//                 ^ IdentifierFunction
-//                  ^ IdentifierOperator
-//                   ^ IdentifierFunction
-//                    ^ IdentifierOperator
-//                     ^^^^^^^^^ Identifier
+//    ^^^^^^^^^^^^^^^^^ StringLiteral
+//                     ^ IdentifierOperator
+//                      ^^^^^^^^ IdentifierFunction
 //                               ^^^^^^^^^^^^^^^ StringLiteral
 //                                                ^^^^^ Keyword
       write("Got a match!")

@@ -147,6 +147,8 @@
  "_package"
 ] @include
 
+(regex_literal) @string.special
+
 ; NOTE(issues: https://github.com/krn-robin/tree-sitter-magik/issues/49): Grammar does not support traversing to the children in the pragma
 (pragma) @identifier.attribute
 
