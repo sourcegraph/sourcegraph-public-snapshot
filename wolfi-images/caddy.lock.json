@@ -204,41 +204,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q10Rr8mXMuAm4i4SjxE7xhsgs2UME=",
+        "checksum": "Q1Pzlyz/uT6pDrB6wYRCHovS1l3L0=",
         "control": {
-          "checksum": "sha1-0Rr8mXMuAm4i4SjxE7xhsgs2UME=",
-          "range": "bytes=699-1079"
+          "checksum": "sha1-Pzlyz/uT6pDrB6wYRCHovS1l3L0=",
+          "range": "bytes=703-1081"
         },
         "data": {
-          "checksum": "sha256-IVV0PRiJiwz4Ov1pWU1VAHf8cM0TgwqsV3vkYEQc0mM=",
-          "range": "bytes=1080-5915633"
+          "checksum": "sha256-l8l4cttQB3QIwtA2ShZ657+XF2vOaKQcMbguvW/ESDc=",
+          "range": "bytes=1082-5924289"
         },
         "name": "libcrypto3",
         "signature": {
-          "checksum": "sha1-OlnuKCVUD1RpZgK+JyGdG/NQ0R0=",
-          "range": "bytes=0-698"
+          "checksum": "sha1-d5qYSbthK/cUvZCqqv1sm0G+fMM=",
+          "range": "bytes=0-702"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r7.apk",
-        "version": "3.3.0-r7"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.1-r0.apk",
+        "version": "3.3.1-r0"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1xZQl4rSEEOs59w1q/EhMx0+ZVxw=",
+        "checksum": "Q13pXMCQRVCGP3ct1MI0ZDdPAETYU=",
         "control": {
-          "checksum": "sha1-xZQl4rSEEOs59w1q/EhMx0+ZVxw=",
-          "range": "bytes=697-1082"
+          "checksum": "sha1-3pXMCQRVCGP3ct1MI0ZDdPAETYU=",
+          "range": "bytes=706-1089"
         },
         "data": {
-          "checksum": "sha256-IfGWsH9qFzzKcdVENdnoZqPbAdejcokLcfm7Z53KnPM=",
-          "range": "bytes=1083-1197082"
+          "checksum": "sha256-5AsDl/Dy20sgzxy5Qi5PNeNU6etTxrPneMB8HbaFo5M=",
+          "range": "bytes=1090-1197082"
         },
         "name": "libssl3",
         "signature": {
-          "checksum": "sha1-CypiuHQ6EuduQ5uexXhBDv5YvvY=",
-          "range": "bytes=0-696"
+          "checksum": "sha1-i/Sm11CXUpTkdBOfH98uAI/Jfb8=",
+          "range": "bytes=0-705"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r7.apk",
-        "version": "3.3.0-r7"
+        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.1-r0.apk",
+        "version": "3.3.1-r0"
       },
       {
         "architecture": "x86_64",
@@ -584,22 +584,22 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1hmJGKUg5U62/eDsJFXTXql08W5k=",
+        "checksum": "Q1PGSGzKPMVw90aYlMlNUdARgMDfc=",
         "control": {
-          "checksum": "sha1-hmJGKUg5U62/eDsJFXTXql08W5k=",
-          "range": "bytes=695-1092"
+          "checksum": "sha1-PGSGzKPMVw90aYlMlNUdARgMDfc=",
+          "range": "bytes=701-1099"
         },
         "data": {
-          "checksum": "sha256-9mtlf5LYMHCQZQcBNv/Nhof+RDrDvqEJB3u/pFo9nXc=",
-          "range": "bytes=1093-41669227"
+          "checksum": "sha256-QjsHuaC1mVOumuyNSPOcx8mjPqaV7s/nl1z1FUQEE8w=",
+          "range": "bytes=1100-42588288"
         },
         "name": "caddy",
         "signature": {
-          "checksum": "sha1-sJwUZEAK0xlZda4GGmTA5C6d2pc=",
-          "range": "bytes=0-694"
+          "checksum": "sha1-0lXh76iWNLGfC4EgObKUoP0CxZ4=",
+          "range": "bytes=0-700"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/caddy-2.7.6-r9.apk",
-        "version": "2.7.6-r9"
+        "url": "https://packages.wolfi.dev/os/x86_64/caddy-2.8.4-r1.apk",
+        "version": "2.8.4-r1"
       },
       {
         "architecture": "x86_64",
