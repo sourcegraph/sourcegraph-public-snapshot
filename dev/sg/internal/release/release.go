@@ -218,7 +218,7 @@ var Command = &cli.Command{
 				},
 			},
 		},
-		registryCommand,
+		listReleaseCommand,
 	},
 }
 
