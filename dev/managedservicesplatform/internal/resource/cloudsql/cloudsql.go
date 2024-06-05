@@ -74,6 +74,13 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Value: pointers.Stringf("%d", *config.Spec.MaxConnections),
 		})
 	}
+	if config.Spec.LogicalReplication != nil {
+		// https://cloud.google.com/sql/docs/postgres/replication/configure-logical-replication#set-up-native-postgresql-logical-replication
+		databaseFlags = append(databaseFlags, sqldatabaseinstance.SqlDatabaseInstanceSettingsDatabaseFlags{
+			Name:  pointers.Ptr("cloudsql.logical_decoding"),
+			Value: pointers.Ptr("on"),
+		})
+	}
 
 	instance := sqldatabaseinstance.NewSqlDatabaseInstance(scope, id.TerraformID("instance"), &sqldatabaseinstance.SqlDatabaseInstanceConfig{
 		Project: &config.ProjectID,

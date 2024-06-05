@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverypipeline"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqllogicalreplication"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
@@ -280,9 +281,29 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Cloud Run.
 
 		// Apply additional runtime configuration
+		var publications []postgresqllogicalreplication.PublicationOutput
+		if pgSpec.LogicalReplication != nil {
+			replication, err := postgresqllogicalreplication.New(stack, id.Group("postgresqllogicalreplication"), postgresqllogicalreplication.Config{
+				CloudSQL: sqlInstance,
+				Spec:     *pgSpec.LogicalReplication,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL logical replication")
+			}
+			// Make output more visible
+			for _, pub := range replication.Publications {
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", *pub.PublicationName), *pub.PublicationName,
+					"TODO")
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", *pub.PublicationName), *pub.ReplicationSlotName,
+					"TODO")
+				// TODO Add user name as local, password as secret
+			}
+		}
+		// TODO: Add https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
-			Databases: pgSpec.Databases,
-			CloudSQL:  sqlInstance,
+			Databases:    pgSpec.Databases,
+			CloudSQL:     sqlInstance,
+			Publications: publications,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")

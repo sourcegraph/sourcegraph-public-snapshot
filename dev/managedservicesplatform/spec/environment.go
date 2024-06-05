@@ -788,7 +788,23 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	//  - https://cloud.google.com/sql/pricing
 	//
 	// Also see: https://sourcegraph.notion.site/655e89d164b24727803f5e5a603226d8
+	//
+	// Toggling highAvailability will incur a small amount of downtime.
 	HighAvailability *bool `yaml:"highAvailability,omitempty"`
+	// LogicalReplication configures native logical replication for PostgreSQL:
+	// https://www.postgresql.org/docs/current/logical-replication.html
+	//
+	// Enabling logicalReplication will incur a small amount of downtime. If you
+	// plan to use logical replication, you should configure an empty
+	// 'logicalReplication' block to initialize the database instance with the
+	// prerequisite configuration:
+	//
+	//  logicalReplication: {}
+	//
+	// The primary use case for logicalReplication is to integrate with GCP
+	// Datastream to make tables available in BigQuery:
+	// https://cloud.google.com/datastream/docs/sources-postgresql
+	LogicalReplication *EnvironmentResourcePostgreSQLLogicalReplicationSpec `yaml:"logicalReplication,omitempty"`
 }
 
 func (EnvironmentResourcePostgreSQLSpec) ResourceKind() string { return "PostgreSQL instance" }
@@ -822,6 +838,20 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 		}
 	}
 	return errs
+}
+
+type EnvironmentResourcePostgreSQLLogicalReplicationSpec struct {
+	// TODO
+	Publications []EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec `yaml:"publications,omitempty"`
+}
+
+type EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec struct {
+	// TODO
+	Name string `yaml:"name"`
+	// TODO
+	Database string `yaml:"database"`
+	// TODO
+	Tables []string `yaml:"tables"`
 }
 
 type EnvironmentResourceBigQueryDatasetSpec struct {
