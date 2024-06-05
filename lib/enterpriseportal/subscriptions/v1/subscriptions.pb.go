@@ -1147,14 +1147,14 @@ type UpdateEnterpriseSubscriptionRequest struct {
 
 	// The subscription to update.
 	// The following fields are used to identify the membership to update:
-	//   - subscription.id
+	//   - id
 	//
 	// Multiple fields are treated as AND-concatenated.
 	Subscription *EnterpriseSubscription `protobuf:"bytes,1,opt,name=subscription,proto3" json:"subscription,omitempty"`
 	// The list of fields to update, fields are specified relative to the EnterpriseSubscription.
 	// Updatable fields are:
-	//   - subscription.display_name
-	//   - subscription.domain
+	//   - display_name
+	//   - domain
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 }
 
@@ -1334,8 +1334,8 @@ type UpdateSubscriptionMembershipRequest struct {
 
 	// The membership to update.
 	// The following fields are used to identify the membership to update:
-	//   - membership.subscription_id
-	//   - membership.instance_domain
+	//   - subscription_id
+	//   - instance_domain
 	//
 	// Multiple fields are treated as AND-concatenated.
 	Membership *EnterpriseSubscriptionMembership `protobuf:"bytes,1,opt,name=membership,proto3" json:"membership,omitempty"`

@@ -261,14 +261,14 @@ message ListEnterpriseSubscriptionLicensesResponse {
 message UpdateEnterpriseSubscriptionRequest {
   // The subscription to update.
   // The following fields are used to identify the membership to update:
-  //  - subscription.id
+  //  - id
   // Multiple fields are treated as AND-concatenated.
   EnterpriseSubscription subscription = 1;
 
   // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
   // Updatable fields are:
-  //  - subscription.display_name
-  //  - subscription.domain
+  //  - display_name
+  //  - domain
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -291,8 +291,8 @@ message EnterpriseSubscriptionMembership {
 message UpdateSubscriptionMembershipRequest {
   // The membership to update.
   // The following fields are used to identify the membership to update:
-  //  - membership.subscription_id
-  //  - membership.instance_domain
+  //  - subscription_id
+  //  - instance_domain
   // Multiple fields are treated as AND-concatenated.
   EnterpriseSubscriptionMembership membership = 1;
 
