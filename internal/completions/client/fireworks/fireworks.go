@@ -95,9 +95,9 @@ func (c *fireworksClient) Complete(
 	if response.Choices[0].Text != "" {
 		// The /completion endpoint returns a text field ...
 		completion = response.Choices[0].Text
-	} else if response.Choices[0].Delta != nil {
+	} else if response.Choices[0].Message != nil {
 		// ... whereas the /chat/completion endpoints returns this structure
-		completion = response.Choices[0].Delta.Content
+		completion = response.Choices[0].Message.Content
 	}
 
 	return &types.CompletionResponse{
@@ -144,7 +144,7 @@ func (c *fireworksClient) Stream(
 			continue
 		}
 
-		var event fireworksResponse
+		var event fireworksStreamResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
@@ -297,6 +297,23 @@ type message struct {
 
 // response for a non streaming request
 type fireworksResponse struct {
+	Choices []struct {
+		Text    string `json:"text"`
+		Message *struct {
+			Content string `json:"content"`
+		} `json:"message"`
+		Index        int             `json:"index"`
+		FinishReason string          `json:"finish_reason"`
+		Logprobs     *types.Logprobs `json:"logprobs"`
+	} `json:"choices"`
+	Usage struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+	} `json:"usage"`
+}
+
+type fireworksStreamResponse struct {
 	Choices []struct {
 		Text  string `json:"text"`
 		Delta *struct {

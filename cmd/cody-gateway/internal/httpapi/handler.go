@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -167,8 +166,7 @@ func NewHandler(
 			embeddings.ModelNameSourcegraphMetadataGen: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
 
-		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		fireworksClient := fireworks.NewClient(httpcli.UncachedExternalDoer, completionsConfig.Endpoint, completionsConfig.AccessToken)
+		fireworksClient := fireworks.NewClient(httpcli.UncachedExternalDoer, "https://api.fireworks.ai/inference/v1/chat/completions", config.Fireworks.AccessToken)
 
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
