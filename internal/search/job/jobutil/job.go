@@ -659,7 +659,7 @@ func toSymbolSearchRequest(f query.Flat, feat *search.Features) (*searcher.Symbo
 	// Handle lang: and -lang: filters.
 	langAliasInclude, langAliasExclude := f.IncludeExcludeValues(query.FieldLang)
 	var langInclude, langExclude []string
-	if feat.ContentBasedLangFilters {
+	if feat.UseContentBasedLangFilters(append(langAliasInclude, langAliasExclude...)) {
 		langInclude = toLangFilters(langAliasInclude)
 		langExclude = toLangFilters(langAliasExclude)
 	} else {
@@ -687,7 +687,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Fea
 	// Handle lang: and -lang: filters.
 	langAliasInclude, langAliasExclude := b.IncludeExcludeValues(query.FieldLang)
 	var langInclude, langExclude []string
-	if feat.ContentBasedLangFilters {
+	if feat.UseContentBasedLangFilters(append(langAliasInclude, langAliasExclude...)) {
 		langInclude = toLangFilters(langAliasInclude)
 		langExclude = toLangFilters(langAliasExclude)
 	} else {

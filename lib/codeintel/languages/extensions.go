@@ -87,6 +87,8 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 var unsupportedByEnryExtensionToNameMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
 	".pkl": "Pkl",
+	// Magik Language
+	".magik": "Magik",
 }
 
 var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
