@@ -144,7 +144,7 @@ func (c *fireworksClient) Stream(
 			continue
 		}
 
-		var event fireworksStreamResponse
+		var event fireworksResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
@@ -302,20 +302,6 @@ type fireworksResponse struct {
 		Message *struct {
 			Content string `json:"content"`
 		} `json:"message"`
-		Index        int             `json:"index"`
-		FinishReason string          `json:"finish_reason"`
-		Logprobs     *types.Logprobs `json:"logprobs"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		TotalTokens      int `json:"total_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
-}
-
-type fireworksStreamResponse struct {
-	Choices []struct {
-		Text  string `json:"text"`
 		Delta *struct {
 			Content string `json:"content"`
 		} `json:"delta"`
