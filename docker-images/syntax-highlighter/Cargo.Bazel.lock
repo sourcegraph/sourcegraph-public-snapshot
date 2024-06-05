@@ -1,5 +1,5 @@
 {
-  "checksum": "60342490e7bf2c9f00ff7f33cb3292fc9e82e8864d56a49b22340bf26ffda1d0",
+  "checksum": "bc9f1d6a77efbf8a0b38153240b41782150967584f7eeb3ec8445d749233015a",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13929,7 +13929,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/tree-sitter-magik",
           "commitish": {
-            "Rev": "d6f81de3eb00343ac4fedebd6ed1dc900381a1d9"
+            "Rev": "dfabbd4e70ff311939cf48fdf90d340f07758d37"
           }
         }
       },

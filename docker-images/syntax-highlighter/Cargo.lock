@@ -2551,7 +2551,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-magik"
 version = "0.0.1"
-source = "git+https://github.com/sourcegraph/tree-sitter-magik?rev=d6f81de3eb00343ac4fedebd6ed1dc900381a1d9#d6f81de3eb00343ac4fedebd6ed1dc900381a1d9"
+source = "git+https://github.com/sourcegraph/tree-sitter-magik?rev=dfabbd4e70ff311939cf48fdf90d340f07758d37#dfabbd4e70ff311939cf48fdf90d340f07758d37"
 dependencies = [
  "cc",
  "tree-sitter",
