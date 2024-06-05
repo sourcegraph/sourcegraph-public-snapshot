@@ -372,7 +372,10 @@ impl<'e> EvaluationResult<'e> {
             writeln!(
                 output,
                 "{}",
-                self.render("How many extra occurrences we reported compared to compiler?".italic(), options)
+                self.render(
+                    "How many extra occurrences we reported compared to compiler?".italic(),
+                    options
+                )
             )?;
 
             for symbol_occurrence in &self.false_positives {
