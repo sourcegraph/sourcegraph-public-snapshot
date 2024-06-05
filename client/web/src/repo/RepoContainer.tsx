@@ -560,7 +560,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 </Routes>
             </Suspense>
 
-            {!isRepoIgnored(repoName) && isCodySidebarOpen && (
+            {!isRepoIgnored(repoName) && isCodySidebarOpen && repo && (
                 <RepoContainerRootPortal>
                     <Panel
                         className="cody-sidebar-panel"
@@ -573,6 +573,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         onResize={setCodySidebarSize}
                     >
                         <CodySidebar
+                            repository={repo}
                             onClose={() => setIsCodySidebarOpen(false)}
                             authenticatedUser={props.authenticatedUser}
                             telemetryRecorder={props.platformContext.telemetryRecorder}

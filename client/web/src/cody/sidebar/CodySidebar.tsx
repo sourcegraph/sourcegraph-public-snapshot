@@ -24,9 +24,13 @@ export const SCROLL_THRESHOLD = 100
 interface CodySidebarProps extends TelemetryV2Props {
     onClose?: () => void
     authenticatedUser: AuthenticatedUser | null
+    repository: {
+        id: string
+        name: string
+    }
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticatedUser, telemetryRecorder }) => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({ repository, onClose, authenticatedUser, telemetryRecorder }) => {
     const codySidebarStore = useCodySidebar()
     const {
         initializeNewChat,
@@ -152,6 +156,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticated
                 ) : (
                     <CodyWebChat
                         accessToken=''
+                        repositories={[repository]}
                         serverEndpoint={window.location.origin}
                     />
                 )}
