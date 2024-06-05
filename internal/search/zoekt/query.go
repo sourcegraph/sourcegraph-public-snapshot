@@ -3,12 +3,11 @@ package zoekt
 import (
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 
-	"github.com/go-enry/go-enry/v2"
-
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/sourcegraph/zoekt/query"
@@ -82,7 +81,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 }
 
 func toLangFilter(lang string) zoekt.Q {
-	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
+	lang, _ = languages.GetLanguageByAlias(lang) // Invariant: lang is valid.
 	return &zoekt.Language{Language: lang}
 }
 

@@ -47,6 +47,12 @@ export const POPULAR_LANGUAGES: string[] = [
 ]
 
 /**
+ * Languages that are not present in the Linguist library
+ * and so are not in go-enry either
+ */
+const LANGUAGES_NOT_IN_LINGUIST = ['Magik']
+
+/**
  * A list of all supported languages, ranking the popular languages higher by
  * including them first.
  * The whole list was extracted from
@@ -721,4 +727,6 @@ export const ALL_LANGUAGES = uniq(
         'wisp',
         'xBase',
     ])
+        .concat(LANGUAGES_NOT_IN_LINGUIST)
+        .sort()
 )
