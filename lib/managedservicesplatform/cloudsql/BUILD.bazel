@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cloudsql",
-    srcs = ["cloudsql.go"],
+    srcs = [
+        "cloudsql.go",
+        "tracer.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql",
     visibility = ["//visibility:public"],
     deps = [

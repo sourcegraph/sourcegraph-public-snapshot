@@ -35,9 +35,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "25e06ac98ce2dd44d74e728e63e1c88e707d0972db20d7e7339c8e458335b4e3",
-    strip_prefix = "rules_js-2.0.0-rc2",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc2/rules_js-v2.0.0-rc2.tar.gz",
+    sha256 = "3dfccf2713288e0518c0485b65574ca66426c6e06495299abe6f5c64e3bc6314",
+    strip_prefix = "rules_js-2.0.0-rc3",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc3/rules_js-v2.0.0-rc3.tar.gz",
 )
 
 http_archive(

@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus, mdiCheck } from '@mdi/js'
 import {
@@ -22,8 +22,7 @@ import { logger } from '@sourcegraph/common'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Form, Grid, H3, Icon, Label, Text } from '@sourcegraph/wildcard'
 
-import { Client } from '../../api/client'
-import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
+import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import { LoadingIconButton } from './LoadingIconButton'
@@ -37,18 +36,20 @@ if (!publishableKey) {
 
 const stripePromise = loadStripe(publishableKey || '')
 
+const updateSubscriptionMutationErrorText =
+    'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+
 interface PaymentDetailsProps {
     subscription: Subscription
-    refetchSubscription: () => Promise<void>
 }
 
 export const PaymentDetails: React.FC<PaymentDetailsProps> = props => (
     <Grid columnCount={2} spacing={0}>
         <div className={styles.gridItem}>
-            <PaymentMethod subscription={props.subscription} refetchSubscription={props.refetchSubscription} />
+            <PaymentMethod subscription={props.subscription} />
         </div>
         <div className={styles.gridItem}>
-            <BillingAddress subscription={props.subscription} refetchSubscription={props.refetchSubscription} />
+            <BillingAddress subscription={props.subscription} />
         </div>
     </Grid>
 )
@@ -63,11 +64,7 @@ const PaymentMethod: React.FC<PaymentDetailsProps> = props => {
     if (isEditMode) {
         return (
             <Elements stripe={stripePromise}>
-                <PaymentMethodForm
-                    onReset={() => setIsEditMode(false)}
-                    onSubmit={() => setIsEditMode(false)}
-                    refetchSubscription={props.refetchSubscription}
-                />
+                <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
             </Elements>
         )
     }
@@ -134,7 +131,7 @@ const useStripeCardElementOptions = (): StripeCardElementOptions => {
     )
 }
 
-interface PaymentMethodFormProps extends Pick<PaymentDetailsProps, 'refetchSubscription'> {
+interface PaymentMethodFormProps {
     onReset: () => void
     onSubmit: () => void
 }
@@ -144,56 +141,51 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
     const elements = useElements()
     const cardElementOptions = useStripeCardElementOptions()
 
-    const { caller } = useContext(CodyProApiClientContext)
+    const updateCurrentSubscriptionMutation = useUpdateCurrentSubscription()
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState('')
+    const [isStripeLoading, setIsStripeLoading] = useState(false)
+    const [stripeErrorMessage, setStripeErrorMessage] = useState('')
+
+    const [isErrorVisible, setIsErrorVisible] = useState(true)
+
+    const isLoading = isStripeLoading || updateCurrentSubscriptionMutation.isPending
+    const errorMessage =
+        stripeErrorMessage || updateCurrentSubscriptionMutation.isError ? updateSubscriptionMutationErrorText : ''
+
+    useEffect(() => {
+        if (errorMessage) {
+            setIsErrorVisible(true)
+        }
+    }, [errorMessage])
 
     const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
         event.preventDefault()
 
-        setIsLoading(true)
-        setErrorMessage('')
+        setStripeErrorMessage('')
 
         if (!stripe || !elements) {
-            setIsLoading(false)
-            return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
+            return setStripeErrorMessage('Stripe or Stripe Elements libraries are not available.')
         }
 
         const cardNumberElement = elements.getElement(CardNumberElement)
         if (!cardNumberElement) {
-            setIsLoading(false)
-            return setErrorMessage('Stripe card number element was not found.')
+            return setStripeErrorMessage('Stripe card number element was not found.')
         }
 
+        setIsStripeLoading(true)
         const tokenResult = await stripe.createToken(cardNumberElement)
+        setIsStripeLoading(false)
         if (tokenResult.error) {
-            setIsLoading(false)
-            return setErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
+            return setStripeErrorMessage(tokenResult.error.message ?? 'An unknown error occurred.')
         }
 
-        const serverErrorText =
-            'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
-
-        try {
-            const { response } = await caller.call(
-                Client.updateCurrentSubscription({ customerUpdate: { newCreditCardToken: tokenResult.token.id } })
-            )
-            if (response.ok) {
-                await props.refetchSubscription()
-                props.onSubmit()
-            } else {
-                setErrorMessage(serverErrorText)
-            }
-        } catch (error) {
-            logger.error(error)
-            setErrorMessage(serverErrorText)
-        } finally {
-            setIsLoading(false)
-        }
+        updateCurrentSubscriptionMutation.mutate(
+            { customerUpdate: { newCreditCardToken: tokenResult.token.id } },
+            { onSuccess: props.onSubmit }
+        )
     }
 
-    const cardElementProps = { options: cardElementOptions, onFocus: () => setErrorMessage('') }
+    const cardElementProps = { options: cardElementOptions, onFocus: () => setIsErrorVisible(false) }
 
     return (
         <>
@@ -219,7 +211,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = props => {
                     </Label>
                 </Grid>
 
-                {errorMessage && <Text className="text-danger">{errorMessage}</Text>}
+                {isErrorVisible && errorMessage ? <Text className="text-danger">{errorMessage}</Text> : null}
 
                 <div className="mt-4 d-flex justify-content-end">
                     <Button type="reset" variant="secondary" outline={true}>
@@ -301,7 +293,6 @@ const BillingAddress: React.FC<PaymentDetailsProps> = props => {
                 <Elements stripe={stripePromise} options={options}>
                     <BillingAddressForm
                         subscription={props.subscription}
-                        refetchSubscription={props.refetchSubscription}
                         onReset={() => setIsEditMode(false)}
                         onSubmit={() => setIsEditMode(false)}
                     />
@@ -375,66 +366,61 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
     const stripe = useStripe()
     const elements = useElements()
 
-    const { caller } = useContext(CodyProApiClientContext)
+    const updateCurrentSubscriptionMutation = useUpdateCurrentSubscription()
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState('')
+    const [isStripeLoading, setIsStripeLoading] = useState(false)
+    const [stripeErrorMessage, setStripeErrorMessage] = useState('')
+
+    const [isErrorVisible, setIsErrorVisible] = useState(true)
+
+    const isLoading = isStripeLoading || updateCurrentSubscriptionMutation.isPending
+    const errorMessage =
+        stripeErrorMessage || updateCurrentSubscriptionMutation.isError ? updateSubscriptionMutationErrorText : ''
+
+    useEffect(() => {
+        if (errorMessage) {
+            setIsErrorVisible(true)
+        }
+    }, [errorMessage])
 
     const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event): Promise<void> => {
         event.preventDefault()
 
-        setIsLoading(true)
-        setErrorMessage('')
+        setStripeErrorMessage('')
 
         if (!stripe || !elements) {
-            setIsLoading(false)
-            return setErrorMessage('Stripe or Stripe Elements libraries are not available.')
+            return setStripeErrorMessage('Stripe or Stripe Elements libraries are not available.')
         }
 
         const addressElement = elements.getElement(AddressElement)
         if (!addressElement) {
-            setIsLoading(false)
-            return setErrorMessage('Stripe address element was not found.')
+            return setStripeErrorMessage('Stripe address element was not found.')
         }
 
+        setIsStripeLoading(true)
         const addressElementValue = await addressElement.getValue()
+        setIsStripeLoading(false)
         if (!addressElementValue.complete) {
-            setIsLoading(false)
-            return setErrorMessage('Address is not complete.')
+            return setStripeErrorMessage('Address is not complete.')
         }
 
-        const serverErrorText =
-            'An error occurred while updating your credit card info. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
-
-        try {
-            const { line1, line2, postal_code, city, state, country } = addressElementValue.value.address
-            const { response } = await caller.call(
-                Client.updateCurrentSubscription({
-                    customerUpdate: {
-                        newName: addressElementValue.value.name,
-                        newAddress: {
-                            line1,
-                            line2: line2 || '',
-                            postalCode: postal_code,
-                            city,
-                            state,
-                            country,
-                        },
+        const { line1, line2, postal_code, city, state, country } = addressElementValue.value.address
+        updateCurrentSubscriptionMutation.mutate(
+            {
+                customerUpdate: {
+                    newName: addressElementValue.value.name,
+                    newAddress: {
+                        line1,
+                        line2: line2 || '',
+                        postalCode: postal_code,
+                        city,
+                        state,
+                        country,
                     },
-                })
-            )
-            if (response.ok) {
-                await props.refetchSubscription()
-                props.onSubmit()
-            } else {
-                setErrorMessage(serverErrorText)
-            }
-        } catch (error) {
-            logger.error(error)
-            setErrorMessage(serverErrorText)
-        } finally {
-            setIsLoading(false)
-        }
+                },
+            },
+            { onSuccess: props.onSubmit }
+        )
     }
 
     const options = useMemo(
@@ -454,9 +440,9 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = props => {
 
     return (
         <Form onSubmit={handleSubmit} onReset={props.onReset} className={styles.billingAddressForm}>
-            <AddressElement options={options} onFocus={() => setErrorMessage('')} />
+            <AddressElement options={options} onFocus={() => setIsErrorVisible(false)} />
 
-            {errorMessage && <Text className="mt-3 text-danger">{errorMessage}</Text>}
+            {isErrorVisible && errorMessage ? <Text className="mt-3 text-danger">{errorMessage}</Text> : null}
 
             <div className={classNames('d-flex justify-content-end', styles.billingAddressFormButtonContainer)}>
                 <Button type="reset" variant="secondary" outline={true}>

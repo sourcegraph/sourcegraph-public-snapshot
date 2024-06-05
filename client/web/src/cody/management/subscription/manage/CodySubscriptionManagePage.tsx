@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Alert, Card, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
@@ -19,8 +19,7 @@ import {
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
-import { Client } from '../../api/client'
-import { useApiCaller } from '../../api/hooks/useApiClient'
+import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 
 import { InvoiceHistory } from './InvoiceHistory'
 import { PaymentDetails } from './PaymentDetails'
@@ -67,49 +66,31 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         return <Navigate to="/cody/manage/subscription/new" replace={true} />
     }
 
-    return <PageContent />
+    return (
+        <Page className="d-flex flex-column">
+            <PageContent />
+        </Page>
+    )
 }
 
-const currentSubscriptionCall = Client.getCurrentSubscription()
-
 const PageContent: React.FC = () => {
-    const {
-        loading,
-        error,
-        data: subscription,
-        refetch: refetchSubscription,
-        response,
-    } = useApiCaller(currentSubscriptionCall)
+    const subscriptionQueryResult = useCurrentSubscription()
 
-    if (loading && !subscription) {
-        // Loading may be true when the subscription is being refetched.
-        // We want to show the page content, but not the loading spinner in this case.
-        return <LoadingSpinner />
+    if (subscriptionQueryResult.isLoading) {
+        return <LoadingSpinner className="mx-auto" />
     }
 
-    if (error) {
-        logger.error('Error fetching current subscription', error)
-        return null
+    if (subscriptionQueryResult.isError) {
+        return <Alert variant="danger">Failed to fetch subscription data</Alert>
     }
 
-    if (response && !response.ok) {
-        if (response.status === 401) {
-            return <Navigate to="/-/sign-out" replace={true} />
-        }
-
-        logger.error(`Fetch Cody subscription request failed with status ${response.status}`)
-        return null
-    }
-
+    const subscription = subscriptionQueryResult?.data
     if (!subscription) {
-        if (response) {
-            logger.error('Current subscription is not available.')
-        }
-        return null
+        return <Alert variant="warning">Subscription data is not available</Alert>
     }
 
     return (
-        <Page className="d-flex flex-column">
+        <>
             <PageTitle title="Manage Subscription" />
             <PageHeader className="mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1" className="mb-4 d-flex align-items-center">
@@ -126,17 +107,17 @@ const PageContent: React.FC = () => {
             </div>
 
             <Card className={classNames('p-4', styles.card)}>
-                <SubscriptionDetails subscription={subscription} refetchSubscription={refetchSubscription} />
+                <SubscriptionDetails subscription={subscription} />
 
                 <hr className={styles.divider} />
 
-                <PaymentDetails subscription={subscription} refetchSubscription={refetchSubscription} />
+                <PaymentDetails subscription={subscription} />
             </Card>
 
             <Card className={classNames('my-4 p-4', styles.card)}>
                 <InvoiceHistory />
             </Card>
-        </Page>
+        </>
     )
 }
 

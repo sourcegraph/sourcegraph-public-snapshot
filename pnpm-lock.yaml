@@ -142,6 +142,9 @@ importers:
       '@stripe/stripe-js':
         specifier: ^3.3.0
         version: 3.3.0
+      '@tanstack/react-query':
+        specifier: ^5.39.0
+        version: 5.39.0(react@18.1.0)
       '@testing-library/react':
         specifier: ^13.4.0
         version: 13.4.0(react-dom@18.1.0)(react@18.1.0)
@@ -10599,6 +10602,19 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       defer-to-connect: 2.0.1
+    dev: false
+
+  /@tanstack/query-core@5.38.0:
+    resolution: {integrity: sha512-QtkoxvFcu52mNpp3+qOo9H265m3rt83Dgbw5WnNyJvr83cegrQ7zT8haHhL4Rul6ZQkeovxyWbXVW9zI0WYx6g==}
+    dev: false
+
+  /@tanstack/react-query@5.39.0(react@18.1.0):
+    resolution: {integrity: sha512-zc0WnyEffyTgG+myLv8cY2tJOUT6jOprCiprpbMqylCaCFipSDUPCYCt2AC+qxgk2CFuqiI/fjb1u5/HhLkrPg==}
+    peerDependencies:
+      react: ^18.0.0
+    dependencies:
+      '@tanstack/query-core': 5.38.0
+      react: 18.1.0
     dev: false
 
   /@testing-library/dom@8.13.0:
