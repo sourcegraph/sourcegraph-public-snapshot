@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
-import { scretTokenKey } from '../webview/platform/AuthProvider'
+import { secretTokenKey } from '../webview/platform/AuthProvider'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
@@ -10,17 +10,17 @@ import { readConfiguration } from './readConfiguration'
 export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
     // Process the token that lives in user configuration
     // Move them to secrets and then remove them by setting it as undefined
-    const storageToken = await secretStorage.get(scretTokenKey)
+    const storageToken = await secretStorage.get(secretTokenKey)
     const oldToken = vscode.workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
     if (!storageToken && oldToken.length > 8) {
-        await secretStorage.store(scretTokenKey, oldToken)
+        await secretStorage.store(secretTokenKey, oldToken)
         await removeOldAccessTokenSetting()
     }
     return
 }
 
 export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
-    const currentToken = await secretStorage.get(scretTokenKey)
+    const currentToken = await secretStorage.get(secretTokenKey)
     return currentToken || ''
 }
 
