@@ -13,19 +13,19 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
+
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/attribution"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -162,22 +162,16 @@ func NewHandler(
 			embeddings.NewListHandler(config.EmbeddingsAllowedModels))
 
 		factoryMap := embeddings.ModelFactoryMap{
-			embeddings.ModelNameOpenAIAda:              embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
-			embeddings.ModelNameSourcegraphSTMultiQA:   embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
-			embeddings.ModelNameSourcegraphMetadataGen: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
+			embeddings.ModelNameOpenAIAda:            embeddings.NewOpenAIClient(httpClient, config.OpenAI.AccessToken),
+			embeddings.ModelNameSourcegraphSTMultiQA: embeddings.NewSourcegraphClient(httpClient, config.Sourcegraph.EmbeddingsAPIURL, config.Sourcegraph.EmbeddingsAPIToken),
 		}
-
-		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		fireworksClient := fireworks.NewClient(httpcli.UncachedExternalDoer, completionsConfig.Endpoint, completionsConfig.AccessToken)
-
 		embeddingsHandler := embeddings.NewHandler(
 			logger,
 			eventLogger,
 			rs,
 			config.RateLimitNotifier,
 			factoryMap,
-			config.EmbeddingsAllowedModels,
-			fireworksClient)
+			config.EmbeddingsAllowedModels)
 		// TODO: If embeddings.ModelFactoryMap includes more than just OpenAI, we might want to
 		// revisit how we count concurrent requests into the handler. (Instead of assuming they are
 		// all OpenAI-related requests. (i.e. maybe we should use something other than
