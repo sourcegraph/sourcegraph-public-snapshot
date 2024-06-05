@@ -347,7 +347,7 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 		cancel()
 	}
 	// Register an interrupt handler
-	interrupt.Register(sc.cancel)
+	interrupt.RegisterConcurrent(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir
