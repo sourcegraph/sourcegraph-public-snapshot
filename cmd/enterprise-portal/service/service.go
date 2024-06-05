@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"connectrpc.com/otelconnect"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
@@ -71,10 +73,22 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		dotcomDB: dotcomDB,
 	})
 
-	// Register connect endpoints
-	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
-	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
+	// Prepare instrumentation middleware for ConnectRPC handlers
+	otelConnctInterceptor, err := otelconnect.NewInterceptor(
+		// Keep data low-cardinality
+		otelconnect.WithoutServerPeerAttributes(),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "create OTEL interceptor")
+	}
 
+	// Register connect endpoints
+	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor))
+	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor))
+
+	// Optionally enable reflection handlers and a debug UI
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	if !contract.MSP && debugserver.GRPCWebUIEnabled {
 		// Enable reflection for the web UI

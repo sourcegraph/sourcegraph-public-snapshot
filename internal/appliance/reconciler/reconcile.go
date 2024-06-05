@@ -96,14 +96,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.reconcilePreciseCodeIntel(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile precise code intel: %w", err)
 	}
+	if err := r.reconcileCodeInsights(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile code insights DB: %w", err)
+	}
 	if err := r.reconcileCodeIntel(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile precise code intel: %w", err)
+		return ctrl.Result{}, errors.Newf("failed to reconcile code intel DB: %w", err)
 	}
 	if err := r.reconcilePrometheus(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile prometheus: %w", err)
 	}
 	if err := r.reconcileCadvisor(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile cadvisor: %w", err)
+	}
+	if err := r.reconcileWorker(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile worker: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.

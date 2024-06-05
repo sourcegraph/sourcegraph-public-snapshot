@@ -185,15 +185,6 @@ func TestExecRequest(t *testing.T) {
 		return false, nil
 	})
 
-	vcssyncer.TestGitRepoExists = func(ctx context.Context, repoName api.RepoName) error {
-		if strings.Contains(string(repoName), "nicksnyder/go-i18n") {
-			return nil
-		}
-
-		return errors.New("not cloneable")
-	}
-	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
-
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			ss := gitserver.NewMockGitserverService_ExecServer()
@@ -447,17 +438,6 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
 		wantErr      string
 	}{
-		{
-			name: "Not cloneable",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-				m := vcssyncer.NewMockVCSSyncer()
-				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName) error {
-					return errors.New("not_cloneable")
-				})
-				return m, nil
-			},
-			wantErr: "failed to clone example.com/foo/bar: error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable",
-		},
 		{
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {

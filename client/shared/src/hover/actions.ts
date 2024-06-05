@@ -379,6 +379,9 @@ export function registerHoverContributions({
                             '${json(hoverPosition)}',
                             /* eslint-enable no-template-curly-in-string */
                         ],
+                        telemetryProps: {
+                            feature: 'blob.goToDefinition',
+                        },
                     },
                     {
                         // This action is used when preloading the definition succeeded and at least 1
@@ -389,6 +392,9 @@ export function registerHoverContributions({
                         command: 'open',
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
+                        telemetryProps: {
+                            feature: 'blob.goToDefinition.preloaded',
+                        },
                     },
                 ],
                 menus: {
@@ -479,6 +485,9 @@ export function registerHoverContributions({
                         command: 'open',
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${findReferences.url}'],
+                        telemetryProps: {
+                            feature: 'blob.findReferences',
+                        },
                     },
                 ],
                 menus: {
@@ -518,6 +527,10 @@ export function registerHoverContributions({
                             ],
                             id: 'findImplementations_' + spec.languageID,
                             title: 'Find implementations',
+                            telemetryProps: {
+                                feature: 'blob.findImplementations',
+                                privateMetadata: { languageID: spec.languageID },
+                            },
                         })),
                     ],
                     menus: {

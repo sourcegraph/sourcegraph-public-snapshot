@@ -921,7 +921,7 @@
     "gitLongCommandTimeout": {
       "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
       "type": "integer",
-      "default": 3600,
+      "default": 7200,
       "group": "External services"
     },
     "gitMaxConcurrentClones": {
@@ -2890,7 +2890,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks", "google"]
         },
         "endpoint": {
           "type": "string",

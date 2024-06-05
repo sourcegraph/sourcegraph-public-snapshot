@@ -49,6 +49,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
                 ".node": "copy",
             },
         },
+        # TODO: work through build failures when sandbox plugin is enabled so that bundling is hermetic
+        bazel_sandbox_plugin = False,
     )
 
     args = [

@@ -1,7 +1,7 @@
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "COPY_FILE_TO_BIN_TOOLCHAINS", "copy_files_to_bin_actions")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_js//js:libs.bzl", "js_lib_helpers")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
-load("//dev:js_lib.bzl", "gather_files_from_js_providers", "gather_runfiles")
 
 def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_js_deps = []):
     """
@@ -58,17 +58,17 @@ def _custom_eslint_impl(ctx):
 
     inputs_depset = depset(
         copied_srcs + [ctx.executable.binary],
-        transitive = [gather_files_from_js_providers(
+        transitive = [js_lib_helpers.gather_files_from_js_infos(
             targets = [ctx.attr.config] + ctx.attr.deps,
             include_sources = False,
+            include_types = True,  # we have to include types because we need to lint the types.
             include_transitive_sources = False,
-            # We have to include declarations because we need to lint the types.
-            include_declarations = True,
-            include_npm_linked_packages = True,
+            include_transitive_types = True,  # we have to include types because we need to lint the types.
+            include_npm_sources = True,
         )],
     )
 
-    runfiles = gather_runfiles(
+    runfiles = js_lib_helpers.gather_runfiles(
         ctx = ctx,
         sources = [],
         data = [ctx.attr.config],

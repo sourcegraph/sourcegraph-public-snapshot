@@ -3,6 +3,8 @@ package codenav
 import (
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,6 +30,19 @@ type RequestState struct {
 	RepositoryID int
 	Commit       string
 	Path         string
+}
+
+func (r *RequestState) Attrs() []attribute.KeyValue {
+	out := []attribute.KeyValue{
+		attribute.Int("repositoryID", r.RepositoryID),
+		attribute.String("commit", r.Commit),
+		attribute.String("path", r.Path),
+	}
+	if r.dataLoader != nil {
+		uploads := r.dataLoader.uploads
+		out = append(out, attribute.Int("numUploads", len(uploads)), attribute.String("uploads", uploadIDsToString(uploads)))
+	}
+	return out
 }
 
 func NewRequestState(

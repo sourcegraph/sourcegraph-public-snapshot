@@ -10,6 +10,7 @@ import { type ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/sha
 import type { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import type { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
@@ -42,6 +43,7 @@ export interface CodeViewToolbarProps
     extends PlatformContextProps<'settings' | 'requestGraphQL'>,
         ExtensionsControllerProps,
         TelemetryProps,
+        TelemetryV2Props,
         CodeViewToolbarClassProps {
     sourcegraphURL: string
 

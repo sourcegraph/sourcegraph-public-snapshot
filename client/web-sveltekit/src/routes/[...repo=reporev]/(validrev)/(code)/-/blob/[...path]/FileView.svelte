@@ -8,6 +8,8 @@
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
 
+    import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
     import type { ScrollSnapshot } from '$lib/codemirror/utils'
@@ -22,6 +24,7 @@
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -92,6 +95,7 @@
                   requestGraphQL(options) {
                       return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
                   },
+                  telemetryRecorder: noOpTelemetryRecorder,
               })
             : null
 
@@ -123,6 +127,7 @@
         // TODO: track other blob mode
         if (event.detail === CodeViewMode.Blame) {
             SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
+            TELEMETRY_V2_RECORDER.recordEvent('repo.gitBlame', 'enable')
         }
 
         goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })
