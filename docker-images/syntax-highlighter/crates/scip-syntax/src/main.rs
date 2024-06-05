@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
-use std::path::PathBuf;
+use std::{path::PathBuf, process};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -123,20 +123,27 @@ pub fn main() -> anyhow::Result<()> {
                             location: PathBuf::from(loc),
                         },
                     },
-                    None => {
-                        match workspace {
-                            None => IndexMode::Files { list: filenames },
-                            Some(location) => {
-                                if !filenames.is_empty() {
-                                    panic!("--workspace option cannot be combined with a list of files");
-                                } else {
-                                    IndexMode::Workspace {
-                                        location: location.into(),
-                                    }
+                    None => match workspace {
+                        None => {
+                            if filenames.is_empty() {
+                                eprintln!("either specify --workspace or provide a list of files");
+                                process::exit(1)
+                            }
+                            IndexMode::Files { list: filenames }
+                        }
+                        Some(location) => {
+                            if !filenames.is_empty() {
+                                eprintln!(
+                                    "--workspace option cannot be combined with a list of files"
+                                );
+                                process::exit(1)
+                            } else {
+                                IndexMode::Workspace {
+                                    location: location.into(),
                                 }
                             }
                         }
-                    }
+                    },
                 }
             };
 
