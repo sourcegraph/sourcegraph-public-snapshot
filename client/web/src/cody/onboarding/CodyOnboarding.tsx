@@ -46,7 +46,8 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
     const returnToURL = parameters.get('returnTo')
-    const isCody = parameters.get('requestFrom') === 'CODY'
+    // Even if just the return URL contains `requestFrom=CODY`, we should treat it as a request from Cody.
+    const isCody = parameters.get('requestFrom') === 'CODY' || returnToURL?.includes('requestFrom=CODY')
 
     const navigate = useNavigate()
 
