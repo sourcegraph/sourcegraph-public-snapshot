@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -199,7 +199,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isLanguage := func() error {
-		_, ok := enry.GetLanguageByAlias(value)
+		_, ok := languages.GetLanguageByAlias(value)
 		if !ok {
 			return errors.Errorf("unknown language: %q", value)
 		}
