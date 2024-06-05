@@ -12,15 +12,15 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/overhead"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,7 +34,6 @@ func NewHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	mf ModelFactory,
 	prefixedAllowedModels []string,
-	completionsClient types.CompletionsClient,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("embeddingshandler")
 
@@ -119,7 +118,6 @@ func NewHandler(
 								}
 								return characters
 							}(),
-							"is_query": body.IsQuery,
 						},
 					},
 				)
@@ -127,25 +125,6 @@ func NewHandler(
 					logger.Error("failed to log event", log.Error(err))
 				}
 			}()
-
-			// Hacky experiment: Replace embedding model input with generated metadata text when indexing.
-			if body.Model == string(ModelNameSourcegraphMetadataGen) {
-				newInput := body.Input
-				// Generate metadata if we are indexing, not querying.
-				if !body.IsQuery {
-					var err error
-					newInput, err = generateMetadata(r.Context(), body, logger, completionsClient)
-					if err != nil {
-						logger.Error("failed to generate metadata", log.Error(err))
-						return
-					}
-				}
-				body = codygateway.EmbeddingsRequest{
-					Model:   string(ModelNameSourcegraphSTMultiQA),
-					Input:   newInput,
-					IsQuery: body.IsQuery,
-				}
-			}
 
 			resp, ut, err := c.GenerateEmbeddings(r.Context(), body)
 			usedTokens = ut

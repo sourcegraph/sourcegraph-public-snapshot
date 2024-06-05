@@ -27,8 +27,6 @@ go_library(
         "//cmd/cody-gateway/shared/config",
         "//internal/authbearer",
         "//internal/collections",
-        "//internal/completions/client/fireworks",
-        "//internal/conf",
         "//internal/httpcli",
         "//internal/instrumentation",
         "//internal/redispool",
