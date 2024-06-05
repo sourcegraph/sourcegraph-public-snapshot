@@ -7,6 +7,8 @@
         id: string
         selectedTabID: Readable<string | null>
         register(tab: Tab): Unsubscriber
+        getTabs: () => Tab[]
+        selectTab: (selectedTabIndex: number) => void
     }
 
     export const KEY = {}
@@ -50,6 +52,11 @@
                 tabs.update(tabs => tabs.filter(existingTab => existingTab.id !== tab.id))
             }
         },
+        getTabs: () => $tabs,
+        selectTab: (index: number): void => {
+            $selectedTab = $selectedTab === index && toggable ? null : index
+            dispatch('select', $selectedTab)
+        },
     })
 
     function selectTab(event: { detail: number }) {
@@ -59,7 +66,7 @@
 </script>
 
 <div class="tabs" data-tabs>
-    <TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} />
+    <header><TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} /></header>
     <slot />
 </div>
 
@@ -68,5 +75,9 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+        }
     }
 </style>

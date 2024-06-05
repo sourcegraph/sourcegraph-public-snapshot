@@ -66,15 +66,7 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 		container.NewEnvVarFieldRef("POD_NAME", "metadata.name"),
 	)
 
-	// Only set these when the internal blobstore is enabled. Otherwise, callers
-	// can supply env vars for external blobstores via ContainerConfig.
-	if !sg.Spec.Blobstore.Disabled {
-		ctr.Env = append(
-			ctr.Env,
-			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_BACKEND", Value: "blobstore"},
-			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
-		)
-	}
+	ctr.Env = addPreciseCodeIntelBlobstoreVars(ctr.Env, sg)
 
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
 
@@ -143,4 +135,17 @@ func (r *Reconciler) reconcilePreciseCodeIntelServiceAccount(ctx context.Context
 	cfg := sg.Spec.PreciseCodeIntel
 	sa := serviceaccount.NewServiceAccount("precise-code-intel-worker", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, cfg, &sa, &corev1.ServiceAccount{}, sg, owner)
+}
+
+func addPreciseCodeIntelBlobstoreVars(env []corev1.EnvVar, sg *config.Sourcegraph) []corev1.EnvVar {
+	// Only set these when the internal blobstore is enabled. Otherwise, callers
+	// can supply env vars for external blobstores via ContainerConfig.
+	if !sg.Spec.Blobstore.Disabled {
+		env = append(
+			env,
+			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_BACKEND", Value: "blobstore"},
+			corev1.EnvVar{Name: "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
+		)
+	}
+	return env
 }

@@ -94,7 +94,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 				}
 
 				// Return first match
-				return strings.Join(symbol.Documentation, "\n"), rangeBySymbol[symbolName], true, nil
+				return strings.Join(symbolHoverText(symbol), "\n"), rangeBySymbol[symbolName], true, nil
 			}
 		}
 	}

@@ -421,7 +421,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                                 <ul>
                                     <li>
                                         Provider (e.g., "sourcegraph", "anthropic", "openai", "azure-openai",
-                                        "fireworks", "aws-bedrock", etc.)
+                                        "fireworks", "aws-bedrock", "google", etc.)
                                     </li>
                                     <li>Chat model (included only for "sourcegraph" provider)</li>
                                     <li>Fast chat model (included only for "sourcegraph" provider)</li>

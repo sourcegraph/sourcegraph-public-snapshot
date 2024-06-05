@@ -23,7 +23,7 @@ import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { manageSubscriptionRedirectURL } from '../util'
+import { getManageSubscriptionPageURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
@@ -31,7 +31,6 @@ import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -41,7 +40,6 @@ export enum EditorStep {
 }
 
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -96,7 +94,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !subscription) {
+    if (!isCodyEnabled() || !subscription) {
         return null
     }
 
@@ -144,11 +142,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 <ButtonLink
                                     variant="primary"
                                     size="sm"
-                                    href={manageSubscriptionRedirectURL}
-                                    onClick={event => {
-                                        event.preventDefault()
+                                    to={getManageSubscriptionPageURL()}
+                                    onClick={() => {
                                         telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                        window.location.href = manageSubscriptionRedirectURL
                                     }}
                                 >
                                     <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />

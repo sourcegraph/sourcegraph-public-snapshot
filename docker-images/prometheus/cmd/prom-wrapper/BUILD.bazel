@@ -14,6 +14,7 @@ go_library(
         "status.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/docker-images/prometheus/cmd/prom-wrapper",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:private"],
     deps = [
         "//internal/conf",
@@ -48,6 +49,7 @@ go_binary(
     ],
     pure = "on",
     static = "on",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//visibility:public"],
 )
 
@@ -59,6 +61,7 @@ go_test(
         "silence_test.go",
     ],
     embed = [":prom-wrapper_lib"],
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/version",
         "//schema",

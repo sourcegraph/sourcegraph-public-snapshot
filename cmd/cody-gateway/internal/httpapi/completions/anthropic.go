@@ -128,6 +128,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(a.anthropicTokenizer,
 		flaggingRequest{
+			ModelName:       ar.Model,
 			FlattenedPrompt: ar.Prompt,
 			MaxTokens:       int(ar.MaxTokensToSample),
 		},

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,6 +46,7 @@ type Config struct {
 
 	Fireworks FireworksConfig
 
+	// Prefixed model names
 	AllowedEmbeddingsModels []string
 
 	AllowAnonymous bool
@@ -88,12 +90,14 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	FlaggingConfig FlaggingConfig
 }
 
 type FireworksConfig struct {
+	// Non-prefixed model names
 	AllowedModels                          []string
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
@@ -102,6 +106,7 @@ type FireworksConfig struct {
 }
 
 type OpenAIConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	OrgID          string
@@ -145,6 +150,10 @@ type FlaggingConfig struct {
 	// MaxTokensToSampleFlaggingLimit is a soft-cap, used to flag requests. (But not necessarily block.)
 	// So MaxTokensToSampleFlaggingLimit should be <= MaxTokensToSample.
 	MaxTokensToSampleFlaggingLimit int
+
+	// FlaggedModelNames is a list of provider-specific model names (e.g. "gtp-3.5")
+	// that if used will lead to the request being flagged.
+	FlaggedModelNames []string
 
 	// ResponseTokenBlockingLimit is the maximum number of tokens we allow before outright blocking
 	// a response. e.g. the client sends a request desiring a response with 100 max tokens, we will
@@ -274,6 +283,20 @@ func (c *Config) Load() {
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 
+	// Configurations for Google Gemini models.
+	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
+	c.Google.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_GOOGLE_ALLOWED_MODELS",
+		strings.Join([]string{
+			google.Gemini15FlashLatest,
+			google.Gemini15ProLatest,
+			google.GeminiProLatest,
+		}, ","),
+		"Google models that can to be used."),
+	)
+	if c.Google.AccessToken != "" && len(c.Google.AllowedModels) == 0 {
+		c.AddError(errors.New("must provide allowed models for Google"))
+	}
+
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphSTMultiQA)}, ","), "The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
@@ -317,16 +340,6 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
-
-	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
-	c.Google.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_GOOGLE_ALLOWED_MODELS",
-		strings.Join([]string{
-			"gemini-1.5-pro-latest",
-			"gemini-1.5-flash-latest",
-		}, ","),
-		"Google models that can to be used."),
-	)
-
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
@@ -359,6 +372,8 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
 	cfg.PromptTokenFlaggingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "4000", "Maximum number of completion tokens to allow without blocking.")
+
+	cfg.FlaggedModelNames = maybeLoadLowercaseSlice("FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
 }
 
 // splitMaybe splits the provided string on commas, but returns nil if given the empty string.

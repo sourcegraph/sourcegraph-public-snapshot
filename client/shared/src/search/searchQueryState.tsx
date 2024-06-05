@@ -3,7 +3,7 @@ import React, { createContext } from 'react'
 import type { StoreApi, UseBoundStore } from 'zustand'
 
 import type { SearchPatternType } from '../graphql-operations'
-import { TelemetryV2Props } from '../telemetry'
+import type { TelemetryV2Props } from '../telemetry'
 
 import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './helpers'
 import type { FilterType } from './query/filters'

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -24,7 +25,14 @@ import (
 )
 
 type Reader struct {
-	conn *pgx.Conn
+	db   *pgxpool.Pool
+	opts ReaderOptions
+}
+
+type ReaderOptions struct {
+	// DevOnly indicates that this Reader should only return subscriptions,
+	// licenses, etc. that are only used for development.
+	DevOnly bool
 }
 
 // NewReader wraps a direct connection to the Sourcegraph.com database. It
@@ -33,21 +41,28 @@ type Reader struct {
 //
 // 👷 This is intended to be a short-lived mechanism, and should be removed
 // as part of https://linear.app/sourcegraph/project/12f1d5047bd2/overview.
-func NewReader(conn *pgx.Conn) *Reader {
-	return &Reader{conn: conn}
+func NewReader(db *pgxpool.Pool, opts ReaderOptions) *Reader {
+	return &Reader{db: db, opts: opts}
 }
 
 func (r *Reader) Ping(ctx context.Context) error {
-	if err := r.conn.Ping(ctx); err != nil {
+	// Execute ping steps within a single connection.
+	conn, err := r.db.Acquire(ctx)
+	if err != nil {
+		return errors.Wrap(err, "db.Acquire")
+	}
+	defer conn.Release()
+
+	if err := conn.Ping(ctx); err != nil {
 		return errors.Wrap(err, "sqlDB.PingContext")
 	}
-	if _, err := r.conn.Exec(ctx, "SELECT current_user;"); err != nil {
+	if _, err := conn.Exec(ctx, "SELECT current_user;"); err != nil {
 		return errors.Wrap(err, "sqlDB.Exec SELECT current_user")
 	}
 	return nil
 }
 
-func (r *Reader) Close(ctx context.Context) error { return r.conn.Close(ctx) }
+func (r *Reader) Close() { r.db.Close() }
 
 type CodyGatewayAccessAttributes struct {
 	SubscriptionID string
@@ -68,6 +83,15 @@ type CodyGatewayAccessAttributes struct {
 
 	// Used for GenerateAccessTokens
 	LicenseKeyHashes [][]byte
+}
+
+func (c CodyGatewayAccessAttributes) GetSubscriptionDisplayName() string {
+	for _, tag := range c.ActiveLicenseTags {
+		if strings.HasPrefix(tag, "customer:") {
+			return strings.TrimPrefix(tag, "customer:")
+		}
+	}
+	return ""
 }
 
 type CodyGatewayRateLimits struct {
@@ -148,7 +172,7 @@ func (q *queryConditions) addWhere(cond string) {
 	}
 }
 
-func newCodyGatewayAccessQuery(conds queryConditions) string {
+func newCodyGatewayAccessQuery(conds queryConditions, opts ReaderOptions) string {
 	const rawClause = `
 SELECT
 	subscription.id,
@@ -199,6 +223,16 @@ FROM product_subscriptions subscription
 	if conds.havingClause != "" {
 		clauses = append(clauses, "HAVING "+conds.havingClause)
 	}
+	if opts.DevOnly {
+		// '&&' operator: overlap (have elements in common)
+		c := fmt.Sprintf("ARRAY['%s','%s'] && MAX(active_license.license_tags)",
+			licensing.DevTag, licensing.InternalTag)
+		if conds.havingClause != "" {
+			clauses = append(clauses, "AND "+c)
+		} else {
+			clauses = append(clauses, "HAVING "+c)
+		}
+	}
 	return strings.Join(clauses, "\n")
 }
 
@@ -210,8 +244,8 @@ type GetCodyGatewayAccessAttributesOpts struct {
 func (r *Reader) GetCodyGatewayAccessAttributesBySubscription(ctx context.Context, subscriptionID string) (*CodyGatewayAccessAttributes, error) {
 	query := newCodyGatewayAccessQuery(queryConditions{
 		whereClause: "subscription.id = $1",
-	})
-	row := r.conn.QueryRow(ctx, query,
+	}, r.opts)
+	row := r.db.QueryRow(ctx, query,
 		strings.TrimPrefix(subscriptionID, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 	return scanCodyGatewayAccessAttributes(row)
 }
@@ -232,8 +266,8 @@ func (r *Reader) GetCodyGatewayAccessAttributesByAccessToken(ctx context.Context
 
 	query := newCodyGatewayAccessQuery(queryConditions{
 		havingClause: "$1 = ANY(array_agg(tokens.license_key_hash))",
-	})
-	row := r.conn.QueryRow(ctx, query, decoded)
+	}, r.opts)
+	row := r.db.QueryRow(ctx, query, decoded)
 	return scanCodyGatewayAccessAttributes(row)
 }
 
@@ -262,8 +296,8 @@ func scanCodyGatewayAccessAttributes(row pgx.Row) (*CodyGatewayAccessAttributes,
 }
 
 func (r *Reader) GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*CodyGatewayAccessAttributes, error) {
-	query := newCodyGatewayAccessQuery(queryConditions{})
-	rows, err := r.conn.Query(ctx, query)
+	query := newCodyGatewayAccessQuery(queryConditions{}, r.opts)
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
 	}
@@ -281,7 +315,7 @@ func (r *Reader) GetAllCodyGatewayAccessAttributes(ctx context.Context) ([]*Cody
 
 var ErrEnterpriseSubscriptionLicenseNotFound = errors.New("enterprise subscription license not found")
 
-func newLicensesQuery(conds queryConditions) string {
+func newLicensesQuery(conds queryConditions, opts ReaderOptions) string {
 	const rawClause = `
 SELECT
 	-- EnterpriseSubscriptionLicense
@@ -307,6 +341,16 @@ LEFT JOIN product_subscriptions subscriptions
 	clauses := []string{rawClause}
 	if conds.whereClause != "" {
 		clauses = append(clauses, "WHERE "+conds.whereClause)
+	}
+	if opts.DevOnly {
+		// '&&' operator: overlap (have elements in common)
+		c := fmt.Sprintf("ARRAY['%s','%s'] && licenses.license_tags",
+			licensing.DevTag, licensing.InternalTag)
+		if conds.whereClause != "" {
+			clauses = append(clauses, "AND "+c)
+		} else {
+			clauses = append(clauses, "WHERE "+c)
+		}
 	}
 	if conds.havingClause != "" {
 		clauses = append(clauses, "HAVING "+conds.havingClause)
@@ -390,8 +434,8 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 		}
 	}
 
-	query := newLicensesQuery(conds)
-	rows, err := r.conn.Query(ctx, query, args...)
+	query := newLicensesQuery(conds, r.opts)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cody gateway access attributes")
 	}

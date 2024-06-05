@@ -12,6 +12,8 @@ type Config struct {
 		cloudsql.ConnConfig
 
 		PGDSNOverride *string
+
+		IncludeProductionLicenses bool
 	}
 
 	SAMS SAMSConfig
@@ -32,6 +34,8 @@ func (c *Config) Load(env *runtime.Env) {
 	}
 	c.DotComDB.PGDSNOverride = env.GetOptional("DOTCOM_PGDSN_OVERRIDE",
 		"For local dev: custom PostgreSQL DSN, overrides DOTCOM_CLOUDSQL_* options")
+	c.DotComDB.IncludeProductionLicenses = env.GetBool("DOTCOM_INCLUDE_PRODUCTION_LICENSES", "false",
+		"Include production licenses in API results")
 
 	c.SAMS.ConnConfig = sams.NewConnConfigFromEnv(env)
 	c.SAMS.ClientID = env.Get("ENTERPRISE_PORTAL_SAMS_CLIENT_ID", "",

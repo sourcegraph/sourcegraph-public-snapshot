@@ -81,6 +81,9 @@ message CodyGatewayAccess {
   // Available access tokens for authenticating as the subscription holder with
   // Cody Gateway.
   repeated CodyGatewayAccessToken access_tokens = 6;
+
+  // The display name of the corresponding Enterprise subscription.
+  string subscription_display_name = 7;
 }
 
 message ListCodyGatewayAccessesRequest {

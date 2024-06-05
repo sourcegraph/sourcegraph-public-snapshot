@@ -24,6 +24,8 @@ var additionalAllowedEventTypes = func() []EventType {
 
 // AllowedEventTypes denotes a list of all events allowed to export sensitive
 // telemetry metadata.
+//
+// 🚨 SECURITY: Must get approval from data-analytics team before adding events to this list.
 func AllowedEventTypes() EventTypes {
 	return eventTypes(append(additionalAllowedEventTypes,
 		// Example event for testing.
@@ -39,7 +41,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "suggested",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
@@ -49,7 +51,7 @@ func AllowedEventTypes() EventTypes {
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completions",
+			Feature: "cody.completion",
 			Action:  "accepted",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",

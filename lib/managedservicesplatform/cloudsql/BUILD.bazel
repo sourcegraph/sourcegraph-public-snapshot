@@ -2,12 +2,16 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cloudsql",
-    srcs = ["cloudsql.go"],
+    srcs = [
+        "cloudsql.go",
+        "tracer.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql",
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
         "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_google_cloud_go_cloudsqlconn//:cloudsqlconn",
         "@io_opentelemetry_go_otel//:otel",

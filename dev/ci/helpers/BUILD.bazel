@@ -5,6 +5,7 @@ go_library(
     name = "helpers",
     srcs = ["bazeldo.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/ci/helpers",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
@@ -16,4 +17,5 @@ go_test(
     name = "helpers_test",
     srcs = ["bazeldo_test.go"],
     embed = [":helpers"],
+    tags = [TAG_INFRA_DEVINFRA],
 )

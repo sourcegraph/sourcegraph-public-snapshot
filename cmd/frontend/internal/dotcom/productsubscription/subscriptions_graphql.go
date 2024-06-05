@@ -8,6 +8,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
 
@@ -21,6 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var productSubscriptionAccess = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "productsubscription",
+	Name:      "graphql_access",
+}, []string{"action"})
 
 const auditEntityProductSubscriptions = "dotcom-productsubscriptions"
 
@@ -81,6 +89,9 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 			log.String("accessed_product_subscription_id", id),
 		},
 	})
+	// Track usage
+	productSubscriptionAccess.With(prometheus.Labels{"action": action}).Inc()
+
 	return &productSubscription{logger: logger, v: v, db: db}, nil
 }
 

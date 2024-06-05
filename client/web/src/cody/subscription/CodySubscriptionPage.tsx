@@ -27,19 +27,17 @@ import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
 import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -65,7 +63,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
+    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
         return null
     }
 
@@ -79,18 +77,18 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                     className="mb-4"
                     actions={
                         isProUser && (
-                            <Button
+                            <ButtonLink
                                 variant="primary"
+                                to={getManageSubscriptionPageURL()}
                                 onClick={() => {
                                     telemetryRecorder.recordEvent('cody.manageSubscription', 'click', {
                                         metadata: { tier: 1 },
                                     })
-                                    window.location.href = manageSubscriptionRedirectURL
                                 }}
                             >
                                 <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
                                 Manage subscription
-                            </Button>
+                            </ButtonLink>
                         )
                     }
                 >
@@ -204,18 +202,19 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     <Text className="mb-0 text-muted d-inline">/month</Text>
                                 </div>
                                 {isProUser ? (
-                                    <Text
-                                        className="mb-0 text-muted d-inline cursor-pointer"
-                                        size="small"
+                                    <Link
+                                        to={getManageSubscriptionPageURL()}
+                                        className="mb-0 text-muted"
                                         onClick={() => {
                                             telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                 metadata: { tier: 0 },
                                             })
-                                            window.location.href = manageSubscriptionRedirectURL
                                         }}
                                     >
-                                        Manage subscription
-                                    </Text>
+                                        <Text as="span" size="small">
+                                            Manage subscription
+                                        </Text>
+                                    </Link>
                                 ) : useEmbeddedCodyUI ? (
                                     <>
                                         <Button

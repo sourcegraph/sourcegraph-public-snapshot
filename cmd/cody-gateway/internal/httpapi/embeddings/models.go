@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
 
-type ModelName string
+type PrefixedModelName string
 
 const (
-	ModelNameOpenAIAda            ModelName = "openai/text-embedding-ada-002"
-	ModelNameSourcegraphSTMultiQA ModelName = "sourcegraph/st-multi-qa-mpnet-base-dot-v1"
+	ModelNameOpenAIAda            PrefixedModelName = "openai/text-embedding-ada-002"
+	ModelNameSourcegraphSTMultiQA PrefixedModelName = "sourcegraph/st-multi-qa-mpnet-base-dot-v1"
 )
 
 type EmbeddingsClient interface {
@@ -26,23 +26,23 @@ type ModelFactory interface {
 	ForModel(model string) (_ EmbeddingsClient, ok bool)
 }
 
-type ModelFactoryMap map[ModelName]EmbeddingsClient
+type ModelFactoryMap map[PrefixedModelName]EmbeddingsClient
 
 func (mf ModelFactoryMap) ForModel(model string) (EmbeddingsClient, bool) {
-	c, ok := mf[ModelName(model)]
+	c, ok := mf[PrefixedModelName(model)]
 	return c, ok
 }
 
-func NewListHandler() http.Handler {
+func NewListHandler(prefixedAllowedModels []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 
-		modelEnabled := func(model ModelName) bool {
+		modelEnabled := func(model PrefixedModelName) bool {
 			rl, ok := act.RateLimits[codygateway.FeatureEmbeddings]
 			if !act.AccessEnabled || !ok || !rl.IsValid() {
 				return false
 			}
-			return slices.Contains(rl.AllowedModels, string(model))
+			return slices.Contains(rl.EvaluateAllowedModels(prefixedAllowedModels), string(model))
 		}
 
 		models := modelsResponse{

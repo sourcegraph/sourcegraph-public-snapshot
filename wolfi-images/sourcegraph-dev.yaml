@@ -1,5 +1,9 @@
 include: ./sourcegraph-template.yaml
 
+# sourcegraph-dev is identical to sourcegraph-base, but it includes apk tools which allows additional
+# packages to be installed.
+# This should not be used for production images, but is helpful for internal tooling and testing.
+
 contents:
   packages:
     # Included by existing SG base image
