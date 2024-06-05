@@ -260,7 +260,9 @@ message ListEnterpriseSubscriptionLicensesResponse {
 
 message UpdateEnterpriseSubscriptionRequest {
   // The subscription to update.
-  // The field "id" is used to identify the subscription to update.
+  // The following fields are used to identify the membership to update:
+  //  - subscription.id
+  // Multiple fields are treated as AND-concatenated.
   EnterpriseSubscription subscription = 1;
 
   // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
@@ -275,22 +277,27 @@ message UpdateEnterpriseSubscriptionResponse {
   EnterpriseSubscription subscription = 1;
 }
 
-message UpdateSubscriptionMembershipRequest {
-  // Query specifies the subscription lookup strategy for this update request.
-  oneof subscription_query {
-    // Look up a subscription using its external, prefixed UUID-format identifier.
-    string id = 1;
-    // Look up a subscription using its instance domain.
-    string domain = 2;
-  }
-
-  // Look up a member using its SAMS account ID.
+message EnterpriseSubscriptionMembership {
+  // The external, prefixed UUID-format identifier of the subscription.
+  string subscription_id = 1;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string instance_domain = 2;
+  // The SAMS account ID of the member.
   string member_sams_account_id = 3;
-  // The new roles for the member.
+  // The roles of the member.
   repeated string member_roles = 4;
+}
+
+message UpdateSubscriptionMembershipRequest {
+  // The membership to update.
+  // The following fields are used to identify the membership to update:
+  //  - membership.subscription_id
+  //  - membership.instance_domain
+  // Multiple fields are treated as AND-concatenated.
+  EnterpriseSubscriptionMembership membership = 1;
 
   // If set to true, and the membership is not found, a new membership will be created.
-  bool allow_missing = 5;
+  bool allow_missing = 2;
 }
 
 message UpdateSubscriptionMembershipResponse {}
