@@ -11,6 +11,7 @@ declare global {
   const ILucideChevronLeft: typeof import('~icons/lucide/chevron-left')['default']
   const ILucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
   const ILucideEllipsis: typeof import('~icons/lucide/ellipsis')['default']
+  const ILucideFolder: typeof import('~icons/lucide/folder')['default']
   const ILucideGitCompareArrows: typeof import('~icons/lucide/git-compare-arrows')['default']
   const ILucideGitMerge: typeof import('~icons/lucide/git-merge')['default']
   const ILucideHome: typeof import('~icons/lucide/home')['default']
