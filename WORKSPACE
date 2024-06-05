@@ -258,6 +258,12 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
+    patch_args = ["-p1"],
+    patches = [
+        # Includes https://github.com/aspect-build/rules_esbuild/pull/201 as well as a fix for
+        # object-inspect being weird, see the comments in the patch for further links.
+        "//third_party/rules_esbuild:sandbox-plugin-fixes.patch",
+    ],
     sha256 = "ef7163a2e8e319f8a9a70560788dd899126aebf3538c76f8bc1f0b4b52ba4b56",
     strip_prefix = "rules_esbuild-0.21.0-rc1",
     url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.21.0-rc1/rules_esbuild-v0.21.0-rc1.tar.gz",
