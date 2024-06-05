@@ -1,5 +1,3 @@
-// This file follows the API design guidelines at https://google.aip.dev/, exceptions are otherwise noted.
-
 syntax = "proto3";
 
 package enterpriseportal.subscriptions.v1;
@@ -80,6 +78,14 @@ message EnterpriseSubscription {
   string display_name = 3;
   // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
   string instance_domain = 4;
+}
+
+// EnterpriseSubscription represents a Sourcegraph Enterprise subscription member.
+message EnterpriseSubscriptionMember {
+  // The SAMS account ID of the member.
+  string sams_account_id = 1;
+  // The role of the member.
+  string role = 2;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
@@ -209,11 +215,16 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions whose license key contains this
     // substring.
     string license_key_substring = 4;
+    // Return only product subscriptions whose license key contains the given member.
+    Member member = 5;
+  }
+
+  message Member {
     // Return only product subscriptions contains the member with given SAMS
     // account ID.
-    string member_sams_account_id = 5;
+    string sams_account_id = 1;
     // Return only product subscriptions contains the member with the given role.
-    string member_role = 6;
+    string role = 2;
   }
 }
 
