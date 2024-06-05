@@ -70,7 +70,7 @@ pub fn index_command(
     evaluate_against: Option<PathBuf>,
     options: IndexOptions,
 ) -> Result<()> {
-    let p = ParserId::from_name(&language).unwrap();
+    let parser_id = ParserId::from_name(&language).unwrap();
     let project_root = {
         match index_mode {
             IndexMode::Files { .. } => project_root,
@@ -109,7 +109,7 @@ pub fn index_command(
             .strip_prefix(canonical_project_root.clone())
             .expect("Failed to strip project root prefix");
 
-        match index_content(&contents, p, &options) {
+        match index_content(&contents, parser_id, &options) {
             Ok(mut document) => {
                 document.relative_path = relative_path.display().to_string();
                 index.documents.push(document);
@@ -130,7 +130,7 @@ pub fn index_command(
         }
     };
 
-    let extensions = ParserId::language_extensions(&p);
+    let extensions = ParserId::language_extensions(&parser_id);
 
     let file_matches_language = |filename: &str| -> bool {
         filename
@@ -138,14 +138,6 @@ pub fn index_command(
             .last()
             .filter(|ext| extensions.contains(ext))
             .is_some()
-    };
-
-    let is_indexable_path = |path: &PathBuf| -> bool {
-        match path.extension().and_then(|e| e.to_str()) {
-            None => false,
-            Some(ext) if file_matches_language(ext) => true,
-            Some(_) => false,
-        }
     };
 
     match index_mode {
@@ -160,68 +152,21 @@ pub fn index_command(
 
             bar.finish();
         }
-        IndexMode::TarArchive { input } => {
-            let mut index_entry = |path: &PathBuf, contents: &str| -> Result<()> {
-                match index_content(&contents, p, &options) {
-                    Ok(mut document) => {
-                        document.relative_path = path.display().to_string();
-                        index.documents.push(document);
-                        Ok(())
-                    }
-                    Err(error) => {
-                        if options.fail_fast {
-                            Err(anyhow!("Failed to index {}: {:?}", path.display(), error))
-                        } else {
-                            eprintln!("Failed to index {}: {:?}", path.display(), error);
-                            Ok(())
-                        }
-                    }
-                }
-            };
-
-            match input {
-                TarMode::File { location } => {
-                    let mut ar = tar::Archive::new(File::open(location).unwrap());
-                    let entries = ar.entries()?;
-                    let mut contents = String::new();
-                    for entry in entries {
-                        let mut e = entry?;
-                        let path = PathBuf::from(e.path()?);
-                        if is_indexable_path(&path) {
-                            let read = e.read_to_string(&mut contents)?;
-                            index_entry(&path, &contents)?;
-                            if read > 0 {
-                                contents.clear();
-                            }
-                        }
-                    }
-                }
-                TarMode::Stdin => {
-                    let stdin = io::stdin();
-                    let mut ar = tar::Archive::new(stdin);
-                    let entries = ar.entries()?;
-                    let mut contents = String::new();
-                    let bar = create_spinner();
-                    let mut i = 0;
-
-                    for entry in entries {
-                        let mut e = entry?;
-                        let path = PathBuf::from(e.path()?);
-                        if is_indexable_path(&path) {
-                            let read = e.read_to_string(&mut contents)?;
-
-                            index_entry(&path, &contents)?;
-                            if read > 0 {
-                                contents.clear();
-                            }
-                            i += 1;
-                            bar.set_message(format!("[{}]: {}", i, path.display().to_string()));
-                            bar.tick();
-                        }
-                    }
-                }
+        IndexMode::TarArchive { input } => match input {
+            TarMode::File { location } => {
+                let mut ar = tar::Archive::new(File::open(location).unwrap());
+                let entries = ar.entries()?;
+                let documents = index_tar_entries(entries, parser_id, &options)?;
+                index.documents.extend(documents);
             }
-        }
+            TarMode::Stdin => {
+                let stdin = io::stdin();
+                let mut ar: tar::Archive<_> = tar::Archive::new(stdin);
+                let entries = ar.entries()?;
+                let documents = index_tar_entries(entries, parser_id, &options)?;
+                index.documents.extend(documents);
+            }
+        },
         IndexMode::Workspace { location } => {
             let is_valid = |entry: &DirEntry| {
                 entry.file_type().is_dir()
@@ -270,6 +215,67 @@ pub fn index_command(
     write_message_to_file(out.clone(), index)
         .map_err(|err| anyhow!("{err:?}"))
         .with_context(|| format!("When writing index to {}", out.display()))
+}
+
+fn index_tar_entries<R: Read>(
+    entries: tar::Entries<'_, R>,
+    parser: ParserId,
+    options: &IndexOptions,
+) -> anyhow::Result<Vec<Document>> {
+    let extensions = ParserId::language_extensions(&parser);
+    let mut contents = String::new();
+    let mut documents: Vec<Document> = vec![];
+    let mut progress = 0;
+    let spinner = create_spinner();
+    for entry in entries {
+        let mut e = entry?;
+        let path = PathBuf::from(e.path()?);
+
+        if matches!(path.extension().and_then(|e| e.to_str()), Some(ext) if extensions.contains(ext))
+        {
+            match e.read_to_string(&mut contents) {
+                Ok(size) => {
+                    match index_content(&contents, parser, &options) {
+                        Ok(mut document) => {
+                            document.relative_path = path.display().to_string();
+                            documents.push(document);
+                        }
+                        Err(error) => {
+                            if options.fail_fast {
+                                anyhow::bail!("Failed to index {}: {:?}", path.display(), error);
+                            } else {
+                                eprintln!("Failed to index {}: {:?}", path.display(), error);
+                            }
+                        }
+                    }
+                    if size > 0 {
+                        contents.clear();
+                    }
+                }
+                Err(error) => {
+                    if options.fail_fast {
+                        anyhow::bail!(
+                            "Failed to read contents of path {}: {:?}",
+                            path.display(),
+                            error
+                        )
+                    } else {
+                        eprintln!(
+                            "Failed to read contents of path {}: {:?}",
+                            path.display(),
+                            error
+                        );
+                    }
+                }
+            }
+
+            progress += 1;
+            spinner.set_message(format!("[{}]: {}", progress, path.display().to_string()));
+            spinner.tick();
+        }
+    }
+
+    Ok(documents)
 }
 
 fn index_content(contents: &str, parser: ParserId, options: &IndexOptions) -> Result<Document> {
