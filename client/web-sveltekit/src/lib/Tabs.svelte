@@ -66,7 +66,7 @@
 </script>
 
 <div class="tabs" data-tabs>
-    <TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} />
+    <header><TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} /></header>
     <slot />
 </div>
 
@@ -75,5 +75,9 @@
         display: flex;
         flex-direction: column;
         height: 100%;
+
+        header {
+            border-bottom: 1px solid var(--border-color);
+        }
     }
 </style>

@@ -101,15 +101,8 @@ func (s *Service) gatherLocations(
 	includeReferencingIndexes bool,
 	extractor LocationExtractor,
 ) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-	}})
+	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold,
+		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
 	if cursor.Phase == "" {

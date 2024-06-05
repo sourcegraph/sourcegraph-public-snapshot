@@ -38,6 +38,7 @@ go_library(
         "//internal/codygateway",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
+        "//internal/completions/client/google",
         "//internal/completions/types",
         "//internal/conf",
         "//internal/conf/conftypes",

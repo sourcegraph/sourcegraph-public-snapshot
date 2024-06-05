@@ -360,6 +360,10 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegra
 			// of the queue.
 			managed := sched.ListRepoIDs()
 
+			if len(managed) == 0 {
+				return nil
+			}
+
 			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 			if err != nil {
 				return errors.Wrap(err, "failed to fetch list of uncloned repositories")

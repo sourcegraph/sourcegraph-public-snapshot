@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import styles from './CodyAlert.module.scss'
 
 interface CodyAlertProps extends React.HTMLAttributes<HTMLDivElement> {
-    variant: 'greenSuccess' | 'purpleSuccess' | 'purpleCodyPro' | 'error'
+    variant: 'purple' | 'greenSuccess' | 'purpleSuccess' | 'purpleCodyPro' | 'error'
     className?: string
     children: React.ReactNode
 }
@@ -15,10 +15,11 @@ export const CodyAlert: React.FunctionComponent<CodyAlertProps> = ({ variant, cl
         'mb-4',
         styles.alert,
         {
-            [styles.greenSuccessAlert]: variant === 'greenSuccess',
-            [styles.purpleSuccessAlert]: variant === 'purpleSuccess',
+            [styles.purpleNoIcon]: variant === 'purple',
+            [styles.greenSuccess]: variant === 'greenSuccess',
+            [styles.purpleSuccess]: variant === 'purpleSuccess',
             [styles.purpleCodyPro]: variant === 'purpleCodyPro',
-            [styles.errorAlert]: variant === 'error',
+            [styles.error]: variant === 'error',
         },
         className
     )

@@ -356,6 +356,42 @@ func TestGitCLIBackend_CommitLog(t *testing.T) {
 		_, err = it.Next()
 		require.Error(t, err)
 		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Bad commit in range:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"HEAD..deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Bad commit in range LHS:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef..HEAD"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Bad ref in range:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"HEAD..unknownbranch"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+
+		// Unknown SHA:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
 	})
 	// Verify that if the context is canceled, the iterator returns an error.
 	t.Run("context cancelation", func(t *testing.T) {

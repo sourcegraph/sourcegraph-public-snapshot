@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
@@ -42,11 +41,9 @@ type FS interface {
 
 func New(observationCtx *observation.Context, reposDir string) FS {
 	return &realGitserverFS{
-		logger:              observationCtx.Logger.Scoped("gitserverfs"),
-		observationCtx:      observationCtx,
-		reposDir:            reposDir,
-		clonedState:         make(map[api.RepoName]struct{}),
-		lastCloneStateReset: time.Now(),
+		logger:         observationCtx.Logger.Scoped("gitserverfs"),
+		observationCtx: observationCtx,
+		reposDir:       reposDir,
 	}
 }
 
@@ -54,10 +51,6 @@ type realGitserverFS struct {
 	reposDir       string
 	observationCtx *observation.Context
 	logger         log.Logger
-	// clonedState keeps track of the clone state of a repo.
-	clonedState         map[api.RepoName]struct{}
-	cloneStateMu        sync.Mutex
-	lastCloneStateReset time.Time
 }
 
 func (r *realGitserverFS) Initialize() error {
@@ -107,46 +100,12 @@ func (r *realGitserverFS) VisitRepos(visit func(api.RepoName, common.GitDir) (do
 	return nil
 }
 
-const cloneStateResetInterval = 5 * time.Minute
-
 func (r *realGitserverFS) RepoCloned(name api.RepoName) (bool, error) {
-	r.cloneStateMu.Lock()
-	defer r.cloneStateMu.Unlock()
-
-	// Every few minutes, we invalidate the entire cache, in case we fall into
-	// some bad state, this'll fix the state every now and then.
-	if time.Since(r.lastCloneStateReset) > cloneStateResetInterval {
-		r.clonedState = make(map[api.RepoName]struct{})
-	}
-
-	_, cloned := r.clonedState[name]
-	if cloned {
-		return true, nil
-	}
-
-	cloned, err := repoCloned(r.RepoDir(name))
-	if err != nil {
-		return false, err
-	}
-
-	if cloned {
-		r.clonedState[name] = struct{}{}
-	}
-
-	return cloned, nil
+	return repoCloned(r.RepoDir(name))
 }
 
 func (r *realGitserverFS) RemoveRepo(name api.RepoName) error {
-	err := removeRepoDirectory(r.logger, r.reposDir, r.RepoDir(name))
-
-	// Mark as not cloned anymore in cache. We even remove it from the cache
-	// when the deletion failed partially, in the next call we'll recheck if
-	// the repo is still there.
-	r.cloneStateMu.Lock()
-	delete(r.clonedState, name)
-	r.cloneStateMu.Unlock()
-
-	return err
+	return removeRepoDirectory(r.logger, r.reposDir, r.RepoDir(name))
 }
 
 // iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the

@@ -35,11 +35,8 @@ test.describe('cloned repository', () => {
         await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
     })
 
-    test('has search button', async ({ page }) => {
-        await page.getByRole('button', { name: 'Type / to search', exact: true }).click()
-        await expect(page.getByRole('textbox')).toHaveText(
-            String.raw`repo:^github\.com/sourcegraph/sourcegraph$@1234567 `
-        )
+    test('has prepopulated search bar', async ({ page }) => {
+        await expect(page.getByText('repo:^github\\.com/sourcegraph')).toBeVisible()
     })
 })
 

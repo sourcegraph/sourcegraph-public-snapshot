@@ -7,75 +7,11 @@ import (
 	"net"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var tracer = otel.GetTracerProvider().Tracer("msp/cloudsql/pgx")
-
-type pgxTracer struct{}
-
-// Select tracing hooks we want to implement.
-var _ pgx.QueryTracer = pgxTracer{}
-var _ pgx.ConnectTracer = pgxTracer{}
-
-// TraceQueryStart is called at the beginning of Query, QueryRow, and Exec calls. The returned context is used for the
-// rest of the call and will be passed to TraceQueryEnd.
-func (pgxTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
-	ctx, _ = tracer.Start(ctx, "pgx.Query", trace.WithAttributes(
-		attribute.String("query", data.SQL),
-		attribute.Int("args.len", len(data.Args)),
-	))
-	return ctx
-}
-
-func (pgxTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
-	span := trace.SpanFromContext(ctx)
-	defer span.End()
-
-	span.SetAttributes(
-		attribute.String("command_tag", data.CommandTag.String()),
-		attribute.Int64("rows_affected", data.CommandTag.RowsAffected()),
-	)
-	switch {
-	case data.CommandTag.Insert():
-		span.SetName("pgx.Query: INSERT")
-	case data.CommandTag.Update():
-		span.SetName("pgx.Query: UPDATE")
-	case data.CommandTag.Delete():
-		span.SetName("pgx.Query: DELETE")
-	case data.CommandTag.Select():
-		span.SetName("pgx.Query: SELECT")
-	}
-
-	if data.Err != nil {
-		span.SetStatus(codes.Error, data.Err.Error())
-	}
-}
-
-func (pgxTracer) TraceConnectStart(ctx context.Context, data pgx.TraceConnectStartData) context.Context {
-	ctx, _ = tracer.Start(ctx, "pgx.Connect", trace.WithAttributes(
-		attribute.String("database", data.ConnConfig.Database),
-		attribute.String("instance", fmt.Sprintf("%s:%d", data.ConnConfig.Host, data.ConnConfig.Port)),
-		attribute.String("user", data.ConnConfig.User)))
-	return ctx
-}
-
-func (pgxTracer) TraceConnectEnd(ctx context.Context, data pgx.TraceConnectEndData) {
-	span := trace.SpanFromContext(ctx)
-	defer span.End()
-
-	if data.Err != nil {
-		span.SetStatus(codes.Error, data.Err.Error())
-	}
-}
 
 type ConnConfig struct {
 	// ConnectionName is the CloudSQL connection name,
