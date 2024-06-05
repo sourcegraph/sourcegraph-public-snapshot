@@ -17,7 +17,7 @@ import {
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
 } from './initialize'
-import { scretTokenKey } from './platform/AuthProvider'
+import { secretTokenKey } from './platform/AuthProvider'
 
 // Track current active webview panel to make sure only one panel exists at a time
 let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
@@ -47,7 +47,7 @@ export function registerWebviews({
         // TODO: Decrypt token
         // TODO: Match returnedNonce to stored nonce
         if (token && token.length > 8) {
-            await context.secrets.store(scretTokenKey, token)
+            await context.secrets.store(secretTokenKey, token)
             await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
         }
     }
