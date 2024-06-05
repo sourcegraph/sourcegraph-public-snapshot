@@ -318,6 +318,7 @@ require (
 	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
 	gorm.io/plugin/opentelemetry v0.1.4
 	oss.terrastruct.com/d2 v0.6.5
+	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.17.3
 )
 
