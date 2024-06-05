@@ -76,25 +76,17 @@ func (r *releaseRegistryClient) ListVersions(ctx context.Context) ([]RegistryVer
 	return results, nil
 }
 
-var registryCommand = &cli.Command{
-	Name:      "registry",
-	Usage:     "set of commands to interact with the release registry",
+var listReleaseCommand = &cli.Command{
+	Name:      "list",
+	Usage:     "list versions from the release registry",
 	Category:  category.Util,
-	UsageText: "sg release registry [subcommand]",
-	Subcommands: []*cli.Command{
-		{
-			Name:      "list",
-			Usage:     "list versions in the release",
-			Category:  category.Util,
-			UsageText: "sg release registry list <flags>",
-			Action:    listRegistryVersions,
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:  "format",
-					Usage: "output the list of versions in 'json' or 'terminal' format",
-					Value: "terminal",
-				},
-			},
+	UsageText: "sg release list <flags>",
+	Action:    listRegistryVersions,
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "format",
+			Usage: "output the list of versions in 'json' or 'terminal' format",
+			Value: "terminal",
 		},
 	},
 }
