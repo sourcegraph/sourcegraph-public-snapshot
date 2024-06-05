@@ -1,5 +1,6 @@
 import { join } from 'path'
 
+import { sentrySvelteKit } from '@sentry/sveltekit'
 import { sveltekit } from '@sveltejs/kit/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import IconsResolver from 'unplugin-icons/resolver'
@@ -18,6 +19,12 @@ export default defineConfig(({ mode }) => {
     // locally.
     let config: UserConfig & VitestUserConfig = {
         plugins: [
+            sentrySvelteKit({
+                sourceMapsUploadOptions: {
+                    org: 'sourcegraph',
+                    project: 'dot-com-web',
+                },
+            }),
             sveltekit(),
             AutoImport({
                 // Ignore TS when running Bazel. It would try to write to the file which is not

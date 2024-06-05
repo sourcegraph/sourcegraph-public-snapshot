@@ -70,6 +70,7 @@
   "dependencies": {
     "@floating-ui/dom": "^1.6.3",
     "@melt-ui/svelte": "^0.76.0",
+    "@sentry/sveltekit": "^8.7.0",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/common": "workspace:*",
