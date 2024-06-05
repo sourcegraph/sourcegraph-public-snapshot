@@ -81,7 +81,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Syntax highlighting works correctly for JSX files. [#62027](https://github.com/sourcegraph/sourcegraph/pull/62027)
 - Changesets with a skipped CI check now have their CI status correctly displayed in the Batch Changes UI. [#62204](https://github.com/sourcegraph/sourcegraph/pull/62204)
 - Fixed the Sourcegraph login page auto-redirecting to the single auth provider when request access is enabled. [#62376](https://github.com/sourcegraph/sourcegraph/pull/62376)
-- Resolved scip-ctags issue for Python and C# where it was not detecting classes properly: [#62345](https://github.com/sourcegraph/sourcegraph/pull/62345)
+- Fixed bug for Python classes with decorators and C# classes with attributes that prevented symbol search (`type:symbol`) and the symbol sidebar from detecting them properly: [#62345](https://github.com/sourcegraph/sourcegraph/pull/62345)
 
 ## 5.3.12303
 
