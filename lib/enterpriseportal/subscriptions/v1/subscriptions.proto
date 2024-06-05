@@ -284,7 +284,7 @@ message EnterpriseSubscriptionMembership {
   string instance_domain = 2;
   // The SAMS account ID of the member.
   string member_sams_account_id = 3;
-  // The permissions of the member, e.g. "cody_analytics::customer_admin::read".
+  // The permissions of the member, e.g. "cody_analytics::analytics::read".
   repeated string member_permissions = 4;
 }
 
