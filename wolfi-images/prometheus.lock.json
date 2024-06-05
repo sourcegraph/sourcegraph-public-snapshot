@@ -204,41 +204,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q10Rr8mXMuAm4i4SjxE7xhsgs2UME=",
+        "checksum": "Q1gTZGkWP+QO3mUqLVJth8vrDEzzU=",
         "control": {
-          "checksum": "sha1-0Rr8mXMuAm4i4SjxE7xhsgs2UME=",
-          "range": "bytes=699-1079"
+          "checksum": "sha1-gTZGkWP+QO3mUqLVJth8vrDEzzU=",
+          "range": "bytes=699-1076"
         },
         "data": {
-          "checksum": "sha256-IVV0PRiJiwz4Ov1pWU1VAHf8cM0TgwqsV3vkYEQc0mM=",
-          "range": "bytes=1080-5915633"
+          "checksum": "sha256-/IFXqeKvU0GODNsz1yPIEMcFHgABT+8rbZpSlTLo4e4=",
+          "range": "bytes=1077-5915704"
         },
         "name": "libcrypto3",
         "signature": {
-          "checksum": "sha1-OlnuKCVUD1RpZgK+JyGdG/NQ0R0=",
+          "checksum": "sha1-l1o5ixkyWWqqJE3FOfR0QUemJUA=",
           "range": "bytes=0-698"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r7.apk",
-        "version": "3.3.0-r7"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.0-r9.apk",
+        "version": "3.3.0-r9"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1xZQl4rSEEOs59w1q/EhMx0+ZVxw=",
+        "checksum": "Q1jhAhggAuZnU7FFHnebGA26mq+jI=",
         "control": {
-          "checksum": "sha1-xZQl4rSEEOs59w1q/EhMx0+ZVxw=",
-          "range": "bytes=697-1082"
+          "checksum": "sha1-jhAhggAuZnU7FFHnebGA26mq+jI=",
+          "range": "bytes=695-1079"
         },
         "data": {
-          "checksum": "sha256-IfGWsH9qFzzKcdVENdnoZqPbAdejcokLcfm7Z53KnPM=",
-          "range": "bytes=1083-1197082"
+          "checksum": "sha256-XTCQYnhGSm7SkGwqV/TQMFqGajVJVYhKAidKfLb2D3Y=",
+          "range": "bytes=1080-1197081"
         },
         "name": "libssl3",
         "signature": {
-          "checksum": "sha1-CypiuHQ6EuduQ5uexXhBDv5YvvY=",
-          "range": "bytes=0-696"
+          "checksum": "sha1-qVrfDVxubkrb5Yrd2mFTv2A0G7k=",
+          "range": "bytes=0-694"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r7.apk",
-        "version": "3.3.0-r7"
+        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.0-r9.apk",
+        "version": "3.3.0-r9"
       },
       {
         "architecture": "x86_64",
@@ -736,41 +736,41 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1wjEh5PI4XEuZMLSqCUBZsNsp5t8=",
+        "checksum": "Q1KHnJp4dgXxm50FeWqVm7Lu2Rm3o=",
         "control": {
-          "checksum": "sha1-wjEh5PI4XEuZMLSqCUBZsNsp5t8=",
-          "range": "bytes=702-1143"
+          "checksum": "sha1-KHnJp4dgXxm50FeWqVm7Lu2Rm3o=",
+          "range": "bytes=696-1138"
         },
         "data": {
-          "checksum": "sha256-Vbe4KzKdSQ8oya/6+1+E9jHF+kEFJ9dk9E+zkaoBM7w=",
-          "range": "bytes=1144-192879162"
+          "checksum": "sha256-wWq5y1hEpcKhQ1QnvOKJHsnPxcD7/X7IEViso75B9bs=",
+          "range": "bytes=1139-192875683"
         },
         "name": "prometheus-2.52",
         "signature": {
-          "checksum": "sha1-m6xJcvKj0rNtml4eJe5VbyYfryo=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-3JjyUbZtACAX5ljsTN4qs1Qekqk=",
+          "range": "bytes=0-695"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.52-2.52.0-r2.apk",
-        "version": "2.52.0-r2"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-2.52-2.52.0-r3.apk",
+        "version": "2.52.0-r3"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1EFV1Q0eivNbJaIY0PhIkKyi/YpM=",
+        "checksum": "Q1mKnd8VT1t/VpToT3N7SPrMi9G7M=",
         "control": {
-          "checksum": "sha1-EFV1Q0eivNbJaIY0PhIkKyi/YpM=",
-          "range": "bytes=692-1063"
+          "checksum": "sha1-mKnd8VT1t/VpToT3N7SPrMi9G7M=",
+          "range": "bytes=704-1076"
         },
         "data": {
-          "checksum": "sha256-8+FNf75bgQE5erENZXCFxI50AnaHUvWSpI08emdqXvM=",
-          "range": "bytes=1064-57320379"
+          "checksum": "sha256-jQj6AJ1g/WJ9eLrczILo23fWFXkgfa9KdKtaFQoqSUc=",
+          "range": "bytes=1077-57321007"
         },
         "name": "prometheus-alertmanager",
         "signature": {
-          "checksum": "sha1-YMhX/dlqWFP0BQzWZPUviDQs/Yw=",
-          "range": "bytes=0-691"
+          "checksum": "sha1-ZOVjf8UJGM8EYWnakAYVMzPXaoE=",
+          "range": "bytes=0-703"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.27.0-r5.apk",
-        "version": "0.27.0-r5"
+        "url": "https://packages.wolfi.dev/os/x86_64/prometheus-alertmanager-0.27.0-r6.apk",
+        "version": "0.27.0-r6"
       },
       {
         "architecture": "x86_64",
