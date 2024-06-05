@@ -1,0 +1,11 @@
+---
+source: crates/syntax-analysis/src/lib.rs
+expression: dumped
+---
+  @Deprecated
+  package foo.bar;
+//        ^^^^^^^ definition(Package) scip-ctags `foo.bar`/
+  
+  class Baz {}
+//      ^^^ definition scip-ctags `foo.bar`/Baz#
+
