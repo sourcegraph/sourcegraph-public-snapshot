@@ -4,9 +4,7 @@
 
 There are some services that are expected to be running by the Enterprise Portal:
 
-- PostgreSQL running on `localhost:5432`
-  - A database named `enterprise-portal`
-  - Owned by the user `sourcegraph` with password `sourcegraph` (should already be done during the Sourcegraph setup)
+- PostgreSQL with a database named `enterprise-portal`
 - Redis running on `localhost:6379`
 
 To start the Enterprise Portal, run:
