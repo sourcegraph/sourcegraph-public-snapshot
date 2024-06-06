@@ -293,7 +293,6 @@ fn create_tar(files: &HashMap<PathBuf, String>) -> Result<Vec<u8>, std::io::Erro
         ar.append(&header, bytes).unwrap();
     }
 
-    ar.finish().expect("Failed to close TAR archive");
     ar.into_inner()
 }
 
