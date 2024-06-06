@@ -223,9 +223,9 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions contains the member with given SAMS
     // account ID.
     string sams_account_id = 1;
-    // Return only product subscriptions contains the member with the given scope,
+    // Return only product subscriptions contains the member with the given permission,
     // e.g. "cody_analytics::analytics::read".
-    string scope = 2;
+    string permission = 2;
   }
 }
 
