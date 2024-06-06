@@ -56,17 +56,26 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
 
-    inputs_depset = depset(
+    input_targets = [ctx.attr.config] + ctx.attr.deps
+
+    input_depsets = [depset(
         copied_srcs + [ctx.executable.binary],
         transitive = [js_lib_helpers.gather_files_from_js_infos(
-            targets = [ctx.attr.config] + ctx.attr.deps,
-            include_sources = False,
+            targets = input_targets,
+            include_sources = True,  # include sources & transitives sources so the eslint config .js files are picked up
             include_types = True,  # we have to include types because we need to lint the types.
-            include_transitive_sources = False,
+            include_transitive_sources = True,  # include sources & transitives sources so the eslint config .js files are picked up
             include_transitive_types = True,  # we have to include types because we need to lint the types.
             include_npm_sources = True,
         )],
-    )
+    )]
+
+    # include runfiles in inputs as well so they can be resolved from the execroot
+    input_depsets.extend([
+        target[DefaultInfo].default_runfiles.files
+        for target in input_targets
+        if DefaultInfo in target and hasattr(target[DefaultInfo], "default_runfiles")
+    ])
 
     runfiles = js_lib_helpers.gather_runfiles(
         ctx = ctx,
@@ -118,7 +127,7 @@ def _custom_eslint_impl(ctx):
     # Generate and run a bash script to wrap the binary
     ctx.actions.run_shell(
         env = env,
-        inputs = inputs_depset,
+        inputs = depset([], transitive = input_depsets),
         outputs = [report, exit_code_out],
         command = command,
         arguments = [args],
