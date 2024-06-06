@@ -161,7 +161,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			syncLog.Warn("sync context cancelled")
 			return seen, nil
 		}
-		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
+		return seen, errors.Wrap(err, "failed to list Enterprise subscriptions")
 	}
 
 	for _, access := range resp.GetAccesses() {
