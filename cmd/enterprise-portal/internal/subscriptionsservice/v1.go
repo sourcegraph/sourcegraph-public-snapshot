@@ -21,15 +21,11 @@ import (
 
 const Name = subscriptionsv1connect.SubscriptionsServiceName
 
-type DotComDB interface {
-	ListEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
-}
-
 func RegisterV1(
 	logger log.Logger,
 	mux *http.ServeMux,
 	samsClient samsm2m.TokenIntrospector,
-	dotcom DotComDB,
+	store StoreV1,
 	opts ...connect.HandlerOption,
 ) {
 	mux.Handle(
@@ -37,7 +33,7 @@ func RegisterV1(
 			&handlerV1{
 				logger:     logger.Scoped("subscriptions.v1"),
 				samsClient: samsClient,
-				dotcom:     dotcom,
+				store:      store,
 			},
 			opts...,
 		),
@@ -49,7 +45,7 @@ type handlerV1 struct {
 
 	logger     log.Logger
 	samsClient samsm2m.TokenIntrospector
-	dotcom     DotComDB
+	store      StoreV1
 }
 
 var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
@@ -57,7 +53,7 @@ var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
 func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req *connect.Request[subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
-	// 🚨 SECURITY: Require approrpiate M2M scope.
+	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
 	if err != nil {
@@ -97,7 +93,7 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		}
 	}
 
-	licenses, err := s.dotcom.ListEnterpriseSubscriptionLicenses(ctx, filters,
+	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, filters,
 		// Provide page size to allow "active license" functionality, by only
 		// retrieving the most recently created result.
 		int(req.Msg.GetPageSize()))
