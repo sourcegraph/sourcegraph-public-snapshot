@@ -191,16 +191,17 @@
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
                 <div class="sidebar-action-row">
-                    <Button
-                        variant="secondary"
-                        outline
-                        size="sm"
-                        on:click={toggleFileSidePanel}
-                        aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
-                    >
-                        <Icon2 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
-                    </Button>
-
+                    <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
+                        <Button
+                            variant="secondary"
+                            outline
+                            size="sm"
+                            on:click={toggleFileSidePanel}
+                            aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
+                        >
+                            <Icon2 icon={isCollapsed ? ILucideArrowRightFromLine : ILucideArrowLeftFromLine} inline aria-hidden />
+                        </Button>
+                    </Tooltip>
                     <RepositoryRevPicker
                         repoURL={data.repoURL}
                         revision={data.revision}
