@@ -82,6 +82,7 @@ func (runner *cmdRunner) run(ctx context.Context) error {
 				select {
 				// Handle context cancelled
 				case <-ctx.Done():
+					runner.WriteLine(output.Styledf(output.StyleSuccess, "%s%s stopped due to context error: %v%s", output.StyleBold, config.Name, ctx.Err(), output.StyleReset))
 					return ctx.Err()
 
 				// Handle process exit

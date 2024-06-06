@@ -81,7 +81,7 @@
         {#if editor}
             <Tooltip tooltip={`Open in ${editor.name}`}>
                 <a
-                    class="action-href"
+                    class="action"
                     href={buildEditorUrl(
                         buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
                         start,
@@ -101,10 +101,10 @@
 {:else if editorSettingsErrorMessage}
     <Popover let:registerTrigger let:toggle placement="left-start">
         <Tooltip tooltip="Set your preferred editor">
-            <span use:registerTrigger on:click={() => toggle()}>
+            <button class="action" use:registerTrigger on:click={() => toggle()}>
                 <DefaultEditorIcon />
-                <span data-action-label> Editor </span>
-            </span>
+                <span data-action-label>Editor</span>
+            </button>
         </Tooltip>
         <div slot="content" class="open-in-editor-popover">
             <form on:submit={handleEditorUpdate} novalidate>
@@ -159,7 +159,9 @@
 {/if}
 
 <style lang="scss">
-    .action-href {
+    .action {
+        all: unset;
+
         display: flex;
         align-items: center;
         justify-content: center;
@@ -167,6 +169,7 @@
         color: var(--text-body);
         text-decoration: none;
         white-space: nowrap;
+        cursor: pointer;
 
         &:hover {
             color: var(--text-title);
@@ -178,10 +181,6 @@
         width: 25rem;
         padding: 1.25rem 1rem;
         background-color: var(--color-bg-1);
-    }
-
-    .form-label {
-        font-weight: 500;
     }
 
     .form-input {

@@ -26,7 +26,7 @@ import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './setting
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, type VSCEQueryState } from './state'
 import { copySourcegraphLinks, focusSearchPanel, openSourcegraphLinks, registerWebviews } from './webview/commands'
-import { scretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { secretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
@@ -37,13 +37,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
             endpointSetting(),
-            scretTokenKey,
+            secretTokenKey,
             new SourcegraphAuthProvider(secretStorage)
         )
     )
     await processOldToken(secretStorage)
     const initialInstanceURL = endpointSetting()
-    const initialAccessToken = await secretStorage.get(scretTokenKey)
+    const initialAccessToken = await secretStorage.get(secretTokenKey)
     const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
     const session = await vscode.authentication.getSession(endpointSetting(), [], createIfNone)
     const authenticatedUser = observeAuthenticatedUser(secretStorage)

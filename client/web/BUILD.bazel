@@ -103,6 +103,7 @@ js_library(
             "src/**/*.tsx",
         ],
         [
+            "src/playwright/*.spec.ts",
             "src/end-to-end/**/*.*",
             # TODO: Ignore legacy build generated file as it conflicts with the Bazel
             # build. This can be removed after the migration.
@@ -143,7 +144,7 @@ filegroup(
 
 ts_project(
     name = "web_lib",
-    srcs = [
+    srcs = glob(["!src/playwright/*.spec.ts"]) + [
         "src/Index.tsx",
         "src/LegacyLayout.tsx",
         "src/LegacyRouteContext.tsx",
@@ -236,6 +237,9 @@ ts_project(
         "src/cody/management/api/client.ts",
         "src/cody/management/api/components/CodyProApiClient.ts",
         "src/cody/management/api/hooks/useApiClient.tsx",
+        "src/cody/management/api/react-query/QueryClientProvider.tsx",
+        "src/cody/management/api/react-query/callCodyProApi.ts",
+        "src/cody/management/api/react-query/subscriptions.ts",
         "src/cody/management/api/stripeCheckout.ts",
         "src/cody/management/api/teamInvites.ts",
         "src/cody/management/api/teamMembers.ts",
@@ -1065,7 +1069,6 @@ ts_project(
         "src/enterprise/site-admin/dotcom/customers/SiteAdminCustomersPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyGatewayRateLimitModal.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyServicesSection.tsx",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/ModelBadges.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminGenerateProductLicenseForSubscriptionForm.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage.tsx",
@@ -1778,6 +1781,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/telemetry",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/@types/node",
         ":node_modules/mermaid",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/commands",
@@ -1810,6 +1814,7 @@ ts_project(
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@stripe/react-stripe-js",
         "//:node_modules/@stripe/stripe-js",
+        "//:node_modules/@tanstack/react-query",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -1821,7 +1826,6 @@ ts_project(
         "//:node_modules/@types/lru-cache",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/mocha",  #keep
-        "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-calendar",
         "//:node_modules/@types/react-circular-progressbar",
@@ -2052,6 +2056,7 @@ ts_project(
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/@types/node",
         ":web_lib",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/state",
@@ -2065,7 +2070,6 @@ ts_project(
         "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mocha",
-        "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/semver",
