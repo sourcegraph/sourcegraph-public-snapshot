@@ -198,14 +198,14 @@ pub fn index_command(
 fn index_file(
     filepath: &Path,
     parser_id: ParserId,
-    absolute_project_root: &PathBuf,
+    absolute_project_root: &Path,
     options: &IndexOptions,
 ) -> Result<Document> {
     let contents = std::fs::read_to_string(filepath)
         .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
 
     let relative_path = filepath
-        .strip_prefix(absolute_project_root.clone())
+        .strip_prefix(absolute_project_root)
         .with_context(|| {
             format!(
                 "Failed to strip project root prefix: root={} file={}",
