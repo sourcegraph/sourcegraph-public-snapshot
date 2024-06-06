@@ -67,54 +67,47 @@
         }
     }
 
-    const watchTrigger: Action<HTMLElement, HTMLElement | null> = (_node, trigger) => {
-        function handleMouseEnterTrigger(): void {
+    function handleMouseEnterTrigger(): void {
+        clearTimeout(delayTimer)
+        delayTimer = setTimeout(() => toggle(true), hoverDelay)
+    }
+
+    function handleMouseLeaveTrigger(event: MouseEvent): void {
+        // It should be possible to move the mouse from the trigger to the popover without closing it
+        if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
             clearTimeout(delayTimer)
-            delayTimer = setTimeout(() => toggle(true), hoverDelay)
+            delayTimer = setTimeout(() => toggle(false), hoverCloseDelay)
         }
+    }
 
-        function handleMouseLeaveTrigger(event: MouseEvent): void {
-            // It should be possible to move the mouse from the trigger to the popover without closing it
-            if (event.relatedTarget && !popoverContainer?.contains(event.relatedTarget as Node)) {
-                clearTimeout(delayTimer)
-                delayTimer = setTimeout(() => toggle(false), hoverCloseDelay)
-            }
-        }
+    function handleMouseMoveTrigger(): void {
+        clearTimeout(delayTimer)
+        delayTimer = setTimeout(() => toggle(true), hoverDelay)
+    }
 
-        function handleMouseMoveTrigger(): void {
-            clearTimeout(delayTimer)
-            delayTimer = setTimeout(() => toggle(true), hoverDelay)
-        }
+    function watchTrigger(trigger: HTMLElement) {
+        trigger.addEventListener('mouseenter', handleMouseEnterTrigger)
+        trigger.addEventListener('mouseleave', handleMouseLeaveTrigger)
+        trigger.addEventListener('mousemove', handleMouseMoveTrigger)
+        trigger.addEventListener('click', close)
+        window.addEventListener('blur', close)
+    }
 
-        function apply(trigger: HTMLElement) {
-            trigger.addEventListener('mouseenter', handleMouseEnterTrigger)
-            trigger.addEventListener('mouseleave', handleMouseLeaveTrigger)
-            trigger.addEventListener('mousemove', handleMouseMoveTrigger)
-            trigger.addEventListener('click', close)
-            window.addEventListener('blur', close)
-        }
+    function unwatchTrigger(trigger: HTMLElement) {
+        trigger.removeEventListener('mouseenter', handleMouseEnterTrigger)
+        trigger.removeEventListener('mouseleave', handleMouseLeaveTrigger)
+        trigger.removeEventListener('mousemove', handleMouseMoveTrigger)
+        trigger.removeEventListener('click', close)
+        window.removeEventListener('blur', close)
+    }
 
-        function unapply(trigger: HTMLElement) {
-            trigger.removeEventListener('mouseenter', handleMouseEnterTrigger)
-            trigger.removeEventListener('mouseleave', handleMouseLeaveTrigger)
-            trigger.removeEventListener('mousemove', handleMouseMoveTrigger)
-            trigger.removeEventListener('click', close)
-            window.removeEventListener('blur', close)
-        }
-
-        trigger && apply(trigger)
-
-        return {
-            update(newTrigger: HTMLElement | null) {
-                trigger && unapply(trigger)
-                trigger = newTrigger
-                trigger && apply(trigger)
-            },
-            destroy() {
-                trigger && unapply(trigger)
-                trigger = null
-            },
-        }
+    // Every time trigger changes (either by a props change or a call to registerTrigger)
+    // unwatch the old trigger and watch the new trigger.
+    let oldTrigger: HTMLElement | null
+    $: {
+        oldTrigger && unwatchTrigger(oldTrigger)
+        trigger && watchTrigger(trigger)
+        oldTrigger = trigger
     }
 
     const registerPopoverContainer: Action<HTMLElement> = node => {
@@ -145,9 +138,7 @@
     }
 </script>
 
-<div class="target-watcher" use:watchTrigger={trigger}>
-    <slot {toggle} {registerTrigger} {registerTarget} />
-</div>
+<slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
         class="popover-container"
@@ -169,10 +160,6 @@
 {/if}
 
 <style lang="scss">
-    .target-watcher {
-        display: contents;
-    }
-
     .popover-container {
         position: absolute;
         isolation: isolate;
