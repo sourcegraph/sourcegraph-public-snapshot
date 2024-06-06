@@ -21,6 +21,7 @@ import (
 )
 
 var ErrDeploymentExists error = errors.New("deployment already exists")
+var ErrMainBranchBuild error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
 
 var deployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -130,6 +131,9 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	if currRepo.Branch == "main" {
+		return nil, ErrMainBranchBuild
+	}
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
