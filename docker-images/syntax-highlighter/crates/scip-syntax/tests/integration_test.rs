@@ -108,6 +108,7 @@ fn java_files_indexing() {
     prepare(&out_dir, &setup).unwrap();
 
     cmd.args(vec![
+        "files",
         "--language",
         "java",
         "--out",
@@ -138,7 +139,8 @@ fn java_workspace_indexing() {
     prepare(&out_dir, &setup).unwrap();
 
     cmd.args(vec![
-        "--workspace",
+        "workspace",
+        "--dir",
         out_dir.to_str().unwrap(),
         "--language",
         "java",
@@ -172,7 +174,7 @@ fn java_tar_file_indexing() {
     write_file_bytes(&tar_file, &data).unwrap();
 
     cmd.args(vec![
-        "--tar",
+        "tar",
         tar_file.to_str().unwrap(),
         "--language",
         "java",
@@ -209,7 +211,7 @@ fn java_tar_stream_indexing() {
 
     let mut spawned = cmd
         .args(vec![
-            "--tar",
+            "tar",
             "-",
             "--language",
             "java",

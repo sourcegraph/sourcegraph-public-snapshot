@@ -26,7 +26,7 @@ pub struct IndexOptions {
     pub fail_fast: bool,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum AnalysisMode {
     /// Only extract occurrences of local definitions
     Locals,

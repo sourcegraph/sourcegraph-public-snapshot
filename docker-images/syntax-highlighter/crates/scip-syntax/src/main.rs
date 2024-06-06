@@ -1,7 +1,7 @@
 use std::{path::PathBuf, process};
 
 use clap::{Parser, Subcommand};
-use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
+use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions, TarMode};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -11,48 +11,79 @@ struct Cli {
     command: Commands,
 }
 
+#[derive(Parser, Clone, Debug)]
+struct IndexCommandOptions {
+    /// Which language parser to use to process the files
+    #[arg(short, long)]
+    language: String,
+
+    /// Path where the SCIP index will be written
+    #[arg(short, long, default_value = "./index.scip")]
+    out: String,
+
+    /// Analysis mode
+    #[arg(short, long, default_value = "full")]
+    mode: AnalysisMode,
+
+    /// Fail on first error
+    #[arg(long, default_value_t = false)]
+    fail_fast: bool,
+
+    /// Project root to write to SCIP index
+    #[arg(short, long, default_value = "./")]
+    project_root: String,
+
+    /// Evaluate the build index against an index from a file
+    #[arg(long)]
+    evaluate: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+enum IndexCommand {
+    /// Index a folder, automatically detecting files
+    /// to be processed by the chosen language
+    Workspace {
+        /// Folder to index - will be chosen as project root,
+        /// and files will be discovered according to
+        /// configured extensions for the selected language
+        /// Has to be absolute path.
+        #[arg(long)]
+        dir: String,
+
+        #[command(flatten)]
+        options: IndexCommandOptions,
+    },
+
+    /// Index a list of files
+    Files {
+        /// List of files to analyse
+        filenames: Vec<String>,
+
+        #[command(flatten)]
+        options: IndexCommandOptions,
+    },
+
+    /// Index a .tar archive, either from a file or streaming from STDIN
+    Tar {
+        /// Either a path to .tar file, or "-" to read .tar data from STDIN
+        tar: String,
+
+        #[command(flatten)]
+        options: IndexCommandOptions,
+    },
+}
+#[derive(Parser, Debug)]
+struct IndexCommandParser {
+    #[structopt(subcommand)]
+    index_command: IndexCommand,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     /// Index source files using Tree Sitter parser for a given language
     /// and produce a SCIP file
-    Index {
-        /// Which language parser to use to process the files
-        #[arg(short, long)]
-        language: String,
-
-        /// Path where the SCIP index will be written
-        #[arg(short, long, default_value = "./index.scip")]
-        out: String,
-
-        /// Folder to index - will be chosen as project root,
-        /// and files will be discovered according to
-        /// configured extensions for the selected language
-        #[arg(long)]
-        workspace: Option<String>,
-
-        /// List of files to analyse
-        filenames: Vec<String>,
-
-        /// Either a path to .tar file, or "-" to read .tar data from STDIN
-        #[arg(long)]
-        tar: Option<String>,
-
-        /// Analysis mode
-        #[arg(short, long, default_value = "full")]
-        mode: AnalysisMode,
-
-        /// Fail on first error
-        #[arg(long, default_value_t = false)]
-        fail_fast: bool,
-
-        /// Project root to write to SCIP index
-        #[arg(short, long, default_value = "./")]
-        project_root: String,
-
-        /// Evaluate the build index against an index from a file
-        #[arg(long)]
-        evaluate: Option<String>,
-    },
+    #[clap(name = "index")]
+    Index(IndexCommandParser),
 
     /// Fuzzily evaluate candidate SCIP index against known ground truth
     ScipEvaluate {
@@ -103,62 +134,44 @@ pub fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Index {
-            language,
-            out,
-            filenames,
-            workspace,
-            mode,
-            fail_fast,
-            project_root,
-            evaluate,
-            tar,
-        } => {
-            let index_mode = {
-                match tar {
-                    Some(loc) if loc == "-" => IndexMode::TarArchive {
-                        input: scip_syntax::index::TarMode::Stdin,
+        Commands::Index(index1) => {
+            let result = match index1.index_command {
+                IndexCommand::Files { filenames, options } => {
+                    if filenames.is_empty() {
+                        eprintln!("either specify --workspace or provide a list of files");
+                        process::exit(1)
+                    }
+                    run_index_command(options, IndexMode::Files { list: filenames })
+                }
+                IndexCommand::Workspace { dir, options } => run_index_command(
+                    options,
+                    IndexMode::Workspace {
+                        location: dir.into(),
                     },
-                    Some(loc) => IndexMode::TarArchive {
-                        input: scip_syntax::index::TarMode::File {
-                            location: PathBuf::from(loc),
-                        },
-                    },
-                    None => match workspace {
-                        None => {
-                            if filenames.is_empty() {
-                                eprintln!("either specify --workspace or provide a list of files");
-                                process::exit(1)
-                            }
-                            IndexMode::Files { list: filenames }
-                        }
-                        Some(location) => {
-                            if !filenames.is_empty() {
-                                eprintln!(
-                                    "--workspace option cannot be combined with a list of files"
-                                );
-                                process::exit(1)
-                            } else {
-                                IndexMode::Workspace {
-                                    location: location.into(),
-                                }
-                            }
-                        }
-                    },
+                ),
+
+                IndexCommand::Tar { tar, options } => {
+                    if tar == "-" {
+                        run_index_command(
+                            options,
+                            IndexMode::TarArchive {
+                                input: scip_syntax::index::TarMode::Stdin,
+                            },
+                        )
+                    } else {
+                        run_index_command(
+                            options,
+                            IndexMode::TarArchive {
+                                input: TarMode::File {
+                                    location: PathBuf::from(tar),
+                                },
+                            },
+                        )
+                    }
                 }
             };
 
-            index_command(
-                language,
-                index_mode,
-                PathBuf::from(out),
-                PathBuf::from(project_root),
-                evaluate.map(PathBuf::from),
-                IndexOptions {
-                    analysis_mode: mode,
-                    fail_fast,
-                },
-            )?
+            result.unwrap()
         }
 
         Commands::ScipEvaluate {
@@ -182,4 +195,18 @@ pub fn main() -> anyhow::Result<()> {
         )?,
     }
     Ok(())
+}
+
+fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::Result<()> {
+    index_command(
+        options.language,
+        mode,
+        PathBuf::from(options.out),
+        PathBuf::from(options.project_root),
+        options.evaluate.map(PathBuf::from),
+        IndexOptions {
+            analysis_mode: options.mode,
+            fail_fast: options.fail_fast,
+        },
+    )
 }
