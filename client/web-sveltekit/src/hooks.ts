@@ -37,7 +37,7 @@ function rerouteWithEncodedFilePath(url: URL): string | void {
     }
 }
 
-interface EnhancedSvelteKitRoute extends SvelteKitRoute {
+interface SvelteKitRouteWithPathEncoder extends SvelteKitRoute {
     /**
      * Encodes the part of the URL pathname that represents a file path.
      * @param url
@@ -48,10 +48,10 @@ interface EnhancedSvelteKitRoute extends SvelteKitRoute {
 /**
  * A list of routes for which the file path portion of the URL path name should be encoded.
  */
-const ROUTES_WITH_FILEPATH: EnhancedSvelteKitRoute[] = (function () {
+const ROUTES_WITH_FILEPATH: SvelteKitRouteWithPathEncoder[] = (function () {
     const filePathParameter = '[...path]'
     const filePathSegment = `/${filePathParameter}`
-    const routesWithFilepath: EnhancedSvelteKitRoute[] = []
+    const routesWithFilepath: SvelteKitRouteWithPathEncoder[] = []
 
     for (const route of svelteKitRoutes) {
         // To keep the logic simple we currently only do this for routes that have the file path parameter at
