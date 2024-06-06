@@ -404,6 +404,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   _method my_object.my_method(a, b)
 //^^^^^^^ Keyword
 //        ^^^^^^^^^ IdentifierType
+//                 ^ IdentifierOperator
 //                  ^^^^^^^^^ IdentifierFunction
 //                            ^ IdentifierParameter
 //                               ^ IdentifierParameter
@@ -425,6 +426,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^^ Keyword
 //          ^^^^^^^ Keyword
 //                  ^^^^^^^^ IdentifierType
+//                          ^ IdentifierOperator
 //                           ^^^^^^^^^ IdentifierFunction
       ## whatever this method should do...
 //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
@@ -436,6 +438,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   _method person.new(name, age)
 //^^^^^^^ Keyword
 //        ^^^^^^ IdentifierType
+//              ^ IdentifierOperator
 //               ^^^ IdentifierFunction
 //                   ^^^^ IdentifierParameter
 //                         ^^^ IdentifierParameter
@@ -455,6 +458,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^ Keyword
 //         ^^^^^^^ Keyword
 //                 ^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
 //                        ^^^^ IdentifierFunction
 //                             ^^^^ IdentifierParameter
 //                                   ^^^ IdentifierParameter
@@ -591,6 +595,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   _method my_object.my_method(_gather values)
 //^^^^^^^ Keyword
 //        ^^^^^^^^^ IdentifierType
+//                 ^ IdentifierOperator
 //                  ^^^^^^^^^ IdentifierFunction
 //                            ^^^^^^^ Keyword
 //                                    ^^^^^^ IdentifierParameter
@@ -652,6 +657,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^ Keyword
 //      ^^^^^^^ Keyword
 //              ^^^^^^^^^ IdentifierType
+//                       ^ IdentifierOperator
 //                        ^^^^^^^^^^^^^ IdentifierFunction
     _for a _over _self.elements()
 //  ^^^^ Keyword

@@ -6,6 +6,8 @@
 (method
   name: (identifier) @function)
 
+(method "." @operator)
+
 (procedure (label) @function)
 
 (documentation) @comment
@@ -63,7 +65,7 @@
 (unary_operator
     operator: _ @operator)
 
-(class _ @keyword) @type
+(class _) @type
 
 (invoke
   receiver: (variable) @function.builtin
@@ -75,77 +77,70 @@
 
 (invoke
   receiver: (_) @function)
-
-(call
-  receiver: (variable) @variable )
 (call
   operator: "." @operator)
 (call
   message: (identifier) @function
   "(")
-(call
-  message: (identifier) @variable)
 
 ; Keywords
 [
-  "_iter"
-  "_while"
-  "_over"
-  "_for"
-  "_loop"
-  "_endloop"
-  "_over"
-  "_try"
-  "_endtry"
-  "_throw"
-  "_catch"
-  "_endcatch"
-  "_primitive"
-  "_finally"
-  "_default"
-  "_with"
-  "_when"
-  "_method"
-  "_endmethod"
-  "_class"
-  "_loopbody"
-  "_gather"
-  "_continue"
+  "_abstract"
   "_allresults"
-  "_dynamic"
-  "_handling"
-  "_leave"
-  "_primitive"
   "_block"
-  "_endblock"
-  "_protect"
-  "_protection"
-  "_endprotect"
-  "_if"
-  "_then"
+  "_catch"
+  "_cf"
+  "_class"
+  "_constant"
+  "_continue"
+  "_default"
+  "_dynamic"
   "_elif"
   "_else"
+  "_endblock"
+  "_endcatch"
   "_endif"
-  "_thisthread"
-  "_return"
-  "_lock"
   "_endlock"
-  "_abstract"
-  "_private"
-  "_constant"
-  "_local"
-  "_global"
-  "_proc"
+  "_endloop"
+  "_endmethod"
   "_endproc"
-  "_cf"
-  "_scatter"
+  "_endprotect"
+  "_endtry"
+  "_finally"
+  "_for"
+  "_gather"
+  "_global"
+  "_handling"
+  "_if"
   "_import"
+  "_iter"
+  "_leave"
+  "_local"
+  "_lock"
+  "_loop"
+  "_loopbody"
+  "_method"
   "_optional"
+  "_over"
+  "_over"
+  "_primitive"
+  "_primitive"
+  "_private"
+  "_proc"
+  "_protect"
+  "_protection"
+  "_return"
+  "_scatter"
+  "_then"
+  "_thisthread"
+  "_throw"
+  "_try"
+  "_when"
+  "_while"
+  "_with"
 ] @keyword
 
-[
- "_package"
-] @include
+"_package" @include
 
 (regex_literal) @string.special
 
@@ -155,13 +150,9 @@
 (argument) @identifier.parameter
 
 ; Literals
-[
-  (number)
-] @number
+(number) @number
 
-[
-  (string_literal)
-] @string
+(string_literal) @string
 
 [
   (true)
