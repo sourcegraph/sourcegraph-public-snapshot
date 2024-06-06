@@ -460,8 +460,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 
 	update := database.UserUpdate{
-		AvatarURL:   args.AvatarURL,
-		DisplayName: args.DisplayName,
+		AvatarURL: args.AvatarURL,
 	}
 
 	user, err := r.db.Users().GetByID(ctx, userID)
@@ -469,13 +468,26 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		return nil, errors.Wrap(err, "getting user from the database")
 	}
 
+	usernameChanged := args.Username != nil && user.Username != *args.Username
+
+	// Check if the user account is SCIM controlled
 	if user.SCIMControlled {
-		return nil, errors.New("cannot update externally managed user")
+		errUserScimManaged := errors.Errorf("cannot update externally managed user")
+
+		if usernameChanged {
+			return nil, errUserScimManaged
+		}
+
+		if args.DisplayName != nil && user.DisplayName != *args.DisplayName {
+			return nil, errUserScimManaged
+		}
 	}
+
+	update.DisplayName = args.DisplayName
 
 	// If user is changing their username, we need to verify if this action can be
 	// done.
-	if args.Username != nil && user.Username != *args.Username {
+	if usernameChanged {
 		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
@@ -486,7 +498,6 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		return nil, err
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a user account is modified/updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
@@ -827,6 +838,7 @@ func viewerCanChangeUsername(a *actor.Actor, db database.DB, userID int32) bool 
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
+
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return auth.CheckCurrentActorIsSiteAdmin(a, db) == nil
 }

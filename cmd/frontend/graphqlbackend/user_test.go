@@ -504,7 +504,7 @@ func TestUpdateUser(t *testing.T) {
 			SCIMControlled: true,
 			Username:       "alice",
 			DisplayName:    "alice-updated",
-			AvatarURL:      "http://www.example.com/alice-updated",
+			AvatarURL:      "http://www.example.com/alice.png",
 		}
 		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
@@ -520,7 +520,7 @@ func TestUpdateUser(t *testing.T) {
 			mutation {
 				updateUser(
 					user: "VXNlcjox",
-					displayName: "alice-updated"
+					displayName: "alice-changed"
 				) {
 					displayName,
 				}
