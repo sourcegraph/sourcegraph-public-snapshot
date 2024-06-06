@@ -382,7 +382,7 @@ test.describe('scroll behavior', () => {
 
 test('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({ }) => ({
+        BlobFileViewBlobQuery: ({}) => ({
             repository: {
                 commit: {
                     blob: null,
@@ -397,7 +397,7 @@ test('non-existent file', async ({ page, sg }) => {
 
 test('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({ }) => {
+        BlobFileViewBlobQuery: ({}) => {
             throw new Error('Blob error')
         },
     })
@@ -408,7 +408,7 @@ test('error loading file data', async ({ page, sg }) => {
 
 test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewHighlightedFileQuery: ({ }) => {
+        BlobFileViewHighlightedFileQuery: ({}) => {
             throw new Error('Highlights error')
         },
     })
