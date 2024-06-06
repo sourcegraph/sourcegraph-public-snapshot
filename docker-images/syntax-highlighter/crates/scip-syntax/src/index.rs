@@ -2,6 +2,7 @@ use std::{
     fs::File,
     path::{Path, PathBuf},
 };
+use std::env;
 
 use anyhow::{anyhow, bail, Context, Result};
 use clap::ValueEnum;
@@ -9,6 +10,7 @@ use scip::{types::Document, write_message_to_file};
 use std::io::{self, prelude::*};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
+use path_clean;
 
 use crate::{
     evaluate::Evaluator,
@@ -64,6 +66,14 @@ pub enum IndexMode {
     },
 }
 
+fn make_absolute(cwd: &Path, path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        path.to_owned()
+    } else {
+        path_clean::clean(cwd.join(path))
+    }
+}
+
 pub fn index_command(
     language: String,
     index_mode: IndexMode,
@@ -83,12 +93,8 @@ pub fn index_command(
         }
     };
 
-    let canonical_project_root = project_root.canonicalize().with_context(|| {
-        format!(
-            "Failed to canonicalize project root: {}",
-            project_root.display()
-        )
-    })?;
+    let cwd = env::current_dir().context("Failed to get the current working directory")?;
+    let absolute_project_root = make_absolute(&cwd, &project_root);
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -99,7 +105,7 @@ pub fn index_command(
                 ..Default::default()
             })
             .into(),
-            project_root: format!("file://{}", canonical_project_root.display()),
+            project_root: format!("file://{}", absolute_project_root.display()),
             ..Default::default()
         })
         .into(),
@@ -112,14 +118,9 @@ pub fn index_command(
         IndexMode::Files { list } => {
             let bar = create_progress_bar(list.len() as u64);
             for filename in list {
-                let filepath = PathBuf::from(filename).canonicalize()?;
+                let filepath = make_absolute(&cwd, &PathBuf::from(filename));
                 bar.set_message(filepath.display().to_string());
-                index.documents.push(index_file(
-                    &filepath,
-                    parser_id,
-                    &canonical_project_root,
-                    &options,
-                )?);
+                index.documents.push(index_file(&filepath, parser_id, &absolute_project_root, &options)?);
                 bar.inc(1);
             }
 
@@ -156,7 +157,7 @@ pub fn index_command(
                     index.documents.push(index_file(
                         &entry.into_path(),
                         parser_id,
-                        &canonical_project_root,
+                        &absolute_project_root,
                         &options,
                     )?);
                     bar.tick();
@@ -192,33 +193,18 @@ pub fn index_command(
 fn index_file(
     filepath: &Path,
     parser_id: ParserId,
-    canonical_project_root: &PathBuf,
+    absolute_project_root: &PathBuf,
     options: &IndexOptions,
 ) -> Result<Document> {
     let contents = std::fs::read_to_string(filepath)
         .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
 
-    // TODO(Anton&Christoph): revise this logic. currently uncommented version is the only one that
-    // passes tests on MacOS
-    //let filepath = if filepath.is_absolute() {
-    //    filepath.to_owned()
-    //} else {
-    //    filepath
-    //        .canonicalize()
-    //        .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?
-    //};
-    //
-    let filepath = filepath
-        .canonicalize()
-        .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?;
-    // end TODO
-
     let relative_path = filepath
-        .strip_prefix(canonical_project_root.clone())
+        .strip_prefix(absolute_project_root.clone())
         .with_context(|| {
             format!(
                 "Failed to strip project root prefix: root={} file={}",
-                canonical_project_root.display(),
+                absolute_project_root.display(),
                 filepath.display()
             )
         })?;
