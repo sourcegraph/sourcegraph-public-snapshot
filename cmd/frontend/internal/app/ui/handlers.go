@@ -76,12 +76,20 @@ type PreloadedAsset struct {
 	Href string
 }
 
+type SvelteInjections struct {
+	Enabled bool
+	Head    template.HTML
+	Body    template.HTML
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	Svelte SvelteInjections
 
 	PreloadedAssets *[]PreloadedAsset
 
@@ -162,6 +170,19 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		}
 	}
 
+	var svelteInjections SvelteInjections
+	if sveltekit.Enabled(r.Context()) {
+		svelteHead, svelteBody, err := sveltekit.LoadCachedSvelteKitInjections()
+		if err != nil {
+			return nil, errors.Wrap(err, "loading svelte kit context")
+		}
+		svelteInjections = SvelteInjections{
+			Enabled: true,
+			Head:    template.HTML(svelteHead),
+			Body:    template.HTML(svelteBody),
+		}
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -178,7 +199,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
-
+		Svelte:              svelteInjections,
 		WebBuilderDevServer: webBuilderDevServer,
 	}
 
@@ -326,10 +347,6 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 			return nil // request was handled
 		}
 		common.Title = title(common, r)
-
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
-		}
 
 		return renderTemplate(w, "app.html", common)
 	}
@@ -482,10 +499,6 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 
 		common.Title = title(common, r)
 
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
-		}
-
 		return renderTemplate(w, "app.html", common)
 	}
 }
@@ -537,10 +550,6 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			r.URL.RawQuery = q.Encode()
 			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
 			return nil
-		}
-
-		if sveltekit.Enabled(r.Context()) {
-			return sveltekit.RenderTemplate(w, common)
 		}
 
 		return renderTemplate(w, "app.html", common)
