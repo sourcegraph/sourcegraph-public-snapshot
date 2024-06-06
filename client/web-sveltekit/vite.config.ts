@@ -43,6 +43,9 @@ export default defineConfig(({ mode }) => {
             graphqlCodegen(),
             inspect(),
         ],
+        build: {
+            sourcemap: true,
+        },
         define:
             mode === 'test'
                 ? {}
