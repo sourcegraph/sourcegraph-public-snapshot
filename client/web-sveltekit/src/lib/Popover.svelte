@@ -51,10 +51,20 @@
 
     const registerTarget: Action<HTMLElement> = node => {
         target = node
+        return {
+            destroy() {
+                target = undefined
+            },
+        }
     }
 
     const registerTrigger: Action<HTMLElement> = node => {
         trigger = node
+        return {
+            destroy() {
+                trigger = null
+            },
+        }
     }
 
     const watchTrigger: Action<HTMLElement, HTMLElement | null> = (_node, trigger) => {
