@@ -247,7 +247,7 @@
                                 {repoName}
                                 {revision}
                                 treeProvider={$fileTreeStore}
-                                selectedPath={$page.params.path ?? ''}
+                                selectedPath={data.filePath ?? ''}
                             />
                         {/if}
                     {:else}
@@ -282,7 +282,7 @@
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
                         <TabPanel title="History" shortcut={historyHotkey}>
-                            {#key $page.params.path}
+                            {#key data.filePath}
                                 <HistoryPanel
                                     bind:this={historyPanel}
                                     history={commitHistory}
