@@ -210,30 +210,6 @@ func (b *observableBackend) ReadFile(ctx context.Context, commit api.CommitID, p
 	}, nil
 }
 
-func (b *observableBackend) Exec(ctx context.Context, args ...string) (_ io.ReadCloser, err error) {
-	ctx, errCollector, endObservation := b.operations.exec.WithErrors(ctx, &err, observation.Args{})
-	ctx, cancel := context.WithCancel(ctx)
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	concurrentOps.WithLabelValues("Exec").Inc()
-
-	r, err := b.backend.Exec(ctx, args...)
-	if err != nil {
-		concurrentOps.WithLabelValues("Exec").Dec()
-		cancel()
-		return nil, err
-	}
-
-	return &observableReadCloser{
-		inner: r,
-		endObservation: func(err error) {
-			concurrentOps.WithLabelValues("Exec").Dec()
-			errCollector.Collect(&err)
-			cancel()
-		},
-	}, nil
-}
-
 func (b *observableBackend) ArchiveReader(ctx context.Context, format ArchiveFormat, treeish string, paths []string) (_ io.ReadCloser, err error) {
 	ctx, errCollector, endObservation := b.operations.archiveReader.WithErrors(ctx, &err, observation.Args{})
 	ctx, cancel := context.WithCancel(ctx)
@@ -545,7 +521,6 @@ type operations struct {
 	symbolicRefHead       *observation.Operation
 	revParseHead          *observation.Operation
 	readFile              *observation.Operation
-	exec                  *observation.Operation
 	getCommit             *observation.Operation
 	archiveReader         *observation.Operation
 	resolveRevision       *observation.Operation
@@ -598,7 +573,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		symbolicRefHead:       op("symbolic-ref-head"),
 		revParseHead:          op("rev-parse-head"),
 		readFile:              op("read-file"),
-		exec:                  op("exec"),
 		getCommit:             op("get-commit"),
 		archiveReader:         op("archive-reader"),
 		resolveRevision:       op("resolve-revision"),

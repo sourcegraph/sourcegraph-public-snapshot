@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -133,110 +131,6 @@ func (gs *grpcServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 		FreeSpace:   usage.Free(),
 		PercentUsed: usage.PercentUsed(),
 	}, nil
-}
-
-func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
-	ctx := ss.Context()
-
-	// Log which actor is accessing the repo.
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	args := byteSlicesToStrings(req.GetArgs())
-	logAttrs := []log.Field{}
-	if len(args) > 0 {
-		logAttrs = append(logAttrs,
-			log.String("cmd", args[0]),
-			log.Strings("args", args[1:]),
-		)
-	}
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	if req.GetRepo() == "" {
-		return status.New(codes.InvalidArgument, "repo must be specified").Err()
-	}
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	repoName := api.RepoName(req.GetRepo())
-	repoDir := gs.fs.RepoDir(repoName)
-	backend := gs.gitBackendSource(repoDir, repoName)
-
-	if err := gs.checkRepoExists(ctx, repoName); err != nil {
-		return err
-	}
-
-	w := streamio.NewWriter(func(p []byte) error {
-		return ss.Send(&proto.ExecResponse{
-			Data: p,
-		})
-	})
-
-	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(args) == 2 && args[0] == "rev-parse" && args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickRevParseHead(repoDir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
-			_, _ = w.Write([]byte(resolved))
-			return nil
-		}
-	}
-
-	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(args) == 2 && args[0] == "symbolic-ref" && args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickSymbolicRefHead(repoDir); err == nil {
-			_, _ = w.Write([]byte(resolved))
-			return nil
-		}
-	}
-
-	stdout, err := backend.Exec(ctx, args...)
-	if err != nil {
-		if errors.Is(err, gitcli.ErrBadGitCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
-		}
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		return err
-	}
-	defer stdout.Close()
-
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		commandFailedErr := &gitcli.CommandFailedError{}
-		if errors.As(err, &commandFailedErr) {
-			gRPCStatus := codes.Unknown
-			if strings.Contains(commandFailedErr.Error(), "signal: killed") {
-				gRPCStatus = codes.Aborted
-			}
-
-			var errString string
-			if commandFailedErr.Unwrap() != nil {
-				errString = commandFailedErr.Unwrap().Error()
-			}
-			s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
-				StatusCode: int32(commandFailedErr.ExitStatus),
-				Stderr:     string(commandFailedErr.Stderr),
-			})
-			if err != nil {
-				gs.logger.Error("failed to marshal status", log.Error(err))
-				return err
-			}
-			return s.Err()
-		}
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		return err
-	}
-
-	return nil
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {

@@ -93,7 +93,7 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 
 	if !IsAllowedGitCmd(logger, opts.arguments) {
 		blockedCommandExecutedCounter.Inc()
-		return nil, ErrBadGitCommand
+		return nil, errBadGitCommand
 	}
 
 	if len(opts.arguments) == 0 {
@@ -177,16 +177,16 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 	return cr, nil
 }
 
-// ErrBadGitCommand is returned from the git CLI backend if the arguments provided
+// errBadGitCommand is returned from the git CLI backend if the arguments provided
 // are not allowed.
-var ErrBadGitCommand = errors.New("bad git command, not allowed")
+var errBadGitCommand = errors.New("bad git command, not allowed")
 
-func commandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr []byte) error {
+func newCommandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr []byte) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	return &CommandFailedError{
+	return &commandFailedError{
 		Inner:      err,
 		args:       cmd.Unwrap().Args,
 		Stderr:     stderr,
@@ -194,18 +194,18 @@ func commandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr
 	}
 }
 
-type CommandFailedError struct {
+type commandFailedError struct {
 	Stderr     []byte
 	ExitStatus int
 	Inner      error
 	args       []string
 }
 
-func (e *CommandFailedError) Unwrap() error {
+func (e *commandFailedError) Unwrap() error {
 	return e.Inner
 }
 
-func (e *CommandFailedError) Error() string {
+func (e *commandFailedError) Error() string {
 	return fmt.Sprintf("git command %v failed with status code %d (output: %q)", e.args, e.ExitStatus, e.Stderr)
 }
 
@@ -260,7 +260,7 @@ func (rc *cmdReader) waitCmd() error {
 			if checkMaybeCorruptRepo(rc.logger, rc.gitDir, rc.repoName, rc.stderr.String()) {
 				rc.err = common.ErrRepoCorrupted{Reason: rc.stderr.String()}
 			} else {
-				rc.err = commandFailedError(rc.ctx, rc.err, rc.cmd, rc.stderr.Bytes())
+				rc.err = newCommandFailedError(rc.ctx, rc.err, rc.cmd, rc.stderr.Bytes())
 			}
 		}
 
