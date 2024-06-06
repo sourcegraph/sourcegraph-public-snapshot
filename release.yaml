@@ -6,11 +6,11 @@ meta:
 
 requirements:
   # We use wget here, because curl --fail-with-body was introduced in a version ulterior to what we can have on the CI agents.
-  - name: "wget"
-    cmd: "wget --help"
-  - name: "jq"
-    cmd: "jq --help"
-  - name: "Buidkite access token"
+  - name: 'wget'
+    cmd: 'wget --help'
+  - name: 'jq'
+    cmd: 'jq --help'
+  - name: 'Buidkite access token'
     # `write_builds` permission is all that's needed here
     # You also need to ensure you add access to the Sourcegraph organization on Buildkite.
     env: BUILDKITE_ACCESS_TOKEN
@@ -254,7 +254,7 @@ promoteToPublic:
           # we need to first fetch the branch because the repo in CI is in a detached state
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
           git checkout {{git.branch}}
-          git tag {{version}}
+          git tag --force {{version}}
           git push origin {{git.branch}} --tags
 
           # Annotate build
@@ -262,7 +262,7 @@ promoteToPublic:
           Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
           EOF
 
-      - name: "git:release:create"
+      - name: 'git:release:create'
         cmd: |
           tag="{{tag}}"
           version="{{version}}"
