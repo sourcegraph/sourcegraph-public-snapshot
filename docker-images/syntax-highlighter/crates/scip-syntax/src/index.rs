@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::ValueEnum;
 use scip::{types::Document, write_message_to_file};
 use std::io::{self, prelude::*};
@@ -72,7 +72,9 @@ pub fn index_command(
     evaluate_against: Option<PathBuf>,
     options: IndexOptions,
 ) -> Result<()> {
-    let parser_id = ParserId::from_name(&language).unwrap();
+    let parser_id = ParserId::from_name(&language)
+        .context(format!("No parser found for language {language}"))?;
+
     let project_root = {
         match index_mode {
             IndexMode::Files { .. } => project_root,
@@ -104,58 +106,15 @@ pub fn index_command(
         ..Default::default()
     };
 
-    let mut index_file = |filepath: &Path| -> Result<()> {
-        let contents = std::fs::read_to_string(filepath)
-            .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
-
-        let filepath = if filepath.is_absolute() {
-            filepath.to_owned()
-        } else {
-            filepath.canonicalize().with_context(|| {
-                format!("Failed to canonicalize file path: {}", filepath.display())
-            })?
-        };
-
-        let relative_path = filepath
-            .strip_prefix(canonical_project_root.clone())
-            .with_context(|| {
-                format!(
-                    "Failed to strip project root prefix: root={} file={}",
-                    canonical_project_root.display(),
-                    filepath.display()
-                )
-            })?;
-
-        match index_content(&contents, parser_id, &options) {
-            Ok(mut document) => {
-                document.relative_path = relative_path.display().to_string();
-                index.documents.push(document);
-                Ok(())
-            }
-            Err(error) => {
-                if options.fail_fast {
-                    Err(anyhow!(
-                        "Failed to index {}: {:?}",
-                        filepath.display(),
-                        error
-                    ))
-                } else {
-                    eprintln!("Failed to index {}: {:?}", filepath.display(), error);
-                    Ok(())
-                }
-            }
-        }
-    };
-
     let extensions = ParserId::language_extensions(&parser_id);
 
     match index_mode {
         IndexMode::Files { list } => {
             let bar = create_progress_bar(list.len() as u64);
             for filename in list {
-                let filepath = PathBuf::from(filename).canonicalize().unwrap();
+                let filepath = PathBuf::from(filename).canonicalize()?;
                 bar.set_message(filepath.display().to_string());
-                index_file(&filepath)?;
+                index_file(&filepath, parser_id, &canonical_project_root, &options)?;
                 bar.inc(1);
             }
 
@@ -163,7 +122,7 @@ pub fn index_command(
         }
         IndexMode::TarArchive { input } => match input {
             TarMode::File { location } => {
-                let mut ar = tar::Archive::new(File::open(location).unwrap());
+                let mut ar = tar::Archive::new(File::open(location)?);
                 let entries = ar.entries()?;
                 let documents = index_tar_entries(entries, parser_id, &options)?;
                 index.documents.extend(documents);
@@ -189,7 +148,12 @@ pub fn index_command(
                 };
                 if extensions.contains(extension) {
                     bar.set_message(entry.path().display().to_string());
-                    index_file(&entry.into_path())?;
+                    index_file(
+                        &entry.into_path(),
+                        parser_id,
+                        &canonical_project_root,
+                        &options,
+                    )?;
                     bar.tick();
                 }
             }
@@ -218,6 +182,44 @@ pub fn index_command(
     write_message_to_file(out.clone(), index)
         .map_err(|err| anyhow!("{err:?}"))
         .with_context(|| format!("When writing index to {}", out.display()))
+}
+
+fn index_file(
+    filepath: &Path,
+    parser_id: ParserId,
+    canonical_project_root: &PathBuf,
+    options: &IndexOptions,
+) -> Result<Document> {
+    let contents = std::fs::read_to_string(filepath)
+        .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
+
+    let filepath = if filepath.is_absolute() {
+        filepath.to_owned()
+    } else {
+        filepath
+            .canonicalize()
+            .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?
+    };
+
+    let relative_path = filepath
+        .strip_prefix(canonical_project_root.clone())
+        .with_context(|| {
+            format!(
+                "Failed to strip project root prefix: root={} file={}",
+                canonical_project_root.display(),
+                filepath.display()
+            )
+        })?;
+
+    match index_content(&contents, parser_id, &options) {
+        Ok(mut document) => {
+            document.relative_path = relative_path.display().to_string();
+            Ok(document)
+        }
+        Err(error) => {
+            bail!("Failed to index {}: {:?}", filepath.display(), error)
+        }
+    }
 }
 
 fn index_tar_entries<R: Read>(
