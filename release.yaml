@@ -255,7 +255,8 @@ promoteToPublic:
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
           git checkout {{git.branch}}
           git tag --force {{version}}
-          git push origin {{git.branch}} --tags
+          # only push a single tag
+          git push origin tag {{version}}
 
           # Annotate build
           cat << EOF | buildkite-agent annotate --style info
@@ -290,7 +291,7 @@ promoteToPublic:
             - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
           EndOfText
 
-          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --notes "${releasepost}"
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
@@ -339,7 +340,7 @@ promoteToPublic:
           chmod +x changelog
 
           pr_url=$(./changelog \
-            --github.token="$DEVX_GH_TOKEN" \
+            --github.token="$DEVX_SERVICE_GH_TOKEN" \
             update-as-pr \
             --github.repo="sourcegraph/sourcegraph" \
             --output.repo="sourcegraph/docs" \
