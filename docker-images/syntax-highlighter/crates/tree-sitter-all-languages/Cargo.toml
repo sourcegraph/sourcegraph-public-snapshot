@@ -35,3 +35,4 @@ tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
 # on our own fork.
 tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", rev = "6ea62b8d33c9e39f6de8a398a6885d1873ed7e91" }
+tree-sitter-hack = { git = "https://github.com/slackhq/tree-sitter-hack", rev = "fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2" }

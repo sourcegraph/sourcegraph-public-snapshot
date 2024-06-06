@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: When facing the "incomplete datapoints" warning, you can now use GraphQL to discover which repositories had problems. The schemas for `TimeoutDatapointAlert` and `GenericIncompleteDatapointAlert` now contain an additional `repositories` field. ([#62756](https://github.com/sourcegraph/sourcegraph/pull/62756)).
 - Users will now be presented with a modal that reminds them to connect any external code host accounts that's required for permissions. Without these accounts connected, users may be unable to view repositories that they otherwise have access to. [#62983](https://github.com/sourcegraph/sourcegraph/pull/62983)
 - Added support for Google as an LLM provider for Cody, with the following models available through Cody Gateway: Gemini Pro (`gemini-pro-latest`), Gemini 1.5 Flash (`gemini-1.5-flash-latest`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`). [#63053](https://github.com/sourcegraph/sourcegraph/pull/63053)
+- Added syntax highlighting for the Hack programming language. [#62770](https://github.com/sourcegraph/sourcegraph/pull/62770)
 
 ### Changed
 
