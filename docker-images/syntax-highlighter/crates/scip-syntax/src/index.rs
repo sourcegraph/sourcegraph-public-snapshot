@@ -114,7 +114,12 @@ pub fn index_command(
             for filename in list {
                 let filepath = PathBuf::from(filename).canonicalize()?;
                 bar.set_message(filepath.display().to_string());
-                index_file(&filepath, parser_id, &canonical_project_root, &options)?;
+                index.documents.push(index_file(
+                    &filepath,
+                    parser_id,
+                    &canonical_project_root,
+                    &options,
+                )?);
                 bar.inc(1);
             }
 
@@ -148,12 +153,12 @@ pub fn index_command(
                 };
                 if extensions.contains(extension) {
                     bar.set_message(entry.path().display().to_string());
-                    index_file(
+                    index.documents.push(index_file(
                         &entry.into_path(),
                         parser_id,
                         &canonical_project_root,
                         &options,
-                    )?;
+                    )?);
                     bar.tick();
                 }
             }

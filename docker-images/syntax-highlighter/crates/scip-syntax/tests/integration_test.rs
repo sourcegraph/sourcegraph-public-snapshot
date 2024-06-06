@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -100,12 +100,33 @@ fn java_e2e_indexing() {
         include_str!("../testdata/globals.java").to_string(),
     )]);
 
-    index_files(&out_dir, &setup, vec!["--language", "java"]);
+    let mut cmd = command("index");
+    let output_location = out_dir.join("index.scip");
+    let paths: Vec<String> = setup
+        .clone()
+        .into_keys()
+        .map(|pb| pb.to_str().unwrap().to_string())
+        .collect();
 
-    let index = read_index_from_file(&out_dir.join("index.scip")).unwrap();
+    prepare(&out_dir, &setup);
+
+    cmd.args(vec![
+        "--language",
+        "java",
+        "--out",
+        output_location.to_str().unwrap(),
+    ])
+    .current_dir(out_dir)
+    .args(paths)
+    .assert()
+    .success();
+
+    let index = read_index_from_file(&output_location).unwrap();
+    let mut indexed_paths: HashSet<String> = HashSet::new();
 
     for doc in &index.documents {
         let path = &doc.relative_path;
+        indexed_paths.insert(path.to_string());
         let dumped = snapshot_syntax_document(
             doc,
             setup.get(&PathBuf::from(&path)).expect(
@@ -118,8 +139,16 @@ fn java_e2e_indexing() {
             ),
         );
 
-        insta::assert_snapshot!(path.clone(), dumped);
+        insta::assert_snapshot!(format!("files_indexing-{}", path.clone()), &dumped);
     }
+
+    assert_eq!(
+        indexed_paths,
+        setup
+            .into_keys()
+            .map(|p| p.to_str().unwrap().to_string())
+            .collect()
+    );
 }
 
 #[test]
@@ -136,12 +165,29 @@ fn java_workspace_indexing() {
         ),
     ]);
 
-    index_workspace(&out_dir, &setup, vec!["--language", "java"]);
+    let mut cmd = command("index");
+    let output_location = out_dir.join("index.scip");
 
-    let index = read_index_from_file(&out_dir.join("index.scip")).unwrap();
+    prepare(&out_dir, &setup);
+
+    cmd.args(vec![
+        "--workspace",
+        out_dir.to_str().unwrap(),
+        "--language",
+        "java",
+        "--out",
+        output_location.to_str().unwrap(),
+    ])
+    .assert()
+    .success();
+
+    let index = read_index_from_file(&output_location).unwrap();
+
+    let mut indexed_paths: HashSet<String> = HashSet::new();
 
     for doc in &index.documents {
         let path = &doc.relative_path;
+        indexed_paths.insert(path.to_string());
         let dumped = snapshot_syntax_document(
             doc,
             setup.get(&PathBuf::from(&path)).expect(
@@ -154,45 +200,19 @@ fn java_workspace_indexing() {
             ),
         );
 
-        insta::assert_snapshot!(path.clone(), dumped);
+        insta::assert_snapshot!(format!("workspace_indexing-{}", path.clone()), &dumped);
     }
-}
 
-//#[test]
-//fn java_tar_indexing() {
-//    let out_dir = temp_dir();
-//    let setup = HashMap::from([
-//        (
-//            PathBuf::from("src/main/java/globals.java"),
-//            include_str!("../testdata/globals.java").to_string(),
-//        ),
-//        (
-//            PathBuf::from("package-info.java"),
-//            include_str!("../testdata/package-info.java").to_string(),
-//        ),
-//    ]);
-//
-//    index_workspace(&out_dir, &setup, vec!["--language", "java"]);
-//
-//    let index = read_index_from_file(&out_dir.join("index.scip")).unwrap();
-//
-//    for doc in &index.documents {
-//        let path = &doc.relative_path;
-//        let dumped = snapshot_syntax_document(
-//            doc,
-//            setup.get(&PathBuf::from(&path)).expect(
-//                format!(
-//                    "Unexpected relative path {} found in the index. Valid paths are: {:?}",
-//                    path,
-//                    setup.keys()
-//                )
-//                .as_str(),
-//            ),
-//        );
-//
-//        insta::assert_snapshot!(path.clone(), dumped);
-//    }
-//}
+    println!("{:?}", index.documents);
+
+    assert_eq!(
+        indexed_paths,
+        setup
+            .into_keys()
+            .map(|p| p.to_str().unwrap().to_string())
+            .collect()
+    );
+}
 
 fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) {
     for (path, contents) in files.iter() {
@@ -201,55 +221,17 @@ fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) {
     }
 }
 
-fn index_files(location: &PathBuf, files: &HashMap<PathBuf, String>, extra_arguments: Vec<&str>) {
-    prepare(location, files);
-
-    let mut base_args = vec!["index"];
-    base_args.extend(extra_arguments);
-
+fn command(sub: &str) -> Command {
     let mut cmd = Command::new(BINARY_LOCATION.to_str().unwrap());
 
-    cmd.args(base_args);
+    cmd.arg(sub);
 
-    for (path, _) in files.iter() {
-        cmd.arg(path.to_str().unwrap());
-    }
-
-    cmd.current_dir(location);
-
-    cmd.assert().success();
-}
-
-fn index_workspace(
-    location: &PathBuf,
-    files: &HashMap<PathBuf, String>,
-    extra_arguments: Vec<&str>,
-) -> PathBuf {
-    prepare(location, files);
-
-    let mut base_args = vec!["index"];
-    base_args.extend(extra_arguments);
-
-    let mut cmd = Command::new(BINARY_LOCATION.to_str().unwrap());
-
-    cmd.args(base_args);
-
-    cmd.arg("--workspace");
-    cmd.arg(location.to_str().unwrap());
-
-    cmd.arg("--out");
-    let out_path = &location.join("index.scip");
-    cmd.arg(out_path.to_str().unwrap());
-
-    cmd.assert().success();
-
-    out_path.to_path_buf()
+    cmd
 }
 
 fn write_file(path: &PathBuf, contents: &String) {
     use std::io::Write;
 
-    //let parent = path.parent()(|dir| std::fs::create_dir_all(dir))
     let Some(parent) = path.parent() else {
         panic!("failed to find parent dir for {:?}", path)
     };
