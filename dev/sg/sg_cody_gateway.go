@@ -10,12 +10,15 @@ import (
 )
 
 var (
-	genGatewayAccessTokenCommand = &cli.Command{
-		Name: "gen_gateway_access_token",
-		Usage: "Generate a dotcom user gateway access token from a personal access token. " +
-			"Useful for testing Cody Gateway locally.",
-		Action:   genGatewayAccessTokenExec,
+	codyGatewayCommand = &cli.Command{
+		Name:     "cody-gateway",
+		Usage:    "set of commands that are helpful for working with Cody Gateway locally",
 		Category: category.Util,
+		Subcommands: []*cli.Command{{
+			Name:   "gen-token",
+			Usage:  "generate a new token for use with Cody Gateway",
+			Action: genGatewayAccessTokenExec,
+		}},
 	}
 )
 
