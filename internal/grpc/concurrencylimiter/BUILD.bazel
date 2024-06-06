@@ -15,7 +15,6 @@ go_test(
     embed = [":concurrencylimiter"],
     deps = [
         "//internal/limiter",
-        "@com_github_stretchr_testify//require",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )
