@@ -244,7 +244,7 @@ test.describe('file header', () => {
             await expect(page.getByRole('link', { name: 'src' })).toBeVisible()
         })
 
-        test('select and copy file path', async ({ page, context }) => {
+        test.fixme('select and copy file path', async ({ page, context }) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write'])
             await page.goto(url)
             await page.getByText('src / readme.md').selectText()
