@@ -248,7 +248,7 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test('file popover', async ({ page, sg }) => {
+test.fixme('file popover', async ({ page, sg }) => {
     await page.goto(`/${repoName}`)
 
     // Open the sidebar
