@@ -34,7 +34,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
-			span.SetStatus(codes.Error, "migrate failed")
+			span.SetStatus(codes.Error, err.Error())
 		}
 		span.End()
 	}()
