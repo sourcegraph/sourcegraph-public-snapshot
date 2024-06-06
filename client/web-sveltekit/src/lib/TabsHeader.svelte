@@ -76,7 +76,7 @@
         cursor: pointer;
         align-items: center;
         min-height: 2rem;
-        padding: 0.25rem 0.75rem;
+        padding: 0.25rem var(--tabs-horizontal-spacing, 0.75rem);
         color: var(--text-body);
         display: inline-flex;
         flex-flow: row nowrap;

@@ -281,6 +281,18 @@
             >
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
+                        <svelte:fragment slot="header-actions">
+                            {#if !isCollapsed}
+                                <Button
+                                    variant="text"
+                                    size="sm"
+                                    aria-label="Hide bottom panel"
+                                    on:click={handleBottomPanelCollapse}
+                                >
+                                    <Icon2 icon={ILucidePanelBottomClose} inline aria-hidden /> Hide
+                                </Button>
+                            {/if}
+                        </svelte:fragment>
                         <TabPanel title="History" shortcut={historyHotkey}>
                             {#key $page.params.path}
                                 <HistoryPanel

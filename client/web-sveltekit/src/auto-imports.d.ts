@@ -16,6 +16,7 @@ declare global {
   const ILucideGitMerge: typeof import('~icons/lucide/git-merge')['default']
   const ILucideHome: typeof import('~icons/lucide/home')['default']
   const ILucideInfo: typeof import('~icons/lucide/info')['default']
+  const ILucidePanelBottomClose: typeof import('~icons/lucide/panel-bottom-close')['default']
   const ILucideRegex: typeof import('~icons/lucide/regex')['default']
   const ILucideSquareSlash: typeof import('~icons/lucide/square-slash')['default']
   const ILucideStar: typeof import('~icons/lucide/star')['default']

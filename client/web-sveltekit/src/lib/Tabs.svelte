@@ -66,7 +66,12 @@
 </script>
 
 <div class="tabs" data-tabs>
-    <header><TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} /></header>
+    <header>
+        <TabsHeader {id} tabs={$tabs} selected={$selectedTab} on:select={selectTab} />
+        <div class="actions">
+            <slot name="header-actions" />
+        </div>
+    </header>
     <slot />
 </div>
 
@@ -76,8 +81,17 @@
         flex-direction: column;
         height: 100%;
 
+        --tabs-horizontal-spacing: 0.75rem;
+
         header {
+            display: flex;
+            align-items: center;
             border-bottom: 1px solid var(--border-color);
+
+            .actions {
+                margin-left: auto;
+                margin-right: var(--tabs-horizontal-spacing);
+            }
         }
     }
 </style>
