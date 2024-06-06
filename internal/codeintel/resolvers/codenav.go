@@ -542,6 +542,7 @@ func resolveWithCache(ctx context.Context, repoStore database.RepoStore, f *Usag
 	}
 	var repoFilter *ResolvedRepositoryFilter
 	if f.Repository != nil && f.Repository.Name.Equals != nil {
+		repoFilter = &ResolvedRepositoryFilter{}
 		repoName := *f.Repository.Name.Equals
 		if repoName == "" {
 			return nil, errors.New("repository.name.equals should be non-empty; for no filtering, remove the repository field")

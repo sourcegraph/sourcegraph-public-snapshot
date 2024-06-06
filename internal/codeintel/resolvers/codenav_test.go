@@ -71,6 +71,16 @@ func afterCursorGenerator() *rapid.Generator[*string] {
 	})
 }
 
+func usagesFilterGenerator() *rapid.Generator[*UsagesFilter] {
+	repoGen := rapid.Ptr(rapid.Make[RepositoryFilter](), true)
+	return rapid.OneOf(
+		rapid.Just[*UsagesFilter](nil),
+		rapid.Custom(func(t *rapid.T) *UsagesFilter {
+			notFilter := rapid.Deferred(usagesFilterGenerator).Draw(t, "")
+			return &UsagesFilter{notFilter, repoGen.Draw(t, "repo")}
+		}))
+}
+
 func usagesForSymbolArgsGenerator() *rapid.Generator[*UsagesForSymbolArgs] {
 	revisionGen := pbt.WithProbabilities[string]([]pbt.GeneratorChoice[string]{
 		{
@@ -90,13 +100,19 @@ func usagesForSymbolArgsGenerator() *rapid.Generator[*UsagesForSymbolArgs] {
 			Value:  rapid.Just(""),
 		},
 	})
+	symbolGen := rapid.Make[*SymbolComparator]()
+	rangeGen := rapid.Make[RangeInput]()
 	cursorGen := afterCursorGenerator()
+	filterGen := usagesFilterGenerator()
+	firstGen := rapid.Ptr(rapid.Int32Range(-1, 250), true)
 	return rapid.Custom(func(t *rapid.T) *UsagesForSymbolArgs {
-		// FIXME: Replace this with a custom generator because rapid cannot
-		// handle recursive types (https://github.com/flyingmutant/rapid/issues/67),
-		// and it seems to be running out of entropy bits
-		// with the existing generation logic.
-		val := rapid.Make[UsagesForSymbolArgs]().Draw(t, "args")
+		val := UsagesForSymbolArgs{
+			symbolGen.Draw(t, "symbolComparator"),
+			rangeGen.Draw(t, "range"),
+			filterGen.Draw(t, "usagesFilter"),
+			firstGen.Draw(t, "first"),
+			cursorGen.Draw(t, "after"),
+		}
 		if val.Range.Revision != nil {
 			val.Range.Revision = pointers.Ptr(revisionGen.Draw(t, "revision"))
 		}
@@ -173,14 +189,19 @@ func TestResolve(t *testing.T) {
 
 	rapid.Check(t, func(t *rapid.T) {
 		args := generator.Draw(t, "args")
+		// NOTE: For some reason, moving the p90Bool.Draw operations inside the hook
+		// functions triggers a bug inside rapid with a buffer overrun or running
+		// out of entropy bits.
+		makeRepo := p90Bool.Draw(t, "repo")
+		makeCommit := p90Bool.Draw(t, "commit")
 		repoStoreImpl := fakeRepoStore{}
 		gitserverClientImpl := fakeGitserverClient{}
 
 		mockRepoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-			if t, err := repoStoreImpl.GetByName(name); err == nil {
-				return t, nil
+			if repo, err := repoStoreImpl.GetByName(name); err == nil {
+				return repo, nil
 			}
-			if p90Bool.Draw(t, "") {
+			if makeRepo {
 				return repoStoreImpl.Insert(name), nil
 			} else {
 				return nil, &database.RepoNotFoundErr{}
@@ -191,7 +212,7 @@ func TestResolve(t *testing.T) {
 			if commitID, err := gitserverClientImpl.ResolveRevision(repo, revision); err == nil {
 				return commitID, nil
 			}
-			if p90Bool.Draw(t, "") {
+			if makeCommit {
 				return gitserverClientImpl.Insert(repo, revision), nil
 			} else {
 				return "", &gitdomain.RevisionNotFoundError{}
