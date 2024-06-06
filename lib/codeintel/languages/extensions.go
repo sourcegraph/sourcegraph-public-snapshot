@@ -65,6 +65,8 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 var unsupportedByEnryExtensionsMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
 	".pkl": "Pkl",
+	// Magik Language
+	".magik": "Magik",
 }
 
 // Source: https://github.com/sindresorhus/binary-extensions/blob/main/binary-extensions.json
