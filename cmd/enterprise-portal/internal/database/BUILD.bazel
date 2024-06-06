@@ -21,5 +21,8 @@ go_library(
         "@io_gorm_gorm//:gorm",
         "@io_gorm_gorm//logger",
         "@io_gorm_plugin_opentelemetry//tracing",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

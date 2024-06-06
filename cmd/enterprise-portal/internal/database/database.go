@@ -6,10 +6,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
+
+var databaseTracer = otel.Tracer("enterprise-portal/internal/database")
 
 // DB is the database handle for the storage layer.
 type DB struct {

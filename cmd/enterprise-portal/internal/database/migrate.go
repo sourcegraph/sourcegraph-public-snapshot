@@ -8,6 +8,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -21,6 +23,15 @@ import (
 // maybeMigrate runs the auto-migration for the database when needed based on
 // the given version.
 func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) error {
+	ctx, span := databaseTracer.Start(
+		ctx,
+		"database.maybeMigrate",
+		trace.WithAttributes(
+			attribute.String("currentVersion", currentVersion),
+		),
+	)
+	defer span.End()
+
 	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, databaseName)
 	if err != nil {
 		return errors.Wrap(err, "open database")
