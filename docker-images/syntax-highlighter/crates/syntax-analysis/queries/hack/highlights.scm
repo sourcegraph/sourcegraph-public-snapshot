@@ -12,9 +12,6 @@
   (xhp_comment)
 ] @comment
 
-((comment) @comment
-  (#match? @comment "^[*][*][^*].*[*]$"))
-
 (scope_identifier) @keyword
 (visibility_modifier) @keyword
 
@@ -38,56 +35,6 @@
   ] @tag.delimiter)
 
 [
-  "implements"
-  "using"
-  "attribute"
-  "const"
-  "extends"
-  "insteadof"
-  "trait"
-  "throw"
-  "yield"
-  "is"
-  "as"
-  "?as"
-  "super"
-  "where"
-  "list"
-  "function"
-  "use"
-  "include"
-  "include_once"
-  "require"
-  "require_once"
-  "class"
-  "type"
-  "interface"
-  "namespace"
-  "enum"
-  "new"
-  "print"
-  "echo"
-  "newtype"
-  "clone"
-  "as"
-  "concurrent"
-  "async"
-  "await"
-  "return"
-  "if"
-  "else"
-  "elseif"
-  "switch"
-  "case"
-  "try"
-  "catch"
-  "finally"
-  "for"
-  "while"
-  "foreach"
-  "do"
-  "continue"
-  "break"
   (abstract_modifier)
   (final_modifier)
   (static_modifier)
@@ -95,7 +42,57 @@
   (xhp_modifier)
   (inout_modifier)
   (reify_modifier)
+  "?as"
+  "as"
+  "as"
+  "async"
+  "attribute"
+  "await"
+  "break"
+  "case"
+  "catch"
+  "class"
+  "clone"
+  "concurrent"
+  "const"
+  "continue"
+  "do"
+  "echo"
+  "else"
+  "elseif"
+  "enum"
+  "extends"
+  "finally"
+  "for"
+  "foreach"
+  "function"
+  "if"
+  "implements"
+  "include_once"
+  "include"
+  "insteadof"
+  "interface"
+  "is"
+  "list"
   ; "nameof" This is missing in the grammar
+  "namespace"
+  "new"
+  "newtype"
+  "print"
+  "require_once"
+  "require"
+  "return"
+  "super"
+  "switch"
+  "throw"
+  "trait"
+  "try"
+  "type"
+  "use"
+  "using"
+  "where"
+  "while"
+  "yield"
 ] @keyword
 
 (new_expression
@@ -114,21 +111,21 @@
 )
 
 [
-  "shape" ; also a keyword, but prefer highlighting as a type
-  "tuple" ; also a keyword, but prefer highlighting as a type
   (array_type)
+  "arraykey"
   "bool"
+  "dynamic"
   "float"
   "int"
-  "string"
-  "arraykey"
-  "void"
-  "nonnull"
   "mixed"
-  "dynamic"
+  "nonnull"
   "noreturn"
   "nothing"
   "num"
+  "shape" ; also a keyword, but prefer highlighting as a type
+  "string"
+  "tuple" ; also a keyword, but prefer highlighting as a type
+  "void"
 ] @type.builtin
 
 (shape_type_specifier (open_modifier)) @type.builtin
@@ -468,5 +465,3 @@
 (variable) @variable
 (identifier) @variable
 (pipe_variable) @variable
-
-(braced_expression) @none
