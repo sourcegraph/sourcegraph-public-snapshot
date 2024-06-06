@@ -96,7 +96,7 @@ func TestRequireScope(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			err := RequireScope(ctx, logtest.Scoped(t), tc.samsClient, requiredScope, request(tc.metadata))
+			_, err := RequireScope(ctx, logtest.Scoped(t), tc.samsClient, requiredScope, request(tc.metadata))
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
 			} else {

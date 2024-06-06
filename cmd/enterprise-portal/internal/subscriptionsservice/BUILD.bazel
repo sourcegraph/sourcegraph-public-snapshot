@@ -22,5 +22,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_golang_x_exp//maps",
     ],
 )
