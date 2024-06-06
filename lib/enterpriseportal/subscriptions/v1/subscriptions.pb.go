@@ -1263,7 +1263,7 @@ type EnterpriseSubscriptionMembership struct {
 	InstanceDomain string `protobuf:"bytes,2,opt,name=instance_domain,json=instanceDomain,proto3" json:"instance_domain,omitempty"`
 	// The SAMS account ID of the member.
 	MemberSamsAccountId string `protobuf:"bytes,3,opt,name=member_sams_account_id,json=memberSamsAccountId,proto3" json:"member_sams_account_id,omitempty"`
-	// The roles of the member, e.g. "cody_analytics::analytics".
+	// The roles of the member, e.g. "cody_analytics::customer_admin".
 	MemberRoles []string `protobuf:"bytes,4,rep,name=member_roles,json=memberRoles,proto3" json:"member_roles,omitempty"`
 }
 
