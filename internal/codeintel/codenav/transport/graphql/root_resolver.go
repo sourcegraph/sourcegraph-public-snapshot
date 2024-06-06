@@ -2,8 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"

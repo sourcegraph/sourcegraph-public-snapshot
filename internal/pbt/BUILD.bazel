@@ -17,7 +17,10 @@ go_library(
 
 go_test(
     name = "pbt_test",
-    srcs = ["api_test.go"],
+    srcs = [
+        "api_test.go",
+        "probability_test.go",
+    ],
     embed = [":pbt"],
     deps = [
         "//internal/api",

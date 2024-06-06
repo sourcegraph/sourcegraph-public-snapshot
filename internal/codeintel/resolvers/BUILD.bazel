@@ -49,6 +49,7 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/pbt",
         "//internal/types",
+        "//lib/pointers",
         "@com_github_stretchr_testify//require",
         "@net_pgregory_rapid//:rapid",
     ],
