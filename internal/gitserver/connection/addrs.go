@@ -17,11 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/concurrencylimiter"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -206,8 +204,6 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		conn, err := defaults.Dial(
 			addr,
 			clientLogger,
-			grpc.WithChainUnaryInterceptor(concurrencylimiter.UnaryClientInterceptor(lim)),
-			grpc.WithChainStreamInterceptor(concurrencylimiter.StreamClientInterceptor(lim)),
 		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
@@ -220,30 +216,6 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 			ce.conn.Close()
 		}
 	}
-}
-
-var (
-	concurrencyLimit = env.MustGetInt("SRC_GITSERVER_CLIENT_CONCURRENCY_LIMIT", 500, "maximum number of concurrent gitserver RPC calls")
-	lim              = &observedLimiter{Limiter: limiter.New(concurrencyLimit)}
-)
-
-var concurrentRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_gitserver_client_concurrent_requests",
-	Help: "Current number of concurrent requests running against gitserver client.",
-})
-
-type observedLimiter struct {
-	limiter.Limiter
-}
-
-func (l *observedLimiter) Acquire() {
-	l.Limiter.Acquire()
-	concurrentRequestsGauge.Inc()
-}
-
-func (l *observedLimiter) Release() {
-	l.Limiter.Release()
-	concurrentRequestsGauge.Dec()
 }
 
 var _ AddressWithConn = &connAndErr{}
