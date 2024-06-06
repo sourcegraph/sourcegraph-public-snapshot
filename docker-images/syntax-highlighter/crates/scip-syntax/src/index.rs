@@ -46,24 +46,23 @@ impl AnalysisMode {
 }
 
 pub enum TarMode {
+    /// Data is streamed from STDIN
     Stdin,
+
+    /// Data is read from a .tar file
     File { location: PathBuf },
 }
 
 pub enum IndexMode {
     /// Index only this list of files, without checking file extensions
-    Files {
-        list: Vec<String>,
-    },
+    Files { list: Vec<String> },
     /// Discover all files that can be handled by the chosen language
     /// in the passed location (which has to be a directory)
-    Workspace {
-        location: PathBuf,
-    },
+    Workspace { location: PathBuf },
 
-    TarArchive {
-        input: TarMode,
-    },
+    /// Discover all files that can be handled by the chosen language
+    /// in either a .tar file, or from STDIN to which TAR data is streamed
+    TarArchive { input: TarMode },
 }
 
 fn make_absolute(cwd: &Path, path: &Path) -> PathBuf {

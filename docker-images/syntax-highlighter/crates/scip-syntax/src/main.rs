@@ -33,7 +33,7 @@ enum Commands {
         /// List of files to analyse
         filenames: Vec<String>,
 
-        /// Tar file to index
+        /// Either a path to .tar file, or "-" to read .tar data from STDIN
         #[arg(long)]
         tar: Option<String>,
 
