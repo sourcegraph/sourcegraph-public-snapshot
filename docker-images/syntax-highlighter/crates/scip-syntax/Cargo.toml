@@ -29,8 +29,5 @@ syntax-analysis = { path = "../syntax-analysis" }
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
 tar = "0.4.40"
 
-[profile.release]
-debug=true
-
 [dev-dependencies]
 tempfile="3.10.1"
