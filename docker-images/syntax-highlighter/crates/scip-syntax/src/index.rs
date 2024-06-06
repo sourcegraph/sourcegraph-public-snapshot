@@ -1,16 +1,16 @@
+use std::env;
 use std::{
     fs::File,
     path::{Path, PathBuf},
 };
-use std::env;
 
 use anyhow::{anyhow, bail, Context, Result};
 use clap::ValueEnum;
+use path_clean;
 use scip::{types::Document, write_message_to_file};
 use std::io::{self, prelude::*};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
-use path_clean;
 
 use crate::{
     evaluate::Evaluator,
@@ -120,7 +120,12 @@ pub fn index_command(
             for filename in list {
                 let filepath = make_absolute(&cwd, &PathBuf::from(filename));
                 bar.set_message(filepath.display().to_string());
-                index.documents.push(index_file(&filepath, parser_id, &absolute_project_root, &options)?);
+                index.documents.push(index_file(
+                    &filepath,
+                    parser_id,
+                    &absolute_project_root,
+                    &options,
+                )?);
                 bar.inc(1);
             }
 
