@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -8,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"slices"
 	"strings"
 	"sync"
 
@@ -200,9 +202,10 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
-type matchingOccurrence struct {
-	occurrence  *scip.Occurrence
-	displayName string
+type ScoredMatch struct {
+	path       string
+	occurrence *scip.Occurrence
+	score      float64
 }
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
@@ -256,9 +259,42 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 			return nil, fmt.Errorf("no matching occurrences found for range")
 		}
 
-		candidateMatches, err := r.findCandidateOccurencesWithZearcher(ctx, repo, symbolName, revision)
+		candidateMatches, err := r.findCandidateOccurrencesWithZearcher(ctx, repo, symbolName, revision)
 
 		fmt.Printf("candidateMatches: %#v", candidateMatches)
+
+		var scoredMatches []ScoredMatch
+		for path, ranges := range candidateMatches {
+			upload, err := r.getSyntacticUpload(ctx, repo, revision)
+			if err != nil {
+				continue
+			}
+
+			document, err := r.svc.SCIPDocument(ctx, upload.ID, path)
+			if err != nil {
+				continue
+			}
+
+			// TODO iterate through document and ranges in lockstep to make this linear rather than quadratic.
+			// TODO even quicker, use binary search
+			for _, occRange := range ranges {
+				for _, occurrence := range document.Occurrences {
+					if rangesOverlap(occRange, scip.NewRange(occurrence.Range)) {
+						sym, err := scip.ParseSymbol(occurrence.Symbol)
+						if err != nil {
+							continue
+						}
+						score := scoreMatch(matchingSymbol, sym)
+						scoredMatches = append(scoredMatches, ScoredMatch{path, occurrence, score})
+					}
+				}
+			}
+		}
+
+		slices.SortFunc(scoredMatches, func(a, b ScoredMatch) int {
+			return cmp.Compare(a.score, b.score)
+		})
+		fmt.Printf("scoredMatches: %#v", scoredMatches)
 
 		remainingCount = remainingCount - numSyntacticResults
 	}
@@ -271,7 +307,18 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	return nil, errors.New("Not implemented yet")
 }
 
-func (r *rootResolver) findCandidateOccurencesWithZearcher(
+func scoreMatch(symbol1 *scip.Symbol, symbol2 *scip.Symbol) float64 {
+	return 9000.1
+}
+
+func rangesOverlap(zearcherRange result.Range, scipRange *scip.Range) bool {
+	return zearcherRange.Start.Line == int(scipRange.Start.Line) &&
+		zearcherRange.End.Line == int(scipRange.End.Line) &&
+		zearcherRange.Start.Column <= int(scipRange.End.Character) &&
+		int(scipRange.Start.Character) <= zearcherRange.End.Column
+}
+
+func (r *rootResolver) findCandidateOccurrencesWithZearcher(
 	ctx context.Context,
 	repo *types.Repo,
 	symbolName string,
@@ -302,9 +349,6 @@ func (r *rootResolver) findCandidateOccurencesWithZearcher(
 	matches := make(map[string][]result.Range)
 	for _, match := range stream.Results {
 		fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
-
-		// TODO: Do we care about the ranges on individual matches?
-		// (Might let us speed up search in the syntactic indexes as we can use binary search on the ordered list of occurrences)
 		t, ok := match.(*result.FileMatch)
 		if !ok {
 			continue
@@ -346,29 +390,34 @@ func (r *rootResolver) resolveRepoAndRevision(ctx context.Context, args *resolve
 	return repo, &resolvedRevision, err
 }
 
-func (r *rootResolver) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
+// TODO: Hack that relies on us having only syntactic uploads for the root directory.
+func (r *rootResolver) getSyntacticUpload(ctx context.Context, repo *types.Repo, revision *api.CommitID) (shared.CompletedUpload, error) {
 	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
-		RepositoryID:       int(repo.ID),
-		Commit:             string(*revision),
-		Path:               rangeInput.Path,
-		RootToPathMatching: shared.RootMustEnclosePath,
-		Indexer:            shared.SyntacticIndexer,
+		RepositoryID: int(repo.ID),
+		Commit:       string(*revision),
+		Indexer:      shared.SyntacticIndexer,
 	})
 
 	if err != nil {
-		return nil, err
+		return shared.CompletedUpload{}, err
 	}
 
 	if len(uploads) == 0 {
-		// TODO: probably just return 0 results instead?
-		return nil, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
+		return shared.CompletedUpload{}, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
 	}
 
 	if len(uploads) != 1 {
 		// TODO: Is seeing multiple syntactic uploads an error?
 	}
 
-	syntacticUpload := uploads[0]
+	return uploads[0], nil
+}
+
+func (r *rootResolver) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
+	syntacticUpload, err := r.getSyntacticUpload(ctx, repo, revision)
+	if err != nil {
+		return nil, err
+	}
 
 	doc, err := r.svc.SCIPDocument(ctx, syntacticUpload.ID, rangeInput.Path)
 	if err != nil {
