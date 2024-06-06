@@ -75,7 +75,7 @@ func (a *Actor) IsEmpty() bool {
 
 func (a *Actor) IsDotComActor() bool {
 	// Corresponds to sourcegraph.com subscription ID, or using a dotcom access token
-	return a != nil && (a.GetSource() == codygateway.ActorSourceProductSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser
+	return a != nil && (a.GetSource() == codygateway.ActorSourceEnterpriseSubscription && a.ID == "d3d2b638-d0a2-4539-a099-b36860b09819") || a.GetSource() == codygateway.ActorSourceDotcomUser
 }
 
 type contextKey int

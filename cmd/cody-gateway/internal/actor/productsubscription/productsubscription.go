@@ -83,7 +83,7 @@ func NewSource(
 	}
 }
 
-func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
+func (s *Source) Name() string { return string(codygateway.ActorSourceEnterpriseSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {

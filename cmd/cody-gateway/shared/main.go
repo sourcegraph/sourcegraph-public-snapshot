@@ -131,7 +131,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		dotcomURL.String(),
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
-			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
+			codygateway.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
 			// No notifications for individual dotcom users - this can get quite
 			// spammy.
 			codygateway.ActorSourceDotcomUser: []int{},
