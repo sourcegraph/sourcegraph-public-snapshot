@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package enterpriseportal.subscriptions.v1;
 
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1";
@@ -35,6 +36,18 @@ service SubscriptionsService {
   rpc ListEnterpriseSubscriptionLicenses(ListEnterpriseSubscriptionLicensesRequest) returns (ListEnterpriseSubscriptionLicensesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
+  // Only properties specified by the update_mask are applied.
+  rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // UpdateSubscriptionMembership updates a subscription membership. It creates
+  // a new one if it does not exist and allow_missing is set to true.
+  rpc UpdateSubscriptionMembership(UpdateSubscriptionMembershipRequest) returns (UpdateSubscriptionMembershipResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message EnterpriseSubscriptionCondition {
@@ -63,6 +76,16 @@ message EnterpriseSubscription {
   repeated EnterpriseSubscriptionCondition conditions = 2;
   // Display name of this subscription, e.g. "Acme, Inc."
   string display_name = 3;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string instance_domain = 4;
+}
+
+// EnterpriseSubscription represents a Sourcegraph Enterprise subscription member.
+message EnterpriseSubscriptionMember {
+  // The SAMS account ID of the member.
+  string sams_account_id = 1;
+  // The role of the member.
+  string role = 2;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
@@ -192,6 +215,17 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions whose license key contains this
     // substring.
     string license_key_substring = 4;
+    // Return only product subscriptions whose license key contains the given member.
+    Member member = 5;
+  }
+
+  message Member {
+    // Return only product subscriptions contains the member with given SAMS
+    // account ID.
+    string sams_account_id = 1;
+    // Return only product subscriptions contains the member with the given scope,
+    // e.g. "cody_analytics::analytics::read".
+    string scope = 2;
   }
 }
 
@@ -224,3 +258,47 @@ message ListEnterpriseSubscriptionLicensesResponse {
   // recently created licenses first.
   repeated EnterpriseSubscriptionLicense licenses = 2;
 }
+
+message UpdateEnterpriseSubscriptionRequest {
+  // The subscription to update.
+  // The following fields are used to identify the membership to update:
+  //  - id
+  // Multiple fields are treated as AND-concatenated.
+  EnterpriseSubscription subscription = 1;
+
+  // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
+  // Updatable fields are:
+  //  - display_name
+  //  - domain
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateEnterpriseSubscriptionResponse {
+  // The updated subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message EnterpriseSubscriptionMembership {
+  // The external, prefixed UUID-format identifier of the subscription.
+  string subscription_id = 1;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string instance_domain = 2;
+  // The SAMS account ID of the member.
+  string member_sams_account_id = 3;
+  // The roles of the member, e.g. "cody_analytics::customer_admin".
+  repeated string member_roles = 4;
+}
+
+message UpdateSubscriptionMembershipRequest {
+  // The membership to update.
+  // The following fields are used to identify the membership to update:
+  //  - subscription_id
+  //  - instance_domain
+  // Multiple fields are treated as AND-concatenated.
+  EnterpriseSubscriptionMembership membership = 1;
+
+  // If set to true, and the membership is not found, a new membership will be created.
+  bool allow_missing = 2;
+}
+
+message UpdateSubscriptionMembershipResponse {}
