@@ -63,7 +63,7 @@ func (e *RepoNotExistError) Error() string {
 
 // IsRepoNotExist reports if err is a RepoNotExistError.
 func IsRepoNotExist(err error) bool {
-	return errors.HasType(err, &RepoNotExistError{})
+	return errors.HasType[*RepoNotExistError](err)
 }
 
 // IsCloneInProgress reports if err is a RepoNotExistError which has a clone

@@ -71,7 +71,7 @@ func TestGitCLIBackend_RevParseHead(t *testing.T) {
 
 		_, err := backend.RevParseHead(ctx)
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }
 

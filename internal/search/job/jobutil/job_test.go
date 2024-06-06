@@ -1639,7 +1639,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		endpoint.Static("test"),
 		false,
 	)
-	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if !errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }

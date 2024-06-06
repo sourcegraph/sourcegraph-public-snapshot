@@ -552,7 +552,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			MetricLabelValues: []string{name},
 			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 					return observation.EmitForHoney | observation.EmitForTraces
 				}
 				if errors.Is(err, os.ErrNotExist) {

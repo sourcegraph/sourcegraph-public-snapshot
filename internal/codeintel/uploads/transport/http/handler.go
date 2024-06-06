@@ -85,7 +85,7 @@ func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName
 
 	if _, err := repoStore.ResolveRev(ctx, repo.Name, commit); err != nil {
 		var reason string
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			reason = "commit not found"
 		} else if gitdomain.IsCloneInProgress(err) {
 			reason = "repository still cloning"
