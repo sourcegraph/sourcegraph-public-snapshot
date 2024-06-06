@@ -228,7 +228,7 @@ func diffEmails(beforeUpdateUserData, afterUpdateUserData scim.ResourceAttribute
 // and adding a random suffix to make it unique in case there one without a suffix already exists in the DB.
 // This is meant to be done inside a transaction so that the user creation/update is guaranteed to be
 // coherent with the evaluation of this function.
-func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUsername string) (string, error) {
+func getUniqueUsername(ctx context.Context, tx database.UserStore, existingUserID int32, requestedUsername string) (string, error) {
 	// Process requested username
 	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
 	if err != nil {
@@ -238,15 +238,23 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 			return "", scimerrors.ScimErrorBadParams([]string{"invalid username"})
 		}
 	}
-	_, err = tx.GetByUsername(ctx, normalizedUsername)
-	if err == nil { // Username exists, try to add random suffix
+	u, err := tx.GetByUsername(ctx, normalizedUsername)
+	if err != nil {
+		if !database.IsUserNotFoundErr(err) {
+			return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not check if username exists").Error()}
+		}
+		// User doesn't exist, we're good to go
+		return normalizedUsername, nil
+	}
+
+	// Username exists and is not the same user, try to add random suffix to make it unique
+	if u.ID != existingUserID {
 		normalizedUsername, err = userpasswd.AddRandomSuffix(normalizedUsername)
 		if err != nil {
 			return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not normalize username").Error()}
 		}
-	} else if !database.IsUserNotFoundErr(err) {
-		return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not check if username exists").Error()}
 	}
+
 	return normalizedUsername, nil
 }
 

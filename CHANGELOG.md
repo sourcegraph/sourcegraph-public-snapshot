@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
 - Providing an access token via the [`SRC_ACCESS_TOKEN`](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token) environment variable is now mandatory for uploading SCIP indexes using [src-cli](https://sourcegraph.com/docs/cli). [#62573](https://github.com/sourcegraph/sourcegraph/pull/62573)
 - Fixed several conditions that could cause a repository being incorrectly marked as modified during code host syncing. For these cases, unnecessary git fetches were triggered. [#62837](https://github.com/sourcegraph/sourcegraph/pull/62837)
+- Fixed usernames getting random suffixes added during SCIM provisioning. [#63122](https://github.com/sourcegraph/sourcegraph/pull/63122)
 
 ## 5.4.2198
 
