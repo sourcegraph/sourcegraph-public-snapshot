@@ -62,7 +62,6 @@ var (
 	// concrete type but with different data.
 	Is        = errors.Is
 	IsAny     = errors.IsAny
-	HasType   = errors.HasType
 	Cause     = errors.Cause
 	Unwrap    = errors.Unwrap
 	UnwrapAll = errors.UnwrapAll
@@ -107,6 +106,21 @@ func AsInterface[I any](err error, target *I) bool {
 		panic("Expected pointer to interface")
 	}
 	return errors.As(err, target)
+}
+
+// HasType checks if the error tree err has a node of type T.
+//
+// CAVEAT: HasType is implemented via As. So strictly speaking, it is
+// possible that HasType returns true via some implementation of
+// `interface { As(target any) bool }` in the error tree that
+// doesn't actually check the type.
+func HasType[T error](err error) bool {
+	// At the moment, the cockroachdb/errors package's implementation
+	// of HasType does not correctly handle multi-errors, whereas As does,
+	// so we implement HasType via As.
+	// (See https://github.com/cockroachdb/errors/issues/145)
+	var zero T
+	return As(err, &zero)
 }
 
 // Extend multiError to work with cockroachdb errors. Implement here to keep imports in

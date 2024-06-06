@@ -77,10 +77,6 @@ service GitserverService {
   rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc Exec(ExecRequest) returns (stream ExecResponse) {
-    option deprecated = true;
-  }
-
   // GetObject returns the object with the given OID in the given repository.
   //
   // If the object is not found, an error with a RevisionNotFoundPayload is
@@ -815,18 +811,6 @@ message CreateCommitFromPatchBinaryResponse {
   string changelist_id = 3;
 }
 
-message ExecRequest {
-  string repo = 1 [deprecated = true];
-  bytes ensure_revision = 2 [deprecated = true];
-  repeated bytes args = 3 [deprecated = true];
-  bytes stdin = 4 [deprecated = true];
-  bool no_timeout = 5 [deprecated = true];
-}
-
-message ExecResponse {
-  bytes data = 1 [deprecated = true];
-}
-
 message RepoNotFoundPayload {
   string repo = 1;
   bool clone_in_progress = 2;
@@ -842,11 +826,6 @@ message FileNotFoundPayload {
   string repo = 1;
   string commit = 2;
   bytes path = 3;
-}
-
-message ExecStatusPayload {
-  int32 status_code = 1;
-  string stderr = 2;
 }
 
 message SearchRequest {

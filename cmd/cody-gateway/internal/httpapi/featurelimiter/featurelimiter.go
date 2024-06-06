@@ -181,7 +181,7 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 			// Capture the current usage.
 			currentUsage, expiry, err := l.Usage(r.Context())
 			if err != nil {
-				if errors.HasType(err, limiter.NoAccessError{}) {
+				if errors.HasType[limiter.NoAccessError](err) {
 					// No access to this feature, skip.
 					continue
 				}

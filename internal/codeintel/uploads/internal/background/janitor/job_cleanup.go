@@ -73,7 +73,7 @@ func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient gitserver
 			return false, nil
 		}
 
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			// Repository is resolvable but commit is not - remove it
 			return true, nil
 		}

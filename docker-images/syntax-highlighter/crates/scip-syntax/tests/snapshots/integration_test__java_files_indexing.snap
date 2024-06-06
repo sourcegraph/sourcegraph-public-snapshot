@@ -1,7 +1,17 @@
 ---
 source: crates/scip-syntax/tests/integration_test.rs
-expression: dumped
+expression: index_snapshot
 ---
+//----FILE=package-info.java
+  @Deprecated
+  package foo.bar;
+//        ^^^^^^^ definition(Package) scip-ctags `foo.bar`/
+  
+  class Baz {}
+//      ^^^ definition scip-ctags `foo.bar`/Baz#
+
+
+//----FILE=src/main/java/globals.java
   package MyPackage;
 //        ^^^^^^^^^ definition(Package) scip-ctags MyPackage/
   
@@ -71,4 +81,6 @@ expression: dumped
           }
       }
   }
+
+
 
