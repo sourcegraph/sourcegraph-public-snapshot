@@ -1521,8 +1521,7 @@ type ListEnterpriseSubscriptionLicensesFilter_Member struct {
 	// Return only product subscriptions contains the member with given SAMS
 	// account ID.
 	SamsAccountId string `protobuf:"bytes,1,opt,name=sams_account_id,json=samsAccountId,proto3" json:"sams_account_id,omitempty"`
-	// Return only product subscriptions contains the member with the given permission,
-	// e.g. "cody_analytics::analytics::read".
+	// Return only product subscriptions contains the member with the given permission.
 	Permission string `protobuf:"bytes,2,opt,name=permission,proto3" json:"permission,omitempty"`
 }
 
