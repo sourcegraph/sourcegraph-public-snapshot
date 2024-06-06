@@ -54,6 +54,7 @@ go_test(
         "user_get_test.go",
         "user_patch_test.go",
         "user_replace_test.go",
+        "user_test.go",
         "util_test.go",
     ],
     embed = [":scim"],

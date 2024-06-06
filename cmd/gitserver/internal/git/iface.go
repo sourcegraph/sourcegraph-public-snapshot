@@ -117,11 +117,6 @@ type GitBackend interface {
 	// Empty branches return an iterator that emits zero commits, not an error.
 	CommitLog(ctx context.Context, opt CommitLogOpts) (CommitLogIterator, error)
 
-	// Exec is a temporary helper to run arbitrary git commands from the exec endpoint.
-	// No new usages of it should be introduced and once the migration is done we will
-	// remove this method.
-	Exec(ctx context.Context, args ...string) (io.ReadCloser, error)
-
 	// FirstEverCommit returns the first commit ever made to the repository.
 	//
 	// If the repository is empty, a RevisionNotFoundError is returned (as the

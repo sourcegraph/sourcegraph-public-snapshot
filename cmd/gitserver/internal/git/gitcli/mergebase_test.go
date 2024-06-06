@@ -67,10 +67,10 @@ func TestGitCLIBackend_MergeBase(t *testing.T) {
 
 		_, err := backend.MergeBase(ctx, "master", "notfound")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		_, err = backend.MergeBase(ctx, "notfound", "master")
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 }

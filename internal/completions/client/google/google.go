@@ -150,6 +150,7 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	}
 
 	payload := googleRequest{
+		Model:    requestParams.Model,
 		Contents: prompt,
 		GenerationConfig: googleGenerationConfig{
 			Temperature:     requestParams.Temperature,

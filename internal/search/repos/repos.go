@@ -531,7 +531,7 @@ func (r *Resolver) normalizeRepoRefs(
 		case rev.RevAtTime != nil:
 			commitOID, found, err := r.gitserver.RevAtTime(ctx, repo.Name, rev.RevAtTime.RevSpec, rev.RevAtTime.Timestamp)
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType[*gitdomain.BadCommitError](err) {
 					return nil, err
 				}
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
@@ -550,7 +550,7 @@ func (r *Resolver) normalizeRepoRefs(
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
 			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType[*gitdomain.BadCommitError](err) {
 					return nil, err
 				}
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
@@ -619,7 +619,7 @@ func (r *Resolver) filterHasCommitAfter(
 			rev := rev
 			p.Go(func(ctx context.Context) error {
 				if hasCommitAfter, err := hasCommitAfter(ctx, r.gitserver, repoRev.Repo.Name, timeRef, rev); err != nil {
-					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+					if errors.HasType[*gitdomain.RevisionNotFoundError](err) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
 						// Ignore the error, but filter this repo out.
@@ -815,7 +815,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs, repo types.MinimalRepo, rev string) (bool, error) {
 			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{EnsureRevision: false})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType[*gitdomain.BadCommitError](err) {
 					return false, err
 				} else if e := (&gitdomain.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
 					// In the case that we can't find HEAD, that means there are no commits, which means

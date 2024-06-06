@@ -31,6 +31,7 @@ try-import %workspace%/.bazelrc-nix
 common --enable_platform_specific_config
 common:macos --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.34
 common:macos --sandbox_add_mount_pair=/tmp
+common:macos --experimental_inprocess_symlink_creation
 
 # Helper to run only fast go unit tests
 test:go-short --test_tag_filters=go --test_timeout_filters=short

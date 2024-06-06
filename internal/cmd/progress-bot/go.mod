@@ -2,7 +2,7 @@ module progress-bot
 
 go 1.21
 
-toolchain go1.22.1
+toolchain go1.22.4
 
 require (
 	cloud.google.com/go/storage v1.40.0

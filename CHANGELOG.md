@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Users will now be presented with a modal that reminds them to connect any external code host accounts that's required for permissions. Without these accounts connected, users may be unable to view repositories that they otherwise have access to. [#62983](https://github.com/sourcegraph/sourcegraph/pull/62983)
 - Added support for Google as an LLM provider for Cody, with the following models available through Cody Gateway: Gemini Pro (`gemini-pro-latest`), Gemini 1.5 Flash (`gemini-1.5-flash-latest`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`). [#63053](https://github.com/sourcegraph/sourcegraph/pull/63053)
 - Added syntax highlighting for the Magik programming language. [#63110](https://github.com/sourcegraph/sourcegraph/pull/63110)
+- Added syntax highlighting for the Hack programming language. [#62770](https://github.com/sourcegraph/sourcegraph/pull/62770)
 
 ### Changed
 
@@ -35,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pressing the numpad `Enter` key will now cycle through in-file search results [#62665](https://github.com/sourcegraph/sourcegraph/pull/62665)
 - Providing an access token via the [`SRC_ACCESS_TOKEN`](https://sourcegraph.com/docs/cli/how-tos/creating_an_access_token) environment variable is now mandatory for uploading SCIP indexes using [src-cli](https://sourcegraph.com/docs/cli). [#62573](https://github.com/sourcegraph/sourcegraph/pull/62573)
 - Fixed several conditions that could cause a repository being incorrectly marked as modified during code host syncing. For these cases, unnecessary git fetches were triggered. [#62837](https://github.com/sourcegraph/sourcegraph/pull/62837)
+- Fixed usernames getting random suffixes added during SCIM provisioning. [#63122](https://github.com/sourcegraph/sourcegraph/pull/63122)
 
 ## 5.4.2198
 

@@ -460,27 +460,44 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 
 	update := database.UserUpdate{
-		DisplayName: args.DisplayName,
-		AvatarURL:   args.AvatarURL,
+		AvatarURL: args.AvatarURL,
 	}
+
 	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user from the database")
 	}
 
+	usernameChanged := args.Username != nil && user.Username != *args.Username
+
+	// Check if the user account is SCIM controlled
+	if user.SCIMControlled {
+		errUserScimManaged := errors.Errorf("cannot update externally managed user")
+
+		if usernameChanged {
+			return nil, errUserScimManaged
+		}
+
+		if args.DisplayName != nil && user.DisplayName != *args.DisplayName {
+			return nil, errUserScimManaged
+		}
+	}
+
+	update.DisplayName = args.DisplayName
+
 	// If user is changing their username, we need to verify if this action can be
 	// done.
-	if args.Username != nil && user.Username != *args.Username {
+	if usernameChanged {
 		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
 	}
+
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a user account is modified/updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
@@ -821,6 +838,7 @@ func viewerCanChangeUsername(a *actor.Actor, db database.DB, userID int32) bool 
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
+
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return auth.CheckCurrentActorIsSiteAdmin(a, db) == nil
 }

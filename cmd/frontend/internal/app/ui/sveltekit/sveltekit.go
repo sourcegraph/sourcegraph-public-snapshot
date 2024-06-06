@@ -1,12 +1,11 @@
 package sveltekit
 
 import (
-	"bytes"
 	"context"
-	"html/template"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/grafana/regexp"
@@ -148,46 +147,44 @@ func GetJSContext(ctx context.Context) JSContext {
 	}
 }
 
-func loadSvelteKitTemplate() (*template.Template, error) {
+func loadSvelteKitInjections() (head, body string, _ error) {
 	fileName := "_sk/index.html"
 	file, err := assets.Provider.Assets().Open(fileName)
 	if err != nil {
-		return nil, errors.Errorf("failed to open %s: %w", fileName, err)
+		return "", "", errors.Errorf("failed to open %s: %w", fileName, err)
 	}
 	defer file.Close()
-	content, err := io.ReadAll(file)
+
+	contents, err := io.ReadAll(file)
 	if err != nil {
-		return nil, errors.Errorf("failed to read %s: %w", fileName, err)
+		return "", "", err
 	}
 
-	tmpl, err := template.New(fileName).Parse(string(content))
-	if err != nil {
-		return nil, errors.Errorf("failed to parse template %s: %w", fileName, err)
+	splits := strings.Split(string(contents), "<!-- SPLIT -->")
+	if len(splits) != 3 {
+		return "", "", errors.New("failed to parse svelte injections")
 	}
-	return tmpl, nil
-
+	return splits[1], splits[2], nil
 }
 
-var loadCachedSvelteKitTemplate = sync.OnceValues(loadSvelteKitTemplate)
+type loadResult struct {
+	head, body string
+	err        error
+}
 
-// RenderTemplate writes SvelteKit's fallback page to the provided writer
-func RenderTemplate(dst io.Writer, data any) error {
-	tmpl, err := loadCachedSvelteKitTemplate()
+var (
+	injectOnce sync.Once
+	injections loadResult
+)
+
+func LoadCachedSvelteKitInjections() (head, body string, err error) {
 	if env.InsecureDev {
-		// Load "fresh" template in dev mode
-		tmpl, err = loadSvelteKitTemplate()
-	}
-	if err != nil {
-		return err
+		return loadSvelteKitInjections()
 	}
 
-	// Write to a buffer to avoid a partially written response going to w
-	// when an error would occur. Otherwise, our error page template rendering
-	// will be corrupted.
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return err
-	}
-	_, err = buf.WriteTo(dst)
-	return err
+	injectOnce.Do(func() {
+		head, body, err := loadSvelteKitInjections()
+		injections = loadResult{head, body, err}
+	})
+	return injections.head, injections.body, injections.err
 }
