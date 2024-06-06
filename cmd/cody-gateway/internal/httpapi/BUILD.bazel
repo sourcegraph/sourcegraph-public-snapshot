@@ -28,7 +28,6 @@ go_library(
         "//internal/authbearer",
         "//internal/collections",
         "//internal/completions/client/fireworks",
-        "//internal/conf",
         "//internal/httpcli",
         "//internal/instrumentation",
         "//internal/redispool",
