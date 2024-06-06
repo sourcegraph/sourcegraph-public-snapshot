@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
@@ -58,9 +59,11 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
-	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	if err != nil {
 		return nil, err
 	}
+	logger = logger.With(clientAttrs...)
 
 	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
 	// BUT, we allow pageSize to act as a 'limit' parameter for querying for
@@ -112,8 +115,16 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		NextPageToken: "",
 		Licenses:      make([]*subscriptionsv1.EnterpriseSubscriptionLicense, len(licenses)),
 	}
+
+	accessedSubscriptions := map[string]struct{}{}
+	accessedLicenses := make([]string, len(licenses))
 	for i, l := range licenses {
 		resp.Licenses[i] = convertLicenseAttrsToProto(l)
+		accessedSubscriptions[resp.Licenses[i].GetSubscriptionId()] = struct{}{}
+		accessedLicenses[i] = resp.Licenses[i].GetId()
 	}
+	logger.Scoped("audit").Info("ListEnterpriseSubscriptionLicenses",
+		log.Strings("accessedSubscriptions", maps.Keys(accessedSubscriptions)),
+		log.Strings("accessedLicenses", accessedLicenses))
 	return connect.NewResponse(&resp), nil
 }
