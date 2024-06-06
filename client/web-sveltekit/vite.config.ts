@@ -43,12 +43,12 @@ export default defineConfig(({ mode }) => {
             mode === 'test'
                 ? {}
                 : {
-                    'process.platform': '"browser"',
-                    'process.env.VITEST': 'null',
-                    'process.env.NODE_ENV': `"${mode}"`,
-                    'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
-                    'process.env': '{}',
-                },
+                      'process.platform': '"browser"',
+                      'process.env.VITEST': 'null',
+                      'process.env.NODE_ENV': `"${mode}"`,
+                      'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+                      'process.env': '{}',
+                  },
         css: {
             preprocessorOptions: {
                 scss: {
@@ -74,11 +74,11 @@ export default defineConfig(({ mode }) => {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
                 '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|embeddings|code-graph|batch-changes|settings)(/|$)':
-                {
-                    target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
-                    changeOrigin: true,
-                    secure: false,
-                },
+                    {
+                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
+                        changeOrigin: true,
+                        secure: false,
+                    },
             },
         },
 
@@ -151,8 +151,8 @@ export default defineConfig(({ mode }) => {
                             // directory.
                             return source.includes('@sourcegraph') || importer?.includes('@sourcegraph/')
                                 ? this.resolve(source, importer, { skipSelf: true, ...options }).then(
-                                    resolved => resolved || { id: source }
-                                )
+                                      resolved => resolved || { id: source }
+                                  )
                                 : null
                         },
                     },
