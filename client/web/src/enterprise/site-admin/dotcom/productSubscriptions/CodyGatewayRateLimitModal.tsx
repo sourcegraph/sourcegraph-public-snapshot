@@ -13,7 +13,6 @@ import type {
 } from '../../../../graphql-operations'
 
 import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
-import { ModelBadges } from './ModelBadges'
 import { numberFormatter, prettyInterval } from './utils'
 
 export interface CodyGatewayRateLimitModalProps {
@@ -39,11 +38,6 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
         setLimitInterval(parseInt(event.target.value, 10))
     }, [])
 
-    const [allowedModels, setAllowedModels] = useState<string>(current?.allowedModels?.join(',') ?? '')
-    const onChangeAllowedModels = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setAllowedModels(event.target.value)
-    }, [])
-
     const [updateCodyGatewayConfig, { loading, error }] = useMutation<
         UpdateCodyGatewayConfigResult,
         UpdateCodyGatewayConfigVariables
@@ -62,7 +56,6 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                                 ? {
                                       chatCompletionsRateLimit: String(limit),
                                       chatCompletionsRateLimitIntervalSeconds: limitInterval,
-                                      chatCompletionsAllowedModels: splitModels(allowedModels),
                                   }
                                 : {}),
 
@@ -70,7 +63,6 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                                 ? {
                                       codeCompletionsRateLimit: String(limit),
                                       codeCompletionsRateLimitIntervalSeconds: limitInterval,
-                                      codeCompletionsAllowedModels: splitModels(allowedModels),
                                   }
                                 : {}),
 
@@ -78,7 +70,6 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                                 ? {
                                       embeddingsRateLimit: String(limit),
                                       embeddingsRateLimitIntervalSeconds: limitInterval,
-                                      embeddingsAllowedModels: splitModels(allowedModels),
                                   }
                                 : {}),
                         },
@@ -91,7 +82,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                 logger.error(error)
             }
         },
-        [updateCodyGatewayConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels, mode]
+        [updateCodyGatewayConfig, productSubscriptionID, limit, limitInterval, afterSave, mode]
     )
 
     return (
@@ -152,28 +143,6 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         }
                     />
                 </div>
-                <div className="form-group">
-                    <Input
-                        id="allowedModels"
-                        name="allowedModels"
-                        type="text"
-                        autoComplete="off"
-                        spellCheck="false"
-                        required={true}
-                        disabled={loading}
-                        min={1}
-                        label="Allowed models"
-                        description="Comma separated list of the models the subscription can use. This normally doesn't need to be changed."
-                        value={allowedModels}
-                        onChange={onChangeAllowedModels}
-                        message={
-                            <ModelBadges
-                                models={splitModels(allowedModels)}
-                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
-                            />
-                        }
-                    />
-                </div>
                 <div className="d-flex justify-content-end">
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
@@ -190,11 +159,4 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
             </Form>
         </Modal>
     )
-}
-
-function splitModels(allowedModels: string): string[] {
-    if (allowedModels === '') {
-        return []
-    }
-    return allowedModels.split(',').map(model => model.trim())
 }

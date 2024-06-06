@@ -1,7 +1,6 @@
 package licensing
 
 import (
-	"slices"
 	"time"
 )
 
@@ -11,6 +10,8 @@ import (
 type CodyGatewayRateLimit struct {
 	// AllowedModels is a list of allowed models for the given feature in the
 	// format "$PROVIDER/$MODEL_NAME", for example "anthropic/claude-2".
+	// A single-item slice with value '*' means that all models in the Cody
+	// Gateway allowlist are allowed.
 	AllowedModels []string
 
 	Limit           int64
@@ -30,24 +31,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int) CodyGatewayRateLimit
 	if uc < 1 {
 		uc = 1
 	}
-	models := []string{
-		"anthropic/claude-v1",
-		"anthropic/claude-2",
-		"anthropic/claude-2.0",
-		"anthropic/claude-2.1",
-		"anthropic/claude-instant-v1",
-		"anthropic/claude-instant-1",
-		"anthropic/claude-instant-1.2",
-		"anthropic/claude-3-sonnet-20240229",
-		"anthropic/claude-3-opus-20240229",
-		"anthropic/claude-3-haiku-20240307",
-
-		"openai/gpt-3.5-turbo",
-		"openai/gpt-4",
-		"openai/gpt-4o",
-		"openai/gpt-4-turbo",
-		"openai/gpt-4-turbo-preview",
-	}
+	models := []string{"*"} // allow all models that are allowlisted by Cody Gateway
 	switch plan {
 	// TODO: This is just an example for now.
 	case PlanEnterprise1,
@@ -77,16 +61,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
-	models := []string{
-		"anthropic/claude-instant-v1",
-		"anthropic/claude-instant-1",
-		"anthropic/claude-instant-1.2",
-		"fireworks/starcoder",
-	}
-	// Switch on GPT models by default if the customer license has the GPT tag.
-	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = append(models, "openai/gpt-3.5-turbo")
-	}
+	models := []string{"*"} // allow all models allowlisted by Cody Gateway
 	switch plan {
 	// TODO: This is just an example for now.
 	case PlanEnterprise1,
@@ -121,7 +96,7 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 		uc = 1
 	}
 
-	models := []string{"openai/text-embedding-ada-002"}
+	models := []string{"*"} // allow all models allowlisted by Cody Gateway
 	switch plan {
 	// TODO: This is just an example for now.
 	case PlanEnterprise1,

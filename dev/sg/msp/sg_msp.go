@@ -731,7 +731,8 @@ This command supports completions on services and environments.
 								Project: env.ProjectID,
 							})
 							if err != nil {
-								return errors.Wrap(err, "find IAM output")
+								return maybeAddSuggestion(svc.Service,
+									errors.Wrap(err, "find IAM output"))
 							}
 							std.Out.WriteAlertf("Preparing a connection with write access - proceed with caution!")
 						} else {
@@ -742,7 +743,8 @@ This command supports completions on services and environments.
 								Project: env.ProjectID,
 							})
 							if err != nil {
-								return errors.Wrap(err, "find IAM output")
+								return maybeAddSuggestion(svc.Service,
+									errors.Wrap(err, "find IAM output"))
 							}
 							std.Out.WriteSuggestionf("Preparing a connection with read-only access - for write access, use the '-write-access' flag.")
 						}
@@ -752,18 +754,18 @@ This command supports completions on services and environments.
 							Project: env.ProjectID,
 						})
 						if err != nil {
-							return errors.Wrap(err, "find Cloud Run output")
+							return maybeAddSuggestion(svc.Service,
+								errors.Wrap(err, "find Cloud Run output"))
 						}
 
 						proxyPort := c.Int("port")
-						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
+						proxy := cloudsqlproxy.NewCloudSQLProxy(
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
+							// errors from proxy are already annotated with
+							// suggestions where applicable
 							svc.Service.GetHandbookPageURL())
-						if err != nil {
-							return err
-						}
 
 						for _, db := range env.Resources.PostgreSQL.Databases {
 							std.Out.WriteNoticef("Use this command to connect to database %q:", db)

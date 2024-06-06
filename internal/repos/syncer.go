@@ -79,10 +79,6 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		opts.DequeueInterval = 10 * time.Second
 	}
 
-	if !opts.IsDotCom {
-		s.initialUnmodifiedDiffFromStore(ctx, store)
-	}
-
 	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker"), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
@@ -191,31 +187,6 @@ func (e ErrAccountSuspended) Error() string {
 
 func (e ErrAccountSuspended) AccountSuspended() bool {
 	return true
-}
-
-// initialUnmodifiedDiffFromStore creates a diff of all repos present in the
-// store and sends it to s.Synced. This is used so that on startup the reader
-// of s.Synced will receive a list of repos. In particular this is so that the
-// git update scheduler can start working straight away on existing
-// repositories.
-func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store) {
-	if s.Synced == nil {
-		return
-	}
-
-	stored, err := store.RepoStore().List(ctx, database.ReposListOptions{})
-	if err != nil {
-		s.ObsvCtx.Logger.Warn("initialUnmodifiedDiffFromStore store.ListRepos", log.Error(err))
-		return
-	}
-
-	// Assuming sources returns no differences from the last sync, the Diff
-	// would be just a list of all stored repos Unmodified. This is the steady
-	// state, so is the initial diff we choose.
-	select {
-	case s.Synced <- types.RepoSyncDiff{Unmodified: stored}:
-	case <-ctx.Done():
-	}
 }
 
 // SyncRepo syncs a single repository by name and associates it with an external service.

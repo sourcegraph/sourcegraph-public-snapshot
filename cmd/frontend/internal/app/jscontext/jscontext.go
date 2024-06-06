@@ -297,7 +297,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
-	var authProviders []authProviderInfo
+	authProviders := []authProviderInfo{} // Explicitly initialise array, otherwise it gets marshalled to null instead of []
 	_, authzProviders := authz.GetProviders()
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)

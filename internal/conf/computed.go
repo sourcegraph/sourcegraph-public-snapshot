@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/cronexpr"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -867,6 +868,32 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.CompletionModel)
 		completionsConfig.CompletionModel = completionsModelRef.CanonicalizedModelID()
 		canonicalized = true
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameGoogle) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://generativelanguage.googleapis.com/v1beta/models"
+		}
+
+		// If not access token is set, we cannot talk to Google. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = google.Gemini15ProLatest
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = google.Gemini15FlashLatest
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			// Code completion is not supported by Google
+			completionsConfig.CompletionModel = google.Gemini15FlashLatest
+		}
 	}
 
 	// only apply canonicalization if not already applied. Not all model IDs can simply be lowercased

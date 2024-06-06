@@ -4,16 +4,24 @@ import classNames from 'classnames'
 
 import styles from './WhiteIcon.module.scss'
 
-export const ICON_NAMES = ['mdi-account-multiple-plus-gradient'] as const
+export const ICON_NAMES = ['cody-logo', 'mdi-account-multiple-plus-gradient'] as const
 
 interface WhiteIconProps {
     name: typeof ICON_NAMES[number]
     className?: string
 }
 
-const nameToUrl = {
-    'mdi-account-multiple-plus-gradient':
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACkAAAAZCAYAAACsGgdbAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAZtSURBVHgBvVdbaGRVFt37nHOrKs6I1WDDtDR40zAzzTCY+DEfA8NYmXcPDaaZnxEES/FPwQcoiGAqfyI+Wm2R9sMk+Kdip/1Q8Rm//DT++EClqhVfdEsqbSep+zhnu/a5qfgqOx3RPuGkirrnnrvO2nuvtS/RLzDmUmnO/UbSs605ln6WHku7TTqHwfQzjodTaTkvM66klvVE1nPfGr9obTF71edjveG6py75omOI7jLGE3P5ulh/7aHeeI9+aZAP/05mTA6AeK4tALBkshLIshc25Qk2PDUEeixdaUq5vmJYQXoyHBRs+2Dv9wuj9jb0M4wH9ksaJHRIDx2wqbBYIWF9uPEMIKmlwdxw/aHerj4ALhkuBZOqT3/4x8LvRv14dXsDYeMZWwpCZvqPPVk/RGcbHG7CP0FYmBWcaIRCZIlJmfIKtqUgENZ+fLAtjhP51iabOEjZHOOsjUuHzwlkMD4tjW3hbqWlS9sMb3iSFZsoVAPMijbEMGreKVuWcOKyMYnlS/FclPeNwUICkyZUB6EwMWr/kSCLmuaBACxyq6Dth4S+Plb/TAy3iDGlsgOwBQBgmpIEFTUcBhsb8mI385JNACVhddT2I3NycAFRVhfKGzpp+2F4iTXcymAQBcfKjDVFNW0OULkW6fLwlprNLrUmY2M3Jw9QZPnyOYMsACwbIxk0Ag3GwrYKYJ1ZQCqu2oBgC9EmQLEmJ2cycTYXAJ0d5mO8x2StxGaS6HWTIUfz7l/fnZoftT//6aGNK8iXHd2co7bhISVfagOlKByGlPRtMMtJzpIUxMlAqD4w/YUnGt8ppkd+m0/WzyTHGkWZ1uy6OLfGzg4iSIT79f90L5sarn1j8vm0LGxXD2MoCPLjBKie+vPygd4okG5gB+Oc2CuqUJHmFAMw9FULUvVOmtb7lqsxRaAJcVkPPyimG96vLcNlpoxZ7xi3NlFzZ5pgq5eYcv4fH17+Xf0LeTux0ov6KDzvDD14+fLBPv3I4P1zK20snYtpX8kHcQU0Mot8joBtGR0EQJFPYOGVzgX76DwNd6ZBOBHPbyWnxH8pZguQtVJXbcGLCt4ps4gOirZP53GMLIrdz55qB2sej7JiqHfqwK7zxtqoMVInv4I5SRV7ULm9v7c6K83G2mB690k7MXH6vYuuD0fGnTdUlA2URb0XyJ3AsqXdLxxZ+v693Van6ai8SSy9lXi3vGep0/v+mpEA7Bun2rgwR1pAgU5kf7l4fNS6Pz56spVkMvOrNWldCBn+9SrJhaeJ966fpGvMUdlLH3PpG+RDEic46cIhFqjReHDX4uGtlPn077dPg5Fn1Eih6PMmodk9L9zdG14fqZOQGqpvCI2tCzfWaOT4w9GTaMnktVpBLVfGciPviDMYwCeNi+m+cCc/J1eSoNLqyek4E/tVah2qv1h9c2O6nQ73uuSVexYhVwuJU0GHf5d59/N/33rzWUE2MulBbuaTjOcbhSz+gMGjX84kuXS00nUadGMklY2WjmGrLHmd6EU6QPdms+BzL9XcOtWSdU7cGoR7PQ0+f3Vlenqr64Gwzzq7QQAqqq9W8vu/+NeN03ptx/3k5KMrqfiimxRMLhPIESRJP+F6SfzEAzOK33UNogITCPw3+zz90x2nGuGH4MQLTiNmbuz409cN9z598NrX4KqtgCYF15Bt3Df1sfGd95O+nEYbJ7GNC9jKS2zSQKToNzXRYFk8MJSOpIT45wnTS/6/8sCgQx/JPjCZxYmO/ZB8i00D74YBaMhJLRVefhEVZ9o7BglRvxK2XLmRin5lAqStmqJVEgK63mDxiRwFUE0BBUuf2T10JLuDjuf/Rwti1dubRZKn3+yev6UNidMOSUGaggF6wu0UpLZitrLP6EjoaZXDmDbKpAoX2BTNT6gQs6XNQ6gH6Bonr4YD/M7GZfy/+gLtM29vMWmRi4ZBP1wON1YtKmjYMUiL8KpVGnUe0U5cuDLTikk8pXp/0LQCQK9JYCEs0cm4yg2ky6d+Lz02uI1T8wF+f7naW1/Mou7BA/F+hK40Nvk7Bln5uVSvCRGZilskKmIIFN8dYlOv0NAoap+DtzKuUkJRVm0CZZzQe7J/a29thPV0AadTF1EWVYB+Asj8FlRGM+ZkvN3HcAbZTAHsa5TFsLler5nNa6TsSuwPFC5qjxpusNXoopCWytJNVScMMaHxctH7GkPOD7m9sLmtAAAAAElFTkSuQmCC',
+const icons = {
+    'cody-logo': {
+        width: 37,
+        height: 33,
+        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 38 34"><path fill="%23FF5543" fill-rule="evenodd" d="M28.24.45a3.38 3.38 0 0 1 3.39 3.39v7.73a3.38 3.38 0 1 1-6.77 0V3.84A3.38 3.38 0 0 1 28.24.45Z" clip-rule="evenodd"/><path fill="%23A112FF" fill-rule="evenodd" d="M3.1 9.16a3.38 3.38 0 0 1 3.38-3.39h7.74a3.38 3.38 0 0 1 0 6.77H6.48A3.38 3.38 0 0 1 3.1 9.16Z" clip-rule="evenodd"/><path fill="%2300CBEC" fill-rule="evenodd" d="M7 21.37a3.38 3.38 0 0 0-5.4 4.08l2.7-2.03-2.7 2.04.02.02a25.62 25.62 0 0 0 .35.43 22.37 22.37 0 0 0 4.22 3.7 23.2 23.2 0 0 0 13.1 3.97 23.2 23.2 0 0 0 16.45-6.71 17.38 17.38 0 0 0 1.24-1.4l.01-.01-2.7-2.04 2.7 2.03a3.38 3.38 0 1 0-5.51-3.94l-.54.58A16.43 16.43 0 0 1 19.3 26.8a16.43 16.43 0 0 1-11.64-4.7 10.66 10.66 0 0 1-.66-.73Zm24.58.02 2.62 1.97-2.62-1.97Z" clip-rule="evenodd"/></svg>',
+    },
+    'mdi-account-multiple-plus-gradient': {
+        width: 41,
+        height: 25,
+        url: 'data:image/png;base64,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',
+    },
 }
 
 export const WhiteIcon: React.FunctionComponent<WhiteIconProps> = ({ name, ...attributes }) => {
@@ -24,7 +32,13 @@ export const WhiteIcon: React.FunctionComponent<WhiteIconProps> = ({ name, ...at
 
     return (
         <div className={classNames(styles.whiteBox, className)} {...otherAttributes}>
-            <img className={styles.whiteBoxContent} src={nameToUrl[name]} alt={name} />
+            <img
+                className={styles.whiteBoxContent}
+                src={icons[name].url}
+                alt={name}
+                width={icons[name].width}
+                height={icons[name].height}
+            />
             <svg
                 className={styles.whiteBoxBackground}
                 width="92"

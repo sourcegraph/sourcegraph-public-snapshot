@@ -2,7 +2,7 @@
 source: crates/scip-syntax/tests/integration_test.rs
 expression: "String::from_utf8(str).unwrap()"
 ---
-{"precision_percent":"100.0","recall_percent":"37.4","true_positives":"34.0","false_positives":"0.0","false_negatives":"57.0"}
+{"precision_percent":"94.4","recall_percent":"37.4","true_positives":"34.0","false_positives":"2.0","false_negatives":"57.0"}
 
 False negatives (FN): 57
 [FN] src/main/java/Main.java: L0 C8 -- semanticdb maven . . com/
@@ -63,6 +63,11 @@ False negatives (FN): 57
 [FN] src/main/java/TodoList.java: L45 C15 -- semanticdb maven jdk 17 java/io/PrintStream#println(+8).
 [FN] src/main/java/TodoList.java: L45 C38 -- semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle().
 
+False positives: 2
+How many extra occurrences we reported compared to compiler?
+[FP] src/main/java/Main.java: L0 C8 -- scip-ctags . . . `com.sourcegraph.graph.twodwo`/
+[FP] src/main/java/TodoList.java: L0 C8 -- scip-ctags . . . `com.sourcegraph.graph.twodwo`/
+
 True positives: 35
 [TP] src/main/java/Main.java: L3 C13 -- semanticdb maven . . com/sourcegraph/graph/twodwo/Main#`<init>`().
 [TP] src/main/java/Main.java: L5 C23 -- semanticdb maven . . com/sourcegraph/graph/twodwo/Main#main().
@@ -101,10 +106,10 @@ True positives: 35
 [TP] src/main/java/TodoList.java: L45 C33 -- local doc-1-4
 
 Symbol mapping
-scip-ctags . . . Main#
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/Main#
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/Main#`<init>`(). [1/1 occurrences]
 
-scip-ctags . . . Main#main().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/Main#main().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/Main#main(). [1/1 occurrences]
 
 local doc-0-1
@@ -116,38 +121,38 @@ local doc-0-2
 local doc-0-3
    1.00 local doc-0-2 [2/2 occurrences]
 
-scip-ctags . . . TodoList#
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList# [1/4 occurrences]
 
-scip-ctags . . . TodoList#summarise().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#summarise().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#summarise(). [1/2 occurrences]
 
-scip-ctags . . . TodoList#getTodos().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#getTodos().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#getTodos(). [1/1 occurrences]
 
-scip-ctags . . . TodoList#addTodo().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#addTodo().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#addTodo(). [1/4 occurrences]
 
-scip-ctags . . . TodoList#TodoList().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#TodoList().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#`<init>`(). [1/2 occurrences]
 
-scip-ctags . . . TodoList#todos.
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#todos.
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#todos. [1/5 occurrences]
 
-scip-ctags . . . TodoList#Item#
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#Item#
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item# [1/5 occurrences]
 
-scip-ctags . . . TodoList#Item#getTitle().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#Item#getTitle().
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#getTitle(). [1/3 occurrences]
 
-scip-ctags . . . TodoList#Item#Item().
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#Item#Item().
    0.40 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(). [1/3 occurrences]
    0.60 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#`<init>`(+1). [1/2 occurrences]
 
-scip-ctags . . . TodoList#Item#done.
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#Item#done.
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#done. [1/4 occurrences]
 
-scip-ctags . . . TodoList#Item#title.
+scip-ctags . . . `com.sourcegraph.graph.twodwo`/TodoList#Item#title.
    1.00 semanticdb maven . . com/sourcegraph/graph/twodwo/TodoList#Item#title. [1/4 occurrences]
 
 local doc-1-1
