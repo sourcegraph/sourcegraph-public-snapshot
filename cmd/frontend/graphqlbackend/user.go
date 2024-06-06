@@ -460,12 +460,17 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 
 	update := database.UserUpdate{
-		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
+		DisplayName: args.DisplayName,
 	}
+
 	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user from the database")
+	}
+
+	if user.SCIMControlled {
+		return nil, errors.New("cannot update externally managed user")
 	}
 
 	// If user is changing their username, we need to verify if this action can be
@@ -476,6 +481,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 		update.Username = *args.Username
 	}
+
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}

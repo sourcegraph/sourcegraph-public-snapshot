@@ -491,6 +491,73 @@ func TestUpdateUser(t *testing.T) {
 		})
 	})
 
+	t.Run("scim controlled user cannot change display or username", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthEnableUsernameChanges: false,
+			},
+		})
+		defer conf.Mock(nil)
+
+		mockUser := &types.User{
+			ID:             1,
+			SCIMControlled: true,
+			Username:       "alice",
+			DisplayName:    "alice-updated",
+			AvatarURL:      "http://www.example.com/alice-updated",
+		}
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					displayName: "alice-updated"
+				) {
+					displayName,
+				}
+			}
+			`,
+				ExpectedResult: `null`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:    []any{string("updateUser")},
+						Message: "cannot update externally managed user",
+					},
+				},
+			},
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					username: "alice-updated"
+				) {
+					username,
+				}
+			}
+			`,
+				ExpectedResult: `null`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:    []any{string("updateUser")},
+						Message: "cannot update externally managed user",
+					},
+				},
+			},
+		})
+	})
+
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
