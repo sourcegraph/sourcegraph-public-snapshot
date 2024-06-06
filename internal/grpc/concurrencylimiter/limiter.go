@@ -4,6 +4,7 @@ package concurrencylimiter
 
 import (
 	"context"
+	"sync/atomic"
 
 	"google.golang.org/grpc"
 )
@@ -31,34 +32,23 @@ func StreamClientInterceptor(limiter Limiter) func(ctx context.Context, desc *gr
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 		limiter.Acquire()
 
+		var released int32
+		release := func() {
+			if atomic.CompareAndSwapInt32(&released, 0, 1) {
+				limiter.Release()
+			}
+		}
+
+		opts = append(opts, grpc.OnFinish(func(err error) {
+			release()
+		}))
+
 		cs, err := streamer(ctx, desc, cc, method, opts...)
 		if err != nil {
-			limiter.Release()
+			release()
 			return cs, err
 		}
 
-		return &limitedClientStream{ClientStream: cs, release: limiter.Release}, nil
+		return cs, nil
 	}
-}
-
-type limitedClientStream struct {
-	grpc.ClientStream
-
-	release func()
-}
-
-func (s *limitedClientStream) SendMsg(m any) error {
-	err := s.ClientStream.SendMsg(m)
-	if err != nil {
-		s.release()
-	}
-	return err
-}
-
-func (s *limitedClientStream) RecvMsg(m any) error {
-	err := s.ClientStream.RecvMsg(m)
-	if err != nil {
-		s.release()
-	}
-	return err
 }
