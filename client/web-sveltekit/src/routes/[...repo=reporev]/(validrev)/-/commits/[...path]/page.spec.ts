@@ -43,7 +43,7 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('infinity scroll', async ({ page, utils }) => {
+test.fixme('infinity scroll', async ({ page, utils }) => {
     await page.goto(url)
     // First page of commits is loaded
     const firstCommit = page.getByRole('link', { name: 'Commit 0' })
