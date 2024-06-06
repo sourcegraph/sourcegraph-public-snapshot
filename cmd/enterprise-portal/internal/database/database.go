@@ -19,7 +19,7 @@ type DB struct {
 // ⚠️ WARNING: This list is meant to be read-only.
 var allTables = []any{
 	&Subscription{},
-	&SubscriptionMember{},
+	&Permission{},
 }
 
 const databaseName = "enterprise-portal"
