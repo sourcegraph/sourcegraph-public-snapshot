@@ -120,8 +120,6 @@
   "_method"
   "_optional"
   "_over"
-  "_over"
-  "_primitive"
   "_primitive"
   "_private"
   "_proc"
