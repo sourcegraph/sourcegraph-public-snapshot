@@ -1433,7 +1433,7 @@ func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 
 	// Make sure "not found" is handled
 	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: 9999})
-	if !errors.HasType(err, &errSyncJobNotFound{}) {
+	if !errors.HasType[*errSyncJobNotFound](err) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
 	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: 9999})
@@ -1504,7 +1504,7 @@ RETURNING id
 	// Insert sync job in state that is not cancelable
 	syncJobID4 := insertSyncJob(t, "completed")
 	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID4})
-	if !errors.HasType(err, &errSyncJobNotFound{}) {
+	if !errors.HasType[*errSyncJobNotFound](err) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
 }

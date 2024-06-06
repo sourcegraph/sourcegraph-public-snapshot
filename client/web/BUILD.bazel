@@ -1,4 +1,3 @@
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
@@ -7,7 +6,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
-load("//dev:esbuild.bzl", "esbuild_web_app")
+load("//dev:esbuild.bzl", "esbuild", "esbuild_web_app")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
@@ -205,6 +204,7 @@ ts_project(
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
+        "src/cody/codyProRoutes.tsx",
         "src/cody/components/ChatUI/ChatUi.tsx",
         "src/cody/components/ChatUI/index.tsx",
         "src/cody/components/CodeMirrorEditor.ts",
@@ -237,13 +237,24 @@ ts_project(
         "src/cody/management/api/client.ts",
         "src/cody/management/api/components/CodyProApiClient.ts",
         "src/cody/management/api/hooks/useApiClient.tsx",
+        "src/cody/management/api/react-query/QueryClientProvider.tsx",
+        "src/cody/management/api/react-query/callCodyProApi.ts",
+        "src/cody/management/api/react-query/subscriptions.ts",
         "src/cody/management/api/stripeCheckout.ts",
         "src/cody/management/api/teamInvites.ts",
         "src/cody/management/api/teamMembers.ts",
         "src/cody/management/api/teamSubscriptions.ts",
         "src/cody/management/api/types.ts",
+        "src/cody/management/subscription/manage/CodySubscriptionManagePage.tsx",
+        "src/cody/management/subscription/manage/InvoiceHistory.tsx",
+        "src/cody/management/subscription/manage/LoadingIconButton.tsx",
+        "src/cody/management/subscription/manage/PaymentDetails.tsx",
+        "src/cody/management/subscription/manage/SubscriptionDetails.tsx",
+        "src/cody/management/subscription/manage/utils.ts",
         "src/cody/management/subscription/new/CodyProCheckoutForm.tsx",
+        "src/cody/management/subscription/new/CodyProCheckoutFormContainer.tsx",
         "src/cody/management/subscription/new/NewCodyProSubscriptionPage.tsx",
+        "src/cody/management/subscription/new/PayButton.tsx",
         "src/cody/onboarding/CodyOnboarding.tsx",
         "src/cody/onboarding/EditorStep.tsx",
         "src/cody/onboarding/PurposeStep.tsx",
@@ -1058,7 +1069,6 @@ ts_project(
         "src/enterprise/site-admin/dotcom/customers/SiteAdminCustomersPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyGatewayRateLimitModal.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyServicesSection.tsx",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/ModelBadges.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminGenerateProductLicenseForSubscriptionForm.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage.tsx",
@@ -1318,7 +1328,8 @@ ts_project(
         "src/repo/blob/codemirror/occurrence-utils.ts",
         "src/repo/blob/codemirror/react-interop.tsx",
         "src/repo/blob/codemirror/scip-snapshot.ts",
-        "src/repo/blob/codemirror/search.tsx",
+        "src/repo/blob/codemirror/search.ts",
+        "src/repo/blob/codemirror/search/SearchPanel.tsx",
         "src/repo/blob/codemirror/static-highlights.tsx",
         "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/HovercardView.tsx",
@@ -1803,6 +1814,7 @@ ts_project(
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@stripe/react-stripe-js",
         "//:node_modules/@stripe/stripe-js",
+        "//:node_modules/@tanstack/react-query",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",

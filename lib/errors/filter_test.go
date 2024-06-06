@@ -13,7 +13,6 @@ func (t *testError) Error() string { return "testError" }
 func TestIgnore(t *testing.T) {
 	testError1 := New("test1")
 	testError2 := New("test2")
-	testError3 := &testError{}
 
 	cases := []struct {
 		input error
@@ -50,13 +49,6 @@ func TestIgnore(t *testing.T) {
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.NoError(t, err)
-		},
-	}, {
-		input: Append(testError1, testError3),
-		pred:  HasTypePred(testError3),
-		check: func(t *testing.T, err error) {
-			require.ErrorIs(t, err, testError1)
-			require.False(t, HasType(err, testError3))
 		},
 	}, {
 		input: Wrap(Append(testError1, testError2), "wrapped"),

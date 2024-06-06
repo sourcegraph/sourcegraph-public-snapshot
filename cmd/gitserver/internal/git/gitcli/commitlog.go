@@ -94,8 +94,10 @@ func buildCommitLogArgs(opt git.CommitLogOpts) ([]string, error) {
 
 	args = append(args, opt.Ranges...)
 
+	args = append(args, "--")
+
 	if opt.Path != "" {
-		args = append(args, "--", opt.Path)
+		args = append(args, opt.Path)
 	}
 
 	return args, nil
@@ -129,16 +131,31 @@ func (it *commitLogIterator) Next() (*git.GitCommitWithFiles, error) {
 			// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
 			// are referencing a commit that does not exist.
 			// We want to return a gitdomain.RevisionNotFoundError in that case.
-			var e *CommandFailedError
+			var e *commandFailedError
 			if errors.As(err, &e) && e.ExitStatus == 128 {
-				if bytes.Contains(e.Stderr, []byte("not a tree object")) || bytes.Contains(e.Stderr, []byte("fatal: bad object")) {
-					return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
+				if (bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet"))) || bytes.Contains(e.Stderr, []byte("fatal: bad revision 'HEAD'")) {
+					return nil, io.EOF
 				}
+
+				// range with bad commit or bad ref on RHS: fatal: bad revision
+				// range with bad commit or bad ref on LHS: fatal: Invalid revision range
+				// 40 character commit sha: fatal: bad object
+				// unknown ref name: fatal: ambiguous argument && unknown revision or path not in the working tree.
+
+				var errMessages = []string{
+					"not a tree object",
+					"fatal: bad object",
+					"fatal: Invalid revision range",
+					"fatal: bad revision",
+				}
+				for _, message := range errMessages {
+					if bytes.Contains(e.Stderr, []byte(message)) {
+						return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
+					}
+				}
+
 				if bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")) && bytes.Contains(e.Stderr, []byte("unknown revision or path not in the working tree.")) {
 					return nil, &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
-				}
-				if bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet")) {
-					return nil, io.EOF
 				}
 			}
 			return nil, err
@@ -157,13 +174,26 @@ func (it *commitLogIterator) Next() (*git.GitCommitWithFiles, error) {
 func (it *commitLogIterator) Close() error {
 	err := it.Closer.Close()
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 {
-			if bytes.Contains(e.Stderr, []byte("not a tree object")) || bytes.Contains(e.Stderr, []byte("fatal: bad object")) {
-				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
-			}
-			if bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet")) {
+			if (bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet"))) || bytes.Contains(e.Stderr, []byte("fatal: bad revision 'HEAD'")) {
 				return nil
+			}
+
+			var errMessages = []string{
+				"not a tree object",
+				"fatal: bad object",
+				"fatal: Invalid revision range",
+				"fatal: bad revision",
+			}
+			for _, message := range errMessages {
+				if bytes.Contains(e.Stderr, []byte(message)) {
+					return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
+				}
+			}
+
+			if bytes.Contains(e.Stderr, []byte("fatal: ambiguous argument")) && bytes.Contains(e.Stderr, []byte("unknown revision or path not in the working tree.")) {
+				return &gitdomain.RevisionNotFoundError{Repo: it.repoName, Spec: it.spec}
 			}
 		}
 	}

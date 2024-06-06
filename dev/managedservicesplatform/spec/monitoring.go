@@ -141,13 +141,24 @@ type CustomAlert struct {
 }
 
 type CustomAlertCondition struct {
-	// Type is one of `MQL` or `PromQL`
+	// Type describes the format of the configured query, and is one of `mql` or
+	// `promql`:
+	//
+	// - MQL: GCP monitoring's custom 'Monitoring Query Language'. Good for more
+	//   complicated alerts.
+	// - PromQL: Prometheus's query language. Good for simple alerts that you
+	//   already know how to express in PromQL.
 	Type CustomAlertQueryType `yaml:"type"`
-	// Query is the MQL or PromQL query to execute
+	// Query is the MQL or PromQL query to execute, based on your configured 'type'.
+	// Refer to the following guides for more details on how to write queries
+	// for each type:
+	//
+	// - PromQL: https://cloud.google.com/monitoring/promql
+	// - MQL: https://cloud.google.com/monitoring/mql
 	Query string `yaml:"query"`
-	// Duration is the time in minutes the query must violate the threshold.
+	// DurationMinutes is the time in minutes the query must violate the threshold.
 	// to trigger the alert. Defaults to one minute.
-	Duration *uint `yaml:"duration,omitempty"`
+	DurationMinutes *uint `yaml:"durationMinutes,omitempty"`
 }
 
 func (c *CustomAlert) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -190,9 +201,9 @@ func (c *CustomAlert) Validate() []error {
 		errs = append(errs, errors.New("customAlerts[].condition.query cannot be empty"))
 	}
 
-	if c.Condition.Duration != nil {
-		if *c.Condition.Duration > 1440 { // 24 hours
-			errs = append(errs, errors.New("customAlerts[].condition.duration must be less than 1440 minutes"))
+	if c.Condition.DurationMinutes != nil {
+		if *c.Condition.DurationMinutes > 1440 { // 24 hours
+			errs = append(errs, errors.New("customAlerts[].condition.durationMinutes must be less than 1440 minutes"))
 		}
 	}
 

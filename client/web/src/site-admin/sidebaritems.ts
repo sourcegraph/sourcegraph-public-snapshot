@@ -62,7 +62,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
             condition: ({ license }) => license.isCodeSearchEnabled,
         },
         {
-            label: 'Extensions',
+            label: 'Search extensions',
             to: '/site-admin/analytics/extensions',
         },
         {

@@ -9,6 +9,7 @@ go_library(
         "mapper.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/perforce",
+    tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//cmd/worker:__subpackages__"],
     deps = [
         "//cmd/worker/job",
@@ -35,7 +36,10 @@ go_test(
     name = "perforce_test",
     srcs = ["mapper_test.go"],
     embed = [":perforce"],
-    tags = ["requires-network"],
+    tags = [
+        "requires-network",
+        TAG_PLATFORM_SOURCE,
+    ],
     deps = [
         "//internal/api",
         "//internal/conf",

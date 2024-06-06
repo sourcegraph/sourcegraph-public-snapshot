@@ -1,7 +1,7 @@
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project", "vitest_test")
+load("//dev:esbuild.bzl", "esbuild")
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}

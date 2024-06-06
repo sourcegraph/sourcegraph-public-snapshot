@@ -32,6 +32,7 @@ go_library(
         "//cmd/worker/internal/ratelimit",
         "//cmd/worker/internal/repostatistics",
         "//cmd/worker/internal/search",
+        "//cmd/worker/internal/sourcegraphaccounts",
         "//cmd/worker/internal/telemetry",
         "//cmd/worker/internal/telemetrygatewayexporter",
         "//cmd/worker/internal/webhooks",

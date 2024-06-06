@@ -185,7 +185,7 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 	// Make sure the username is unique, then create user with/without an external account ID
 	var user *types.User
 	err = u.db.WithTransact(ctx, func(tx database.DB) error {
-		uniqueUsername, err := getUniqueUsername(ctx, tx.Users(), extractStringAttribute(attributes, AttrUserName))
+		uniqueUsername, err := getUniqueUsername(ctx, tx.Users(), 0, extractStringAttribute(attributes, AttrUserName))
 		if err != nil {
 			return err
 		}

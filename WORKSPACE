@@ -28,38 +28,30 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "d0529773764ac61184eb3ad3c687fb835df5bee01afedf07f0cf1a45515c96bc",
-    strip_prefix = "bazel-lib-1.42.3",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.42.3/bazel-lib-v1.42.3.tar.gz",
-)
-
-# rules_js defines an older rules_nodejs, so we override it here
-http_archive(
-    name = "rules_nodejs",
-    sha256 = "3e8369256ad63197959d2253c473a9dcc57c2841d176190e59b91d25d4fe9e67",
-    strip_prefix = "rules_nodejs-6.1.1",
-    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.1.1/rules_nodejs-v6.1.1.tar.gz",
+    sha256 = "6d758a8f646ecee7a3e294fbe4386daafbe0e5966723009c290d493f227c390b",
+    strip_prefix = "bazel-lib-2.7.7",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "2cfb3875e1231cefd3fada6774f2c0c5a99db0070e0e48ea398acbff7c6c765b",
-    strip_prefix = "rules_js-1.42.3",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.42.3/rules_js-v1.42.3.tar.gz",
+    sha256 = "3dfccf2713288e0518c0485b65574ca66426c6e06495299abe6f5c64e3bc6314",
+    strip_prefix = "rules_js-2.0.0-rc3",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc3/rules_js-v2.0.0-rc3.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "da6620683ab2c28014e9c82e8a8fdbb724cd67f6a1d27317f42a8ceb14048b9b",
-    strip_prefix = "rules_ts-2.4.1",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v2.4.1/rules_ts-v2.4.1.tar.gz",
+    sha256 = "3ea5cdb825d5dbffe286b3d9c5197a2648cf04b5e6bd8b913a45823cdf0ae960",
+    strip_prefix = "rules_ts-3.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v3.0.0-rc0/rules_ts-v3.0.0-rc0.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_swc",
-    sha256 = "1908691bde56321423c3f3beaf37f5fc21c51614869572e5f626cea058649373",
-    strip_prefix = "rules_swc-1.2.3",
-    url = "https://github.com/aspect-build/rules_swc/releases/download/v1.2.3/rules_swc-v1.2.3.tar.gz",
+    sha256 = "c085647585c3d01bee3966eb9ba433a1efbb0ee79bb1b8c67882a81d82a9b37f",
+    strip_prefix = "rules_swc-2.0.0-rc0",
+    url = "https://github.com/aspect-build/rules_swc/releases/download/v2.0.0-rc0/rules_swc-v2.0.0-rc0.tar.gz",
 )
 
 http_archive(
@@ -114,13 +106,9 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/rules_oci:no_xattr.patch",
-    ],
-    sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
-    strip_prefix = "rules_oci-1.4.3",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
+    sha256 = "647f4c6fd092dc7a86a7f79892d4b1b7f1de288bdb4829ca38f74fd430fcd2fe",
+    strip_prefix = "rules_oci-1.7.6",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.6/rules_oci-v1.7.6.tar.gz",
 )
 
 http_archive(
@@ -156,11 +144,11 @@ http_archive(
     url = "https://github.com/aspect-build/aspect-cli/archive/5.8.20.tar.gz",
 )
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_expand_template_toolchains", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
 
-register_jq_toolchains()
+aspect_bazel_lib_dependencies()
 
-register_expand_template_toolchains()
+aspect_bazel_lib_register_toolchains()
 
 http_archive(
     name = "rules_apko",
@@ -207,16 +195,12 @@ load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
 rules_js_dependencies()
 
-# node toolchain setup ==========================
-load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
 
-nodejs_register_toolchains(
-    name = "nodejs",
-    node_version = "20.8.0",
-)
+rules_js_register_toolchains(node_version = "20.8.0")
 
 # rules_js npm setup ============================
-load("@aspect_rules_js//npm:npm_import.bzl", "npm_translate_lock")
+load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
 
 npm_translate_lock(
     name = "npm",
@@ -270,9 +254,15 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "84419868e43c714c0d909dca73039e2f25427fc04f352d2f4f7343ca33f60deb",
-    strip_prefix = "rules_esbuild-0.15.3",
-    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.15.3/rules_esbuild-v0.15.3.tar.gz",
+    patch_args = ["-p1"],
+    patches = [
+        # Includes https://github.com/aspect-build/rules_esbuild/pull/201 as well as a fix for
+        # object-inspect being weird, see the comments in the patch for further links.
+        "//third_party/rules_esbuild:sandbox-plugin-fixes.patch",
+    ],
+    sha256 = "ef7163a2e8e319f8a9a70560788dd899126aebf3538c76f8bc1f0b4b52ba4b56",
+    strip_prefix = "rules_esbuild-0.21.0-rc1",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.21.0-rc1/rules_esbuild-v0.21.0-rc1.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
@@ -280,11 +270,12 @@ load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependenc
 rules_esbuild_dependencies()
 
 # Register a toolchain containing esbuild npm package and native bindings
-load("@aspect_rules_esbuild//esbuild:repositories.bzl", "LATEST_ESBUILD_VERSION", "esbuild_register_toolchains")
+load("@aspect_rules_esbuild//esbuild:repositories.bzl", "esbuild_register_toolchains")
 
 esbuild_register_toolchains(
     name = "esbuild",
-    esbuild_version = LATEST_ESBUILD_VERSION,
+    # Note, this differs from the version noted in package.json, however we've been inadvertently building with this version for some time now so we'll stick with it and revisit.
+    esbuild_version = "0.19.2",
 )
 
 # Go toolchain setup
@@ -343,7 +334,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.22.1",
+    version = "1.22.4",
 )
 
 linter_dependencies()

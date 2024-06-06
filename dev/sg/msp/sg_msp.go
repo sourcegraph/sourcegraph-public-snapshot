@@ -437,7 +437,7 @@ This command supports completions on services and environments.
 					Flags: []cli.Flag{
 						&cli.IntFlag{
 							Name:  "concurrency",
-							Value: 3,
+							Value: 5,
 							Usage: "Maximum number of concurrent updates to Notion pages",
 						},
 					},
@@ -485,7 +485,10 @@ This command supports completions on services and environments.
 								return errors.Wrap(err, "failed to get Notion token")
 							}
 						}
-						notionClient := notionapi.NewClient(notionapi.Token(notionToken))
+						notionClient := notionapi.NewClient(
+							notionapi.Token(notionToken),
+							// Retry 429 errors
+							notionapi.WithRetry(3))
 
 						type task struct {
 							svc          *spec.Spec
@@ -518,8 +521,9 @@ This command supports completions on services and environments.
 						concurrency := c.Int("concurrency")
 						prog := std.Out.ProgressWithStatusBars(
 							[]output.ProgressBar{{
-								Label: fmt.Sprintf("Generating service handbook pages (concurrency: %d)", concurrency),
-								Max:   float64(len(services)),
+								Label: fmt.Sprintf("Generating Notion pages for %d services (concurrency: %d)",
+									len(services), concurrency),
+								Max: float64(len(services)),
 							}},
 							statusBars,
 							nil)
@@ -537,6 +541,10 @@ This command supports completions on services and environments.
 							s := svc.Service.ID
 
 							wg.Go(func() (err error) {
+								// Reset the status bar to indicate the real
+								// start time, given concurrency limits.
+								prog.StatusBarResetf(i, svc.Service.ID, "Starting...")
+
 								defer func() {
 									if err != nil {
 										prog.StatusBarFailf(i, err.Error())
@@ -723,7 +731,8 @@ This command supports completions on services and environments.
 								Project: env.ProjectID,
 							})
 							if err != nil {
-								return errors.Wrap(err, "find IAM output")
+								return maybeAddSuggestion(svc.Service,
+									errors.Wrap(err, "find IAM output"))
 							}
 							std.Out.WriteAlertf("Preparing a connection with write access - proceed with caution!")
 						} else {
@@ -734,7 +743,8 @@ This command supports completions on services and environments.
 								Project: env.ProjectID,
 							})
 							if err != nil {
-								return errors.Wrap(err, "find IAM output")
+								return maybeAddSuggestion(svc.Service,
+									errors.Wrap(err, "find IAM output"))
 							}
 							std.Out.WriteSuggestionf("Preparing a connection with read-only access - for write access, use the '-write-access' flag.")
 						}
@@ -744,18 +754,18 @@ This command supports completions on services and environments.
 							Project: env.ProjectID,
 						})
 						if err != nil {
-							return errors.Wrap(err, "find Cloud Run output")
+							return maybeAddSuggestion(svc.Service,
+								errors.Wrap(err, "find Cloud Run output"))
 						}
 
 						proxyPort := c.Int("port")
-						proxy, err := cloudsqlproxy.NewCloudSQLProxy(
+						proxy := cloudsqlproxy.NewCloudSQLProxy(
 							connectionName,
 							serviceAccountEmail,
 							proxyPort,
+							// errors from proxy are already annotated with
+							// suggestions where applicable
 							svc.Service.GetHandbookPageURL())
-						if err != nil {
-							return err
-						}
 
 						for _, db := range env.Resources.PostgreSQL.Databases {
 							std.Out.WriteNoticef("Use this command to connect to database %q:", db)
@@ -1041,6 +1051,44 @@ This command supports completions on services and environments.
 						return nil
 					},
 				},
+			},
+		},
+		{
+			Name:   "validate",
+			Usage:  "Validate MSP configurations",
+			Before: msprepo.UseManagedServicesRepo,
+			Action: func(c *cli.Context) error {
+				services, err := msprepo.ListServices()
+				if err != nil {
+					return err
+				}
+				for _, svc := range services {
+					s, err := spec.Open(msprepo.ServiceYAMLPath(svc))
+					// HACK: Check nil instead of error so that we can get the
+					// itemized list of errors instead with s.Validate() for
+					// validation errors.
+					if s == nil {
+						std.Out.WriteFailuref("[%s] Could not open spec: %s", svc, err.Error())
+						continue
+					}
+					errs := s.Validate()
+					if len(errs) == 0 {
+						std.Out.WriteSuccessf("[%s] Validated", svc)
+						continue
+					}
+
+					std.Out.WriteFailuref("[%s] Found valdiation errors", svc)
+					var messages []string
+					for _, err := range errs {
+						messages = append(messages, fmt.Sprintf("- %s", err.Error()))
+					}
+					if err := std.Out.WriteMarkdown(strings.Join(messages, "\n")); err != nil {
+						return err
+					}
+				}
+
+				std.Out.Writef("Checked %d service specifications", len(services))
+				return nil
 			},
 		},
 		{

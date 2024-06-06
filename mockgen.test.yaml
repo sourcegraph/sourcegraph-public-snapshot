@@ -347,6 +347,10 @@
   path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
+- filename: cmd/worker/internal/sourcegraphaccounts/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts
+  interfaces:
+    - notificationsSubscriberStore
 - filename: internal/codeintel/ranking/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store

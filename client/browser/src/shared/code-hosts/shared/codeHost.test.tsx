@@ -17,6 +17,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import type { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { integrationTestContext } from '@sourcegraph/shared/src/testing/testHelpers'
@@ -82,6 +83,7 @@ const commonArguments = () =>
         platformContext: createMockPlatformContext(),
         sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        telemetryRecorder: noOpTelemetryRecorder,
         render: RENDER,
         userSignedIn: true,
         minimalUI: false,

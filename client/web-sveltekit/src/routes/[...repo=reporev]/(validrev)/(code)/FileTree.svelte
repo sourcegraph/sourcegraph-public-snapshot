@@ -12,7 +12,7 @@
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import { replaceRevisionInURL } from '$lib/shared'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
-    import { createForwardStore, delay } from '$lib/utils'
+    import { createForwardStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
 
     export let repoName: string
@@ -131,6 +131,8 @@
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
                         use:registerTrigger
+                        on:mouseover={/* Preload */ () =>
+                            fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >
                         {#if entry.isDirectory}
                             <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
@@ -140,7 +142,7 @@
                         {isRoot ? '..' : entry.name}
                     </a>
                     <svelte:fragment slot="content">
-                        {#await delay(fetchPopoverData({ repoName, revision, filePath: entry.path }), 300) then entry}
+                        {#await fetchPopoverData({ repoName, revision, filePath: entry.path }) then entry}
                             <FilePopover {repoName} {revision} {entry} />
                         {/await}
                     </svelte:fragment>
@@ -176,13 +178,12 @@
     }
 
     a {
-        flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-        padding: 0.2rem 0.25rem 0.2rem 0;
         color: inherit;
         text-decoration: none;
+        width: 100%;
 
         &:hover {
             color: inherit;

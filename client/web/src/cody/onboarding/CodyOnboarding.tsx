@@ -46,7 +46,8 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
     const parameters = useSearchParameters()
     const enrollPro = parameters.get('pro') === 'true'
     const returnToURL = parameters.get('returnTo')
-    const isCody = parameters.get('requestFrom') === 'CODY'
+    // All calls with a `requestFrom` query param to this call or in the returnTo URL come from Cody clients.
+    const isCody = !!parameters.get('requestFrom') || !!returnToURL?.includes('requestFrom')
 
     const navigate = useNavigate()
 

@@ -38,6 +38,8 @@
         type ContentMatch,
     } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -108,6 +110,7 @@
 
     onMount(() => {
         SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewSearchResultsPage)
+        TELEMETRY_V2_RECORDER.recordEvent('search.results', 'view')
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -133,8 +136,14 @@
         SVELTE_LOGGER.log(...codeCopiedEvent('search-result'))
     }
 
-    function handleSearchResultClick(): void {
+    function handleSearchResultClick(index: number): void {
         SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SearchResultClick)
+        TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'click', {
+            metadata: {
+                index,
+                resultsLength: results.length,
+            },
+        })
     }
 
     function handleSubmit(state: QueryState) {
@@ -143,6 +152,9 @@
             { source: 'nav', query: state.query },
             { source: 'nav', patternType: state.patternType }
         )
+        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['nav'] },
+        })
     }
 </script>
 
@@ -181,15 +193,21 @@
                         2. A11y: Non-interactive element <ol> should not be assigned mouse
                            or keyboard event listeners.
                     -->
-                    <ol on:click={handleSearchResultClick} on:copy={handleResultCopy}>
+                    <ol on:copy={handleResultCopy}>
                         {#each resultsToShow as result, i}
                             {@const component = getSearchResultComponent(result)}
                             {#if i === resultsToShow.length - 1}
-                                <li use:observeIntersection on:intersecting={loadMore}>
+                                <li
+                                    use:observeIntersection
+                                    on:intersecting={loadMore}
+                                    on:click={() => handleSearchResultClick(i)}
+                                >
                                     <svelte:component this={component} {result} />
                                 </li>
                             {:else}
-                                <li><svelte:component this={component} {result} /></li>
+                                <li on:click={() => handleSearchResultClick(i)}>
+                                    <svelte:component this={component} {result} />
+                                </li>
                             {/if}
                         {/each}
                     </ol>

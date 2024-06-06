@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
@@ -24,6 +25,10 @@ type flaggingConfig struct {
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
 
+	// FlaggedModelNames is a slice of LLM model names, e.g. "gpt-3.5-turbo",
+	// that will lead to the request getting flagged.
+	FlaggedModelNames []string
+
 	// If false, flaggingResult.shouldBlock will always be false when returned by isFlaggedRequest.
 	RequestBlockingEnabled bool
 }
@@ -39,11 +44,15 @@ func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
 		PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
 		MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
 		ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		FlaggedModelNames:              cfg.FlaggedModelNames,
 		RequestBlockingEnabled:         cfg.RequestBlockingEnabled,
 	}
 }
 
 type flaggingRequest struct {
+	// ModelName is the slug for the specific LLM model.
+	// e.g. "llama-v2-13b-code"
+	ModelName       string
 	FlattenedPrompt string
 	MaxTokens       int
 }
@@ -63,6 +72,10 @@ type flaggingResult struct {
 func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
+
+	if r.ModelName != "" && slices.Contains(cfg.FlaggedModelNames, r.ModelName) {
+		reasons = append(reasons, "model_used")
+	}
 
 	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
 		reasons = append(reasons, "unknown_prompt")

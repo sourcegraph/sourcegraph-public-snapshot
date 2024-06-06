@@ -28,6 +28,7 @@ container_structure_test(
     driver = "docker",
     image = ":image",
     tags = [
+        TAG_INFRA_RELEASE,
         "exclusive",
         "requires-network",
     ],

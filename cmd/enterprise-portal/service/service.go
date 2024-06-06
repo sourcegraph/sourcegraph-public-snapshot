@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"connectrpc.com/otelconnect"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
@@ -44,12 +46,6 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "newDotComDBConn")
 	}
 
-	// Validate connection on startup
-	if err := dotcomDB.Ping(ctx); err != nil {
-		return nil, errors.Wrap(err, "dotcomDB.Ping")
-	}
-	logger.Debug("connected to dotcom database")
-
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
 	logger.Debug("using SAMS client",
 		log.String("samsExternalURL", config.SAMS.ExternalURL),
@@ -73,12 +69,26 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	httpServer := http.NewServeMux()
 
 	// Register MSP endpoints
-	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{})
+	contract.Diagnostics.RegisterDiagnosticsHandlers(httpServer, serviceState{
+		dotcomDB: dotcomDB,
+	})
+
+	// Prepare instrumentation middleware for ConnectRPC handlers
+	otelConnctInterceptor, err := otelconnect.NewInterceptor(
+		// Keep data low-cardinality
+		otelconnect.WithoutServerPeerAttributes(),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "create OTEL interceptor")
+	}
 
 	// Register connect endpoints
-	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
-	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
+	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor))
+	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor))
 
+	// Optionally enable reflection handlers and a debug UI
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	if !contract.MSP && debugserver.GRPCWebUIEnabled {
 		// Enable reflection for the web UI
@@ -124,10 +134,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		background.CallbackRoutine{
 			StopFunc: func(ctx context.Context) error {
 				start := time.Now()
-				if err := dotcomDB.Close(ctx); err != nil {
-					return errors.Wrap(err, "dotcomDB.Close")
-				}
-				logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
+				dotcomDB.Close()
+				logger.Info("database connection pool closed", log.Duration("elapsed", time.Since(start)))
 				return nil
 			},
 		},

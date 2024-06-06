@@ -93,7 +93,7 @@ func TestGitCLIBackend_CommitLog(t *testing.T) {
 		})
 		require.NoError(t, err)
 		_, err = it.Next()
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 		_ = it.Close()
 	})
 
@@ -346,7 +346,7 @@ func TestGitCLIBackend_CommitLog(t *testing.T) {
 		})
 		require.NoError(t, err)
 		_, err = it.Next()
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
 		// Verify ordering doesn't matter and we return an error for any missing range:
 		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
@@ -355,7 +355,43 @@ func TestGitCLIBackend_CommitLog(t *testing.T) {
 		require.NoError(t, err)
 		_, err = it.Next()
 		require.Error(t, err)
-		require.True(t, errors.HasType(err, &gitdomain.RevisionNotFoundError{}))
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+
+		// Bad commit in range:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"HEAD..deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+
+		// Bad commit in range LHS:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef..HEAD"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+
+		// Bad ref in range:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"HEAD..unknownbranch"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+
+		// Unknown SHA:
+		it, err = backend.CommitLog(ctx, git.CommitLogOpts{
+			Ranges: []string{"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		})
+		require.NoError(t, err)
+		_, err = it.Next()
+		require.Error(t, err)
+		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 	})
 	// Verify that if the context is canceled, the iterator returns an error.
 	t.Run("context cancelation", func(t *testing.T) {

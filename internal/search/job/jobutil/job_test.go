@@ -1639,7 +1639,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 		endpoint.Static("test"),
 		false,
 	)
-	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if !errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
@@ -1969,6 +1969,7 @@ func runRepoSubsetTextSearch(
 
 	zoektParams := &search.ZoektParameters{
 		FileMatchLimit:  patternInfo.FileMatchLimit,
+		Typ:             typ,
 		Select:          patternInfo.Select,
 		NumContextLines: 0,
 	}
@@ -1976,7 +1977,7 @@ func runRepoSubsetTextSearch(
 	zoektJob := &zoektutil.RepoSubsetTextSearchJob{
 		Repos:       indexed,
 		Query:       zoektQuery,
-		Typ:         search.TextRequest,
+		Typ:         typ,
 		ZoektParams: zoektParams,
 		Since:       nil,
 	}

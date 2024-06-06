@@ -23,8 +23,9 @@ func convertAccessAttrsToProto(attrs *dotcomdb.CodyGatewayAccessAttributes) *cod
 	// If enabled, return the full response.
 	limits := attrs.EvaluateRateLimits()
 	return &codyaccessv1.CodyGatewayAccess{
-		SubscriptionId: subscriptionID,
-		Enabled:        attrs.CodyGatewayEnabled,
+		SubscriptionId:          subscriptionID,
+		SubscriptionDisplayName: attrs.GetSubscriptionDisplayName(),
+		Enabled:                 attrs.CodyGatewayEnabled,
 		ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
 			Source:           limits.ChatSource,
 			Limit:            limits.Chat.Limit,

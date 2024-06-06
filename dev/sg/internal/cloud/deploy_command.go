@@ -21,6 +21,7 @@ import (
 )
 
 var ErrDeploymentExists error = errors.New("deployment already exists")
+var ErrMainBranchBuild error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
 
 var deployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -95,15 +96,14 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 
 	// Check if the deployment already exists
 	pending.Updatef("Checking if deployment %q already exists", name)
-	_, err = cloudClient.GetInstance(ctx, name)
-	if err != nil {
-		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
-		} else {
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
-			// Deployment exists
-			return ErrDeploymentExists
-		}
+	inst, err := cloudClient.GetInstance(ctx, name)
+	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
+		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
+	}
+	if inst != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
+		// Deployment exists
+		return ErrDeploymentExists
 	}
 
 	pending.Updatef("Fetching license key...")
@@ -113,13 +113,13 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return err
 	}
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		license,
 	)
 
 	pending.Updatef("Creating deployment %q for version %q", spec.Name, spec.Version)
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+	inst, err = cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to deploy %q of version %s", spec.Name, spec.Version)
@@ -131,6 +131,9 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	if currRepo.Branch == "main" {
+		return nil, ErrMainBranchBuild
+	}
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
@@ -186,7 +189,7 @@ func determineDeploymentName(originalName, version, email, branch string) string
 		deploymentName = branch
 	}
 
-	return deploymentName
+	return sanitizeInstanceName(deploymentName)
 
 }
 
@@ -211,12 +214,16 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if version == "" {
 		b, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
-			if err == ErrBranchOutOfSync {
+			if errors.Is(err, ErrBranchOutOfSync) {
 				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
 
 Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
-			} else {
-				std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
+			} else if errors.Is(err, ErrMainBranchBuild) {
+				std.Out.WriteWarningf(`Triggering Cloud Ephemeral builds from "main" is not supported.`)
+				steps := "1. create a new branch off main by running `git switch <branch-name>`\n"
+				steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
+				steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
+				std.Out.WriteMarkdown(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps))
 			}
 			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}

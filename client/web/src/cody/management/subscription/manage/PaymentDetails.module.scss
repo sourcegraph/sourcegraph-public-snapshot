@@ -1,0 +1,38 @@
+.grid {
+    &-item {
+        padding-top: 1.125rem;
+        padding-bottom: 1.125rem;
+        padding-left: 1.125rem;
+
+        &:first-child {
+            border-right: 1px solid var(--border-color);
+            padding-left: 0;
+            padding-right: 1.125rem;
+        }
+    }
+}
+
+.title-button {
+    margin-right: -0.75rem;
+}
+
+.payment-method {
+    &-number {
+        font-size: 1rem;
+    }
+
+    &-form {
+        margin-top: 1.5rem;
+    }
+}
+
+.billing-address {
+    &-form {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        margin-top: 9px;
+
+        &-button-container {
+            margin-top: 2.25rem;
+        }
+    }
+}

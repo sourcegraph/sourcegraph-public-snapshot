@@ -39,6 +39,7 @@
             return false
         },
     })
+
     registerHotkey({
         keys: symbolsHotkey,
         ignoreInputFields: false,
@@ -61,6 +62,16 @@
                 open: true,
                 selectedTabId: 'files',
             })
+            return false
+        },
+    })
+
+    registerHotkey({
+        keys: { key: 'Esc' },
+        ignoreInputFields: false,
+        handler: event => {
+            event.preventDefault()
+            fuzzyFinderState.update(state => ({ ...state, open: false }))
             return false
         },
     })

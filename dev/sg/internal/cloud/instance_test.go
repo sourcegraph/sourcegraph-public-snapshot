@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -39,14 +38,18 @@ func TestInstanceStatus(t *testing.T) {
 			reason:     "",
 		},
 		{
-			name:    "incorrect reason format",
-			reason:  "https://test.com/action/123",
-			errText: "failed to parse status reason",
+			name:       "incorrect reason format",
+			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
+			statusText: "unspecified",
+			reason:     "https://test.com/action/123",
+			errText:    `failed to parse status reason: "https://test.com/action/123"`,
 		},
 		{
-			name:    "incorrect reason field format",
-			reason:  "actionURL=https://test.com/action/123, status=completed",
-			errText: "failed to parse status reason",
+			name:       "incorrect reason field format",
+			statusEnum: cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED,
+			statusText: "unspecified",
+			reason:     "actionURL=https://test.com/action/123, status=completed",
+			errText:    `failed to parse status reason: "actionURL=https://test.com/action/123, status=completed"`,
 		},
 	}
 	for _, tc := range tt {
@@ -56,14 +59,9 @@ func TestInstanceStatus(t *testing.T) {
 				Reason:         &tc.reason,
 			}
 
-			instanceSatus, err := newInstanceStatus(src)
-			if err != nil {
-				if tc.errText == "" {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), tc.errText) {
-					t.Errorf("incorrect error. want=%s have=%s", tc.errText, err.Error())
-				}
-				return
+			instanceSatus := newInstanceStatus(src)
+			if tc.errText != "" && instanceSatus.Error != tc.errText {
+				t.Errorf("incorrect error. want=%s have=%s", tc.errText, instanceSatus.Error)
 			}
 
 			if instanceSatus.Reason.JobURL != tc.jobURL {

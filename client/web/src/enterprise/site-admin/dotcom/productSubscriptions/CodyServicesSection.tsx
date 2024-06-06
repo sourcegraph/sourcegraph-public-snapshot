@@ -50,7 +50,6 @@ import {
     UPDATE_CODY_GATEWAY_CONFIG,
 } from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
-import { ModelBadges } from './ModelBadges'
 import { numberFormatter, prettyInterval } from './utils'
 
 import styles from './CodyServicesSection.module.scss'
@@ -154,7 +153,6 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                             <th>Feature</th>
                                             <th>Source</th>
                                             <th>Rate limit</th>
-                                            <th>Allowed models</th>
                                             {viewerCanAdminister && <th>Actions</th>}
                                         </tr>
                                     </thead>
@@ -189,7 +187,6 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                             <th>Feature</th>
                                             <th>Source</th>
                                             <th>Rate limit</th>
-                                            <th>Allowed models</th>
                                             {viewerCanAdminister && <th>Actions</th>}
                                         </tr>
                                     </thead>
@@ -368,12 +365,6 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                             {numberFormatter.format(BigInt(rateLimit.limit))}{' '}
                             {mode === 'embeddings' ? 'tokens' : 'requests'} /{' '}
                             {prettyInterval(rateLimit.intervalSeconds)}
-                        </td>
-                        <td>
-                            <ModelBadges
-                                models={rateLimit.allowedModels}
-                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
-                            />
                         </td>
                         {viewerCanAdminister && (
                             <td>

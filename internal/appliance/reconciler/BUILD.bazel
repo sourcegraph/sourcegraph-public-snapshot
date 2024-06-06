@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "blobstore.go",
         "cadvisor.go",
+        "codeinsights.go",
         "codeintel.go",
         "gitserver.go",
         "kubernetes.go",
@@ -17,8 +18,10 @@ go_library(
         "repo_updater.go",
         "symbols.go",
         "syntect.go",
+        "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/reconciler",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance/config",
@@ -64,6 +67,7 @@ go_test(
     srcs = [
         "blobstore_test.go",
         "cadvisor_test.go",
+        "codeinsights_test.go",
         "codeintel_test.go",
         "gitserver_test.go",
         "golden_test.go",
@@ -76,6 +80,7 @@ go_test(
         "standard_config_test.go",
         "symbols_test.go",
         "syntect_test.go",
+        "worker_test.go",
     ],
     data = [
         ":testdata",
@@ -85,6 +90,7 @@ go_test(
     env = {
         "KUBEBUILDER_ASSET_PATHS": "$(rlocationpaths //dev/tools:kubebuilder-assets)",
     },
+    tags = [TAG_INFRA_RELEASE],
     deps = [
         "//internal/appliance/config",
         "//internal/appliance/yaml",

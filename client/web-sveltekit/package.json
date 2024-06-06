@@ -80,6 +80,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
+    "@sourcegraph/telemetry": "^0.11.0",
     "@sourcegraph/web": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
     "@storybook/test": "^8.0.5",

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,6 +123,7 @@ func (o *OpenAIHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger
 	result, err := isFlaggedRequest(
 		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
 		flaggingRequest{
+			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
 			MaxTokens:       int(req.MaxTokens),
 		},

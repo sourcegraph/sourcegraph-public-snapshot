@@ -8,6 +8,7 @@ go_library(
         "config.go",
         "cut.go",
         "cve.go",
+        "list_release.go",
         "release.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/release",

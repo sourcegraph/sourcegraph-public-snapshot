@@ -28,6 +28,8 @@ func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoNa
 	options := gitserver.CommitsOptions{N: 1, Before: target, Order: gitserver.CommitsOrderCommitDate}
 	if len(revision) > 0 {
 		options.Ranges = []string{revision}
+	} else {
+		options.Ranges = []string{"HEAD"}
 	}
 	return g.gitserverClient.Commits(ctx, repoName, options)
 }

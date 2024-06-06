@@ -5,6 +5,7 @@ go_library(
     name = "dotcomdb",
     srcs = ["dotcomdb.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//internal/license",
@@ -14,6 +15,7 @@ go_library(
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/errors",
         "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
     ],
 )
 
@@ -36,7 +38,7 @@ go_test(
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/pointers",
         "@com_github_jackc_pgx_v4//stdlib",
-        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

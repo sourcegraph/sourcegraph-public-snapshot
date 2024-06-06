@@ -1,0 +1,65 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "sourcegraphaccounts",
+    srcs = [
+        "notifications_subscriber.go",
+        "notifications_subscriber_handlers.go",
+        "notifications_subscriber_store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/dotcom",
+        "//internal/env",
+        "//internal/extsvc",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "//schema",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//clients/v1:clients",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//notifications/v1:notifications",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
+        "@com_google_cloud_go_pubsub//:pubsub",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+go_test(
+    name = "sourcegraphaccounts_test",
+    srcs = [
+        "mocks_test.go",
+        "notifications_subscriber_handlers_test.go",
+    ],
+    embed = [":sourcegraphaccounts"],
+    deps = [
+        "//internal/database",
+        "//internal/extsvc",
+        "//schema",
+        "@com_github_derision_test_go_mockgen_v2//testutil/require",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//clients/v1:clients",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//notifications/v1:notifications",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":sourcegraphaccounts"],
+)

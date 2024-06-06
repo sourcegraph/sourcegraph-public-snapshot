@@ -257,7 +257,7 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
                                         aria-label="Extensions"
                                         className="mr-1"
                                     />
-                                    Extensions
+                                    Search extensions
                                 </Text>
                             </Link>
                         </td>

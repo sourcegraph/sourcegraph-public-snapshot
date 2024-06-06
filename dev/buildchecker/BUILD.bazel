@@ -13,6 +13,7 @@ go_library(
         "slack.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/buildchecker",
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:private"],
     deps = [
         "//dev/team",
@@ -29,6 +30,7 @@ go_library(
 go_binary(
     name = "buildchecker",
     embed = [":buildchecker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//visibility:public"],
 )
 
@@ -44,6 +46,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":buildchecker_lib"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = [
         "//dev/team",
         "//internal/httptestutil",

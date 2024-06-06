@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -273,9 +274,9 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	var (
 		hoverText               []string
 		definitionSymbol        = occurrence.Symbol
-		referencesBySymbol      = map[string]struct{}{}
-		implementationsBySymbol = map[string]struct{}{}
-		prototypeBySymbol       = map[string]struct{}{}
+		referencesBySymbol      = collections.NewSet[string]()
+		implementationsBySymbol = collections.NewSet[string]()
+		prototypeBySymbol       = collections.NewSet[string]()
 	)
 
 	// Extract hover text and relationship data from the symbol information that
@@ -283,17 +284,17 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// we should include in reference and implementation searches.
 
 	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbol.Documentation
+		hoverText = symbolHoverText(symbol)
 
 		for _, rel := range symbol.Relationships {
 			if rel.IsDefinition {
 				definitionSymbol = rel.Symbol
 			}
 			if rel.IsReference {
-				referencesBySymbol[rel.Symbol] = struct{}{}
+				referencesBySymbol.Add(rel.Symbol)
 			}
 			if rel.IsImplementation {
-				prototypeBySymbol[rel.Symbol] = struct{}{}
+				prototypeBySymbol.Add(rel.Symbol)
 			}
 		}
 	}
@@ -302,7 +303,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
 				if rel.Symbol == occurrence.Symbol {
-					implementationsBySymbol[sym.Symbol] = struct{}{}
+					implementationsBySymbol.Add(sym.Symbol)
 				}
 			}
 		}
@@ -314,7 +315,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	prototypes := []*scip.Range{}
 
 	// Include original symbol names for reference search below
-	referencesBySymbol[occurrence.Symbol] = struct{}{}
+	referencesBySymbol.Add(occurrence.Symbol)
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -328,17 +329,17 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
-		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
+		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
 			references = append(references, scip.NewRange(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
+		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
 			implementations = append(implementations, scip.NewRange(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
-		if _, ok := prototypeBySymbol[occ.Symbol]; ok && isDefinition {
+		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
 			prototypes = append(prototypes, scip.NewRange(occ.Range))
 		}
 	}
@@ -366,8 +367,13 @@ func monikersToString(vs []precise.MonikerData) string {
 	return strings.Join(strs, ", ")
 }
 
-//
-//
+func symbolHoverText(symbol *scip.SymbolInformation) []string {
+	if sigdoc := symbol.SignatureDocumentation; sigdoc != nil && sigdoc.Text != "" && sigdoc.Language != "" {
+		signature := []string{fmt.Sprintf("```%s\n%s\n```", sigdoc.Language, sigdoc.Text)}
+		return append(signature, symbol.Documentation...)
+	}
+	return symbol.Documentation
+}
 
 func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
 	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
@@ -466,28 +472,25 @@ func (s *store) extractLocationsFromPosition(
 		}
 	}
 
-	return deduplicateLocations(locations), deduplicate(symbols, func(s string) string { return s }), nil
+	return deduplicateLocations(locations), deduplicateBy(symbols, func(s string) string { return s }), nil
 }
 
-func deduplicate[T any](locations []T, keyFn func(T) string) []T {
-	seen := map[string]struct{}{}
-
+func deduplicateBy[T any](locations []T, keyFn func(T) string) []T {
+	seen := collections.NewSet[string]()
 	filtered := locations[:0]
 	for _, l := range locations {
 		k := keyFn(l)
-		if _, ok := seen[k]; ok {
+		if seen.Has(k) {
 			continue
 		}
-
-		seen[k] = struct{}{}
+		seen.Add(k)
 		filtered = append(filtered, l)
 	}
-
 	return filtered
 }
 
 func deduplicateLocations(locations []shared.Location) []shared.Location {
-	return deduplicate(locations, locationKey)
+	return deduplicateBy(locations, locationKey)
 }
 
 func locationKey(l shared.Location) string {

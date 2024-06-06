@@ -352,8 +352,8 @@ type RangeInput struct {
 	Repository string
 	Revision   *string
 	Path       string
-	Start      *PositionInput
-	End        *PositionInput
+	Start      PositionInput
+	End        PositionInput
 }
 
 func (r *RangeInput) Attrs() (out []attribute.KeyValue) {
@@ -362,14 +362,10 @@ func (r *RangeInput) Attrs() (out []attribute.KeyValue) {
 		out = append(out, attribute.String("range.revision", *r.Revision))
 	}
 	out = append(out, attribute.String("range.path", r.Path))
-	if r.Start != nil {
-		out = append(out, attribute.Int("range.start.line", int(r.Start.Line)))
-		out = append(out, attribute.Int("range.start.character", int(r.Start.Character)))
-	}
-	if r.End != nil {
-		out = append(out, attribute.Int("range.end.line", int(r.End.Line)))
-		out = append(out, attribute.Int("range.end.character", int(r.End.Character)))
-	}
+	out = append(out, attribute.Int("range.start.line", int(r.Start.Line)))
+	out = append(out, attribute.Int("range.start.character", int(r.Start.Character)))
+	out = append(out, attribute.Int("range.end.line", int(r.End.Line)))
+	out = append(out, attribute.Int("range.end.character", int(r.End.Character)))
 	return out
 }
 

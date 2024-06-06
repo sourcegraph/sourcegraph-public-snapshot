@@ -2,7 +2,7 @@ module github.com/sourcegraph/sourcegraph/lib
 
 go 1.22
 
-toolchain go1.22.1
+toolchain go1.22.4
 
 require (
 	connectrpc.com/connect v1.16.1
@@ -41,6 +41,7 @@ require (
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+	pgregory.net/rapid v1.1.0
 )
 
 require (

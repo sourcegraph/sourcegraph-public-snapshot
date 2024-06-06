@@ -1,14 +1,10 @@
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-
-    import { page } from '$app/stores'
-    import Icon from '$lib/Icon.svelte'
     import { Button } from '$lib/wildcard'
 
-    import CountBadge from './CountBadge.svelte'
-    import { updateFilterInURL, type SectionItem } from './index'
+    import type { SectionItemData } from './index.ts'
+    import SectionItem from './SectionItem.svelte'
 
-    export let items: SectionItem[]
+    export let items: SectionItemData[]
     export let title: string
     export let filterPlaceholder: string = ''
     export let showAll: boolean = false
@@ -35,23 +31,17 @@
         <ul>
             {#each limitedItems as item}
                 <li>
-                    <a
-                        href={updateFilterInURL($page.url, item, item.selected).toString()}
-                        class:selected={item.selected}
-                        on:click={() => onFilterSelect(item.kind)}
-                    >
-                        <span class="label">
-                            <slot name="label" label={item.label} value={item.value}>
-                                {item.label}
-                            </slot>
-                        </span>
-                        <CountBadge count={item.count} exhaustive={item.exhaustive} />
-                        {#if item.selected}
-                            <span class="close">
-                                <Icon svgPath={mdiClose} inline />
-                            </span>
+                    <slot name="item" {item}>
+                        {#if $$slots.label}
+                            <SectionItem {item} {onFilterSelect}>
+                                <svelte:fragment slot="label" let:label let:value>
+                                    <slot name="label" {label} {value} />
+                                </svelte:fragment>
+                            </SectionItem>
+                        {:else}
+                            <SectionItem {item} {onFilterSelect} />
                         {/if}
-                    </a>
+                    </slot>
                 </li>
             {/each}
         </ul>
@@ -134,51 +124,5 @@
 
     .show-more {
         text-align: center;
-    }
-
-    a {
-        display: flex;
-        width: 100%;
-        align-items: center;
-        border: none;
-        text-align: left;
-        text-decoration: none;
-        border-radius: var(--border-radius);
-        color: inherit;
-        white-space: nowrap;
-        gap: 0.25rem;
-
-        padding: 0.25rem 0.5rem;
-        margin: 0;
-        font-weight: 400;
-
-        .label {
-            flex: 1;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            color: var(--text-body);
-        }
-
-        &:hover {
-            background-color: var(--color-bg-3);
-
-            .label {
-                color: var(--text-title);
-            }
-        }
-
-        &.selected {
-            background-color: var(--primary);
-            color: var(--light-text);
-            --color: var(--light-text);
-
-            .label {
-                color: var(--light-text);
-            }
-        }
-
-        .close {
-            flex-shrink: 0;
-        }
     }
 </style>

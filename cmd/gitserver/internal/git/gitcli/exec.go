@@ -1,17 +1,11 @@
 package gitcli
 
 import (
-	"context"
-	"io"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/log"
 )
-
-func (g *gitCLIBackend) Exec(ctx context.Context, args ...string) (io.ReadCloser, error) {
-	return g.NewCommand(ctx, WithArguments(args...))
-}
 
 var (
 	// gitCmdAllowlist are commands and arguments that are allowed to execute and are

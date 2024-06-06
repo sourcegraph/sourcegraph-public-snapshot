@@ -7,7 +7,7 @@ import type { LanguageSpec } from './language-specs/language-spec'
 import { type Logger, NoopLogger } from './logging'
 import { createProviders as createLSIFProviders } from './lsif/providers'
 import { createProviders as createSearchProviders } from './search/providers'
-import { TelemetryEmitter } from './telemetry'
+import { type CodeIntelActions, TelemetryEmitter } from './telemetry'
 import { API } from './util/api'
 import { asArray, mapArrayish, nonEmpty } from './util/helpers'
 import { noopAsyncGenerator, observableFromAsyncIterator } from './util/ix'
@@ -465,7 +465,7 @@ function logLocationResults<T extends sourcegraph.Badged<sourcegraph.Location>, 
     logger,
 }: {
     provider: string
-    action: string
+    action: CodeIntelActions
     repo: string
     textDocument: sourcegraph.TextDocument
     position: sourcegraph.Position
@@ -473,11 +473,11 @@ function logLocationResults<T extends sourcegraph.Badged<sourcegraph.Location>, 
     emitter?: TelemetryEmitter
     logger?: Logger
 }): void {
-    emitter?.emitOnce(action)
+    emitter?.emitOnce(false, action)
 
     // Emit xrepo event if we contain a result from another repository
     if (asArray(results).some(location => parseGitURI(location.uri.toString()).repo !== repo)) {
-        emitter?.emitOnce(action + '.xrepo')
+        emitter?.emitOnce(true, action)
     }
 
     if (logger) {
@@ -555,7 +555,7 @@ export function createHoverProvider(
                     }
                 }
 
-                emitter.emitOnce('lsifHover')
+                emitter.emitOnce(false, 'lsifHover')
                 logger?.log({ provider: 'hover', precise: true, ...commonLogFields })
                 yield badgeHoverResult(
                     lsifWrapper.hover,
@@ -582,7 +582,7 @@ export function createHoverProvider(
                     continue
                 }
 
-                emitter.emitOnce('searchHover')
+                emitter.emitOnce(false, 'searchHover')
                 logger?.log({ provider: 'hover', precise: false, ...commonLogFields })
 
                 if (hasPreciseDefinition) {
@@ -634,14 +634,14 @@ export function createDocumentHighlightProvider(
 
             for await (const lsifResult of lsifProvider(textDocument, position)) {
                 if (lsifResult) {
-                    emitter.emitOnce('lsifDocumentHighlight')
+                    emitter.emitOnce(false, 'lsifDocumentHighlight')
                     yield lsifResult
                     hasLsifResults = true
                 }
             }
 
             if (!hasLsifResults) {
-                emitter.emitOnce('searchDocumentHighlight')
+                emitter.emitOnce(false, 'searchDocumentHighlight')
                 for await (const searchResult of searchProvider(textDocument, position)) {
                     if (searchResult) {
                         yield searchResult
