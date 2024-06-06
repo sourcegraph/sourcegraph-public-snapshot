@@ -252,7 +252,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						Identifier: act.ID,
 						Metadata: events.MergeMaps(requestMetadata, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
-							"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
+							"model":    fmt.Sprintf("%s/%s", "", body.GetModel()),
 							"provider": upstreamName,
 
 							// Request metadata
