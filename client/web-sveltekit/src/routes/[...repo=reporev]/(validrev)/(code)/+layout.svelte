@@ -289,7 +289,7 @@
                                     aria-label="Hide bottom panel"
                                     on:click={handleBottomPanelCollapse}
                                 >
-                                    <Icon2 icon={ILucidePanelBottomClose} inline aria-hidden /> Hide
+                                    <Icon2 icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
                                 </Button>
                             {/if}
                         </svelte:fragment>
