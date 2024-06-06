@@ -253,32 +253,12 @@
 (call_expression
   function: (qualified_identifier
     (identifier) @keyword .)
-    (#eq? @keyword "invariant"))
-
-(call_expression
-  function: (qualified_identifier
-    (identifier) @keyword .)
-    (#eq? @keyword "exit"))
+    (#match? @keyword "(invariant|exit)"))
 
 (call_expression
   function: (qualified_identifier
     (identifier) @function.builtin .)
-    (#eq? @function.builtin "idx"))
-
-(call_expression
-  function: (qualified_identifier
-    (identifier) @function.builtin .)
-    (#eq? @function.builtin "is_int"))
-
-(call_expression
-  function: (qualified_identifier
-    (identifier) @function.builtin .)
-    (#eq? @function.builtin "is_bool"))
-
-(call_expression
-  function: (qualified_identifier
-    (identifier) @function.builtin .)
-    (#eq? @function.builtin "is_string"))
+    (#match? @function.builtin "(idx|is_int|is_bool|is_string)"))
 
 (call_expression
   function: (qualified_identifier
@@ -303,44 +283,13 @@
 ; Handle built-ins not named in the tree sitter grammar
 (qualified_identifier
   . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "NAN"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "INF"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__CLASS__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__DIR__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__FILE__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__FUNCTION__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__LINE__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__METHOD__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__NAMESPACE__"))
-(qualified_identifier
-  . (identifier) @constant.builtin  .
-  (#eq? @constant.builtin "__TRAIT__"))
+  (#match? @constant.builtin "(NAN|INF|__CLASS__|__DIR__|__FILE__|__FUNCTION__|__LINE__|__METHOD__|__NAMESPACE__|__TRAIT__)"))
 
 ; Explicitly handle internal amd module since they are not
 ; not mentioned in grammar
 (qualified_identifier
   . (identifier) @keyword  .
-  (#eq? @keyword "internal"))
-
-(qualified_identifier
-  . (identifier) @keyword  .
-  (#eq? @keyword "module"))
+  (#match? @keyword "(internal|module)"))
 
 (namespace_declaration
     name:  (qualified_identifier (identifier) @identifier.module))
