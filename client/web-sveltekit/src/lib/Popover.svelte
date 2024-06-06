@@ -1,16 +1,17 @@
 <script lang="ts">
-    import type { Placement } from '@floating-ui/dom'
+    import type { OffsetOptions, Placement } from '@floating-ui/dom'
     import type { Action } from 'svelte/action'
 
     import { registerHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
 
-    export let placement: Placement = 'bottom'
     /**
      * Show the popover when hovering over the trigger.
      */
     export let showOnHover: boolean = false
+    export let placement: Placement = 'bottom'
+    export let offset: OffsetOptions = showOnHover ? 0 : 3
     export let hoverDelay: number = 500
     export let hoverCloseDelay: number = 150
     export let closeOnEsc: boolean = true
@@ -147,7 +148,7 @@
             reference: target ?? trigger,
             options: {
                 placement,
-                offset: showOnHover ? 0 : 3,
+                offset,
                 shift: { padding: 4 },
             },
         }}
