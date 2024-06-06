@@ -2,7 +2,6 @@ use std::io::Write;
 use std::process::Stdio;
 use std::{
     collections::{HashMap, HashSet},
-    io::BufWriter,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -188,7 +187,7 @@ fn java_tar_file_indexing() {
 
     assert_eq!(extract_paths(&setup), extract_indexed_paths(&index));
 
-    let index_snapshot = snapshot_from_files(&index.documents, &out_dir);
+    let index_snapshot = snapshot_from_data(&index.documents, &setup);
 
     insta::assert_snapshot!(index_snapshot);
 }
@@ -329,14 +328,22 @@ fn snapshot_from_files(docs: &Vec<Document>, project_root: &Path) -> String {
     docs.sort_by_key(|doc| doc.relative_path.clone());
 
     for doc in docs {
-        str.push_str(format!("//----FILE={}\n", doc.relative_path).as_str());
         let path = project_root.join(doc.relative_path.clone());
         let contents = std::fs::read_to_string(path.clone())
             .with_context(|| anyhow!("Failed to read path {:?}", path.clone()))
             .unwrap();
-        str.push_str(&snapshot_syntax_document(&doc, &contents));
-        str.push_str("\n\n")
+
+        str.push_str(&format_snapshot_document(&doc, &contents));
     }
+
+    str
+}
+
+fn format_snapshot_document(doc: &scip::types::Document, contents: &String) -> String {
+    let mut str = String::new();
+    str.push_str(format!("//----FILE={}\n", doc.relative_path).as_str());
+    str.push_str(&snapshot_syntax_document(&doc, &contents));
+    str.push_str("\n\n");
 
     str
 }
@@ -347,14 +354,12 @@ fn snapshot_from_data(docs: &Vec<Document>, data: &HashMap<PathBuf, String>) -> 
     docs.sort_by_key(|doc| doc.relative_path.clone());
 
     for doc in docs {
-        str.push_str(format!("//----FILE={}\n", doc.relative_path).as_str());
-
         let contents = data
             .get(&PathBuf::from(&doc.relative_path))
             .context(format!("Failed to find {} in data", &doc.relative_path))
             .unwrap();
-        str.push_str(&snapshot_syntax_document(&doc, &contents));
-        str.push_str("\n\n")
+
+        str.push_str(&format_snapshot_document(&doc, contents));
     }
 
     str
