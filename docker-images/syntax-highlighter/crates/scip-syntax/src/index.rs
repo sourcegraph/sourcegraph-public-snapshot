@@ -214,7 +214,7 @@ fn index_file(
             )
         })?;
 
-    match index_content(&contents, parser_id, &options) {
+    match index_content(&contents, parser_id, options) {
         Ok(mut document) => {
             document.relative_path = relative_path.display().to_string();
             Ok(document)
@@ -243,7 +243,7 @@ fn index_tar_entries<R: Read>(
         {
             match e.read_to_string(&mut contents) {
                 Ok(size) => {
-                    match index_content(&contents, parser, &options) {
+                    match index_content(&contents, parser, options) {
                         Ok(mut document) => {
                             document.relative_path = path.display().to_string();
                             documents.push(document);
@@ -278,7 +278,7 @@ fn index_tar_entries<R: Read>(
             }
 
             progress += 1;
-            spinner.set_message(format!("[{}]: {}", progress, path.display().to_string()));
+            spinner.set_message(format!("[{}]: {}", progress, path.display()));
             spinner.tick();
         }
     }
