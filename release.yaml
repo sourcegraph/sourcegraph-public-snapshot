@@ -255,7 +255,8 @@ promoteToPublic:
           git fetch origin '+refs/heads/{{git.branch}}:refs/heads/{{git.branch}}'
           git checkout {{git.branch}}
           git tag --force {{version}}
-          git push origin {{git.branch}} --tags
+          # only push a single tag
+          git push origin tag {{version}}
 
           # Annotate build
           cat << EOF | buildkite-agent annotate --style info
@@ -339,7 +340,7 @@ promoteToPublic:
           chmod +x changelog
 
           pr_url=$(./changelog \
-            --github.token="$DEVX_GH_TOKEN" \
+            --github.token="$DEVX_SERVICE_GH_TOKEN" \
             update-as-pr \
             --github.repo="sourcegraph/sourcegraph" \
             --output.repo="sourcegraph/docs" \
