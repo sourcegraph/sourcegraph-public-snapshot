@@ -141,7 +141,6 @@
 <slot {toggle} {registerTrigger} {registerTarget} />
 {#if trigger && isOpen}
     <div
-        class="popover-container"
         use:portal
         use:onClickOutside
         use:registerPopoverContainer
@@ -160,7 +159,7 @@
 {/if}
 
 <style lang="scss">
-    .popover-container {
+    div {
         position: absolute;
         isolation: isolate;
         min-width: 10rem;
