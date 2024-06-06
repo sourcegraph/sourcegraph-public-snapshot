@@ -8,7 +8,7 @@ import (
 )
 
 // getLanguagesByAlias is a replacement for enry.GetLanguagesByAlias
-// It support languages that are missing in go-enry
+// It supports languages that are missing in go-enry
 func GetLanguageByAlias(alias string) (lang string, ok bool) {
 	normalizedAlias := strings.ToLower(alias)
 	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
@@ -19,7 +19,7 @@ func GetLanguageByAlias(alias string) (lang string, ok bool) {
 }
 
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
-// It support languages that are missing in go-enry
+// It supports languages that are missing in go-enry
 func GetLanguageExtensions(alias string) []string {
 	if lang, ok := unsupportedByEnryNameToExtensionMap[alias]; ok {
 		return []string{lang}
