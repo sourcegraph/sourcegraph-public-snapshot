@@ -114,7 +114,7 @@
         on:select={event => handleSelect(event.detail)}
         on:scope-change={event => handleScopeChange(event.detail.provider)}
     >
-        <svelte:fragment let:entry let:expanded>
+        <svelte:fragment let:entry let:expanded let:label>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
                 <!-- todo: create alert component -->
@@ -124,13 +124,12 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover let:registerTrigger placement="right-end" showOnHover>
+                <Popover trigger={label} placement="right-start" showOnHover>
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
                         on:click|preventDefault={() => {}}
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
-                        use:registerTrigger
                         on:mouseover={/* Preload */ () =>
                             fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >

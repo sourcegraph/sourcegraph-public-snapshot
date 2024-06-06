@@ -54,7 +54,9 @@
 
     const registerTrigger: Action<HTMLElement> = node => {
         trigger = node
+    }
 
+    const watchTrigger: Action<HTMLElement, HTMLElement | null> = (_node, trigger) => {
         function handleMouseEnterTrigger(): void {
             clearTimeout(delayTimer)
             delayTimer = setTimeout(() => toggle(true), hoverDelay)
@@ -73,22 +75,33 @@
             delayTimer = setTimeout(() => toggle(true), hoverDelay)
         }
 
-        if (showOnHover) {
-            node.addEventListener('mouseenter', handleMouseEnterTrigger)
-            node.addEventListener('mouseleave', handleMouseLeaveTrigger)
-            node.addEventListener('mousemove', handleMouseMoveTrigger)
-            node.addEventListener('click', close)
+        function apply(trigger: HTMLElement) {
+            trigger.addEventListener('mouseenter', handleMouseEnterTrigger)
+            trigger.addEventListener('mouseleave', handleMouseLeaveTrigger)
+            trigger.addEventListener('mousemove', handleMouseMoveTrigger)
+            trigger.addEventListener('click', close)
             window.addEventListener('blur', close)
         }
 
+        function unapply(trigger: HTMLElement) {
+            trigger.removeEventListener('mouseenter', handleMouseEnterTrigger)
+            trigger.removeEventListener('mouseleave', handleMouseLeaveTrigger)
+            trigger.removeEventListener('mousemove', handleMouseMoveTrigger)
+            trigger.removeEventListener('click', close)
+            window.removeEventListener('blur', close)
+        }
+
+        trigger && apply(trigger)
+
         return {
+            update(newTrigger: HTMLElement | null) {
+                trigger && unapply(trigger)
+                trigger = newTrigger
+                trigger && apply(trigger)
+            },
             destroy() {
+                trigger && unapply(trigger)
                 trigger = null
-                node.removeEventListener('mouseenter', handleMouseEnterTrigger)
-                node.removeEventListener('mouseleave', handleMouseLeaveTrigger)
-                node.removeEventListener('mousemove', handleMouseMoveTrigger)
-                node.removeEventListener('click', close)
-                window.removeEventListener('blur', close)
             },
         }
     }
@@ -121,9 +134,12 @@
     }
 </script>
 
-<slot {toggle} {registerTrigger} {registerTarget} />
+<div class="target-watcher" use:watchTrigger={trigger}>
+    <slot {toggle} {registerTrigger} {registerTarget} />
+</div>
 {#if trigger && isOpen}
     <div
+        class="popover-container"
         use:portal
         use:onClickOutside
         use:registerPopoverContainer
@@ -142,7 +158,11 @@
 {/if}
 
 <style lang="scss">
-    div {
+    .target-watcher {
+        display: contents;
+    }
+
+    .popover-container {
         position: absolute;
         isolation: isolate;
         min-width: 10rem;
