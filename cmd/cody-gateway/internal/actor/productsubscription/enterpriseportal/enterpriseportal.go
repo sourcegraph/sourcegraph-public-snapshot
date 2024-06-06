@@ -28,6 +28,9 @@ func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.Token
 	} else {
 		opts = defaults.ExternalDialOptions(logger, creds)
 	}
+	logger.Info("dialing Enterprise Portal gRPC service",
+		log.String("host", addr.Host),
+		log.Bool("insecureTarget", insecureTarget))
 	conn, err := grpc.DialContext(ctx, addr.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to connect to Enterprise Portal gRPC service at %s", addr.String())
