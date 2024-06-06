@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
     import type { Action } from 'svelte/action'
+
     import { registerHotkey } from '$lib/Hotkey'
 
     import { popover, onClickOutside, portal } from './dom'
@@ -13,10 +14,10 @@
     export let hoverDelay: number = 500
     export let hoverCloseDelay: number = 150
     export let closeOnEsc: boolean = true
+    export let trigger: HTMLElement | null = null
+    export let target: HTMLElement | undefined = undefined
 
     let isOpen = false
-    let trigger: HTMLElement | null
-    let target: HTMLElement | undefined
     let popoverContainer: HTMLElement | null
     let delayTimer: ReturnType<typeof setTimeout>
 
