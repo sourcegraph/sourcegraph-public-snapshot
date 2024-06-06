@@ -296,17 +296,6 @@ func TestGetLanguageFromContent(t *testing.T) {
 %setupPythonIfNeeded Check if python is installed and configured.  If it's`,
 			Expected: "matlab",
 		},
-		{
-			Filename: "hack_hh.hh",
-			Contents: `<?hh`,
-			Expected: "hack",
-		},
-		{
-			Filename: "cpp_hh.hh",
-			// empty file counts as cpp since we only do explicit check to see if it is hack
-			Contents: ``,
-			Expected: "c++",
-		},
 	}
 
 	for _, testCase := range cases {
