@@ -196,7 +196,6 @@ var GitserverRepositoryService_ServiceDesc = grpc.ServiceDesc{
 const (
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
-	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
 	GitserverService_GetObject_FullMethodName                   = "/gitserver.v1.GitserverService/GetObject"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
@@ -235,8 +234,6 @@ const (
 type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
-	// Deprecated: Do not use.
-	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	// GetObject returns the object with the given OID in the given repository.
 	//
 	// If the object is not found, an error with a RevisionNotFoundPayload is
@@ -495,39 +492,6 @@ func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoReque
 	return out, nil
 }
 
-// Deprecated: Do not use.
-func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Exec_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &gitserverServiceExecClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type GitserverService_ExecClient interface {
-	Recv() (*ExecResponse, error)
-	grpc.ClientStream
-}
-
-type gitserverServiceExecClient struct {
-	grpc.ClientStream
-}
-
-func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
-	m := new(ExecResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *gitserverServiceClient) GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error) {
 	out := new(GetObjectResponse)
 	err := c.cc.Invoke(ctx, GitserverService_GetObject_FullMethodName, in, out, opts...)
@@ -556,7 +520,7 @@ func (c *gitserverServiceClient) ListGitolite(ctx context.Context, in *ListGitol
 }
 
 func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Search_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Search_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +552,7 @@ func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
 }
 
 func (c *gitserverServiceClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Archive_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Archive_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -710,7 +674,7 @@ func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseReq
 }
 
 func (c *gitserverServiceClient) Blame(ctx context.Context, in *BlameRequest, opts ...grpc.CallOption) (GitserverService_BlameClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_Blame_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Blame_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -751,7 +715,7 @@ func (c *gitserverServiceClient) DefaultBranch(ctx context.Context, in *DefaultB
 }
 
 func (c *gitserverServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (GitserverService_ReadFileClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ReadFile_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_ReadFile_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -801,7 +765,7 @@ func (c *gitserverServiceClient) ResolveRevision(ctx context.Context, in *Resolv
 }
 
 func (c *gitserverServiceClient) ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (GitserverService_ListRefsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_ListRefs_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[5], GitserverService_ListRefs_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -842,7 +806,7 @@ func (c *gitserverServiceClient) RevAtTime(ctx context.Context, in *RevAtTimeReq
 }
 
 func (c *gitserverServiceClient) RawDiff(ctx context.Context, in *RawDiffRequest, opts ...grpc.CallOption) (GitserverService_RawDiffClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_RawDiff_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[6], GitserverService_RawDiff_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -901,7 +865,7 @@ func (c *gitserverServiceClient) BehindAhead(ctx context.Context, in *BehindAhea
 }
 
 func (c *gitserverServiceClient) ChangedFiles(ctx context.Context, in *ChangedFilesRequest, opts ...grpc.CallOption) (GitserverService_ChangedFilesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ChangedFiles_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[7], GitserverService_ChangedFiles_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -942,7 +906,7 @@ func (c *gitserverServiceClient) Stat(ctx context.Context, in *StatRequest, opts
 }
 
 func (c *gitserverServiceClient) ReadDir(ctx context.Context, in *ReadDirRequest, opts ...grpc.CallOption) (GitserverService_ReadDirClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_ReadDir_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[8], GitserverService_ReadDir_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -974,7 +938,7 @@ func (x *gitserverServiceReadDirClient) Recv() (*ReadDirResponse, error) {
 }
 
 func (c *gitserverServiceClient) CommitLog(ctx context.Context, in *CommitLogRequest, opts ...grpc.CallOption) (GitserverService_CommitLogClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[10], GitserverService_CommitLog_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[9], GitserverService_CommitLog_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1011,8 +975,6 @@ func (x *gitserverServiceCommitLogClient) Recv() (*CommitLogResponse, error) {
 type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
-	// Deprecated: Do not use.
-	Exec(*ExecRequest, GitserverService_ExecServer) error
 	// GetObject returns the object with the given OID in the given repository.
 	//
 	// If the object is not found, an error with a RevisionNotFoundPayload is
@@ -1231,9 +1193,6 @@ func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(Gitserver
 func (UnimplementedGitserverServiceServer) DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DiskInfo not implemented")
 }
-func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
-	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
-}
 func (UnimplementedGitserverServiceServer) GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetObject not implemented")
 }
@@ -1379,27 +1338,6 @@ func _GitserverService_DiskInfo_Handler(srv interface{}, ctx context.Context, de
 		return srv.(GitserverServiceServer).DiskInfo(ctx, req.(*DiskInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
-}
-
-func _GitserverService_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ExecRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(GitserverServiceServer).Exec(m, &gitserverServiceExecServer{stream})
-}
-
-type GitserverService_ExecServer interface {
-	Send(*ExecResponse) error
-	grpc.ServerStream
-}
-
-type gitserverServiceExecServer struct {
-	grpc.ServerStream
-}
-
-func (x *gitserverServiceExecServer) Send(m *ExecResponse) error {
-	return x.ServerStream.SendMsg(m)
 }
 
 func _GitserverService_GetObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -2070,11 +2008,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "CreateCommitFromPatchBinary",
 			Handler:       _GitserverService_CreateCommitFromPatchBinary_Handler,
 			ClientStreams: true,
-		},
-		{
-			StreamName:    "Exec",
-			Handler:       _GitserverService_Exec_Handler,
-			ServerStreams: true,
 		},
 		{
 			StreamName:    "Search",
