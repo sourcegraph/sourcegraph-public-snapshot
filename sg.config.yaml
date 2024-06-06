@@ -412,6 +412,9 @@ commands:
       DOTCOM_INCLUDE_PRODUCTION_LICENSES: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
+      PGDSN: "user='sourcegraph' password='sourcegraph' host='localhost' port='5432' dbname='{{ .Database }}' search_path='public' application_name='enterprise-portal' client_encoding=UTF8"
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
     externalSecrets:
       ENTERPRISE_PORTAL_SAMS_CLIENT_ID:
         project: sourcegraph-local-dev

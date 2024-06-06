@@ -3587,6 +3587,20 @@ def go_dependencies():
         version = "v0.4.0",
     )
     go_repository(
+        name = "com_github_jinzhu_inflection",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/jinzhu/inflection",
+        sum = "h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=",
+        version = "v1.0.0",
+    )
+    go_repository(
+        name = "com_github_jinzhu_now",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/jinzhu/now",
+        sum = "h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=",
+        version = "v1.1.5",
+    )
+    go_repository(
         name = "com_github_jmespath_go_jmespath",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jmespath/go-jmespath",
@@ -5098,6 +5112,20 @@ def go_dependencies():
         importpath = "github.com/rainycape/unidecode",
         sum = "h1:ta7tUOvsPHVHGom5hKW5VXNc2xZIkfCKP8iaqOyYtUQ=",
         version = "v0.0.0-20150907023854-cb7f23ec59be",
+    )
+    go_repository(
+        name = "com_github_redis_go_redis_extra_rediscmd_v9",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/redis/go-redis/extra/rediscmd/v9",
+        sum = "h1:EaDatTxkdHG+U3Bk4EUr+DZ7fOGwTfezUiUJMaIcaho=",
+        version = "v9.0.5",
+    )
+    go_repository(
+        name = "com_github_redis_go_redis_extra_redisotel_v9",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/redis/go-redis/extra/redisotel/v9",
+        sum = "h1:EfpWLLCyXw8PSM2/XNJLjI3Pb27yVE+gIAfeqp8LUCc=",
+        version = "v9.0.5",
     )
     go_repository(
         name = "com_github_redis_go_redis_v9",
@@ -7433,6 +7461,34 @@ def go_dependencies():
         version = "v3.5.10",
     )
     go_repository(
+        name = "io_gorm_driver_postgres",
+        build_file_proto_mode = "disable_global",
+        importpath = "gorm.io/driver/postgres",
+        sum = "h1:8ptbNJTDbEmhdr62uReG5BGkdQyeasu/FZHxI0IMGnM=",
+        version = "v1.5.7",
+    )
+    go_repository(
+        name = "io_gorm_driver_sqlite",
+        build_file_proto_mode = "disable_global",
+        importpath = "gorm.io/driver/sqlite",
+        sum = "h1:zKYbzRCpBrT1bNijRnxLDJWPjVfImGEn0lSnUY5gZ+c=",
+        version = "v1.5.0",
+    )
+    go_repository(
+        name = "io_gorm_gorm",
+        build_file_proto_mode = "disable_global",
+        importpath = "gorm.io/gorm",
+        sum = "h1:9DShaph9qhkIYw7QF91I/ynrr4cOO2PZra2PFD7Mfeg=",
+        version = "v1.25.7-0.20240204074919-46816ad31dde",
+    )
+    go_repository(
+        name = "io_gorm_plugin_opentelemetry",
+        build_file_proto_mode = "disable_global",
+        importpath = "gorm.io/plugin/opentelemetry",
+        sum = "h1:7p0ocWELjSSRI7NCKPW2mVe6h43YPini99sNJcbsTuc=",
+        version = "v0.1.4",
+    )
+    go_repository(
         name = "io_k8s_api",
         build_file_proto_mode = "disable_global",
         importpath = "k8s.io/api",
@@ -7808,11 +7864,32 @@ def go_dependencies():
         version = "v0.49.0",
     )
     go_repository(
+        name = "io_opentelemetry_go_contrib_instrumentation_runtime",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/contrib/instrumentation/runtime",
+        sum = "h1:EbmAUG9hEAMXyfWEasIt2kmh/WmXUznUksChApTgBGc=",
+        version = "v0.42.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_contrib_propagators_b3",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/contrib/propagators/b3",
+        sum = "h1:ImOVvHnku8jijXqkwCSyYKRDt2YrnGXD4BbhcpfbfJo=",
+        version = "v1.17.0",
+    )
+    go_repository(
         name = "io_opentelemetry_go_contrib_propagators_jaeger",
         build_file_proto_mode = "disable_global",
         importpath = "go.opentelemetry.io/contrib/propagators/jaeger",
         sum = "h1:CKtIfwSgDvJmaWsZROcHzONZgmQdMYn9mVYWypOWT5o=",
         version = "v1.24.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_contrib_propagators_opencensus",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/contrib/propagators/opencensus",
+        sum = "h1:wQBFvTXNs/UcCiWEi0cadOGJ8LMxDSOWbNtldFS0VI4=",
+        version = "v0.42.0",
     )
     go_repository(
         name = "io_opentelemetry_go_contrib_propagators_ot",
@@ -7827,6 +7904,13 @@ def go_dependencies():
         importpath = "go.opentelemetry.io/otel",
         sum = "h1:0LAOdjNmQeSTzGBzduGe/rU4tZhMwL5rWgtp9Ku5Jfo=",
         version = "v1.24.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_otel_bridge_opencensus",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/otel/bridge/opencensus",
+        sum = "h1:YHivttTaDhbZIHuPlg1sWsy2P5gj57vzqPfkHItgbwQ=",
+        version = "v0.39.0",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_bridge_opentracing",
@@ -7846,8 +7930,22 @@ def go_dependencies():
         name = "io_opentelemetry_go_otel_exporters_otlp_internal_retry",
         build_file_proto_mode = "disable_global",
         importpath = "go.opentelemetry.io/otel/exporters/otlp/internal/retry",
-        sum = "h1:/fXHZHGvro6MVqV34fJzDhi7sHGpX3Ej/Qjmfn003ho=",
-        version = "v1.14.0",
+        sum = "h1:t4ZwRPU+emrcvM2e9DHd0Fsf0JTPVcbfa/BhTDF03d0=",
+        version = "v1.16.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_otel_exporters_otlp_otlpmetric",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/otel/exporters/otlp/otlpmetric",
+        sum = "h1:f6BwB2OACc3FCbYVznctQ9V6KK7Vq6CjmYXJ7DeSs4E=",
+        version = "v0.39.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_otel_exporters_otlp_otlpmetric_otlpmetricgrpc",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc",
+        sum = "h1:rm+Fizi7lTM2UefJ1TO347fSRcwmIsUAaZmYmIGBRAo=",
+        version = "v0.39.0",
     )
 
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
@@ -7894,6 +7992,13 @@ def go_dependencies():
         importpath = "go.opentelemetry.io/otel/exporters/prometheus",
         sum = "h1:I8WIFXR351FoLJYuloU4EgXbtNX2URfU/85pUPheIEQ=",
         version = "v0.46.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_otel_exporters_stdout_stdouttrace",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/otel/exporters/stdout/stdouttrace",
+        sum = "h1:2PunuO5SbkN5MhCbuHCd3tC6qrcaj+uDAkX/qBU5BAs=",
+        version = "v1.15.1",
     )
     go_repository(
         name = "io_opentelemetry_go_otel_metric",
