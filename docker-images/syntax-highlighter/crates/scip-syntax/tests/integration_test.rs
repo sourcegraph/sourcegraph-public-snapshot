@@ -140,7 +140,6 @@ fn java_workspace_indexing() {
 
     cmd.args(vec![
         "workspace",
-        "--dir",
         out_dir.to_str().unwrap(),
         "--language",
         "java",
