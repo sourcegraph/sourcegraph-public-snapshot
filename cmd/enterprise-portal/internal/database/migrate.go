@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -22,7 +23,7 @@ import (
 
 // maybeMigrate runs the auto-migration for the database when needed based on
 // the given version.
-func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) error {
+func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) (err error) {
 	ctx, span := databaseTracer.Start(
 		ctx,
 		"database.maybeMigrate",
@@ -30,7 +31,13 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 			attribute.String("currentVersion", currentVersion),
 		),
 	)
-	defer span.End()
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "migrate failed")
+		}
+		span.End()
+	}()
 
 	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, databaseName)
 	if err != nil {
@@ -69,6 +76,8 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		15*time.Second,
 		func() error {
 			versionKey := fmt.Sprintf("%s:db_version", databaseName)
+			span.AddEvent("lock.acquired")
+
 			if shouldSkipMigration(
 				redisClient.Get(context.Background(), versionKey).Val(),
 				currentVersion,
@@ -77,6 +86,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 					log.String("database", databaseName),
 					log.String("currentVersion", currentVersion),
 				)
+				span.SetAttributes(attribute.Bool("skipped", true))
 				return nil
 			}
 
