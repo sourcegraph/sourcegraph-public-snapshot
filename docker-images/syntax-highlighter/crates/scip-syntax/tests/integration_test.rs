@@ -1,9 +1,8 @@
-use std::io::Write;
-use std::process::Stdio;
 use std::{
     collections::{HashMap, HashSet},
+    io::Write,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use anyhow::{anyhow, Context};

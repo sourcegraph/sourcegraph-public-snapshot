@@ -1,6 +1,7 @@
+use std::{path::PathBuf, process};
+
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
-use std::{path::PathBuf, process};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

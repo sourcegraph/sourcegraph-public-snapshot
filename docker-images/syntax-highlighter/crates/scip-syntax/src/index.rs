@@ -1,6 +1,7 @@
-use std::env;
 use std::{
+    env,
     fs::File,
+    io::{self, prelude::*},
     path::{Path, PathBuf},
 };
 
@@ -8,7 +9,6 @@ use anyhow::{anyhow, bail, Context, Result};
 use clap::ValueEnum;
 use path_clean;
 use scip::{types::Document, write_message_to_file};
-use std::io::{self, prelude::*};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
 
