@@ -5,7 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use assert_cmd::{cargo::cargo_bin, prelude::*};
 use scip::types::Document;
 use scip_syntax::{
@@ -260,11 +260,11 @@ fn write_file_bytes(path: &PathBuf, contents: &[u8]) -> Result<()> {
     use std::io::Write;
 
     let Some(parent) = path.parent() else {
-        panic!("failed to find parent dir for {:?}", path)
+        bail!("failed to find parent dir for {}", path.display())
     };
 
     std::fs::create_dir_all(parent)
-        .with_context(|| anyhow!("Failed to create all parent folders for {:?}", path))?;
+        .with_context(|| anyhow!("Failed to create all parent folders for {}", path.display()))?;
 
     let output = std::fs::File::create(path)
         .with_context(|| anyhow!("Failed to open file {} for writing", path.to_str().unwrap()))?;
@@ -312,8 +312,7 @@ fn indexing_data() -> HashMap<PathBuf, String> {
 
 fn extract_paths(setup: &HashMap<PathBuf, String>) -> HashSet<String> {
     setup
-        .clone()
-        .into_keys()
+        .keys()
         .map(|pb| pb.to_str().unwrap().to_string())
         .collect()
 }
@@ -321,9 +320,8 @@ fn extract_paths(setup: &HashMap<PathBuf, String>) -> HashSet<String> {
 fn extract_indexed_paths(index: &scip::types::Index) -> HashSet<String> {
     index
         .documents
-        .clone()
-        .into_iter()
-        .map(|pb| pb.relative_path)
+        .iter()
+        .map(|pb| pb.relative_path.clone())
         .collect()
 }
 
@@ -335,7 +333,7 @@ fn snapshot_from_files(docs: &[Document], project_root: &Path) -> String {
     for doc in docs {
         let path = project_root.join(doc.relative_path.clone());
         let contents = std::fs::read_to_string(path.clone())
-            .with_context(|| anyhow!("Failed to read path {:?}", path.clone()))
+            .with_context(|| anyhow!("Failed to read path {}", path.display()))
             .unwrap();
 
         str.push_str(&format_snapshot_document(&doc, &contents));

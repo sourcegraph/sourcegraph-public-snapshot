@@ -84,16 +84,14 @@ pub fn index_command(
     let parser_id = ParserId::from_name(&language)
         .context(format!("No parser found for language {language}"))?;
 
-    let project_root = {
-        match index_mode {
-            IndexMode::Files { .. } => project_root,
-            IndexMode::TarArchive { .. } => project_root,
-            IndexMode::Workspace { ref location } => location.clone(),
-        }
-    };
-
     let cwd = env::current_dir().context("Failed to get the current working directory")?;
-    let absolute_project_root = make_absolute(&cwd, &project_root);
+    let absolute_project_root = make_absolute(
+        &cwd,
+        match &index_mode {
+            IndexMode::Workspace { location } => location,
+            _ => &project_root,
+        },
+    );
 
     let mut index = scip::types::Index {
         metadata: Some(scip::types::Metadata {
@@ -117,14 +115,10 @@ pub fn index_command(
         IndexMode::Files { list } => {
             let bar = create_progress_bar(list.len() as u64);
             for filename in list {
+                bar.set_message(filename.clone());
                 let filepath = make_absolute(&cwd, &PathBuf::from(filename));
-                bar.set_message(filepath.display().to_string());
-                index.documents.push(index_file(
-                    &filepath,
-                    parser_id,
-                    &absolute_project_root,
-                    &options,
-                )?);
+                let document = index_file(&filepath, parser_id, &absolute_project_root, &options)?;
+                index.documents.push(document);
                 bar.inc(1);
             }
 
@@ -158,22 +152,21 @@ pub fn index_command(
                 };
                 if extensions.contains(extension) {
                     bar.set_message(entry.path().display().to_string());
-                    index.documents.push(index_file(
+                    let document = index_file(
                         &entry.into_path(),
                         parser_id,
                         &absolute_project_root,
                         &options,
-                    )?);
+                    )?;
+                    index.documents.push(document);
                     bar.tick();
                 }
             }
         }
     }
 
-    eprintln!();
-
     eprintln!(
-        "Writing index for {} documents into {}",
+        "\nWriting index for {} documents into {}",
         index.documents.len(),
         out.display()
     );
@@ -189,7 +182,7 @@ pub fn index_command(
             .write_summary(&mut std::io::stdout(), Default::default())?
     }
 
-    write_message_to_file(out.clone(), index)
+    write_message_to_file(&out, index)
         .map_err(|err| anyhow!("{err:?}"))
         .with_context(|| format!("When writing index to {}", out.display()))
 }
