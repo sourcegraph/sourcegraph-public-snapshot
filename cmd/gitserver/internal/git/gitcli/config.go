@@ -24,7 +24,7 @@ func (g *gitCLIBackend) Get(ctx context.Context, key string) (string, error) {
 	out, err := io.ReadAll(r)
 	if err != nil {
 		// Exit code 1 means the key is not set.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 1 {
 			return "", nil
 		}
@@ -63,7 +63,7 @@ func (g *gitCLIBackend) Unset(ctx context.Context, key string) error {
 	_, err = io.Copy(io.Discard, r)
 	if err != nil {
 		// Exit code 5 means the key is not set.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 5 {
 			return nil
 		}

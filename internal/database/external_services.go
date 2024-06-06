@@ -1760,7 +1760,7 @@ func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, 
 	}
 	// TODO: Use this method for the OOB migrator as well.
 	rateLimit, isDefaultRateLimit, err := extsvc.ExtractRateLimit(config, kind)
-	if err != nil && !errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
+	if err != nil && !errors.HasType[extsvc.ErrRateLimitUnsupported](err) {
 		return 0, err
 	}
 	ch := &types.CodeHost{

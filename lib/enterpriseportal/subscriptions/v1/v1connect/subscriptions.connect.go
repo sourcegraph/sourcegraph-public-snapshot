@@ -42,6 +42,12 @@ const (
 	// SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure is the fully-qualified name of
 	// the SubscriptionsService's ListEnterpriseSubscriptionLicenses RPC.
 	SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
+	// SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure is the fully-qualified name of the
+	// SubscriptionsService's UpdateEnterpriseSubscription RPC.
+	SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	// SubscriptionsServiceUpdateSubscriptionMembershipProcedure is the fully-qualified name of the
+	// SubscriptionsService's UpdateSubscriptionMembership RPC.
+	SubscriptionsServiceUpdateSubscriptionMembershipProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -50,6 +56,8 @@ var (
 	subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor          = subscriptionsServiceServiceDescriptor.Methods().ByName("GetEnterpriseSubscription")
 	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
 	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
+	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
+	subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateSubscriptionMembership")
 )
 
 // SubscriptionsServiceClient is a client for the
@@ -66,6 +74,12 @@ type SubscriptionsServiceClient interface {
 	// Each subscription owns a collection of licenses, typically a series of
 	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
+	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
+	// Only properties specified by the update_mask are applied.
+	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// UpdateSubscriptionMembership updates a subscription membership. It creates
+	// a new one if it does not exist and allow_missing is set to true.
+	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
 }
 
 // NewSubscriptionsServiceClient constructs a client for the
@@ -100,6 +114,20 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		updateEnterpriseSubscription: connect.NewClient[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse](
+			httpClient,
+			baseURL+SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure,
+			connect.WithSchema(subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
+		updateSubscriptionMembership: connect.NewClient[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse](
+			httpClient,
+			baseURL+SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
+			connect.WithSchema(subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -108,6 +136,8 @@ type subscriptionsServiceClient struct {
 	getEnterpriseSubscription          *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.GetEnterpriseSubscriptionResponse]
 	listEnterpriseSubscriptions        *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
 	listEnterpriseSubscriptionLicenses *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
+	updateEnterpriseSubscription       *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
+	updateSubscriptionMembership       *connect.Client[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse]
 }
 
 // GetEnterpriseSubscription calls
@@ -128,6 +158,18 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 	return c.listEnterpriseSubscriptionLicenses.CallUnary(ctx, req)
 }
 
+// UpdateEnterpriseSubscription calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscription.
+func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error) {
+	return c.updateEnterpriseSubscription.CallUnary(ctx, req)
+}
+
+// UpdateSubscriptionMembership calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateSubscriptionMembership.
+func (c *subscriptionsServiceClient) UpdateSubscriptionMembership(ctx context.Context, req *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
+	return c.updateSubscriptionMembership.CallUnary(ctx, req)
+}
+
 // SubscriptionsServiceHandler is an implementation of the
 // enterpriseportal.subscriptions.v1.SubscriptionsService service.
 type SubscriptionsServiceHandler interface {
@@ -142,6 +184,12 @@ type SubscriptionsServiceHandler interface {
 	// Each subscription owns a collection of licenses, typically a series of
 	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
+	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
+	// Only properties specified by the update_mask are applied.
+	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// UpdateSubscriptionMembership updates a subscription membership. It creates
+	// a new one if it does not exist and allow_missing is set to true.
+	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
 }
 
 // NewSubscriptionsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -171,6 +219,20 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionsServiceUpdateEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure,
+		svc.UpdateEnterpriseSubscription,
+		connect.WithSchema(subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
+	subscriptionsServiceUpdateSubscriptionMembershipHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
+		svc.UpdateSubscriptionMembership,
+		connect.WithSchema(subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/enterpriseportal.subscriptions.v1.SubscriptionsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SubscriptionsServiceGetEnterpriseSubscriptionProcedure:
@@ -179,6 +241,10 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 			subscriptionsServiceListEnterpriseSubscriptionsHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceListEnterpriseSubscriptionLicensesProcedure:
 			subscriptionsServiceListEnterpriseSubscriptionLicensesHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure:
+			subscriptionsServiceUpdateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceUpdateSubscriptionMembershipProcedure:
+			subscriptionsServiceUpdateSubscriptionMembershipHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -198,4 +264,12 @@ func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptions(cont
 
 func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.ListEnterpriseSubscriptionLicenses is not implemented"))
+}
+
+func (UnimplementedSubscriptionsServiceHandler) UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscription is not implemented"))
+}
+
+func (UnimplementedSubscriptionsServiceHandler) UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateSubscriptionMembership is not implemented"))
 }

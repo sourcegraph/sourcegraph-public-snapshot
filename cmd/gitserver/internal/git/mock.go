@@ -570,9 +570,6 @@ type MockGitBackend struct {
 	// ContributorCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method ContributorCounts.
 	ContributorCountsFunc *GitBackendContributorCountsFunc
-	// ExecFunc is an instance of a mock function object controlling the
-	// behavior of the method Exec.
-	ExecFunc *GitBackendExecFunc
 	// FirstEverCommitFunc is an instance of a mock function object
 	// controlling the behavior of the method FirstEverCommit.
 	FirstEverCommitFunc *GitBackendFirstEverCommitFunc
@@ -656,11 +653,6 @@ func NewMockGitBackend() *MockGitBackend {
 		},
 		ContributorCountsFunc: &GitBackendContributorCountsFunc{
 			defaultHook: func(context.Context, ContributorCountsOpts) (r0 []*gitdomain.ContributorCount, r1 error) {
-				return
-			},
-		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -781,11 +773,6 @@ func NewStrictMockGitBackend() *MockGitBackend {
 				panic("unexpected invocation of MockGitBackend.ContributorCounts")
 			},
 		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: func(context.Context, ...string) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockGitBackend.Exec")
-			},
-		},
 		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
 			defaultHook: func(context.Context) (api.CommitID, error) {
 				panic("unexpected invocation of MockGitBackend.FirstEverCommit")
@@ -888,9 +875,6 @@ func NewMockGitBackendFrom(i GitBackend) *MockGitBackend {
 		},
 		ContributorCountsFunc: &GitBackendContributorCountsFunc{
 			defaultHook: i.ContributorCounts,
-		},
-		ExecFunc: &GitBackendExecFunc{
-			defaultHook: i.Exec,
 		},
 		FirstEverCommitFunc: &GitBackendFirstEverCommitFunc{
 			defaultHook: i.FirstEverCommit,
@@ -1701,120 +1685,6 @@ func (c GitBackendContributorCountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitBackendContributorCountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitBackendExecFunc describes the behavior when the Exec method of the
-// parent MockGitBackend instance is invoked.
-type GitBackendExecFunc struct {
-	defaultHook func(context.Context, ...string) (io.ReadCloser, error)
-	hooks       []func(context.Context, ...string) (io.ReadCloser, error)
-	history     []GitBackendExecFuncCall
-	mutex       sync.Mutex
-}
-
-// Exec delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitBackend) Exec(v0 context.Context, v1 ...string) (io.ReadCloser, error) {
-	r0, r1 := m.ExecFunc.nextHook()(v0, v1...)
-	m.ExecFunc.appendCall(GitBackendExecFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Exec method of the
-// parent MockGitBackend instance is invoked and the hook queue is empty.
-func (f *GitBackendExecFunc) SetDefaultHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Exec method of the parent MockGitBackend instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *GitBackendExecFunc) PushHook(hook func(context.Context, ...string) (io.ReadCloser, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitBackendExecFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBackendExecFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, ...string) (io.ReadCloser, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitBackendExecFunc) nextHook() func(context.Context, ...string) (io.ReadCloser, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitBackendExecFunc) appendCall(r0 GitBackendExecFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitBackendExecFuncCall objects describing
-// the invocations of this function.
-func (f *GitBackendExecFunc) History() []GitBackendExecFuncCall {
-	f.mutex.Lock()
-	history := make([]GitBackendExecFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitBackendExecFuncCall is an object that describes an invocation of
-// method Exec on an instance of MockGitBackend.
-type GitBackendExecFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 io.ReadCloser
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c GitBackendExecFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitBackendExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
