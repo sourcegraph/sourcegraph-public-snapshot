@@ -28,9 +28,10 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
             'Sourcegraph GraphQL Client has been invalidated due to instance URL change. Restart VS Code to fix.'
         )
     }
-    const session = await authentication.getSession(endpointSetting(), [], { createIfNone: false })
     const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
-    const accessToken = overrideAccessToken || session?.accessToken
+    const accessToken =
+        overrideAccessToken ||
+        (await authentication.getSession(sourcegraphURL, [], { createIfNone: false }))?.accessToken
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     const customHeaders = endpointRequestHeadersSetting()
