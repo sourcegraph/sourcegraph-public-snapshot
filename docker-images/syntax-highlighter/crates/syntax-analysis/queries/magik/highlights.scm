@@ -65,8 +65,6 @@
 (unary_operator
     operator: _ @operator)
 
-(class _) @type
-
 (invoke
   receiver: (variable) @function.builtin
   (#eq? @function.builtin "def_slotted_exemplar"))
