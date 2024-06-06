@@ -290,7 +290,7 @@ promoteToPublic:
             - [Release post](https://sourcegraph.com/blog/release/${month_name}-${current_year})
           EndOfText
 
-          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --generate-notes --notes "${releasepost}"
+          bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --notes "${releasepost}"
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
