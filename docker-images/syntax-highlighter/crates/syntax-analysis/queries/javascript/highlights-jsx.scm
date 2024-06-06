@@ -6,7 +6,7 @@
   ">" @tag.delimiter)
 
 ; We need to match the tag characters individually since the version of the grammar we are using (v0.20.0) defines them that way
-; when we update to the newsest we can remove this
+; when we update to the newest version we can remove this
 (jsx_closing_element
   ["<" "/"] @tag.delimiter
   name: (identifier) @tag
