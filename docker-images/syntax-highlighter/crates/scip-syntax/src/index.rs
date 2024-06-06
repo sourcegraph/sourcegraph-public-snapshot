@@ -193,13 +193,20 @@ fn index_file(
     let contents = std::fs::read_to_string(filepath)
         .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
 
-    let filepath = if filepath.is_absolute() {
-        filepath.to_owned()
-    } else {
-        filepath
-            .canonicalize()
-            .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?
-    };
+    // TODO(Anton&Christoph): revise this logic. currently uncommented version is the only one that
+    // passes tests on MacOS
+    //let filepath = if filepath.is_absolute() {
+    //    filepath.to_owned()
+    //} else {
+    //    filepath
+    //        .canonicalize()
+    //        .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?
+    //};
+    //
+    let filepath = filepath
+        .canonicalize()
+        .with_context(|| format!("Failed to canonicalize file path: {}", filepath.display()))?;
+    // end TODO
 
     let relative_path = filepath
         .strip_prefix(canonical_project_root.clone())
