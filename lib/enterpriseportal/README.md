@@ -2,6 +2,8 @@
 
 `lib/enterpriseportal` defines the gRPC services implemented by Enterprise Portal. Core functionality are defined in `subscriptions/v1`, with extensions defined as separate services implemented by Enterprise Portal, such as `codyaccess/v1`.
 
+All RPCs follow the API design guidelines at https://google.aip.dev/, exceptions are otherwise noted.
+
 To regenerate all relevant bindings:
 
 ```sh

@@ -24,7 +24,7 @@ func (g *gitCLIBackend) MergeBase(ctx context.Context, baseRevspec, headRevspec 
 	stdout, err := io.ReadAll(out)
 	if err != nil {
 		// Exit code 1 and empty output most likely means that no common merge-base was found.
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) {
 			if e.ExitStatus == 1 {
 				if len(e.Stderr) == 0 {

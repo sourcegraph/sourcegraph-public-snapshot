@@ -346,3 +346,18 @@ func sortSlice[S ~[]E, E cmp.Ordered](s S) S {
 	slices.Sort(s)
 	return s
 }
+
+// maybeAddSuggestion adds suggestions to errors that are known to be related to
+// problems that can be resolved by referring to the service Notion page. If
+// the service doesn't have one, or if the error doesn't match any known patterns,
+// the error is returned as-is.
+func maybeAddSuggestion(svc spec.ServiceSpec, err error) error {
+	if svc.NotionPageID == nil {
+		return err
+	}
+	if strings.Contains(err.Error(), "PermissionDenied") {
+		return errors.Wrapf(err, "possible permissions error, ensure you have the prerequisite Entitle grants mentioned in %s",
+			svc.GetHandbookPageURL())
+	}
+	return err
+}

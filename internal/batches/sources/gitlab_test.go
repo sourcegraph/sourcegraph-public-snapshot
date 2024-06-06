@@ -1374,7 +1374,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 				src, err = src.WithAuthenticator(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
+				} else if !errors.HasType[UnsupportedAuthenticatorError](err) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
