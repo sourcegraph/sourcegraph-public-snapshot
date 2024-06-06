@@ -223,8 +223,9 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions contains the member with given SAMS
     // account ID.
     string sams_account_id = 1;
-    // Return only product subscriptions contains the member with the given role.
-    string role = 2;
+    // Return only product subscriptions contains the member with the given permission,
+    // e.g. "cody_analytics::analytics::read".
+    string permission = 2;
   }
 }
 
@@ -284,8 +285,8 @@ message EnterpriseSubscriptionMembership {
   string instance_domain = 2;
   // The SAMS account ID of the member.
   string member_sams_account_id = 3;
-  // The permissions of the member, e.g. "cody_analytics::analytics::read".
-  repeated string member_permissions = 4;
+  // The roles of the member, e.g. "cody_analytics::analytics".
+  repeated string member_roles = 4;
 }
 
 message UpdateSubscriptionMembershipRequest {
