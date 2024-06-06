@@ -33,7 +33,7 @@ Please write a paragraph of documentation for each high-level class, struct, fun
 Be concise, write no more than a few sentences for each entry.
 Return your response in text format. Each entry name should be followed by a newline, then its documentation.
 Respond with nothing else, only the entry names and the documentation. Code: ` +
-		"````" + *input + "```"
+		"```\n" + *input + "\n```"
 
 	resp, err := c.completionsClient.Complete(c.ctx, types.CompletionsFeatureChat, types.CompletionsVersionLegacy,
 		types.CompletionRequestParameters{

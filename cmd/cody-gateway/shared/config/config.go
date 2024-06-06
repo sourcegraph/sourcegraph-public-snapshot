@@ -297,7 +297,15 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Google"))
 	}
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphSTMultiQA), string(embeddings.ModelNameSourcegraphMetadataGen)}, ","), "The models allowed for embeddings generation."))
+	defaultEmbeddingModels := strings.Join([]string{
+		string(embeddings.ModelNameOpenAIAda),
+		string(embeddings.ModelNameSourcegraphSTMultiQA),
+		string(embeddings.ModelNameSourcegraphMetadataGen),
+	}, ",")
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get(
+		"CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS",
+		defaultEmbeddingModels,
+		"The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
