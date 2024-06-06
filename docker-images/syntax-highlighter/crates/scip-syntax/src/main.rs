@@ -47,7 +47,6 @@ enum IndexCommand {
         /// and files will be discovered according to
         /// configured extensions for the selected language
         /// Has to be absolute path.
-        #[arg(long)]
         dir: String,
 
         #[command(flatten)]
@@ -138,7 +137,7 @@ pub fn main() -> anyhow::Result<()> {
             let result = match index1.index_command {
                 IndexCommand::Files { filenames, options } => {
                     if filenames.is_empty() {
-                        eprintln!("either specify --workspace or provide a list of files");
+                        eprintln!("List of files cannot be empty");
                         process::exit(1)
                     }
                     run_index_command(options, IndexMode::Files { list: filenames })
