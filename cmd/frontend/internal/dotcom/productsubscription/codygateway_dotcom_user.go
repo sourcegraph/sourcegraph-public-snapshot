@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -226,11 +225,6 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 		}
 	}
 
-	// Apply override for testing if set
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		limit = 1
-	}
-
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
 		Limit:           limit,
@@ -242,16 +236,6 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
-
-	// Apply override for testing if set.
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		return licensing.CodyGatewayRateLimit{
-			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true),
-			Limit:           1,
-			IntervalSeconds: math.MaxInt32,
-		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
-	}
 
 	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
