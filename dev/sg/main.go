@@ -312,6 +312,7 @@ var sg = &cli.App{
 		release.Command,
 		updateCommand,
 		versionCommand,
+		genGatewayAccessTokenCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		interrupt.Wait()
