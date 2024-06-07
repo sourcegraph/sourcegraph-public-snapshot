@@ -62,10 +62,7 @@ func (r *Reconciler) reconcilePrometheusDeployment(ctx context.Context, sg *conf
 	name := "prometheus"
 	cfg := sg.Spec.Prometheus
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

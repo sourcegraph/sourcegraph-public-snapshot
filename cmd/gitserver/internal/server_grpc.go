@@ -95,6 +95,15 @@ func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 		return status.New(codes.InvalidArgument, "must send metadata event first").Err()
 	}
 
+	if metadata.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(metadata.GetRepo())
+	if err := gs.checkRepoExists(s.Context(), repoName); err != nil {
+		return err
+	}
+
 	patchReader := streamio.NewReader(func() ([]byte, error) {
 		msg, err := s.Recv()
 		if err != nil {
@@ -192,7 +201,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -673,7 +681,6 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -720,7 +727,6 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 			return nil, s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -802,7 +808,6 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -848,7 +853,6 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	refName, err := backend.SymbolicRefHead(ctx, req.GetShortRef())
 	if err != nil {
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -931,7 +935,6 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -993,7 +996,6 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -1083,7 +1085,6 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 	it, err := backend.ListRefs(ss.Context(), opt)
 	if err != nil {
 		gs.svc.LogIfCorrupt(ss.Context(), repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 
@@ -1190,7 +1191,6 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -1243,7 +1243,6 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 

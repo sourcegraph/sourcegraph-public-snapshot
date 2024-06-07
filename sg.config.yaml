@@ -404,6 +404,7 @@ commands:
 
   enterprise-portal:
     cmd: |
+      export PGDSN="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/{{ .Database }}?sslmode=$PGSSLMODE"
       # Connect to local development database, with the assumption that it will
       # have dotcom database tables.
       export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
@@ -423,6 +424,8 @@ commands:
       DOTCOM_INCLUDE_PRODUCTION_LICENSES: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
     externalSecrets:
       ENTERPRISE_PORTAL_SAMS_CLIENT_ID:
         project: sourcegraph-local-dev

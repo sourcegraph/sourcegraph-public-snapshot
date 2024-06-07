@@ -46,7 +46,7 @@ resources:
           name: blobstore
         spec:
           containers:
-            - image: index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa
+            - image: index.docker.io/sourcegraph/blobstore:5.3.9104
               imagePullPolicy: IfNotPresent
               name: blobstore
               ports:

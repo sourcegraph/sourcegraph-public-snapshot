@@ -44,9 +44,9 @@ var deployEphemeralCommand = cli.Command{
 func deployUpgradeSuggestion(name, version string) string {
 	var text = "You might want to try one of the following:\n" +
 		"- Create a new deployment with a different name by running\n" +
-		"\n```sg cloud deploy --name <new-name>```\n\n" +
+		"\n```sg cloud ephemeral deploy --name <new-name>```\n\n" +
 		"- Upgrade the existing deployment with the new version once the build completes by running\n" +
-		"\n```sg cloud upgrade --name \"%s\" --version \"%s\"```\n"
+		"\n```sg cloud ephemeral upgrade --name \"%s\" --version \"%s\"```\n"
 	return fmt.Sprintf(text, name, version)
 }
 
@@ -136,7 +136,7 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	}
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if branch is out of sync with remote branch"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync
@@ -150,7 +150,7 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
 	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to trigger build"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to trigger build"))
 		return nil, err
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
@@ -166,10 +166,10 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	}
 	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Checking if version %q exists in Cloud ephemeral registry", version))
 	if images, err := ar.FindDockerImageExact(ctx, "gitserver", version); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if version %q exists in Cloud ephemeral registry", version))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if version %q exists in Cloud ephemeral registry", version))
 		return err
 	} else if len(images) == 0 {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "no version %q found in Cloud ephemeral registry!", version))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "No version %q found in Cloud ephemeral registry!", version))
 		return errors.Newf("no image with tag %q found", version)
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))

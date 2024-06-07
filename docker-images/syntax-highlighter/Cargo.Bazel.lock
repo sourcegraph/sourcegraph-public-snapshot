@@ -1,5 +1,5 @@
 {
-  "checksum": "3cd06aa5fd5108cee2e6e19b9e6809923b6c23e0bd51d36717b4c016dd136a8c",
+  "checksum": "af874a7a007e7b8e861e3203be252436ede369e33b1819397b3428b27f7df960",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -13347,6 +13347,10 @@
               "target": "tree_sitter_go"
             },
             {
+              "id": "tree-sitter-hack 0.0.4",
+              "target": "tree_sitter_hack"
+            },
+            {
               "id": "tree-sitter-java 0.20.2",
               "target": "tree_sitter_java"
             },
@@ -13361,6 +13365,10 @@
             {
               "id": "tree-sitter-kotlin 0.2.11",
               "target": "tree_sitter_kotlin"
+            },
+            {
+              "id": "tree-sitter-magik 0.0.1",
+              "target": "tree_sitter_magik"
             },
             {
               "id": "tree-sitter-matlab 1.0.2",
@@ -13754,6 +13762,74 @@
       },
       "license": "MIT"
     },
+    "tree-sitter-hack 0.0.4": {
+      "name": "tree-sitter-hack",
+      "version": "0.0.4",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/slackhq/tree-sitter-hack",
+          "commitish": {
+            "Rev": "fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_hack",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_hack",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-hack 0.0.4",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.4"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.83",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
     "tree-sitter-highlight 0.20.1": {
       "name": "tree-sitter-highlight",
       "version": "0.20.1",
@@ -14052,6 +14128,74 @@
         },
         "edition": "2018",
         "version": "0.2.11"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.83",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-magik 0.0.1": {
+      "name": "tree-sitter-magik",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/sourcegraph/tree-sitter-magik",
+          "commitish": {
+            "Rev": "dfabbd4e70ff311939cf48fdf90d340f07758d37"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_magik",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_magik",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-magik 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -18568,11 +18712,13 @@
     "tree-sitter-cpp 0.20.3",
     "tree-sitter-dart 0.0.1",
     "tree-sitter-go 0.20.0",
+    "tree-sitter-hack 0.0.4",
     "tree-sitter-highlight 0.20.1",
     "tree-sitter-java 0.20.2",
     "tree-sitter-javascript 0.20.0",
     "tree-sitter-jsonnet 0.0.1",
     "tree-sitter-kotlin 0.2.11",
+    "tree-sitter-magik 0.0.1",
     "tree-sitter-matlab 1.0.2",
     "tree-sitter-nickel 0.0.1",
     "tree-sitter-perl 0.0.1",

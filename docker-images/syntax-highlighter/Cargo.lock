@@ -2459,10 +2459,12 @@ dependencies = [
  "tree-sitter-cpp",
  "tree-sitter-dart",
  "tree-sitter-go",
+ "tree-sitter-hack",
  "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-kotlin",
+ "tree-sitter-magik",
  "tree-sitter-matlab",
  "tree-sitter-nickel",
  "tree-sitter-perl",
@@ -2528,6 +2530,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-hack"
+version = "0.0.4"
+source = "git+https://github.com/slackhq/tree-sitter-hack?rev=fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2#fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
 name = "tree-sitter-highlight"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2571,6 +2582,15 @@ dependencies = [
 name = "tree-sitter-kotlin"
 version = "0.2.11"
 source = "git+https://github.com/fwcd/tree-sitter-kotlin?rev=100d79fd96b56a1b99099a8d2f3c114b8687acfb#100d79fd96b56a1b99099a8d2f3c114b8687acfb"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-magik"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-magik?rev=dfabbd4e70ff311939cf48fdf90d340f07758d37#dfabbd4e70ff311939cf48fdf90d340f07758d37"
 dependencies = [
  "cc",
  "tree-sitter",

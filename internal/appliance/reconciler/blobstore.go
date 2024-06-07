@@ -69,7 +69,7 @@ func (r *Reconciler) reconcileBlobstoreServices(ctx context.Context, sg *config.
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &s, &corev1.Service{}, sg, owner)
 }
 
-func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error) {
+func buildBlobstoreDeployment(sg *config.Sourcegraph) appsv1.Deployment {
 	name := "blobstore"
 
 	containerPorts := []corev1.ContainerPort{{
@@ -88,10 +88,7 @@ func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error)
 		},
 	}
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	defaultContainer := container.NewContainer(name, sg.Spec.Blobstore, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -137,13 +134,10 @@ func buildBlobstoreDeployment(sg *config.Sourcegraph) (appsv1.Deployment, error)
 	)
 	defaultDeployment.Spec.Template = podTemplate.Template
 
-	return defaultDeployment, nil
+	return defaultDeployment
 }
 
 func (r *Reconciler) reconcileBlobstoreDeployments(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	d, err := buildBlobstoreDeployment(sg)
-	if err != nil {
-		return err
-	}
+	d := buildBlobstoreDeployment(sg)
 	return reconcileObject(ctx, r, sg.Spec.Blobstore, &d, &appsv1.Deployment{}, sg, owner)
 }
