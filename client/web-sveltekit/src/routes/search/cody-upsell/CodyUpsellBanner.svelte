@@ -19,9 +19,8 @@
 
 <style lang="scss">
     section {
+        isolation: isolate;
         padding: 1.75rem 2.5rem;
-        max-width: 60rem;
-        border-radius: 0.5rem;
         display: grid;
         grid-template-columns: 1fr 1.5fr;
         gap: 1rem;
@@ -40,15 +39,12 @@
             }
 
             .title {
-                color: var(--text-title);
                 font-size: 1.5rem;
                 font-weight: 500;
                 margin-bottom: 0.75rem;
             }
 
             .description {
-                color: var(--text-body);
-                font-size: 0.9375rem;
                 margin-bottom: 1.25rem;
             }
         }

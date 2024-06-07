@@ -80,6 +80,7 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        z-index: 1;
     }
 
     img.logo {
