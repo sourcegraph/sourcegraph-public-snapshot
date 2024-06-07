@@ -47,6 +47,7 @@ type EmbeddingsRequest struct {
 	// Input is the list of strings to generate embeddings for.
 	Input []string `json:"input"`
 	// IsQuery is true if the request is used for querying, false if it used for indexing.
+	// TODO: Refactor this to use an enum to be more descriptive. This will require updating callers in bfg/embeddings.
 	IsQuery bool `json:"isQuery"`
 }
 
