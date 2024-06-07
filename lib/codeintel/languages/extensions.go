@@ -11,7 +11,7 @@ import (
 // It supports languages that are missing in go-enry
 func GetLanguageByAlias(alias string) (lang string, ok bool) {
 	normalizedAlias := strings.ToLower(alias)
-	if lang, ok = unsupportedByLinguistAliasMap[normalizedAlias]; ok {
+	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
 		return lang, true
 	}
 
@@ -21,7 +21,7 @@ func GetLanguageByAlias(alias string) (lang string, ok bool) {
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
 // It supports languages that are missing in go-enry
 func GetLanguageExtensions(alias string) []string {
-	if lang, ok := unsupportedByLinguistNameToExtensionMap[alias]; ok {
+	if lang, ok := unsupportedByEnryNameToExtensionMap[alias]; ok {
 		return []string{lang}
 	}
 
@@ -39,7 +39,7 @@ func getLanguagesByExtension(path string) (candidates []string, isLikelyBinaryFi
 	if ext == "" {
 		return nil, false
 	}
-	if lang, ok := unsupportedByLinguistExtensionToNameMap[ext]; ok {
+	if lang, ok := unsupportedByEnryExtensionToNameMap[ext]; ok {
 		return []string{lang}, false
 	}
 	if _, ok := commonBinaryFileExtensions[ext[1:]]; ok {
@@ -84,16 +84,16 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	// for other variants of YAML, hence only 'YAML' is picked by enry.
 }
 
-var unsupportedByLinguistExtensionToNameMap = map[string]string{
+var unsupportedByEnryExtensionToNameMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
 	".pkl": "Pkl",
 	// Magik Language
 	".magik": "Magik",
 }
 
-var unsupportedByLinguistNameToExtensionMap = reverseMap(unsupportedByLinguistExtensionToNameMap)
+var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
 
-var unsupportedByLinguistAliasMap = map[string]string{
+var unsupportedByEnryAliasMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
 	"pkl": "Pkl",
 	// Magik Language

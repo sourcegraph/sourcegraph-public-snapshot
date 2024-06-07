@@ -1223,6 +1223,54 @@ func TestNewPlanJob(t *testing.T) {
             NOOP))))))
 `),
 		},
+
+		// This test shows that we can handle languages not in Linguist
+		{
+			query:      `context:global repo:sourcegraph/.* lang:magik`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeKeyword,
+			want: autogold.Expect(`
+(LOG
+  (ALERT
+    (features . error decoding features)
+    (protocol . Streaming)
+    (onSourcegraphDotCom . true)
+    (query . )
+    (originalQuery . )
+    (patternType . keyword)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 10000)
+        (PARALLEL
+          (REPOPAGER
+            (containsRefGlobs . false)
+            (repoOpts.repoFilters . [sourcegraph/.*])
+            (repoOpts.searchContextSpec . global)
+            (PARTIALREPOS
+              (ZOEKTREPOSUBSETTEXTSEARCH
+                (fileMatchLimit . 10000)
+                (select . )
+                (zoektQueryRegexps . [(?i)(?im:\.MAGIK$)])
+                (query . file_regex:"(?i:\\.MAGIK)(?m:$)")
+                (type . text))))
+          (REPOPAGER
+            (containsRefGlobs . false)
+            (repoOpts.repoFilters . [sourcegraph/.*])
+            (repoOpts.searchContextSpec . global)
+            (PARTIALREPOS
+              (SEARCHERTEXTSEARCH
+                (useFullDeadline . true)
+                (patternInfo . TextPatternInfo{//,filematchlimit:10000,lang:magik,f:"(?i)\\.magik$"})
+                (numRepos . 0)
+                (pathRegexps . [(?i)\.magik$])
+                (indexed . false))))
+          (REPOSCOMPUTEEXCLUDED
+            (repoOpts.repoFilters . [sourcegraph/.*])
+            (repoOpts.searchContextSpec . global))
+          NOOP)))))
+`),
+		},
 	}
 
 	for _, tc := range cases {
@@ -1461,6 +1509,13 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		input:  `repo:go-diff type:symbol HunkNoChunksize lang:Julia -lang:R`,
 		feat:   search.Features{ContentBasedLangFilters: true},
 		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"","IncludeLangs":["Julia"],"ExcludeLangs":["R"]}`),
+	}, {
+		input:  `repo:go-diff type:symbol HunkNoChunksize lang:magik`,
+		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":["(?i)\\.magik$"],"ExcludePattern":"","IncludeLangs":null,"ExcludeLangs":null}`),
+	}, {
+		input:  `repo:go-diff type:symbol HunkNoChunksize lang:magik`,
+		feat:   search.Features{ContentBasedLangFilters: true},
+		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"","IncludeLangs":["Magik"],"ExcludeLangs":null}`),
 	}}
 
 	for _, tc := range cases {
