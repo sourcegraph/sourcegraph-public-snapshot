@@ -307,6 +307,24 @@ func TestGetLanguageFromContent(t *testing.T) {
 			Contents: ``,
 			Expected: "c++",
 		},
+		{
+			Filename: "cpp_hh.hh",
+			Contents: `#pragma once`,
+			Expected: "c++",
+		},
+		{
+			Filename: "cpp_hh.hh",
+			Contents: `#help_index "Bit"`,
+			Expected: "c++",
+		}, {
+			Filename: "cpp_hh.hh",
+			Contents: `/*
+* I am a comment
+*/
+#ifndef __CPU_O3_CPU_HH__
+#define __CPU_O3_CPU_HH__`,
+			Expected: "c++",
+		},
 	}
 
 	for _, testCase := range cases {
@@ -341,6 +359,21 @@ func TestGetLanguageFromPath(t *testing.T) {
 		{
 			Filename: "react.tsx",
 			Expected: "tsx",
+		},
+		{
+			Filename: "hack.hack",
+			Expected: "hack",
+		},
+		{
+			Filename: "cpp.cpp",
+			Expected: "c++",
+		},
+
+		// This resolves to C++ and not hack since
+		// it does not find the <?hh to indicate hack
+		{
+			Filename: "file.hh",
+			Expected: "c++",
 		},
 	}
 
