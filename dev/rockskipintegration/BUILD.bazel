@@ -1,0 +1,37 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "rockskipintegration_test",
+    srcs = ["main_test.go"],
+    data = ["//dev/tools:universal-ctags"],
+    env = {
+        "CTAGS_RLOCATIONPATH": "$(rlocationpath //dev/tools:universal-ctags)",
+    },
+    tags = [
+        TAG_PLATFORM_SEARCH,
+        # Test requires talking to real gitserver over network
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/symbols/fetcher",
+        "//cmd/symbols/gitserver",
+        "//cmd/symbols/parser",
+        "//cmd/symbols/types",
+        "//dev/gitserverintegration",
+        "//internal/api",
+        "//internal/ctags_config",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/env",
+        "//internal/observation",
+        "//internal/rockskip",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@io_bazel_rules_go//go/runfiles:go_default_library",
+    ],
+)
