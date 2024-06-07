@@ -49,7 +49,7 @@
 <style lang="scss">
     section {
         overflow-y: auto;
-        padding: 0 1rem;
+        padding: 3rem 1rem;
         display: flex;
         flex-direction: column;
         flex: 1;
@@ -57,7 +57,7 @@
     }
 
     div.content {
-        margin-top: 6rem;
+        padding-top: 3rem;
         flex-shrink: 0;
         display: flex;
         gap: 3rem;

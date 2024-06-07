@@ -5,7 +5,11 @@
 {#if links.length > 0}
     <footer>
         {#each links as link}
-            <span><a href={link.href} on:click={link.handleClick}>{link.name}</a></span>
+            <span>
+                <a href={link.href} on:click={link.handleClick} rel="noopener noreferrer" target="_blank">
+                    {link.name}
+                </a>
+            </span>
         {/each}
     </footer>
 {/if}
