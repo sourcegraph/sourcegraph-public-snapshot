@@ -303,7 +303,7 @@ func TestGetLanguageFromContent(t *testing.T) {
 		},
 		{
 			Filename: "cpp_hh.hh",
-			// empty file counts as cpp since we only do explicit check to see if it is hack
+			// empty file counts as cpp since we only do an explicit check to see if it is hack
 			Contents: ``,
 			Expected: "c++",
 		},
