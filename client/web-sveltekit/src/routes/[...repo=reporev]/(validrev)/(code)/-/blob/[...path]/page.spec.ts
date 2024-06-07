@@ -181,7 +181,7 @@ test.describe('file header', () => {
         )
     })
 
-    test.fixme('dropdown menu', async ({ page }) => {
+    test('dropdown menu', async ({ page }) => {
         await page.goto(url)
 
         async function openDropdown() {
