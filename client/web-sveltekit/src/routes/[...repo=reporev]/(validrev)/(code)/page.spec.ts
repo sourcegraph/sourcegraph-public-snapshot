@@ -248,15 +248,15 @@ test('history panel', async ({ page, sg }) => {
     await expect(page.getByText('Test commit')).toBeHidden()
 })
 
-test.fixme('file popover', async ({ page, sg }) => {
+test('file popover', async ({ page, sg }) => {
     await page.goto(`/${repoName}`)
 
     // Open the sidebar
-    await page.locator('#sidebar-panel').getByRole('button').click()
+    await page.getByLabel('Open sidebar').click()
 
     // Hover a tree entry, expect the popover to be visible
     await page.getByRole('link', { name: 'index.js' }).hover()
-    await expect(page.getByText('Last Changed')).toBeVisible()
+    await expect(page.getByText('Last Changed')).toBeVisible({ timeout: 10000 })
 
     // Hover outside the popover (the Sourcegraph logo), expect the popover to be hidden
     await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
