@@ -24,7 +24,8 @@ const REFERENCES_PER_PAGE = 20
 export const load: LayoutLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
-    const parentPath = params.path ? dirname(params.path) : ROOT_PATH
+    const filePath = params.path ? decodeURIComponent(params.path) : ''
+    const parentPath = filePath ? dirname(filePath) : ROOT_PATH
     const resolvedRevision = resolveRevision(parent, revision)
 
     // Prefetch the sidebar file tree for the parent path.
@@ -42,11 +43,12 @@ export const load: LayoutLoad = async ({ parent, params }) => {
 
     return {
         fileTree,
+        filePath,
         parentPath,
         lastCommit: client.query(LastCommitQuery, {
             repoName,
             revspec: revision,
-            filePath: params.path ?? '',
+            filePath,
         }),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({
@@ -56,7 +58,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                 resolvedRevision.then(revspec => ({
                     repoName,
                     revspec,
-                    filePath: params.path ?? '',
+                    filePath,
                     first: HISTORY_COMMITS_PER_PAGE,
                     afterCursor: null as string | null,
                 }))
@@ -103,7 +105,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                     resolvedRevision.then(revspec => ({
                         repoName,
                         revspec,
-                        filePath: params.path ?? '',
+                        filePath,
                         first: REFERENCES_PER_PAGE,
                         // Line and character are 1-indexed, but the API expects 0-indexed
                         line: lineOrPosition.line - 1,

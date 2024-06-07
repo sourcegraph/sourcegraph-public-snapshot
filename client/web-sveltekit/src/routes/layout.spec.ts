@@ -62,3 +62,22 @@ test('has global notifications', async ({ sg, page }) => {
     await expect(alerts.first()).toBeVisible()
     await expect(alerts).toHaveCount(4)
 })
+
+// Because of how SvelteKit routing works, having a URL with a file path that includes route segements is
+// problematic. We solve this problem by automatically encoding file paths in the URL. This test ensures
+// that this behavior works as expected.
+test('automatic file path encoding', async ({ sg, page }) => {
+    sg.mockOperations({
+        ResolveRepoRevision(variables) {
+            return {
+                repositoryRedirect: {
+                    id: '1',
+                },
+            }
+        },
+    })
+    await page.goto('/sourcegraph/sourcegraph/-/blob/app/src/routes/-/blob/page.ts')
+    // If this didn't work we would render a 'Error: Not found' page
+    await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Error' })).not.toBeVisible()
+})

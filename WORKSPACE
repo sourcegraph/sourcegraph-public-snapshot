@@ -35,9 +35,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "25e06ac98ce2dd44d74e728e63e1c88e707d0972db20d7e7339c8e458335b4e3",
-    strip_prefix = "rules_js-2.0.0-rc2",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc2/rules_js-v2.0.0-rc2.tar.gz",
+    sha256 = "3dfccf2713288e0518c0485b65574ca66426c6e06495299abe6f5c64e3bc6314",
+    strip_prefix = "rules_js-2.0.0-rc3",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc3/rules_js-v2.0.0-rc3.tar.gz",
 )
 
 http_archive(
@@ -106,13 +106,9 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party/rules_oci:no_xattr.patch",
-    ],
-    sha256 = "d41d0ba7855f029ad0e5ee35025f882cbe45b0d5d570842c52704f7a47ba8668",
-    strip_prefix = "rules_oci-1.4.3",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.4.3/rules_oci-v1.4.3.tar.gz",
+    sha256 = "647f4c6fd092dc7a86a7f79892d4b1b7f1de288bdb4829ca38f74fd430fcd2fe",
+    strip_prefix = "rules_oci-1.7.6",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.7.6/rules_oci-v1.7.6.tar.gz",
 )
 
 http_archive(
@@ -258,6 +254,12 @@ swc_register_toolchains(
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
+    patch_args = ["-p1"],
+    patches = [
+        # Includes https://github.com/aspect-build/rules_esbuild/pull/201 as well as a fix for
+        # object-inspect being weird, see the comments in the patch for further links.
+        "//third_party/rules_esbuild:sandbox-plugin-fixes.patch",
+    ],
     sha256 = "ef7163a2e8e319f8a9a70560788dd899126aebf3538c76f8bc1f0b4b52ba4b56",
     strip_prefix = "rules_esbuild-0.21.0-rc1",
     url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.21.0-rc1/rules_esbuild-v0.21.0-rc1.tar.gz",
@@ -332,7 +334,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.22.1",
+    version = "1.22.4",
 )
 
 linter_dependencies()

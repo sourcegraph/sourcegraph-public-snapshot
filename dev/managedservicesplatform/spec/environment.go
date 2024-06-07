@@ -252,7 +252,9 @@ func (s EnvironmentDeployTypeSubscriptionSpec) ResolveTag(imageRepo string) (str
 }
 
 type EnvironmentServiceSpec struct {
-	// Domain configures where the resource is externally accessible.
+	// Domain configures where the resource is externally accessible. There
+	// may be additional considerations based on your service's chosen protocol;
+	// refer to the 'service.protocol' docstring for more details.
 	//
 	// Only supported for services of 'kind: service'.
 	Domain *EnvironmentServiceDomainSpec `yaml:"domain,omitempty"`

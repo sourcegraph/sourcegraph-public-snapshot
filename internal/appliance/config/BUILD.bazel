@@ -21,7 +21,6 @@ go_library(
     tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
         "//lib/pointers",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",

@@ -13,6 +13,7 @@ export const BUTTON_VARIANTS = [
     'merged',
     'link',
     'icon',
+    'text',
 ] as const
 export const BUTTON_SIZES = ['sm', 'lg'] as const
 export const BUTTON_DISPLAY = ['inline', 'block'] as const

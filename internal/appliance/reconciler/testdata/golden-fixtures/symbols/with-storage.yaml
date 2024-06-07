@@ -74,7 +74,7 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/symbols:5.3.2@sha256:dd7f923bdbd5dbd231b749a7483110d40d59159084477b9fff84afaf58aad98e
+              image: index.docker.io/sourcegraph/symbols:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3

@@ -147,10 +147,13 @@ func (c CodyGatewayAccessAttributes) EvaluateRateLimits() CodyGatewayRateLimits 
 }
 
 func (c CodyGatewayAccessAttributes) GenerateAccessTokens() []string {
-	accessTokens := make([]string, len(c.LicenseKeyHashes))
-	for i, t := range c.LicenseKeyHashes {
+	accessTokens := make([]string, 0, len(c.LicenseKeyHashes))
+	for _, t := range c.LicenseKeyHashes {
+		if len(t) == 0 { // query can return empty hashes, ignore these
+			continue
+		}
 		// See license.GenerateLicenseKeyBasedAccessToken
-		accessTokens[i] = license.LicenseKeyBasedAccessTokenPrefix + hex.EncodeToString(t)
+		accessTokens = append(accessTokens, license.LicenseKeyBasedAccessTokenPrefix+hex.EncodeToString(t))
 	}
 	return accessTokens
 }

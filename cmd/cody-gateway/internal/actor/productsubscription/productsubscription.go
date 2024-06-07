@@ -3,27 +3,27 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
-	"slices"
 	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 )
 
 // SourceVersion should be bumped whenever the format of any cached data in this
@@ -45,14 +45,20 @@ type ListingCache interface {
 	ListAllKeys() []string
 }
 
-type Source struct {
-	log    log.Logger
-	cache  ListingCache // cache is expected to be something with automatic TTL
-	dotcom graphql.Client
+// EnterprisePortalClient defines the RPCs implemented by the Enterprise Portal
+// that this Source depends on. We declare our own interface to keep our
+// generated mock surface minimal, and our dependencies explicit.
+type EnterprisePortalClient interface {
+	// codyaccessv1 RPCs
+	GetCodyGatewayAccess(context.Context, *codyaccessv1.GetCodyGatewayAccessRequest, ...grpc.CallOption) (*codyaccessv1.GetCodyGatewayAccessResponse, error)
+	ListCodyGatewayAccesses(context.Context, *codyaccessv1.ListCodyGatewayAccessesRequest, ...grpc.CallOption) (*codyaccessv1.ListCodyGatewayAccessesResponse, error)
+}
 
-	// internalMode, if true, indicates only dev and internal licenses may use
-	// this Cody Gateway instance.
-	internalMode bool
+type Source struct {
+	log   log.Logger
+	cache ListingCache // cache is expected to be something with automatic TTL
+
+	enterprisePortal EnterprisePortalClient
 
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
@@ -61,19 +67,23 @@ var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache ListingCache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(
+	logger log.Logger,
+	cache ListingCache,
+	enterprisePortal EnterprisePortalClient,
+	concurrencyConfig codygateway.ActorConcurrencyLimitConfig,
+) *Source {
 	return &Source{
-		log:    logger.Scoped("productsubscriptions"),
-		cache:  cache,
-		dotcom: dotcomClient,
+		log:   logger.Scoped("productsubscriptions"),
+		cache: cache,
 
-		internalMode: internalMode,
+		enterprisePortal: enterprisePortal,
 
 		concurrencyConfig: concurrencyConfig,
 	}
 }
 
-func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
+func (s *Source) Name() string { return string(codygateway.ActorSourceEnterpriseSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {
@@ -139,23 +149,30 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	syncLog := sgtrace.Logger(ctx, s.log)
 	seenTokens := collections.NewSet[string]()
 
-	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
+	resp, err := s.enterprisePortal.ListCodyGatewayAccesses(ctx, &codyaccessv1.ListCodyGatewayAccessesRequest{
+		// TODO(https://linear.app/sourcegraph/issue/CORE-134): Once the
+		// Enterprise Portal supports pagination in its API responses we need to
+		// update this callsite to make repeated requests with a continuation
+		// token, etc. For now, we assume that we are fetching all licenses in
+		// a single call.
+	})
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			syncLog.Warn("sync context cancelled")
 			return seen, nil
 		}
-		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
+		return seen, errors.Wrap(err, "failed to list Enterprise subscriptions")
 	}
 
-	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
-		for _, token := range sub.SourcegraphAccessTokens {
+	for _, access := range resp.GetAccesses() {
+		for _, token := range access.GetAccessTokens() {
 			select {
 			case <-ctx.Done():
 				return seen, ctx.Err()
 			default:
 			}
-			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
+
+			act := newActor(s, token.GetToken(), access, time.Now())
 			data, err := json.Marshal(act)
 			if err != nil {
 				act.Logger(syncLog).Error("failed to marshal actor",
@@ -163,8 +180,8 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 				errs = errors.Append(errs, err)
 				continue
 			}
-			s.cache.Set(token, data)
-			seenTokens.Add(token)
+			s.cache.Set(token.GetToken(), data)
+			seenTokens.Add(token.GetToken())
 			seen++
 		}
 	}
@@ -198,27 +215,25 @@ func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLo
 	}
 }
 
-func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
-	resp, err := dotcom.CheckAccessToken(ctx, s.dotcom, token)
+func (s *Source) checkAccessToken(ctx context.Context, token string) (*codyaccessv1.CodyGatewayAccess, error) {
+	resp, err := s.enterprisePortal.GetCodyGatewayAccess(ctx, &codyaccessv1.GetCodyGatewayAccessRequest{
+		Query: &codyaccessv1.GetCodyGatewayAccessRequest_AccessToken{
+			AccessToken: token,
+		},
+	})
 	if err == nil {
-		return resp, nil
+		return resp.GetAccess(), nil
 	}
 
-	// Inspect the error to see if it's a list of GraphQL errors.
-	gqlerrs, ok := err.(gqlerror.List)
-	if !ok {
-		return nil, err
-	}
-
-	for _, gqlerr := range gqlerrs {
-		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == productsubscription.GQLErrCodeProductSubscriptionNotFound {
-			return nil, actor.ErrAccessTokenDenied{
-				Source: s.Name(),
-				Reason: "associated product subscription not found",
-			}
+	// Inspect the error to see if it's not-found error.
+	if statusErr, ok := status.FromError(err); ok && statusErr.Code() == codes.NotFound {
+		return nil, actor.ErrAccessTokenDenied{
+			Source: s.Name(),
+			Reason: "associated product subscription not found",
 		}
 	}
-	return nil, err
+
+	return nil, errors.Wrap(err, "verifying token via Enterprise Portal")
 }
 
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
@@ -226,14 +241,13 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = newActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode, s.concurrencyConfig)
+		act = newActor(s, token, &codyaccessv1.CodyGatewayAccess{}, time.Now())
 	} else {
 		act = newActor(
 			s,
 			token,
-			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
-			s.internalMode,
-			s.concurrencyConfig,
+			resp,
+			time.Now(),
 		)
 	}
 
@@ -252,86 +266,73 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 
 // getSubscriptionAccountName attempts to get the account name from the product
 // subscription. It returns an empty string if no account name is available.
-func getSubscriptionAccountName(s dotcom.ProductSubscriptionState) string {
-	// 1. Check if the special "customer:" tag is present
-	if s.ActiveLicense != nil && s.ActiveLicense.Info != nil {
-		for _, tag := range s.ActiveLicense.Info.Tags {
-			if strings.HasPrefix(tag, "customer:") {
-				return strings.TrimPrefix(tag, "customer:")
-			}
+func getSubscriptionAccountName(activeLicenseTags []string) string {
+	// Check if the special "customer:" tag is present.
+	for _, tag := range activeLicenseTags {
+		if strings.HasPrefix(tag, "customer:") {
+			return strings.TrimPrefix(tag, "customer:")
 		}
-	}
-
-	// 2. Use the username of the account
-	if s.Account != nil && s.Account.Username != "" {
-		return s.Account.Username
 	}
 	return ""
 }
 
 // newActor creates an actor from Sourcegraph.com product subscription state.
-func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
-	name := getSubscriptionAccountName(s)
+func newActor(
+	source *Source,
+	token string,
+	s *codyaccessv1.CodyGatewayAccess,
+	now time.Time,
+) *actor.Actor {
+	name := s.GetSubscriptionDisplayName()
 	if name == "" {
-		name = s.Uuid
+		name = s.GetSubscriptionId()
 	}
 
-	// In internal mode, only allow dev and internal licenses.
-	disallowedLicense := internalMode &&
-		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
-			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
-
-	now := time.Now()
 	a := &actor.Actor{
-		Key:           token,
-		ID:            s.Uuid,
+		Key: token,
+
+		// Maintain consistency with existing non-prefixed IDs.
+		ID: strings.TrimPrefix(s.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix),
+
 		Name:          name,
-		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
+		AccessEnabled: s.GetEnabled(),
 		EndpointAccess: map[string]bool{
-			"/v1/attribution": !disallowedLicense && !s.IsArchived,
+			// Always enabled even if !s.GetEnabled(), to allow BYOK customers.
+			"/v1/attribution": true,
 		},
 		RateLimits:  map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated: &now,
 		Source:      source,
 	}
 
-	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
+	if rl := s.GetChatCompletionsRateLimit(); rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.IntervalDuration.AsDuration(),
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
-	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
+	if rl := s.GetCodeCompletionsRateLimit(); rl != nil {
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.IntervalDuration.AsDuration(),
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
-	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
+	if rl := s.GetEmbeddingsRateLimit(); rl != nil {
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.IntervalDuration.AsDuration(),
 			[]string{"*"}, // allow all models that are allowlisted by Cody Gateway
 			// TODO: Once we split interactive and on-interactive, we want to apply
 			// stricter limits here than percentage based for this heavy endpoint.
-			concurrencyConfig,
+			source.concurrencyConfig,
 		)
 	}
 
 	return a
-}
-
-func containsOneOf(s []string, needles ...string) bool {
-	for _, needle := range needles {
-		if slices.Contains(s, needle) {
-			return true
-		}
-	}
-	return false
 }

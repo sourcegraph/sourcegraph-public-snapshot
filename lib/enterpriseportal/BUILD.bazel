@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enterpriseportal",
+    srcs = ["enterpriseportal.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal",
+    visibility = ["//visibility:public"],
+)

@@ -70,7 +70,6 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 			repo string,
 			baseCommit string,
 			targetRef string,
-			uniqueRef bool,
 			pushRef *string,
 
 			commitInfo struct {
@@ -81,22 +80,19 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 			},
 
 			pushConfig *protocol.PushConfig,
-			gitApplyArgs []string,
 		) bool {
 			original := protocol.CreateCommitFromPatchRequest{
 				Repo:       api.RepoName(repo),
 				BaseCommit: api.CommitID(baseCommit),
 				TargetRef:  targetRef,
-				UniqueRef:  uniqueRef,
 				CommitInfo: protocol.PatchCommitInfo{
 					Messages:    commitInfo.Messages,
 					AuthorName:  commitInfo.AuthorName,
 					AuthorEmail: commitInfo.AuthorEmail,
 					Date:        time.Time(commitInfo.Date),
 				},
-				Push:         pushConfig,
-				PushRef:      pushRef,
-				GitApplyArgs: gitApplyArgs,
+				Push:    pushConfig,
+				PushRef: pushRef,
 			}
 			var converted protocol.CreateCommitFromPatchRequest
 			converted.FromProto(original.ToMetadataProto())

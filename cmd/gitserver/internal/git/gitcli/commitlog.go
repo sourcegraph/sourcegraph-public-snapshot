@@ -131,7 +131,7 @@ func (it *commitLogIterator) Next() (*git.GitCommitWithFiles, error) {
 			// If exit code is 128 and `fatal: bad object` is part of stderr, most likely we
 			// are referencing a commit that does not exist.
 			// We want to return a gitdomain.RevisionNotFoundError in that case.
-			var e *CommandFailedError
+			var e *commandFailedError
 			if errors.As(err, &e) && e.ExitStatus == 128 {
 				if (bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet"))) || bytes.Contains(e.Stderr, []byte("fatal: bad revision 'HEAD'")) {
 					return nil, io.EOF
@@ -174,7 +174,7 @@ func (it *commitLogIterator) Next() (*git.GitCommitWithFiles, error) {
 func (it *commitLogIterator) Close() error {
 	err := it.Closer.Close()
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 {
 			if (bytes.Contains(e.Stderr, []byte("fatal: your current branch")) && bytes.Contains(e.Stderr, []byte("does not have any commits yet"))) || bytes.Contains(e.Stderr, []byte("fatal: bad revision 'HEAD'")) {
 				return nil

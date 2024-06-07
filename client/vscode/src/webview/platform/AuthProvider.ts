@@ -15,7 +15,7 @@ import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventS
 import { getProxyAgent } from '../../backend/fetch'
 import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from '../../settings/endpointSetting'
 
-export const scretTokenKey = 'SOURCEGRAPH_AUTH'
+export const secretTokenKey = 'SOURCEGRAPH_AUTH'
 
 class SourcegraphAuthSession implements AuthenticationSession {
     public readonly account = {
@@ -30,8 +30,8 @@ class SourcegraphAuthSession implements AuthenticationSession {
 
 export class SourcegraphAuthProvider implements AuthenticationProvider, Disposable {
     public static id = endpointSetting()
-    private static secretKey = scretTokenKey
-    public static label = scretTokenKey
+    private static secretKey = secretTokenKey
+    public static label = secretTokenKey
 
     // Kept track of token changes through out the session
     private currentToken: string | undefined
@@ -136,7 +136,7 @@ export class SourcegraphAuthActions {
 
     public async login(newtoken: string, newuri: string): Promise<void> {
         try {
-            await this.secretStorage.store(scretTokenKey, newtoken)
+            await this.secretStorage.store(secretTokenKey, newtoken)
             if (this.currentEndpoint !== newuri) {
                 await setEndpoint(newuri)
             }
@@ -147,7 +147,7 @@ export class SourcegraphAuthActions {
     }
 
     public async logout(): Promise<void> {
-        await this.secretStorage.delete(scretTokenKey)
+        await this.secretStorage.delete(secretTokenKey)
         await commands.executeCommand('workbench.action.reloadWindow')
         return
     }

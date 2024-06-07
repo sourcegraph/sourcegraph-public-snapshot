@@ -77,7 +77,7 @@ resources:
                   value: /var/lib/postgresql/data/pgdata
                 - name: POSTGRESQL_CONF_DIR
                   value: /conf
-              image: index.docker.io/sourcegraph/codeinsights-db:5.3.2@sha256:c4a1bd3908658e1c09558a638e378e5570d5f669d27f9f867eeda25fe60cb88f
+              image: index.docker.io/sourcegraph/codeinsights-db:5.3.9104
               imagePullPolicy: IfNotPresent
               name: codeinsights
               ports:
@@ -130,7 +130,7 @@ resources:
                   value: 127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
                 - name: PG_EXPORTER_EXTEND_QUERY_PATH
                   value: /config/code_insights_queries.yaml
-              image: index.docker.io/sourcegraph/postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0
+              image: index.docker.io/sourcegraph/postgres_exporter:5.3.9104
               imagePullPolicy: IfNotPresent
               name: pgsql-exporter
               resources:
@@ -153,7 +153,7 @@ resources:
                 - sh
                 - -c
                 - if [ -d /var/lib/postgresql/data/pgdata ]; then chmod 750 /var/lib/postgresql/data/pgdata; fi
-              image: index.docker.io/sourcegraph/alpine-3.14:5.3.2@sha256:982220e0fd8ce55a73798fa7e814a482c4807c412f054c8440c5970b610239b7
+              image: index.docker.io/sourcegraph/alpine-3.14:5.3.9104
               imagePullPolicy: IfNotPresent
               name: correct-data-dir-permissions
               resources:

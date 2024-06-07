@@ -31,6 +31,7 @@ go_library(
     visibility = [
         "//cmd/gitserver:__subpackages__",
         "//cmd/repo-updater/internal/gitserver:__pkg__",
+        "//dev/gitserverintegration:__pkg__",
         "//internal/api:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
         "//internal/gitserver:__pkg__",

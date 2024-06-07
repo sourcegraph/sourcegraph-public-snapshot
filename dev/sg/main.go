@@ -9,9 +9,8 @@ import (
 	"time"
 
 	hashstructure "github.com/mitchellh/hashstructure/v2"
-	"github.com/urfave/cli/v2"
-
 	"github.com/sourcegraph/log"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
@@ -312,6 +311,7 @@ var sg = &cli.App{
 		release.Command,
 		updateCommand,
 		versionCommand,
+		codyGatewayCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		interrupt.Wait()

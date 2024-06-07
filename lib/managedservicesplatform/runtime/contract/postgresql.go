@@ -49,7 +49,7 @@ func (c postgreSQLContract) OpenDatabase(ctx context.Context, database string) (
 		if err != nil {
 			return nil, err
 		}
-		return sql.Open("customdsn", stdlib.RegisterConnConfig(config.ConnConfig))
+		return sql.Open("pgx", stdlib.RegisterConnConfig(config.ConnConfig))
 	}
 	return cloudsql.Open(ctx, c.getCloudSQLConnConfig(database))
 }

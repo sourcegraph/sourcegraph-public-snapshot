@@ -9,6 +9,7 @@ type googleCompletionStreamClient struct {
 }
 
 type googleRequest struct {
+	Model            string                 `json:"model"`
 	Contents         []googleContentMessage `json:"contents"`
 	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
 	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`

@@ -47,10 +47,7 @@ func (r *Reconciler) reconcileCodeInsightsStatefulSet(ctx context.Context, sg *c
 	cfg := sg.Spec.CodeInsights
 	name := "codeinsights-db"
 
-	ctrImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	ctrImage := config.GetDefaultImage(sg, name)
 
 	ctr := container.NewContainer("codeinsights", cfg, config.ContainerConfig{
 		Image: ctrImage,
@@ -86,11 +83,7 @@ func (r *Reconciler) reconcileCodeInsightsStatefulSet(ctx context.Context, sg *c
 		{Name: "lockdir", MountPath: "/var/run/postgresql"},
 	}
 
-	initCtrImage, err := config.GetDefaultImage(sg, "alpine")
-	if err != nil {
-		return err
-	}
-
+	initCtrImage := config.GetDefaultImage(sg, "alpine-3.14")
 	initCtr := container.NewContainer("correct-data-dir-permissions", cfg, config.ContainerConfig{
 		Image: initCtrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -113,11 +106,7 @@ func (r *Reconciler) reconcileCodeInsightsStatefulSet(ctx context.Context, sg *c
 	initCtr.VolumeMounts = []corev1.VolumeMount{{Name: "disk", MountPath: "/var/lib/postgresql/data"}}
 	initCtr.Command = []string{"sh", "-c", "if [ -d /var/lib/postgresql/data/pgdata ]; then chmod 750 /var/lib/postgresql/data/pgdata; fi"}
 
-	pgExpCtrImage, err := config.GetDefaultImage(sg, "pgsql-exporter")
-	if err != nil {
-		return err
-	}
-
+	pgExpCtrImage := config.GetDefaultImage(sg, "postgres_exporter")
 	pgExpCtr := container.NewContainer("pgsql-exporter", cfg, config.ContainerConfig{
 		Image: pgExpCtrImage,
 		Resources: &corev1.ResourceRequirements{
