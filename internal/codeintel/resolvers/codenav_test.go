@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"golang.org/x/exp/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,8 +55,8 @@ func wellFormedAfterCursorGenerator() *rapid.Generator[*string] {
 	})
 }
 
-func afterCursorGenerator() *rapid.Generator[*string] {
-	return pbt.WithProbabilities[*string]([]pbt.GeneratorChoice[*string]{
+func afterCursorGenerator(rng *rand.Rand) *rapid.Generator[*string] {
+	return pbt.WithProbabilities[*string](rng, []pbt.GeneratorChoice[*string]{
 		{
 			Chance: 0.5,
 			Value:  rapid.Just[*string](nil),
@@ -81,8 +82,8 @@ func usagesFilterGenerator() *rapid.Generator[*UsagesFilter] {
 		}))
 }
 
-func usagesForSymbolArgsGenerator() *rapid.Generator[*UsagesForSymbolArgs] {
-	revisionGen := pbt.WithProbabilities[string]([]pbt.GeneratorChoice[string]{
+func usagesForSymbolArgsGenerator(rng *rand.Rand) *rapid.Generator[*UsagesForSymbolArgs] {
+	revisionGen := pbt.WithProbabilities[string](rng, []pbt.GeneratorChoice[string]{
 		{
 			Chance: 0.5,
 			Value:  rapid.Map(pbt.CommitID(), func(id api.CommitID) string { return string(id) }),
@@ -102,7 +103,7 @@ func usagesForSymbolArgsGenerator() *rapid.Generator[*UsagesForSymbolArgs] {
 	})
 	symbolGen := rapid.Make[*SymbolComparator]()
 	rangeGen := rapid.Make[RangeInput]()
-	cursorGen := afterCursorGenerator()
+	cursorGen := afterCursorGenerator(rng)
 	filterGen := usagesFilterGenerator()
 	firstGen := rapid.Ptr(rapid.Int32Range(-1, 250), true)
 	return rapid.Custom(func(t *rapid.T) *UsagesForSymbolArgs {
@@ -184,16 +185,16 @@ func (c *fakeGitserverClient) Insert(repo api.RepoName, rev string) api.CommitID
 func TestResolve(t *testing.T) {
 	mockRepoStore := dbmocks.NewStrictMockRepoStore()
 	mockGitserverClient := gitserver.NewStrictMockClient()
-	generator := usagesForSymbolArgsGenerator()
-	p90Bool := pbt.Bool(0.9)
 
 	rapid.Check(t, func(t *rapid.T) {
-		args := generator.Draw(t, "args")
+		seed := rapid.Uint64().Draw(t, "seed")
+		rng := rand.New(rand.NewSource(seed))
+		p90Bool := pbt.Bool(rng, 0.9)
+
+		args := usagesForSymbolArgsGenerator(rng).Draw(t, "args")
 		// NOTE: For some reason, moving the p90Bool.Draw operations inside the hook
 		// functions triggers a bug inside rapid with a buffer overrun or running
 		// out of entropy bits.
-		makeRepo := p90Bool.Draw(t, "repo")
-		makeCommit := p90Bool.Draw(t, "commit")
 		repoStoreImpl := fakeRepoStore{}
 		gitserverClientImpl := fakeGitserverClient{}
 
@@ -201,7 +202,7 @@ func TestResolve(t *testing.T) {
 			if repo, err := repoStoreImpl.GetByName(name); err == nil {
 				return repo, nil
 			}
-			if makeRepo {
+			if p90Bool.Draw(t, "repo") {
 				return repoStoreImpl.Insert(name), nil
 			} else {
 				return nil, &database.RepoNotFoundErr{}
@@ -212,7 +213,7 @@ func TestResolve(t *testing.T) {
 			if commitID, err := gitserverClientImpl.ResolveRevision(repo, revision); err == nil {
 				return commitID, nil
 			}
-			if makeCommit {
+			if p90Bool.Draw(t, "commit") {
 				return gitserverClientImpl.Insert(repo, revision), nil
 			} else {
 				return "", &gitdomain.RevisionNotFoundError{}
