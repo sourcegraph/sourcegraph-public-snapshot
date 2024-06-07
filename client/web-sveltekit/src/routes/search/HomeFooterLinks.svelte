@@ -17,13 +17,13 @@
 
         span {
             padding: 0 1rem;
-            a {
-                color: var(--text-muted);
-            }
-
             &:not(:last-child) {
                 border-right: 1px solid var(--border-color);
             }
+        }
+
+        a {
+            color: var(--text-muted);
         }
 
         // In a small viewport, align links in a column and remove the separator
