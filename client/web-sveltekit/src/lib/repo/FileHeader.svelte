@@ -63,7 +63,7 @@
 </script>
 
 <div class="header" use:sizeToFit={{ grow, shrink }}>
-    <h2 on:copy={stripSpaces} data-testid="header-path">
+    <h2 on:copy={stripSpaces} data-testid="file-header-path">
         {#if collapsedBreadcrumbCount > 0}
             <DropdownMenu
                 open={breadcrumbMenuOpen}

@@ -247,7 +247,7 @@ test.describe('file header', () => {
         test('select and copy file path', async ({ page, context }) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write'])
             await page.goto(url)
-            await page.getByTestId('header-path').selectText()
+            await page.getByTestId('file-header-path').selectText()
             await page.keyboard.press(`Meta+KeyC`)
             await page.keyboard.press(`Control+KeyC`)
             const clipboardText = await page.evaluate('navigator.clipboard.readText()')
