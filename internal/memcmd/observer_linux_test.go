@@ -16,11 +16,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/conc/pool"
 
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestObserverIntegration(t *testing.T) {
-	cmd := allocatingGoProgram(t, 500*1024*1024) // 500 MB
+	cmd := allocatingGoProgram(t, 250*1024*1024) // 250 MB
 
 	var buf bytes.Buffer
 	cmd.Stderr = &buf
@@ -47,13 +48,13 @@ func TestObserverIntegration(t *testing.T) {
 		t.Fatalf("failed to get memory usage: %v", err)
 	}
 
-	t.Logf("memory usage: %s", humanize.Bytes(memoryUsage))
+	t.Logf("memory usage: %s", humanize.Bytes(uint64(memoryUsage)))
 
-	memoryLow := uint64(400 * 1024 * 1024)  // 400MB
-	memoryHigh := uint64(650 * 1024 * 1024) // 650MB
+	memoryLow := bytesize.Bytes(200 << 20)  // 200 MB
+	memoryHigh := bytesize.Bytes(350 << 20) // 350 MB
 
 	if !(memoryLow < memoryUsage && memoryUsage < memoryHigh) {
-		t.Fatalf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(memoryLow), humanize.Bytes(memoryHigh), humanize.Bytes(memoryUsage))
+		t.Fatalf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(uint64(memoryLow)), humanize.Bytes(uint64(memoryHigh)), humanize.Bytes(uint64(memoryUsage)))
 	}
 }
 
@@ -305,11 +306,11 @@ func benchFunc(b *testing.B, observerInterval time.Duration) {
 					return errors.Errorf("getting memory usage: %v", err)
 				}
 
-				memoryLow := uint64(10 * 1024 * 1024)   // 10MB
-				memoryHigh := uint64(100 * 1024 * 1024) // 100MB
+				memoryLow := bytesize.Bytes(10 << 20)   // 10MB
+				memoryHigh := bytesize.Bytes(100 << 20) // 100MB
 
 				if !(memoryLow < memory && memory < memoryHigh) {
-					return errors.Errorf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(memoryLow), humanize.Bytes(memoryHigh), humanize.Bytes(memory))
+					return errors.Errorf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(uint64(memoryLow)), humanize.Bytes(uint64(memoryHigh)), humanize.Bytes(uint64(memory)))
 				}
 
 				return nil

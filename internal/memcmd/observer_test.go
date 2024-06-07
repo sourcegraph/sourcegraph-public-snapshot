@@ -6,8 +6,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/bazelbuild/rules_go/go/runfiles"
 )
+
+var goBinary = "go"
+
+func init() {
+	if path := os.Getenv("GO_RLOCATIONPATH"); path != "" {
+		var err error
+		goBinary, err = runfiles.Rlocation(path)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 func allocatingGoProgram(t testing.TB, allocationSizeBytes uint64) *exec.Cmd {
 	t.Helper()
@@ -38,20 +53,60 @@ func main() {
 	goSource := fmt.Sprintf(goTemplate, allocationSizeBytes)
 
 	goFile := filepath.Join(t.TempDir(), "main.go")
-	err := os.WriteFile(goFile, []byte(goSource), 0644) // permissions: -rw-r--r--
+	err := os.WriteFile(goFile, []byte(goSource), 0o644) // permissions: -rw-r--r--
 	if err != nil {
 		t.Fatalf("failed to write test program: %v", err)
 	}
 
-	const bashTemplate = `
+	binaryPath := filepath.Join(t.TempDir(), "main")
+
+	const bashTemplateGoBuild = `
 #!/usr/bin/env bash
 set -euxo pipefail
-go run %s
-echo "done" # force bash to fork
+
+%s build -o %s %s
 `
 
-	bashCommand := fmt.Sprintf(bashTemplate, goFile)
+	ctx := context.Background()
 
-	cmd := exec.CommandContext(context.Background(), "bash", "-c", bashCommand)
-	return cmd
+	args := []string{
+		"--login", // -l: login shell (so that we know that the PATH is set correctly for asdf if needed)
+		"-c",
+		fmt.Sprintf(bashTemplateGoBuild, goBinary, binaryPath, goFile),
+	}
+
+	goBuildCmd := exec.CommandContext(ctx, "bash", args...)
+	goBuildCmd.Env = append(goBuildCmd.Env, fmt.Sprintf("GOCACHE=%s", t.TempDir()))
+
+	{
+		// Ensure that the HOME environment variable is set. This is required for
+		// asdf to work correctly.
+		hasHome := false
+		for _, env := range goBuildCmd.Env {
+			if strings.HasPrefix(env, "HOME=") {
+				hasHome = true
+				break
+			}
+		}
+
+		if !hasHome {
+			if home, err := os.UserHomeDir(); err == nil {
+				goBuildCmd.Env = append(goBuildCmd.Env, fmt.Sprintf("HOME=%s", home))
+			}
+		}
+	}
+
+	_, err = goBuildCmd.Output()
+	if err != nil {
+		t.Fatalf("failed to compile test program: %v", err)
+	}
+
+	const bashTemplateRunCmd = `
+#!/usr/bin/env bash
+set -euxo pipefail
+
+%s
+echo "done" # force bash to fork
+`
+	return exec.Command("bash", "-c", fmt.Sprintf(bashTemplateRunCmd, binaryPath))
 }

@@ -3,6 +3,7 @@ package memcmd
 import (
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -37,7 +38,7 @@ type Observer interface {
 	//
 	// See the individual observer implementations for more details on how memory
 	// usage is calculated.
-	MaxMemoryUsage() (memoryBytes uint64, err error)
+	MaxMemoryUsage() (bytes bytesize.Bytes, err error)
 }
 
 type noopObserver struct {
@@ -60,7 +61,7 @@ func (o *noopObserver) Stop() {
 	})
 }
 
-func (o *noopObserver) MaxMemoryUsage() (memoryBytes uint64, err error) {
+func (o *noopObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
 	select {
 	case <-o.started:
 	default:
@@ -77,6 +78,7 @@ func (o *noopObserver) MaxMemoryUsage() (memoryBytes uint64, err error) {
 func NewNoOpObserver() Observer {
 	return &noopObserver{
 		started: make(chan struct{}),
+		stopped: make(chan struct{}),
 	}
 }
 

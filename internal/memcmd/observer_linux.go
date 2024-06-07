@@ -12,11 +12,24 @@ import (
 
 	"github.com/prometheus/procfs"
 
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// LinuxObserver is an Observer that observes the memory usage of a process and its children on Linux.
-type LinuxObserver struct {
+var defaultSamplingInterval = env.MustGetDuration("MEMORY_OBSERVATION_DEFAULT_SAMPLING_INTERVAL", 1*time.Millisecond, "For memory observers spawned by NewDefaultObserver, the interval at which memory usage is sampled. This environment variable only has an effect on Linux.")
+
+// NewDefaultObserver creates a new Observer that observes the memory usage of a process and its children on Linux.
+// This function is a convenience function that uses the default sampling interval specified by the MEMORY_OBSERVATION_DEFAULT_SAMPLING_INTERVAL
+// environment variable.
+//
+// See NewLinuxObserver for more information.
+func NewDefaultObserver(ctx context.Context, cmd *exec.Cmd) (Observer, error) {
+	return NewLinuxObserver(ctx, cmd, defaultSamplingInterval)
+}
+
+// linuxObserver is an Observer that observes the memory usage of a process and its children on Linux.
+type linuxObserver struct {
 	ctx  context.Context
 	proc processInfoProvider
 
@@ -61,7 +74,7 @@ func NewLinuxObserver(ctx context.Context, cmd *exec.Cmd, samplingInterval time.
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	return &LinuxObserver{
+	return &linuxObserver{
 		ctx:  ctx,
 		proc: proc,
 
@@ -75,7 +88,7 @@ func NewLinuxObserver(ctx context.Context, cmd *exec.Cmd, samplingInterval time.
 	}, nil
 }
 
-func (l *LinuxObserver) MaxMemoryUsage() (uint64, error) {
+func (l *linuxObserver) MaxMemoryUsage() (bytesize.Bytes, error) {
 	select {
 	case <-l.started:
 	default:
@@ -87,24 +100,24 @@ func (l *LinuxObserver) MaxMemoryUsage() (uint64, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	return l.highestMemoryUsageBytes, l.errs
+	return bytesize.Bytes(l.highestMemoryUsageBytes), l.errs
 }
 
 // Start starts the observer.
-func (l *LinuxObserver) Start() {
+func (l *linuxObserver) Start() {
 	l.startOnce.Do(func() {
 		go l.observe()
 		close(l.started)
 	})
 }
 
-func (l *LinuxObserver) Stop() {
+func (l *linuxObserver) Stop() {
 	l.stopOnce.Do(func() {
 		l.stopFunc()
 	})
 }
 
-func (l *LinuxObserver) observe() {
+func (l *linuxObserver) observe() {
 	// Create a channel to signal when we should collect memory usage
 	doCollection := make(chan struct{}, 1)
 	doCollection <- struct{}{} // Trigger initial collection
