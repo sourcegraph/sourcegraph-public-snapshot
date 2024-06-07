@@ -52,5 +52,6 @@ go_test(
         "//lib/pointers",
         "@com_github_stretchr_testify//require",
         "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
     ],
 )

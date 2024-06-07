@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/api",
         "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
     ],
 )
 
@@ -26,5 +27,7 @@ go_test(
         "//internal/api",
         "@com_github_stretchr_testify//require",
         "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
+        "@org_gonum_v1_gonum//stat/distuv",
     ],
 )
