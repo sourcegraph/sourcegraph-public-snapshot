@@ -20,6 +20,7 @@ function loadDiffView({ params, url }: PageLoadEvent) {
     const client = getGraphQLClient()
     const revisionOverride = url.searchParams.get('rev')
     const { repoName } = parseRepoRevision(params.repo)
+    const filePath = decodeURIComponent(params.path)
 
     assertNonNullable(revisionOverride, 'revisionOverride is set')
 
@@ -27,12 +28,12 @@ function loadDiffView({ params, url }: PageLoadEvent) {
         type: 'DiffView' as const,
         enableInlineDiff: true,
         enableViewAtCommit: true,
-        filePath: params.path,
+        filePath,
         commit: client
             .query(BlobDiffViewCommitQuery, {
                 repoName,
                 revspec: revisionOverride,
-                path: params.path,
+                path: filePath,
             })
             .then(mapOrThrow(result => result.data?.repository?.commit ?? null)),
     }
@@ -45,14 +46,13 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
     const lineOrPosition = SourcegraphURL.from(url).lineRange
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = revisionOverride ? Promise.resolve(revisionOverride) : resolveRevision(parent, revision)
+    const filePath = decodeURIComponent(params.path)
 
     // Create a BehaviorSubject so preloading does not create a subscriberless observable
     const blameData = new BehaviorSubject<BlameHunkData>({ current: undefined, externalURLs: undefined })
     if (isBlame) {
         const blameHunks = from(resolvedRevision).pipe(
-            concatMap(resolvedRevision =>
-                fetchBlameHunksMemoized({ repoName, revision: resolvedRevision, filePath: params.path })
-            )
+            concatMap(resolvedRevision => fetchBlameHunksMemoized({ repoName, revision: resolvedRevision, filePath }))
         )
 
         from(parent())
@@ -75,13 +75,13 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         enableViewAtCommit: true,
         graphQLClient: client,
         lineOrPosition,
-        filePath: params.path,
+        filePath,
         blob: resolvedRevision
             .then(resolvedRevision =>
                 client.query(BlobFileViewBlobQuery, {
                     repoName,
                     revspec: resolvedRevision,
-                    path: params.path,
+                    path: filePath,
                 })
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null)),
@@ -90,7 +90,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 client.query(BlobFileViewHighlightedFileQuery, {
                     repoName,
                     revspec: resolvedRevision,
-                    path: params.path,
+                    path: filePath,
                     disableTimeout: false,
                 })
             )

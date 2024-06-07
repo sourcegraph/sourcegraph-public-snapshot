@@ -23,6 +23,7 @@ tree-sitter-typescript = "0.20.2"
 tree-sitter-dart = { git = "https://github.com/UserNobody14/tree-sitter-dart", rev = "923fbe0d3e62340ea78422551166ce946bc05222" }
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
 tree-sitter-kotlin = { git = "https://github.com/fwcd/tree-sitter-kotlin", rev = "100d79fd96b56a1b99099a8d2f3c114b8687acfb" }
+tree-sitter-magik = { git = "https://github.com/sourcegraph/tree-sitter-magik", rev = "dfabbd4e70ff311939cf48fdf90d340f07758d37" }
 tree-sitter-matlab = { git = "https://github.com/acristoffers/tree-sitter-matlab", rev = "6071891a8c39600203eba20513666cf93b4d650a" }
 tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", rev = "d6c7eeb751038f934b5b1aa7ff236376d0235c56" }
 tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
@@ -35,3 +36,4 @@ tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend
 # on our own fork.
 tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql", rev = "6ea62b8d33c9e39f6de8a398a6885d1873ed7e91" }
+tree-sitter-hack = { git = "https://github.com/slackhq/tree-sitter-hack", rev = "fca1e294f6dce8ec5659233a6a21f5bd0ed5b4f2" }

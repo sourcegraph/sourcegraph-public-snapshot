@@ -14,12 +14,12 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
-
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -41,9 +41,19 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	// We use Sourcegraph tracing code, so explicitly configure a trace policy
 	policy.SetTracePolicy(policy.TraceAll)
 
+	redisClient, err := newRedisClient(contract.MSP, contract.RedisEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize Redis client")
+	}
+
+	dbHandle, err := database.NewHandle(ctx, logger, contract, redisClient, version.Version())
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize database handle")
+	}
+
 	dotcomDB, err := newDotComDBConn(ctx, config)
 	if err != nil {
-		return nil, errors.Wrap(err, "newDotComDBConn")
+		return nil, errors.Wrap(err, "initialize dotcom database handle")
 	}
 
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
@@ -85,8 +95,18 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	// Register connect endpoints
 	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
 		connect.WithInterceptors(otelConnctInterceptor))
-	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
-		connect.WithInterceptors(otelConnctInterceptor))
+	subscriptionsservice.RegisterV1(
+		logger,
+		httpServer,
+		samsClient.Tokens(),
+		subscriptionsservice.NewStoreV1(
+			subscriptionsservice.NewStoreV1Options{
+				DB:       dbHandle,
+				DotcomDB: dotcomDB,
+			},
+		),
+		connect.WithInterceptors(otelConnctInterceptor),
+	)
 
 	// Optionally enable reflection handlers and a debug UI
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
@@ -134,6 +154,8 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		background.CallbackRoutine{
 			StopFunc: func(ctx context.Context) error {
 				start := time.Now()
+				// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+				// service exits, so we attempt to gracefully shutdown first.
 				dotcomDB.Close()
 				logger.Info("database connection pool closed", log.Duration("elapsed", time.Since(start)))
 				return nil

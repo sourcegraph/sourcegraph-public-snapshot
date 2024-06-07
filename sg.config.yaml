@@ -393,6 +393,7 @@ commands:
 
   enterprise-portal:
     cmd: |
+      export PGDSN="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/{{ .Database }}?sslmode=$PGSSLMODE"
       # Connect to local development database, with the assumption that it will
       # have dotcom database tables.
       export DOTCOM_PGDSN_OVERRIDE="postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE?sslmode=$PGSSLMODE"
@@ -412,6 +413,8 @@ commands:
       DOTCOM_INCLUDE_PRODUCTION_LICENSES: 'true'
       # Used for authentication
       SAMS_URL: https://accounts.sgdev.org
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
     externalSecrets:
       ENTERPRISE_PORTAL_SAMS_CLIENT_ID:
         project: sourcegraph-local-dev
@@ -1776,37 +1779,6 @@ commandsets:
     bazelCommands:
       - cody-gateway
 
-  enterprise-bazel-sveltekit:
-    <<: *enterprise_bazel_set
-    env:
-      SVELTEKIT: true
-
-  enterprise-sveltekit:
-    <<: *enterprise_set
-    # Keep in sync with &enterprise_set.commands
-    commands:
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - web-sveltekit
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - caddy
-      - symbols
-      # TODO https://github.com/sourcegraph/devx-support/issues/537
-      # - docsite
-      - syntax-highlighter
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - embeddings
-    env:
-      SVELTEKIT: true
-
 tests:
   # These can be run with `sg test [name]`
   backend:
@@ -1879,7 +1851,7 @@ tests:
 
   web-e2e:
     preamble: |
-      A Sourcegraph isntance must be already running for these tests to work, most
+      A Sourcegraph instance must be already running for these tests to work, most
       commonly with: `sg start enterprise-e2e`
 
       See more details: https://docs-legacy.sourcegraph.com/dev/how-to/testing#running-end-to-end-tests

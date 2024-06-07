@@ -68,6 +68,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string.special",          SyntaxKind::StringLiteral),
     ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::Tag),
+    ("tag.delimiter",           SyntaxKind::TagDelimiter),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
@@ -175,12 +176,14 @@ lazy_static::lazy_static! {
             (C_Sharp, "c_sharp"),
             (Dart, "dart"),
             (Go, "go"),
+            (Hack, "hack"),
             (Java, "java"),
             // Skipping Javascript here as it is handled
             // specially inside the macro implementation
             // in order to include the jsx highlights.
             (Jsonnet, "jsonnet"),
             (Kotlin, "kotlin"),
+            (Magik, "magik"),
             (Matlab, "matlab"),
             (Nickel, "nickel"),
             (Perl, "perl"),

@@ -11,27 +11,28 @@ export const load: PageLoad = ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = resolveRevision(parent, revision)
+    const filePath = decodeURIComponent(params.path)
 
     const treeEntries = resolvedRevision
         .then(resolvedRevision =>
             fetchTreeEntries({
                 repoName,
                 revision: resolvedRevision,
-                filePath: params.path,
+                filePath,
                 first: null,
             })
         )
         .then(commit => commit.tree)
 
     return {
-        filePath: params.path,
+        filePath,
         treeEntries,
         treeEntriesWithCommitInfo: resolvedRevision
             .then(resolvedRevision =>
                 client.query(TreePageCommitInfoQuery, {
                     repoName,
                     revision: resolvedRevision,
-                    filePath: params.path,
+                    filePath,
                     first: null,
                 })
             )

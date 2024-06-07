@@ -5,12 +5,14 @@ go_library(
     srcs = [
         "adapters.go",
         "v1.go",
+        "v1_store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice",
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//cmd/enterprise-portal/internal/connectutil",
+        "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//internal/trace",
@@ -22,5 +24,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_google_protobuf//types/known/timestamppb",
+        "@org_golang_x_exp//maps",
     ],
 )

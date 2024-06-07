@@ -258,6 +258,8 @@ type TB interface {
 	Helper()
 }
 
+const TestAddr = "127.0.0.1:6379"
+
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
 func SetupForTest(t testing.TB) {
@@ -267,7 +269,7 @@ func SetupForTest(t testing.TB) {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
+			return redis.Dial("tcp", TestAddr)
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")

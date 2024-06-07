@@ -91,15 +91,12 @@ func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverSe
 }
 
 func createCommitFromPatchBinaryRequestMetadataToLogFields(req *proto.CreateCommitFromPatchBinaryRequest_Metadata) []log.Field {
-
 	return []log.Field{
 		log.String("repo", req.GetRepo()),
 		log.String("baseCommit", req.GetBaseCommit()),
 		log.String("targetRef", req.GetTargetRef()),
-		log.Bool("uniqueRef", req.GetUniqueRef()),
 		log.Object("commitInfo", patchCommitInfoToLogFields(req.GetCommitInfo())...),
 		log.Object("push", pushConfigToLogFields(req.GetPush())...),
-		log.Strings("gitApplyArgs", req.GetGitApplyArgs()),
 		log.String("pushRef", req.GetPushRef()),
 	}
 }
