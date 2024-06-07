@@ -42,6 +42,7 @@ func createUserAccount(host, accountID, cookie string) {
 		fmt.Println("Error sending request:", err)
 		return
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -49,7 +50,12 @@ func createUserAccount(host, accountID, cookie string) {
 		}
 	}(resp.Body)
 
-	fmt.Println("Response status for creating user account:", resp.Status)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+	fmt.Println("Response status for creating user account:", resp.Status, "-", string(body))
 }
 
 // addMemberToTeam adds a member to the Sourcegraph team in SSC.
@@ -75,5 +81,11 @@ func addMemberToTeam(host, teamID, accountID, cookie string) {
 		}
 	}(resp.Body)
 
-	fmt.Println("Response status for adding member to team:", resp.Status)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+
+	fmt.Println("Response status for adding member to team:", resp.Status, "-", string(body))
 }
