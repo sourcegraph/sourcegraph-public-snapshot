@@ -46,10 +46,9 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
+        <CodyUpsellBanner />
     </div>
 </section>
-
-<CodyUpsellBanner />
 
 <style lang="scss">
     section {
@@ -62,8 +61,10 @@
     }
 
     div.content {
+        margin-top: 6rem;
         flex-shrink: 0;
         display: flex;
+        gap: 3rem;
         flex-direction: column;
         align-items: center;
         width: 100%;
@@ -83,9 +84,7 @@
 
     img.logo {
         width: 20rem;
-        margin-top: 6rem;
         max-width: 90%;
         min-height: 54px;
-        margin-bottom: 3rem;
     }
 </style>

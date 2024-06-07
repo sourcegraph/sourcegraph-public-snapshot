@@ -4,7 +4,7 @@
     import MultiLineCompletion from './MultiLineCompletion.svelte'
 </script>
 
-<section class="upsell">
+<section>
     <div class="meta">
         <div class="logo"><CodyIcon /></div>
         <h2 class="title">Introducing Cody: your new AI coding assistant.</h2>
@@ -18,10 +18,8 @@
 </section>
 
 <style lang="scss">
-    .upsell {
+    section {
         padding: 1.75rem 2.5rem;
-        padding-right: 1rem;
-        margin-top: 4rem;
         max-width: 60rem;
         border-radius: 0.5rem;
         display: grid;
