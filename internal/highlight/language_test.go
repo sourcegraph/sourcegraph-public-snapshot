@@ -315,6 +315,7 @@ func TestGetLanguageFromContent(t *testing.T) {
 		{
 			Filename: "cpp_hh.hh",
 			Contents: `#help_index "Bit"`,
+			// Linguist only considers .hc to be HolyC so this is marked as C++
 			Expected: "c++",
 		}, {
 			Filename: "cpp_hh.hh",
