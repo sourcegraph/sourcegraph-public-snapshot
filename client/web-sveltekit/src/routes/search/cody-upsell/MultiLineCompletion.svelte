@@ -2,8 +2,8 @@
     import { isLightTheme } from '$lib/stores'
 </script>
 
-{#if $isLightTheme}
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 560 301">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 560 301">
+    {#if $isLightTheme}
         <g clip-path="url(#clip0_1070_5213)">
             <path
                 fill="#fff"
@@ -52,19 +52,19 @@
                 fill="#FF5543"
                 fill-rule="evenodd"
                 d="M12.453 175.381c.364 0 .658.291.658.652v1.491c0 .36-.295.652-.658.652a.655.655 0 01-.658-.652v-1.491c0-.361.295-.652.658-.652z"
-                clipRule="evenodd"
+                clip-rule="evenodd"
             />
             <path
                 fill="#A112FF"
                 fill-rule="evenodd"
                 d="M7.566 177.057c0-.36.294-.652.658-.652h1.504c.363 0 .658.292.658.652a.654.654 0 01-.658.652H8.224a.654.654 0 01-.658-.652z"
-                clipRule="evenodd"
+                clip-rule="evenodd"
             />
             <path
                 fill="#00CBEC"
                 fill-rule="evenodd"
                 d="M8.324 179.411a.662.662 0 00-.918-.127.648.648 0 00-.132.913l.527-.391c-.527.391-.526.391-.526.392v.001h.001l.002.003.005.007c.004.005.01.011.015.019l.049.058a4.368 4.368 0 00.82.713 4.541 4.541 0 002.547.763c1.121 0 1.976-.381 2.547-.763a4.36 4.36 0 00.82-.713l.05-.058.014-.019.005-.007.002-.003h.001v-.001c.001-.001.001-.001-.525-.392l.526.391a.648.648 0 00-.131-.913.662.662 0 00-.92.13l-.021.025a3.03 3.03 0 01-.556.478 3.21 3.21 0 01-1.812.541 3.21 3.21 0 01-2.262-.908 2.519 2.519 0 01-.105-.111l-.02-.025-.003-.003zm4.778.003l.509.38-.51-.38z"
-                clipRule="evenodd"
+                clip-rule="evenodd"
             />
             <path
                 fill="#0F111A"
@@ -110,13 +110,11 @@
                 <stop offset="0.626" stop-color="#A112FF" />
                 <stop offset="1" stop-color="#FF5543" />
             </linearGradient>
-            <clipPath id="clip0_1070_5213">
+            <clip-path id="clip0_1070_5213">
                 <path fill="#fff" d="M0 0H560V300.714H0z" />
-            </clipPath>
+            </clip-path>
         </defs>
-    </svg>
-{:else}
-    <svg xmlns="http://www.w3.org/2000/svg" width="560" height="283" fill="none" viewBox="0 0 560 283">
+    {:else}
         <g clip-path="url(#clip0_1070_4576)">
             <path
                 fill="#191B21"
@@ -194,9 +192,9 @@
                 y2="156.127"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop stopColor="#00CBEC" />
-                <stop offset="0.536" stopColor="#A112FF" />
-                <stop offset="1" stopColor="#FF5543" />
+                <stop stop-color="#00CBEC" />
+                <stop offset="0.536" stop-color="#A112FF" />
+                <stop offset="1" stop-color="#FF5543" />
             </linearGradient>
             <linearGradient
                 id="paint1_linear_1070_4576"
@@ -206,8 +204,8 @@
                 y2="nan"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop stopColor="#4AC1E8" />
-                <stop offset="0.995" stopColor="#6985F1" />
+                <stop stop-color="#4AC1E8" />
+                <stop offset="0.995" stop-color="#6985F1" />
             </linearGradient>
             <linearGradient
                 id="paint2_linear_1070_4576"
@@ -217,14 +215,14 @@
                 y2="nan"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop stopColor="#7048E8" />
-                <stop offset="0.308" stopColor="#4AC1E8" />
-                <stop offset="0.626" stopColor="#A112FF" />
-                <stop offset="1" stopColor="#FF5543" />
+                <stop stop-color="#7048E8" />
+                <stop offset="0.308" stop-color="#4AC1E8" />
+                <stop offset="0.626" stop-color="#A112FF" />
+                <stop offset="1" stop-color="#FF5543" />
             </linearGradient>
-            <clipPath id="clip0_1070_4576">
+            <clip-path id="clip0_1070_4576">
                 <path fill="#fff" d="M0 0H560V282.745H0z" />
-            </clipPath>
+            </clip-path>
         </defs>
-    </svg>
-{/if}
+    {/if}
+</svg>
