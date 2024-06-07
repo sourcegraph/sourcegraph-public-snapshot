@@ -78,7 +78,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                 if (group !== '.') {
                     const option = createFilterSuggestion(
                         FilterType.repo,
-                        `^${escapeRegExp(group)}${revision ? `@${revision}` : ''}`,
+                        `^${escapeRegExp(group)}`,
                         'Search within organization/group',
                         tokens,
                         position
