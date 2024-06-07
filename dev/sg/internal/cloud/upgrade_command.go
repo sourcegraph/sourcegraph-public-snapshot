@@ -101,7 +101,7 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		if errors.Is(err, ErrInstanceNotFound) {
 			std.Out.WriteWarningf("Unable to upgrade %q since no deployment like that exists", deploymentName)
-			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud list`, or you can see all deployments with `sg cloud list --all`")
+			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud ephemeral list`, or you can see all deployments with `sg cloud ephemeral list --all`")
 		}
 		return err
 	}
