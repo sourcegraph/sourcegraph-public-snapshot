@@ -317,6 +317,17 @@ commands:
       CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN: sekret
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sekret
       CODY_GATEWAY_GOOGLE_ACCESS_TOKEN: sekret
+      # Connect to services that require SAMS M2M http://go/sams-m2m
+      SAMS_URL: https://accounts.sgdev.org
+      # Connect to Enterprise Portal running locally
+      CODY_GATEWAY_ENTERPRISE_PORTAL_URL: http://localhost:6081
+    externalSecrets:
+      SAMS_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_ID
+      SAMS_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_SECRET
     watch:
       - lib
       - internal
@@ -422,7 +433,6 @@ commands:
       ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET:
         project: sourcegraph-local-dev
         name: SG_LOCAL_DEV_SAMS_CLIENT_SECRET
-
     watch:
       - lib
       - cmd/enterprise-portal
@@ -1052,6 +1062,18 @@ bazelCommands:
       CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN: sekret
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sekret
       CODY_GATEWAY_GOOGLE_ACCESS_TOKEN: sekret
+      # Connect to services that require SAMS M2M http://go/sams-m2m
+      SAMS_URL: https://accounts.sgdev.org
+      # Connect to Enterprise Portal running locally
+      CODY_GATEWAY_ENTERPRISE_PORTAL_URL: http://localhost:6081
+    externalSecrets:
+      SAMS_CLIENT_ID:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_ID
+      SAMS_CLIENT_SECRET:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_SAMS_CLIENT_SECRET
+
   docsite:
     runTarget: //doc:serve
   searcher:
@@ -1394,6 +1416,7 @@ commandsets:
       - blobstore
       - embeddings
       - cody-gateway
+      - enterprise-portal # required by Cody Gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
