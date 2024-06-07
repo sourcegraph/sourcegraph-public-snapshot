@@ -280,13 +280,13 @@ test.describe('scroll behavior', () => {
         await expect(selectedLine).toHaveText(/line 100;/)
     })
 
-    test.fixme('go to another file', async ({ page, utils }) => {
+    test('go to another file', async ({ page, utils }) => {
         await page.goto(url)
         // Scroll to some arbitrary position
         await utils.scrollYAt(page.getByText('line 1;'), 1000)
 
         // Open sidebar
-        await page.locator('#sidebar-panel').getByRole('button').click()
+        await page.getByLabel('Open sidebar').click()
 
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
         await expect(page.getByText('line 1;')).toBeVisible()
@@ -382,7 +382,7 @@ test.describe('scroll behavior', () => {
 
 test('non-existent file', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => ({
+        BlobFileViewBlobQuery: ({ }) => ({
             repository: {
                 commit: {
                     blob: null,
@@ -397,7 +397,7 @@ test('non-existent file', async ({ page, sg }) => {
 
 test('error loading file data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewBlobQuery: ({}) => {
+        BlobFileViewBlobQuery: ({ }) => {
             throw new Error('Blob error')
         },
     })
@@ -408,7 +408,7 @@ test('error loading file data', async ({ page, sg }) => {
 
 test.skip('error loading highlights data', async ({ page, sg }) => {
     sg.mockOperations({
-        BlobFileViewHighlightedFileQuery: ({}) => {
+        BlobFileViewHighlightedFileQuery: ({ }) => {
             throw new Error('Highlights error')
         },
     })
