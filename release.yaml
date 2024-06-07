@@ -261,6 +261,7 @@ promoteToPublic:
           # Annotate build
           cat << EOF | buildkite-agent annotate --style info
           Promoted release is **publicly available** through a git tag at [\`{{version}}\`](https://github.com/sourcegraph/sourcegraph/tree/{{version}}).
+          Please note that some release artifacts will not be available until the tag's pipeline completes. You can follow this at https://buildkite.com/sourcegraph/sourcegraph/builds?branch={{version}}
           EOF
 
       - name: 'git:release:create'
