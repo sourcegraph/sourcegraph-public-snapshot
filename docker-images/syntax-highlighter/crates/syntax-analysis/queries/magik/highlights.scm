@@ -155,10 +155,9 @@
   (false)
 ] @boolean
 
-[
-  (maybe)
-  (unset)
-] @constant.builtin
+(maybe) @constant.builtin
+
+(unset) @constant.null
 
 [
  (self)
@@ -169,7 +168,7 @@
 [
  (symbol)
  (character_literal)
-] @constant
+] @string
 
 [
  (variable)

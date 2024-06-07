@@ -2,6 +2,9 @@
 source: crates/syntax-analysis/src/highlighting/tree_sitter.rs
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
+  # Some examples based on test cases here https://github.com/krn-robin/tree-sitter-magik/tree/main/test/corpus
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
   # Package
 //^^^^^^^^^ Comment
   _package pp
@@ -41,15 +44,15 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   2.2e10
 //^^^^^^ NumericLiteral
   :symbol
-//^^^^^^^ IdentifierConstant
+//^^^^^^^ StringLiteral
   :boolean?
-//^^^^^^^^^ IdentifierConstant
+//^^^^^^^^^ StringLiteral
   :kleenean??
-//^^^^^^^^^^^ IdentifierConstant
+//^^^^^^^^^^^ StringLiteral
   :int!internal
-//^^^^^^^^^^^^^ IdentifierConstant
+//^^^^^^^^^^^^^ StringLiteral
   :|piped|
-//^^^^^^^^ IdentifierConstant
+//^^^^^^^^ StringLiteral
   {1,2,3}
 // ^ NumericLiteral
 //   ^ NumericLiteral
@@ -134,13 +137,13 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^ Keyword
 //        ^^^^^^^^^^^^^^ Identifier
 //                       ^^ IdentifierOperator
-//                          ^^^^^^ IdentifierBuiltin
+//                          ^^^^^^ IdentifierNull
   _global _constant !current_view! << _unset
 //^^^^^^^ Keyword
 //        ^^^^^^^^^ Keyword
 //                  ^^^^^^^^^^^^^^ Identifier
 //                                 ^^ IdentifierOperator
-//                                    ^^^^^^ IdentifierBuiltin
+//                                    ^^^^^^ IdentifierNull
   
   write(a)
 //^^^^^ IdentifierFunction
@@ -151,11 +154,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   a << :hello
 //^ Identifier
 //  ^^ IdentifierOperator
-//     ^^^^^^ IdentifierConstant
+//     ^^^^^^ StringLiteral
   b << :|hello world|
 //^ Identifier
 //  ^^ IdentifierOperator
-//     ^^^^^^^^^^^^^^ IdentifierConstant
+//     ^^^^^^^^^^^^^^ StringLiteral
   
   # Function calls
 //^^^^^^^^^^^^^^^^ Comment
@@ -170,23 +173,23 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^^^ Comment
   def_slotted_exemplar(:my_object,
 //^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
-//                     ^^^^^^^^^^ IdentifierConstant
+//                     ^^^^^^^^^^ StringLiteral
    {
       {:slot_a, 34},
-//     ^^^^^^^ IdentifierConstant
+//     ^^^^^^^ StringLiteral
 //              ^^ NumericLiteral
       {:slot_b, "hello"}
-//     ^^^^^^^ IdentifierConstant
+//     ^^^^^^^ StringLiteral
 //              ^^^^^^^ StringLiteral
    }, {:parent_object_a, :parent_object_b})
-//     ^^^^^^^^^^^^^^^^ IdentifierConstant
-//                       ^^^^^^^^^^^^^^^^ IdentifierConstant
+//     ^^^^^^^^^^^^^^^^ StringLiteral
+//                       ^^^^^^^^^^^^^^^^ StringLiteral
   
   # Class directive
 //^^^^^^^^^^^^^^^^^ Comment
   def_slotted_exemplar(:exemplar,
 //^^^^^^^^^^^^^^^^^^^^ IdentifierBuiltin
-//                     ^^^^^^^^^ IdentifierConstant
+//                     ^^^^^^^^^ StringLiteral
                        {},
                        {},
                        {_class |com.gesmallworld.magik.language.MagikFinalisable|})
@@ -196,29 +199,29 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^ Comment
   def_mixin(:my_mixin)
 //^^^^^^^^^ IdentifierBuiltin
-//          ^^^^^^^^^ IdentifierConstant
+//          ^^^^^^^^^ StringLiteral
   def_mixin(:my_variant_of_their_mixin,{their_mixin})
 //^^^^^^^^^ IdentifierBuiltin
-//          ^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierConstant
+//          ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                      ^^^^^^^^^^^ Identifier
   
   my_mixin.define_shared_variable(:a_var,:test,:public)
 //^^^^^^^^ Identifier
 //        ^ IdentifierOperator
 //         ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
-//                                ^^^^^^ IdentifierConstant
-//                                       ^^^^^ IdentifierConstant
-//                                             ^^^^^^^ IdentifierConstant
+//                                ^^^^^^ StringLiteral
+//                                       ^^^^^ StringLiteral
+//                                             ^^^^^^^ StringLiteral
   
   my_mixin.method(:a_var).value << :changed
 //^^^^^^^^ Identifier
 //        ^ IdentifierOperator
 //         ^^^^^^ IdentifierFunction
-//                ^^^^^^ IdentifierConstant
+//                ^^^^^^ StringLiteral
 //                       ^ IdentifierOperator
 //                        ^^^^^ Identifier
 //                              ^^ IdentifierOperator
-//                                 ^^^^^^^^ IdentifierConstant
+//                                 ^^^^^^^^ StringLiteral
   
   # Operators
 //^^^^^^^^^^^ Comment
@@ -329,7 +332,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^^^^^ BooleanLiteral
 //            ^^^^^ Keyword
 //                  ^^ IdentifierOperator
-//                     ^^^^^^ IdentifierBuiltin
+//                     ^^^^^^ IdentifierNull
 //                            ^^^^^^ Keyword
   _endblock
 //^^^^^^^^^ Keyword
@@ -371,7 +374,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^ Comment
   _catch :error
 //^^^^^^ Keyword
-//       ^^^^^^ IdentifierConstant
+//       ^^^^^^ StringLiteral
     >> _true
 //  ^^ IdentifierOperator
 //     ^^^^^ BooleanLiteral
@@ -408,7 +411,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                            ^ IdentifierParameter
 //                               ^ IdentifierParameter
    ## multi
-// ^^^^^^^^ Comment 133:1..135:17
+// ^^^^^^^^ Comment 135:1..137:17
    ## line
    ## documentation
       _return a + b
@@ -481,7 +484,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //            ^^^ Identifier
       _throw :error _with a, b
 //    ^^^^^^ Keyword
-//           ^^^^^^ IdentifierConstant
+//           ^^^^^^ StringLiteral
 //                  ^^^^^ Keyword
 //                        ^ Identifier
 //                           ^ Identifier
@@ -506,7 +509,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //      ^ IdentifierOperator
 //       ^^^^^^ Identifier
 //             ^^ IdentifierOperator
-//                ^^^^^^ IdentifierBuiltin
+//                ^^^^^^ IdentifierNull
   object.method1.method2
 //^^^^^^ Identifier
 //      ^ IdentifierOperator
@@ -528,6 +531,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
     _leave@outer_loop
 //  ^^^^^^ Keyword
 //        ^^^^^^^^^^^ Identifier
+    _continue@outer_loop
+//  ^^^^^^^^^ Keyword
+//           ^^^^^^^^^^^ Identifier
   _endloop
 //^^^^^^^^ Keyword
   
@@ -573,8 +579,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
           _leave _with (_unset, _unset)
 //        ^^^^^^ Keyword
 //               ^^^^^ Keyword
-//                      ^^^^^^ IdentifierBuiltin
-//                              ^^^^^^ IdentifierBuiltin
+//                      ^^^^^^ IdentifierNull
+//                              ^^^^^^ IdentifierNull
     s +<< i
 //  ^ Identifier
 //    ^^^ IdentifierOperator
@@ -618,7 +624,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
        _continue _with _unset
 //     ^^^^^^^^^ Keyword
 //               ^^^^^ Keyword
-//                     ^^^^^^ IdentifierBuiltin
+//                     ^^^^^^ IdentifierNull
     _endloop
 //  ^^^^^^^^ Keyword
     _try _with cond
@@ -691,9 +697,9 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //     ^^^^^^^ Keyword
 //             ^^^^ Identifier
 //                  ^^^^^ Keyword
-//                         ^^ IdentifierConstant
-//                            ^^ IdentifierConstant
-//                               ^^ IdentifierConstant
+//                         ^^ StringLiteral
+//                            ^^ StringLiteral
+//                               ^^ StringLiteral
 //                                  ^ IdentifierOperator
 //                                   ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
   _loop
