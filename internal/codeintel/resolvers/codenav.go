@@ -403,10 +403,7 @@ type StringComparator struct {
 	Equals *string
 }
 
-type UsageConnectionResolver interface {
-	ConnectionResolver[UsageResolver]
-	PageInfo(ctx context.Context) (*graphqlutil.ConnectionPageInfo[UsageResolver], error)
-}
+type UsageConnectionResolver = PagedConnectionResolver[UsageResolver]
 
 type UsageResolver interface {
 	Symbol(context.Context) (SymbolInformationResolver, error)
