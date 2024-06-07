@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -33,6 +34,10 @@ func genGatewayAccessTokenExec(c *cli.Context) error {
 
 	out.WriteNoticef("Generating new gateway access token ...")
 	privateToken := c.Args().Get(0)
+	if !strings.HasPrefix(privateToken, "sgp_") {
+		out.WriteWarningf("Token must be prefixed with \"sgp_\"")
+		return errors.New("invalid token: not prefixed with sgp_")
+	}
 	accessToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(privateToken)
 	if err != nil {
 		return errors.Newf("failed to generate gateway access token: %s", err)
