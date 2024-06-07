@@ -12,15 +12,9 @@ func convertAccessAttrsToProto(attrs *dotcomdb.CodyGatewayAccessAttributes) *cod
 	// Provide ID in prefixed format.
 	subscriptionID := subscriptionsv1.EnterpriseSubscriptionIDPrefix + attrs.SubscriptionID
 
-	// If not enabled, return a minimal response.
-	if !attrs.CodyGatewayEnabled {
-		return &codyaccessv1.CodyGatewayAccess{
-			SubscriptionId: subscriptionID,
-			Enabled:        false,
-		}
-	}
-
-	// If enabled, return the full response.
+	// Always try to return the full response, since even when disabled, some
+	// features may be allowed via Cody Gateway (notably attributions). This
+	// also allows Cody Gateway to cache the state of actors that are disabled.
 	limits := attrs.EvaluateRateLimits()
 	return &codyaccessv1.CodyGatewayAccess{
 		SubscriptionId:          subscriptionID,
