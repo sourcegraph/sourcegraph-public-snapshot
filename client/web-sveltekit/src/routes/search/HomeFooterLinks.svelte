@@ -1,11 +1,11 @@
 <script lang="ts">
-    export let links: { name: string; href: string }[]
+    export let links: { name: string; href: string; handleClick: () => void }[]
 </script>
 
 {#if links.length > 0}
     <footer>
         {#each links as link}
-            <span><a href={link.href}>{link.name}</a></span>
+            <span><a href={link.href} on:click={link.handleClick}>{link.name}</a></span>
         {/each}
     </footer>
 {/if}

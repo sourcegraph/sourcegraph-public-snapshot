@@ -15,7 +15,7 @@
 
     export let queryState: QueryStateStore
     export let codyHref: string = '/cody'
-    export let footerLinks: { name: string; href: string }[]
+    export let footerLinks: { name: string; href: string; handleClick: () => void }[]
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
