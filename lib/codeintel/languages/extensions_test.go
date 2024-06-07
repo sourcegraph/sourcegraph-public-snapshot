@@ -41,7 +41,7 @@ var nonAmbiguousExtensionsCheck = map[string]string{
 }
 
 func TestGetLanguageByAlias_UnsupportedLanguages(t *testing.T) {
-	for alias, name := range unsupportedByEnryAliasMap {
+	for alias, name := range unsupportedByLinguistAliasMap {
 		resName, _ := GetLanguageByAlias(alias)
 		require.Equal(t, name, resName,
 			"maybe a typo in `unsupportedByEnryAliasMap`?")
@@ -57,7 +57,7 @@ func TestGetLanguageByAlias_NonAmbiguousLanguages(t *testing.T) {
 }
 
 func TestGetLanguageExtensions_UnsupportedExtensions(t *testing.T) {
-	for language, ext := range unsupportedByEnryNameToExtensionMap {
+	for language, ext := range unsupportedByLinguistNameToExtensionMap {
 		extensions := GetLanguageExtensions(language)
 		require.Contains(t, extensions, ext,
 			"maybe a typo in `unsupportedByEnryNameToExtensionMap`?")
@@ -74,7 +74,7 @@ func TestGetLanguageExtensions_NonAmbiguousExtensions(t *testing.T) {
 }
 
 func TestGetLanguagesByExtension_UnsupportedExtensions(t *testing.T) {
-	for ext, language := range unsupportedByEnryExtensionToNameMap {
+	for ext, language := range unsupportedByLinguistExtensionToNameMap {
 		filename := "foo" + ext
 		languages, _ := getLanguagesByExtension(filename)
 		require.Contains(t, languages, language,

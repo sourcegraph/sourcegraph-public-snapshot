@@ -42,7 +42,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	// feature is enabled, we use Zoekt's native language filters, which are based on the actual language
 	// of the file (as determined by go-enry).
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	if feat.UseContentBasedLangFilters(append(langInclude, langExclude...)) {
+	if feat.ContentBasedLangFilters {
 		for _, lang := range langInclude {
 			and = append(and, toLangFilter(lang))
 		}

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -420,20 +419,6 @@ func (f *Features) String() string {
 		return "error decoding features"
 	}
 	return flagMap.String()
-}
-
-func (f *Features) UseContentBasedLangFilters(langs []string) bool {
-	if !f.ContentBasedLangFilters {
-		return false
-	}
-
-	for _, lang := range langs {
-		if _, ok := enry.GetLanguageByAlias(lang); !ok {
-			return false
-		}
-	}
-
-	return true
 }
 
 // RepoOptions is the source of truth for the options a user specified
