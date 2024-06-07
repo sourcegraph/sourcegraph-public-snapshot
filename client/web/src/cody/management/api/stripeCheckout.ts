@@ -1,23 +1,20 @@
 import type { BillingInterval } from './teamSubscriptions'
 
-export interface CreateCheckoutSessionRequest {
+export interface CreatePaymentSessionRequest {
     interval: BillingInterval
     seats: number
-    canChangeSeatCount?: boolean
 
     customerEmail?: string
     showPromoCodeField: boolean
 
     returnUrl?: string
-
-    stripeUiMode?: 'embedded' | 'custom'
 }
 
-export interface CreateCheckoutSessionResponse {
+export interface CreatePaymentSessionResponse {
     clientSecret: string
 }
 
-export interface GetCheckoutSessionResponse {
+export interface GetPaymentSessionResponse {
     // The only valid state is "complete". Any other string implies that the
     // checkout was not successful, and no new Cody Pro team was registered.
     status: string

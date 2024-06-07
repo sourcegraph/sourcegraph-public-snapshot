@@ -32,15 +32,15 @@ export module Client {
 
     // Stripe Checkout
 
-    export function createStripeCheckoutSession(
-        requestBody: types.CreateCheckoutSessionRequest
-    ): Call<types.CreateCheckoutSessionResponse> {
-        return { method: 'POST', urlSuffix: '/checkout/session', requestBody }
+    export function createStripePaymentSession(
+        requestBody: types.CreatePaymentSessionRequest
+    ): Call<types.CreatePaymentSessionResponse> {
+        return { method: 'POST', urlSuffix: '/payment/session', requestBody }
     }
 }
 
 // Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
+// This is a sort of "meta request" in the same vein as the `gql`
 // template tag, see: https://github.com/apollographql/graphql-tag
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
