@@ -16,14 +16,13 @@ var (
 		Category: category.Util,
 		Subcommands: []*cli.Command{{
 			Name:   "gen-token",
-			Usage:  "generate a new token for use with Cody Gateway from a personal access token",
+			Usage:  "generate a new token for use with Cody Gateway",
 			Action: genGatewayAccessTokenExec,
 		}},
 	}
 )
 
 func genGatewayAccessTokenExec(c *cli.Context) error {
-	// The provided token must be nonempty and start with sgp_
 	accessToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(c.Args().Get(0))
 	if err != nil {
 		return errors.Newf("failed to generate gateway access token: %s", err)
