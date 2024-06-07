@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "pbt",
+    srcs = [
+        "api.go",
+        "probability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/pbt",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
+    ],
+)
+
+go_test(
+    name = "pbt_test",
+    srcs = [
+        "api_test.go",
+        "probability_test.go",
+    ],
+    embed = [":pbt"],
+    deps = [
+        "//internal/api",
+        "@com_github_stretchr_testify//require",
+        "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
+        "@org_gonum_v1_gonum//stat/distuv",
+    ],
+)
