@@ -193,8 +193,8 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
-func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
@@ -221,12 +221,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
-		repo, revision, err := r.resolveRepoAndRevision(ctx, args)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = r.svc.SyntacticUsages(ctx, args.Range, repo, revision)
+		_, err = r.svc.SyntacticUsages(ctx, args.Path, args.Start, args.End, args.Repo, args.CommitID)
 		if err != nil {
 			return nil, err
 		}

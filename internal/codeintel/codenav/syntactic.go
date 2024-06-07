@@ -15,9 +15,9 @@ import (
 func FindCandidateOccurrencesViaSearch(
 	ctx context.Context,
 	client searchclient.SearchClient,
-	repo *types.Repo,
+	repo types.Repo,
 	symbolName string,
-	revision *api.CommitID,
+	revision api.CommitID,
 ) (map[string][]result.Range, error) {
 	var contextLines int32 = 0
 	patternType := "standard"
@@ -27,7 +27,7 @@ func FindCandidateOccurrencesViaSearch(
 	repoName := fmt.Sprintf("^%s$", repo.Name)
 	identifier := symbolName
 	countLimit := 500
-	searchQuery := fmt.Sprintf("repo:%s rev:%s language:%s count:%d %s", repoName, string(*revision), language, countLimit, identifier)
+	searchQuery := fmt.Sprintf("repo:%s rev:%s language:%s count:%d %s", repoName, string(revision), language, countLimit, identifier)
 
 	// fmt.Printf("Sending: query=%s\n", searchQuery)
 

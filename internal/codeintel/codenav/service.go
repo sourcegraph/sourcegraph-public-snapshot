@@ -932,10 +932,10 @@ func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (
 }
 
 // TODO: Hack that relies on us having only syntactic uploads for the root directory.
-func (s *Service) getSyntacticUpload(ctx context.Context, repo *types.Repo, commit *api.CommitID) (uploadsshared.CompletedUpload, error) {
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID) (uploadsshared.CompletedUpload, error) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
 		RepositoryID: int(repo.ID),
-		Commit:       string(*commit),
+		Commit:       string(commit),
 		Indexer:      uploadsshared.SyntacticIndexer,
 	})
 
@@ -954,13 +954,20 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo *types.Repo, comm
 	return uploads[0], nil
 }
 
-func (s *Service) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
+func (s *Service) getSyntacticSymbolsAtRange(
+	ctx context.Context,
+	repo types.Repo,
+	revision api.CommitID,
+	path string,
+	start resolverstubs.PositionInput,
+	end resolverstubs.PositionInput,
+) (symbols []*scip.Symbol, err error) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
 	if err != nil {
 		return nil, err
 	}
 
-	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, rangeInput.Path)
+	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -970,8 +977,8 @@ func (s *Service) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Re
 		occRange := scip.NewRange(occurrence.GetRange())
 		// TODO: Shouldn't need exact match, just overlap is enough
 		// TODO: Needs to handle differing text encodings to get the character positions right
-		if rangeInput.Start.Line == occRange.Start.Line && rangeInput.End.Line == occRange.End.Line &&
-			rangeInput.Start.Character == occRange.Start.Character && rangeInput.End.Character == occRange.End.Character {
+		if start.Line == occRange.Start.Line && end.Line == occRange.End.Line &&
+			start.Character == occRange.Start.Character && end.Character == occRange.End.Character {
 			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 			if err != nil {
 				// TODO: Log this failure?
@@ -989,8 +996,15 @@ type ScoredMatch struct {
 	score      float64
 }
 
-func (s *Service) SyntacticUsages(ctx context.Context, rangeInput resolverstubs.RangeInput, repo *types.Repo, revision *api.CommitID) ([]struct{}, error) {
-	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, revision, rangeInput)
+func (s *Service) SyntacticUsages(
+	ctx context.Context,
+	path string,
+	start resolverstubs.PositionInput,
+	end resolverstubs.PositionInput,
+	repo types.Repo,
+	commit api.CommitID,
+) ([]struct{}, error) {
+	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -1008,13 +1022,13 @@ func (s *Service) SyntacticUsages(ctx context.Context, rangeInput resolverstubs.
 		return nil, fmt.Errorf("no matching occurrences found for range")
 	}
 
-	candidateMatches, err := FindCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, symbolName, revision)
+	candidateMatches, err := FindCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, symbolName, commit)
 
 	fmt.Printf("candidateMatches: %#v", candidateMatches)
 
 	var scoredMatches []ScoredMatch
 	for path, ranges := range candidateMatches {
-		upload, err := s.getSyntacticUpload(ctx, repo, revision)
+		upload, err := s.getSyntacticUpload(ctx, repo, commit)
 		if err != nil {
 			continue
 		}

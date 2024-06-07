@@ -26,7 +26,6 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/observation",
-        "//internal/search/client",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
