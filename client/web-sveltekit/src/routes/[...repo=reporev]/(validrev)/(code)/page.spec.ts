@@ -256,7 +256,7 @@ test('file popover', async ({ page, sg }) => {
 
     // Hover a tree entry, expect the popover to be visible
     await page.getByRole('link', { name: 'index.js' }).hover()
-    await expect(page.getByText('Last Changed')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Last Changed')).toBeVisible()
 
     // Hover outside the popover (the Sourcegraph logo), expect the popover to be hidden
     await page.getByRole('link', { name: 'Sourcegraph', exact: true }).hover()
