@@ -191,8 +191,8 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
-func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
+func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
@@ -205,12 +205,12 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	}()
 
 	const maxUsagesCount = 100
-	resolvedArgs, err := args.Resolve(ctx, r.repoStore, r.gitserverClient, maxUsagesCount)
+	args, err := unresolvedArgs.Resolve(ctx, r.repoStore, r.gitserverClient, maxUsagesCount)
 	if err != nil {
 		return nil, err
 	}
-	remainingCount := int(*args.First)
-	provsForSCIPData := resolvedArgs.Symbol.ProvenancesForSCIPData()
+	remainingCount := int(*unresolvedArgs.First)
+	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
 		// Attempt to get up to remainingCount precise results.
