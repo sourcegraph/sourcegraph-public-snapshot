@@ -2,9 +2,9 @@ package postgresqllogicalreplication
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqluser"
-	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/publication"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/replicationslot"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/random/password"
@@ -16,6 +16,8 @@ import (
 )
 
 type Config struct {
+	PostgreSQLProvider cdktf.TerraformProvider
+
 	CloudSQL *cloudsql.Output
 	Spec     spec.EnvironmentResourcePostgreSQLLogicalReplicationSpec
 }
@@ -53,15 +55,6 @@ type Output struct {
 //
 // TODO(@bobheadxi): Improve documentation around this teardown scenario.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	pgProvider := postgresql.NewPostgresqlProvider(scope, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
-		Scheme:    pointers.Ptr("gcppostgres"),
-		Host:      config.CloudSQL.Instance.ConnectionName(),
-		Username:  config.CloudSQL.AdminUser.Name(),
-		Password:  config.CloudSQL.AdminUser.Password(),
-		Port:      pointers.Float64(5432),
-		Superuser: pointers.Ptr(false),
-	})
-
 	var publicationOutputs []PublicationOutput
 	for _, p := range config.Spec.Publications {
 		id := id.Group("publications").Group(p.Name)
@@ -88,13 +81,13 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		publicationOutputs = append(publicationOutputs, PublicationOutput{
 			EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec: p,
 			PublicationName: publication.NewPublication(scope, id.TerraformID("publication"), &publication.PublicationConfig{
-				Provider: pgProvider,
+				Provider: config.PostgreSQLProvider,
 				Name:     pointers.Ptr(p.Name),
 				Database: pointers.Ptr(p.Database),
 				Tables:   pointers.Ptr(pointers.Slice(p.Tables)),
 			}).Name(),
 			ReplicationSlotName: replicationslot.NewReplicationSlot(scope, id.TerraformID("replication_slot"), &replicationslot.ReplicationSlotConfig{
-				Provider: pgProvider,
+				Provider: config.PostgreSQLProvider,
 				Name:     pointers.Ptr(p.Name + "_pgoutput"),
 				Database: pointers.Ptr(p.Database),
 				Plugin:   pointers.Ptr("pgoutput"),

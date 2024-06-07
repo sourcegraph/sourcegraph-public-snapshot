@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiamcustomrole"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucket"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/storagebucketobject"
+	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryorganization"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/datasentryteam"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry/key"
@@ -281,13 +283,22 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Cloud Run.
 
 		// Apply additional runtime configuration
+		pgRuntimeProvider := postgresql.NewPostgresqlProvider(stack, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
+			Scheme:    pointers.Ptr("gcppostgres"),
+			Host:      sqlInstance.Instance.ConnectionName(),
+			Username:  sqlInstance.AdminUser.Name(),
+			Password:  sqlInstance.AdminUser.Password(),
+			Port:      jsii.Number(5432),
+			Superuser: jsii.Bool(false),
+		})
 		var publications []postgresqllogicalreplication.PublicationOutput
 		if pgSpec.LogicalReplication != nil {
 			replication, err := postgresqllogicalreplication.New(stack,
 				id.Group("postgresqllogicalreplication"),
 				postgresqllogicalreplication.Config{
-					CloudSQL: sqlInstance,
-					Spec:     *pgSpec.LogicalReplication,
+					PostgreSQLProvider: pgRuntimeProvider,
+					CloudSQL:           sqlInstance,
+					Spec:               *pgSpec.LogicalReplication,
 				})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL logical replication")
@@ -295,28 +306,32 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			// Make output visible for configuration in consumer tools like
 			// Datastream
 			for _, pub := range replication.Publications {
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", pub.Name), *pub.PublicationName,
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", pub.Name),
+					*pub.PublicationName,
 					fmt.Sprintf("Publication name of the %q PostgreSQL publication", pub.Name))
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", pub.Name), *pub.ReplicationSlotName,
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", pub.Name),
+					*pub.ReplicationSlotName,
 					fmt.Sprintf("Replication slot name of the %q PostgreSQL publication", pub.Name))
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_user", pub.Name), *pub.User.Name(),
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_user", pub.Name),
+					*pub.User.Name(),
 					fmt.Sprintf("User for subscribing to the %q PostgreSQL publication", pub.Name))
 				gsmsecret.New(stack,
-					id.Group("postgresqllogicalreplication").
-						Group(*pub.PublicationName).
+					id.Group("postgresqllogicalreplication_output").
+						Group(pub.Name).
 						Group("user_password"),
 					gsmsecret.Config{
 						ProjectID: vars.ProjectID,
 						ID: fmt.Sprintf("POSTGRESQL_PUBLICATION_%s_USER_PASSWORD",
-							strings.ToUpper(*pub.PublicationName)),
+							strings.ToUpper(pub.Name)),
 						Value: *pub.User.Password(),
 					})
 			}
 		}
 		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
-			Databases:    pgSpec.Databases,
-			CloudSQL:     sqlInstance,
-			Publications: publications,
+			PostgreSQLProvider: pgRuntimeProvider,
+			Databases:          pgSpec.Databases,
+			CloudSQL:           sqlInstance,
+			Publications:       publications,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")

@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grant"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grantrole"
-	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/role"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
@@ -23,6 +22,8 @@ type Output struct {
 }
 
 type Config struct {
+	PostgreSQLProvider cdktf.TerraformProvider
+
 	Databases    []string
 	CloudSQL     *cloudsql.Output
 	Publications []postgresqllogicalreplication.PublicationOutput
@@ -43,17 +44,8 @@ type Config struct {
 //
 // TODO(@bobheadxi): Improve documentation around this teardown scenario.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	pgProvider := postgresql.NewPostgresqlProvider(scope, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
-		Scheme:    pointers.Ptr("gcppostgres"),
-		Host:      config.CloudSQL.Instance.ConnectionName(),
-		Username:  config.CloudSQL.AdminUser.Name(),
-		Password:  config.CloudSQL.AdminUser.Password(),
-		Port:      jsii.Number(5432),
-		Superuser: jsii.Bool(false),
-	})
-
 	workloadSuperuserGrant := grantrole.NewGrantRole(scope, id.TerraformID("workload_service_account_role_cloudsqlsuperuser"), &grantrole.GrantRoleConfig{
-		Provider:        pgProvider,
+		Provider:        config.PostgreSQLProvider,
 		Role:            config.CloudSQL.WorkloadUser.Name(),
 		GrantRole:       jsii.String("cloudsqlsuperuser"),
 		WithAdminOption: jsii.Bool(true),
@@ -63,7 +55,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// https://github.com/sourcegraph/deploy-sourcegraph-managed/blob/ded74a806bb6d1925cb894a8755ed52db7585a4f/modules/terraform-managed-instance-new/sql.tf#L153-L179
 	for _, db := range config.Databases {
 		_ = grant.NewGrant(scope, id.Group(db).TerraformID("operator_access_service_account_connect_grant"), &grant.GrantConfig{
-			Provider:   pgProvider,
+			Provider:   config.PostgreSQLProvider,
 			Database:   &db,
 			Role:       config.CloudSQL.OperatorAccessUser.Name(),
 			ObjectType: pointers.Ptr("database"),
@@ -72,7 +64,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			})),
 		})
 		_ = grant.NewGrant(scope, id.Group(db).TerraformID("operator_access_service_account_table_grant"), &grant.GrantConfig{
-			Provider: pgProvider,
+			Provider: config.PostgreSQLProvider,
 			Database: &db,
 			Role:     config.CloudSQL.OperatorAccessUser.Name(),
 			Schema:   pointers.Ptr("public"),
@@ -92,7 +84,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		id := id.Group("publication")
 
 		replicationRole := role.NewRole(scope, id.TerraformID("replicationrole"), &role.RoleConfig{
-			Provider:    pgProvider,
+			Provider:    config.PostgreSQLProvider,
 			Name:        pointers.Ptr("replication_role"),
 			Replication: pointers.Ptr(true),
 		})
@@ -102,14 +94,14 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 			// 	CREATE USER USER_NAME WITH REPLICATION LOGIN <...>;
 			_ = grantrole.NewGrantRole(scope, id.TerraformID("user_replicationrole_grant"), &grantrole.GrantRoleConfig{
-				Provider:  pgProvider,
+				Provider:  config.PostgreSQLProvider,
 				Role:      p.User.Name(),
 				GrantRole: replicationRole.Name(),
 			})
 
 			// 	GRANT SELECT ON ALL TABLES IN SCHEMA SCHEMA_NAME TO USER_NAME;
 			_ = grant.NewGrant(scope, id.TerraformID("user_table_select_grant"), &grant.GrantConfig{
-				Provider:   pgProvider,
+				Provider:   config.PostgreSQLProvider,
 				Database:   &p.Database,
 				Role:       p.User.Name(),
 				Schema:     pointers.Ptr("public"),
@@ -122,7 +114,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			})
 			// 	GRANT USAGE ON SCHEMA SCHEMA_NAME TO USER_NAME;
 			_ = grant.NewGrant(scope, id.TerraformID("user_schema_usage_grant"), &grant.GrantConfig{
-				Provider:   pgProvider,
+				Provider:   config.PostgreSQLProvider,
 				Database:   &p.Database,
 				Role:       p.User.Name(),
 				ObjectType: pointers.Ptr("schema"),
