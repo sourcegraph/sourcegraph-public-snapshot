@@ -148,7 +148,12 @@
 ; Literals
 (number) @number
 
-(string_literal) @string
+[
+  (string_literal)
+  (symbol)
+] @string
+
+(character_literal) @character
 
 [
   (true)
@@ -164,11 +169,6 @@
  (super)
  (clone)
 ] @variable.builtin
-
-[
- (symbol)
- (character_literal)
-] @string
 
 [
  (variable)

@@ -62,6 +62,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   'string'
 //^^^^^^^^ StringLiteral
   
+  ; Character
+//  ^^^^^^^^^ Identifier
+  %x
+//^^ CharacterLiteral
+  
   _primitive 512
 //^^^^^^^^^^ Keyword
 //           ^^^ NumericLiteral
@@ -411,7 +416,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                            ^ IdentifierParameter
 //                               ^ IdentifierParameter
    ## multi
-// ^^^^^^^^ Comment 135:1..137:17
+// ^^^^^^^^ Comment 138:1..140:17
    ## line
    ## documentation
       _return a + b

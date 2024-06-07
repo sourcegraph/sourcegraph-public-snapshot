@@ -27,6 +27,9 @@ _maybe
 "string"
 'string'
 
+; Character
+%x
+
 _primitive 512
 
 # Assignments
