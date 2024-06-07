@@ -50,7 +50,15 @@ export const POPULAR_LANGUAGES: string[] = [
  * Languages that are not present in the go-enry library
  * and so are not in go-enry either
  */
-const LANGUAGES_NOT_IN_ENRY = ['Magik']
+const LANGUAGES_NOT_IN_ENRY = [
+    // Not in Linguist and they are not likely to add
+    'Magik',
+
+    // Add to linguist on 6/7/24
+    // can remove once go-enry package updates
+    // to that linguist version
+    'Pkl',
+]
 
 /**
  * A list of all supported languages, ranking the popular languages higher by

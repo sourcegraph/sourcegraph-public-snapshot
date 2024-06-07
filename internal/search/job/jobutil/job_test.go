@@ -1326,6 +1326,7 @@ func TestToTextPatternInfo(t *testing.T) {
 	cases := []struct {
 		input  string
 		output autogold.Value
+		feat   search.Features
 	}{{
 		input:  `type:repo archived`,
 		output: autogold.Expect(`{"Query":{"Value":"archived","IsNegated":false,"IsRegExp":false},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
@@ -1458,9 +1459,17 @@ func TestToTextPatternInfo(t *testing.T) {
 	}, {
 		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
 		output: autogold.Expect(`{"Query":{"Value":"\"basic :[_] access :[_]\"","IsNegated":false,"IsRegExp":false},"IsStructuralPat":true,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["^README\\.md"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+	}, {
+		input:  `sgtest lang:magik type:file`,
+		feat:   search.Features{ContentBasedLangFilters: true},
+		output: autogold.Expect(`{"Query":{"Value":"sgtest","IsNegated":false,"IsRegExp":false},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":null,"ExcludePaths":"","IncludeLangs":["Magik"],"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["magik"]}`),
+	}, {
+		input:  `sgtest lang:magik type:file`,
+		feat:   search.Features{ContentBasedLangFilters: false},
+		output: autogold.Expect(`{"Query":{"Value":"sgtest","IsNegated":false,"IsRegExp":false},"IsStructuralPat":false,"CombyRule":"","IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePaths":["(?i)\\.magik$"],"ExcludePaths":"","IncludeLangs":null,"ExcludeLangs":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["magik"]}`),
 	}}
 
-	test := func(input string) string {
+	test := func(input string, feat search.Features) string {
 		searchType := overrideSearchType(input, query.SearchTypeLiteral)
 		plan, err := query.Pipeline(query.Init(input, searchType))
 		if err != nil {
@@ -1471,14 +1480,14 @@ func TestToTextPatternInfo(t *testing.T) {
 		}
 		b := plan[0]
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral, defaultResultTypes)
-		p := toTextPatternInfo(b, resultTypes, &search.Features{}, limits.DefaultMaxSearchResults)
+		p := toTextPatternInfo(b, resultTypes, &feat, limits.DefaultMaxSearchResults)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.input, func(t *testing.T) {
-			tc.output.Equal(t, test(tc.input))
+			tc.output.Equal(t, test(tc.input, tc.feat))
 		})
 	}
 }
@@ -1509,13 +1518,6 @@ func TestToSymbolSearchRequest(t *testing.T) {
 		input:  `repo:go-diff type:symbol HunkNoChunksize lang:Julia -lang:R`,
 		feat:   search.Features{ContentBasedLangFilters: true},
 		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"","IncludeLangs":["Julia"],"ExcludeLangs":["R"]}`),
-	}, {
-		input:  `repo:go-diff type:symbol HunkNoChunksize lang:magik`,
-		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":["(?i)\\.magik$"],"ExcludePattern":"","IncludeLangs":null,"ExcludeLangs":null}`),
-	}, {
-		input:  `repo:go-diff type:symbol HunkNoChunksize lang:magik`,
-		feat:   search.Features{ContentBasedLangFilters: true},
-		output: autogold.Expect(`{"RegexpPattern":"HunkNoChunksize","IsCaseSensitive":false,"IncludePatterns":null,"ExcludePattern":"","IncludeLangs":["Magik"],"ExcludeLangs":null}`),
 	}}
 
 	for _, tc := range cases {

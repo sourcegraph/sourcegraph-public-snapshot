@@ -86,6 +86,9 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
+	// NOTE: Add to linguist on 6/7/24
+	// can remove once go-enry package updates
+	// to that linguist version
 	".pkl": "Pkl",
 	// Magik Language
 	".magik": "Magik",
