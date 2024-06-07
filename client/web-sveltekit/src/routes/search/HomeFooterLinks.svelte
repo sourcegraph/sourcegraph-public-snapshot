@@ -5,11 +5,9 @@
 {#if links.length > 0}
     <footer>
         {#each links as link}
-            <span>
-                <a href={link.href} on:click={link.handleClick} rel="noopener noreferrer" target="_blank">
-                    {link.name}
-                </a>
-            </span>
+            <a href={link.href} on:click={link.handleClick} rel="noopener noreferrer" target="_blank">
+                {link.name}
+            </a>
         {/each}
     </footer>
 {/if}
@@ -19,15 +17,12 @@
         display: flex;
         flex-direction: row;
 
-        span {
+        a {
+            color: var(--text-muted);
             padding: 0 1rem;
             &:not(:last-child) {
                 border-right: 1px solid var(--border-color);
             }
-        }
-
-        a {
-            color: var(--text-muted);
         }
 
         // In a small viewport, align links in a column and remove the separator
@@ -36,7 +31,7 @@
             gap: 0.5rem;
             align-items: center;
 
-            span:not(:last-child) {
+            a:not(:last-child) {
                 border: none;
             }
         }
