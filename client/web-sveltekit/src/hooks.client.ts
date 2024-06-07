@@ -2,6 +2,7 @@ import { handleErrorWithSentry } from '@sentry/sveltekit'
 import * as Sentry from '@sentry/sveltekit'
 
 Sentry.init({
+    // Disabled if dsn is undefined
     dsn: window.context.sentryDSN ?? undefined,
     release: window.context.version,
     initialScope: {
