@@ -7,7 +7,21 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/bazelbuild/rules_go/go/runfiles"
 )
+
+var goBinary = "go"
+
+func init() {
+	if path := os.Getenv("GO_RLOCATIONPATH"); path != "" {
+		var err error
+		goBinary, err = runfiles.Rlocation(path)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 func allocatingGoProgram(t testing.TB, allocationSizeBytes uint64) *exec.Cmd {
 	t.Helper()
@@ -38,7 +52,7 @@ func main() {
 	goSource := fmt.Sprintf(goTemplate, allocationSizeBytes)
 
 	goFile := filepath.Join(t.TempDir(), "main.go")
-	err := os.WriteFile(goFile, []byte(goSource), 0644) // permissions: -rw-r--r--
+	err := os.WriteFile(goFile, []byte(goSource), 0o644) // permissions: -rw-r--r--
 	if err != nil {
 		t.Fatalf("failed to write test program: %v", err)
 	}
@@ -46,12 +60,15 @@ func main() {
 	const bashTemplate = `
 #!/usr/bin/env bash
 set -euxo pipefail
-go run %s
+%s run %s
 echo "done" # force bash to fork
 `
 
-	bashCommand := fmt.Sprintf(bashTemplate, goFile)
+	bashCommand := fmt.Sprintf(bashTemplate, goBinary, goFile)
+
+	gocacheDir := t.TempDir()
 
 	cmd := exec.CommandContext(context.Background(), "bash", "-c", bashCommand)
+	cmd.Env = append(cmd.Env, "GOCACHE="+gocacheDir)
 	return cmd
 }
