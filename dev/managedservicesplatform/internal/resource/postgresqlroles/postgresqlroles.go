@@ -87,6 +87,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	}
 
 	if len(config.Publications) > 0 {
+		// Assign publication users permissions as required for GCP Datastream.
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		id := id.Group("publication")
 

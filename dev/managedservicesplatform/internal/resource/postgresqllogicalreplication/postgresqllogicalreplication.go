@@ -21,9 +21,15 @@ type Config struct {
 }
 
 type PublicationOutput struct {
-	PublicationName     *string
+	// The name of your publication. You'll need to provide this name when you
+	// create a stream in the Datastream stream creation wizard.
+	PublicationName *string
+	// The name of your replication slot. You'll need to provide this name when
+	// you create a stream in the Datastream stream creation wizard.
 	ReplicationSlotName *string
-	User                sqluser.SqlUser
+	// User for subscribing to the publication.
+	User sqluser.SqlUser
+	// The original publication spec.
 	spec.EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec
 }
 
@@ -31,7 +37,7 @@ type Output struct {
 	Publications []PublicationOutput
 }
 
-// New applies ...
+// New applies PostgreSQL runtime configuration for PostgreSQL logical replication.
 //
 // When tearing down a database only (i.e. not destroying the entire environment),
 // we must manually remove resources managed by this provider from state in order
@@ -47,7 +53,6 @@ type Output struct {
 //
 // TODO(@bobheadxi): Improve documentation around this teardown scenario.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-
 	pgProvider := postgresql.NewPostgresqlProvider(scope, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
 		Scheme:    pointers.Ptr("gcppostgres"),
 		Host:      config.CloudSQL.Instance.ConnectionName(),

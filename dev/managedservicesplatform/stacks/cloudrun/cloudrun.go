@@ -283,23 +283,36 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Apply additional runtime configuration
 		var publications []postgresqllogicalreplication.PublicationOutput
 		if pgSpec.LogicalReplication != nil {
-			replication, err := postgresqllogicalreplication.New(stack, id.Group("postgresqllogicalreplication"), postgresqllogicalreplication.Config{
-				CloudSQL: sqlInstance,
-				Spec:     *pgSpec.LogicalReplication,
-			})
+			replication, err := postgresqllogicalreplication.New(stack,
+				id.Group("postgresqllogicalreplication"),
+				postgresqllogicalreplication.Config{
+					CloudSQL: sqlInstance,
+					Spec:     *pgSpec.LogicalReplication,
+				})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL logical replication")
 			}
-			// Make output more visible
+			// Make output visible for configuration in consumer tools like
+			// Datastream
 			for _, pub := range replication.Publications {
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", *pub.PublicationName), *pub.PublicationName,
-					"TODO")
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", *pub.PublicationName), *pub.ReplicationSlotName,
-					"TODO")
-				// TODO Add user name as local, password as secret
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", pub.Name), *pub.PublicationName,
+					fmt.Sprintf("Publication name of the %q PostgreSQL publication", pub.Name))
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", pub.Name), *pub.ReplicationSlotName,
+					fmt.Sprintf("Replication slot name of the %q PostgreSQL publication", pub.Name))
+				locals.Add(fmt.Sprintf("postgresql_publication_%s_user", pub.Name), *pub.User.Name(),
+					fmt.Sprintf("User for subscribing to the %q PostgreSQL publication", pub.Name))
+				gsmsecret.New(stack,
+					id.Group("postgresqllogicalreplication").
+						Group(*pub.PublicationName).
+						Group("user_password"),
+					gsmsecret.Config{
+						ProjectID: vars.ProjectID,
+						ID: fmt.Sprintf("POSTGRESQL_PUBLICATION_%s_USER_PASSWORD",
+							strings.ToUpper(*pub.PublicationName)),
+						Value: *pub.User.Password(),
+					})
 			}
 		}
-		// TODO: Add https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
 			Databases:    pgSpec.Databases,
 			CloudSQL:     sqlInstance,

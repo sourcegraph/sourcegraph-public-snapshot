@@ -839,20 +839,55 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 			errs = append(errs, errors.New("postgreSQL.memoryGB must be <= 6*postgreSQL.cpu"))
 		}
 	}
+	if s.LogicalReplication != nil {
+		errs = append(errs, s.LogicalReplication.Validate()...)
+	}
 	return errs
 }
 
 type EnvironmentResourcePostgreSQLLogicalReplicationSpec struct {
-	// TODO
+	// Publications configure PostgreSQL logical replication publications for
+	// consumption in tools like GCP Datastream.
 	Publications []EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec `yaml:"publications,omitempty"`
 }
 
+func (s *EnvironmentResourcePostgreSQLLogicalReplicationSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+	seenPublications := map[string]struct{}{}
+	for i, p := range s.Publications {
+		if p.Name == "" {
+			errs = append(errs, errors.Newf("publication[%d].name is required", i))
+		}
+		if _, ok := seenPublications[p.Name]; ok {
+			errs = append(errs, errors.Newf("publication[%d].name must be unique", i))
+		}
+		seenPublications[p.Name] = struct{}{}
+
+		if p.Database == "" {
+			errs = append(errs, errors.Newf("publication[%d].database is required", i))
+		}
+		if len(p.Tables) == 0 {
+			errs = append(errs, errors.Newf("publication[%d].tables is required", i))
+		}
+		for ti, t := range p.Tables {
+			if t == "" {
+				errs = append(errs, errors.Newf("publication[%d].tables[%d] must not be empty", i, ti))
+			}
+		}
+	}
+	return errs
+}
+
 type EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec struct {
-	// TODO
+	// Name of the publication. Must be machine-friendly and unique. Required.
 	Name string `yaml:"name"`
-	// TODO
+	// Database containing the tables you want to replicate and publish. Required.
 	Database string `yaml:"database"`
-	// TODO
+	// Tables to replicate and publish. Required.
 	Tables []string `yaml:"tables"`
 }
 
