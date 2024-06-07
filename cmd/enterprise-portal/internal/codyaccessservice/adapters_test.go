@@ -30,6 +30,15 @@ func TestConvertAccessAttrsToProto(t *testing.T) {
 		assert.Nil(t, proto.EmbeddingsRateLimit)
 	})
 
+	t.Run("enabled with empty access token", func(t *testing.T) {
+		proto := convertAccessAttrsToProto(&dotcomdb.CodyGatewayAccessAttributes{
+			CodyGatewayEnabled: true,
+			LicenseKeyHashes:   [][]byte{[]byte(""), nil},
+		})
+		assert.True(t, proto.Enabled)
+		assert.Empty(t, proto.GetAccessTokens())
+	})
+
 	t.Run("enabled returns everything", func(t *testing.T) {
 		proto := convertAccessAttrsToProto(&dotcomdb.CodyGatewayAccessAttributes{
 			CodyGatewayEnabled: true,
