@@ -42,10 +42,9 @@ type CodeDBSpec struct {
 }
 
 type IngressSpec struct {
-	Disabled         bool              `json:"enabled,omitempty"`
 	Annotations      map[string]string `json:"annotations,omitempty"`
 	Host             string            `json:"host,omitempty"`
-	IngressClassName string            `json:"ingressClassName,omitempty"`
+	IngressClassName *string           `json:"ingressClassName,omitempty"`
 	TLSSecret        string            `json:"tlsSecret,omitempty"`
 }
 
@@ -53,20 +52,17 @@ type EmbeddingsSpec struct {
 	StandardConfig
 }
 
-// FrontendSpec defines the desired state of Frontend.
 type FrontendSpec struct {
+	StandardConfig
+
+	Migrator bool `json:"migrator,omitempty"`
+
 	// Replicas defines the number of Frontend pod replicas.
 	// Default: 2
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Ingress allows for changes to the custom Sourcegraph ingress.
 	Ingress *IngressSpec `json:"ingress,omitempty"`
-
-	// ExistingSecret is the name of an existing secret to use for Postgres credentials.
-	ExistingSecret string `json:"existingSecret,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 // GitServerSpec defines the desired state of GitServer.
@@ -80,6 +76,10 @@ type GitServerSpec struct {
 	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
 	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
 	SSHSecret string `json:"sshSecret,omitempty"`
+}
+
+type GrafanaSpec struct {
+	StandardConfig
 }
 
 // IndexedSearchSpec defines the desired state of Index Search.
@@ -96,6 +96,10 @@ type IndexedSearchSpec struct {
 type IndexedSearchIndexerSpec struct {
 	// Resources allows for custom resource limits and requests.
 	Resources *corev1.ResourceList `json:"resources,omitempty"`
+}
+
+type JaegerSpec struct {
+	StandardConfig
 }
 
 // PGSQLSpec defines the desired state of the Postgres server.
@@ -231,11 +235,15 @@ type SourcegraphSpec struct {
 	// GitServer defines the desired state of the GitServer service.
 	GitServer GitServerSpec `json:"gitServer,omitempty"`
 
+	Grafana GrafanaSpec `json:"grafana,omitempty"`
+
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
 
 	// IndexedSearchIndexer defines the desired state of the Indexed Search Indexer service.
 	IndexedSearchIndexer IndexedSearchIndexerSpec `json:"indexedSearchIndexer,omitempty"`
+
+	Jaeger JaegerSpec `json:"jaeger,omitempty"`
 
 	// PGSQL defines the desired state of the PostgreSQL database.
 	PGSQL PGSQLSpec `json:"pgsql,omitempty"`
