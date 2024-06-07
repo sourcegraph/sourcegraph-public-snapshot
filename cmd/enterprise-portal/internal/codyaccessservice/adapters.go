@@ -39,6 +39,10 @@ func convertAccessAttrsToProto(attrs *dotcomdb.CodyGatewayAccessAttributes) *cod
 		// This is always provided, even if access is disabled
 		AccessTokens: func() []*codyaccessv1.CodyGatewayAccessToken {
 			accessTokens := attrs.GenerateAccessTokens()
+			if len(accessTokens) == 0 {
+				return []*codyaccessv1.CodyGatewayAccessToken{}
+			}
+
 			results := make([]*codyaccessv1.CodyGatewayAccessToken, len(accessTokens))
 			for i, token := range accessTokens {
 				results[i] = &codyaccessv1.CodyGatewayAccessToken{
