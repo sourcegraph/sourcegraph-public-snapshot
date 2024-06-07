@@ -1,12 +1,13 @@
 package productsubscription
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -172,7 +173,10 @@ func TestGetSubscriptionAccountName(t *testing.T) {
 		})
 	}
 }
+
 func TestRemoveUnseenTokens(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("removes unseen tokens", func(t *testing.T) {
 		seen := collections.NewSet("slk_token1")
 
@@ -180,7 +184,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:v1:slk_token1": nil, "v2:product-subscription:v2:slk_token3": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}, {"Delete", "slk_token3"}})
 	})
 
@@ -191,7 +195,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
 	})
 	t.Run("ignores malformed keys ", func(t *testing.T) {
@@ -201,7 +205,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:v2:sgp_dotcom": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
 	})
 }

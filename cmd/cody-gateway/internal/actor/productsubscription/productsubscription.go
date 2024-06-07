@@ -8,6 +8,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -25,6 +26,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 )
+
+var tracer = otel.GetTracerProvider().Tracer("cody-gateway/actor/productsubscription")
 
 // SourceVersion should be bumped whenever the format of any cached data in this
 // actor source implementation is changed. This effectively expires all entries.
@@ -185,17 +188,28 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			seen++
 		}
 	}
-	removeUnseenTokens(seenTokens, s.cache, syncLog)
+	removeUnseenTokens(ctx, syncLog, seenTokens, s.cache)
 	return seen, errs
 }
 
-func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLog log.Logger) {
+func removeUnseenTokens(ctx context.Context, syncLog log.Logger, seen collections.Set[string], cache ListingCache) {
+	_, span := tracer.Start(ctx, "removeUnseenTokens", // ctx is unused, linter will complain
+		trace.WithAttributes(attribute.Int("seen", len(seen.Values()))))
+	defer span.End()
+
 	start := time.Now()
 	// Using Redis KEYS can get slow, but we only expect NUMBER_OF_SUBSCRIPTIONS * NUMBER_OF_ACTIVE_LICENCE_KEYS here
 	// Right now, listing 2000 keys takes ~3ms, and replacing this with SCAN this would require changing our Redis client to support scanning / context, so let's leave like that until we fix listing subscriptions in Q2 2024.
 	keys := cache.ListAllKeys()
+	span.SetAttributes(attribute.Int("allKeys", len(keys)))
 	elapsed := time.Since(start)
-	syncLog.Info("removing expired/disabled tokens", log.Int("seen", len(seen.Values())), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
+	syncLog.Debug("removing expired/disabled tokens", log.Int("seen", len(seen.Values())), log.Int("allKeys", len(keys)), log.Duration("listLatency", elapsed))
+	// We don't have instrumentation on Redis, add a span event that gives the
+	// equivalent of the log above
+	span.AddEvent("ListAllKeys",
+		trace.WithAttributes(attribute.Int64("elapsedMs", elapsed.Milliseconds())))
+
+	var deleted int
 	for _, key := range keys {
 		parts := strings.Split(key, ":")
 		if len(parts) != 4 {
@@ -210,9 +224,13 @@ func removeUnseenTokens(seen collections.Set[string], cache ListingCache, syncLo
 			continue
 		}
 		if !seen.Has(token) {
+			deleted += 1
 			cache.Delete(token)
 		}
 	}
+	syncLog.Info("deleted expired/disabled tokens", log.Int("deleted", deleted))
+	span.SetAttributes(
+		attribute.Int("deleted", deleted))
 }
 
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*codyaccessv1.CodyGatewayAccess, error) {
