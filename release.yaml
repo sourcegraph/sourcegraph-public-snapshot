@@ -231,22 +231,6 @@ promoteToPublic:
           fi
   finalize:
     steps:
-      - name: 'Promote on release registry'
-        cmd: |
-          echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
-          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
-          exit_code=$?
-
-          if [ $exit_code != 0 ]; then
-            echo "❌ Failed to promote release on release registry, got:"
-            echo "--- raw body ---"
-            echo $body
-            echo "--- raw body ---"
-            exit $exit_code
-          else
-            echo "Release promoted, see:"
-            echo $body
-          fi
       - name: 'git:tag'
         cmd: |
           set -eu
@@ -293,6 +277,24 @@ promoteToPublic:
           EndOfText
 
           bazel run //dev/tools:gh -- release create ${version} --latest --verify-tag -t "Sourcegraph ${tag}" --notes "${releasepost}"
+
+      # A release promoted to public in the release registry cannot be repromoted unless the publi is manually set to FALSE.
+      - name: 'Promote on release registry'
+        cmd: |
+          echo "Promoting sourcegraph/sourcegraph {{version}} release on release registry"
+          body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: ${RELEASE_REGISTRY_TOKEN}" --post-data '' "https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph/{{version}}/promote")
+          exit_code=$?
+
+          if [ $exit_code != 0 ]; then
+            echo "❌ Failed to promote release on release registry, got:"
+            echo "--- raw body ---"
+            echo $body
+            echo "--- raw body ---"
+            exit $exit_code
+          else
+            echo "Release promoted, see:"
+            echo $body
+          fi
 
       # tag is usually in the format `5.3.2`
       # while version is usually the tag prepended with a v, `v5.3.2`
