@@ -95,6 +95,15 @@ func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 		return status.New(codes.InvalidArgument, "must send metadata event first").Err()
 	}
 
+	if metadata.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(metadata.GetRepo())
+	if err := gs.checkRepoExists(s.Context(), repoName); err != nil {
+		return err
+	}
+
 	patchReader := streamio.NewReader(func() ([]byte, error) {
 		msg, err := s.Recv()
 		if err != nil {
