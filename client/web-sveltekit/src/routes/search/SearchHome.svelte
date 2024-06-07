@@ -1,15 +1,17 @@
 <script lang="ts">
     import { setContext, onMount } from 'svelte'
 
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore, QueryState } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
 
+    import CodyUpsellBanner from './cody-upsell/CodyUpsellBanner.svelte'
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
@@ -46,6 +48,8 @@
         </div>
     </div>
 </section>
+
+<CodyUpsellBanner />
 
 <style lang="scss">
     section {
