@@ -106,9 +106,9 @@ http_archive(
 # Container rules
 http_archive(
     name = "rules_oci",
-    sha256 = "e96d70faa4bace3e09fdb1d7d1441b838920f491588889ff9a7e2615afca5799",
-    strip_prefix = "rules_oci-2.0.0-alpha2",
-    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v2.0.0-alpha2/rules_oci-v2.0.0-alpha2.tar.gz",
+    sha256 = "02df4efc5c7431904a927c1947fc7b6e2eda838b038b15bdf9a15918e7d6c04b",
+    strip_prefix = "rules_oci-2.0.0-alpha4",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v2.0.0-alpha4/rules_oci-v2.0.0-alpha4.tar.gz",
 )
 
 http_archive(
