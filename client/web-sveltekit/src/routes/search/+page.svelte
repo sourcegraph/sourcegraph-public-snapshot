@@ -26,6 +26,29 @@
     let searchResults: SearchResults | undefined
     $: queryState.set(data.queryOptions ?? {})
     $: queryState.setSettings($settings)
+
+    const footerLinks = window.context.sourcegraphDotComMode
+        ? [
+              {
+                  name: 'Docs',
+                  href: 'https://sourcegraph.com/docs',
+              },
+              { name: 'About', href: 'https://sourcegraph.com' },
+              {
+                  name: 'Cody',
+                  href: 'https://sourcegraph.com/cody',
+              },
+              {
+                  name: 'Enterprise',
+                  href: 'https://sourcegraph.com/get-started?t=enterprise',
+              },
+              {
+                  name: 'Security',
+                  href: 'https://sourcegraph.com/security',
+              },
+              { name: 'Discord', href: 'https://srcgr.ph/discord-server' },
+          ]
+        : []
 </script>
 
 <svelte:head>
@@ -41,5 +64,5 @@
         selectedFilters={data.queryFilters}
     />
 {:else}
-    <SearchHome {queryState} codyHref={data.codyHref} />
+    <SearchHome {queryState} codyHref={data.codyHref} {footerLinks} />
 {/if}
