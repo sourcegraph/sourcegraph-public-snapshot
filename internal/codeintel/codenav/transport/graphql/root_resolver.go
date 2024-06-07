@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	codenavshared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
@@ -221,7 +222,17 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
-		_, err = r.svc.SyntacticUsages(ctx, args.Path, args.Start, args.End, args.Repo, args.CommitID)
+		symbolRange := codenavshared.Range{
+			Start: codenavshared.Position{
+				Line:      int(args.Start.Line),
+				Character: int(args.Start.Character),
+			},
+			End: codenavshared.Position{
+				Line:      int(args.End.Line),
+				Character: int(args.End.Character),
+			},
+		}
+		_, err = r.svc.SyntacticUsages(ctx, args.Path, symbolRange, args.Repo, args.CommitID)
 		if err != nil {
 			return nil, err
 		}

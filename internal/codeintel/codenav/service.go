@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"io"
 	"slices"
 	"strings"
@@ -18,13 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -959,8 +958,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	repo types.Repo,
 	revision api.CommitID,
 	path string,
-	start resolverstubs.PositionInput,
-	end resolverstubs.PositionInput,
+	symbolRange shared.Range,
 ) (symbols []*scip.Symbol, err error) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
 	if err != nil {
@@ -977,8 +975,8 @@ func (s *Service) getSyntacticSymbolsAtRange(
 		occRange := scip.NewRange(occurrence.GetRange())
 		// TODO: Shouldn't need exact match, just overlap is enough
 		// TODO: Needs to handle differing text encodings to get the character positions right
-		if start.Line == occRange.Start.Line && end.Line == occRange.End.Line &&
-			start.Character == occRange.Start.Character && end.Character == occRange.End.Character {
+		if symbolRange.Start.Line == int(occRange.Start.Line) && symbolRange.End.Line == int(occRange.End.Line) &&
+			symbolRange.Start.Character == int(occRange.Start.Character) && symbolRange.End.Character == int(occRange.End.Character) {
 			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 			if err != nil {
 				// TODO: Log this failure?
@@ -999,12 +997,11 @@ type ScoredMatch struct {
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	path string,
-	start resolverstubs.PositionInput,
-	end resolverstubs.PositionInput,
+	symbolRange shared.Range,
 	repo types.Repo,
 	commit api.CommitID,
 ) ([]struct{}, error) {
-	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, start, end)
+	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
