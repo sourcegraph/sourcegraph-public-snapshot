@@ -18,21 +18,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	repoStore  database.RepoStore
-	lsifstore  lsifstore.LsifStore
-	gitserver  gitserver.Client
-	uploadSvc  UploadService
-	operations *operations
-	logger     log.Logger
+	repoStore    database.RepoStore
+	lsifstore    lsifstore.LsifStore
+	gitserver    gitserver.Client
+	uploadSvc    UploadService
+	searchClient searcher.SearchClient
+	operations   *operations
+	logger       log.Logger
 }
 
 func newService(
@@ -41,14 +45,18 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
+	searchClient searcher.SearchClient,
+	logger log.Logger,
 ) *Service {
+
 	return &Service{
-		repoStore:  repoStore,
-		lsifstore:  lsifstore,
-		gitserver:  gitserver,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationCtx),
-		logger:     log.Scoped("codenav"),
+		repoStore:    repoStore,
+		lsifstore:    lsifstore,
+		gitserver:    gitserver,
+		uploadSvc:    uploadSvc,
+		searchClient: searchClient,
+		operations:   newOperations(observationCtx),
+		logger:       logger,
 	}
 }
 
@@ -921,4 +929,122 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+}
+
+// TODO: Hack that relies on us having only syntactic uploads for the root directory.
+func (s *Service) getSyntacticUpload(ctx context.Context, repo *types.Repo, commit *api.CommitID) (uploadsshared.CompletedUpload, error) {
+	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
+		RepositoryID: int(repo.ID),
+		Commit:       string(*commit),
+		Indexer:      uploadsshared.SyntacticIndexer,
+	})
+
+	if err != nil {
+		return uploadsshared.CompletedUpload{}, err
+	}
+
+	if len(uploads) == 0 {
+		return uploadsshared.CompletedUpload{}, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
+	}
+
+	if len(uploads) != 1 {
+		// TODO: Is seeing multiple syntactic uploads an error?
+	}
+
+	return uploads[0], nil
+}
+
+func (s *Service) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, rangeInput.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols = make([]*scip.Symbol, 0)
+	for _, occurrence := range doc.GetOccurrences() {
+		occRange := scip.NewRange(occurrence.GetRange())
+		// TODO: Shouldn't need exact match, just overlap is enough
+		// TODO: Needs to handle differing text encodings to get the character positions right
+		if rangeInput.Start.Line == occRange.Start.Line && rangeInput.End.Line == occRange.End.Line &&
+			rangeInput.Start.Character == occRange.Start.Character && rangeInput.End.Character == occRange.End.Character {
+			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+			if err != nil {
+				// TODO: Log this failure?
+				continue
+			}
+			symbols = append(symbols, parsedSymbol)
+		}
+	}
+	return symbols, nil
+}
+
+type ScoredMatch struct {
+	path       string
+	occurrence *scip.Occurrence
+	score      float64
+}
+
+func (s *Service) SyntacticUsages(ctx context.Context, rangeInput resolverstubs.RangeInput, repo *types.Repo, revision *api.CommitID) ([]struct{}, error) {
+	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, revision, rangeInput)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(symbols) == 0 {
+		return nil, fmt.Errorf("no matching occurrences found for range")
+	}
+
+	// Overlapping occurrences should lead to the same display name, but be scored separately.
+	// (Meaning we just need a single Searcher/Zoekt search)
+	// TODO: Assert this?
+	matchingSymbol := symbols[0]
+	symbolName := NameFromSymbol(matchingSymbol)
+	if symbolName == "" {
+		return nil, fmt.Errorf("no matching occurrences found for range")
+	}
+
+	candidateMatches, err := FindCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, symbolName, revision)
+
+	fmt.Printf("candidateMatches: %#v", candidateMatches)
+
+	var scoredMatches []ScoredMatch
+	for path, ranges := range candidateMatches {
+		upload, err := s.getSyntacticUpload(ctx, repo, revision)
+		if err != nil {
+			continue
+		}
+
+		document, err := s.SCIPDocument(ctx, upload.ID, path)
+		if err != nil {
+			continue
+		}
+
+		// TODO iterate through document and ranges in lockstep to make this linear rather than quadratic.
+		// TODO even quicker, use binary search
+		for _, occRange := range ranges {
+			for _, occurrence := range document.Occurrences {
+				if RangesOverlap(occRange, scip.NewRange(occurrence.Range)) {
+					sym, err := scip.ParseSymbol(occurrence.Symbol)
+					if err != nil {
+						continue
+					}
+					score := ScoreMatch(matchingSymbol, sym)
+					scoredMatches = append(scoredMatches, ScoredMatch{path, occurrence, score})
+				}
+			}
+		}
+	}
+
+	slices.SortFunc(scoredMatches, func(a, b ScoredMatch) int {
+		return cmp.Compare(a.score, b.score)
+	})
+
+	fmt.Printf("scoredMatches: %#v", scoredMatches)
+
+	return []struct{}{}, nil
 }

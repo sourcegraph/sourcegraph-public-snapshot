@@ -2,8 +2,10 @@ package graphql
 
 import (
 	"context"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -25,6 +27,7 @@ type CodeNavService interface {
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
 	SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error)
+	SyntacticUsages(ctx context.Context, rangeInput resolverstubs.RangeInput, repo *types.Repo, revision *api.CommitID) (_ []struct{}, err error)
 }
 
 type AutoIndexingService interface {

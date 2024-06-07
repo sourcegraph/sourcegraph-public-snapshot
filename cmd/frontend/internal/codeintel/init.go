@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
 
 func LoadConfig() {
@@ -55,8 +54,6 @@ func Init(
 	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
 	uploadLoaderFactory := uploadgraphql.NewUploadLoaderFactory(codeIntelServices.UploadsService)
 	indexLoaderFactory := uploadgraphql.NewIndexLoaderFactory(codeIntelServices.UploadsService)
-	// TODO(Christoph): Use a proper logger
-	searcherClient := client.New(log.NoOp(), db, codeIntelServices.GitserverClient)
 	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
@@ -82,7 +79,6 @@ func Init(
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
-		searcherClient,
 		uploadLoaderFactory,
 		indexLoaderFactory,
 		preciseIndexResolverFactory,

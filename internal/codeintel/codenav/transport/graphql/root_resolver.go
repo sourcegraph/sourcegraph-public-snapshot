@@ -1,15 +1,10 @@
 package graphql
 
 import (
-	"cmp"
 	"context"
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"slices"
 	"strings"
 	"sync"
 
@@ -29,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,7 +33,6 @@ type rootResolver struct {
 	gitserverClient                gitserver.Client
 	siteAdminChecker               sharedresolvers.SiteAdminChecker
 	repoStore                      database.RepoStore
-	searcherClient                 searchclient.SearchClient
 	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
 	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
 	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
@@ -56,7 +49,6 @@ func NewRootResolver(
 	gitserverClient gitserver.Client,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	searcherClient searchclient.SearchClient,
 	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
 	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
 	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
@@ -75,7 +67,6 @@ func NewRootResolver(
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
-		searcherClient:                 searcherClient,
 		uploadLoaderFactory:            uploadLoaderFactory,
 		indexLoaderFactory:             indexLoaderFactory,
 		indexResolverFactory:           indexResolverFactory,
@@ -202,12 +193,6 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 	return out
 }
 
-type ScoredMatch struct {
-	path       string
-	occurrence *scip.Occurrence
-	score      float64
-}
-
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	numPreciseResults := 0
@@ -241,61 +226,10 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 			return nil, err
 		}
 
-		symbols, err := r.getSyntacticSymbolsAtRange(ctx, repo, revision, args.Range)
+		_, err = r.svc.SyntacticUsages(ctx, args.Range, repo, revision)
 		if err != nil {
 			return nil, err
 		}
-
-		if len(symbols) == 0 {
-			return nil, fmt.Errorf("no matching occurrences found for range")
-		}
-
-		// Overlapping occurrences should lead to the same display name, but be scored separately.
-		// (Meaning we just need a single Searcher/Zoekt search)
-		// TODO: Assert this?
-		matchingSymbol := symbols[0]
-		symbolName := nameFromSymbol(matchingSymbol)
-		if symbolName == "" {
-			return nil, fmt.Errorf("no matching occurrences found for range")
-		}
-
-		candidateMatches, err := r.findCandidateOccurrencesWithZearcher(ctx, repo, symbolName, revision)
-
-		fmt.Printf("candidateMatches: %#v", candidateMatches)
-
-		var scoredMatches []ScoredMatch
-		for path, ranges := range candidateMatches {
-			upload, err := r.getSyntacticUpload(ctx, repo, revision)
-			if err != nil {
-				continue
-			}
-
-			document, err := r.svc.SCIPDocument(ctx, upload.ID, path)
-			if err != nil {
-				continue
-			}
-
-			// TODO iterate through document and ranges in lockstep to make this linear rather than quadratic.
-			// TODO even quicker, use binary search
-			for _, occRange := range ranges {
-				for _, occurrence := range document.Occurrences {
-					if rangesOverlap(occRange, scip.NewRange(occurrence.Range)) {
-						sym, err := scip.ParseSymbol(occurrence.Symbol)
-						if err != nil {
-							continue
-						}
-						score := scoreMatch(matchingSymbol, sym)
-						scoredMatches = append(scoredMatches, ScoredMatch{path, occurrence, score})
-					}
-				}
-			}
-		}
-
-		slices.SortFunc(scoredMatches, func(a, b ScoredMatch) int {
-			return cmp.Compare(a.score, b.score)
-		})
-		fmt.Printf("scoredMatches: %#v", scoredMatches)
-
 		remainingCount = remainingCount - numSyntacticResults
 	}
 
@@ -305,73 +239,6 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, args *resolverstubs.
 	}
 
 	return nil, errors.New("Not implemented yet")
-}
-
-func scoreMatch(symbol1 *scip.Symbol, symbol2 *scip.Symbol) float64 {
-	return 9000.1
-}
-
-func rangesOverlap(zearcherRange result.Range, scipRange *scip.Range) bool {
-	return zearcherRange.Start.Line == int(scipRange.Start.Line) &&
-		zearcherRange.End.Line == int(scipRange.End.Line) &&
-		zearcherRange.Start.Column <= int(scipRange.End.Character) &&
-		int(scipRange.Start.Character) <= zearcherRange.End.Column
-}
-
-func (r *rootResolver) findCandidateOccurrencesWithZearcher(
-	ctx context.Context,
-	repo *types.Repo,
-	symbolName string,
-	revision *api.CommitID,
-) (map[string][]result.Range, error) {
-	var contextLines int32 = 0
-	patternType := "standard"
-	// TODO: Once we handle languages with ambiguous file extensions we'll need to be smarter about this.
-	// Figure out why the enry call isn't working
-	language := "java" // enry.GetLanguageByFilename(filepath.Base(args.Range.Path))
-	repoName := fmt.Sprintf("^%s$", repo.Name)
-	identifier := symbolName
-	countLimit := 500
-	searchQuery := fmt.Sprintf("repo:%s rev:%s language:%s count:%d %s", repoName, string(*revision), language, countLimit, identifier)
-
-	// fmt.Printf("Sending: query=%s\n", searchQuery)
-
-	plan, err := r.searcherClient.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
-	if err != nil {
-		return nil, err
-	}
-	stream := streaming.NewAggregatingStream()
-	_, err = r.searcherClient.Execute(ctx, stream, plan)
-	if err != nil {
-		return nil, err
-	}
-
-	matches := make(map[string][]result.Range)
-	for _, match := range stream.Results {
-		fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
-		t, ok := match.(*result.FileMatch)
-		if !ok {
-			continue
-		}
-		for _, chunkMatch := range t.ChunkMatches {
-			for _, matchRange := range chunkMatch.Ranges {
-				path := match.Key().Path
-				if matches[path] == nil {
-					matches[path] = []result.Range{}
-				}
-				matches[path] = append(matches[path], matchRange)
-			}
-		}
-	}
-	return matches, nil
-}
-
-func nameFromSymbol(symbol *scip.Symbol) string {
-	lastDescriptor := ""
-	if len(symbol.Descriptors) > 0 {
-		lastDescriptor = symbol.Descriptors[len(symbol.Descriptors)-1].Name
-	}
-	return lastDescriptor
 }
 
 // TODO: Move to args.normalize
@@ -388,58 +255,6 @@ func (r *rootResolver) resolveRepoAndRevision(ctx context.Context, args *resolve
 	}
 
 	return repo, &resolvedRevision, err
-}
-
-// TODO: Hack that relies on us having only syntactic uploads for the root directory.
-func (r *rootResolver) getSyntacticUpload(ctx context.Context, repo *types.Repo, revision *api.CommitID) (shared.CompletedUpload, error) {
-	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
-		RepositoryID: int(repo.ID),
-		Commit:       string(*revision),
-		Indexer:      shared.SyntacticIndexer,
-	})
-
-	if err != nil {
-		return shared.CompletedUpload{}, err
-	}
-
-	if len(uploads) == 0 {
-		return shared.CompletedUpload{}, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
-	}
-
-	if len(uploads) != 1 {
-		// TODO: Is seeing multiple syntactic uploads an error?
-	}
-
-	return uploads[0], nil
-}
-
-func (r *rootResolver) getSyntacticSymbolsAtRange(ctx context.Context, repo *types.Repo, revision *api.CommitID, rangeInput resolverstubs.RangeInput) (symbols []*scip.Symbol, err error) {
-	syntacticUpload, err := r.getSyntacticUpload(ctx, repo, revision)
-	if err != nil {
-		return nil, err
-	}
-
-	doc, err := r.svc.SCIPDocument(ctx, syntacticUpload.ID, rangeInput.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	symbols = make([]*scip.Symbol, 0)
-	for _, occurrence := range doc.GetOccurrences() {
-		occRange := scip.NewRange(occurrence.GetRange())
-		// TODO: Shouldn't need exact match, just overlap is enough
-		// TODO: Needs to handle differing text encodings to get the character positions right
-		if rangeInput.Start.Line == occRange.Start.Line && rangeInput.End.Line == occRange.End.Line &&
-			rangeInput.Start.Character == occRange.Start.Character && rangeInput.End.Character == occRange.End.Character {
-			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
-			if err != nil {
-				// TODO: Log this failure?
-				continue
-			}
-			symbols = append(symbols, parsedSymbol)
-		}
-	}
-	return symbols, nil
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
