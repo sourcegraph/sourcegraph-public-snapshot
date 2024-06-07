@@ -129,6 +129,13 @@ def go_dependencies():
         version = "v2.2.6+incompatible",
     )
     go_repository(
+        name = "com_github_alecthomas_kingpin_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/alecthomas/kingpin/v2",
+        sum = "h1:f48lwail6p8zpO1bC4TxtqACaGqHYA22qkHjHpqDjYY=",
+        version = "v2.4.0",
+    )
+    go_repository(
         name = "com_github_alecthomas_participle_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/alecthomas/participle/v2",
@@ -260,13 +267,6 @@ def go_dependencies():
         importpath = "github.com/aokoli/goutils",
         sum = "h1:7fpzNGoJ3VA8qcrm++XEE1QUe0mIwNeLa02Nwq7RDkg=",
         version = "v1.0.1",
-    )
-    go_repository(
-        name = "com_github_apache_arrow_go_v12",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/apache/arrow/go/v12",
-        sum = "h1:xtZE63VWl7qLdB0JObIXvvhGjoVNrQ9ciIHG2OK5cmc=",
-        version = "v12.0.0",
     )
     go_repository(
         name = "com_github_apache_arrow_go_v14",
@@ -3933,8 +3933,8 @@ def go_dependencies():
         name = "com_github_konsorten_go_windows_terminal_sequences",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/konsorten/go-windows-terminal-sequences",
-        sum = "h1:DB17ag19krx9CFsz4o3enTrPXyIXCl+2iCXH/aMAp9s=",
-        version = "v1.0.2",
+        sum = "h1:CE8S1cTafDpPvMhIxNJKvHsGVBgn1xWYf1NbHQhywc8=",
+        version = "v1.0.3",
     )
     go_repository(
         name = "com_github_kr_fs",
@@ -4973,9 +4973,8 @@ def go_dependencies():
         name = "com_github_prometheus_common",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/prometheus/common",
-        replace = "github.com/prometheus/common",
-        sum = "h1:hWIdL3N2HoUx3B8j3YN9mWor0qhY/NlEKZEaXxuIRh4=",
-        version = "v0.32.1",
+        sum = "h1:U2pL9w9nmJwJDa4qqLQ3ZaePJ6ZTwt7cMD3AG3+aLCE=",
+        version = "v0.53.0",
     )
     go_repository(
         name = "com_github_prometheus_common_assets",
@@ -6234,6 +6233,13 @@ def go_dependencies():
         importpath = "github.com/xeonx/timeago",
         sum = "h1:9rRzv48GlJC0vm+iBpLcWAr8YbETyN9Vij+7h2ammz4=",
         version = "v1.0.0-rc4",
+    )
+    go_repository(
+        name = "com_github_xhit_go_str2duration_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/xhit/go-str2duration/v2",
+        sum = "h1:lxklc02Drh6ynqX+DdPyp5pCKLUQpRT8bp8Ydu2Bstc=",
+        version = "v2.1.0",
     )
     go_repository(
         name = "com_github_xiang90_probing",
@@ -8165,8 +8171,8 @@ def go_dependencies():
         name = "org_golang_google_genproto_googleapis_api",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/genproto/googleapis/api",
-        sum = "h1:P8OJ/WCl/Xo4E4zoe4/bifHpSmmKwARqyqE4nW6J2GQ=",
-        version = "v0.0.0-20240520151616-dc85e6b867a5",
+        sum = "h1:+rdxYoE3E5htTEWIe15GlN6IfvbURM//Jt0mmkmm6ZU=",
+        version = "v0.0.0-20240604185151-ef581f913117",
     )
     go_repository(
         name = "org_golang_google_genproto_googleapis_bytestream",
