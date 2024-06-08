@@ -147,6 +147,7 @@ export class SourcegraphAuthActions {
     }
 
     public async logout(): Promise<void> {
+        setEndpoint(undefined)
         await this.secretStorage.delete(secretTokenKey)
         await commands.executeCommand('workbench.action.reloadWindow')
         return
