@@ -13,11 +13,11 @@
 (documentation) @comment
 (comment) @comment
 
+"_package" @include
 (package (identifier) @identifier.module)
 
 ; Expression
 [
-    "<<"
     ">>"
     ">"
     ">="
@@ -136,7 +136,6 @@
   "_with"
 ] @keyword
 
-"_package" @include
 
 (regex_literal) @string.special
 
