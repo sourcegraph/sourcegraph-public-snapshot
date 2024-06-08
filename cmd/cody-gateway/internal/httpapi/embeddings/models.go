@@ -13,8 +13,9 @@ import (
 type PrefixedModelName string
 
 const (
-	ModelNameOpenAIAda            PrefixedModelName = "openai/text-embedding-ada-002"
-	ModelNameSourcegraphSTMultiQA PrefixedModelName = "sourcegraph/st-multi-qa-mpnet-base-dot-v1"
+	ModelNameOpenAIAda              PrefixedModelName = "openai/text-embedding-ada-002"
+	ModelNameSourcegraphSTMultiQA   PrefixedModelName = "sourcegraph/st-multi-qa-mpnet-base-dot-v1"
+	ModelNameSourcegraphMetadataGen PrefixedModelName = "sourcegraph/st-multi-qa-mpnet-metadata"
 )
 
 type EmbeddingsClient interface {
@@ -56,6 +57,12 @@ func NewListHandler(prefixedAllowedModels []string) http.Handler {
 			{
 				Enabled:    modelEnabled(ModelNameSourcegraphSTMultiQA),
 				Name:       string(ModelNameSourcegraphSTMultiQA),
+				Dimensions: 768,
+				Deprecated: false,
+			},
+			{
+				Enabled:    modelEnabled(ModelNameSourcegraphMetadataGen),
+				Name:       string(ModelNameSourcegraphMetadataGen),
 				Dimensions: 768,
 				Deprecated: false,
 			},

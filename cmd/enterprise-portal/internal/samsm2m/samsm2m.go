@@ -3,6 +3,7 @@ package samsm2m
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"connectrpc.com/connect"
 	"go.opentelemetry.io/otel"
@@ -41,7 +42,7 @@ type Request interface {
 // returned directly from a ConnectRPC implementation.
 //
 // See: go/sams-m2m
-func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospector, requiredScope scopes.Scope, req Request) (err error) {
+func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospector, requiredScope scopes.Scope, req Request) (attrs []log.Field, err error) {
 	logger = logger.Scoped("samsm2m")
 
 	var span trace.Span
@@ -59,11 +60,11 @@ func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospect
 		var err error
 		token, err = authbearer.ExtractBearerContents(v[0])
 		if err != nil {
-			return connect.NewError(connect.CodeUnauthenticated,
+			return nil, connect.NewError(connect.CodeUnauthenticated,
 				errors.Wrap(err, "invalid authorization header"))
 		}
 	} else {
-		return connect.NewError(connect.CodeUnauthenticated,
+		return nil, connect.NewError(connect.CodeUnauthenticated,
 			errors.New("no authorization header"))
 	}
 
@@ -72,15 +73,20 @@ func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospect
 	// for now until we have a concerted effort.
 	result, err := tokens.IntrospectToken(ctx, token)
 	if err != nil {
-		return connectutil.InternalError(ctx, logger, err, "unable to validate token")
+		return nil, connectutil.InternalError(ctx, logger, err, "unable to validate token")
 	}
 	span.SetAttributes(attribute.String("client_id", result.ClientID))
+	fields := []log.Field{
+		log.String("client.clientID", result.ClientID),
+		log.Time("client.tokenExpiresAt", result.ExpiresAt),
+		log.String("client.tokenScopes", strings.Join(scopes.ToStrings(result.Scopes), " ")),
+	}
 
 	// Active encapsulates whether the token is active, including expiration.
 	if !result.Active {
 		// Record detailed error in span, and return an opaque one
 		span.SetAttributes(attribute.String("full_error", "inactive token"))
-		return connect.NewError(connect.CodePermissionDenied, errors.New("permission denied"))
+		return fields, connect.NewError(connect.CodePermissionDenied, errors.New("permission denied"))
 	}
 
 	// Check for our required scope.
@@ -89,11 +95,10 @@ func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospect
 		err = errors.Newf("got scopes %+v, required: %+v", result.Scopes, requiredScope)
 		span.SetAttributes(attribute.String("full_error", err.Error()))
 		logger.Error("attempt to authenticate using SAMS token without required scope",
-			log.String("clientID", result.ClientID),
 			log.Error(err))
 		// Return an opaque error
-		return connect.NewError(connect.CodePermissionDenied, errors.New("insufficient scope"))
+		return fields, connect.NewError(connect.CodePermissionDenied, errors.New("insufficient scope"))
 	}
 
-	return nil
+	return fields, nil
 }

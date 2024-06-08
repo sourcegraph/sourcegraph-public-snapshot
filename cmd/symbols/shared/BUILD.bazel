@@ -30,6 +30,7 @@ go_library(
         "//internal/debugserver",
         "//internal/diskcache",
         "//internal/env",
+        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/honey",
         "//internal/httpserver",

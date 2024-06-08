@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "concurrencylimiter",
+    srcs = ["limiter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/concurrencylimiter",
+    visibility = ["//:__subpackages__"],
+    deps = ["@org_golang_google_grpc//:go_default_library"],
+)
+
+go_test(
+    name = "concurrencylimiter_test",
+    srcs = ["limiter_test.go"],
+    embed = [":concurrencylimiter"],
+    deps = [
+        "//internal/limiter",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

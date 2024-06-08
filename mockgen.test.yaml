@@ -432,3 +432,10 @@
   package: main
   interfaces:
     - BigQueryWriter
+- filename: cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest/mocks.go
+  package: productsubscriptiontest
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
+      interfaces:
+        - EnterprisePortalClient
+

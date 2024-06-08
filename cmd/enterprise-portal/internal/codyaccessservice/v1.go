@@ -62,12 +62,13 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
-	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	if err != nil {
 		return nil, err
 	}
+	logger = logger.With(clientAttrs...)
 
 	var attr *dotcomdb.CodyGatewayAccessAttributes
-	var err error
 	switch query := req.Msg.GetQuery().(type) {
 	case *codyaccessv1.GetCodyGatewayAccessRequest_SubscriptionId:
 		if len(query.SubscriptionId) == 0 {
@@ -85,14 +86,18 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid query"))
 	}
 	if err != nil {
-		if err == dotcomdb.ErrCodyGatewayAccessNotFound {
+		if errors.Is(err, dotcomdb.ErrCodyGatewayAccessNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connectutil.InternalError(ctx, logger, err,
 			"failed to get Cody Gateway access attributes")
 	}
+
+	access := convertAccessAttrsToProto(attr)
+	logger.Scoped("audit").Info("GetCodyGatewayAccess",
+		log.String("accessedSubscription", access.GetSubscriptionId()))
 	return connect.NewResponse(&codyaccessv1.GetCodyGatewayAccessResponse{
-		Access: convertAccessAttrsToProto(attr),
+		Access: access,
 	}), nil
 }
 
@@ -101,9 +106,11 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
-	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	if err != nil {
 		return nil, err
 	}
+	logger = logger.With(clientAttrs...)
 
 	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
 	if req.Msg.PageSize != 0 {
@@ -127,8 +134,12 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 		NextPageToken: "",
 		Accesses:      make([]*codyaccessv1.CodyGatewayAccess, len(attrs)),
 	}
+	accessedSubscriptions := make([]string, len(attrs))
 	for i, attr := range attrs {
 		resp.Accesses[i] = convertAccessAttrsToProto(attr)
+		accessedSubscriptions[i] = resp.Accesses[i].GetSubscriptionId()
 	}
+	logger.Scoped("audit").Info("ListCodyGatewayAccesses",
+		log.Strings("accessedSubscriptions", accessedSubscriptions))
 	return connect.NewResponse(&resp), nil
 }

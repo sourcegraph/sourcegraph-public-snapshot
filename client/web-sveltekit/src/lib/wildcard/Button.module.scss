@@ -7,7 +7,6 @@
     --font-size-lg: 1.09375rem;
     --btn-line-height-lg: 1.5;
     --btn-border-width: 1px;
-    --btn-padding-x: 0.75rem;
     --btn-active-box-shadow: inset 0 3px 5px rgba(var(--black), 0.125);
     --btn-icon-disabled-light-color: #797d8a;
     --btn-icon-disabled-dark-color: #959ba7;
@@ -22,7 +21,7 @@
     vertical-align: middle;
     color: var(--body-color);
     background-color: transparent;
-    border: 1px solid transparent;
+    border: var(--btn-border-width) solid transparent;
     user-select: none;
     font-size: 0.875rem;
     line-height: 1.4285714286;
@@ -40,32 +39,8 @@
     }
 }
 
-// Handle a special case for Button as="input" type="checkbox | radio"
-// since button doesn't use disabled attribute we enforce/mimic the native
-// disabled control styles.
-input.btn {
-    &:focus-visible {
-        outline: 2px solid var(--primary-2);
-        outline-offset: 2px;
-    }
-
-    &[aria-disabled='true'] {
-        cursor: not-allowed;
-
-        :global(.theme-light) & {
-            filter: brightness(0.9);
-        }
-
-        :global(.theme-dark) & {
-            filter: brightness(0.5);
-        }
-    }
-}
-
-.btn-link {
-    color: var(--link-color);
-    background-color: var(--link-1);
-
+.btn-link,
+.btn-text {
     &:global(.disabled),
     &:disabled,
     &[aria-disabled='true'] {
@@ -77,6 +52,11 @@ input.btn {
             opacity: 0.4;
         }
     }
+}
+
+.btn-link {
+    color: var(--link-color);
+    background-color: var(--link-1);
 
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         &:hover:not(:global(.focus)):not(:focus-visible),
@@ -84,6 +64,29 @@ input.btn {
         &:global(.active) {
             text-decoration: underline;
             color: var(--link-hover-color);
+        }
+
+        &:focus-visible,
+        &:global(.focus) {
+            text-decoration: underline;
+
+            :global(.theme-light) & {
+                box-shadow: 0 0 0 2px var(--primary-2);
+            }
+
+            :global(.theme-dark) & {
+                box-shadow: 0 0 0 2px var(--primary-3);
+            }
+        }
+    }
+}
+
+.btn-text {
+    &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+        &:hover:not(:global(.focus)):not(:focus-visible),
+        &:active,
+        &:global(.active) {
+            background-color: var(--secondary-2);
         }
 
         &:focus-visible,

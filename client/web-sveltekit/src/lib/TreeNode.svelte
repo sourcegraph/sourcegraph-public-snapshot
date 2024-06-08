@@ -99,7 +99,7 @@
                 <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
             </Button>
         {/if}
-        <slot {entry} {expanded} toggle={toggleOpen} />
+        <slot {entry} {expanded} toggle={toggleOpen} {label} />
     </span>
     {#if expanded && children}
         {#await children}
@@ -109,8 +109,8 @@
         {:then treeProvider}
             <ul role="group">
                 {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
-                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
-                        <slot {entry} {toggle} {expanded} />
+                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded let:label on:scope-change>
+                        <slot {entry} {toggle} {expanded} {label} />
                     </svelte:self>
                 {/each}
             </ul>

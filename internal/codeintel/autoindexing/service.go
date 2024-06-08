@@ -101,7 +101,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	} else {
 		// Verify that the commit exists.
 		_, err := s.gitserverClient.GetCommit(ctx, repo.Name, api.CommitID(commit))
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			return nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 		if err != nil {

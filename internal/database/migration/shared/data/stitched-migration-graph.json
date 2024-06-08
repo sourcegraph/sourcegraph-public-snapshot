@@ -11221,6 +11221,19 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1717699555,
+				"Name": "Fix unique index for SCIM external account connection",
+				"UpQuery": "DROP INDEX IF EXISTS user_external_accounts_user_id_scim_service_type;\n\nCREATE UNIQUE INDEX\n    user_external_accounts_user_id_scim_service_type\nON\n    user_external_accounts (user_id, service_type)\nWHERE\n    service_type = 'scim'::text\n    AND deleted_at IS NULL;",
+				"DownQuery": "DROP INDEX IF EXISTS user_external_accounts_user_id_scim_service_type;\n\nCREATE UNIQUE INDEX\n    user_external_accounts_user_id_scim_service_type\nON\n    user_external_accounts (user_id, service_type)\nWHERE\n    service_type = 'scim'::text;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1713958707
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11481,7 +11494,7 @@
 			"v5.4.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1713958707
+					1717699555
 				],
 				"PreCreation": false
 			}

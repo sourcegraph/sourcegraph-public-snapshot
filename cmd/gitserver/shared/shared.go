@@ -11,6 +11,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
 	"github.com/sourcegraph/log"
@@ -25,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
@@ -40,16 +46,10 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -94,53 +94,19 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	backendSource := func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
 		return git.NewObservableBackend(gitcli.NewBackend(logger, recordingCommandFactory, dir, repoName))
 	}
-	gitserver := server.NewServer(&server.ServerOpts{
-		Logger:           logger,
-		GitBackendSource: backendSource,
-		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
+	gitserver := makeServer(
+		observationCtx,
+		fs,
+		db,
+		recordingCommandFactory,
+		backendSource,
+		hostname,
+		config.CoursierCacheDir,
+		locker,
+		func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, db, repo)
 		},
-		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
-			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
-				ExternalServiceStore:    db.ExternalServices(),
-				RepoStore:               db.Repos(),
-				DepsSvc:                 dependencies.NewService(observationCtx, db),
-				Repo:                    repo,
-				CoursierCacheDir:        config.CoursierCacheDir,
-				RecordingCommandFactory: recordingCommandFactory,
-				Logger:                  logger,
-				FS:                      fs,
-				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
-					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
-						rawURL, err := getRemoteURLFunc(ctx, db, repo)
-						if err != nil {
-							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
-
-						}
-
-						u, err := vcs.ParseURL(rawURL)
-						if err != nil {
-							// TODO@ggilmore: Note that we can't redact the URL here because we can't
-							// parse it to know where the sensitive information is.
-							return nil, errors.Wrapf(err, "parsing remote URL %q", rawURL)
-						}
-
-						return u, nil
-
-					}), nil
-				},
-			})
-		},
-		FS:                      fs,
-		Hostname:                hostname,
-		DB:                      db,
-		RecordingCommandFactory: recordingCommandFactory,
-		Locker:                  locker,
-		RPSLimiter: ratelimit.NewInstrumentedLimiter(
-			ratelimit.GitRPSLimiterBucketName,
-			ratelimit.NewGlobalRateLimiter(logger, ratelimit.GitRPSLimiterBucketName),
-		),
-	})
+	)
 
 	// Make sure we watch for config updates that affect the recordingCommandFactory.
 	go conf.Watch(func() {
@@ -156,21 +122,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	internal.RegisterEchoMetric(logger.Scoped("echoMetricReporter"))
 
-	handler := internal.NewHTTPHandler(logger, fs)
-	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.InternalHTTPMiddleware(handler)
-	handler = requestinteraction.HTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler)
-	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, gitserver, config), handler)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	routines := []goroutine.BackgroundRoutine{
-		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
-			Handler: handler,
-		}),
+		makeHTTPServer(logger, fs, makeGRPCServer(logger, gitserver, config), config.ListenAddress),
 		server.NewRepoStateSyncer(
 			ctx,
 			logger,
@@ -234,6 +190,82 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	gitserver.Stop()
 
 	return nil
+}
+
+// makeServer creates a new gitserver.Server instance.
+func makeServer(
+	observationCtx *observation.Context,
+	fs gitserverfs.FS,
+	db database.DB,
+	recordingCommandFactory *wrexec.RecordingCommandFactory,
+	backendSource func(dir common.GitDir, repoName api.RepoName) git.GitBackend,
+	hostname string,
+	coursierCacheDir string,
+	locker internal.RepositoryLocker,
+	getRemoteURLFunc func(ctx context.Context, repo api.RepoName) (string, error),
+) *internal.Server {
+	return server.NewServer(&server.ServerOpts{
+		Logger:           observationCtx.Logger,
+		GitBackendSource: backendSource,
+		GetRemoteURLFunc: getRemoteURLFunc,
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
+				ExternalServiceStore:    db.ExternalServices(),
+				RepoStore:               db.Repos(),
+				DepsSvc:                 dependencies.NewService(observationCtx, db),
+				Repo:                    repo,
+				CoursierCacheDir:        coursierCacheDir,
+				RecordingCommandFactory: recordingCommandFactory,
+				Logger:                  observationCtx.Logger,
+				FS:                      fs,
+				GetRemoteURLSource: func(ctx context.Context, repo api.RepoName) (vcssyncer.RemoteURLSource, error) {
+					return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
+						rawURL, err := getRemoteURLFunc(ctx, repo)
+						if err != nil {
+							return nil, errors.Wrapf(err, "getting remote URL for %q", repo)
+
+						}
+
+						u, err := vcs.ParseURL(rawURL)
+						if err != nil {
+							// TODO@ggilmore: Note that we can't redact the URL here because we can't
+							// parse it to know where the sensitive information is.
+							return nil, errors.Wrapf(err, "parsing remote URL %q", rawURL)
+						}
+
+						return u, nil
+
+					}), nil
+				},
+			})
+		},
+		FS:                      fs,
+		Hostname:                hostname,
+		DB:                      db,
+		RecordingCommandFactory: recordingCommandFactory,
+		Locker:                  locker,
+		RPSLimiter: ratelimit.NewInstrumentedLimiter(
+			ratelimit.GitRPSLimiterBucketName,
+			ratelimit.NewGlobalRateLimiter(observationCtx.Logger, ratelimit.GitRPSLimiterBucketName),
+		),
+	})
+}
+
+// makeHTTPServer creates a new *http.Server for the gitserver endpoints and registers
+// it with methods on the given server. It multiplexes HTTP requests and gRPC requests
+// from a single port.
+func makeHTTPServer(logger log.Logger, fs gitserverfs.FS, grpcServer *grpc.Server, listenAddress string) goroutine.BackgroundRoutine {
+	handler := internal.NewHTTPHandler(logger, fs)
+	handler = actor.HTTPMiddleware(logger, handler)
+	handler = requestclient.InternalHTTPMiddleware(handler)
+	handler = requestinteraction.HTTPMiddleware(handler)
+	handler = trace.HTTPMiddleware(logger, handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
+
+	return httpserver.NewFromAddr(listenAddress, &http.Server{
+		Handler: handler,
+	})
 }
 
 // makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
