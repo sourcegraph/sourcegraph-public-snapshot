@@ -21,7 +21,6 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import type { Event } from './graphql-operations'
 import { accessTokenSetting, processOldToken } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
-import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, type VSCEQueryState } from './state'
@@ -51,7 +50,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
-    invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
