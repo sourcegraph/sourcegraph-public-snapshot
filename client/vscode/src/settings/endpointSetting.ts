@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { extensionContext } from '../extension'
+import { secretTokenKey, SourcegraphAuthProvider } from '../webview/platform/AuthProvider'
 
 const defaultEndpointURL = 'https://sourcegraph.com'
 
@@ -36,14 +37,39 @@ export function endpointSetting(): string {
     return removeEndingSlash(url)
 }
 
-export async function setEndpoint(newEndpoint: string): Promise<void> {
+export function setEndpoint(newEndpoint: string | undefined): void {
     const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : defaultEndpointURL
     const currentEndpointHostname = new URL(endpointSetting()).hostname
     const newEndpointHostname = new URL(newEndpointURL).hostname
     if (currentEndpointHostname !== newEndpointHostname) {
-        await extensionContext?.globalState.update(endpointKey, newEndpointURL)
+        extensionContext?.globalState.update(endpointKey, newEndpointURL).then(
+            () => {
+                // after changing the endpoint URL, register an authentication provder for it.
+                // trying and erroring (because one already exists) is probably just as cheap/expensive
+                // as trying `vscode.authentication.getSession(newEndpointURL, [], { createIfNone: false })`,
+                // catching an error and registering an auth provider.
+                try {
+                    const provider = vscode.authentication.registerAuthenticationProvider(
+                        newEndpointURL,
+                        secretTokenKey,
+                        new SourcegraphAuthProvider(extensionContext?.secrets)
+                    )
+                    extensionContext?.subscriptions.push(provider)
+                } catch (error) {
+                    // unsetting the endpoint reverts to the default,
+                    // which probably already has an auth provider,
+                    // which would cause an error,
+                    // so ignore it.
+                    if (!(error as Error).message.includes('is already registered')) {
+                        console.error(error)
+                    }
+                }
+            },
+            error => {
+                console.error(error)
+            }
+        )
     }
-    return
 }
 
 export function endpointHostnameSetting(): string {

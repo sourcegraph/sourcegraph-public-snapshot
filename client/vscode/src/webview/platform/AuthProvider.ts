@@ -138,7 +138,7 @@ export class SourcegraphAuthActions {
         try {
             await this.secretStorage.store(secretTokenKey, newtoken)
             if (this.currentEndpoint !== newuri) {
-                await setEndpoint(newuri)
+                setEndpoint(newuri)
             }
             return
         } catch (error) {
