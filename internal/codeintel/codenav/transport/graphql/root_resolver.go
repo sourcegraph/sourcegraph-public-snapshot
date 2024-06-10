@@ -238,7 +238,9 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			usageConnectionResolvers = append(usageConnectionResolvers, newUsageResolver(usage, args.Repo.URI, args.CommitID.Short()))
 		}
 
-		remainingCount = remainingCount - numSyntacticResults
+		// TODO: nogo linter complains about non-effectual assignment here
+		// numSyntacticResults += len(usages)
+		// remainingCount = remainingCount - numSyntacticResults
 
 		return &usageConnectionResolver{
 			nodes:    usageConnectionResolvers,
