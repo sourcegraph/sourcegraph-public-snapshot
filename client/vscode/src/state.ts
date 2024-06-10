@@ -99,7 +99,7 @@ function createInitialState({ localStorageService }: { localStorageService: Loca
 
 // Temporary placeholder events. We will replace these with the actual events as we implement the webviews.
 
-export type VSCEEvent = SearchEvent | TabsEvent | SettingsEvent
+export type VSCEEvent = SearchEvent | TabsEvent
 
 type SearchEvent =
     | { type: 'set_query_state' }
@@ -118,10 +118,6 @@ type TabsEvent =
     | { type: 'remote_file_focused' }
     | { type: 'remote_file_unfocused' }
 
-interface SettingsEvent {
-    type: 'sourcegraph_url_change'
-}
-
 export function createVSCEStateMachine({
     localStorageService,
 }: {
@@ -135,15 +131,6 @@ export function createVSCEStateMachine({
             return state
         }
 
-        // Events with the same behavior regardless of current state
-        if (event.type === 'sourcegraph_url_change') {
-            return {
-                status: 'context-invalidated',
-                context: {
-                    ...createInitialState({ localStorageService }).context,
-                },
-            }
-        }
         if (event.type === 'set_selected_search_context_spec') {
             return {
                 ...state,
