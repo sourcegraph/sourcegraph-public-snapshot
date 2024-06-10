@@ -22,17 +22,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	repoStore  database.RepoStore
-	lsifstore  lsifstore.LsifStore
-	gitserver  gitserver.Client
-	uploadSvc  UploadService
-	operations *operations
-	logger     log.Logger
+	repoStore    database.RepoStore
+	lsifstore    lsifstore.LsifStore
+	gitserver    gitserver.Client
+	uploadSvc    UploadService
+	searchClient searcher.SearchClient
+	operations   *operations
+	logger       log.Logger
 }
 
 func newService(
@@ -41,14 +43,17 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
+	searchClient searcher.SearchClient,
+	logger log.Logger,
 ) *Service {
 	return &Service{
-		repoStore:  repoStore,
-		lsifstore:  lsifstore,
-		gitserver:  gitserver,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationCtx),
-		logger:     log.Scoped("codenav"),
+		repoStore:    repoStore,
+		lsifstore:    lsifstore,
+		gitserver:    gitserver,
+		uploadSvc:    uploadSvc,
+		searchClient: searchClient,
+		operations:   newOperations(observationCtx),
+		logger:       logger,
 	}
 }
 
