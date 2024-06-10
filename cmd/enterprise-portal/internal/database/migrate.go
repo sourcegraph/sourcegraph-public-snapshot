@@ -24,6 +24,12 @@ import (
 // maybeMigrate runs the auto-migration for the database when needed based on
 // the given version.
 func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) (err error) {
+	// TODO(jchen): We need to figure otu a way to make local dev more seamless.
+	// Until then, only run migrations in MSP.
+	if !contract.MSP {
+		return nil
+	}
+
 	ctx, span := databaseTracer.Start(
 		ctx,
 		"database.maybeMigrate",
