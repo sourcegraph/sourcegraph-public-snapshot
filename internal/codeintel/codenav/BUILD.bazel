@@ -26,7 +26,6 @@ go_library(
         "//internal/authz",
         "//internal/codeintel/codenav/internal/lsifstore",
         "//internal/codeintel/codenav/shared",
-        "//internal/codeintel/resolvers",
         "//internal/codeintel/shared",
         "//internal/codeintel/uploads/shared",
         "//internal/collections",
