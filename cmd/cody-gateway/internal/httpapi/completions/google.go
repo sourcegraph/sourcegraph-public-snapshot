@@ -193,13 +193,18 @@ func parseGoogleTokenUsage(r io.Reader, logger log.Logger) (promptTokens int, co
 	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
 	scanner.Split(bufio.ScanLines)
 
-	var lastLine []byte
+	var lastNonEmptyLine []byte
+
+	// Find the last non-empty line in the stream.
 	for scanner.Scan() {
-		lastLine = scanner.Bytes()
+		line := scanner.Bytes()
+		if len(bytes.TrimSpace(line)) > 0 {
+			lastNonEmptyLine = line
+		}
 	}
 
-	if bytes.HasPrefix(bytes.TrimSpace(lastLine), []byte("data: ")) {
-		event := lastLine[5:]
+	if bytes.HasPrefix(bytes.TrimSpace(lastNonEmptyLine), []byte("data: ")) {
+		event := lastNonEmptyLine[5:]
 		var res googleResponse
 		if err := json.NewDecoder(bytes.NewReader(event)).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))

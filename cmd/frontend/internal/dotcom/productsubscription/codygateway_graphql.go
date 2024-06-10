@@ -67,7 +67,7 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -107,7 +107,7 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -146,7 +146,7 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil

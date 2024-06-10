@@ -211,6 +211,15 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		objs = append(objs, &obj)
 	}
 
+	ingresses, err := suite.k8sClient.NetworkingV1().Ingresses(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range ingresses.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "networking.k8s.io", Version: "v1", Kind: "Ingress"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+
 	return objs
 }
 

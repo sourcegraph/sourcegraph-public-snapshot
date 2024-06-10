@@ -166,3 +166,29 @@ func TestLIFOStopRoutine(t *testing.T) {
 	// stops in reverse
 	assert.Equal(t, []string{"r3", "r2", "r1"}, stopped)
 }
+
+func TestFIFOStopRoutine(t *testing.T) {
+	// use an unguarded slice because FIFOSTopRoutine should only stop in sequence
+	var stopped []string
+	r1 := NewMockRoutine()
+	r1.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r1")
+		return nil
+	})
+	r2 := NewMockRoutine()
+	r2.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r2")
+		return nil
+	})
+	r3 := NewMockRoutine()
+	r3.StopFunc.PushHook(func(context.Context) error {
+		stopped = append(stopped, "r3")
+		return nil
+	})
+
+	r := FIFOSTopRoutine{r1, r2, r3}
+	err := r.Stop(context.Background())
+	require.NoError(t, err)
+	// stops in order
+	assert.Equal(t, []string{"r1", "r2", "r3"}, stopped)
+}
