@@ -7,7 +7,7 @@ const defaultEndpointURL = 'https://sourcegraph.com'
 
 const endpointKey = 'sourcegraph.url'
 
-export async function removeOldEndpointURLSetting(): Promise<void> {
+async function removeOldEndpointURLSetting(): Promise<void> {
     await vscode.workspace.getConfiguration().update(endpointKey, undefined, vscode.ConfigurationTarget.Global)
     await vscode.workspace.getConfiguration().update(endpointKey, undefined, vscode.ConfigurationTarget.Workspace)
     return
