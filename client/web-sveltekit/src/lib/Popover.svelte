@@ -40,10 +40,7 @@
 
     function close(): void {
         clearTimeout(delayTimer)
-
-        if (isOpen) {
-            toggle(false)
-        }
+        toggle(false)
     }
 
     function handleClickOutside(event: { detail: HTMLElement }): void {
