@@ -25,7 +25,8 @@ import (
 // the given version.
 func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) (err error) {
 	// TODO(jchen): We need to figure otu a way to make local dev more seamless.
-	// Until then, only run migrations in MSP.
+	// Until then, only run migrations in MSP. See
+	// https://linear.app/sourcegraph/issue/CORE-176/enterprise-portal-do-not-require-a-separate-database-in-local-dev
 	if !contract.MSP {
 		return nil
 	}
