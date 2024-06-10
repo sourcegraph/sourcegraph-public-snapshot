@@ -972,6 +972,8 @@ func (s *Service) getSyntacticSymbolsAtRange(
 		return nil, err
 	}
 
+	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
+
 	symbols = make([]*scip.Symbol, 0)
 	for _, occurrence := range doc.GetOccurrences() {
 		occRange := lsifstore.TranslateRange(scip.NewRange(occurrence.GetRange()))
