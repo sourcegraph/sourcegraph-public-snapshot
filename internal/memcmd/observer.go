@@ -22,6 +22,8 @@ type Observer interface {
 	// Calling Start() multiple times is safe and has no effect after the first invocation.
 	Start()
 
+	// Stop stops the observer and releases any associated resources. For accurate measurement,
+	// Stop must be called _after_ Wait has been called on the *exec.Cmd.
 	// Stop stops the observer and releases any associated resources.
 	//
 	// Calling Stop() multiple times is safe and has no effect after the first invocation.
