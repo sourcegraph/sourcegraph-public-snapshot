@@ -68,7 +68,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 })
 
                 try {
-                    const response = await requestSSC(`/team/current/members`, 'PATCH', {updateMemberRole: {accountId, teamRole: newRole}})
+                    const response = await requestSSC('/team/current/members', 'PATCH', {
+                        updateMemberRole: { accountId, teamRole: newRole },
+                    })
                     if (!response.ok) {
                         setLoading(false)
                         setActionResult({
