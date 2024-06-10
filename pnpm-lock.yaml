@@ -1639,9 +1639,18 @@ importers:
       '@graphql-typed-document-node/core':
         specifier: ^3.2.0
         version: 3.2.0(graphql@15.4.0)
+      '@iconify-json/devicon-plain':
+        specifier: ^1.1.42
+        version: 1.1.42
       '@iconify-json/lucide':
         specifier: ^1.1.188
         version: 1.1.188
+      '@iconify-json/ph':
+        specifier: ^1.1.13
+        version: 1.1.13
+      '@iconify-json/simple-icons':
+        specifier: ^1.1.104
+        version: 1.1.104
       '@playwright/test':
         specifier: 1.42.1
         version: 1.42.1
@@ -5508,8 +5517,26 @@ packages:
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
     dev: true
 
+  /@iconify-json/devicon-plain@1.1.42:
+    resolution: {integrity: sha512-NGCuw6BHn8lpjbVVa4XvYnprhWZ6IWkr6O19b69ySpDyi8QF3lh/Pe5As7C6eAG1KsblxQFqwcztgILOOmZqAA==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
   /@iconify-json/lucide@1.1.188:
     resolution: {integrity: sha512-yJNoU7vX11OvdeSKBiAvmbk/etAq2HPCZQkZX1U687NZhn8dTfx1PfyNhPxtJilrd288XGDKK+NQgygcZ+Ho4g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/ph@1.1.13:
+    resolution: {integrity: sha512-xtM4JJ63HCKj09WRqrBswXiHrpliBlqboWSZH8odcmqYXbvIFceU9/Til4V+MQr6+MoUC+KB72cxhky2+A6r/g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/simple-icons@1.1.104:
+    resolution: {integrity: sha512-986r56QHsIqa84MdGpV+tUJVhJjDXFb1OfFJZKMDiuQOi0CacK5QsM3if5RNjmT9WhrQtm5uTRHy4/4u7Cb9oQ==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true
