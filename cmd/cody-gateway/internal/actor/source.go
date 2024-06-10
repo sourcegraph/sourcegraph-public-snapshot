@@ -149,7 +149,11 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 				if err != nil {
 					return errors.Wrapf(err, "failed to sync %s", src.Name())
 				}
-				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				span.SetAttributes(
+					attribute.Int("seen_actors", seen))
+				syncLogger.Info("Completed sync",
+					log.Duration("sync_duration", time.Since(start)),
+					log.Int("seen", seen))
 				return nil
 			})
 		}

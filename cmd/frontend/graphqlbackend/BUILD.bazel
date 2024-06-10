@@ -380,6 +380,7 @@ go_library(
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_text//unicode/norm",
     ],
 )
 
@@ -422,6 +423,7 @@ go_test(
         "perforce_changelist_test.go",
         "permission_test.go",
         "permissions_test.go",
+        "person_test.go",
         "preview_repository_comparison_test.go",
         "rate_limit_test.go",
         "recorded_commands_test.go",

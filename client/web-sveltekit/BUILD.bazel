@@ -84,6 +84,7 @@ BUILD_DEPS = [
     ":node_modules/@graphql-tools/utils",
     ":node_modules/@iconify-json/lucide",
     ":node_modules/@melt-ui/svelte",
+    ":node_modules/@sentry/sveltekit",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/client-api",
     ":node_modules/@sourcegraph/common",

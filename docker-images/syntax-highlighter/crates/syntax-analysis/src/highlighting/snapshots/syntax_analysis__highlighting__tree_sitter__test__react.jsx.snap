@@ -14,12 +14,24 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
       return (
 //    ^^^^^^ Keyword
           <div>
+//        ^ TagDelimiter
 //         ^^^ Tag
+//            ^ TagDelimiter
+              <p />
+//            ^ TagDelimiter
+//             ^ Tag
+//               ^ TagDelimiter
+//                ^ TagDelimiter
               <h1 id={name}>My Component</h1>
+//            ^ TagDelimiter
 //             ^^ Tag
 //                ^^ TagAttribute
 //                    ^^^^ Identifier
+//                         ^ TagDelimiter
+//                                      ^ TagDelimiter
+//                                       ^ TagDelimiter
 //                                        ^^ Tag
+//                                          ^ TagDelimiter
               {[1, 2, 3].map(item => (
 //              ^ NumericLiteral
 //                 ^ NumericLiteral
@@ -27,13 +39,21 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                       ^^^ IdentifierFunction
 //                           ^^^^ Identifier
                   <p key={item}>{item}</p>
+//                ^ TagDelimiter
 //                 ^ Tag
 //                   ^^^ TagAttribute
 //                        ^^^^ Identifier
+//                             ^ TagDelimiter
 //                               ^^^^ Identifier
+//                                    ^ TagDelimiter
+//                                     ^ TagDelimiter
 //                                      ^ Tag
+//                                       ^ TagDelimiter
               ))}
           </div>
+//        ^ TagDelimiter
+//         ^ TagDelimiter
 //          ^^^ Tag
+//             ^ TagDelimiter
       )
   }

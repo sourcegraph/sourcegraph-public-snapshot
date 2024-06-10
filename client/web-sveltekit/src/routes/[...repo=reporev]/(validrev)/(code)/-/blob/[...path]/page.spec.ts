@@ -181,7 +181,7 @@ test.describe('file header', () => {
         )
     })
 
-    test.fixme('dropdown menu', async ({ page }) => {
+    test('dropdown menu', async ({ page }) => {
         await page.goto(url)
 
         async function openDropdown() {
@@ -244,10 +244,10 @@ test.describe('file header', () => {
             await expect(page.getByRole('link', { name: 'src' })).toBeVisible()
         })
 
-        test.fixme('select and copy file path', async ({ page, context }) => {
+        test('select and copy file path', async ({ page, context }) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write'])
             await page.goto(url)
-            await page.getByText('src / readme.md').selectText()
+            await page.getByTestId('file-header-path').selectText()
             await page.keyboard.press(`Meta+KeyC`)
             await page.keyboard.press(`Control+KeyC`)
             const clipboardText = await page.evaluate('navigator.clipboard.readText()')
@@ -280,13 +280,13 @@ test.describe('scroll behavior', () => {
         await expect(selectedLine).toHaveText(/line 100;/)
     })
 
-    test.fixme('go to another file', async ({ page, utils }) => {
+    test('go to another file', async ({ page, utils }) => {
         await page.goto(url)
         // Scroll to some arbitrary position
         await utils.scrollYAt(page.getByText('line 1;'), 1000)
 
         // Open sidebar
-        await page.locator('#sidebar-panel').getByRole('button').click()
+        await page.getByLabel('Open sidebar').click()
 
         await page.getByRole('link', { name: 'large-file-2.js' }).click()
         await expect(page.getByText('line 1;')).toBeVisible()

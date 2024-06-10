@@ -89,6 +89,9 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 			"google/" + google.Gemini15FlashLatest,
 			"google/" + google.Gemini15ProLatest,
 			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash,
+			"google/" + google.Gemini15Pro,
+			"google/" + google.GeminiPro,
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",

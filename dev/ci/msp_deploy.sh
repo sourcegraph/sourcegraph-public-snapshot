@@ -18,7 +18,7 @@ GCP_CLOUDRUN_SKAFFOLD_SOURCE="gs://${GCP_PROJECT}-cloudrun-skaffold/source.tar.g
 GCP_DELIVERY_PIPELINE="${MSP_SERVICE_ID}-${GCP_REGION}-rollout"
 SHORT_SHA="${BUILDKITE_COMMIT:0:12}"
 TAG="${SHORT_SHA}_${BUILDKITE_BUILD_NUMBER}"
-COMMIT_MESSAGE="$(git log -n 1 --pretty=format:'%s')"
+COMMIT_MESSAGE_BASE64="$(git log -n 1 --pretty=format:'%s' | base64)"
 # resource ids must be lower-case letters, numbers, and hyphens,
 # with the first character a letter, the last a letter or a number,
 # and a 63 character maximum
@@ -39,4 +39,4 @@ gcloud=$2
     --source="${GCP_CLOUDRUN_SKAFFOLD_SOURCE}" \
     --labels="commit=${BUILDKITE_COMMIT}" \
     --deploy-parameters="customTarget/tag=${TAG}" \
-    --annotations="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR},commit_message=${COMMIT_MESSAGE}"
+    --annotations="commit=${BUILDKITE_COMMIT},author=${BUILDKITE_BUILD_AUTHOR},commit_message_base64=${COMMIT_MESSAGE_BASE64}"
