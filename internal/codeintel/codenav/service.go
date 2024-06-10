@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -926,4 +927,63 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+}
+
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID) (uploadsshared.CompletedUpload, error) {
+	// NOTE: Because we're not filtering by path, this relies on us having only syntactic uploads for the root directory.
+	// Is that a fair assumption to make for now?
+	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
+		RepositoryID: int(repo.ID),
+		Commit:       string(commit),
+		Indexer:      uploadsshared.SyntacticIndexer,
+	})
+
+	if err != nil {
+		return uploadsshared.CompletedUpload{}, err
+	}
+
+	if len(uploads) == 0 {
+		return uploadsshared.CompletedUpload{}, errors.Newf(
+			"no syntactic uploads found for repository %q at commit %q",
+			repo.Name,
+			string(commit),
+		)
+	}
+
+	// NOTE: Is seeing multiple syntactic uploads an error?
+	// For now we're just arbitrarily picking the first one.
+	return uploads[0], nil
+}
+
+func (s *Service) getSyntacticSymbolsAtRange(
+	ctx context.Context,
+	repo types.Repo,
+	revision api.CommitID,
+	path string,
+	symbolRange shared.Range,
+) (symbols []*scip.Symbol, err error) {
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, path)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols = make([]*scip.Symbol, 0)
+	for _, occurrence := range doc.GetOccurrences() {
+		occRange := lsifstore.TranslateRange(scip.NewRange(occurrence.GetRange()))
+		// TODO: Needs to handle differing text encodings to get these character positions right
+		if symbolRange.Intersects(occRange) {
+			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+			if err != nil {
+				// TODO: Log this failure?
+				continue
+			}
+			symbols = append(symbols, parsedSymbol)
+		}
+	}
+	return symbols, nil
 }
