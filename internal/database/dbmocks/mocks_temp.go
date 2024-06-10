@@ -15225,6 +15225,9 @@ type MockDB struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBHandleFunc
+	// ModelConfigurationFunc is an instance of a mock function object
+	// controlling the behavior of the method ModelConfiguration.
+	ModelConfigurationFunc *DBModelConfigurationFunc
 	// NamespacePermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method NamespacePermissions.
 	NamespacePermissionsFunc *DBNamespacePermissionsFunc
@@ -15469,6 +15472,11 @@ func NewMockDB() *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ModelConfigurationFunc: &DBModelConfigurationFunc{
+			defaultHook: func() (r0 database.ModelConfigurationStore) {
 				return
 			},
 		},
@@ -15804,6 +15812,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Handle")
 			},
 		},
+		ModelConfigurationFunc: &DBModelConfigurationFunc{
+			defaultHook: func() database.ModelConfigurationStore {
+				panic("unexpected invocation of MockDB.ModelConfiguration")
+			},
+		},
 		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
 			defaultHook: func() database.NamespacePermissionStore {
 				panic("unexpected invocation of MockDB.NamespacePermissions")
@@ -16091,6 +16104,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: i.Handle,
+		},
+		ModelConfigurationFunc: &DBModelConfigurationFunc{
+			defaultHook: i.ModelConfiguration,
 		},
 		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
 			defaultHook: i.NamespacePermissions,
@@ -18409,6 +18425,105 @@ func (c DBHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBModelConfigurationFunc describes the behavior when the
+// ModelConfiguration method of the parent MockDB instance is invoked.
+type DBModelConfigurationFunc struct {
+	defaultHook func() database.ModelConfigurationStore
+	hooks       []func() database.ModelConfigurationStore
+	history     []DBModelConfigurationFuncCall
+	mutex       sync.Mutex
+}
+
+// ModelConfiguration delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) ModelConfiguration() database.ModelConfigurationStore {
+	r0 := m.ModelConfigurationFunc.nextHook()()
+	m.ModelConfigurationFunc.appendCall(DBModelConfigurationFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ModelConfiguration
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBModelConfigurationFunc) SetDefaultHook(hook func() database.ModelConfigurationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ModelConfiguration method of the parent MockDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBModelConfigurationFunc) PushHook(hook func() database.ModelConfigurationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBModelConfigurationFunc) SetDefaultReturn(r0 database.ModelConfigurationStore) {
+	f.SetDefaultHook(func() database.ModelConfigurationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBModelConfigurationFunc) PushReturn(r0 database.ModelConfigurationStore) {
+	f.PushHook(func() database.ModelConfigurationStore {
+		return r0
+	})
+}
+
+func (f *DBModelConfigurationFunc) nextHook() func() database.ModelConfigurationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBModelConfigurationFunc) appendCall(r0 DBModelConfigurationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBModelConfigurationFuncCall objects
+// describing the invocations of this function.
+func (f *DBModelConfigurationFunc) History() []DBModelConfigurationFuncCall {
+	f.mutex.Lock()
+	history := make([]DBModelConfigurationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBModelConfigurationFuncCall is an object that describes an invocation of
+// method ModelConfiguration on an instance of MockDB.
+type DBModelConfigurationFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ModelConfigurationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBModelConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBModelConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

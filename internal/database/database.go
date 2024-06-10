@@ -37,6 +37,7 @@ type DB interface {
 	GitHubApps() gha.GitHubAppsStore
 	GitserverRepos() GitserverRepoStore
 	GlobalState() GlobalStateStore
+	ModelConfiguration() ModelConfigurationStore
 	NamespacePermissions() NamespacePermissionStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -191,6 +192,10 @@ func (d *db) GitserverRepos() GitserverRepoStore {
 
 func (d *db) GlobalState() GlobalStateStore {
 	return GlobalStateWith(d.Store)
+}
+
+func (d *db) ModelConfiguration() ModelConfigurationStore {
+	return ModelConfigurationWith(d.logger, d.Store)
 }
 
 func (d *db) NamespacePermissions() NamespacePermissionStore {
