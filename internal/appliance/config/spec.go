@@ -138,11 +138,8 @@ type RepoUpdaterSpec struct {
 	StandardConfig
 }
 
-// SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	StandardConfig
 
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1

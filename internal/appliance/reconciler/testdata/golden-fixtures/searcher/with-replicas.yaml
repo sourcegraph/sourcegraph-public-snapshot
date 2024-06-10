@@ -1,0 +1,285 @@
+resources:
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c878c6daa974c7ef411448ebabf07a65e9eb202152898e1f786066a15de2209a
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 1
+      labels:
+        app.kubernetes.io/component: searcher
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: searcher
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      minReadySeconds: 10
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: Retain
+        whenScaled: Retain
+      podManagementPolicy: OrderedReady
+      replicas: 8
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: searcher
+      serviceName: searcher
+      template:
+        metadata:
+          annotations:
+            kubectl.kubernetes.io/default-container: searcher
+          creationTimestamp: null
+          labels:
+            app: searcher
+            deploy: sourcegraph
+          name: searcher
+        spec:
+          containers:
+            - env:
+                - name: REDIS_CACHE_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      key: endpoint
+                      name: redis-cache
+                - name: REDIS_STORE_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      key: endpoint
+                      name: redis-store
+                - name: SEARCHER_CACHE_SIZE_MB
+                  value: "23961"
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.name
+                - name: CACHE_DIR
+                  value: /mnt/cache/$(POD_NAME)
+                - name: OTEL_AGENT_HOST
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: status.hostIP
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: http://$(OTEL_AGENT_HOST):4317
+              image: index.docker.io/sourcegraph/searcher:5.3.9104
+              imagePullPolicy: IfNotPresent
+              name: searcher
+              ports:
+                - containerPort: 3181
+                  name: http
+                  protocol: TCP
+                - containerPort: 6060
+                  name: debug
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /healthz
+                  port: http
+                  scheme: HTTP
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 5
+              resources:
+                limits:
+                  cpu: "2"
+                  memory: 2G
+                requests:
+                  cpu: 500m
+                  memory: 500M
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 101
+                runAsUser: 100
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /mnt/cache
+                  name: cache
+                - mountPath: /tmp
+                  name: tmpdir
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext:
+            fsGroup: 101
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 101
+            runAsUser: 100
+          serviceAccount: searcher
+          serviceAccountName: searcher
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - emptyDir: {}
+              name: cache
+            - emptyDir: {}
+              name: tmpdir
+      updateStrategy:
+        type: RollingUpdate
+      volumeClaimTemplates:
+        - apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            creationTimestamp: null
+            labels:
+              deploy: sourcegraph
+            name: cache
+            namespace: NORMALIZED_FOR_TESTING
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 26Gi
+            volumeMode: Filesystem
+          status:
+            phase: Pending
+    status:
+      availableReplicas: 0
+      replicas: 0
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
+
+          blobstore:
+            disabled: true
+
+          codeInsights:
+            disabled: true
+
+          codeIntel:
+            disabled: true
+
+          frontend:
+            disabled: true
+
+          gitServer:
+            disabled: true
+
+          indexedSearch:
+            disabled: true
+
+          indexedSearchIndexer:
+            disabled: true
+
+          pgsql:
+            disabled: true
+
+          postgresExporter:
+            disabled: true
+
+          preciseCodeIntel:
+            disabled: true
+
+          redisCache:
+            disabled: true
+
+          redisStore:
+            disabled: true
+
+          repoUpdater:
+            disabled: true
+
+          searcher:
+            replicas: 8
+
+          symbols:
+            disabled: true
+
+          syntectServer:
+            disabled: true
+
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c878c6daa974c7ef411448ebabf07a65e9eb202152898e1f786066a15de2209a
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: searcher
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c878c6daa974c7ef411448ebabf07a65e9eb202152898e1f786066a15de2209a
+        prometheus.io/port: "6060"
+        sourcegraph.prometheus/scrape: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app: searcher
+        app.kubernetes.io/component: searcher
+        deploy: sourcegraph
+      name: searcher
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      clusterIP: NORMALIZED_FOR_TESTING
+      clusterIPs:
+        - NORMALIZED_FOR_TESTING
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+        - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+        - name: http
+          port: 3181
+          protocol: TCP
+          targetPort: http
+        - name: debug
+          port: 6060
+          protocol: TCP
+          targetPort: debug
+      selector:
+        app: searcher
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}
