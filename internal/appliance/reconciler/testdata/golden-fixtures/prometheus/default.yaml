@@ -400,9 +400,6 @@ resources:
             disabled: true
 
           prometheus: {}
-
-          embeddings:
-            disabled: true
     kind: ConfigMap
     metadata:
       annotations:
