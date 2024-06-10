@@ -3,15 +3,12 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -272,22 +269,6 @@ func newUsageResolver(usage codenav.ScoredMatch, repository string, revision str
 			},
 		},
 	}
-}
-
-// TODO: Move to args.normalize
-func (r *rootResolver) resolveRepoAndRevision(ctx context.Context, args *resolverstubs.UsagesForSymbolArgs) (repo *types.Repo, commitId *api.CommitID, err error) {
-	// Find matching uploads for the coordinates in the request
-	repo, err = r.repoStore.GetByName(ctx, api.RepoName(args.Range.Repository))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	resolvedRevision, err := r.gitserverClient.ResolveRevision(ctx, repo.Name, *args.Range.Revision, gitserver.ResolveRevisionOptions{EnsureRevision: true})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return repo, &resolvedRevision, err
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This

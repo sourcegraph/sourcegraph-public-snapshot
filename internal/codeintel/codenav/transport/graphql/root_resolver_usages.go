@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 

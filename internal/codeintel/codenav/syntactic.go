@@ -3,7 +3,9 @@ package codenav
 import (
 	"context"
 	"fmt"
+
 	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
