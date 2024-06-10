@@ -237,7 +237,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to={'/cody/manage/subscription/new'}
+                                            to="/cody/manage/subscription/new"
                                             target="_blank"
                                             rel="noreferrer noopener"
                                             onClick={event => {
