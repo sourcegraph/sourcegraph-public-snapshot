@@ -8,26 +8,12 @@ import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endp
 
 import { fetch, getProxyAgent, Headers, type HeadersInit } from './fetch'
 
-let invalidated = false
-
-/**
- * To be called when Sourcegraph URL changes.
- */
-export function invalidateClient(): void {
-    invalidated = true
-}
-
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
     variables: V,
     overrideAccessToken?: string,
     overrideSourcegraphURL?: string
 ): Promise<GraphQLResult<R>> => {
-    if (invalidated) {
-        throw new Error(
-            'Sourcegraph GraphQL Client has been invalidated due to instance URL change. Restart VS Code to fix.'
-        )
-    }
     const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
     const accessToken =
         overrideAccessToken ||
