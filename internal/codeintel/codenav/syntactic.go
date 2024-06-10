@@ -45,7 +45,6 @@ func FindCandidateOccurrencesViaSearch(
 
 	matches := make(map[string][]result.Range)
 	for _, match := range stream.Results {
-		fmt.Printf("Matches in: %v/%s\n", match.RepoName().Name, match.Key().Path)
 		t, ok := match.(*result.FileMatch)
 		if !ok {
 			continue

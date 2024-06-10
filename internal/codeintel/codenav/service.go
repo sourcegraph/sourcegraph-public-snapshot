@@ -943,7 +943,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 	}
 
 	if len(uploads) == 0 {
-		return uploadsshared.CompletedUpload{}, fmt.Errorf("no syntactic uploads found for repository %q", repo.Name)
+		return uploadsshared.CompletedUpload{}, errors.Newf("no syntactic uploads found for repository %q", repo.Name)
 	}
 
 	if len(uploads) != 1 {
@@ -1008,7 +1008,7 @@ func (s *Service) SyntacticUsages(
 	}
 
 	if len(symbols) == 0 {
-		return nil, fmt.Errorf("no matching occurrences found for range")
+		return nil, errors.Newf("no matching occurrences found for range")
 	}
 
 	// Overlapping occurrences should lead to the same display name, but be scored separately.
@@ -1017,12 +1017,13 @@ func (s *Service) SyntacticUsages(
 	matchingSymbol := symbols[0]
 	symbolName := NameFromSymbol(matchingSymbol)
 	if symbolName == "" {
-		return nil, fmt.Errorf("no matching occurrences found for range")
+		return nil, errors.Newf("no matching occurrences found for range")
 	}
 
 	candidateMatches, err := FindCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, symbolName, commit)
-
-	fmt.Printf("candidateMatches: %#v", candidateMatches)
+	if err != nil {
+		return nil, err
+	}
 
 	var scoredMatches []ScoredMatch
 	for path, ranges := range candidateMatches {
@@ -1066,8 +1067,6 @@ func (s *Service) SyntacticUsages(
 	slices.SortFunc(scoredMatches, func(a, b ScoredMatch) int {
 		return cmp.Compare(a.Score, b.Score)
 	})
-
-	fmt.Printf("scoredMatches: %#v", scoredMatches)
 
 	return scoredMatches, nil
 }
