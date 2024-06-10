@@ -34,12 +34,14 @@ var (
 	EventNameAssigned = "license.check.api.assigned"
 )
 
-func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
+func logEvent(ctx context.Context, db database.DB, name string, siteID string, licenseID string) {
 	logger := log.Scoped("LicenseCheckHandler logEvent")
 	eArg, err := json.Marshal(struct {
-		SiteID string `json:"site_id,omitempty"`
+		SiteID    string `json:"site_id,omitempty"`
+		LicenseID string `json:"license_id,omitempty"`
 	}{
-		SiteID: siteID,
+		SiteID:    siteID,
+		LicenseID: licenseID,
 	})
 	if err != nil {
 		logger.Warn("error marshalling json body", log.Error(err))
@@ -198,7 +200,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				})
 				return
 			}
-			logEvent(ctx, db, EventNameAssigned, siteID)
+			logEvent(ctx, db, EventNameAssigned, siteID, license.ID)
 		} else if !strings.EqualFold(*license.SiteID, siteID) {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
@@ -221,7 +223,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 				IsValid: true,
 			},
 		})
-		logEvent(ctx, db, EventNameSuccess, siteID)
+		logEvent(ctx, db, EventNameSuccess, siteID, license.ID)
 	})
 }
 
