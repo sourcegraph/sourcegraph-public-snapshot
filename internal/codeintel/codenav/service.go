@@ -948,6 +948,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 
 	if len(uploads) != 1 {
 		// TODO: Is seeing multiple syntactic uploads an error?
+		_ = "shut up nogo linter complaining about empty branch"
 	}
 
 	return uploads[0], nil
