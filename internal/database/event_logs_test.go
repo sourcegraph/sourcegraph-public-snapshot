@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -1448,6 +1449,7 @@ func TestEventLogs_ListAll(t *testing.T) {
 
 	events := []*Event{
 		{
+			ID:        int64(math.MaxInt64),
 			UserID:    1,
 			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
@@ -1469,6 +1471,7 @@ func TestEventLogs_ListAll(t *testing.T) {
 			Timestamp: startDate,
 		},
 		{
+			ID:        int64(math.MinInt64),
 			UserID:    3,
 			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
@@ -2165,4 +2168,61 @@ func TestMakeDateTruncExpression(t *testing.T) {
 			require.Equal(t, tc.expected, date.Format(time.RFC3339))
 		})
 	}
+}
+
+func TestEventLogs_ID_INT64(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	now := time.Now()
+
+	startDate, _ := calcStartDate(now, Daily, 3)
+
+	// The Event struct's ID field needs to be int64 to support the event_logs table's bigint "id" column.
+	// This test is a bit of a circular reference, since the ID field must be int64 in order to populate the database.
+	events := []*Event{
+		{
+			ID:        int64(math.MaxInt64),
+			UserID:    1,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		},
+		// this ID value happens to be the one that caused the error exposing the int32 struct type
+		{
+			ID:        2524326457,
+			UserID:    2,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		},
+		{
+			ID:        int64(math.MinInt64),
+			UserID:    3,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		},
+	}
+
+	for _, event := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
+		if err := db.EventLogs().Insert(ctx, event); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("Ensure we can Scan all events", func(t *testing.T) {
+		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried")})
+		require.NoError(t, err)
+		assert.Len(t, have, 3)
+	})
 }
