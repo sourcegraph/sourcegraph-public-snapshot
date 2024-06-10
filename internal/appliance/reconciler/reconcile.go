@@ -112,7 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.Newf("failed to reconcile worker: %w", err)
 	}
 	if err := r.reconcileFrontend(ctx, &sourcegraph, &applianceSpec); err != nil {
-		return ctrl.Result{}, errors.Newf("failed to reconcile worker: %w", err)
+		return ctrl.Result{}, errors.Newf("failed to reconcile frontend: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.
