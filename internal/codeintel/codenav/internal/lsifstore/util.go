@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 )
 
-func translateRange(r *scip.Range) shared.Range {
+func TranslateRange(r *scip.Range) shared.Range {
 	return newRange(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character))
 }
 
