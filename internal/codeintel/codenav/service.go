@@ -989,9 +989,10 @@ func (s *Service) getSyntacticSymbolsAtRange(
 }
 
 type ScoredMatch struct {
-	path       string
-	occurrence *scip.Occurrence
-	score      float64
+	Path       string
+	Range      shared.Range
+	Occurrence *scip.Occurrence
+	Score      float64
 }
 
 func (s *Service) SyntacticUsages(
@@ -1000,7 +1001,7 @@ func (s *Service) SyntacticUsages(
 	symbolRange shared.Range,
 	repo types.Repo,
 	commit api.CommitID,
-) ([]struct{}, error) {
+) ([]ScoredMatch, error) {
 	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
@@ -1039,23 +1040,34 @@ func (s *Service) SyntacticUsages(
 		// TODO even quicker, use binary search
 		for _, occRange := range ranges {
 			for _, occurrence := range document.Occurrences {
-				if RangesOverlap(occRange, scip.NewRange(occurrence.Range)) {
+				scipRange := scip.NewRange(occurrence.Range)
+				if RangesOverlap(occRange, scipRange) {
 					sym, err := scip.ParseSymbol(occurrence.Symbol)
 					if err != nil {
 						continue
 					}
 					score := ScoreMatch(matchingSymbol, sym)
-					scoredMatches = append(scoredMatches, ScoredMatch{path, occurrence, score})
+					sharedRange := shared.Range{
+						Start: shared.Position{
+							Line:      int(scipRange.Start.Line),
+							Character: int(scipRange.Start.Character),
+						},
+						End: shared.Position{
+							Line:      int(scipRange.End.Line),
+							Character: int(scipRange.End.Character),
+						},
+					}
+					scoredMatches = append(scoredMatches, ScoredMatch{path, sharedRange, occurrence, score})
 				}
 			}
 		}
 	}
 
 	slices.SortFunc(scoredMatches, func(a, b ScoredMatch) int {
-		return cmp.Compare(a.score, b.score)
+		return cmp.Compare(a.Score, b.Score)
 	})
 
 	fmt.Printf("scoredMatches: %#v", scoredMatches)
 
-	return []struct{}{}, nil
+	return scoredMatches, nil
 }

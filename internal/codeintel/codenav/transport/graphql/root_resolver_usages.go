@@ -6,33 +6,33 @@ import (
 )
 
 type usageConnectionResolver struct {
+	nodes    []resolverstubs.UsageResolver
+	pageInfo resolverstubs.PageInfo
 }
 
 var _ resolverstubs.UsageConnectionResolver = &usageConnectionResolver{}
 
 func (u *usageConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.UsageResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.nodes, nil
 }
 
 func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	//TODO implement me
-	panic("implement me")
+	return u.pageInfo
 }
 
 type usageResolver struct {
+	symbol     resolverstubs.SymbolInformationResolver
+	usageRange resolverstubs.UsageRangeResolver
 }
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
 func (u *usageResolver) Symbol(ctx context.Context) (resolverstubs.SymbolInformationResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.symbol, nil
 }
 
 func (u *usageResolver) UsageRange(ctx context.Context) (resolverstubs.UsageRangeResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.usageRange, nil
 }
 
 func (u *usageResolver) SurroundingContent(_ context.Context, args *struct {
@@ -43,13 +43,14 @@ func (u *usageResolver) SurroundingContent(_ context.Context, args *struct {
 }
 
 type symbolInformationResolver struct {
+	name       string
+	provenance resolverstubs.CodeGraphDataProvenance
 }
 
 var _ resolverstubs.SymbolInformationResolver = &symbolInformationResolver{}
 
 func (s *symbolInformationResolver) Name() (string, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.name, nil
 }
 
 func (s *symbolInformationResolver) Documentation() (*[]string, error) {
@@ -58,8 +59,7 @@ func (s *symbolInformationResolver) Documentation() (*[]string, error) {
 }
 
 func (s *symbolInformationResolver) Provenance() (resolverstubs.CodeGraphDataProvenance, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.provenance, nil
 }
 
 func (s *symbolInformationResolver) DataSource() *string {
@@ -67,26 +67,27 @@ func (s *symbolInformationResolver) DataSource() *string {
 	panic("implement me")
 }
 
-type usageRangeResolver struct{}
+type usageRangeResolver struct {
+	repository string
+	revision   string
+	path       string
+	rx         *rangeResolver
+}
 
 var _ resolverstubs.UsageRangeResolver = &usageRangeResolver{}
 
 func (u *usageRangeResolver) Repository() string {
-	//TODO implement me
-	panic("implement me")
+	return u.repository
 }
 
 func (u *usageRangeResolver) Revision() string {
-	//TODO implement me
-	panic("implement me")
+	return u.revision
 }
 
 func (u *usageRangeResolver) Path() string {
-	//TODO implement me
-	panic("implement me")
+	return u.path
 }
 
 func (u *usageRangeResolver) Range() resolverstubs.RangeResolver {
-	//TODO implement me
-	panic("implement me")
+	return u.rx
 }

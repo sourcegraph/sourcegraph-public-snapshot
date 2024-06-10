@@ -212,7 +212,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	if err != nil {
 		return nil, err
 	}
-	remainingCount := int(*unresolvedArgs.First)
+	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
@@ -232,11 +232,21 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 				Character: int(args.End.Character),
 			},
 		}
-		_, err = r.svc.SyntacticUsages(ctx, args.Path, symbolRange, args.Repo, args.CommitID)
+		usages, err := r.svc.SyntacticUsages(ctx, args.Path, symbolRange, args.Repo, args.CommitID)
 		if err != nil {
 			return nil, err
 		}
+		usageConnectionResolvers := []resolverstubs.UsageResolver{}
+		for _, usage := range usages {
+			usageConnectionResolvers = append(usageConnectionResolvers, newUsageResolver(usage, args.Repo.URI, args.CommitID.Short()))
+		}
+
 		remainingCount = remainingCount - numSyntacticResults
+
+		return &usageConnectionResolver{
+			nodes:    usageConnectionResolvers,
+			pageInfo: resolverstubs.NewSimplePageInfo(false),
+		}, nil
 	}
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
@@ -245,6 +255,23 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 
 	return nil, errors.New("Not implemented yet")
+}
+
+func newUsageResolver(usage codenav.ScoredMatch, repository string, revision string) resolverstubs.UsageResolver {
+	return &usageResolver{
+		symbol: &symbolInformationResolver{
+			name:       usage.Occurrence.Symbol,
+			provenance: resolverstubs.ProvenanceSyntactic,
+		},
+		usageRange: &usageRangeResolver{
+			repository: repository,
+			revision:   revision,
+			path:       usage.Path,
+			rx: &rangeResolver{
+				lspRange: convertRange(usage.Range),
+			},
+		},
+	}
 }
 
 // TODO: Move to args.normalize
