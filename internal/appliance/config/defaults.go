@@ -143,6 +143,25 @@ func NewDefaultConfig() Sourcegraph {
 				},
 				Replicas: 1,
 			},
+			Frontend: FrontendSpec{
+				StandardConfig: StandardConfig{
+					PrometheusPort: pointers.Ptr(6060),
+				},
+				Replicas: 2,
+				Migrator: true,
+			},
+
+			// Grafana and Jaeger are opt-in
+			Grafana: GrafanaSpec{
+				StandardConfig: StandardConfig{
+					Disabled: true,
+				},
+			},
+			Jaeger: JaegerSpec{
+				StandardConfig: StandardConfig{
+					Disabled: true,
+				},
+			},
 		},
 	}
 }
