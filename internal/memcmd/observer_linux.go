@@ -119,19 +119,24 @@ func (l *linuxObserver) Stop() {
 
 func (l *linuxObserver) observe() {
 	// Create a channel to signal when we should collect memory usage
+
 	doCollection := make(chan struct{}, 1)
 	doCollection <- struct{}{} // Trigger initial collection
-
-	donePiping := make(chan struct{})
-	defer close(donePiping)
+	defer func() {
+		for range doCollection {
+			// Drain the channel
+		}
+	}()
 
 	go func() {
 		ticker := time.NewTicker(l.samplingInterval)
 		defer ticker.Stop()
 
+		defer close(doCollection) // signal that we are done collecting memory usage
+
 		for {
 			select {
-			case <-donePiping: // Shutdown the piping goroutine
+			case <-l.ctx.Done(): // Shutdown the piping goroutine
 				return
 
 			case <-ticker.C: // Trigger memory collection at regular intervals

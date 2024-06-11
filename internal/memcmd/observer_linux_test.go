@@ -15,12 +15,15 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/conc/pool"
+	"go.uber.org/goleak"
 
 	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestObserverIntegration(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	cmd := allocatingGoProgram(t, 250*1024*1024) // 250 MB
 
 	var buf bytes.Buffer
@@ -59,6 +62,8 @@ func TestObserverIntegration(t *testing.T) {
 }
 
 func TestConvertESRCH(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	tests := []struct {
 		name     string
 		err      error
@@ -144,6 +149,8 @@ func TestConvertESRCH(t *testing.T) {
 }
 
 func TestMemoryUsageForPidAndChildren(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	ctx := context.Background()
 
 	var spyRSSCalls []int
@@ -205,6 +212,8 @@ func TestMemoryUsageForPidAndChildren(t *testing.T) {
 }
 
 func TestMaxMemoryUsageErrorObserverNotStarted(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	cmd := allocatingGoProgram(t, 50*1024*1024) // 50 MB
 	err := cmd.Start()
 	if err != nil {
@@ -265,6 +274,8 @@ func BenchmarkLinuxObservationApproaches(b *testing.B) {
 }
 
 func benchFunc(b *testing.B, observerInterval time.Duration) {
+	defer goleak.VerifyNone(b)
+
 	for range b.N {
 		workerPool := pool.New().WithErrors()
 
