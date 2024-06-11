@@ -31,7 +31,7 @@ func Dial(ctx context.Context, logger log.Logger, addr *url.URL, ts oauth2.Token
 	logger.Info("dialing Enterprise Portal gRPC service",
 		log.String("host", addr.Host),
 		log.Bool("insecureTarget", insecureTarget))
-	//lint:ignore SA1019 existing usage of deprecated functionality.
+	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	conn, err := grpc.DialContext(ctx, addr.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to connect to Enterprise Portal gRPC service at %s", addr.String())

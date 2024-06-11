@@ -40,6 +40,7 @@ func TestCloseGRPCConnectionCallback(t *testing.T) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
+	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	conn, err := grpc.DialContext(context.Background(), "doesn't matter", opts...)
 	if err != nil {
 		t.Fatalf("failed to dial gRPC server: %v", err)
