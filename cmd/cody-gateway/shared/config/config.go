@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -30,7 +31,6 @@ type Config struct {
 	Dotcom struct {
 		URL                          string
 		AccessToken                  string
-		InternalMode                 bool
 		ActorRefreshCoolDownInterval time.Duration
 
 		// Prompts that get flagged are stored in Redis for a short-time, for
@@ -38,6 +38,10 @@ type Config struct {
 		FlaggedPromptRecorderTTL time.Duration
 
 		ClientID string
+	}
+
+	EnterprisePortal struct {
+		URL *url.URL
 	}
 
 	Anthropic AnthropicConfig
@@ -162,13 +166,19 @@ type FlaggingConfig struct {
 }
 
 type SAMSClientConfig struct {
-	URL          string
+	ConnConfig   sams.ConnConfig
 	ClientID     string
 	ClientSecret string
 }
 
-func (scc SAMSClientConfig) Valid() bool {
-	return !(scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == "")
+func (sams SAMSClientConfig) Validate() error {
+	if err := sams.ConnConfig.Validate(); err != nil {
+		return errors.Wrap(err, "invalid ConnConfig")
+	}
+	if sams.ClientID == "" || sams.ClientSecret == "" {
+		return errors.New("ClientID and ClientSecret must be set")
+	}
+	return nil
 }
 
 func (c *Config) Load() {
@@ -179,19 +189,27 @@ func (c *Config) Load() {
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
 	c.Dotcom.AccessToken = c.GetOptional("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN",
-		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
+		"The Sourcegraph.com access token to be used. If not provided, the dotcom-user actor source will be disabled.")
 	c.Dotcom.ClientID = c.GetOptional("CODY_GATEWAY_DOTCOM_CLIENT_ID",
 		"Value of X-Sourcegraph-Client-Id header to be passed to sourcegraph.com.")
 	c.Dotcom.URL = c.Get("CODY_GATEWAY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
 	if _, err := url.Parse(c.Dotcom.URL); err != nil {
 		c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_DOTCOM_API_URL"))
 	}
-	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
-		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
 		"Cooldown period for refreshing the actor info from dotcom.")
 	c.Dotcom.FlaggedPromptRecorderTTL = c.GetInterval("CODY_GATEWAY_DOTCOM_FLAGGED_PROMPT_RECORDER_TTL", "1h",
 		"Period to retain prompts in Redis.")
+
+	enterprisePortalURL := c.GetOptional("CODY_GATEWAY_ENTERPRISE_PORTAL_URL",
+		"The Enterprise Portal instance to target. If not provided, the product subscriptions actor source will be disabled.")
+	if enterprisePortalURL != "" {
+		var err error
+		c.EnterprisePortal.URL, err = url.Parse(enterprisePortalURL)
+		if err != nil {
+			c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_ENTERPRISE_PORTAL_URL"))
+		}
+	}
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
@@ -290,6 +308,9 @@ func (c *Config) Load() {
 			google.Gemini15FlashLatest,
 			google.Gemini15ProLatest,
 			google.GeminiProLatest,
+			google.Gemini15Flash,
+			google.Gemini15Pro,
+			google.GeminiPro,
 		}, ","),
 		"Google models that can to be used."),
 	)
@@ -297,7 +318,15 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Google"))
 	}
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphSTMultiQA)}, ","), "The models allowed for embeddings generation."))
+	defaultEmbeddingModels := strings.Join([]string{
+		string(embeddings.ModelNameOpenAIAda),
+		string(embeddings.ModelNameSourcegraphSTMultiQA),
+		string(embeddings.ModelNameSourcegraphMetadataGen),
+	}, ",")
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get(
+		"CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS",
+		defaultEmbeddingModels,
+		"The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
@@ -335,7 +364,12 @@ func (c *Config) Load() {
 	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the SMEGA API.")
 	c.Sourcegraph.EmbeddingsAPIToken = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN", "", "Token to use for the SMEGA API.")
 
-	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
+	// SAMS_URL, SAMS_API_URL are same keys used for sams.NewConnConfigFromEnv
+	c.SAMSClientConfig.ConnConfig.ExternalURL = c.Get("SAMS_URL", "https://accounts.sourcegraph.com",
+		"SAMS external service endpoint")
+	if apiurl := c.GetOptional("SAMS_API_URL", "SAMS API endpoint"); apiurl != "" {
+		c.SAMSClientConfig.ConnConfig.APIURL = &apiurl
+	}
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 

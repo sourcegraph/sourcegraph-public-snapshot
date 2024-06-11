@@ -65,7 +65,7 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/gitserver:5.3.2@sha256:6c6042cf3e5f3f16de9b82e3d4ab1647f8bb924cd315245bd7a3162f5489e8c4
+              image: index.docker.io/sourcegraph/gitserver:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -195,9 +195,6 @@ resources:
             disabled: true
 
           prometheus:
-            disabled: true
-
-          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:

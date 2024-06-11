@@ -95,7 +95,7 @@ func request(t *testing.T) *http.Request {
 func TestSuccess(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ps := fakeActorSource{
-		name: codygateway.ActorSourceProductSubscription,
+		name: codygateway.ActorSourceEnterpriseSubscription,
 	}
 	authr := &auth.Authenticator{
 		Sources:     actor.NewSources(ps),
@@ -177,7 +177,7 @@ func TestFailsForDotcomUsers(t *testing.T) {
 func TestUnavailableIfConfigDisabled(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dotCom := fakeActorSource{
-		name: codygateway.ActorSourceProductSubscription,
+		name: codygateway.ActorSourceEnterpriseSubscription,
 	}
 	authr := &auth.Authenticator{
 		Sources:     actor.NewSources(dotCom),

@@ -39,10 +39,7 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 	name := "worker"
 	cfg := sg.Spec.Worker
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -59,13 +56,6 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = addPreciseCodeIntelBlobstoreVars(ctr.Env, sg)
-	if !sg.Spec.Embeddings.Disabled && !sg.Spec.Blobstore.Disabled {
-		ctr.Env = append(
-			ctr.Env,
-			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_BACKEND", Value: "blobstore"},
-			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
-		)
-	}
 	ctr.Env = append(
 		ctr.Env,
 		container.NewEnvVarFieldRef("POD_NAME", "metadata.name"),

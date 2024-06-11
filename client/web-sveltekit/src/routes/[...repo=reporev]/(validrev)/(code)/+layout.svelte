@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -37,7 +37,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -45,9 +44,7 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon from '$lib/Icon.svelte'
     import Icon2 from '$lib/Icon2.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -55,6 +52,7 @@
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
@@ -140,13 +138,11 @@
         }
     })
 
-    async function selectTab(event: { detail: number | null }) {
+    function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
         if (event.detail === null) {
-            const url = new URL($page.url)
-            url.searchParams.delete('rev')
-            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+            handleBottomPanelCollapse().catch(() => {})
         }
         selectedTab = event.detail
     }
@@ -157,7 +153,13 @@
         }
     }
 
-    function handleBottomPanelCollapse() {
+    async function handleBottomPanelCollapse() {
+        // Removing the URL parameter causes the diff view to close
+        if ($page.url.searchParams.has('rev')) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
         selectedTab = null
     }
 
@@ -193,16 +195,17 @@
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
                 <div class="sidebar-action-row">
-                    <Button
-                        variant="secondary"
-                        outline
-                        size="sm"
-                        on:click={toggleFileSidePanel}
-                        aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
-                    >
-                        <Icon svgPath={!isCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight} inline />
-                    </Button>
-
+                    <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
+                        <Button
+                            variant="secondary"
+                            outline
+                            size="sm"
+                            on:click={toggleFileSidePanel}
+                            aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
+                        >
+                            <Icon2 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                        </Button>
+                    </Tooltip>
                     <RepositoryRevPicker
                         repoURL={data.repoURL}
                         revision={data.revision}
@@ -247,7 +250,7 @@
                                 {repoName}
                                 {revision}
                                 treeProvider={$fileTreeStore}
-                                selectedPath={$page.params.path ?? ''}
+                                selectedPath={data.filePath ?? ''}
                             />
                         {/if}
                     {:else}
@@ -281,8 +284,20 @@
             >
                 <div class="bottom-panel">
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
+                        <svelte:fragment slot="header-actions">
+                            {#if !isCollapsed}
+                                <Button
+                                    variant="text"
+                                    size="sm"
+                                    aria-label="Hide bottom panel"
+                                    on:click={handleBottomPanelCollapse}
+                                >
+                                    <Icon2 icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                                </Button>
+                            {/if}
+                        </svelte:fragment>
                         <TabPanel title="History" shortcut={historyHotkey}>
-                            {#key $page.params.path}
+                            {#key data.filePath}
                                 <HistoryPanel
                                     bind:this={historyPanel}
                                     history={commitHistory}

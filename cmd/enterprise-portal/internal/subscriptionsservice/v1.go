@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
@@ -20,15 +21,11 @@ import (
 
 const Name = subscriptionsv1connect.SubscriptionsServiceName
 
-type DotComDB interface {
-	ListEnterpriseSubscriptionLicenses(context.Context, []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter, int) ([]*dotcomdb.LicenseAttributes, error)
-}
-
 func RegisterV1(
 	logger log.Logger,
 	mux *http.ServeMux,
 	samsClient samsm2m.TokenIntrospector,
-	dotcom DotComDB,
+	store StoreV1,
 	opts ...connect.HandlerOption,
 ) {
 	mux.Handle(
@@ -36,7 +33,7 @@ func RegisterV1(
 			&handlerV1{
 				logger:     logger.Scoped("subscriptions.v1"),
 				samsClient: samsClient,
-				dotcom:     dotcom,
+				store:      store,
 			},
 			opts...,
 		),
@@ -48,7 +45,7 @@ type handlerV1 struct {
 
 	logger     log.Logger
 	samsClient samsm2m.TokenIntrospector
-	dotcom     DotComDB
+	store      StoreV1
 }
 
 var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
@@ -56,11 +53,13 @@ var _ subscriptionsv1connect.SubscriptionsServiceHandler = (*handlerV1)(nil)
 func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req *connect.Request[subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[subscriptionsv1.ListEnterpriseSubscriptionLicensesResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
-	// 🚨 SECURITY: Require approrpiate M2M scope.
+	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("subscription", scopes.ActionRead)
-	if err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req); err != nil {
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	if err != nil {
 		return nil, err
 	}
+	logger = logger.With(clientAttrs...)
 
 	// Pagination is unimplemented: https://linear.app/sourcegraph/issue/CORE-134
 	// BUT, we allow pageSize to act as a 'limit' parameter for querying for
@@ -94,7 +93,7 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		}
 	}
 
-	licenses, err := s.dotcom.ListEnterpriseSubscriptionLicenses(ctx, filters,
+	licenses, err := s.store.ListEnterpriseSubscriptionLicenses(ctx, filters,
 		// Provide page size to allow "active license" functionality, by only
 		// retrieving the most recently created result.
 		int(req.Msg.GetPageSize()))
@@ -112,8 +111,16 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 		NextPageToken: "",
 		Licenses:      make([]*subscriptionsv1.EnterpriseSubscriptionLicense, len(licenses)),
 	}
+
+	accessedSubscriptions := map[string]struct{}{}
+	accessedLicenses := make([]string, len(licenses))
 	for i, l := range licenses {
 		resp.Licenses[i] = convertLicenseAttrsToProto(l)
+		accessedSubscriptions[resp.Licenses[i].GetSubscriptionId()] = struct{}{}
+		accessedLicenses[i] = resp.Licenses[i].GetId()
 	}
+	logger.Scoped("audit").Info("ListEnterpriseSubscriptionLicenses",
+		log.Strings("accessedSubscriptions", maps.Keys(accessedSubscriptions)),
+		log.Strings("accessedLicenses", accessedLicenses))
 	return connect.NewResponse(&resp), nil
 }

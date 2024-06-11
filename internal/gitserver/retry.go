@@ -30,16 +30,6 @@ func (r *automaticRetryClient) CreateCommitFromPatchBinary(ctx context.Context, 
 
 // Idempotent methods.
 
-func (r *automaticRetryClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
-	// We specify the specific raw git commands that we allow in internal/gitserver/gitdomain/exec.go.
-	// For all of these commands, we know that they are either:
-	//
-	// - 1. non-destructive (making them safe to retry)
-	// - 2. not used in Exec directly, but instead only via a specific RPC (like CreateCommitFromPatchBinary) where the caller is responsible for retrying.
-	opts = append(defaults.RetryPolicy, opts...)
-	return r.base.Exec(ctx, in, opts...)
-}
-
 func (r *automaticRetryClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 	opts = append(defaults.RetryPolicy, opts...)
 	return r.base.DiskInfo(ctx, in, opts...)

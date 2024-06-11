@@ -8,6 +8,7 @@ go_library(
         "debug.go",
         "service.go",
         "shared.go",
+        "testserver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared",
     tags = [TAG_PLATFORM_SOURCE],

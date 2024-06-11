@@ -881,18 +881,18 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = google.Gemini15ProLatest
+			completionsConfig.ChatModel = google.Gemini15Pro
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = google.Gemini15FlashLatest
+			completionsConfig.FastChatModel = google.Gemini15Flash
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
 			// Code completion is not supported by Google
-			completionsConfig.CompletionModel = google.Gemini15FlashLatest
+			completionsConfig.CompletionModel = google.Gemini15Flash
 		}
 	}
 

@@ -13,7 +13,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
-        "//internal/database",
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",

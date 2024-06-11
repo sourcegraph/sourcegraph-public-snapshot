@@ -94,6 +94,7 @@ rust_test(
     tags = [TAG_PLATFORM_GRAPH],
     deps = all_crate_deps(
         normal = True,
+        normal_dev = True,
     ) + [
         ":scip-syntax",
         ":scip_syntax_lib",

@@ -7,10 +7,15 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"runtime"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/dustin/go-humanize"
+
+	"github.com/sourcegraph/sourcegraph/internal/bytesize"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/memcmd"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -20,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -42,6 +46,8 @@ var (
 		Name: "src_gitserver_exec_high_memory_usage_count",
 		Help: "gitcli.GitCommand high memory usage by subcommand",
 	}, []string{"cmd"})
+
+	memoryObservationEnabled = env.MustGetBool("GITSERVER_MEMORY_OBSERVATION_ENABLED", false, "enable memory observation for gitserver commands")
 )
 
 type commandOpts struct {
@@ -93,7 +99,7 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 
 	if !IsAllowedGitCmd(logger, opts.arguments) {
 		blockedCommandExecutedCounter.Inc()
-		return nil, ErrBadGitCommand
+		return nil, errBadGitCommand
 	}
 
 	if len(opts.arguments) == 0 {
@@ -141,7 +147,7 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 
 	wrappedCmd := g.rcf.WrapWithRepoName(ctx, logger, g.repoName, cmd)
 
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := wrappedCmd.StdoutPipe()
 	if err != nil {
 		cancel()
 		return nil, errors.Wrap(err, "failed to create stdout pipe")
@@ -158,35 +164,53 @@ func (g *gitCLIBackend) NewCommand(ctx context.Context, optFns ...CommandOptionF
 		return nil, errors.Wrap(err, "failed to start git process")
 	}
 
+	observer := memcmd.NewNoOpObserver()
+
+	if memoryObservationEnabled {
+		maybeObs, err := memcmd.NewDefaultObserver(ctx, cmd)
+		if err != nil {
+			logger.Warn("failed to create memory observer, defaulting to no-op", log.Error(err))
+		}
+
+		observer = maybeObs
+	}
+	observer.Start()
+	defer func() {
+		if err != nil {
+			observer.Stop() // stop the observer if we return an error
+		}
+	}()
+
 	execRunning.WithLabelValues(subCmd).Inc()
 
 	cr := &cmdReader{
-		ctx:       ctx,
-		subCmd:    subCmd,
-		ctxCancel: cancel,
-		cmdStart:  cmdStart,
-		stdout:    stdout,
-		cmd:       wrappedCmd,
-		stderr:    stderrBuf,
-		repoName:  g.repoName,
-		logger:    logger,
-		gitDir:    g.dir,
-		tr:        tr,
+		ctx:            ctx,
+		subCmd:         subCmd,
+		ctxCancel:      cancel,
+		cmdStart:       cmdStart,
+		stdout:         stdout,
+		cmd:            wrappedCmd,
+		stderr:         stderrBuf,
+		repoName:       g.repoName,
+		logger:         logger,
+		gitDir:         g.dir,
+		tr:             tr,
+		memoryObserver: observer,
 	}
 
 	return cr, nil
 }
 
-// ErrBadGitCommand is returned from the git CLI backend if the arguments provided
+// errBadGitCommand is returned from the git CLI backend if the arguments provided
 // are not allowed.
-var ErrBadGitCommand = errors.New("bad git command, not allowed")
+var errBadGitCommand = errors.New("bad git command, not allowed")
 
-func commandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr []byte) error {
+func newCommandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr []byte) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
-	return &CommandFailedError{
+	return &commandFailedError{
 		Inner:      err,
 		args:       cmd.Unwrap().Args,
 		Stderr:     stderr,
@@ -194,36 +218,37 @@ func commandFailedError(ctx context.Context, err error, cmd wrexec.Cmder, stderr
 	}
 }
 
-type CommandFailedError struct {
+type commandFailedError struct {
 	Stderr     []byte
 	ExitStatus int
 	Inner      error
 	args       []string
 }
 
-func (e *CommandFailedError) Unwrap() error {
+func (e *commandFailedError) Unwrap() error {
 	return e.Inner
 }
 
-func (e *CommandFailedError) Error() string {
+func (e *commandFailedError) Error() string {
 	return fmt.Sprintf("git command %v failed with status code %d (output: %q)", e.args, e.ExitStatus, e.Stderr)
 }
 
 type cmdReader struct {
-	stdout    io.Reader
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-	subCmd    string
-	cmdStart  time.Time
-	cmd       wrexec.Cmder
-	stderr    *bytes.Buffer
-	logger    log.Logger
-	gitDir    common.GitDir
-	repoName  api.RepoName
-	mu        sync.Mutex
-	tr        trace.Trace
-	err       error
-	waitOnce  sync.Once
+	stdout         io.Reader
+	ctx            context.Context
+	ctxCancel      context.CancelFunc
+	subCmd         string
+	cmdStart       time.Time
+	cmd            wrexec.Cmder
+	stderr         *bytes.Buffer
+	logger         log.Logger
+	gitDir         common.GitDir
+	repoName       api.RepoName
+	mu             sync.Mutex
+	tr             trace.Trace
+	err            error
+	waitOnce       sync.Once
+	memoryObserver memcmd.Observer
 }
 
 func (rc *cmdReader) Read(p []byte) (n int, err error) {
@@ -255,12 +280,13 @@ func (rc *cmdReader) waitCmd() error {
 	// here, and memoize the error.
 	rc.waitOnce.Do(func() {
 		rc.err = rc.cmd.Wait()
+		rc.memoryObserver.Stop()
 
 		if rc.err != nil {
 			if checkMaybeCorruptRepo(rc.logger, rc.gitDir, rc.repoName, rc.stderr.String()) {
 				rc.err = common.ErrRepoCorrupted{Reason: rc.stderr.String()}
 			} else {
-				rc.err = commandFailedError(rc.ctx, rc.err, rc.cmd, rc.stderr.Bytes())
+				rc.err = newCommandFailedError(rc.ctx, rc.err, rc.cmd, rc.stderr.Bytes())
 			}
 		}
 
@@ -272,7 +298,7 @@ func (rc *cmdReader) waitCmd() error {
 	return rc.err
 }
 
-// const highMemoryUsageThreshold = 500 * bytesize.MiB
+const highMemoryUsageThreshold = 500 * bytesize.MiB
 
 func (rc *cmdReader) trace() {
 	duration := time.Since(rc.cmdStart)
@@ -287,12 +313,14 @@ func (rc *cmdReader) trace() {
 		sysUsage = *s
 	}
 
-	memUsage := rssToByteSize(sysUsage.Maxrss)
+	memUsage, err := rc.memoryObserver.MaxMemoryUsage()
+	if err != nil {
+		rc.logger.Warn("failed to get max memory usage", log.Error(err))
+	}
 
 	isSlow := duration > shortGitCommandSlow(rc.cmd.Unwrap().Args)
-	// TODO: Disabled until this also works on linux, this only works on macOS right now
-	// and causes noise.
-	isHighMem := false // memUsage > highMemoryUsageThreshold
+
+	isHighMem := memUsage > highMemoryUsageThreshold
 
 	if isHighMem {
 		highMemoryCounter.WithLabelValues(rc.subCmd).Inc()
@@ -313,7 +341,8 @@ func (rc *cmdReader) trace() {
 		ev.AddField("cmd_duration_ms", duration.Milliseconds())
 		ev.AddField("user_time_ms", processState.UserTime().Milliseconds())
 		ev.AddField("system_time_ms", processState.SystemTime().Milliseconds())
-		ev.AddField("cmd_ru_maxrss_kib", memUsage/bytesize.KiB)
+		ev.AddField("cmd_ru_maxrss_kib", memUsage>>10)
+		ev.AddField("cmd_ru_maxrss_human_readable", humanize.Bytes(uint64(memUsage)))
 		ev.AddField("cmd_ru_minflt", sysUsage.Minflt)
 		ev.AddField("cmd_ru_majflt", sysUsage.Majflt)
 		ev.AddField("cmd_ru_inblock", sysUsage.Inblock)
@@ -340,20 +369,12 @@ func (rc *cmdReader) trace() {
 	rc.tr.SetAttributes(attribute.Int64("cmd_duration_ms", duration.Milliseconds()))
 	rc.tr.SetAttributes(attribute.Int64("user_time_ms", processState.UserTime().Milliseconds()))
 	rc.tr.SetAttributes(attribute.Int64("system_time_ms", processState.SystemTime().Milliseconds()))
-	rc.tr.SetAttributes(attribute.Int64("cmd_ru_maxrss_kib", int64(memUsage/bytesize.KiB)))
+	rc.tr.SetAttributes(attribute.Int64("cmd_ru_maxrss_kib", int64(memUsage>>10)))
+	rc.tr.SetAttributes(attribute.String("cmd_ru_maxrss_human_readable", humanize.Bytes(uint64(memUsage))))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_minflt", sysUsage.Minflt))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_majflt", sysUsage.Majflt))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_inblock", sysUsage.Inblock))
 	rc.tr.SetAttributes(attribute.Int64("cmd_ru_oublock", sysUsage.Oublock))
-}
-
-func rssToByteSize(rss int64) bytesize.Bytes {
-	if runtime.GOOS == "darwin" {
-		// darwin tracks maxrss in bytes.
-		return bytesize.Bytes(rss) * bytesize.B
-	}
-	// maxrss is tracked in KiB on Linux.
-	return bytesize.Bytes(rss) * bytesize.KiB
 }
 
 const maxStderrCapture = 1024

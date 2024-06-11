@@ -43,7 +43,7 @@ resources:
           name: redis-cache
         spec:
           containers:
-            - image: index.docker.io/sourcegraph/redis-cache:5.3.2@sha256:ed79dada4d1a2bd85fb8450dffe227283ab6ae0e7ce56dc5056fbb8202d95624
+            - image: index.docker.io/sourcegraph/redis-cache:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 2
@@ -97,7 +97,7 @@ resources:
               volumeMounts:
                 - mountPath: /redis-data
                   name: redis-data
-            - image: index.docker.io/sourcegraph/redis_exporter:5.3.2@sha256:21a9dd9214483a42b11d58bf99e4f268f44257a4f67acd436d458797a31b7786
+            - image: index.docker.io/sourcegraph/redis_exporter:5.3.9104
               imagePullPolicy: IfNotPresent
               name: redis-exporter
               ports:
@@ -176,7 +176,7 @@ resources:
           name: redis-store
         spec:
           containers:
-            - image: index.docker.io/sourcegraph/redis-store:5.3.2@sha256:0e3270a5eb293c158093f41145810eb5a154f61a74c9a896690dfdecd1b98b39
+            - image: index.docker.io/sourcegraph/redis-store:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 2
@@ -230,7 +230,7 @@ resources:
               volumeMounts:
                 - mountPath: /redis-data
                   name: redis-data
-            - image: index.docker.io/sourcegraph/redis_exporter:5.3.2@sha256:21a9dd9214483a42b11d58bf99e4f268f44257a4f67acd436d458797a31b7786
+            - image: index.docker.io/sourcegraph/redis_exporter:5.3.9104
               imagePullPolicy: IfNotPresent
               name: redis-exporter
               ports:
@@ -321,9 +321,6 @@ resources:
             disabled: true
 
           prometheus:
-            disabled: true
-
-          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:

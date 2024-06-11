@@ -45,7 +45,7 @@ resources:
             - args:
                 - --store_container_labels=false
                 - --whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace,io.kubernetes.pod.uid
-              image: index.docker.io/sourcegraph/cadvisor:5.3.2@sha256:3860cce1f7ef0278c0d785f66baf69dd2bece19610a2fd6eaa54c03095f2f105
+              image: index.docker.io/sourcegraph/cadvisor:5.3.9104
               imagePullPolicy: IfNotPresent
               name: cadvisor
               ports:
@@ -186,9 +186,6 @@ resources:
 
           cadvisor:
             disabled: false
-
-          embeddings:
-            disabled: true
     kind: ConfigMap
     metadata:
       annotations:

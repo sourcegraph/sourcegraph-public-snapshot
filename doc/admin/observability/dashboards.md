@@ -6527,6 +6527,32 @@ src_gitserver_repo_count
 
 <br />
 
+#### gitserver: src_gitserver_client_concurrent_requests
+
+<p class="subtitle">Number of concurrent requests running against gitserver client</p>
+
+This metric is only for informational purposes. It indicates the current number of concurrently running requests by process against gitserver gRPC.
+
+It does not indicate any problems with the instance, but can give a good indication of load spikes or request throttling.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100052` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query:
+
+```
+sum by (job, instance) (src_gitserver_client_concurrent_requests)
+```
+</details>
+
+<br />
+
 ### Git Server: Gitservice for internal cloning
 
 #### gitserver: aggregate_gitservice_request_duration
