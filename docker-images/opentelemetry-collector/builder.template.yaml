@@ -11,8 +11,7 @@ exporters:
   - gomod: go.opentelemetry.io/collector/exporter/loggingexporter v$OTEL_COLLECTOR_VERSION
 
   # Contrib exporters - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
-  # TODO googlecloudexporter never cut v0.102.1 for some reason, pin to v0.102.0 for now https://pkg.go.dev/github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter#section-readme
-  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.102.0"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v$OTEL_COLLECTOR_VERSION"
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v$OTEL_COLLECTOR_VERSION"
   # jaegerexporter was removed after v0.85.0 - we try to include it for now by pinning the version.
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v0.85.0"
