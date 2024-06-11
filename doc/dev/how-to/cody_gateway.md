@@ -53,6 +53,9 @@ commands:
       # Create a personal access token on https://sourcegraph.test:3443/user/settings/tokens
       # for your local site admin user. This allows your local Cody Gateway to
       # access user information in the Sourcegraph instance.
+      #
+      # IMPORTANT: The token needs to belong to a site admin, or have additional
+      # roles and permissions. Your end user token will not be sufficient.
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: "..."
       # For working with embeddings, set the following values - it's recommended to use the dev deployment.
       CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL: 'https://embeddings.sgdev.org/v2/models/st-multi-qa-mpnet-base-dot-v1/infer' # Replace model name as needed
