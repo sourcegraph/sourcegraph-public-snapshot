@@ -9,7 +9,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Form, Grid, H3, Icon, Text } from '@sourcegraph/wildcard'
 
 import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
-import type { PaymentMethod, Subscription } from '../../api/teamSubscriptions'
+import type { PaymentMethod, Subscription } from '../../api/types'
 import { StripeCardDetails } from '../StripeCardDetails'
 
 import { BillingAddress, useBillingAddressStripeElementsOptions } from './BillingAddress'

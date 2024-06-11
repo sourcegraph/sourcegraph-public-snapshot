@@ -73,7 +73,7 @@ export const BillingAddress: React.FC<BillingAddressProps> = ({ subscription, ti
         <div>
             <div className="d-flex align-items-center justify-content-between">
                 {title ?? <H3>{title}</H3>}
-                {editable ?? (
+                {editable && (
                     <Button variant="link" className={styles.titleButton} onClick={() => setIsEditMode(true)}>
                         <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
                     </Button>

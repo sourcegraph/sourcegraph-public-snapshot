@@ -1,4 +1,4 @@
-import { TeamRole } from './teamMembers'
+import type { TeamRole } from './teamMembers'
 
 // BillingInterval is the subscription's billing cycle. 'daily' is only
 // available in the dev environment.

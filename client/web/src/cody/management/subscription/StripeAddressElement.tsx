@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { AddressElement } from '@stripe/react-stripe-js'
 import type { StripeAddressElementOptions } from '@stripe/stripe-js'
 
-import { Subscription } from '../api/teamSubscriptions'
+import type { Subscription } from '../api/types'
 
 interface StripeAddressElementProps {
     subscription?: Subscription
