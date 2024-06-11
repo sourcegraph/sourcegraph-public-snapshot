@@ -156,7 +156,7 @@ require (
 	github.com/peterbourgon/ff v1.7.1
 	github.com/peterbourgon/ff/v3 v3.3.2
 	github.com/peterhellberg/link v1.1.0
-	github.com/prometheus/alertmanager v0.24.0
+	github.com/prometheus/alertmanager v0.27.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.54.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
