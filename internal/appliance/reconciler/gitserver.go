@@ -2,6 +2,8 @@ package reconciler
 
 import (
 	"context"
+	"fmt"
+	"math"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -9,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
@@ -54,6 +57,18 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
+
+	// 5.4 and up only
+	if semver := sg.SemVer(); semver.Major() > 5 || (semver.Major() == 5 && semver.Minor() > 3) {
+		cacheSizeMB, err := gitServerCacheSize(cfg)
+		if err != nil {
+			return err
+		}
+		ctr.Env = append(
+			ctr.Env,
+			corev1.EnvVar{Name: "GITSERVER_CACHE_SIZE_MB", Value: fmt.Sprintf("%d", cacheSizeMB)},
+		)
+	}
 
 	ctr.Ports = []corev1.ContainerPort{
 		{Name: "rpc", ContainerPort: 3178},
@@ -127,4 +142,19 @@ func (r *Reconciler) reconcileGitServerServiceAccount(ctx context.Context, sg *c
 	cfg := sg.Spec.GitServer
 	sa := serviceaccount.NewServiceAccount("gitserver", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sa, &corev1.ServiceAccount{}, sg, owner)
+}
+
+func gitServerCacheSize(cfg config.GitServerSpec) (uint, error) {
+	if cfg.CacheSizeMB != nil {
+		return *cfg.CacheSizeMB, nil
+	}
+
+	storageSize, err := resource.ParseQuantity(cfg.GetPersistentVolumeConfig().StorageSize)
+	if err != nil {
+		return 0, errors.Wrap(err, "parsing storage size")
+	}
+
+	// Default cache size is 10% of available attached storage
+	cacheSize := float64(storageSize.Value()) * 0.1
+	return uint(math.Floor(cacheSize / 1024 / 1024)), nil
 }

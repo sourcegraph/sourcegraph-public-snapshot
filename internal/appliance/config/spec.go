@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/Masterminds/semver/v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -72,6 +73,9 @@ type GitServerSpec struct {
 	// SSHSecret is the name of existing secret that contains SSH credentials to clone repositories.
 	// This secret generally contains keys such as `id_rsa` (private key) and `known_hosts`.
 	SSHSecret string `json:"sshSecret,omitempty"`
+
+	// Only used in 5.4 onwards
+	CacheSizeMB *uint `json:"cacheSizeMB,omitempty"`
 }
 
 type GrafanaSpec struct {
@@ -289,6 +293,12 @@ type Sourcegraph struct {
 
 	Spec   SourcegraphSpec   `json:"spec,omitempty"`
 	Status SourcegraphStatus `json:"status,omitempty"`
+}
+
+func (sg Sourcegraph) SemVer() *semver.Version {
+	// This is just for a demo, we don't really want to panic on arbitrary user
+	// input.
+	return semver.MustParse(sg.Spec.RequestedVersion)
 }
 
 // SourcegraphList contains a list of Sourcegraph
