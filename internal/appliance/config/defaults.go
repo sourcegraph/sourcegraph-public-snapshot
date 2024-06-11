@@ -143,6 +143,34 @@ func NewDefaultConfig() Sourcegraph {
 				},
 				Replicas: 1,
 			},
+			Frontend: FrontendSpec{
+				StandardConfig: StandardConfig{
+					PrometheusPort: pointers.Ptr(6060),
+				},
+				Replicas: 2,
+				Migrator: true,
+			},
+			Searcher: SearcherSpec{
+				StandardConfig: StandardConfig{
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "26Gi",
+					},
+					PrometheusPort: pointers.Ptr(6060),
+				},
+				Replicas: 1,
+			},
+
+			// Grafana and Jaeger are opt-in
+			Grafana: GrafanaSpec{
+				StandardConfig: StandardConfig{
+					Disabled: true,
+				},
+			},
+			Jaeger: JaegerSpec{
+				StandardConfig: StandardConfig{
+					Disabled: true,
+				},
+			},
 		},
 	}
 }

@@ -5,11 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -19,10 +21,11 @@ func TestStencil(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
+	mockSearchClient := client.NewMockSearchClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -77,10 +80,11 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
+	mockSearchClient := client.NewMockSearchClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}

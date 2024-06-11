@@ -2,9 +2,31 @@ package languages
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/go-enry/go-enry/v2"
 )
+
+// getLanguagesByAlias is a replacement for enry.GetLanguagesByAlias
+// It supports languages that are missing in go-enry
+func GetLanguageByAlias(alias string) (lang string, ok bool) {
+	normalizedAlias := strings.ToLower(alias)
+	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
+		return lang, true
+	}
+
+	return enry.GetLanguageByAlias(normalizedAlias)
+}
+
+// getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
+// It supports languages that are missing in go-enry
+func GetLanguageExtensions(alias string) []string {
+	if lang, ok := unsupportedByEnryNameToExtensionMap[alias]; ok {
+		return []string{lang}
+	}
+
+	return enry.GetLanguageExtensions(alias)
+}
 
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
 // to work around the following limitations:
@@ -17,7 +39,7 @@ func getLanguagesByExtension(path string) (candidates []string, isLikelyBinaryFi
 	if ext == "" {
 		return nil, false
 	}
-	if lang, ok := unsupportedByEnryExtensionsMap[ext]; ok {
+	if lang, ok := unsupportedByEnryExtensionToNameMap[ext]; ok {
 		return []string{lang}, false
 	}
 	if _, ok := commonBinaryFileExtensions[ext[1:]]; ok {
@@ -62,11 +84,31 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	// for other variants of YAML, hence only 'YAML' is picked by enry.
 }
 
-var unsupportedByEnryExtensionsMap = map[string]string{
+var unsupportedByEnryExtensionToNameMap = map[string]string{
 	// Pkl Configuration Language (https://pkl-lang.org/)
+	// NOTE: Add to linguist on 6/7/24
+	// can remove once go-enry package updates
+	// to that linguist version
 	".pkl": "Pkl",
 	// Magik Language
 	".magik": "Magik",
+}
+
+var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
+
+var unsupportedByEnryAliasMap = map[string]string{
+	// Pkl Configuration Language (https://pkl-lang.org/)
+	"pkl": "Pkl",
+	// Magik Language
+	"magik": "Magik",
+}
+
+func reverseMap(m map[string]string) map[string]string {
+	n := make(map[string]string, len(m))
+	for k, v := range m {
+		n[v] = k
+	}
+	return n
 }
 
 // Source: https://github.com/sindresorhus/binary-extensions/blob/main/binary-extensions.json

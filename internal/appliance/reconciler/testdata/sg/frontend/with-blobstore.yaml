@@ -9,8 +9,7 @@ spec:
   codeIntel:
     disabled: true
 
-  frontend:
-    disabled: true
+  frontend: {}
 
   gitServer:
     disabled: true
@@ -48,9 +47,8 @@ spec:
   syntectServer:
     disabled: true
 
-  worker: {}
+  worker:
+    disabled: true
 
   prometheus:
     disabled: true
-
-  embeddings: {}

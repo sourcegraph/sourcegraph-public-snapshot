@@ -7414,8 +7414,9 @@ def go_dependencies():
         name = "in_gopkg_square_go_jose_v2",
         build_file_proto_mode = "disable_global",
         importpath = "gopkg.in/square/go-jose.v2",
-        sum = "h1:NGk74WTnPKBNUhNzQX7PYcTLUjoq7mzKk2OKbvwk2iI=",
-        version = "v2.6.0",
+        replace = "gopkg.in/go-jose/go-jose.v2",
+        sum = "h1:nt80fvSDlhKWQgSWyHyy5CfmlQr+asih51R8PTWNKKs=",
+        version = "v2.6.3",
     )
     go_repository(
         name = "in_gopkg_tomb_v1",

@@ -1,3 +1,5 @@
+# Some examples based on test cases here https://github.com/krn-robin/tree-sitter-magik/tree/main/test/corpus
+
 # Package
 _package pp
 
@@ -24,6 +26,9 @@ _maybe
 {1,2,3}
 "string"
 'string'
+
+; Character
+%x
 
 _primitive 512
 
@@ -169,6 +174,7 @@ _thisthread.sleep(10)
 # Iteration
 _loop @outer_loop
   _leave@outer_loop
+  _continue@outer_loop
 _endloop
 
 _block

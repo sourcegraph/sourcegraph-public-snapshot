@@ -24,6 +24,9 @@ replace (
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+
+	// https://github.com/sourcegraph/sourcegraph/security/dependabot/397 archived but has a vulnerability
+	gopkg.in/square/go-jose.v2 v2.6.0 => gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
 // Temporary replace directives
@@ -311,6 +314,7 @@ require (
 	go.opentelemetry.io/collector/config/configtelemetry v0.102.1
 	go.opentelemetry.io/collector/config/configtls v0.102.1
 	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
+	go.uber.org/goleak v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
@@ -434,13 +438,13 @@ require (
 	go.opentelemetry.io/collector/extension v0.102.1 // indirect
 	go.opentelemetry.io/collector/extension/auth v0.102.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.9.0 // indirect
-	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	k8s.io/apiextensions-apiserver v0.29.2 // indirect
 	k8s.io/component-base v0.29.2 // indirect
@@ -603,7 +607,7 @@ require (
 	github.com/pquerna/cachecontrol v0.2.0 // indirect
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/procfs v0.15.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/pseudomuto/protokit v0.2.1 // indirect
 	github.com/rivo/uniseg v0.4.6 // indirect
