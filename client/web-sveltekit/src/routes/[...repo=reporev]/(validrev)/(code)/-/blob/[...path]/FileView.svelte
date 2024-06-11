@@ -24,8 +24,8 @@
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
+    import { codeCopiedEvent, SVELTE_LOGGER } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
-    import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
@@ -126,7 +126,6 @@
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {
         // TODO: track other blob mode
         if (event.detail === CodeViewMode.Blame) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
             TELEMETRY_V2_RECORDER.recordEvent('repo.gitBlame', 'enable')
         }
 

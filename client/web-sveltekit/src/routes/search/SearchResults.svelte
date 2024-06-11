@@ -19,6 +19,8 @@
     import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
+    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
@@ -29,7 +31,6 @@
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import type { QueryState } from '$lib/search/state'
     import {
         type AggregateStreamingSearchResults,
         type PathMatch,
@@ -39,7 +40,6 @@
     } from '$lib/shared'
     import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -109,7 +109,6 @@
     })
 
     onMount(() => {
-        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewSearchResultsPage)
         TELEMETRY_V2_RECORDER.recordEvent('search.results', 'view')
     })
 
@@ -146,12 +145,7 @@
         })
     }
 
-    function handleSubmit(state: QueryState) {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'nav', query: state.query },
-            { source: 'nav', patternType: state.patternType }
-        )
+    function handleSubmit() {
         TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['nav'] },
         })

@@ -5,10 +5,9 @@
 
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import type { QueryStateStore, QueryState } from '$lib/search/state'
+    import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
 
     import CodyUpsellBanner from './cody-upsell/CodyUpsellBanner.svelte'
@@ -24,16 +23,10 @@
     })
 
     onMount(() => {
-        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewHomePage)
         TELEMETRY_V2_RECORDER.recordEvent('home', 'view')
     })
 
-    function handleSubmit(state: QueryState) {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'home', query: state.query },
-            { source: 'home', patternType: state.patternType }
-        )
+    function handleSubmit() {
         TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['home'] },
         })

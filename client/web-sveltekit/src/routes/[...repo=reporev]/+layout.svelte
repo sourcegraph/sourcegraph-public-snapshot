@@ -12,11 +12,10 @@
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { QueryState, queryStateStore } from '$lib/search/state'
+    import { queryStateStore } from '$lib/search/state'
     import { repositoryInsertText } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
@@ -88,12 +87,7 @@
     $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
-    function handleSearchSubmit(state: QueryState): void {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'repo', query: state.query },
-            { source: 'repo', patternType: state.patternType }
-        )
+    function handleSearchSubmit(): void {
         TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['repo'] },
         })
