@@ -15,6 +15,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 
 	"github.com/sourcegraph/sourcegraph/internal/bytesize"
@@ -59,6 +60,34 @@ func TestObserverIntegration(t *testing.T) {
 	if !(memoryLow < memoryUsage && memoryUsage < memoryHigh) {
 		t.Fatalf("memory usage is not in the expected range (low: %s, high: %s): %s", humanize.Bytes(uint64(memoryLow)), humanize.Bytes(uint64(memoryHigh)), humanize.Bytes(uint64(memoryUsage)))
 	}
+}
+func TestErrorMaybeCausedByExplicitStop(t *testing.T) {
+	t.Run("normal context cancellation error", func(t *testing.T) {
+		explicitlyStopped := make(chan struct{})
+
+		require.False(t, errMaybeCausedByExplicitStop(context.Canceled, explicitlyStopped))
+	})
+
+	t.Run("explicit stop", func(t *testing.T) {
+		explicitlyStopped := make(chan struct{})
+		close(explicitlyStopped)
+
+		require.True(t, errMaybeCausedByExplicitStop(context.Canceled, explicitlyStopped))
+	})
+
+	t.Run("stopped, but not cancellation error", func(t *testing.T) {
+		explicitlyStopped := make(chan struct{})
+		close(explicitlyStopped)
+
+		require.False(t, errMaybeCausedByExplicitStop(errors.New("some error"), explicitlyStopped))
+	})
+
+	t.Run("nil error", func(t *testing.T) {
+		explicitlyStopped := make(chan struct{})
+		close(explicitlyStopped)
+
+		require.False(t, errMaybeCausedByExplicitStop(nil, explicitlyStopped))
+	})
 }
 
 func TestConvertESRCH(t *testing.T) {
