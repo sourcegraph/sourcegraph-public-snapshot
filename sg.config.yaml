@@ -773,7 +773,8 @@ commands:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
     install: |
-      bazel run //cmd/batcheshelper:image_tarball
+      bazel build //cmd/batcheshelper:image_tarball
+      docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
@@ -864,7 +865,8 @@ commands:
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      bazel run //docker-images/grafana:image_tarball
+      bazel build //docker-images/grafana:image_tarball
+      docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -921,7 +923,8 @@ commands:
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
-      bazel run //docker-images/prometheus:image_tarball
+      bazel build //docker-images/prometheus:image_tarball
+      docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
@@ -977,7 +980,8 @@ commands:
         "${IMAGE}"
     install: |
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      bazel run //docker-images/postgres_exporter:image_tarball
+      bazel build //docker-images/postgres_exporter:image_tarball
+      docker load --input $(bazel cquery //docker-images/postgres_exporter:image_tarball --output=files)
     env:
       IMAGE: postgres-exporter:candidate
       CONTAINER: postgres_exporter
@@ -991,7 +995,8 @@ commands:
 
   otel-collector:
     install: |
-      bazel run //docker-images/opentelemetry-collector:image_tarball
+      bazel build //docker-images/opentelemetry-collector:image_tarball
+      docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
