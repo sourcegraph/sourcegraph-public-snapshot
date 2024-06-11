@@ -315,7 +315,7 @@ func (rc *cmdReader) trace() {
 
 	memUsage, memoryError := rc.memoryObserver.MaxMemoryUsage()
 	if memoryError != nil {
-		if !(errors.IsContextCanceled(memoryError) && errors.IsContextCanceled(rc.ctx.Err())) {
+		if !(isContextErr(memoryError) && isContextErr(rc.ctx.Err())) {
 			// If the context was canceled, we don't log the error as it's expected.
 			rc.logger.Warn("failed to get max memory usage", log.Error(memoryError))
 		}
@@ -550,4 +550,8 @@ func HoneySampleRate(cmd string, actor *actor.Actor) uint {
 	default:
 		return 8
 	}
+}
+
+func isContextErr(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
