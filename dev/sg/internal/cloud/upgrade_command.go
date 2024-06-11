@@ -90,12 +90,14 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
-	// if a version is specified we do not build anything and just trigger the cloud deployment
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
 	}
 	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)
+	if ctx.String("name") != "" && ctx.String("name") != deploymentName {
+		std.Out.WriteNoticef("Your deployment name has been truncated to be %q", deploymentName)
+	}
 
 	err = upgradeDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {

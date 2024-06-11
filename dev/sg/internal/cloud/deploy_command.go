@@ -246,6 +246,9 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 
 	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
 	deploymentName := determineDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
+	if ctx.String("name") != "" && ctx.String("name") != deploymentName {
+		std.Out.WriteNoticef("Your deployment name has been truncated to be %q", deploymentName)
+	}
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {
