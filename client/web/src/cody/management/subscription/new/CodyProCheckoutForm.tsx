@@ -111,6 +111,21 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
             // This is where we send the token to the backend to create a subscription.
             try {
+                await createTeamMutation.mutateAsync({
+                    name: '(no name yet)',
+                    slug: '(no slug yet)',
+                    seats: seatCount,
+                    address: {
+                        line1: suppliedAddress.line1,
+                        line2: suppliedAddress.line2 || '',
+                        city: suppliedAddress.city,
+                        state: suppliedAddress.state,
+                        postalCode: suppliedAddress.postal_code,
+                        country: suppliedAddress.country,
+                    },
+                    billingInterval: 'monthly',
+                    couponCode: '',
+                    creditCardToken: token,
                 })
             } catch (error) {
                 setErrorMessage(`We couldn't create the team. This is what happened: ${error}`)

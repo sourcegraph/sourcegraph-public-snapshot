@@ -112,7 +112,29 @@ export interface UpdateSubscriptionRequest {
     subscriptionUpdate?: SubscriptionUpdateOptions
 }
 
+export interface PreviewUpdateSubscriptionRequest {
+    newSeatCount?: number
+    newBillingInterval?: BillingInterval
+    newCancelAtPeriodEnd?: boolean
+}
+
 export interface GetSubscriptionInvoicesResponse {
     invoices: Invoice[]
     continuationToken?: string
+}
+
+export interface CreateTeamRequest {
+    name: string
+    slug: string
+    seats: number
+    address: Address
+    billingInterval: BillingInterval
+    couponCode?: string
+    creditCardToken: string
+}
+
+export interface PreviewCreateTeamRequest {
+    seats: number
+    billingInterval: BillingInterval
+    couponCode?: string
 }

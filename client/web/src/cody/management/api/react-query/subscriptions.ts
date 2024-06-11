@@ -7,7 +7,13 @@ import {
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
-import type { UpdateSubscriptionRequest, Subscription } from '../teamSubscriptions'
+import type {
+    UpdateSubscriptionRequest,
+    Subscription,
+    CreateTeamRequest,
+    PreviewResult,
+    PreviewCreateTeamRequest,
+} from '../types'
 
 import { callCodyProApi } from './callCodyProApi'
 
@@ -45,3 +51,16 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
         },
     })
 }
+
+export const useCreateTeam = (): UseMutationResult<string | undefined, Error, CreateTeamRequest> => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async requestBody => callCodyProApi(Client.createTeam(requestBody)),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
+    })
+}
+
+export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefined, Error, PreviewCreateTeamRequest> =>
+    useMutation({
+        mutationFn: async requestBody => callCodyProApi(Client.previewCreateTeam(requestBody)),
+    })
