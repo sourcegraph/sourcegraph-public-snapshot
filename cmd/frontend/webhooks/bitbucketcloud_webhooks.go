@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 
+	gh "github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -13,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (wr *Router) HandleBitbucketCloudWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
+func (wr *Router) HandleBitbucketCloudWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, secret string) {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
@@ -21,6 +22,14 @@ func (wr *Router) HandleBitbucketCloudWebhook(logger log.Logger, w http.Response
 	}
 	defer r.Body.Close()
 	ctx := actor.WithInternalActor(r.Context())
+
+	if secret != "" {
+		sig := r.Header.Get("X-Hub-Signature")
+		if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
+			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+			return
+		}
+	}
 
 	eventType := r.Header.Get("X-Event-Key")
 	e, err := bitbucketcloud.ParseWebhookEvent(eventType, payload)
