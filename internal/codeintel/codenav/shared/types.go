@@ -2,6 +2,7 @@ package shared
 
 import (
 	"cmp"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -55,6 +56,23 @@ type Range struct {
 type Position struct {
 	Line      int
 	Character int
+}
+
+func NewRange(startLine, startCharacter, endLine, endCharacter int) Range {
+	return Range{
+		Start: Position{
+			Line:      startLine,
+			Character: startCharacter,
+		},
+		End: Position{
+			Line:      endLine,
+			Character: endCharacter,
+		},
+	}
+}
+
+func TranslateRange(r *scip.Range) Range {
+	return NewRange(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character))
 }
 
 func (p Position) Compare(other Position) int {

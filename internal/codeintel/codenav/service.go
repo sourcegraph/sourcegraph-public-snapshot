@@ -976,7 +976,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	symbols = make([]*scip.Symbol, 0)
 	for _, occurrence := range doc.GetOccurrences() {
-		occRange := lsifstore.TranslateRange(scip.NewRange(occurrence.GetRange()))
+		occRange := shared.TranslateRange(scip.NewRange(occurrence.GetRange()))
 		// TODO: Needs to handle differing text encodings to get these character positions right
 		if symbolRange.Intersects(occRange) {
 			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)

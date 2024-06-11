@@ -97,7 +97,7 @@ outer:
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
 				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {
@@ -179,7 +179,7 @@ func (s *store) getLocations(
 					locations = append(locations, shared.Location{
 						UploadID: monikerLocation.UploadID,
 						Path:     row.URI,
-						Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+						Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 					})
 				}
 			}
@@ -578,7 +578,7 @@ outer:
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
 				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {
