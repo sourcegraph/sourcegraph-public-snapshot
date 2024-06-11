@@ -38,8 +38,9 @@ type linuxObserver struct {
 	startOnce sync.Once
 	started   chan struct{}
 
-	stopOnce sync.Once
-	stopFunc func()
+	stopOnce          sync.Once
+	cancelFunc        func()
+	explicitlyStopped chan struct{}
 
 	cmd *exec.Cmd
 
@@ -80,9 +81,10 @@ func NewLinuxObserver(ctx context.Context, cmd *exec.Cmd, samplingInterval time.
 
 		cmd: cmd,
 
-		started: make(chan struct{}),
+		started:           make(chan struct{}),
+		explicitlyStopped: make(chan struct{}),
 
-		stopFunc: cancel,
+		cancelFunc: cancel,
 
 		samplingInterval: samplingInterval,
 	}, nil
@@ -113,7 +115,8 @@ func (l *linuxObserver) Start() {
 
 func (l *linuxObserver) Stop() {
 	l.stopOnce.Do(func() {
-		l.stopFunc()
+		l.cancelFunc()
+		close(l.explicitlyStopped)
 	})
 }
 
@@ -152,6 +155,11 @@ func (l *linuxObserver) observe() {
 
 		case <-doCollection:
 			currentMemoryUsageBytes, err := memoryUsageForPidAndChildren(l.ctx, l.proc, l.cmd.Process.Pid)
+			if errMaybeCausedByExplicitStop(err, l.explicitlyStopped) {
+				// The error occurred when we were explicitly stopped, so we should skip
+				// over this iteration.
+				continue
+			}
 
 			l.mu.Lock()
 
@@ -306,6 +314,18 @@ func (p *procfsProcessInfoProvider) Children(parentPID int) (pids []int, err err
 	}
 
 	return pids, err
+}
+
+func errMaybeCausedByExplicitStop(err error, stopChan chan struct{}) bool {
+	if errors.IsContextCanceled(err) {
+		select {
+		case <-stopChan:
+			return true
+		default:
+		}
+	}
+
+	return false
 }
 
 // convertESRCH wraps an ESRCH error with fs.ErrNotExist
