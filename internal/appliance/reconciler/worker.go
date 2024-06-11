@@ -56,13 +56,6 @@ func (r *Reconciler) reconcileWorkerDeployment(ctx context.Context, sg *config.S
 
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = addPreciseCodeIntelBlobstoreVars(ctr.Env, sg)
-	if !sg.Spec.Embeddings.Disabled && !sg.Spec.Blobstore.Disabled {
-		ctr.Env = append(
-			ctr.Env,
-			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_BACKEND", Value: "blobstore"},
-			corev1.EnvVar{Name: "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", Value: "http://blobstore:9000"},
-		)
-	}
 	ctr.Env = append(
 		ctr.Env,
 		container.NewEnvVarFieldRef("POD_NAME", "metadata.name"),

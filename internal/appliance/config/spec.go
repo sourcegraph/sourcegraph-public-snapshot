@@ -48,10 +48,6 @@ type IngressSpec struct {
 	TLSSecret        string            `json:"tlsSecret,omitempty"`
 }
 
-type EmbeddingsSpec struct {
-	StandardConfig
-}
-
 type FrontendSpec struct {
 	StandardConfig
 
@@ -226,8 +222,6 @@ type SourcegraphSpec struct {
 
 	// CodeIntel defines the desired state of the Code Intel service.
 	CodeIntel CodeDBSpec `json:"codeIntel,omitempty"`
-
-	Embeddings EmbeddingsSpec `json:"embeddings,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`

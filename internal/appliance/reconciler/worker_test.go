@@ -6,7 +6,6 @@ func (suite *ApplianceTestSuite) TestDeployWorker() {
 	}{
 		{name: "worker/default"},
 		{name: "worker/with-blobstore"},
-		{name: "worker/with-blobstore-and-embeddings"},
 		{name: "worker/with-replicas"},
 	} {
 		suite.Run(tc.name, func() {
