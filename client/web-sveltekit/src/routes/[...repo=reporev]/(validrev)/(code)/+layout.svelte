@@ -138,13 +138,11 @@
         }
     })
 
-    async function selectTab(event: { detail: number | null }) {
+    function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
         if (event.detail === null) {
-            const url = new URL($page.url)
-            url.searchParams.delete('rev')
-            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+            handleBottomPanelCollapse().catch(() => {})
         }
         selectedTab = event.detail
     }
@@ -155,7 +153,13 @@
         }
     }
 
-    function handleBottomPanelCollapse() {
+    async function handleBottomPanelCollapse() {
+        // Removing the URL parameter causes the diff view to close
+        if ($page.url.searchParams.has('rev')) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
         selectedTab = null
     }
 

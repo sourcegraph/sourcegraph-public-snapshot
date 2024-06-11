@@ -3,15 +3,15 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
+        appliance.sourcegraph.com/configHash: 25b03d6fa226ee5e00548da8fffd9b6a70d3f14b8b1ea254b174105c425c2cdd
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
-        app.kubernetes.io/component: symbols
+        app.kubernetes.io/component: searcher
         app.kubernetes.io/name: sourcegraph
         app.kubernetes.io/version: 5.3.9104
         deploy: sourcegraph
-      name: symbols
+      name: searcher
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -32,17 +32,17 @@ resources:
       revisionHistoryLimit: 10
       selector:
         matchLabels:
-          app: symbols
-      serviceName: symbols
+          app: searcher
+      serviceName: searcher
       template:
         metadata:
           annotations:
-            kubectl.kubernetes.io/default-container: symbols
+            kubectl.kubernetes.io/default-container: searcher
           creationTimestamp: null
           labels:
-            app: symbols
+            app: searcher
             deploy: sourcegraph
-          name: symbols
+          name: searcher
         spec:
           containers:
             - env:
@@ -56,17 +56,15 @@ resources:
                     secretKeyRef:
                       key: endpoint
                       name: redis-store
-                - name: SYMBOLS_CACHE_SIZE_MB
-                  value: "11059"
+                - name: SEARCHER_CACHE_SIZE_MB
+                  value: "921600"
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
                       apiVersion: v1
                       fieldPath: metadata.name
-                - name: SYMBOLS_CACHE_DIR
+                - name: CACHE_DIR
                   value: /mnt/cache/$(POD_NAME)
-                - name: TMPDIR
-                  value: /mnt/tmp
                 - name: OTEL_AGENT_HOST
                   valueFrom:
                     fieldRef:
@@ -74,21 +72,11 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/symbols:5.3.9104
+              image: index.docker.io/sourcegraph/searcher:5.3.9104
               imagePullPolicy: IfNotPresent
-              livenessProbe:
-                failureThreshold: 3
-                httpGet:
-                  path: /healthz
-                  port: http
-                  scheme: HTTP
-                initialDelaySeconds: 60
-                periodSeconds: 10
-                successThreshold: 1
-                timeoutSeconds: 5
-              name: symbols
+              name: searcher
               ports:
-                - containerPort: 3184
+                - containerPort: 3181
                   name: http
                   protocol: TCP
                 - containerPort: 6060
@@ -100,10 +88,9 @@ resources:
                   path: /healthz
                   port: http
                   scheme: HTTP
-                initialDelaySeconds: 60
                 periodSeconds: 5
                 successThreshold: 1
-                timeoutSeconds: 1
+                timeoutSeconds: 5
               resources:
                 limits:
                   cpu: "2"
@@ -121,8 +108,8 @@ resources:
               volumeMounts:
                 - mountPath: /mnt/cache
                   name: cache
-                - mountPath: /mnt/tmp
-                  name: tmp
+                - mountPath: /tmp
+                  name: tmpdir
           dnsPolicy: ClusterFirst
           restartPolicy: Always
           schedulerName: default-scheduler
@@ -131,14 +118,14 @@ resources:
             fsGroupChangePolicy: OnRootMismatch
             runAsGroup: 101
             runAsUser: 100
-          serviceAccount: symbols
-          serviceAccountName: symbols
+          serviceAccount: searcher
+          serviceAccountName: searcher
           terminationGracePeriodSeconds: 30
           volumes:
             - emptyDir: {}
               name: cache
             - emptyDir: {}
-              name: tmp
+              name: tmpdir
       updateStrategy:
         type: RollingUpdate
       volumeClaimTemplates:
@@ -155,7 +142,7 @@ resources:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 12Gi
+                storage: 1000Gi
             volumeMode: Filesystem
           status:
             phase: Pending
@@ -208,9 +195,11 @@ resources:
             disabled: true
 
           searcher:
-            disabled: true
+            persistentVolumeConfig:
+              storageSize: "1000Gi"
 
-          symbols: {}
+          symbols:
+            disabled: true
 
           syntectServer:
             disabled: true
@@ -234,11 +223,11 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
+        appliance.sourcegraph.com/configHash: 25b03d6fa226ee5e00548da8fffd9b6a70d3f14b8b1ea254b174105c425c2cdd
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
-      name: symbols
+      name: searcher
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -253,15 +242,15 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
+        appliance.sourcegraph.com/configHash: 25b03d6fa226ee5e00548da8fffd9b6a70d3f14b8b1ea254b174105c425c2cdd
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
-        app: symbols
-        app.kubernetes.io/component: symbols
+        app: searcher
+        app.kubernetes.io/component: searcher
         deploy: sourcegraph
-      name: symbols
+      name: searcher
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -282,7 +271,7 @@ resources:
       ipFamilyPolicy: SingleStack
       ports:
         - name: http
-          port: 3184
+          port: 3181
           protocol: TCP
           targetPort: http
         - name: debug
@@ -290,7 +279,7 @@ resources:
           protocol: TCP
           targetPort: debug
       selector:
-        app: symbols
+        app: searcher
       sessionAffinity: None
       type: ClusterIP
     status:

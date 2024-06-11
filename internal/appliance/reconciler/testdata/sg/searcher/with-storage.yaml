@@ -22,7 +22,8 @@ spec:
   indexedSearchIndexer:
     disabled: true
 
-  pgsql: {}
+  pgsql:
+    disabled: true
 
   postgresExporter:
     disabled: true
@@ -33,9 +34,6 @@ spec:
   redisCache:
     disabled: true
 
-  redisExporter:
-    disabled: true
-
   redisStore:
     disabled: true
 
@@ -43,7 +41,8 @@ spec:
     disabled: true
 
   searcher:
-    disabled: true
+    persistentVolumeConfig:
+      storageSize: "1000Gi"
 
   symbols:
     disabled: true
