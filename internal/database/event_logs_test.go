@@ -1470,7 +1470,6 @@ func TestEventLogs_ListAll(t *testing.T) {
 			Timestamp: startDate,
 		},
 		{
-			ID:        int64(math.MinInt64),
 			UserID:    3,
 			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
