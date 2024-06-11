@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -23,10 +25,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -83,10 +86,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -205,10 +209,11 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -270,10 +275,11 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -451,10 +457,11 @@ func TestGetImplementations(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}

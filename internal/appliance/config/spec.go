@@ -48,10 +48,6 @@ type IngressSpec struct {
 	TLSSecret        string            `json:"tlsSecret,omitempty"`
 }
 
-type EmbeddingsSpec struct {
-	StandardConfig
-}
-
 type FrontendSpec struct {
 	StandardConfig
 
@@ -142,11 +138,8 @@ type RepoUpdaterSpec struct {
 	StandardConfig
 }
 
-// SearcherSpec defines the desired state of the Searcher service.
 type SearcherSpec struct {
-	// Disabled defines if Code Intel is enabled or not.
-	// Default: false
-	Disabled bool `json:"disabled,omitempty"`
+	StandardConfig
 
 	// Replicas defines the number of Searcher pod replicas.
 	// Default: 1
@@ -226,8 +219,6 @@ type SourcegraphSpec struct {
 
 	// CodeIntel defines the desired state of the Code Intel service.
 	CodeIntel CodeDBSpec `json:"codeIntel,omitempty"`
-
-	Embeddings EmbeddingsSpec `json:"embeddings,omitempty"`
 
 	// Frontend defines the desired state of the Sourcegraph Frontend.
 	Frontend FrontendSpec `json:"frontend,omitempty"`

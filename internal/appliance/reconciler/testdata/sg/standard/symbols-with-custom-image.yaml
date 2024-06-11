@@ -57,6 +57,3 @@ spec:
 
   prometheus:
     disabled: true
-
-  embeddings:
-    disabled: true

@@ -57,6 +57,3 @@ spec:
 
   cadvisor:
     disabled: false
-
-  embeddings:
-    disabled: true
