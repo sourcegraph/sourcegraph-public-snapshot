@@ -71,7 +71,7 @@ func NewRange(startLine, startCharacter, endLine, endCharacter int) Range {
 	}
 }
 
-func TranslateRange(r *scip.Range) Range {
+func TranslateRange(r scip.Range) Range {
 	return NewRange(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character))
 }
 

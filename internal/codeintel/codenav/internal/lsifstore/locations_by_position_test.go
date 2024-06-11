@@ -368,7 +368,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 			explanation    string
 			document       *scip.Document
 			occurrence     *scip.Occurrence
-			expectedRanges []*scip.Range
+			expectedRanges []scip.Range
 		}{
 			{
 				explanation: "#1 happy path: symbol name matches and is definition",
@@ -393,8 +393,8 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react 17.1 main.go func1",
 					SymbolRoles: 1, // is definition
 				},
-				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{1, 100, 1, 200}),
+				expectedRanges: []scip.Range{
+					scip.NewRangeUnchecked([]int32{1, 100, 1, 200}),
 				},
 			},
 			{
@@ -420,7 +420,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react-jest main.js func7",
 					SymbolRoles: 1, // is definition
 				},
-				expectedRanges: []*scip.Range{},
+				expectedRanges: []scip.Range{},
 			},
 			{
 				explanation: "#3 symbol name match but the SymbolRole is not a definition",
@@ -445,7 +445,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react-test index.js func2",
 					SymbolRoles: 0, // not a definition
 				},
-				expectedRanges: []*scip.Range{},
+				expectedRanges: []scip.Range{},
 			},
 		}
 
@@ -461,7 +461,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 			explanation    string
 			document       *scip.Document
 			occurrence     *scip.Occurrence
-			expectedRanges []*scip.Range
+			expectedRanges []scip.Range
 		}{
 			{
 				explanation: "#1 happy path: symbol name matches and it is a reference",
@@ -493,8 +493,8 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react 17.1 main.go func1",
 					SymbolRoles: 0, // not a definition so its a reference
 				},
-				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{1, 100, 1, 200}),
+				expectedRanges: []scip.Range{
+					scip.NewRangeUnchecked([]int32{1, 100, 1, 200}),
 				},
 			},
 			{
@@ -520,7 +520,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react-jest main.js func7",
 					SymbolRoles: 0, // not a definition so its a reference
 				},
-				expectedRanges: []*scip.Range{},
+				expectedRanges: []scip.Range{},
 			},
 			{
 				explanation: "#3 symbol name match but it is not a reference",
@@ -545,7 +545,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react-test index.js func2",
 					SymbolRoles: 0, // not a definition so its a reference
 				},
-				expectedRanges: []*scip.Range{},
+				expectedRanges: []scip.Range{},
 			},
 		}
 
@@ -645,7 +645,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 			explanation    string
 			document       *scip.Document
 			occurrence     *scip.Occurrence
-			expectedRanges []*scip.Range
+			expectedRanges []scip.Range
 		}{
 			{
 				explanation: "#1 happy path: we have implementation",
@@ -673,8 +673,8 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react 17.1 main.go func1",
 					SymbolRoles: 1,
 				},
-				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{3, 300, 4, 400}),
+				expectedRanges: []scip.Range{
+					scip.NewRangeUnchecked([]int32{3, 300, 4, 400}),
 				},
 			},
 			{
@@ -700,7 +700,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react-jest main.js func7",
 					SymbolRoles: 1,
 				},
-				expectedRanges: []*scip.Range{},
+				expectedRanges: []scip.Range{},
 			},
 		}
 
@@ -716,7 +716,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 			explanation    string
 			document       *scip.Document
 			occurrence     *scip.Occurrence
-			expectedRanges []*scip.Range
+			expectedRanges []scip.Range
 		}{
 			{
 				explanation: "#1 happy path: we have prototype",
@@ -744,8 +744,8 @@ func TestExtractOccurrenceData(t *testing.T) {
 					Symbol:      "react 17.1 main.go func1A",
 					SymbolRoles: 1,
 				},
-				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{3, 300, 4, 400}),
+				expectedRanges: []scip.Range{
+					scip.NewRangeUnchecked([]int32{3, 300, 4, 400}),
 				},
 			},
 		}

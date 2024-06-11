@@ -841,7 +841,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
 		}
 
-		originalRange := scip.NewRange(occ.Range)
+		originalRange := scip.NewRangeUnchecked(occ.Range)
 
 		lineOffset := int32(linemap.positions[originalRange.Start.Line])
 		line := file[lineOffset : lineOffset+originalRange.Start.Character]
@@ -976,7 +976,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	symbols = make([]*scip.Symbol, 0)
 	for _, occurrence := range doc.GetOccurrences() {
-		occRange := shared.TranslateRange(scip.NewRange(occurrence.GetRange()))
+		occRange := shared.TranslateRange(scip.NewRangeUnchecked(occurrence.GetRange()))
 		// TODO: Needs to handle differing text encodings to get these character positions right
 		if symbolRange.Intersects(occRange) {
 			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
