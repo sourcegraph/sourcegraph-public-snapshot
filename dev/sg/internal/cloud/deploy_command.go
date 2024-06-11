@@ -190,8 +190,9 @@ func determineDeploymentName(originalName, version, email, branch string) string
 		deploymentName = branch
 	}
 
-	return sanitizeInstanceName(deploymentName)
-
+	deploymentName = sanitizeInstanceName(deploymentName)
+	// names can only be max 30 chars
+	return deploymentName[:min(30, len(deploymentName))]
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
