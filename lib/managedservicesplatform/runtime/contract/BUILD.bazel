@@ -21,6 +21,7 @@ go_library(
         "//lib/pointers",
         "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_google_uuid//:uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_github_prometheus_client_golang//prometheus/promhttp",

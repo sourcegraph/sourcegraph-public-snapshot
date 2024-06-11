@@ -2,12 +2,17 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"sync"
+	"unicode"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"golang.org/x/text/unicode/norm"
 )
 
 type PersonResolver struct {
@@ -70,8 +75,45 @@ func (r *PersonResolver) Name(ctx context.Context) (string, error) {
 	return r.name, nil
 }
 
-func (r *PersonResolver) Email() string {
-	return r.email
+func unicodeToAscii(input string) string {
+	// Decompose the string
+	t := norm.NFD.String(input)
+
+	// Remove all non-spacing marks
+	result := strings.Map(func(r rune) rune {
+		if unicode.Is(unicode.Mn, r) {
+			return -1
+		}
+		return r
+	}, t)
+
+	// Recompose the string if necessary
+	return norm.NFC.String(result)
+}
+
+func (r *PersonResolver) Email(ctx context.Context) (string, error) {
+	if !dotcom.SourcegraphDotComMode() {
+		return r.email, nil
+	}
+
+	// make sure we don't return valid emails to unauthenticated users
+	user, err := auth.CurrentUser(ctx, r.db)
+	if err != nil {
+		return "", err
+	}
+
+	if user != nil {
+		return r.email, nil
+	}
+
+	name, err := r.Name(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	cleanedName := strings.ReplaceAll(strings.ToLower(name), " ", "")
+
+	return url.PathEscape(unicodeToAscii(cleanedName)) + "@noreply.sourcegraph.com", nil
 }
 
 func (r *PersonResolver) DisplayName(ctx context.Context) (string, error) {

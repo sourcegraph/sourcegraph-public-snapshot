@@ -1,6 +1,7 @@
 # Documentation for how to override sg configuration for local development:
 # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/background-information/sg/index.md#configuration
 env:
+  GITSERVER_MEMORY_OBSERVATION_ENABLED: 'true'
   PGPORT: 5432
   PGHOST: localhost
   PGUSER: sourcegraph
@@ -1125,6 +1126,7 @@ bazelCommands:
     target: //cmd/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
+      GITSERVER_MEMORY_OBSERVATION_ENABLED: 'true'
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
   gitserver:
