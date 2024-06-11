@@ -12,6 +12,7 @@ import type { PageLoad, PageLoadEvent } from './$types'
 import {
     BlobDiffViewCommitQuery,
     BlobFileViewBlobQuery,
+    BlobFileViewCodeGraphDataQuery,
     BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewHighlightedFileQuery,
 } from './page.gql'
@@ -95,6 +96,15 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 })
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
+        codeGraphData: resolvedRevision
+            .then(resolvedRevision =>
+                client.query(BlobFileViewCodeGraphDataQuery, {
+                    repoName,
+                    revspec: resolvedRevision,
+                    path: filePath,
+                })
+            )
+            .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.codeGraphData ?? null)),
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client

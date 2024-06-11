@@ -7,6 +7,7 @@ fragment FileViewGitBlob on GitBlob {
     totalLines
     byteSize
 
+
     ...OpenInCodeHostAction
     ...FileIcon_GitBlob
 }
@@ -29,4 +30,24 @@ fragment FileView_ResolvedRevision on Repository {
 fragment FileViewCommit on GitCommit {
     canonicalURL
     abbreviatedOID
+}
+
+fragment FileViewCodeGraphData on CodeGraphData {
+        # TODO(camdencheek): does it actually make sense to paginate here?
+        occurrences(first: 10000) {
+            nodes {
+                symbol
+                range {
+                   start {
+                       line
+                       character
+                   }
+                   end {
+                       line
+                       character
+                   }
+                }
+                roles
+            }
+        }
 }

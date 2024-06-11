@@ -3,6 +3,7 @@ import { EditorSelection, type Text, type EditorState, type SelectionRange } fro
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { codeGraphData } from './codeintel/occurrences'
 import { type HighlightIndex, syntaxHighlight } from './highlight'
 
 /**
@@ -34,7 +35,13 @@ export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
 }
 
 export function occurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
-    // First we try to get an occurrence from syntax highlighting data.
+    // First we try to get an occurrence from the occurrences API
+    const fromAPI = scipOccurrenceAtPosition(state, offset)
+    if (fromAPI) {
+        return fromAPI
+    }
+
+    // Next we try to get an occurrence from syntax highlighting data.
     const fromHighlighting = highlightingOccurrenceAtPosition(state, offset)
     if (fromHighlighting) {
         return fromHighlighting
@@ -61,6 +68,20 @@ function highlightingOccurrenceAtPosition(state: EditorState, offset: number): O
         const occurrence = table.occurrences[index]
         if (occurrence.range.contains(position)) {
             return occurrence
+        }
+    }
+    return undefined
+}
+
+// TODO: document
+function scipOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
+    const position = positionAtCmPosition(state.doc, offset)
+    const data = state.facet(codeGraphData)
+    for (const datum of data) {
+        for (const occurrence of datum.occurrences) {
+            if (occurrence.range.contains(position)) {
+                return occurrence
+            }
         }
     }
     return undefined

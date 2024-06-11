@@ -29,7 +29,7 @@
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
 
     import type { PageData } from './$types'
-    import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
+    import { FileViewGitBlob, FileViewHighlightedFile, FileViewCodeGraphData } from './FileView.gql'
     import FileViewModeSwitcher from './FileViewModeSwitcher.svelte'
     import OpenInCodeHostAction from './OpenInCodeHostAction.svelte'
     import { CodeViewMode, toCodeViewMode } from './util'
@@ -49,9 +49,11 @@
     const lineWrap = writable<boolean>(false)
     const blobLoader = createPromiseStore<Awaited<PageData['blob']>>()
     const highlightsLoader = createPromiseStore<Awaited<PageData['highlights']>>()
+    const codeGraphDataLoader = createPromiseStore<Awaited<PageData['codeGraphData']>>()
 
     let blob: FileViewGitBlob | null = null
     let highlights: FileViewHighlightedFile | null = null
+    let codeGraphData: FileViewCodeGraphData | null = null
     let cmblob: CodeMirrorBlob | null = null
     let initialScrollPosition: ScrollSnapshot | null = null
     let selectedPosition: LineOrPositionOrRange | null = null
@@ -67,12 +69,14 @@
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
+    $: codeGraphDataLoader.set(data.codeGraphData)
 
     $: if (!$blobLoader.pending) {
         // Only update highlights and position after the file content has been loaded.
         // While the file content is loading we show the previous file content.
         blob = $blobLoader.value ?? null
         highlights = $highlightsLoader.pending ? null : $highlightsLoader.value ?? null
+        codeGraphData = $codeGraphDataLoader.pending ? null : $codeGraphDataLoader.value ?? null
         selectedPosition = data.lineOrPosition
     }
     $: fileLoadingError = !$blobLoader.pending && $blobLoader.error
@@ -268,6 +272,7 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
+                {codeGraphData}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
