@@ -209,13 +209,13 @@ var projectSignifiers = []string{
 	"repo",
 	"repository",
 	"script",
-	"@github",
-	"@gitlab",
-	"@bitbucket",
-	"@perforce",
-	"@gerrit",
-	"@code-commit",
-	"@phabricator",
+	"github",
+	"gitlab",
+	"bitbucket",
+	"perforce",
+	"gerrit",
+	"code-commit",
+	"phabricator",
 }
 
 var questionSignifiers = []string{

@@ -166,7 +166,7 @@ func TestExtractEntities(t *testing.T) {
 			want:        []string{entityReadme},
 		},
 		{
-			queryString: "What does @github.com/sourcegraph/zoekt do?",
+			queryString: "What does github.com/sourcegraph/zoekt do?",
 			want:        []string{entityReadme},
 		},
 	}
