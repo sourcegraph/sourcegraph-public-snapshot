@@ -14,13 +14,23 @@ func TestGoogleRequestGetTokenCount(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("streaming", func(t *testing.T) {
-		req := googleRequest{}
+		req := googleRequest{Stream: true}
 		r := strings.NewReader(googleStreamingResponse)
 		handler := &GoogleHandlerMethods{}
 		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
 
 		assert.Equal(t, 21, promptUsage.tokens)
 		assert.Equal(t, 87, completionUsage.tokens)
+	})
+
+	t.Run("non-streaming", func(t *testing.T) {
+		req := googleRequest{Stream: false}
+		r := strings.NewReader(googleNonStreamingResponse)
+		handler := &GoogleHandlerMethods{}
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+
+		assert.Equal(t, 59, promptUsage.tokens)
+		assert.Equal(t, 54, completionUsage.tokens)
 	})
 }
 
@@ -34,6 +44,47 @@ data: {"candidates": [{"content": {"parts": [{"text": " range(n-i-1):\n      if 
 
 data: {"candidates": [{"content": {"parts": [{"text": "1[j+1] = list1[j+1], list1[j]\n  return list1\n"}],"role": "model"},"finishReason": "STOP","index": 0,"safetyRatings": [{"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT","probability": "NEGLIGIBLE"},{"category": "HARM_CATEGORY_HATE_SPEECH","probability": "NEGLIGIBLE"},{"category": "HARM_CATEGORY_HARASSMENT","probability": "NEGLIGIBLE"},{"category": "HARM_CATEGORY_DANGEROUS_CONTENT","probability": "NEGLIGIBLE"}],"citationMetadata": {"citationSources": [{"startIndex": 1,"endIndex": 185,"uri": "https://github.com/Feng080412/Searches-and-sorts","license": ""}]}}],"usageMetadata": {"promptTokenCount": 21,"candidatesTokenCount": 87,"totalTokenCount": 108}}
 
+`
+
+var googleNonStreamingResponse = `{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "The cobblestone path, worn smooth by centuries of weary feet, led to a humble cottage nestled within the quiet village of Saint-Martin, where a young boy named Pierre discovered a weathered, leather backpack tucked beneath the gnarled oak tree in his grandmother's garden. \n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0,
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "NEGLIGIBLE"
+        }
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 59,
+    "candidatesTokenCount": 54,
+    "totalTokenCount": 113
+  }
+}
 `
 
 func TestParseGoogleTokenUsage(t *testing.T) {

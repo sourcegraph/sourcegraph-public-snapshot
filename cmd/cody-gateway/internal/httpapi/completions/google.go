@@ -122,7 +122,7 @@ func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleReques
 
 func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ googleRequest) error {
 	if feature == codygateway.FeatureEmbeddings {
-		return errors.Newf("feature %q is currently not supported for OpenAI", feature)
+		return errors.Newf("feature %q is currently not supported for Google", feature)
 	}
 	return nil
 }
@@ -162,7 +162,6 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
 			return promptUsage, completionUsage
 		}
-
 		promptUsage.tokens = res.UsageMetadata.PromptTokenCount
 		completionUsage.tokens = res.UsageMetadata.CompletionTokenCount
 		if len(res.Candidates) > 0 {
