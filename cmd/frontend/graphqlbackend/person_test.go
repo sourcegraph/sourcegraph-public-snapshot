@@ -28,6 +28,10 @@ func TestPersonEmailIsAnonymized(t *testing.T) {
 		return exampleCommitSHA1, nil
 	}
 
+	t.Cleanup(func() {
+		backend.Mocks = backend.MockServices{}
+	})
+
 	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)

@@ -1,7 +1,8 @@
 spec:
   requestedVersion: "5.3.9104"
 
-  blobstore: {}
+  blobstore:
+    disabled: true
 
   codeInsights:
     disabled: true
@@ -39,8 +40,7 @@ spec:
   repoUpdater:
     disabled: true
 
-  searcher:
-    disabled: true
+  searcher: {}
 
   symbols:
     disabled: true
@@ -48,9 +48,8 @@ spec:
   syntectServer:
     disabled: true
 
-  worker: {}
+  worker:
+    disabled: true
 
   prometheus:
     disabled: true
-
-  embeddings: {}

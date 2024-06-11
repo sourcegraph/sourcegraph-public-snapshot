@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "install:browsers": "playwright install",
     "test": "playwright test",
-    "test:dev": "PORT=5173 playwright test --ui",
+    "test:dev": "DISABLE_APP_ASSETS_MOCKING=true PORT=5173 playwright test --ui",
     "test:svelte": "vitest --run",
     "sync": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
