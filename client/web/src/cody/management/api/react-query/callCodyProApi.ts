@@ -47,8 +47,15 @@ export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | und
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new Error(`Request to Cody Pro API failed with status ${response.status}`)
+        throw new Error(`Request to Cody Pro API failed with status ${response.status}: ${response.statusText}`)
     }
 
-    return (await response.json()) as Data
+    const responseText = await response.text()
+
+    // Handle both JSON and text responses.
+    try {
+        return JSON.parse(responseText) as Data
+    } catch {
+        return responseText as Data
+    }
 }
