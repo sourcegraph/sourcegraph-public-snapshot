@@ -8,7 +8,7 @@ import { CommitPage_CommitQuery, CommitPage_DiffQuery } from './page.gql'
 
 const PAGE_SIZE = 20
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName } = parseRepoRevision(params.repo)
 
@@ -23,6 +23,8 @@ export const load: PageLoad = async ({ params }) => {
     if (!commit) {
         error(404, 'Commit not found')
     }
+
+    parent().then(parent => parent.repositoryContext.set({ revision: commit.abbreviatedOID }))
 
     // parents is an empty array for the initial commit
     // We currently don't support diffs for the initial commit on the backend

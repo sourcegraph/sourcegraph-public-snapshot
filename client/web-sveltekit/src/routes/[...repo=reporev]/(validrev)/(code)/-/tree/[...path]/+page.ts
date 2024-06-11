@@ -24,6 +24,8 @@ export const load: PageLoad = ({ parent, params }) => {
         )
         .then(commit => commit.tree)
 
+    parent().then(parent => parent.repositoryContext.set({ directoryPath: filePath }))
+
     return {
         filePath,
         treeEntries,

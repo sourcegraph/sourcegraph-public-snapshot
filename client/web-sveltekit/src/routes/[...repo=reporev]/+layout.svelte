@@ -22,7 +22,7 @@
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
-    import { setRepositoryPageContext, type RepositoryPageContext } from './context'
+    import { type RepositoryPageContext } from './context'
 
     interface MenuEntry {
         /**
@@ -61,7 +61,7 @@
         { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
     ]
-    const repositoryContext = writable<RepositoryPageContext>({})
+    const repositoryContext = data.repositoryContext
     const contextSearchSuggestions = createScopeSuggestions({
         getContextInformation() {
             return {
@@ -73,8 +73,6 @@
             }
         },
     })
-
-    setRepositoryPageContext(repositoryContext)
 
     $: viewableNavEntries = navEntries.filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)

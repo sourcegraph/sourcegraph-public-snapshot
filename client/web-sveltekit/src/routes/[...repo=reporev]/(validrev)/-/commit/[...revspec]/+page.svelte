@@ -15,8 +15,6 @@
     import Badge from '$lib/wildcard/Badge.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import { getRepositoryPageContext } from '../../../../context'
-
     import type { PageData, Snapshot } from './$types'
 
     interface Capture {
@@ -45,19 +43,11 @@
         },
     }
 
-    const repositoryContext = getRepositoryPageContext()
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
 
     $: diffQuery = data.diff
     $: diffs = $diffQuery?.data?.repository?.comparison.fileDiffs ?? null
-
-    afterNavigate(() => {
-        repositoryContext.set({ revision: data.commit.abbreviatedOID })
-    })
-    beforeNavigate(() => {
-        repositoryContext.set({})
-    })
 </script>
 
 <svelte:head>

@@ -1,3 +1,5 @@
+import { dirname } from 'path'
+
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
 import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
@@ -69,6 +71,29 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
             .subscribe(v => blameData.next(v))
     }
 
+    const blob = resolvedRevision
+        .then(resolvedRevision =>
+            client.query(BlobFileViewBlobQuery, {
+                repoName,
+                revspec: resolvedRevision,
+                path: filePath,
+            })
+        )
+        .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null))
+
+    parent().then(parent =>
+        parent.repositoryContext.set({
+            directoryPath: dirname(filePath),
+            filePath,
+        })
+    )
+    blob.then(fileData => {
+        const fileLanguage = fileData?.languages?.[0]
+        if (fileLanguage) {
+            parent().then(parent => parent.repositoryContext.update(context => ({ ...context, fileLanguage })))
+        }
+    })
+
     return {
         type: 'FileView' as const,
         enableInlineDiff: true,
@@ -76,15 +101,7 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         graphQLClient: client,
         lineOrPosition,
         filePath,
-        blob: resolvedRevision
-            .then(resolvedRevision =>
-                client.query(BlobFileViewBlobQuery, {
-                    repoName,
-                    revspec: resolvedRevision,
-                    path: filePath,
-                })
-            )
-            .then(mapOrThrow(result => result.data?.repository?.commit?.blob ?? null)),
+        blob,
         highlights: resolvedRevision
             .then(resolvedRevision =>
                 client.query(BlobFileViewHighlightedFileQuery, {

@@ -1,4 +1,5 @@
 import { redirect, error } from '@sveltejs/kit'
+import { writable } from 'svelte/store'
 
 import { asError, loadMarkdownSyntaxHighlighting, type ErrorLike } from '$lib/common'
 import { getGraphQLClient, type GraphQLClient } from '$lib/graphql'
@@ -14,6 +15,7 @@ import {
 } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
+import type { RepositoryPageContext } from './context'
 import { ResolveRepoRevision, ResolvedRepository, type ResolveRepoRevisionResult } from './layout.gql'
 
 export interface ResolvedRevision {
@@ -60,6 +62,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
     }
 
     return {
+        repositoryContext: writable<RepositoryPageContext>({}),
         repoURL: '/' + params.repo,
         repoName,
         displayRepoName: displayRepoName(repoName),
