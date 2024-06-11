@@ -115,8 +115,8 @@ func (l *linuxObserver) Start() {
 
 func (l *linuxObserver) Stop() {
 	l.stopOnce.Do(func() {
-		l.cancelFunc()
 		close(l.explicitlyStopped)
+		l.cancelFunc()
 	})
 }
 
