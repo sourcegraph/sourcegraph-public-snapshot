@@ -21,6 +21,7 @@ import (
 )
 
 var ErrDeploymentExists error = errors.New("deployment already exists")
+var ErrVersionNotFoundRegistry error = errors.New("tag/version not in Cloud Ephemeral registry")
 var ErrMainBranchBuild error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
 
 var deployEphemeralCommand = cli.Command{
@@ -169,8 +170,8 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if version %q exists in Cloud ephemeral registry", version))
 		return err
 	} else if len(images) == 0 {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "No version %q found in Cloud ephemeral registry!", version))
-		return errors.Newf("no image with tag %q found", version)
+		pending.Complete(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Whoops! Version %q seems to be missing from the Cloud ephemeral registry. Please ask in #discuss-dev-infra to get the it added to the registry", version))
+		return ErrVersionNotFoundRegistry
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))
 	return nil
