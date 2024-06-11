@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"cmp"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -75,24 +74,9 @@ func TranslateRange(r scip.Range) Range {
 	return NewRange(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character))
 }
 
-func (p Position) Compare(other Position) int {
-	return cmp.Or(cmp.Compare(p.Line, other.Line), cmp.Compare(p.Character, other.Character))
-}
-
-// Contains checks if position is within the range inclusively for both start and end.
-func (r Range) Contains(position Position) bool {
-	return r.Start.Compare(position) <= 0 && r.End.Compare(position) >= 0
-}
-
-// Intersects checks if two ranges intersect inclusively for both start and end.
-func (r Range) Intersects(other Range) bool {
-	return r.Start.Compare(other.End) <= 0 && r.End.Compare(other.Start) >= 0
-}
-
-// Compare returns the relative order of two ranges, ranges that intersect are considered equal.
-func (r Range) Compare(other Range) int {
-	if r.Intersects(other) {
-		return 0
-	}
-	return r.Start.Compare(other.Start)
+func (r Range) ToSCIPRange() scip.Range {
+	return scip.NewRangeUnchecked([]int32{
+		int32(r.Start.Line), int32(r.Start.Character),
+		int32(r.End.Line), int32(r.End.Character),
+	})
 }

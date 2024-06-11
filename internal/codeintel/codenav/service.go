@@ -962,6 +962,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	path string,
 	symbolRange shared.Range,
 ) (symbols []*scip.Symbol, err error) {
+	scipSymbolRange := symbolRange.ToSCIPRange()
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
 	if err != nil {
 		return nil, err
@@ -976,9 +977,9 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	symbols = make([]*scip.Symbol, 0)
 	for _, occurrence := range doc.GetOccurrences() {
-		occRange := shared.TranslateRange(scip.NewRangeUnchecked(occurrence.GetRange()))
+		occRange := scip.NewRangeUnchecked(occurrence.GetRange())
 		// TODO: Needs to handle differing text encodings to get these character positions right
-		if symbolRange.Intersects(occRange) {
+		if scipSymbolRange.Intersects(occRange) {
 			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 			if err != nil {
 				// TODO: Log this failure?
