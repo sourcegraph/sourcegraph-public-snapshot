@@ -221,12 +221,8 @@ var projectSignifiers = []string{
 var questionSignifiers = []string{
 	"what",
 	"how",
-	"why",
-	"does",
 	"describe",
 	"explain",
-	"teach",
-	"tell",
 }
 
 func needsReadmeContext(input string) bool {
