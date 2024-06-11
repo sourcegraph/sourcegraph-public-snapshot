@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiCancel, mdiCheck, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
@@ -112,7 +112,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                                         Pro features after {humanizeDate(props.subscription.currentPeriodEnd)}.
                                     </Text>
                                     <Text className={classNames('mt-4 mb-0', styles.bold)}>
-                                        Do you want to procceed?
+                                        Do you want to proceed?
                                     </Text>
                                 </div>
                                 <div className={classNames('d-flex mt-4', styles.buttonContainer)}>
