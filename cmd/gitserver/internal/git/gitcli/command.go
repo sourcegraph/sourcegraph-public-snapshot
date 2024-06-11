@@ -313,9 +313,12 @@ func (rc *cmdReader) trace() {
 		sysUsage = *s
 	}
 
-	memUsage, err := rc.memoryObserver.MaxMemoryUsage()
-	if err != nil {
-		rc.logger.Warn("failed to get max memory usage", log.Error(err))
+	memUsage, memoryError := rc.memoryObserver.MaxMemoryUsage()
+	if memoryError != nil && !errors.Is(memoryError, context.Canceled) {
+		if !(errors.IsContextCanceled(memoryError) && errors.IsContextCanceled(rc.ctx.Err())) {
+			// If the context was canceled, we don't log the error as it's expected.
+			rc.logger.Warn("failed to get max memory usage", log.Error(memoryError))
+		}
 	}
 
 	isSlow := duration > shortGitCommandSlow(rc.cmd.Unwrap().Args)
