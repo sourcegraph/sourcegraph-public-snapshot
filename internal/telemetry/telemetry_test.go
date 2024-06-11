@@ -14,7 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 )
 
@@ -47,7 +48,7 @@ func TestRecorderEndToEnd(t *testing.T) {
 	exportStore.(database.MockExportModeSetterTelemetryEventsExportQueueStore).
 		SetMockExportMode(licensing.TelemetryEventsExportAll)
 
-	recorder := telemetry.NewEventRecorder(teestore.NewStore(exportStore, db.EventLogs()))
+	recorder := telemetry.NewEventRecorder(telemetrystore.NewDefaultStore(exportStore, db.EventLogs()))
 
 	wantEvents := 3
 	t.Run("Record and BatchRecord", func(t *testing.T) {
