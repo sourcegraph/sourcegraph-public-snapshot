@@ -43,9 +43,14 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 			}
 		}
 
-		expiresAt := "n/a"
+		expireValue := "n/a"
 		if !inst.ExpiresAt.IsZero() {
-			expiresAt = inst.ExpiresAt.Format(time.RFC3339)
+			if time.Now().After(inst.ExpiresAt) {
+				expireValue = "💀 expired"
+			} else {
+				timeTillExpiry := time.Until(inst.ExpiresAt)
+				expireValue = timeTillExpiry.String()
+			}
 		}
 
 		var jobCount = inst.Status.Reason.JobCount
@@ -57,11 +62,11 @@ func newDefaultTerminalInstancePrinter() *terminalInstancePrinter {
 		}
 
 		return []any{
-			name, expiresAt, status, jobCount, overallJobStatus,
+			name, expireValue, status, jobCount, overallJobStatus,
 		}
 
 	}
-	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %-5s %s", "Name", "Expires at", "Status", "Jobs", "Overall job status")
+	return newTerminalInstancePrinter(valueFunc, "%-40s %-20s %-40s %-5s %s", "Name", "Expires In", "Status", "Jobs", "Overall job status")
 }
 
 func newTerminalInstancePrinter(valueFunc func(i *Instance) []any, headingFmt string, headings ...string) *terminalInstancePrinter {

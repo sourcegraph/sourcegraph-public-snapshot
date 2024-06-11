@@ -17,6 +17,7 @@ go_library(
         "root_resolver_raw_scip.go",
         "root_resolver_references.go",
         "root_resolver_stencil.go",
+        "root_resolver_usages.go",
         "util_cursor.go",
         "util_locations.go",
     ],

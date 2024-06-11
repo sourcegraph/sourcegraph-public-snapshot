@@ -245,8 +245,8 @@
 <ul role="tree" bind:this={treeRoot} on:keydown={handleKeydown} on:click={handleClick}>
     {#each entries as entry (treeProvider.getNodeID(entry))}
         <TreeNode {entry} {treeProvider} on:scope-change>
-            <svelte:fragment let:entry let:toggle let:expanded>
-                <slot {entry} {toggle} {expanded} />
+            <svelte:fragment let:entry let:toggle let:expanded let:label>
+                <slot {entry} {toggle} {expanded} {label} />
             </svelte:fragment>
             <svelte:fragment slot="error" let:error>
                 <slot name="error" {error} />

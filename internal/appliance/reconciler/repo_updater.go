@@ -46,10 +46,7 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *con
 	cfg := sg.Spec.RepoUpdater
 	name := "repo-updater"
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

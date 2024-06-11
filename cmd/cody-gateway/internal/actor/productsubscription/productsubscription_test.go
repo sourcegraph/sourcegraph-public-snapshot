@@ -1,165 +1,182 @@
 package productsubscription
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/hexops/autogold/v2"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
+	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
+	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 )
 
 func TestNewActor(t *testing.T) {
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{
-		Percentage: 50,
-		Interval:   24 * time.Hour,
-	}
 	type args struct {
-		s               dotcom.ProductSubscriptionState
-		devLicensesOnly bool
+		access *codyaccessv1.CodyGatewayAccess
 	}
 	tests := []struct {
-		name        string
-		args        args
-		wantEnabled bool
+		name      string
+		args      args
+		wantActor autogold.Value
 	}{
 		{
-			name: "not dev only",
+			name: "enabled, no embeddings",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
+				&codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 true,
+					ChatCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
+					},
+					CodeCompletionsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
-				false,
 			},
-			wantEnabled: true,
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": true,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {
+    "chat_completions": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    },
+    "code_completions": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    }
+  },
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
+}`),
 		},
 		{
-			name: "dev only, not a dev license",
+			name: "enabled, only embeddings",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
+				&codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 true,
+					EmbeddingsRateLimit: &codyaccessv1.CodyGatewayRateLimit{
+						Limit:            10,
+						IntervalDuration: durationpb.New(10 * time.Second),
 					},
 				},
-				true,
 			},
-			wantEnabled: false,
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": true,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {
+    "embeddings": {
+      "allowedModels": [
+        "*"
+      ],
+      "limit": 10,
+      "interval": 10000000000,
+      "concurrentRequests": 4320000,
+      "concurrentRequestsInterval": 86400000000000
+    }
+  },
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
+}`),
 		},
 		{
-			name: "dev only, is a dev license",
+			name: "disabled",
 			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
-									Limit:           10,
-									IntervalSeconds: 10,
-								},
-							},
-						},
-					},
-					ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-						Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-							Tags: []string{"dev"},
-						},
-					},
+				&codyaccessv1.CodyGatewayAccess{
+					SubscriptionId:          "es_1234uuid",
+					SubscriptionDisplayName: "My Subscription",
+					Enabled:                 false,
 				},
-				true,
 			},
-			wantEnabled: true,
+			wantActor: autogold.Expect(`{
+  "key": "sekret_token",
+  "id": "1234uuid",
+  "name": "My Subscription",
+  "accessEnabled": false,
+  "endpointAccess": {
+    "/v1/attribution": true
+  },
+  "rateLimits": {},
+  "lastUpdated": "2024-06-03T20:03:07-07:00"
+}`),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.s, tt.args.devLicensesOnly, concurrencyConfig)
-			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
+			now := time.Date(2024, 6, 3, 20, 3, 7, 0, time.FixedZone("PDT", -25200))
+			act := newActor(&Source{
+				concurrencyConfig: codygateway.ActorConcurrencyLimitConfig{
+					Percentage: 50,
+					Interval:   24 * time.Hour,
+				},
+			}, "sekret_token", tt.args.access, now)
+			// Assert against JSON representation, because that's what we end
+			// up caching.
+			actData, err := json.MarshalIndent(act, "", "  ")
+			require.NoError(t, err)
+			tt.wantActor.Equal(t, string(actData))
 		})
 	}
 }
 
 func TestGetSubscriptionAccountName(t *testing.T) {
 	tests := []struct {
-		name         string
-		mockUsername string
-		mockTags     []string
-		wantName     string
+		name     string
+		mockTags []string
+		wantName string
 	}{
 		{
-			name:         "has special license tag",
-			mockUsername: "alice",
-			mockTags:     []string{"trial", "customer:acme"},
-			wantName:     "acme",
+			name:     "has special license tag",
+			mockTags: []string{"trial", "customer:acme"},
+			wantName: "acme",
 		},
 		{
-			name:         "use account username",
-			mockUsername: "alice",
-			mockTags:     []string{"plan:enterprise-1"},
-			wantName:     "alice",
-		},
-		{
-			name:     "no account name",
+			name:     "no data",
 			wantName: "",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getSubscriptionAccountName(dotcom.ProductSubscriptionState{
-				Account: &dotcom.ProductSubscriptionStateAccountUser{
-					Username: test.mockUsername,
-				},
-				ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-					Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-						Tags: test.mockTags,
-					},
-				},
-			})
+			got := getSubscriptionAccountName(test.mockTags)
 			assert.Equal(t, test.wantName, got)
 		})
 	}
 }
+
 func TestRemoveUnseenTokens(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("removes unseen tokens", func(t *testing.T) {
 		seen := collections.NewSet("slk_token1")
 
@@ -167,7 +184,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:v1:slk_token1": nil, "v2:product-subscription:v2:slk_token3": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}, {"Delete", "slk_token3"}})
 	})
 
@@ -178,7 +195,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
 	})
 	t.Run("ignores malformed keys ", func(t *testing.T) {
@@ -188,7 +205,7 @@ func TestRemoveUnseenTokens(t *testing.T) {
 			state: map[string][]byte{"v2:product-subscription:v2:sgp_dotcom": nil},
 		}
 
-		removeUnseenTokens(seen, cache, log.Scoped("test"))
+		removeUnseenTokens(ctx, logtest.Scoped(t), seen, cache)
 		assert.Equal(t, cache.calls, []struct{ call, key string }{{"ListAllKeys", ""}})
 	})
 }

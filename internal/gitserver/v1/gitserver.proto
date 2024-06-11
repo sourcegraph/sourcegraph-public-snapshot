@@ -763,18 +763,19 @@ message CreateCommitFromPatchBinaryRequest {
     string base_commit = 2;
     // target_ref is the ref that will be created for this patch
     string target_ref = 3;
-    // unique_ref is a boolean that indicates whether a unique number will be
-    // appended to the end (ie TargetRef-{#}). The generated ref will be
-    // returned.
-    bool unique_ref = 4;
+    reserved "unique_ref";
+    reserved 4;
     // commit_info is the information to be used for the commit
     PatchCommitInfo commit_info = 5;
     // push_config is the configuration to be used for pushing the commit
     PushConfig push = 6;
-    // git_apply_args are the arguments to be passed to git apply
-    repeated string git_apply_args = 7;
+    reserved "git_apply_args";
+    reserved 7;
     // push_ref is the optional override for the ref that is pushed to
     optional string push_ref = 8;
+    // Indicates that the filenames in patch are not prefixed with the usual a/
+    // and b/ prefixes.
+    bool patch_filenames_no_prefix = 9;
   }
 
   message Patch {

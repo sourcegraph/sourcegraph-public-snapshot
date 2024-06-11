@@ -44,6 +44,12 @@ type ServiceSpec struct {
 	// Protocol is a protocol other than HTTP that the service communicates
 	// with. If empty, the service uses HTTP. To use gRPC, configure 'h2c':
 	// https://cloud.google.com/run/docs/configuring/http2
+	//
+	// To use gRPC and Cloudflare proxy (implicitly enabled unless
+	// 'domain.cloudflare.proxied: false' is configured), the Cloudflare zone
+	// must have gRPC enabled: https://developers.cloudflare.com/network/grpc-connections/
+	// This is already enabled for the Cloudflare zones 'sourcegraph.com' and
+	// 'sgdev.org'.
 	Protocol *ServiceProtocol `yaml:"protocol,omitempty"`
 
 	// IAM is an optional IAM configuration for the service account on the

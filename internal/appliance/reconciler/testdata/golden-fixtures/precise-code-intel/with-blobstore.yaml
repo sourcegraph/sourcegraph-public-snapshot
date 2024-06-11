@@ -46,7 +46,7 @@ resources:
           name: blobstore
         spec:
           containers:
-            - image: index.docker.io/sourcegraph/blobstore:5.3.2@sha256:d625be1eefe61cc42f94498e3c588bf212c4159c8b20c519db84eae4ff715efa
+            - image: index.docker.io/sourcegraph/blobstore:5.3.9104
               imagePullPolicy: IfNotPresent
               name: blobstore
               ports:
@@ -154,7 +154,7 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/precise-code-intel-worker:5.3.2@sha256:6142093097f5757afe772cffd131c1be54bb77335232011254733f51ffb2d6c6
+              image: index.docker.io/sourcegraph/precise-code-intel-worker:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -269,9 +269,6 @@ resources:
             disabled: true
 
           prometheus:
-            disabled: true
-
-          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:
