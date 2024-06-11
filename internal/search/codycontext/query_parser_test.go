@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -147,6 +148,41 @@ func TestFindSymbols(t *testing.T) {
 			if got := findSymbols(tt.patterns); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("findSymbols() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestExtractEntities(t *testing.T) {
+	cases := []struct {
+		queryString string
+		want        []string
+	}{
+		{
+			queryString: "What does this repo do?",
+			want:        []string{entityReadme},
+		},
+		{
+			queryString: "Describe my code",
+			want:        []string{entityReadme},
+		},
+		{
+			queryString: "What does github.com/sourcegraph/zoekt do?",
+			want:        []string{entityReadme},
+		},
+		{
+			queryString: "What is the meaning of life?",
+			want:        nil,
+		},
+		{
+			queryString: "Where is my code?",
+			want:        nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.queryString, func(t *testing.T) {
+			got := extractEntities(c.queryString)
+			require.Equal(t, c.want, got)
 		})
 	}
 }
