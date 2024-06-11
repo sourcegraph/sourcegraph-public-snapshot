@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -94,11 +95,12 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		body       string
-		headers    http.Header
-		want       licensing.LicenseCheckResponse
-		wantStatus int
+		name                string
+		body                string
+		headers             http.Header
+		want                licensing.LicenseCheckResponse
+		wantStatus          int
+		overrideFeatureFlag bool
 	}{
 		{
 			name:       "no access token",
@@ -153,6 +155,16 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			wantStatus: http.StatusOK,
 		},
 		{
+			name: "valid access token, invalid site id (same license key used in multiple instances), but override featureflag set",
+			headers: http.Header{
+				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
+			},
+			body:                getBody(""),
+			want:                licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
+			wantStatus:          http.StatusOK,
+			overrideFeatureFlag: true,
+		},
+		{
 			name: "valid access token, valid site id",
 			body: getBody(strings.ToLower(*assignedLicense.SiteID)),
 			headers: http.Header{
@@ -188,6 +200,11 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 
 			for k, v := range test.headers {
 				req.Header[k] = v
+			}
+
+			if test.overrideFeatureFlag {
+				flags := map[string]bool{"markConflictingSiteIDsAsValid": true}
+				req = req.WithContext(featureflag.WithFlags(req.Context(), featureflag.NewMemoryStore(flags, flags, flags)))
 			}
 
 			handler := NewLicenseCheckHandler(db)

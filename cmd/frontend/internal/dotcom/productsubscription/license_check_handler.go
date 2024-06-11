@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -204,9 +205,13 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		} else if !strings.EqualFold(*license.SiteID, siteID) {
 			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 
+			flags := featureflag.FromContext(ctx)
+			// This feature flag allows us to temporarily allow conflicting Site IDs
+			conflictingSiteIDsValid := flags.GetBoolOr("markConflictingSiteIDsAsValid", false)
+
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				Data: &licensing.LicenseCheckResponseData{
-					IsValid: false,
+					IsValid: conflictingSiteIDsValid,
 					Reason:  ReasonLicenseIsAlreadyInUseMsg,
 				},
 			})
