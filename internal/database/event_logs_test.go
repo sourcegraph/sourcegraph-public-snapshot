@@ -1449,7 +1449,6 @@ func TestEventLogs_ListAll(t *testing.T) {
 
 	events := []*Event{
 		{
-			ID:        int64(math.MaxInt64),
 			UserID:    1,
 			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
