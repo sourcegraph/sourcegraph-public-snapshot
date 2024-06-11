@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
-import { useCustomCheckout, PaymentElement, AddressElement } from '@stripe/react-stripe-js'
+import { AddressElement, useStripe, useElements, CardNumberElement } from '@stripe/react-stripe-js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,76 +17,115 @@ import {
     Icon,
     Input,
     Label,
-    LoadingSpinner,
     H3,
-    useDebounce,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
-
-import { PayButton } from './PayButton'
+import { useCreateTeam } from '../../api/react-query/subscriptions'
+import { StripeAddressElement } from '../StripeAddressElement'
+import { StripeCardDetails } from '../StripeCardDetails'
 
 import styles from './NewCodyProSubscriptionPage.module.scss'
 
 const MIN_SEAT_COUNT = 1
 const MAX_SEAT_COUNT = 50
 
-export const CodyProCheckoutForm: React.FunctionComponent<{
-    creatingTeam: boolean
+interface CodyProCheckoutFormProps {
+    initialSeatCount: number
     customerEmail: string | undefined
-}> = ({ creatingTeam, customerEmail }) => {
+}
+
+export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormProps> = ({
+    initialSeatCount,
+    customerEmail,
+}) => {
+    const stripe = useStripe()
+    const elements = useElements()
     const navigate = useNavigate()
 
-    const { total, lineItems, updateLineItemQuantity, email, updateEmail, status } = useCustomCheckout()
+    const creatingTeamMutation = initialSeatCount > 1
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-    const [updatingSeatCount, setUpdatingSeatCount] = React.useState(false)
-    const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
-    const debouncedSeatCount = useDebounce(seatCount, 800)
-    const firstLineItemId = lineItems[0]?.id
+    const [seatCount, setSeatCount] = React.useState(initialSeatCount)
+    const [submitting, setSubmitting] = React.useState(false)
 
-    useEffect(() => {
-        const updateSeatCount = async (): Promise<void> => {
-            setUpdatingSeatCount(true)
-            try {
-                await updateLineItemQuantity({
-                    lineItem: firstLineItemId,
-                    quantity: debouncedSeatCount,
-                })
-            } catch {
-                setErrorMessage('Failed to update seat count. Please change the number of seats to try again.')
+    // N * $9. We expect this to be more complex later with annual plans, etc.
+    const total = seatCount * 9
+
+    const createTeamMutation = useCreateTeam()
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        event.preventDefault()
+
+        if (!stripe || !elements) {
+            setErrorMessage('Stripe or Stripe Elements libraries not available.')
+            return
+        }
+        const cardNumberElement = elements.getElement(CardNumberElement)
+        if (!cardNumberElement) {
+            setErrorMessage('CardNumberElement not found.')
+            return
+        }
+        const addressElement = elements.getElement(AddressElement)
+        if (!addressElement) {
+            setErrorMessage('AddressElement not found.')
+            return
+        }
+        const addressElementValue = await addressElement.getValue()
+        if (!addressElementValue.complete) {
+            setErrorMessage('Please fill out your billing address.')
+            return
+        }
+
+        const suppliedAddress = addressElementValue.value.address
+
+        setSubmitting(true)
+        try {
+            // Note that Stripe may have returned an error response.
+            const response = await stripe.createToken(cardNumberElement, {
+                // We want to include the address data along with the card info so Stripe can do
+                // more validation such as confirming the zip code matches the card's.
+                //
+                // This is information we'll also want to pass along to the backend, so
+                // we can store it as the Customer's address as well.
+                address_line1: suppliedAddress.line1,
+                address_line2: suppliedAddress.line2 || '',
+                address_city: suppliedAddress.city,
+                address_state: suppliedAddress.state,
+                address_zip: suppliedAddress.postal_code,
+                address_country: suppliedAddress.country,
+                currency: 'usd',
+            })
+            if (response.error) {
+                setErrorMessage(response.error.message ?? 'We got an unknown error from Stripe.')
+                setSubmitting(false)
+                return
             }
-            setUpdatingSeatCount(false)
-        }
+            const token = response.token?.id
+            if (!token) {
+                setErrorMessage('Stripe token not found.')
+                setSubmitting(false)
+                return
+            }
 
-        void updateSeatCount()
-    }, [firstLineItemId, debouncedSeatCount, updateLineItemQuantity])
+            // This is where we send the token to the backend to create a subscription.
+            try {
+                })
+            } catch (error) {
+                setErrorMessage(`We couldn't create the team. This is what happened: ${error}`)
+                setSubmitting(false)
+                return
+            }
 
-    const isPriceLoading = seatCount !== debouncedSeatCount || updatingSeatCount
-
-    // Set initial seat count.
-    useEffect(() => {
-        if (lineItems.length === 1) {
-            setSeatCount(lineItems[0].quantity)
-        }
-    }, [lineItems])
-
-    // Set customer email to initial value.
-    useEffect(() => {
-        if (customerEmail) {
-            updateEmail(customerEmail)
-        }
-    }, [customerEmail, updateEmail])
-
-    // Redirect once we're done.
-    // Display an error message if the session is expired.
-    useEffect(() => {
-        if (status.type === 'complete') {
             navigate('/cody/manage?welcome=1')
-        } else if (status.type === 'expired') {
-            setErrorMessage('Session expired. Please refresh the page.')
+
+            setSubmitting(false)
+        } catch (error) {
+            setErrorMessage(`We couldn't create the Stripe token. This is what happened: ${error}`)
+            setSubmitting(false)
         }
-    }, [navigate, status.type])
+    }
 
     return (
         <>
@@ -102,7 +141,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
             <Container>
                 <Grid columnCount={2} spacing={4}>
                     <div>
-                        <H2>{creatingTeam ? 'Add seats' : 'Select number of seats'}</H2>
+                        <H2>{creatingTeamMutation ? 'Add seats' : 'Select number of seats'}</H2>
                         <div className="d-flex flex-row align-items-center pb-3 mb-4 border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
                             <Button
@@ -122,16 +161,10 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                         <H2>Summary</H2>
                         <div className="d-flex flex-row align-items-center mb-4">
                             <div className="flex-1">
-                                {creatingTeam ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
+                                {creatingTeamMutation ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
                             </div>
                             <div>
-                                <strong>
-                                    {isPriceLoading ? (
-                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
-                                    ) : (
-                                        `$${total.total / 100} / month`
-                                    )}
-                                </strong>
+                                <strong>${total} / month</strong>
                             </div>
                         </div>
                         <Text size="small">
@@ -143,20 +176,26 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                             Purchase {seatCount} {pluralize('seat', seatCount)}
                         </H2>
                         <Label>Email</Label>
-                        <Input value={email || ''} disabled={true} className="mb-4" />
-                        <Form>
-                            <PaymentElement options={{ layout: 'accordion' }} className="mb-4" />
-                            <AddressElement options={{ mode: 'billing' }} />
+                        <Input value={customerEmail || ''} disabled={true} className="mb-4" />
+                        <Form onSubmit={handleSubmit}>
+                            <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
+                            <StripeAddressElement onFocus={() => setErrorMessage('')} />
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
 
-                            <PayButton
-                                setErrorMessage={setErrorMessage}
+                            <Button
+                                disabled={submitting}
                                 className={classNames('d-block w-100 mb-4', styles.payButton)}
+                                type="submit"
                             >
-                                Subscribe
-                            </PayButton>
+                                {submitting ? (
+                                    <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                ) : (
+                                    'Subscribe'
+                                )}
+                            </Button>
+
                             <div>
                                 <Text>
                                     By clicking the button, you agree to the{' '}
