@@ -1,28 +1,33 @@
-import React, { useEffect } from 'react'
+import React, { useMemo, useEffect } from 'react'
 
 import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
-import { useCustomCheckout, PaymentElement, AddressElement } from '@stripe/react-stripe-js'
+import { PaymentElement, AddressElement, useCustomCheckout, Elements } from '@stripe/react-stripe-js'
+import type { Stripe } from '@stripe/stripe-js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
+import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import {
-    Form,
-    Link,
     Button,
+    Container,
+    Form,
     Grid,
     H2,
-    Text,
-    Container,
+    H3,
     Icon,
     Input,
     Label,
+    Link,
     LoadingSpinner,
-    H3,
+    Text,
     useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
+import { Client } from '../../api/client'
+import { useApiCaller } from '../../api/hooks/useApiClient'
+import type { CreatePaymentSessionRequest } from '../../api/types'
 
 import { PayButton } from './PayButton'
 
@@ -32,9 +37,15 @@ const MIN_SEAT_COUNT = 1
 const MAX_SEAT_COUNT = 50
 
 export const CodyProCheckoutForm: React.FunctionComponent<{
-    creatingTeam: boolean
+    stripe: Stripe | null
+    initialSeatCount: number
     customerEmail: string | undefined
-}> = ({ creatingTeam, customerEmail }) => {
+}> = ({ stripe, initialSeatCount, customerEmail }) => {
+    // Optionally support the "showCouponCodeAtCheckout" URL query parameter, which, if present,
+    // will display a "promotional code" element in the Stripe Checkout UI.
+    const [urlSearchParams] = useSearchParams()
+    const showPromoCodeField = urlSearchParams.get('showCouponCodeAtCheckout') !== null
+
     const navigate = useNavigate()
 
     const { total, lineItems, updateLineItemQuantity, email, updateEmail, status } = useCustomCheckout()
@@ -44,6 +55,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
     const [seatCount, setSeatCount] = React.useState(lineItems[0]?.quantity)
     const debouncedSeatCount = useDebounce(seatCount, 800)
     const firstLineItemId = lineItems[0]?.id
+    const creatingTeam = initialSeatCount > 1
 
     useEffect(() => {
         const updateSeatCount = async (): Promise<void> => {
@@ -88,9 +100,50 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
         }
     }, [navigate, status.type])
 
+    const { theme } = useTheme()
+
+    // Make the API call to create the Stripe Payment session.
+    const createStripePaymentSessionCall = useMemo(() => {
+        const requestBody: CreatePaymentSessionRequest = {
+            interval: 'monthly',
+            seats: initialSeatCount,
+            customerEmail,
+
+            showPromoCodeField,
+
+            // URL the user is redirected to when the checkout process is complete.
+            //
+            // CHECKOUT_SESSION_ID will be replaced by Stripe with the correct value,
+            // when the user finishes the Stripe-hosted checkout form.
+            //
+            // BUG: Due to the race conditions between Stripe, the SSC backend,
+            // and Sourcegraph.com, immediately loading the Dashboard page isn't
+            // going to show the right data reliably. We will need to instead show
+            // some prompt, to give the backends an opportunity to sync.
+            returnUrl: `${origin}/cody/manage?session_id={CHECKOUT_SESSION_ID}&welcome=1`,
+        }
+        return Client.createStripePaymentSession(requestBody)
+    }, [customerEmail, initialSeatCount, showPromoCodeField])
+    const { loading, error, data } = useApiCaller(createStripePaymentSessionCall)
+
+    // Show a spinner while we wait for the Checkout session to be created.
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    // Error page if we aren't able to show the Checkout session.
+    if (error) {
+        return (
+            <div>
+                <H3>Awe snap!</H3>
+                <Text>There was an error creating the checkout session: {error.message}</Text>
+            </div>
+        )
+    }
+
     return (
-        <>
-            {seatCount >= 30 && (
+        <div>
+            {data?.clientSecret && seatCount >= 30 && (
                 <CodyAlert variant="purple">
                     <H3>Explore an enterprise plan</H3>
                     <Text className="mb-0">
@@ -145,8 +198,16 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                         <Label>Email</Label>
                         <Input value={email || ''} disabled={true} className="mb-4" />
                         <Form>
-                            <PaymentElement options={{ layout: 'accordion' }} className="mb-4" />
-                            <AddressElement options={{ mode: 'billing' }} />
+                            <Elements
+                                stripe={stripe}
+                                options={{
+                                    clientSecret: data?.clientSecret,
+                                    appearance: { theme: theme === Theme.Dark ? 'night' : 'stripe' },
+                                }}
+                            >
+                                <PaymentElement options={{ layout: 'accordion' }} className="mb-4" />
+                                <AddressElement options={{ mode: 'billing' }} />
+                            </Elements>
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
@@ -171,6 +232,6 @@ export const CodyProCheckoutForm: React.FunctionComponent<{
                     </div>
                 </Grid>
             </Container>
-        </>
+        </div>
     )
 }

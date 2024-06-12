@@ -25,13 +25,13 @@ import { WhiteIcon } from '../../../components/WhiteIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 
-import { CodyProCheckoutFormContainer } from './CodyProCheckoutFormContainer'
+import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
 // NOTE: Call loadStripe outside a component’s render to avoid recreating the object.
 // We do it here, meaning that "stripe.js" will get loaded lazily, when the user
 // routes to this page.
 const publishableKey = window.context.frontendCodyProConfig?.stripePublishableKey
-const stripe = await stripeJs.loadStripe(publishableKey || '', { betas: ['custom_checkout_beta_2'] })
+const stripe = await stripeJs.loadStripe(publishableKey || '', {})
 
 interface NewCodyProSubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
@@ -77,7 +77,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             </PageHeader>
 
             <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
-                <CodyProCheckoutFormContainer
+                <CodyProCheckoutForm
                     stripe={stripe}
                     initialSeatCount={initialSeatCount}
                     customerEmail={authenticatedUser?.emails[0].email || ''}

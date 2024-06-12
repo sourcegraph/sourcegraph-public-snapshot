@@ -1,6 +1,6 @@
 import React, { useCallback, type MouseEventHandler } from 'react'
 
-import { useCustomCheckout } from '@stripe/react-stripe-js'
+import { useElements } from '@stripe/react-stripe-js'
 
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -18,8 +18,16 @@ export const PayButton: React.FunctionComponent<PayButtonProps> = ({
     children,
     ...props
 }) => {
-    const { confirm, canConfirm, confirmationRequirements } = useCustomCheckout()
+    const elements = useElements()
     const [loading, setLoading] = React.useState(false)
+
+    const paymentElement = elements?.getElement('payment')
+
+    paymentElement?.('change', event => {
+        if (event.error) {
+            setErrorMessage(event.error.message)
+        }
+    })
 
     const handleClick: MouseEventHandler<HTMLButtonElement> = useCallback(async () => {
         if (!canConfirm) {
