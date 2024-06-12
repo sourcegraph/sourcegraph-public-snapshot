@@ -31,10 +31,7 @@ func parseQuery(queryString string) (*contextQuery, error) {
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	symbols := findSymbols(patterns)
-	transformedPatterns := transformPatterns(patterns)
-
-	entities := extractEntities(queryString)
-	keywords := append(transformedPatterns, entities...)
+	keywords := append(expandQuery(queryString), transformPatterns(patterns)...)
 
 	// To maintain decent latency, limit the number of keywords we search.
 	if len(keywords) > maxKeywords {
@@ -198,6 +195,14 @@ func isLikelySymbol(pattern string) bool {
 	return strings.Contains(pattern, "_") || camelCaseRegexp.MatchString(pattern)
 }
 
+// matches project names such as "github.com/sourcegraph/sourcegraph or
+// golang/go", but doesn't match file paths with extensions.
+var projectRegex = regexp.MustCompile(`.*/[^/.]+(?:\.?([?!\s]|$))`)
+
+func maybeContainsProjectName(input string) bool {
+	return projectRegex.MatchString(input)
+}
+
 var projectSignifiers = []string{
 	"code",
 	"codebase",
@@ -208,14 +213,6 @@ var projectSignifiers = []string{
 	"project",
 	"repo",
 	"repository",
-	"script",
-	"github",
-	"gitlab",
-	"bitbucket",
-	"perforce",
-	"gerrit",
-	"code-commit",
-	"phabricator",
 }
 
 var questionSignifiers = []string{
@@ -245,20 +242,24 @@ func needsReadmeContext(input string) bool {
 		}
 	}
 
+	if maybeContainsProjectName(input) {
+		return true
+	}
+
 	return false
 }
 
 const (
-	entityReadme string = "readme"
+	kwReadme string = "readme"
 )
 
-// extractEntities extracts entities from the query string which are not
-// explicitly mentioned.
-func extractEntities(queryString string) []string {
-	var entities []string
+// expandQuery returns a slice of keywords that likely relate to the query but
+// are not explicitly mentioned in it.
+func expandQuery(queryString string) []string {
+	var keywords []string
 	if needsReadmeContext(queryString) {
-		entities = append(entities, entityReadme)
+		keywords = append(keywords, kwReadme)
 	}
 
-	return entities
+	return keywords
 }

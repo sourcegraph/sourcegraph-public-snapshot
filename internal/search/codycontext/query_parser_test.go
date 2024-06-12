@@ -152,22 +152,56 @@ func TestFindSymbols(t *testing.T) {
 	}
 }
 
-func TestExtractEntities(t *testing.T) {
+func TestExpandQuery(t *testing.T) {
 	cases := []struct {
 		queryString string
 		want        []string
 	}{
 		{
 			queryString: "What does this repo do?",
-			want:        []string{entityReadme},
+			want:        []string{kwReadme},
 		},
 		{
 			queryString: "Describe my code",
-			want:        []string{entityReadme},
+			want:        []string{kwReadme},
 		},
 		{
 			queryString: "What does github.com/sourcegraph/zoekt do?",
-			want:        []string{entityReadme},
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "what does batch-change-buddy/jtest do?",
+			want:        []string{kwReadme},
+		},
+		// Punctuation
+		{
+			queryString: "describe sourcegraph/zoekt",
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "describe sourcegraph/zoekt.",
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "describe sourcegraph/zoekt. Details please!",
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "describe sourcegraph/zoekt!",
+			want:        []string{kwReadme},
+		},
+		// Negative tests
+		{
+			queryString: "what does cmd/update.sh do?",
+			want:        nil,
+		},
+		{
+			queryString: "what does update.sh do?",
+			want:        nil,
+		},
+		{
+			queryString: "explain update.sh",
+			want:        nil,
 		},
 		{
 			queryString: "What is the meaning of life?",
@@ -181,7 +215,7 @@ func TestExtractEntities(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.queryString, func(t *testing.T) {
-			got := extractEntities(c.queryString)
+			got := expandQuery(c.queryString)
 			require.Equal(t, c.want, got)
 		})
 	}
