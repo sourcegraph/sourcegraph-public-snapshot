@@ -203,7 +203,11 @@
                             on:click={toggleFileSidePanel}
                             aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                         >
-                            <Icon2 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                            <Icon2
+                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
+                                inline
+                                aria-hidden
+                            />
                         </Button>
                     </Tooltip>
                     <RepositoryRevPicker
