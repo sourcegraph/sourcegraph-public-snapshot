@@ -12,7 +12,7 @@
             Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of your
             company’s codebase in mind.
         </p>
-        <a href="/cody">Explore Cody</a>
+        <a href={window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'}>Explore Cody</a>
     </div>
     <div class="image"><MultiLineCompletion /></div>
 </section>

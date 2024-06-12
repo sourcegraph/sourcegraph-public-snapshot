@@ -46,7 +46,7 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
-        <CodyUpsellBanner />
+        <CodyUpsellBanner codyHref={window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'} />
     </div>
 </section>
 
