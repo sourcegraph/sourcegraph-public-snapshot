@@ -2,7 +2,8 @@
     import { isLightTheme } from '$lib/stores'
 </script>
 
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 560 301">
+<svg role="img" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 560 301">
+    <title>Cody generating a multi-line completion</title>
     {#if $isLightTheme}
         <g clip-path="url(#clip0_1070_5213)">
             <path
