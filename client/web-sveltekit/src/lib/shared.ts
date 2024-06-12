@@ -60,6 +60,7 @@ export {
     rankByLine,
     truncateGroups,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+export { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 export { KeywordKind } from '@sourcegraph/shared/src/search/query/token'

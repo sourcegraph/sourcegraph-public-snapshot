@@ -19,8 +19,6 @@
     import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
-
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
@@ -32,6 +30,7 @@
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
     import {
+        TELEMETRY_SEARCH_SOURCE_TYPE,
         type AggregateStreamingSearchResults,
         type PathMatch,
         type SearchMatch,

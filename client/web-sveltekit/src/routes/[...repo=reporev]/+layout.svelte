@@ -2,7 +2,6 @@
     import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
-    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
     import { page } from '$app/stores'
@@ -13,7 +12,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
-    import { repositoryInsertText } from '$lib/shared'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE, repositoryInsertText } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'

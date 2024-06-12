@@ -1,12 +1,11 @@
 <script lang="ts">
     import { setContext, onMount } from 'svelte'
 
-    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
-
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '$lib/shared'
     import { isLightTheme } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
