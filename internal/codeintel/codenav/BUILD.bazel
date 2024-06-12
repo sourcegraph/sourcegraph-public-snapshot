@@ -11,6 +11,7 @@ go_library(
         "init.go",
         "observability.go",
         "request_state.go",
+        "scip_utils.go",
         "service.go",
         "service_new.go",
         "types.go",
@@ -51,6 +52,7 @@ go_test(
     srcs = [
         "gittree_translator_test.go",
         "mocks_test.go",
+        "scip_utils_test.go",
         "service_closest_uploads_test.go",
         "service_definitions_test.go",
         "service_diagnostics_test.go",
