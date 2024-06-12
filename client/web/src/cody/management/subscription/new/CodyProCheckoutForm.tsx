@@ -116,7 +116,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
     const previewUpdateCurrentSubscriptionMutation = usePreviewUpdateCurrentSubscription()
     const updateCurrentSubscriptionMutation = useUpdateCurrentSubscription()
 
-    const [teamSizeChange, setTeamSizeChange] = React.useState<TeamSizeChange>({
+    const [planChange, setPlanChange] = React.useState<TeamSizeChange>({
         seatCountDiff: initialNewSeats,
         monthlyPriceDiff: initialNewSeats * SEAT_PRICE,
         newMonthlyPrice: (initialSeatCount + initialNewSeats) * SEAT_PRICE,
@@ -128,7 +128,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         (newSeatCountDiff: number): void => {
             // In the case of a new subscription, we can recalculate prices locally. Otherwise, use the back end.
             if (!addSeats) {
-                setTeamSizeChange({
+                setPlanChange({
                     seatCountDiff: newSeatCountDiff,
                     monthlyPriceDiff: newSeatCountDiff * SEAT_PRICE,
                     newMonthlyPrice: (initialSeatCount + newSeatCountDiff) * SEAT_PRICE,
@@ -146,7 +146,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     {
                         onSuccess: result => {
                             if (result) {
-                                setTeamSizeChange({
+                                setPlanChange({
                                     seatCountDiff: newSeatCountDiff,
                                     monthlyPriceDiff: result.newPrice / 100 - initialSeatCount * SEAT_PRICE,
                                     newMonthlyPrice: result.newPrice / 100,
@@ -213,7 +213,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             await createTeamMutation.mutateAsync.call(undefined, {
                 name: '(no name yet)',
                 slug: '(no slug yet)',
-                seats: teamSizeChange.seatCountDiff,
+                seats: planChange.seatCountDiff,
                 address: {
                     line1: suppliedAddress.line1,
                     line2: suppliedAddress.line2 || '',
@@ -234,7 +234,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             setErrorMessage(`We couldn't create the Stripe token. This is what happened: ${error}`)
             setSubmitting(false)
         }
-    }, [stripe, elements, createTeamMutation.mutateAsync, teamSizeChange, navigate])
+    }, [stripe, elements, createTeamMutation.mutateAsync, planChange, navigate])
 
     const handlePlanChangeSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault()
@@ -249,7 +249,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         try {
             await updateCurrentSubscriptionMutation.mutateAsync.call(undefined, {
                 subscriptionUpdate: {
-                    newSeatCount: initialSeatCount + teamSizeChange.seatCountDiff
+                    newSeatCount: initialSeatCount + planChange.seatCountDiff
                 }
             })
         } catch (error) {
@@ -261,11 +261,11 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         navigate('/cody/team/manage')
 
         setSubmitting(false)
-    }, [elements, initialSeatCount, navigate, teamSizeChange.seatCountDiff, stripe, updateCurrentSubscriptionMutation.mutateAsync])
+    }, [elements, initialSeatCount, navigate, planChange.seatCountDiff, stripe, updateCurrentSubscriptionMutation.mutateAsync])
 
     return (
         <>
-            {initialSeatCount + teamSizeChange.seatCountDiff >= 30 && (
+            {initialSeatCount + planChange.seatCountDiff >= 30 && (
                 <CodyAlert variant="purple">
                     <H3>Explore an enterprise plan</H3>
                     <Text className="mb-0">
@@ -279,7 +279,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     <div>
                         <SeatCountSelector
                             header={isTeam ? 'Add seats' : 'Select number of seats'}
-                            current={teamSizeChange.seatCountDiff}
+                            current={planChange.seatCountDiff}
                             min={MIN_SEAT_COUNT}
                             max={maxNewSeatCount}
                             setCount={onSeatCountDiffChange}
@@ -288,12 +288,12 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             addSeats={addSeats}
                             isLoading={previewUpdateCurrentSubscriptionMutation.isPending}
                             initialSeatCount={initialSeatCount}
-                            change={teamSizeChange}
+                            change={planChange}
                         />
                     </div>
                     <div>
                         <H2 className="font-medium">
-                            Purchase {teamSizeChange.seatCountDiff} {pluralize('seat', teamSizeChange.seatCountDiff)}
+                            Purchase {planChange.seatCountDiff} {pluralize('seat', planChange.seatCountDiff)}
                         </H2>
                         <Form onSubmit={addSeats ? handlePlanChangeSubmit : handleSubscribeSubmit}>
                             {addSeats && subscription /* TypeScript needs this */ ? (
