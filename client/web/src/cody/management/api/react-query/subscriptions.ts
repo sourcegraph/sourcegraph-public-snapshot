@@ -38,7 +38,10 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
 > => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async requestBody => callCodyProApi(Client.updateCurrentSubscription(requestBody)),
+        mutationFn: async requestBody => {
+            const response = await callCodyProApi(Client.updateCurrentSubscription(requestBody))
+            return await response.json() as Subscription
+        },
         onSuccess: data => {
             // We get updated subscription data in response - no need to refetch subscription.
             // All the `queryKeys.subscription()` subscribers (`useCurrentSubscription` callers) will get the updated value automatically.
@@ -52,15 +55,20 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
     })
 }
 
-export const useCreateTeam = (): UseMutationResult<string | undefined, Error, CreateTeamRequest> => {
+export const useCreateTeam = (): UseMutationResult<void, Error, CreateTeamRequest> => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async requestBody => callCodyProApi(Client.createTeam(requestBody)),
+        mutationFn: async requestBody => {
+            await callCodyProApi(Client.createTeam(requestBody))
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
     })
 }
 
 export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefined, Error, PreviewCreateTeamRequest> =>
     useMutation({
-        mutationFn: async requestBody => callCodyProApi(Client.previewCreateTeam(requestBody)),
+        mutationFn: async requestBody => {
+            const response = await callCodyProApi(Client.previewCreateTeam(requestBody))
+            return await response.json() as PreviewResult
+        },
     })

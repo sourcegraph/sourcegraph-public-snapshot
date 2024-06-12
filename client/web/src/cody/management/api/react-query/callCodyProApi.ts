@@ -29,7 +29,9 @@ const signOutAndRedirectToSignIn = async (): Promise<void> => {
     }
 }
 
-export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | undefined> => {
+// Important: This function has the side effect of logging the user out and redirecting them
+// to the sign-in page with the current page as the return URL if they are not authenticated.
+export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => {
     const response = await fetch(
         `/.api/ssc/proxy${call.urlSuffix}`,
         buildRequestInit({
@@ -41,8 +43,8 @@ export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | und
     if (!response.ok) {
         if (response.status === 401) {
             await signOutAndRedirectToSignIn()
-            // user is redirected to another page, no need to throw an error
-            return undefined
+            // User is redirected to another page, so no need to throw an error.
+            return response
         }
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
@@ -50,12 +52,5 @@ export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | und
         throw new Error(`Request to Cody Pro API failed with status ${response.status}: ${response.statusText}`)
     }
 
-    const responseText = await response.text()
-
-    // Handle both JSON and text responses.
-    try {
-        return JSON.parse(responseText) as Data
-    } catch {
-        return responseText as Data
-    }
+    return response;
 }
