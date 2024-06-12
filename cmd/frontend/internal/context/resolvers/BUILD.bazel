@@ -9,14 +9,17 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/codycontext",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/httpcli",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_sourcegraph_conc//iter",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

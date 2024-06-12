@@ -82,35 +82,35 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 
 func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetIntentArgs) (graphqlbackend.IntentResolver, error) {
 	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
-		return getIntentResponse{}, errors.Newf("cody is not enabled: %s", reason)
+		return nil, errors.Newf("cody is not enabled: %s", reason)
 	}
 	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
 	intentRequest := intentApiRequest{Query: args.Query}
 	buf, err := json.Marshal(&intentRequest)
 	if err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
 	req, err := http.NewRequestWithContext(ctx, "POST", "http://35.232.21.114:8000/predict/linearv2", bytes.NewReader(buf))
 	if err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := r.intentApiHttpClient.Do(req)
 	if err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
 	var intentResponse intentApiResponse
 	err = json.Unmarshal(body, &intentResponse)
 	if err != nil {
-		return getIntentResponse{}, err
+		return nil, err
 	}
-	return getIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+	return &getIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
 }
 
 type intentApiRequest struct {
@@ -127,10 +127,10 @@ type getIntentResponse struct {
 	score  float64
 }
 
-func (r getIntentResponse) Intent() string {
+func (r *getIntentResponse) Intent() string {
 	return r.intent
 }
-func (r getIntentResponse) Score() float64 {
+func (r *getIntentResponse) Score() float64 {
 	return r.score
 }
 
