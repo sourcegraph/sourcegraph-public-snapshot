@@ -1,5 +1,11 @@
 import type { Call } from '../client'
 
+export class CodyProApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message)
+    }
+}
+
 /**
  * Builds the RequestInit object for the fetch API with the necessary headers and options
  * to authenticate the request with the Sourcegraph backend.
@@ -49,7 +55,7 @@ export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => 
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new Error(`Request to Cody Pro API failed with status ${response.status}: ${response.statusText}`)
+        throw new CodyProApiError(`Request to Cody Pro API failed: ${await response.text()}`, response.status)
     }
 
     return response;
