@@ -1,5 +1,5 @@
 spec:
-  requestedVersion: "5.3.9104"
+  requestedVersion: "5.5.1234"
 
   blobstore:
     disabled: true
@@ -13,7 +13,8 @@ spec:
   frontend:
     disabled: true
 
-  gitServer: {}
+  gitServer:
+    cacheSizeMB: 1024
 
   indexedSearch:
     disabled: true

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pvc"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/service"
-	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/statefulset"
 )
 
@@ -28,9 +27,6 @@ func (r *Reconciler) reconcileGitServer(ctx context.Context, sg *config.Sourcegr
 		return err
 	}
 	if err := r.reconcileGitServerService(ctx, sg, owner); err != nil {
-		return err
-	}
-	if err := r.reconcileGitServerServiceAccount(ctx, sg, owner); err != nil {
 		return err
 	}
 	return nil
@@ -58,17 +54,14 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	ctr.Env = append(ctr.Env, container.EnvVarsRedis()...)
 	ctr.Env = append(ctr.Env, container.EnvVarsOtel()...)
 
-	// 5.4 and up only
-	if semver := sg.SemVer(); semver.Major() > 5 || (semver.Major() == 5 && semver.Minor() > 3) {
-		cacheSizeMB, err := gitServerCacheSize(cfg)
-		if err != nil {
-			return err
-		}
-		ctr.Env = append(
-			ctr.Env,
-			corev1.EnvVar{Name: "GITSERVER_CACHE_SIZE_MB", Value: fmt.Sprintf("%d", cacheSizeMB)},
-		)
+	cacheSizeMB, err := gitServerCacheSize(cfg)
+	if err != nil {
+		return err
 	}
+	ctr.Env = append(
+		ctr.Env,
+		corev1.EnvVar{Name: "GITSERVER_CACHE_SIZE_MB", Value: fmt.Sprintf("%d", cacheSizeMB)},
+	)
 
 	ctr.Ports = []corev1.ContainerPort{
 		{Name: "rpc", ContainerPort: 3178},
@@ -112,10 +105,6 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 	podTemplate.Template.Spec.Volumes = podVolumes
 
-	if semver := sg.SemVer(); semver.Major() < 5 || (semver.Major() == 5 && semver.Minor() <= 4) {
-		podTemplate.Template.Spec.ServiceAccountName = name
-	}
-
 	pvc, err := pvc.NewPersistentVolumeClaim("repos", sg.Namespace, sg.Spec.GitServer)
 	if err != nil {
 		return err
@@ -139,17 +128,6 @@ func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *config.S
 	}
 
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &svc, &corev1.Service{}, sg, owner)
-}
-
-func (r *Reconciler) reconcileGitServerServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	cfg := sg.Spec.GitServer
-	sa := serviceaccount.NewServiceAccount("gitserver", sg.Namespace, cfg)
-
-	// 5.5 and up
-	if semver := sg.SemVer(); semver.Major() > 5 || (semver.Major() == 5 && semver.Minor() > 4) {
-		return r.ensureObjectDeleted(ctx, &sa)
-	}
-	return reconcileObject(ctx, r, sg.Spec.GitServer, &sa, &corev1.ServiceAccount{}, sg, owner)
 }
 
 func gitServerCacheSize(cfg config.GitServerSpec) (uint, error) {

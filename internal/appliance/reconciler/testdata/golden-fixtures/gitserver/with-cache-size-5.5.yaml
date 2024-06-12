@@ -3,13 +3,13 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 50dbbecab03eb6aaef8dd094f46206fdfb5b2353cbf73c1742322ade35abaf7a
+        appliance.sourcegraph.com/configHash: 13c3990503f4e47f92986e9a0033a7355ca6ee96561f835aa710c7bb08d7468f
       creationTimestamp: "2024-04-19T00:00:00Z"
-      generation: 2
+      generation: 1
       labels:
         app.kubernetes.io/component: gitserver
         app.kubernetes.io/name: sourcegraph
-        app.kubernetes.io/version: 5.4.1234
+        app.kubernetes.io/version: 5.5.1234
         deploy: sourcegraph
       name: gitserver
       namespace: NORMALIZED_FOR_TESTING
@@ -66,8 +66,8 @@ resources:
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
                 - name: GITSERVER_CACHE_SIZE_MB
-                  value: "20480"
-              image: index.docker.io/sourcegraph/gitserver:5.4.1234
+                  value: "1024"
+              image: index.docker.io/sourcegraph/gitserver:5.5.1234
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -109,8 +109,6 @@ resources:
             fsGroupChangePolicy: OnRootMismatch
             runAsGroup: 101
             runAsUser: 100
-          serviceAccount: gitserver
-          serviceAccountName: gitserver
           terminationGracePeriodSeconds: 30
           volumes:
             - emptyDir: {}
@@ -144,7 +142,7 @@ resources:
     data:
       spec: |
         spec:
-          requestedVersion: "5.4.1234"
+          requestedVersion: "5.5.1234"
 
           blobstore:
             disabled: true
@@ -158,7 +156,8 @@ resources:
           frontend:
             disabled: true
 
-          gitServer: {}
+          gitServer:
+            cacheSizeMB: 1024
 
           indexedSearch:
             disabled: true
@@ -201,7 +200,7 @@ resources:
     kind: ConfigMap
     metadata:
       annotations:
-        appliance.sourcegraph.com/currentVersion: 5.4.1234
+        appliance.sourcegraph.com/currentVersion: 5.5.1234
         appliance.sourcegraph.com/managed: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
       name: sg
@@ -209,29 +208,10 @@ resources:
       resourceVersion: NORMALIZED_FOR_TESTING
       uid: NORMALIZED_FOR_TESTING
   - apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      annotations:
-        appliance.sourcegraph.com/configHash: 50dbbecab03eb6aaef8dd094f46206fdfb5b2353cbf73c1742322ade35abaf7a
-      creationTimestamp: "2024-04-19T00:00:00Z"
-      labels:
-        deploy: sourcegraph
-      name: gitserver
-      namespace: NORMALIZED_FOR_TESTING
-      ownerReferences:
-        - apiVersion: v1
-          blockOwnerDeletion: true
-          controller: true
-          kind: ConfigMap
-          name: sg
-          uid: NORMALIZED_FOR_TESTING
-      resourceVersion: NORMALIZED_FOR_TESTING
-      uid: NORMALIZED_FOR_TESTING
-  - apiVersion: v1
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 50dbbecab03eb6aaef8dd094f46206fdfb5b2353cbf73c1742322ade35abaf7a
+        appliance.sourcegraph.com/configHash: 13c3990503f4e47f92986e9a0033a7355ca6ee96561f835aa710c7bb08d7468f
         prometheus.io/port: "6060"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
