@@ -111,7 +111,9 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
             // This is where we send the token to the backend to create a subscription.
             try {
-                createTeamMutation.mutate({
+                // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
+                // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
+                await createTeamMutation.mutateAsync({
                     name: '(no name yet)',
                     slug: '(no slug yet)',
                     seats: seatCount,
