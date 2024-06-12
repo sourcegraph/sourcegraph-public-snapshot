@@ -12,6 +12,7 @@ go_library(
         "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/codycontext",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/gitserver",
         "//internal/httpcli",
         "//internal/trace",
