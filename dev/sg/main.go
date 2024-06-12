@@ -30,6 +30,7 @@ import (
 )
 
 func main() {
+	println("🐗")
 	// Do not add initialization here, do all setup in sg.Before - this is a necessary
 	// workaround because we don't have control over the bash completion flag, which is
 	// part of urfave/cli internals.
