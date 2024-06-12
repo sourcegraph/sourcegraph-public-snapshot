@@ -98,6 +98,7 @@ func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetInt
 	if err != nil {
 		return nil, err
 	}
+	// Proof-of-concept warning - this needs to be deployed behind Cody Gateway, or exposed with HTTPS and authentication.
 	req, err := http.NewRequestWithContext(ctx, "POST", "http://35.232.21.114:8000/predict/linearv2", bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
