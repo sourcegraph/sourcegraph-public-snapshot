@@ -789,9 +789,9 @@ func TestRangeEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error decoding ranges: %s", err)
 	}
-	expectedSCIPRanges := make([]*scip.Range, 0, len(ranges)/4)
+	expectedSCIPRanges := make([]scip.Range, 0, len(ranges)/4)
 	for i := 0; i < len(ranges); i += 4 {
-		expectedSCIPRanges = append(expectedSCIPRanges, scip.NewRange(ranges[i:i+4]))
+		expectedSCIPRanges = append(expectedSCIPRanges, scip.NewRangeUnchecked(ranges[i:i+4]))
 	}
 	if diff := cmp.Diff(expectedSCIPRanges, decodedSCIPRanges); diff != "" {
 		t.Fatalf("unexpected ranges (-want +got):\n%s", diff)
