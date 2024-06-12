@@ -66,6 +66,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
     const navigate = useNavigate()
 
     const isTeam = initialSeatCount > 1
+    const [urlSearchParams] = useSearchParams()
+    const addSeats = !!urlSearchParams.get('addSeats')
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     const [seatCount, setSeatCount] = React.useState(initialSeatCount)
@@ -182,9 +184,11 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             </div>
                             <div className={styles.price}>${total} / month</div>
                         </div>
-                        <Text size="small" className={styles.disclaimer}>
-                            Each seat is pro-rated this month, and will be charged at the full rate next month.
-                        </Text>
+                        {addSeats && (
+                            <Text size="small" className={styles.disclaimer}>
+                                    Each seat is pro-rated this month, and will be charged at the full rate next month.
+                            </Text>
+                        )}
                     </div>
                     <div>
                         <H2 className="font-medium">
