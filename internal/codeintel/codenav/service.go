@@ -982,18 +982,23 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
 
+	scipSymbolRange := symbolRange.ToSCIPRange()
 	symbols = make([]*scip.Symbol, 0)
-	for _, occurrence := range doc.GetOccurrences() {
-		occRange := scip.NewRangeUnchecked(occurrence.GetRange())
-		// TODO: Needs to handle differing text encodings to get these character positions right
-		if scipSymbolRange.Intersects(occRange) {
-			parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
-			if err != nil {
-				// TODO: Log this failure?
-				continue
-			}
-			symbols = append(symbols, parsedSymbol)
+	var parseFail *scip.Occurrence = nil
+
+	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
+	for _, occurrence := range findIntersectingOccurrences(doc.Occurrences, scipSymbolRange) {
+		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+		if err != nil {
+			parseFail = occurrence
+			continue
 		}
+		symbols = append(symbols, parsedSymbol)
 	}
+
+	if parseFail != nil {
+		s.logger.Error("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+	}
+
 	return symbols, nil
 }
