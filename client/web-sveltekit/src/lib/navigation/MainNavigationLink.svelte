@@ -35,6 +35,7 @@
     }
 
     .icon {
+        --icon-fill-color: var(--header-icon-color);
         width: var(--icon-inline-size);
         height: var(--icon-inline-size);
         color: var(--header-icon-color);

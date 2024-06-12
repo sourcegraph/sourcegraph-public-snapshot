@@ -1,18 +1,21 @@
 <script lang="ts">
     import { setContext, onMount } from 'svelte'
 
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore, QueryState } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
+    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
 
+    import CodyUpsellBanner from './cody-upsell/CodyUpsellBanner.svelte'
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
+    export let codyHref: string = '/cody'
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
@@ -44,6 +47,7 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
+        <CodyUpsellBanner {codyHref} />
     </div>
 </section>
 
@@ -58,8 +62,10 @@
     }
 
     div.content {
+        margin-top: 6rem;
         flex-shrink: 0;
         display: flex;
+        gap: 3rem;
         flex-direction: column;
         align-items: center;
         width: 100%;
@@ -75,13 +81,12 @@
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        z-index: 1;
     }
 
     img.logo {
         width: 20rem;
-        margin-top: 6rem;
         max-width: 90%;
         min-height: 54px;
-        margin-bottom: 3rem;
     }
 </style>
