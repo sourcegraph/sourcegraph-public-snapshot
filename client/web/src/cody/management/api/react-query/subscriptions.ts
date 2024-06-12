@@ -8,12 +8,13 @@ import {
 
 import { Client } from '../client'
 import type {
-    UpdateSubscriptionRequest,
+    CreateTeamRequest,
+    PreviewCreateTeamRequest,
+    PreviewResult,
+    PreviewUpdateSubscriptionRequest,
     Subscription,
     SubscriptionSummary,
-    CreateTeamRequest,
-    PreviewResult,
-    PreviewCreateTeamRequest,
+    UpdateSubscriptionRequest,
     GetSubscriptionInvoicesResponse,
 } from '../teamSubscriptions'
 
@@ -85,6 +86,18 @@ export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefi
     useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.previewCreateTeam(requestBody))
+            return (await response.json()) as PreviewResult
+        },
+    })
+
+export const usePreviewUpdateCurrentSubscription = (): UseMutationResult<
+    PreviewResult | undefined,
+    Error,
+    PreviewUpdateSubscriptionRequest
+> =>
+    useMutation({
+        mutationFn: async requestBody => {
+            const response = await callCodyProApi(Client.previewUpdateCurrentSubscription(requestBody))
             return (await response.json()) as PreviewResult
         },
     })
