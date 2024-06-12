@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useCallback } from 'react'
 
 import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
 import { AddressElement, useStripe, useElements, CardNumberElement } from '@stripe/react-stripe-js'
@@ -11,7 +11,7 @@ import { pluralize } from '@sourcegraph/common'
 import { Form, Link, Button, Grid, H2, Text, Container, Icon, H3, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
-import { useCreateTeam } from '../../api/react-query/subscriptions'
+import { useCreateTeam, usePreviewUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/types'
 import { NonEditableBillingAddress } from '../manage/NonEditableBillingAddress'
 import { StripeAddressElement } from '../StripeAddressElement'
@@ -21,6 +21,9 @@ import styles from './NewCodyProSubscriptionPage.module.scss'
 
 const MIN_SEAT_COUNT = 1
 const MAX_SEAT_COUNT = 50
+
+// Monthly seat price in USD
+const SEAT_PRICE = 9
 
 interface CodyProCheckoutFormProps {
     subscription?: Subscription
@@ -69,8 +72,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
     const [urlSearchParams] = useSearchParams()
     const addSeats = !!urlSearchParams.get('addSeats')
-    const initialCurrentSeats = addSeats && subscription ? subscription.maxSeats : 0
-    const maxNewSeatCount = MAX_SEAT_COUNT - initialCurrentSeats
+    const initialSeatCount = addSeats && subscription ? subscription.maxSeats : 0
+    const maxNewSeatCount = MAX_SEAT_COUNT - initialSeatCount
     const initialNewSeats = Math.max(
         Math.min(maxNewSeatCount, parseInt(urlSearchParams.get('seats') || '', 10) || 1),
         MIN_SEAT_COUNT
@@ -79,10 +82,56 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     // In the case of new subscriptions we have 0 initial seats, so "addedSeatCount" is actually just "seatCount".
-    const [addedSeatCount, setAddedSeatCount] = React.useState(initialNewSeats)
+    const [seatCountDiff, setSeatCountDiff] = React.useState(initialNewSeats)
     const [submitting, setSubmitting] = React.useState(false)
 
     const createTeamMutation = useCreateTeam()
+    const previewUpdateCurrentSubscriptionMutation = usePreviewUpdateCurrentSubscription()
+
+    const [proRatedPrice, setProRatedPrice] = React.useState(initialNewSeats * SEAT_PRICE)
+    const [dueNow, setDueNow] = React.useState(initialNewSeats * SEAT_PRICE)
+    const [totalMonthlyPrice, setTotalMonthlyPrice] = React.useState((initialSeatCount + initialNewSeats) * SEAT_PRICE)
+    const [dueDate, setDueDate] = React.useState<string | undefined>(undefined)
+
+    const onSeatCountDiffChange = useCallback(
+        (newSeatCountDiff: number): void => {
+            setSeatCountDiff(newSeatCountDiff)
+
+            // In the case of a new subscription, we can recalculate prices locally. Otherwise, use the back end.
+            if (!addSeats) {
+                setProRatedPrice(newSeatCountDiff * SEAT_PRICE)
+                setDueNow(newSeatCountDiff * SEAT_PRICE)
+                setTotalMonthlyPrice((initialSeatCount + newSeatCountDiff) * SEAT_PRICE)
+            } else {
+                // The `.call` call is a workaround because `previewUpdateCurrentSubscriptionMutation` is not referentially stable,
+                // and adding `previewUpdateCurrentSubscriptionMutation` to the list of dependencies causes an infinite loop.
+                // `previewUpdateCurrentSubscriptionMutation.mutate` IS referentially stable, and it doesn't internally reference `this`,
+                // so calling `.call` is safe. See https://github.com/TanStack/query/issues/1858#issuecomment-1255678830
+                previewUpdateCurrentSubscriptionMutation.mutate.call(
+                    undefined,
+                    { newSeatCount: initialSeatCount + newSeatCountDiff },
+                    {
+                        onSuccess: result => {
+                            if (result) {
+                                setProRatedPrice(result.dueNow / 100)
+                                setDueNow(result.newPrice / 100 - initialSeatCount * SEAT_PRICE)
+                                setTotalMonthlyPrice(result.newPrice / 100)
+                                setDueDate(result.dueDate)
+                            }
+                        },
+                    }
+                )
+            }
+        },
+        [addSeats, initialSeatCount, previewUpdateCurrentSubscriptionMutation.mutate]
+    )
+
+    // Load the initial prices if needed.
+    useEffect(() => {
+        if (addSeats) {
+            onSeatCountDiffChange(initialNewSeats)
+        }
+    }, [addSeats, initialNewSeats, onSeatCountDiffChange])
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault()
@@ -127,7 +176,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             await createTeamMutation.mutateAsync({
                 name: '(no name yet)',
                 slug: '(no slug yet)',
-                seats: addedSeatCount,
+                seats: seatCountDiff,
                 address: {
                     line1: suppliedAddress.line1,
                     line2: suppliedAddress.line2 || '',
@@ -150,14 +199,9 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         }
     }
 
-    // TODO: Use preview prices from the backend when adding seats.
-    const proRatedPrice = addedSeatCount * 9
-    const priceDiff = addedSeatCount * 9
-    const totalMonthlyPrice = (initialCurrentSeats + addedSeatCount) * 9
-
     return (
         <>
-            {addedSeatCount >= 30 && (
+            {seatCountDiff >= 30 && (
                 <CodyAlert variant="purple">
                     <H3>Explore an enterprise plan</H3>
                     <Text className="mb-0">
@@ -173,19 +217,19 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
                             <Button
-                                disabled={addedSeatCount === MIN_SEAT_COUNT}
-                                onClick={() => setAddedSeatCount(c => (c > MIN_SEAT_COUNT ? c - 1 : c))}
+                                disabled={seatCountDiff === MIN_SEAT_COUNT}
+                                onClick={() => onSeatCountDiffChange(seatCountDiff > MIN_SEAT_COUNT ? seatCountDiff - 1 : seatCountDiff)}
                                 className="px-3c py-2 border-0"
                             >
                                 <Icon aria-hidden={true} svgPath={mdiMinusThick} className={styles.plusMinusButton} />
                             </Button>
-                            <div className={styles.seatCountSelectorValue}>{addedSeatCount}</div>
+                            <div className={styles.seatCountSelectorValue}>{seatCountDiff}</div>
                             <Button
-                                disabled={addedSeatCount === maxNewSeatCount}
-                                onClick={() => setAddedSeatCount(c => (c < maxNewSeatCount ? c + 1 : c))}
+                                disabled={seatCountDiff === maxNewSeatCount}
+                                onClick={() => onSeatCountDiffChange(seatCountDiff < maxNewSeatCount ? seatCountDiff + 1 : seatCountDiff)}
                                 className="px-3c py-2 border-0"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiPlusThick} className={styles.plusMinusButton} />
+                                <Icon aria-hidden={true} svgPath={mdiPlusThick} />
                             </Button>
                         </div>
 
@@ -193,36 +237,47 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         {addSeats && (
                             <div className="d-flex flex-row align-items-center mb-4">
                                 <div className="flex-1">Pro-rated cost for this month</div>
-                                <div>
-                                    <strong>${proRatedPrice} / month</strong>
+                                <div className={styles.price}>
+                                    {previewUpdateCurrentSubscriptionMutation.isPending ? (
+                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                    ) : (
+                                        <strong>${proRatedPrice} / month</strong>
+                                    )}
                                 </div>
                             </div>
                         )}
                         <div className="d-flex flex-row align-items-center mb-4">
                             <div className="flex-1">
-                                {addSeats ? 'Adding ' : ''} {addedSeatCount} {pluralize('seat', addedSeatCount)}
+                                {addSeats ? 'Adding ' : ''} {seatCountDiff} {pluralize('seat', seatCountDiff)}
                             </div>
-                            <div className={styles.price}>${priceDiff} / month</div>
+                            <div className={styles.price}>
+                                {previewUpdateCurrentSubscriptionMutation.isPending ? (
+                                    <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                ) : (
+                                    <strong>${dueNow} / month</strong>
+                                )}
+                            </div>
                         </div>
                         {addSeats && (
                             <div className="d-flex flex-row align-items-center mb-4">
                                 <div className="flex-1">
-                                    Total for {initialCurrentSeats + addedSeatCount} {pluralize('seat', addedSeatCount)}
+                                    Total for {initialSeatCount + seatCountDiff} {pluralize('seat', initialSeatCount + seatCountDiff)}
                                 </div>
-                                <div>
-                                    <strong>${totalMonthlyPrice} / month</strong>
+                                <div className={styles.price}>
+                                    {previewUpdateCurrentSubscriptionMutation.isPending ? (
+                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                    ) : (
+                                        <strong>${totalMonthlyPrice} / month</strong>
+                                    )}
                                 </div>
                             </div>
                         )}
                         {addSeats && (
-                            <Text size="small" className={styles.disclaimer}>
-                                    Each seat is pro-rated this month, and will be charged at the full rate next month.
-                            </Text>
-                        )}
-                    </div>
+                            <Text size="small" className={styles.disclaimer}>New seats are pro-rated this month, and will be charged at the full rate {dueDate ? `on ${new Date(dueDate).toLocaleDateString()}` : 'next month'}.</Text>
+                        )}                    </div>
                     <div>
                         <H2 className="font-medium">
-                            Purchase {addedSeatCount} {pluralize('seat', addedSeatCount)}
+                            Purchase {seatCountDiff} {pluralize('seat', seatCountDiff)}
                         </H2>
                         <Form onSubmit={handleSubmit}>
                             <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
