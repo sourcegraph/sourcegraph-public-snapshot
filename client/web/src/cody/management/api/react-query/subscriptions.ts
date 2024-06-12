@@ -28,7 +28,10 @@ const queryKeys = {
 export const useCurrentSubscription = (): UseQueryResult<Subscription | undefined> =>
     useQuery({
         queryKey: queryKeys.subscription(),
-        queryFn: async () => callCodyProApi(Client.getCurrentSubscription()),
+        queryFn: async () => {
+            const response = await callCodyProApi(Client.getCurrentSubscription())
+            return response.ok ? response.json() : undefined
+        },
     })
 
 export const useUpdateCurrentSubscription = (): UseMutationResult<
