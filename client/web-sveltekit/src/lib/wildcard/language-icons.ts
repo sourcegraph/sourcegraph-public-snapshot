@@ -53,6 +53,7 @@ export const FILE_ICONS_BY_LANGUAGE: Map<string, LanguageIcon> = new Map([
     ['Go Checksums', { icon: ISimpleIconsGo, color: PINK }],
     ['Groovy', { icon: ISimpleIconsApachegroovy, color: BLUE }],
     ['GraphQL', { icon: ISimpleIconsGraphql, color: PINK }],
+    ['Hack', { icon: IFileIconsHack, color: YELLOW }],
     ['Haskell', { icon: ISimpleIconsHaskell, color: BLUE }],
     ['HTML', { icon: ISimpleIconsHtml5, color: BLUE }],
     ['HTML+ECR', { icon: ISimpleIconsCrystal, color: BLUE }],
