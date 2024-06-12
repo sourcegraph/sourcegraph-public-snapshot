@@ -24,7 +24,7 @@
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
@@ -119,13 +119,13 @@
     }
 
     function handleCopy(): void {
-        TELEMETRY_V2_RECORDER.recordEvent('repo.blob', 'copy')
+        TELEMETRY_RECORDER.recordEvent('repo.blob', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {
         // TODO: track other blob mode
         if (event.detail === CodeViewMode.Blame) {
-            TELEMETRY_V2_RECORDER.recordEvent('repo.gitBlame', 'enable')
+            TELEMETRY_RECORDER.recordEvent('repo.gitBlame', 'enable')
         }
 
         goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })

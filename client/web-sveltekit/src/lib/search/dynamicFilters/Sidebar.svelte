@@ -29,7 +29,7 @@
     import { onMount } from 'svelte'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-    import { TELEMETRY_V2_FILTER_TYPES } from '@sourcegraph/shared/src/search/stream'
+    import { TELEMETRY_FILTER_TYPES } from '@sourcegraph/shared/src/search/stream'
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
@@ -42,7 +42,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -90,8 +90,8 @@
     }
 
     function handleFilterSelect(kind: SectionItemData['kind']): void {
-        TELEMETRY_V2_RECORDER.recordEvent('search.filters', 'select', {
-            metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[kind] },
+        TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
         })
     }
 

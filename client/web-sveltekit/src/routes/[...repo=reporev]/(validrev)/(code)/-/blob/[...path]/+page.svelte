@@ -4,7 +4,7 @@
     // @sg EnableRollout
     import { onMount } from 'svelte'
 
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     import type { PageData, Snapshot } from './$types'
     import DiffView from './DiffView.svelte'
@@ -28,7 +28,7 @@
     let fileView: FileView
 
     onMount(() => {
-        TELEMETRY_V2_RECORDER.recordEvent('blob', 'view')
+        TELEMETRY_RECORDER.recordEvent('blob', 'view')
     })
 </script>
 

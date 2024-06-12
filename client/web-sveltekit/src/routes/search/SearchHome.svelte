@@ -1,14 +1,14 @@
 <script lang="ts">
     import { setContext, onMount } from 'svelte'
 
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 
     import { logoLight, logoDark } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     import CodyUpsellBanner from './cody-upsell/CodyUpsellBanner.svelte'
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
@@ -23,12 +23,12 @@
     })
 
     onMount(() => {
-        TELEMETRY_V2_RECORDER.recordEvent('home', 'view')
+        TELEMETRY_RECORDER.recordEvent('home', 'view')
     })
 
     function handleSubmit() {
-        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
-            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['home'] },
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['home'] },
         })
     }
 </script>

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import Tooltip from '$lib/Tooltip.svelte'
 
     import type { OpenInCodeHostAction } from './OpenInCodeHostAction.gql'
@@ -9,7 +9,7 @@
     export let data: OpenInCodeHostAction
 
     function handleOpenCodeHostClick(): void {
-        TELEMETRY_V2_RECORDER.recordEvent('repo.goToCodeHost', 'click')
+        TELEMETRY_RECORDER.recordEvent('repo.goToCodeHost', 'click')
     }
 </script>
 

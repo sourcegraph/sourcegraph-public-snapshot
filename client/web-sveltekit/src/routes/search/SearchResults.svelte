@@ -19,7 +19,7 @@
     import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
@@ -38,7 +38,7 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -108,7 +108,7 @@
     })
 
     onMount(() => {
-        TELEMETRY_V2_RECORDER.recordEvent('search.results', 'view')
+        TELEMETRY_RECORDER.recordEvent('search.results', 'view')
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -131,11 +131,11 @@
     }
 
     function handleResultCopy(): void {
-        TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'copy')
+        TELEMETRY_RECORDER.recordEvent('search.result.area', 'copy')
     }
 
     function handleSearchResultClick(index: number): void {
-        TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'click', {
+        TELEMETRY_RECORDER.recordEvent('search.result.area', 'click', {
             metadata: {
                 index,
                 resultsLength: results.length,
@@ -144,8 +144,8 @@
     }
 
     function handleSubmit() {
-        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
-            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['nav'] },
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['nav'] },
         })
     }
 </script>

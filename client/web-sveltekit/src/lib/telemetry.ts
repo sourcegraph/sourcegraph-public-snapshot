@@ -105,5 +105,5 @@ class TrackingMetadataProvider implements MarketingTrackingProvider {
     }
 }
 
-export const TELEMETRY_V2 = new TelemetryRecorderProvider(getGraphQLClient(), { enableBuffering: true })
-export const TELEMETRY_V2_RECORDER = TELEMETRY_V2.getRecorder()
+export const TELEMETRY_PROVIDER = new TelemetryRecorderProvider(getGraphQLClient(), { enableBuffering: true })
+export const TELEMETRY_RECORDER = TELEMETRY_PROVIDER.getRecorder()

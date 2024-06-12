@@ -3,7 +3,7 @@
     import { onMount } from 'svelte'
 
     import Readme from '$lib/repo/Readme.svelte'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
@@ -15,7 +15,7 @@
     $: readme.set(data.readme)
 
     onMount(() => {
-        TELEMETRY_V2_RECORDER.recordEvent('repo', 'view')
+        TELEMETRY_RECORDER.recordEvent('repo', 'view')
     })
 </script>
 
