@@ -90,8 +90,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         !userCodyPlanLoading &&
         !subscriptionQueryResult.isLoading &&
         !userCodyPlanError &&
-        !subscriptionQueryResult.isError &&
-        subscription
+        (!addSeats || (!subscriptionQueryResult.isError && subscription))
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
@@ -110,9 +109,11 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
 
             {userCodyPlanLoading || (subscriptionQueryResult.isLoading && <LoadingSpinner className="mx-auto" />)}
 
-            {!!userCodyPlanError && <Alert variant="danger">Failed to fetch subscription data</Alert>}
-            {subscriptionQueryResult.isError && <Alert variant="danger">Failed to fetch subscription data</Alert>}
-            {!subscription && <Alert variant="danger">Subscription data is not available</Alert>}
+            {!!userCodyPlanError && <Alert variant="danger">Failed to fetch user Cody plan data</Alert>}
+            {addSeats && subscriptionQueryResult.isError && (
+                <Alert variant="danger">Failed to fetch subscription data</Alert>
+            )}
+            {addSeats && !subscription && <Alert variant="danger">Subscription data is not available</Alert>}
 
             {canDisplayPage && (
                 <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
