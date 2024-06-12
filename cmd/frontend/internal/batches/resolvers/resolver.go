@@ -33,11 +33,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -1938,18 +1941,46 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, ErrIDIsZero{}
 	}
 
+	as := sources.AuthenticationStrategyUserCredential
+	var ghak *types.GitHubAppKind
+	var firstInstall *ghtypes.GitHubAppInstallation
+	if cred.IsGitHubApp() {
+		as = sources.AuthenticationStrategyGitHubApp
+
+		ghApp, err := r.db.GitHubApps().GetByID(ctx, cred.GitHubAppID())
+		if err != nil {
+			return nil, err
+		}
+
+		if ghApp == nil {
+			return nil, ghstore.ErrNoGitHubAppFound{}
+		}
+
+		installs, err := r.db.GitHubApps().GetInstallations(ctx, ghApp.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(installs) == 0 {
+			return nil, ghstore.ErrNoGitHubAppFound{}
+		}
+
+		ghak = &ghApp.Kind
+		firstInstall = installs[0]
+	}
+
 	a, err := cred.authenticator(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	as := sources.AuthenticationStrategyUserCredential
-	if args.IsGitHubApp {
-		as = sources.AuthenticationStrategyGitHubApp
-	}
-
 	svc := service.New(r.store)
-	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a, as); err != nil {
+	if err := svc.ValidateAuthenticator(ctx, a, as, service.ValidateAuthenticatorArgs{
+		ExternalServiceID:   cred.ExternalServiceURL(),
+		ExternalServiceType: extsvc.KindToType(cred.ExternalServiceKind()),
+		GitHubAppKind:       ghak,
+		Username:            pointers.Ptr(firstInstall.AccountLogin),
+	}); err != nil {
 		return nil, &service.ErrVerifyCredentialFailed{SourceErr: err}
 	}
 

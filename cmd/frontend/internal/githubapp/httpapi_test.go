@@ -76,7 +76,10 @@ func TestGenerateRedirectURL(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			url := generateRedirectURL(tc.domain, &tc.installationID, &tc.appID, &appName, tc.creationErr)
+			url := generateRedirectURL(gitHubAppStateDetails{
+				Domain: *tc.domain,
+				AppID:  tc.appID,
+			}, &tc.installationID, &appName, tc.creationErr)
 			require.Equal(t, tc.expectedURL, url)
 		})
 	}

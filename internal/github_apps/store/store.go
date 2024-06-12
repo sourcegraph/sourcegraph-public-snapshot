@@ -130,9 +130,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 
 	// We enforce that GitHub Apps created in the "batches" domain and are used for commit signing are for unique instance URLs.
 	if domain == itypes.BatchesGitHubAppDomain && kind == itypes.CommitSigningGitHubAppKind {
-		fmt.Println("in here", "<==")
 		existingGHApp, err := s.GetByDomainAndKind(ctx, domain, baseURL.String(), kind)
-		fmt.Println("checking for existenc eof github ap")
 		// An error is expected if no existing app was found, but we double check that
 		// we didn't get a different, unrelated error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
@@ -148,7 +146,6 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
 		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind)
-	fmt.Println(query.Query(sqlf.PostgresBindVar), "<=== quwery")
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }

@@ -1,24 +1,15 @@
 import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { noop } from 'lodash'
+import { useNavigate } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import {
-    Alert,
-    Container,
-    Button,
-    Input,
-    Label,
-    Text,
-    PageHeader,
-    ButtonLink,
-    Checkbox,
-    Link,
-} from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, Checkbox, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
-import { GitHubAppDomain, type GitHubAppKind } from '../../graphql-operations'
+import type { GitHubAppDomain, GitHubAppKind } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
@@ -68,6 +59,11 @@ export interface CreateGitHubAppPageProps extends TelemetryV2Props {
     validateURL?: (url: string) => true | string
     /** The currently authenticated user */
     authenticatedUser: AuthenticatedUser
+    /**
+     * Whether or not the page is being rendered in a minimized mode.
+     * Minimized mode is when this component is rendered in a modal.
+     */
+    minimizedMode?: boolean
 }
 
 /**
@@ -86,7 +82,9 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     telemetryRecorder,
     appKind,
     authenticatedUser,
+    minimizedMode,
 }) => {
+    const navigate = useNavigate()
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>(defaultAppName)
@@ -150,8 +148,14 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const createState = useCallback(async () => {
         setError(undefined)
         try {
+            // We encode the name and url here so that special characters like `#` are interpreted as
+            // part of the URL and not the fragment.
             const response = await fetch(
-                `/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}&kind=${appKind}&userID=${authenticatedUser.databaseID}`
+                `/githubapp/new-app-state?appName=${encodeURIComponent(
+                    name
+                )}&webhookURN=${url}&domain=${appDomain}&baseURL=${encodeURIComponent(url)}&kind=${appKind}&userID=${
+                    authenticatedUser.id
+                }`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {
@@ -177,7 +181,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL, appKind, authenticatedUser.databaseID])
+    }, [submitForm, name, appDomain, url, originURL, appKind, authenticatedUser.id])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)
@@ -214,27 +218,31 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
 
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
     const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
-    const cancelUrl = `/site-admin/${appDomain === GitHubAppDomain.BATCHES ? 'batch-changes' : 'github-apps'}`
 
     return (
         <>
-            <PageTitle title={pageTitle} />
-            <PageHeader
-                path={[{ text: pageTitle }]}
-                headingElement="h2"
-                description={
-                    headerDescription || (
-                        <>
-                            Register a GitHub App to better manage GitHub code host connections.{' '}
-                            <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
-                                See how GitHub App configuration works.
-                            </Link>
-                        </>
-                    )
-                }
-                annotation={headerAnnotation}
-                className="mb-3"
-            />
+            {!minimizedMode && (
+                <>
+                    <PageTitle title={pageTitle} />
+                    <PageHeader
+                        path={[{ text: pageTitle }]}
+                        headingElement="h2"
+                        description={
+                            headerDescription || (
+                                <>
+                                    Register a GitHub App to better manage GitHub code host connections.{' '}
+                                    <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
+                                        See how GitHub App configuration works.
+                                    </Link>
+                                </>
+                            )
+                        }
+                        annotation={headerAnnotation}
+                        className="mb-3"
+                    />
+                </>
+            )}
+
             <Container className="mb-3">
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
@@ -327,13 +335,24 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     <input ref={formInput} name="manifest" onChange={noop} hidden={true} />
                 </form>
             </Container>
-            <div>
+            <div
+                className={classNames({
+                    'd-flex flex-row-reverse': minimizedMode,
+                })}
+            >
                 <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                     Create Github App
                 </Button>
-                <ButtonLink className="ml-2" to={cancelUrl} variant="secondary">
+                <Button
+                    className={classNames({
+                        'ml-2': !minimizedMode,
+                        'mr-2': minimizedMode,
+                    })}
+                    onClick={() => navigate(-1)}
+                    variant="secondary"
+                >
                     Cancel
-                </ButtonLink>
+                </Button>
             </div>
         </>
     )

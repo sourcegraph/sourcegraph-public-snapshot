@@ -26,6 +26,7 @@ export const CREDENTIAL_FIELDS_FRAGMENT = gql`
         id
         sshPublicKey
         isSiteCredential
+        isGitHubApp
     }
 `
 
@@ -187,8 +188,8 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
     })
 
 export const CHECK_BATCH_CHANGES_CREDENTIAL = gql`
-    query CheckBatchChangesCredential($id: ID!, $isGitHubApp: Boolean!) {
-        checkBatchChangesCredential(batchChangesCredential: $id, isGitHubApp: $isGitHubApp) {
+    query CheckBatchChangesCredential($id: ID!) {
+        checkBatchChangesCredential(batchChangesCredential: $id) {
             alwaysNil
         }
     }

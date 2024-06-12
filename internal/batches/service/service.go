@@ -37,6 +37,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1258,7 +1259,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	defer endObservation(1, observation.Args{})
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, sources.ForExternalServiceOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	}, sources.AuthenticationStrategyUserCredential)
@@ -1286,20 +1287,29 @@ type usernameSource interface {
 
 var _ usernameSource = &sources.BitbucketServerSource{}
 
+type ValidateAuthenticatorArgs struct {
+	ExternalServiceID   string
+	ExternalServiceType string
+	Username            *string
+	GitHubAppKind       *types.GitHubAppKind
+}
+
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator, as sources.AuthenticationStrategy) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authenticator, as sources.AuthenticationStrategy, args ValidateAuthenticatorArgs) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if Mocks.ValidateAuthenticator != nil {
-		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
+		return Mocks.ValidateAuthenticator(ctx, args.ExternalServiceID, args.ExternalServiceType, a)
 	}
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceID,
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, sources.ForExternalServiceOpts{
+		ExternalServiceType: args.ExternalServiceType,
+		ExternalServiceID:   args.ExternalServiceID,
+		GitHubAppAccount:    pointers.Deref(args.Username, ""),
+		GitHubAppKind:       args.GitHubAppKind,
 	}, as)
 	if err != nil {
 		return err
@@ -1809,6 +1819,7 @@ type CreateBatchChangesUserCredentialArgs struct {
 	Credential          string
 	Username            *string
 	GitHubAppID         int
+	GitHubAppKind       *types.GitHubAppKind
 }
 
 func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
@@ -1831,6 +1842,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		ExternalServiceID:   args.ExternalServiceURL,
 		ExternalServiceType: args.ExternalServiceType,
 		UserID:              args.UserID,
+		GitHubAppID:         args.GitHubAppID,
 	}
 	existing, err := s.store.UserCredentials().GetByScope(ctx, userCredentialScope)
 	if err != nil && !errcode.IsNotFound(err) {
@@ -1846,6 +1858,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		credential:             args.Credential,
 		username:               args.Username,
 		authenticationStrategy: as,
+		gitHubAppKind:          args.GitHubAppKind,
 	})
 	if err != nil {
 		return nil, err
@@ -1907,6 +1920,7 @@ type generateAuthenticatorForCredentialArgs struct {
 	credential             string
 	username               *string
 	authenticationStrategy sources.AuthenticationStrategy
+	gitHubAppKind          *types.GitHubAppKind
 }
 
 func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
@@ -1968,7 +1982,12 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	}
 
 	// Validate the newly created authenticator.
-	if err := s.ValidateAuthenticator(ctx, args.externalServiceURL, args.externalServiceType, a, args.authenticationStrategy); err != nil {
+	if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
+		ExternalServiceID:   args.externalServiceURL,
+		ExternalServiceType: args.externalServiceType,
+		Username:            args.username,
+		GitHubAppKind:       args.gitHubAppKind,
+	}); err != nil {
 		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
 	}
 	return a, nil

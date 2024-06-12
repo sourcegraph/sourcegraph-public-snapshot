@@ -3,24 +3,14 @@ import React, { useCallback, useState, type FC } from 'react'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import {
-    Button,
-    Modal,
-    Link,
-    Code,
-    Label,
-    Text,
-    Input,
-    ErrorAlert,
-    Form,
-    Select,
-    ButtonLink,
-} from '@sourcegraph/wildcard'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form, Select } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExternalServiceKind, type Scalars, GitHubAppKind } from '../../../graphql-operations'
+import { ExternalServiceKind, GitHubAppKind, type UserAreaUserFields } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
+import { BatchChangesCreateGitHubAppPage } from './BatchChangesCreateGitHubAppPage'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 
@@ -29,7 +19,7 @@ import styles from './AddCredentialModal.module.scss'
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
-    userID: Scalars['ID'] | null
+    user: UserAreaUserFields | null
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean
@@ -99,7 +89,7 @@ type AuthenticationStrategyType = typeof AuthenticationStrategy[keyof typeof Aut
 export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalProps>> = ({
     onCancel,
     afterCreate,
-    userID,
+    user,
     externalServiceKind,
     externalServiceURL,
     requiresSSH,
@@ -132,7 +122,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
             try {
                 const { data } = await createBatchChangesCredential({
                     variables: {
-                        user: userID,
+                        user: user?.id || null,
                         credential,
                         username: requiresUsername ? username : null,
                         externalServiceKind,
@@ -152,7 +142,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
         },
         [
             createBatchChangesCredential,
-            userID,
+            user?.id,
             credential,
             requiresUsername,
             username,
@@ -166,9 +156,10 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     const isTokenSection = step === 'add-token'
     const isGitHubKind = externalServiceKind === ExternalServiceKind.GITHUB
 
+    // addCredentialModalStepRuler
     return (
-        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <div className="test-add-credential-modal">
+        <Modal onDismiss={onCancel} aria-labelledby={labelId} position="center">
+            <div className={classNames('test-add-credential-modal', styles.addCredentialModalContainer)}>
                 <ModalHeader
                     id={labelId}
                     externalServiceKind={externalServiceKind}
@@ -178,7 +169,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                     <Select
                         id="credential-kind"
                         selectSize="sm"
-                        label="Select an Authentication scheme for your credential"
+                        label="Select an Authentication strategy for your credential"
                         value={authStrategy}
                         onChange={event => setAuthStrategy(event.target.value as AuthenticationStrategyType)}
                     >
@@ -196,8 +187,8 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                             </Text>
                             <div
                                 className={classNames(
-                                    styles.addCredentialModalModalStepRuler,
-                                    styles.addCredentialModalModalStepRulerPurple
+                                    styles.addCredentialModalStepRuler,
+                                    styles.addCredentialModalStepRulerPurple
                                 )}
                             />
                         </div>
@@ -207,9 +198,9 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                             </Text>
                             <div
                                 className={classNames(
-                                    styles.addCredentialModalModalStepRuler,
-                                    step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
-                                    step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
+                                    styles.addCredentialModalStepRuler,
+                                    step === 'add-token' && styles.addCredentialModalStepRulerGray,
+                                    step === 'get-ssh-key' && styles.addCredentialModalStepRulerBlue
                                 )}
                             />
                         </div>
@@ -231,6 +222,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                         onCancel={onCancel}
                         authStrategy={authStrategy}
                         externalServiceURL={externalServiceURL}
+                        user={user}
                     />
                 )}
                 {step === 'get-ssh-key' && (
@@ -288,6 +280,7 @@ interface AddTokenProps {
     onCancel: () => void
     authStrategy: AuthenticationStrategyType
     externalServiceURL: string
+    user: UserAreaUserFields | null
 }
 
 const AddToken: FC<AddTokenProps> = ({
@@ -305,19 +298,18 @@ const AddToken: FC<AddTokenProps> = ({
     onCancel,
     authStrategy,
     externalServiceURL,
+    user,
 }) => {
     const patLabel = computeCredentialLabel(externalServiceKind, authStrategy)
     const isStrategyPAT = authStrategy === AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
-    const createGitHubAppURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(
-        externalServiceURL
-    )}&kind=${GitHubAppKind.USER_CREDENTIAL}`
+    const kind = user ? GitHubAppKind.USER_CREDENTIAL : GitHubAppKind.SITE_CREDENTIAL
 
     if (step === 'add-token') {
         return (
             <>
                 {error && <ErrorAlert error={error} />}
-                <Form onSubmit={onSubmit}>
-                    {isStrategyPAT && (
+                {isStrategyPAT ? (
+                    <Form onSubmit={onSubmit}>
                         <div className="form-group">
                             {requiresUsername && (
                                 <>
@@ -361,40 +353,38 @@ const AddToken: FC<AddTokenProps> = ({
                                 {scopeRequirements[externalServiceKind]}
                             </Text>
                         </div>
-                    )}
-                    <div className="d-flex justify-content-end align-items-center">
-                        <Button
-                            disabled={loading}
-                            className="mr-2"
-                            onClick={onCancel}
-                            outline={true}
-                            variant="secondary"
-                        >
-                            Cancel
-                        </Button>
-                        {isStrategyPAT ? (
-                            <LoaderButton
-                                type="submit"
-                                disabled={loading || credential.length === 0}
-                                className="test-add-credential-modal-submit"
-                                variant="primary"
-                                loading={loading}
-                                alwaysShowLabel={true}
-                                label={requiresSSH ? 'Next' : 'Add credential'}
-                            />
-                        ) : (
-                            <ButtonLink
-                                to={createGitHubAppURL}
-                                className="text-nowrap"
-                                variant="primary"
-                                as={Link}
-                                size="sm"
-                            >
-                                Create GitHub App
-                            </ButtonLink>
-                        )}
-                    </div>
-                </Form>
+                        <div className="d-flex justify-content-end align-items-center">
+                            {isStrategyPAT && (
+                                <>
+                                    <Button
+                                        disabled={loading}
+                                        className="mr-2"
+                                        onClick={onCancel}
+                                        outline={true}
+                                        variant="secondary"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <LoaderButton
+                                        type="submit"
+                                        disabled={loading || credential.length === 0}
+                                        className="test-add-credential-modal-submit"
+                                        variant="primary"
+                                        loading={loading}
+                                        alwaysShowLabel={true}
+                                        label={requiresSSH ? 'Next' : 'Add credential'}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    </Form>
+                ) : (
+                    <BatchChangesCreateGitHubAppPage
+                        authenticatedUser={user as unknown as AuthenticatedUser}
+                        minimizedMode={true}
+                        kind={kind}
+                    />
+                )}
             </>
         )
     }

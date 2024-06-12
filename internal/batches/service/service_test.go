@@ -1182,10 +1182,12 @@ index e5af166..d44c3fc 100644
 			fakeSource.ValidateAuthenticatorCalled = false
 			if err := svc.ValidateAuthenticator(
 				ctx,
-				"https://github.com/",
-				extsvc.TypeGitHub,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
 				sources.AuthenticationStrategyUserCredential,
+				ValidateAuthenticatorArgs{
+					ExternalServiceID:   "https://github.com/",
+					ExternalServiceType: extsvc.TypeGitHub,
+				},
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -1198,10 +1200,12 @@ index e5af166..d44c3fc 100644
 			fakeSource.ValidateAuthenticatorCalled = false
 			if err := svc.ValidateAuthenticator(
 				ctx,
-				"https://github.com/",
-				extsvc.TypeGitHub,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
 				sources.AuthenticationStrategyUserCredential,
+				ValidateAuthenticatorArgs{
+					ExternalServiceID:   "https://github.com/",
+					ExternalServiceType: extsvc.TypeGitHub,
+				},
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
 			}

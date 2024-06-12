@@ -1,10 +1,11 @@
 import { useCallback, type FC } from 'react'
 
+import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
-import { FeedbackBadge, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
 import { GitHubAppDomain, GitHubAppKind } from '../../../graphql-operations'
@@ -18,25 +19,21 @@ const DEFAULT_PERMISSIONS = {
     metadata: 'read',
 }
 
-const computeGitHubAppKind = (kind: string): GitHubAppKind => {
-    if (kind === 'USER_CREDENTIAL') {
-        return GitHubAppKind.USER_CREDENTIAL
-    }
-
-    // We default to commit signing always, since this was initially built for that.
-    return GitHubAppKind.COMMIT_SIGNING
-}
-
 interface BatchChangesCreateGitHubAppPageProps {
     authenticatedUser: AuthenticatedUser
+    minimizedMode?: boolean
+    kind: GitHubAppKind
 }
 
-export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPageProps> = ({ authenticatedUser }) => {
+export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPageProps> = ({
+    authenticatedUser,
+    minimizedMode,
+    kind,
+}) => {
     const location = useLocation()
     const searchParams = new URLSearchParams(location.search)
     const baseURL = searchParams.get('baseURL')
 
-    const kind = computeGitHubAppKind(searchParams.get('kind') || GitHubAppKind.COMMIT_SIGNING)
     const isKindCredential = kind !== GitHubAppKind.COMMIT_SIGNING
 
     const { connection } = useGlobalBatchChangesCodeHostConnection()
@@ -63,21 +60,24 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
                 return new URL(existingURL).hostname === asURL.hostname
             })
             const errorMsg = `A ${
-                isKindCredential ? 'GitHub App' : 'commit signing'
+                isKindCredential ? 'GitHub app' : 'commit signing'
             } integration for the code host at this URL already exists.`
             return isDuplicate ? errorMsg : true
         },
         [connection, isKindCredential]
     )
     const pageTitle = isKindCredential
-        ? 'Create GitHub App for Batch Changes Credential'
-        : 'Create GitHub App for commit signing'
-    const defaultAppName = isKindCredential ? 'Batch Changes GitHub App' : 'Sourcegraph Commit Signing'
+        ? `Create GitHub app for ${
+              kind === GitHubAppKind.USER_CREDENTIAL ? authenticatedUser.username : 'Global'
+          } Batch Changes credential`
+        : 'Create GitHub app for commit signing'
+    const defaultAppName = computeAppName(authenticatedUser.username, kind)
     return (
         <CreateGitHubAppPage
             defaultEvents={DEFAULT_EVENTS}
             defaultPermissions={DEFAULT_PERMISSIONS}
             pageTitle={pageTitle}
+            minimizedMode={minimizedMode}
             headerDescription={
                 <>
                     Register a GitHub App to enable Sourcegraph {isKindCredential ? 'create' : 'sign commits for'} Batch
@@ -88,7 +88,6 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
                     </Link>
                 </>
             }
-            headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             appDomain={GitHubAppDomain.BATCHES}
             appKind={kind}
             defaultAppName={defaultAppName}
@@ -98,4 +97,20 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
             authenticatedUser={authenticatedUser}
         />
     )
+}
+
+const computeAppName = (username: string, kind: GitHubAppKind): string => {
+    switch (kind) {
+        case GitHubAppKind.COMMIT_SIGNING: {
+            return 'Sourcegraph Commit Signing'
+        }
+
+        case GitHubAppKind.USER_CREDENTIAL: {
+            return `${capitalize(username)}'s Batch Changes GitHub App`
+        }
+
+        default: {
+            return 'Batch Changes GitHub App'
+        }
+    }
 }

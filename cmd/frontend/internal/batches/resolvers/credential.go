@@ -112,8 +112,16 @@ func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) 
 	return c.credential.Authenticator(ctx)
 }
 
+func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool {
+	return c.credential.GitHubAppID != 0
+}
+
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
+}
+
+func (c *batchChangesUserCredentialResolver) GitHubAppID() int {
+	return c.credential.GitHubAppID
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
@@ -154,4 +162,12 @@ func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {
 
 func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
 	return c.credential.Authenticator(ctx)
+}
+
+func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool {
+	return false
+}
+
+func (c *batchChangesSiteCredentialResolver) GitHubAppID() int {
+	return 0
 }
