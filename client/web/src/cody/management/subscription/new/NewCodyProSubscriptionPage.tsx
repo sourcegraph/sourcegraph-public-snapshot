@@ -1,4 +1,4 @@
-import { useEffect, type FunctionComponent, useMemo } from 'react'
+import { useEffect, type FunctionComponent } from 'react'
 
 import { Elements } from '@stripe/react-stripe-js'
 // NOTE: A side effect of loading this library will update the DOM and
@@ -11,7 +11,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert, logger } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -25,6 +25,8 @@ import {
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
+import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
+import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
@@ -46,31 +48,50 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     telemetryRecorder,
 }) => {
     const [urlSearchParams] = useSearchParams()
-    const addSeats = urlSearchParams.get('addSeats') === '1'
-    const initialSeatCount = useMemo(() => {
-        // Team=1 means the user is purchasing a subscription for a team.
-        // Any other value means an individual subscription, except if seats is explicitly set to > 1.
-        const defaultSeatCount = urlSearchParams.get('team') === '1' ? 2 : 1
-        // If set, we'll use the value set here as the initial seat count.
-        const seatCountString = urlSearchParams.get('seats') || defaultSeatCount.toString()
-        return parseInt(seatCountString, 10) || defaultSeatCount
-    }, [urlSearchParams])
-    const isTeam = initialSeatCount > 1
+    const isTeam = parseInt(urlSearchParams.get('seats') || '', 10) > 1
+    const addSeats = !!urlSearchParams.get('addSeats')
 
-    const options = useBillingAddressStripeElementsOptions()
+    const stripeElementsOptions = useBillingAddressStripeElementsOptions()
+
+    // Load data
+    const {
+        loading: userCodyPlanLoading,
+        data: userCodyPlanData,
+        error: userCodyPlanError,
+    } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const subscriptionQueryResult = useCurrentSubscription()
+    const subscription = subscriptionQueryResult?.data
 
     useEffect(() => {
         telemetryRecorder.recordEvent('cody.new-subscription-checkout', 'view')
     }, [telemetryRecorder])
 
-    // If the user already has a Cody Pro subscription, direct them back to the Cody Management page.
-    const { data, error: dataLoadError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-    if (dataLoadError) {
-        throw dataLoadError
+    useEffect(() => {
+        if (userCodyPlanError) {
+            logger.error('Failed to fetch subscription data', userCodyPlanError)
+        }
+    }, [userCodyPlanError])
+    useEffect(() => {
+        if (subscriptionQueryResult.isError) {
+            logger.error('Failed to fetch subscription data', subscriptionQueryResult.error)
+        }
+    }, [subscriptionQueryResult.isError, subscriptionQueryResult.error])
+
+    if (userCodyPlanLoading || subscriptionQueryResult.isLoading) {
+        return <LoadingSpinner className="mx-auto" />
     }
-    if (!addSeats && data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
+
+    // If the user already has a Cody Pro subscription, direct them back to the Cody Management page.
+    if (!addSeats && userCodyPlanData?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
         return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
+
+    const canDisplayPage =
+        !userCodyPlanLoading &&
+        !subscriptionQueryResult.isLoading &&
+        !userCodyPlanError &&
+        !subscriptionQueryResult.isError &&
+        subscription
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
@@ -87,12 +108,22 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
                 </PageHeader.Heading>
             </PageHeader>
 
-            <Elements stripe={stripe} options={options}>
-                <CodyProCheckoutForm
-                    initialSeatCount={initialSeatCount}
-                    customerEmail={authenticatedUser?.emails[0].email || ''}
-                />
-            </Elements>
+            {userCodyPlanLoading || (subscriptionQueryResult.isLoading && <LoadingSpinner className="mx-auto" />)}
+
+            {!!userCodyPlanError && <Alert variant="danger">Failed to fetch subscription data</Alert>}
+            {subscriptionQueryResult.isError && <Alert variant="danger">Failed to fetch subscription data</Alert>}
+            {!subscription && <Alert variant="danger">Subscription data is not available</Alert>}
+
+            {canDisplayPage && (
+                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
+                    <Elements stripe={stripe} options={stripeElementsOptions}>
+                        <CodyProCheckoutForm
+                            subscription={subscription}
+                            customerEmail={authenticatedUser?.emails[0].email || ''}
+                        />
+                    </Elements>
+                </CodyProApiClientContext.Provider>
+            )}
         </Page>
     )
 }

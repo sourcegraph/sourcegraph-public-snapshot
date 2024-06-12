@@ -5,13 +5,15 @@ import { AddressElement, useStripe, useElements, CardNumberElement } from '@stri
 import type { Stripe, StripeCardNumberElement } from '@stripe/stripe-js'
 import type { StripeAddressElementChangeEvent } from '@stripe/stripe-js/dist/stripe-js/elements/address'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { Form, Link, Button, Grid, H2, Text, Container, Icon, H3, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
 import { useCreateTeam } from '../../api/react-query/subscriptions'
+import type { Subscription } from '../../api/types'
+import { NonEditableBillingAddress } from '../manage/NonEditableBillingAddress'
 import { StripeAddressElement } from '../StripeAddressElement'
 import { StripeCardDetails } from '../StripeCardDetails'
 
@@ -21,7 +23,7 @@ const MIN_SEAT_COUNT = 1
 const MAX_SEAT_COUNT = 50
 
 interface CodyProCheckoutFormProps {
-    initialSeatCount: number
+    subscription?: Subscription
     customerEmail: string | undefined
 }
 
@@ -58,23 +60,27 @@ async function createStripeToken(
 }
 
 export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormProps> = ({
-    initialSeatCount,
+    subscription,
     customerEmail,
 }) => {
     const stripe = useStripe()
     const elements = useElements()
     const navigate = useNavigate()
 
-    const isTeam = initialSeatCount > 1
     const [urlSearchParams] = useSearchParams()
     const addSeats = !!urlSearchParams.get('addSeats')
+    const initialCurrentSeats = addSeats && subscription ? subscription.maxSeats : 0
+    const maxNewSeatCount = MAX_SEAT_COUNT - initialCurrentSeats
+    const initialNewSeats = Math.max(
+        Math.min(maxNewSeatCount, parseInt(urlSearchParams.get('seats') || '', 10) || 1),
+        MIN_SEAT_COUNT
+    )
+    const isTeam = addSeats || initialNewSeats > 1
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-    const [seatCount, setSeatCount] = React.useState(initialSeatCount)
+    // In the case of new subscriptions we have 0 initial seats, so "addedSeatCount" is actually just "seatCount".
+    const [addedSeatCount, setAddedSeatCount] = React.useState(initialNewSeats)
     const [submitting, setSubmitting] = React.useState(false)
-
-    // N * $9. We expect this to be more complex later with annual plans, etc.
-    const total = seatCount * 9
 
     const createTeamMutation = useCreateTeam()
 
@@ -121,7 +127,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             await createTeamMutation.mutateAsync({
                 name: '(no name yet)',
                 slug: '(no slug yet)',
-                seats: seatCount,
+                seats: addedSeatCount,
                 address: {
                     line1: suppliedAddress.line1,
                     line2: suppliedAddress.line2 || '',
@@ -144,9 +150,14 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         }
     }
 
+    // TODO: Use preview prices from the backend when adding seats.
+    const proRatedPrice = addedSeatCount * 9
+    const priceDiff = addedSeatCount * 9
+    const totalMonthlyPrice = (initialCurrentSeats + addedSeatCount) * 9
+
     return (
         <>
-            {seatCount >= 30 && (
+            {addedSeatCount >= 30 && (
                 <CodyAlert variant="purple">
                     <H3>Explore an enterprise plan</H3>
                     <Text className="mb-0">
@@ -156,34 +167,53 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                 </CodyAlert>
             )}
             <Container>
-                <Grid columnCount={2} spacing={4}>
+                <Grid columnCount={2} spacing={4} className="mb-0">
                     <div>
                         <H2 className="font-medium mb-3c">{isTeam ? 'Add seats' : 'Select number of seats'}</H2>
                         <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
                             <Button
-                                disabled={seatCount === MIN_SEAT_COUNT}
-                                onClick={() => setSeatCount(c => (c > MIN_SEAT_COUNT ? c - 1 : c))}
+                                disabled={addedSeatCount === MIN_SEAT_COUNT}
+                                onClick={() => setAddedSeatCount(c => (c > MIN_SEAT_COUNT ? c - 1 : c))}
                                 className="px-3c py-2 border-0"
                             >
                                 <Icon aria-hidden={true} svgPath={mdiMinusThick} className={styles.plusMinusButton} />
                             </Button>
-                            <div className={styles.seatCountSelectorValue}>{seatCount}</div>
+                            <div className={styles.seatCountSelectorValue}>{addedSeatCount}</div>
                             <Button
-                                disabled={seatCount === MAX_SEAT_COUNT}
-                                onClick={() => setSeatCount(c => (c < MAX_SEAT_COUNT ? c + 1 : c))}
+                                disabled={addedSeatCount === maxNewSeatCount}
+                                onClick={() => setAddedSeatCount(c => (c < maxNewSeatCount ? c + 1 : c))}
                                 className="px-3c py-2 border-0"
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlusThick} className={styles.plusMinusButton} />
                             </Button>
                         </div>
+
                         <H2 className="font-medium mb-3c">Summary</H2>
+                        {addSeats && (
+                            <div className="d-flex flex-row align-items-center mb-4">
+                                <div className="flex-1">Pro-rated cost for this month</div>
+                                <div>
+                                    <strong>${proRatedPrice} / month</strong>
+                                </div>
+                            </div>
+                        )}
                         <div className="d-flex flex-row align-items-center mb-4">
                             <div className="flex-1">
-                                {isTeam ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
+                                {addSeats ? 'Adding ' : ''} {addedSeatCount} {pluralize('seat', addedSeatCount)}
                             </div>
-                            <div className={styles.price}>${total} / month</div>
+                            <div className={styles.price}>${priceDiff} / month</div>
                         </div>
+                        {addSeats && (
+                            <div className="d-flex flex-row align-items-center mb-4">
+                                <div className="flex-1">
+                                    Total for {initialCurrentSeats + addedSeatCount} {pluralize('seat', addedSeatCount)}
+                                </div>
+                                <div>
+                                    <strong>${totalMonthlyPrice} / month</strong>
+                                </div>
+                            </div>
+                        )}
                         {addSeats && (
                             <Text size="small" className={styles.disclaimer}>
                                     Each seat is pro-rated this month, and will be charged at the full rate next month.
@@ -192,7 +222,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     </div>
                     <div>
                         <H2 className="font-medium">
-                            Purchase {seatCount} {pluralize('seat', seatCount)}
+                            Purchase {addedSeatCount} {pluralize('seat', addedSeatCount)}
                         </H2>
                         <Form onSubmit={handleSubmit}>
                             <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
@@ -200,7 +230,11 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             <Text className="mb-2 font-medium text-sm">Email</Text>
                             <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
 
-                            <StripeAddressElement onFocus={() => setErrorMessage('')} />
+                            {addSeats && subscription /* TypeScript needs this */ ? (
+                                <NonEditableBillingAddress subscription={subscription} />
+                            ) : (
+                                <StripeAddressElement onFocus={() => setErrorMessage('')} />
+                            )}
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
