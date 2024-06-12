@@ -20,6 +20,9 @@ extend type Query {
         """
         textResultsCount: Int!
     ): [CodyContextResult!]!
+
+    getCodyIntent(     query: String!): CodyIntentResponse!
+
 }
 
 """
@@ -49,4 +52,10 @@ type FileChunkContext {
     The relevant content of the file from start line to end line.
     """
     chunkContent: String!
+}
+
+
+type CodyIntentResponse {
+    intent: String!
+    score: Float!
 }
