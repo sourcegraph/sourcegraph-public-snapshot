@@ -29,17 +29,15 @@
     import { createRecentSearchesStore } from '$lib/search/input/recentSearches'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { getQueryURL, type QueryStateStore } from '$lib/search/state'
-    import type { QueryState } from '$lib/search/state'
     import {
+        TELEMETRY_SEARCH_SOURCE_TYPE,
         type AggregateStreamingSearchResults,
         type PathMatch,
         type SearchMatch,
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
     import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
@@ -109,8 +107,7 @@
     })
 
     onMount(() => {
-        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewSearchResultsPage)
-        TELEMETRY_V2_RECORDER.recordEvent('search.results', 'view')
+        TELEMETRY_RECORDER.recordEvent('search.results', 'view')
     })
 
     function loadMore(event: { detail: boolean }) {
@@ -133,12 +130,11 @@
     }
 
     function handleResultCopy(): void {
-        SVELTE_LOGGER.log(...codeCopiedEvent('search-result'))
+        TELEMETRY_RECORDER.recordEvent('search.result.area', 'copy')
     }
 
     function handleSearchResultClick(index: number): void {
-        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SearchResultClick)
-        TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'click', {
+        TELEMETRY_RECORDER.recordEvent('search.result.area', 'click', {
             metadata: {
                 index,
                 resultsLength: results.length,
@@ -146,14 +142,9 @@
         })
     }
 
-    function handleSubmit(state: QueryState) {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'nav', query: state.query },
-            { source: 'nav', patternType: state.patternType }
-        )
-        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
-            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['nav'] },
+    function handleSubmit() {
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['nav'] },
         })
     }
 </script>

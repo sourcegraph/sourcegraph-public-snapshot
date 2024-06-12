@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -17,12 +17,12 @@
     // to expose more info about nature of switch tab / close tab actions
     function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
         if (nextSelectedTab === 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'show')
             return
         }
 
         if (nextSelectedTab === null && selectedTab == 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'hide')
             return
         }
     }
