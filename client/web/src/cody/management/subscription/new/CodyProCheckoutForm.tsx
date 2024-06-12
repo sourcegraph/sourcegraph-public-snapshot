@@ -28,7 +28,11 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
-import { useCreateTeam, usePreviewUpdateCurrentSubscription, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import {
+    useCreateTeam,
+    usePreviewUpdateCurrentSubscription,
+    useUpdateCurrentSubscription,
+} from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/types'
 import { BillingAddressPreview } from '../BillingAddressPreview'
 import { PaymentMethodPreview } from '../PaymentMethodPreview'
@@ -169,99 +173,112 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         }
     }, [addSeats, initialNewSeats, onSeatCountDiffChange])
 
-    const handleSubscribeSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-        event.preventDefault()
+    const handleSubscribeSubmit = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+            event.preventDefault()
 
-        if (!stripe || !elements) {
-            setErrorMessage('Stripe or Stripe Elements libraries not available.')
-            return
-        }
-        const cardNumberElement = elements.getElement(CardNumberElement)
-        if (!cardNumberElement) {
-            setErrorMessage('CardNumberElement not found.')
-            return
-        }
-        const addressElement = elements.getElement(AddressElement)
-        if (!addressElement) {
-            setErrorMessage('AddressElement not found.')
-            return
-        }
-        const addressElementValue = await addressElement.getValue()
-        if (!addressElementValue.complete) {
-            setErrorMessage('Please fill out your billing address.')
-            return
-        }
+            if (!stripe || !elements) {
+                setErrorMessage('Stripe or Stripe Elements libraries not available.')
+                return
+            }
+            const cardNumberElement = elements.getElement(CardNumberElement)
+            if (!cardNumberElement) {
+                setErrorMessage('CardNumberElement not found.')
+                return
+            }
+            const addressElement = elements.getElement(AddressElement)
+            if (!addressElement) {
+                setErrorMessage('AddressElement not found.')
+                return
+            }
+            const addressElementValue = await addressElement.getValue()
+            if (!addressElementValue.complete) {
+                setErrorMessage('Please fill out your billing address.')
+                return
+            }
 
-        const suppliedAddress = addressElementValue.value.address
+            const suppliedAddress = addressElementValue.value.address
 
-        setSubmitting(true)
+            setSubmitting(true)
 
-        let token
-        try {
-            token = await createStripeToken(stripe, cardNumberElement, suppliedAddress)
-        } catch (error) {
-            setErrorMessage(error)
+            let token
+            try {
+                token = await createStripeToken(stripe, cardNumberElement, suppliedAddress)
+            } catch (error) {
+                setErrorMessage(error)
+                setSubmitting(false)
+                return
+            }
+
+            // This is where we send the token to the backend to create a subscription.
+            try {
+                // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
+                // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
+                // And `.call` is a workaround to https://github.com/TanStack/query/issues/1858#issuecomment-1255678830
+                await createTeamMutation.mutateAsync.call(undefined, {
+                    name: '(no name yet)',
+                    slug: '(no slug yet)',
+                    seats: planChange.seatCountDiff,
+                    address: {
+                        line1: suppliedAddress.line1,
+                        line2: suppliedAddress.line2 || '',
+                        city: suppliedAddress.city,
+                        state: suppliedAddress.state,
+                        postalCode: suppliedAddress.postal_code,
+                        country: suppliedAddress.country,
+                    },
+                    billingInterval: 'monthly',
+                    couponCode: '',
+                    creditCardToken: token,
+                })
+
+                navigate('/cody/manage?welcome=1')
+
+                setSubmitting(false)
+            } catch (error) {
+                setErrorMessage(`We couldn't create the Stripe token. This is what happened: ${error}`)
+                setSubmitting(false)
+            }
+        },
+        [stripe, elements, createTeamMutation.mutateAsync, planChange, navigate]
+    )
+
+    const handlePlanChangeSubmit = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+            event.preventDefault()
+
+            if (!stripe || !elements) {
+                setErrorMessage('Stripe or Stripe Elements libraries not available.')
+                return
+            }
+
+            setSubmitting(true)
+
+            try {
+                await updateCurrentSubscriptionMutation.mutateAsync.call(undefined, {
+                    subscriptionUpdate: {
+                        newSeatCount: initialSeatCount + planChange.seatCountDiff,
+                    },
+                })
+            } catch (error) {
+                setErrorMessage(`We couldn't update your subscription. This is what happened: ${error}`)
+                setSubmitting(false)
+                return
+            }
+
+            navigate('/cody/team/manage')
+
             setSubmitting(false)
-            return
-        }
-
-        // This is where we send the token to the backend to create a subscription.
-        try {
-            // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
-            // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
-            // And `.call` is a workaround to https://github.com/TanStack/query/issues/1858#issuecomment-1255678830
-            await createTeamMutation.mutateAsync.call(undefined, {
-                name: '(no name yet)',
-                slug: '(no slug yet)',
-                seats: planChange.seatCountDiff,
-                address: {
-                    line1: suppliedAddress.line1,
-                    line2: suppliedAddress.line2 || '',
-                    city: suppliedAddress.city,
-                    state: suppliedAddress.state,
-                    postalCode: suppliedAddress.postal_code,
-                    country: suppliedAddress.country,
-                },
-                billingInterval: 'monthly',
-                couponCode: '',
-                creditCardToken: token,
-            })
-
-            navigate('/cody/manage?welcome=1')
-
-            setSubmitting(false)
-        } catch (error) {
-            setErrorMessage(`We couldn't create the Stripe token. This is what happened: ${error}`)
-            setSubmitting(false)
-        }
-    }, [stripe, elements, createTeamMutation.mutateAsync, planChange, navigate])
-
-    const handlePlanChangeSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-        event.preventDefault()
-
-        if (!stripe || !elements) {
-            setErrorMessage('Stripe or Stripe Elements libraries not available.')
-            return
-        }
-
-        setSubmitting(true)
-
-        try {
-            await updateCurrentSubscriptionMutation.mutateAsync.call(undefined, {
-                subscriptionUpdate: {
-                    newSeatCount: initialSeatCount + planChange.seatCountDiff
-                }
-            })
-        } catch (error) {
-            setErrorMessage(`We couldn't update your subscription. This is what happened: ${error}`)
-            setSubmitting(false)
-            return
-        }
-
-        navigate('/cody/team/manage')
-
-        setSubmitting(false)
-    }, [elements, initialSeatCount, navigate, planChange.seatCountDiff, stripe, updateCurrentSubscriptionMutation.mutateAsync])
+        },
+        [
+            elements,
+            initialSeatCount,
+            navigate,
+            planChange.seatCountDiff,
+            stripe,
+            updateCurrentSubscriptionMutation.mutateAsync,
+        ]
+    )
 
     return (
         <>
@@ -347,8 +364,10 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             >
                                 {submitting ? (
                                     <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                ) : addSeats ? (
+                                    'Confirm plan changes'
                                 ) : (
-                                    addSeats ? 'Confirm plan changes' : 'Subscribe'
+                                    'Subscribe'
                                 )}
                             </Button>
 
