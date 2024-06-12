@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
-import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
+import { mdiMinusThick, mdiPlusThick, mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import { AddressElement, useStripe, useElements, CardNumberElement } from '@stripe/react-stripe-js'
 import type { Stripe, StripeCardNumberElement } from '@stripe/stripe-js'
 import type { StripeAddressElementChangeEvent } from '@stripe/stripe-js/dist/stripe-js/elements/address'
@@ -8,12 +8,30 @@ import classNames from 'classnames'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
-import { Form, Link, Button, Grid, H2, Text, Container, Icon, H3, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Form,
+    Link,
+    Button,
+    Grid,
+    H2,
+    Text,
+    Container,
+    Icon,
+    Input,
+    Label,
+    H3,
+    LoadingSpinner,
+    Collapse,
+    H4,
+    CollapseHeader,
+    CollapsePanel,
+} from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
 import { useCreateTeam, usePreviewUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/types'
-import { NonEditableBillingAddress } from '../manage/NonEditableBillingAddress'
+import { BillingAddressPreview } from '../BillingAddressPreview'
+import { PaymentMethodPreview } from '../PaymentMethodPreview'
 import { StripeAddressElement } from '../StripeAddressElement'
 import { StripeCardDetails } from '../StripeCardDetails'
 
@@ -92,6 +110,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     // In the case of new subscriptions we have 0 initial seats, so "addedSeatCount" is actually just "seatCount".
     const [submitting, setSubmitting] = React.useState(false)
+    const [isCardAndAddressSectionExpanded, setIsCardAndAddressSectionExpanded] = React.useState(false)
 
     const createTeamMutation = useCreateTeam()
     const previewUpdateCurrentSubscriptionMutation = usePreviewUpdateCurrentSubscription()
@@ -248,15 +267,44 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             Purchase {teamSizeChange.seatCountDiff} {pluralize('seat', teamSizeChange.seatCountDiff)}
                         </H2>
                         <Form onSubmit={handleSubmit}>
-                            <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
-
-                            <Text className="mb-2 font-medium text-sm">Email</Text>
-                            <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
-
                             {addSeats && subscription /* TypeScript needs this */ ? (
-                                <NonEditableBillingAddress subscription={subscription} />
+                                <Collapse
+                                    isOpen={isCardAndAddressSectionExpanded}
+                                    onOpenChange={setIsCardAndAddressSectionExpanded}
+                                    openByDefault={false}
+                                >
+                                    <CollapseHeader
+                                        as={Button}
+                                        variant="secondary"
+                                        outline={true}
+                                        className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                                    >
+                                        <H4 className="m-0">Show credit card and billing info</H4>
+                                        <Icon
+                                            aria-hidden={true}
+                                            svgPath={isCardAndAddressSectionExpanded ? mdiChevronUp : mdiChevronDown}
+                                            className="mr-1"
+                                            size="md"
+                                        />
+                                    </CollapseHeader>
+                                    <CollapsePanel>
+                                        <PaymentMethodPreview
+                                            paymentMethod={subscription.paymentMethod}
+                                            editButton={false}
+                                            className="mb-4"
+                                        />
+                                        <BillingAddressPreview subscription={subscription} editButton={false} />
+                                    </CollapsePanel>
+                                </Collapse>
                             ) : (
-                                <StripeAddressElement onFocus={() => setErrorMessage('')} />
+                                <>
+                                    <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
+
+                                    <Text className="mb-2 font-medium text-sm">Email</Text>
+                                    <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
+
+                                    <StripeAddressElement onFocus={() => setErrorMessage('')} />
+                                </>
                             )}
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>

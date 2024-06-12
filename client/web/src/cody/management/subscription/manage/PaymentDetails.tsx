@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiPencilOutline, mdiCreditCardOutline, mdiPlus, mdiCheck } from '@mdi/js'
+import { mdiCheck } from '@mdi/js'
 import { CardNumberElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
-import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { Button, Form, Grid, H3, Icon, Text } from '@sourcegraph/wildcard'
+import { Button, Form, Grid, H3, Text } from '@sourcegraph/wildcard'
 
 import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 // Suppressing false positive caused by an ESLint bug. See https://github.com/typescript-eslint/typescript-eslint/issues/4608
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import type { PaymentMethod, Subscription } from '../../api/types'
+import { PaymentMethodPreview } from '../PaymentMethodPreview'
 import { StripeCardDetails } from '../StripeCardDetails'
 
 import { BillingAddress } from './BillingAddress'
@@ -37,7 +37,7 @@ export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subsc
             <PaymentMethod paymentMethod={subscription.paymentMethod} />
         </div>
         <div className={styles.gridItem}>
-            <BillingAddress stripe={stripe} subscription={subscription} title="Billing address" editable={true} />
+            <BillingAddress stripe={stripe} subscription={subscription} editable={true} />
         </div>
     </Grid>
 )
@@ -45,11 +45,7 @@ export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subsc
 const PaymentMethod: React.FC<{ paymentMethod: PaymentMethod | undefined }> = ({ paymentMethod }) => {
     const [isEditMode, setIsEditMode] = useState(false)
 
-    if (!paymentMethod) {
-        return <PaymentMethodMissing onAddButtonClick={() => setIsEditMode(true)} />
-    }
-
-    if (isEditMode) {
+    if (isEditMode && paymentMethod) {
         return (
             <Elements stripe={stripe}>
                 <PaymentMethodForm onReset={() => setIsEditMode(false)} onSubmit={() => setIsEditMode(false)} />
@@ -57,38 +53,14 @@ const PaymentMethod: React.FC<{ paymentMethod: PaymentMethod | undefined }> = ({
         )
     }
 
-    return <ActivePaymentMethod paymentMethod={paymentMethod} onEditButtonClick={() => setIsEditMode(true)} />
+    return (
+        <PaymentMethodPreview
+            paymentMethod={paymentMethod}
+            editButton={true}
+            onButtonClick={() => setIsEditMode(true)}
+        />
+    )
 }
-
-const PaymentMethodMissing: React.FC<{ onAddButtonClick: () => void }> = ({ onAddButtonClick }) => (
-    <div className="d-flex align-items-center justify-content-between">
-        <H3>No payment method is available</H3>
-        <Button variant="link" className={styles.titleButton} onClick={onAddButtonClick}>
-            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
-        </Button>
-    </div>
-)
-
-const ActivePaymentMethod: React.FC<
-    Required<Pick<Subscription, 'paymentMethod'>> & { onEditButtonClick: () => void }
-> = props => (
-    <>
-        <div className="d-flex align-items-center justify-content-between">
-            <H3>Active credit card</H3>
-            <Button variant="link" className={styles.titleButton} onClick={props.onEditButtonClick}>
-                <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
-            </Button>
-        </div>
-        <div className="mt-3 d-flex justify-content-between">
-            <Text as="span" className={classNames('text-muted', styles.paymentMethodNumber)}>
-                <Icon aria-hidden={true} svgPath={mdiCreditCardOutline} /> ···· ···· ···· {props.paymentMethod.last4}
-            </Text>
-            <Text as="span" className="text-muted">
-                Expires {props.paymentMethod.expMonth}/{props.paymentMethod.expYear}
-            </Text>
-        </div>
-    </>
-)
 
 interface PaymentMethodFormProps {
     onReset: () => void
