@@ -104,5 +104,4 @@ declare global {
   const ISimpleIconsWebassembly: typeof import('~icons/simple-icons/webassembly')['default']
   const ISimpleIconsWolframmathematica: typeof import('~icons/simple-icons/wolframmathematica')['default']
   const ISimpleIconsZig: typeof import('~icons/simple-icons/zig')['default']
-  const ISkillIconsPklLight: typeof import('~icons/skill-icons/pkl-light')['default']
 }
