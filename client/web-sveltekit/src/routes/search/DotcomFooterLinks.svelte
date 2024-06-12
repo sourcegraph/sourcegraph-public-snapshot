@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     const links = [
         {
@@ -31,7 +31,7 @@
     ]
 
     function handleLinkClick(telemetryType: number): void {
-        TELEMETRY_V2_RECORDER.recordEvent('home.footer.CTA', 'click', { metadata: { type: telemetryType } })
+        TELEMETRY_RECORDER.recordEvent('home.footer.CTA', 'click', { metadata: { type: telemetryType } })
     }
 </script>
 
