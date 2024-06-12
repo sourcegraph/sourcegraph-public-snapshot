@@ -87,6 +87,8 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
     const cachePolicy = getCachePolicyFromURL(url)
     const trace = url.searchParams.get('trace') ?? undefined
 
+    const codyHref = window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'
+
     if (hasQuery) {
         const parsedQuery = parseExtendedSearchURL(url)
         let {
@@ -139,6 +141,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
         const searchStream = streamManager.search(parsedQuery, options, useClientCache)
 
         return {
+            codyHref,
             searchStream,
             queryFilters,
             queryFromURL: query,
@@ -152,6 +155,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
         }
     }
     return {
+        codyHref,
         queryOptions: {
             query: '',
         },

@@ -15,6 +15,7 @@
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
+    export let codyHref: string = '/cody'
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
@@ -46,7 +47,7 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
-        <CodyUpsellBanner codyHref={window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'} />
+        <CodyUpsellBanner {codyHref} />
     </div>
 </section>
 

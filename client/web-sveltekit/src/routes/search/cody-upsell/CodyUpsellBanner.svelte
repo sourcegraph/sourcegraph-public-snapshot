@@ -2,6 +2,8 @@
     import CodyIcon from '$lib/icons/Cody.svelte'
 
     import MultiLineCompletion from './MultiLineCompletion.svelte'
+
+    export let codyHref = '/cody'
 </script>
 
 <section>
@@ -12,7 +14,7 @@
             Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of your
             company’s codebase in mind.
         </p>
-        <a href={window.context.sourcegraphDotComMode ? 'https://sourcegraph.com/cody' : '/cody'}>Explore Cody</a>
+        <a href={codyHref}>Explore Cody</a>
     </div>
     <div class="image"><MultiLineCompletion /></div>
 </section>
