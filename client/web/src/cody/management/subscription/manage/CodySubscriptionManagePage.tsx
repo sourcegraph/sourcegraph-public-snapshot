@@ -63,7 +63,7 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
     // This page only applies to users who have a Cody Pro subscription to manage.
     // Otherwise, direct them to the ./new page to sign up.
     if (subscriptionData.plan !== CodySubscriptionPlan.PRO) {
-        return <Navigate to="/cody/manage/subscription/new" replace={true} />
+        return <Navigate to={CodyProRoutes.NewProSubscription} replace={true} />
     }
 
     return (

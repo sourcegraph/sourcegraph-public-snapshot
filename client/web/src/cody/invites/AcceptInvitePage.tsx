@@ -1,18 +1,15 @@
 import React, { useEffect } from 'react'
 
-import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { PageHeader, Text, H3, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { Page } from '../../components/Page'
-import { PageTitle } from '../../components/PageTitle'
-import { CodyAlert } from '../components/CodyAlert'
-import { WhiteIcon } from '../components/WhiteIcon'
-import { requestSSC } from '../util'
+import { CodyProRoutes } from '../codyProRoutes'
+import { CodyProApiError } from '../management/api/react-query/callCodyProApi'
+import { useSubscriptionSummary } from '../management/api/react-query/subscriptions'
+import { useTeamMembers } from '../management/api/react-query/teams'
 
 interface CodyAcceptInvitePageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
@@ -21,71 +18,102 @@ interface CodyAcceptInvitePageProps extends TelemetryV2Props {
 const AuthenticatedCodyAcceptInvitePage: React.FunctionComponent<CodyAcceptInvitePageProps> = ({
     telemetryRecorder,
 }) => {
+    const location = useLocation()
+    const userInviteStatus = useUserInviteStatus()
+
     useEffect(() => {
         telemetryRecorder.recordEvent('cody.invites.accept', 'view')
     }, [telemetryRecorder])
 
-    const navigate = useNavigate()
-
-    // Process query params
-    const parameters = useSearchParameters()
-    const teamId = parameters.get('teamID')
-    const inviteId = parameters.get('inviteID')
-    const [loading, setLoading] = React.useState(true)
-    const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
-
-    useEffect(() => {
-        async function postAcceptInvite(): Promise<void> {
-            if (!teamId || !inviteId) {
-                setErrorMessage('Invalid invite ID or team ID')
-                setLoading(false)
-                return
-            }
-            const response = await requestSSC(`/team/${teamId}/invites/${inviteId}/accept`, 'POST')
-            setLoading(false)
-            if (response.ok) {
-                // Wait a second before navigating to the manage team page so that the user sees the success alert.
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                navigate('/cody/manage?welcome=1')
-            } else {
-                setErrorMessage(await response.text())
-            }
+    switch (userInviteStatus) {
+        case undefined: {
+            return null
         }
-
-        void postAcceptInvite()
-    }, [inviteId, navigate, teamId])
-
-    return (
-        <Page className={classNames('d-flex flex-column')}>
-            <PageTitle title="Manage Cody team" />
-            <PageHeader className="mb-4 mt-4">
-                <PageHeader.Heading as="h2" styleAs="h1">
-                    <div className="d-inline-flex align-items-center">
-                        <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
-                        Join Cody Pro team
-                    </div>
-                </PageHeader.Heading>
-            </PageHeader>
-
-            {errorMessage ? (
-                <CodyAlert variant="error">
-                    <H3>We couldn't accept the invite.</H3>
-                    <Text size="small" className="text-muted mb-0">
-                        {errorMessage}
-                    </Text>
-                </CodyAlert>
-            ) : null}
-
-            {!loading && !errorMessage ? (
-                <CodyAlert variant="greenSuccess">
-                    <H3>Invite accepted!</H3>
-                    <Text size="small" className="mb-0">
-                        You are now a member of the team. We'll now redirect you to the team page.
-                    </Text>
-                </CodyAlert>
-            ) : null}
-        </Page>
-    )
+        case UserInviteStatus.AnotherTeamSoleAdmin: {
+            return <Navigate to={CodyProRoutes.ManageTeam + location.search} replace={true} />
+        }
+        default: {
+            return <Navigate to={CodyProRoutes.Manage + location.search} replace={true} />
+        }
+    }
 }
 
 export const CodyAcceptInvitePage = withAuthenticatedUser(AuthenticatedCodyAcceptInvitePage)
+
+export const useInviteParams = (): { params?: { teamId: string; inviteId: string }; clear: () => void } => {
+    const [params, setParams] = useSearchParams()
+    const teamId = params.get('teamID')
+    const inviteId = params.get('inviteID')
+
+    return {
+        params: teamId && inviteId ? { teamId, inviteId } : undefined,
+        clear: () =>
+            setParams(
+                prev => {
+                    prev.delete('teamID')
+                    prev.delete('inviteID')
+                    return prev
+                },
+                { replace: true }
+            ),
+    }
+}
+
+export enum UserInviteStatus {
+    Error,
+
+    NoCurrentTeam,
+    InvitedTeamMember,
+    AnotherTeamMember,
+    AnotherTeamSoleAdmin,
+}
+export const useUserInviteStatus = (): UserInviteStatus | undefined => {
+    const { params: inviteParamsFromURL } = useInviteParams()
+    const subscriptionSummaryQueryEnabled = inviteParamsFromURL !== undefined
+    const subscriptionSummaryQuery = useSubscriptionSummary({ enabled: subscriptionSummaryQueryEnabled })
+    const teamMembersQueryEnabled = subscriptionSummaryQuery.data?.userRole === 'admin'
+    const teamMembersQuery = useTeamMembers({ enabled: teamMembersQueryEnabled })
+
+    if (!inviteParamsFromURL) {
+        return UserInviteStatus.Error
+    }
+
+    if (
+        (subscriptionSummaryQueryEnabled ? !subscriptionSummaryQuery.isFetched : false) ||
+        (teamMembersQueryEnabled ? !teamMembersQuery.isFetched : false)
+    ) {
+        return undefined
+    }
+
+    if (subscriptionSummaryQuery.isError) {
+        return subscriptionSummaryQuery.error instanceof CodyProApiError &&
+            subscriptionSummaryQuery.error.status === 404
+            ? UserInviteStatus.NoCurrentTeam
+            : UserInviteStatus.Error
+    }
+
+    if (teamMembersQuery.isError) {
+        return UserInviteStatus.Error
+    }
+
+    if (subscriptionSummaryQuery.data && (teamMembersQueryEnabled ? teamMembersQuery.data : true)) {
+        const { teamId, userRole } = subscriptionSummaryQuery.data
+
+        if (teamId) {
+            if (teamId === inviteParamsFromURL.teamId) {
+                return UserInviteStatus.InvitedTeamMember
+            }
+            if (userRole === 'admin') {
+                const currentTeamAdminsCount = teamMembersQuery.data!.members.filter(
+                    member => member.role === 'admin'
+                ).length
+                if (currentTeamAdminsCount === 1) {
+                    return UserInviteStatus.AnotherTeamSoleAdmin
+                }
+            }
+            return UserInviteStatus.AnotherTeamMember
+        }
+    }
+
+    return undefined
+}

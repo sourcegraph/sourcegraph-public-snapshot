@@ -29,7 +29,13 @@ const signOutAndRedirectToSignIn = async (): Promise<void> => {
     }
 }
 
-export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | undefined> => {
+export class CodyProApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message)
+    }
+}
+
+export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Response | undefined> => {
     const response = await fetch(
         `/.api/ssc/proxy${call.urlSuffix}`,
         buildRequestInit({
@@ -47,8 +53,8 @@ export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | und
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new Error(`Request to Cody Pro API failed with status ${response.status}`)
+        throw new CodyProApiError(await response.text(), response.status)
     }
 
-    return (await response.json()) as Data
+    return response
 }

@@ -6,7 +6,18 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonLink,
+    H1,
+    H2,
+    H3,
+    Icon,
+    Link,
+    PageHeader,
+    Text,
+    useSearchParameters,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
@@ -20,11 +31,13 @@ import {
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
+import { useInviteParams, UserInviteStatus, useUserInviteStatus } from '../invites/AcceptInvitePage'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL } from '../util'
 
+import { useAcceptInvite, useCancelInvite, useInvite } from './api/react-query/invites'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
@@ -104,6 +117,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
+                <AcceptInviteBanner />
                 {welcomeToPro && (
                     <CodyAlert variant="purpleCodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
@@ -193,3 +207,75 @@ const UpgradeToProBanner: React.FunctionComponent<{
         </div>
     </div>
 )
+
+const AcceptInviteBanner: React.FC = () => {
+    const { params: inviteParams, clear: clearInviteParams } = useInviteParams()
+    const userInviteStatus = useUserInviteStatus()
+
+    const inviteQuery = useInvite(inviteParams)
+    const acceptInviteMutation = useAcceptInvite()
+    const cancelInviteMutation = useCancelInvite()
+
+    if (inviteParams === undefined && acceptInviteMutation.isIdle && cancelInviteMutation.isIdle) {
+        return null
+    }
+
+    switch (userInviteStatus) {
+        case UserInviteStatus.NoCurrentTeam:
+        case UserInviteStatus.AnotherTeamMember: {
+            const sentBy = inviteQuery.data?.sentBy
+            return (
+                <CodyAlert variant="purple">
+                    <H3 className="mt-4">{acceptInviteMutation.isSuccess ? 'Success' : 'Join new Cody Pro team?'}</H3>
+                    {acceptInviteMutation.isSuccess ? (
+                        <Text>You joined the new Cody Pro team.</Text>
+                    ) : (
+                        <>
+                            <Text>You've been invited to a new Cody Pro team${sentBy ? ` by ${sentBy}` : ''}.</Text>
+                            <Text>
+                                {userInviteStatus === UserInviteStatus.NoCurrentTeam
+                                    ? 'You will get unlimited autocompletions chat messages.'
+                                    : 'This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not lose access to your Cody Pro benefits.'}
+                            </Text>
+                            {acceptInviteMutation.isError ? (
+                                <Text className="text-danger">{acceptInviteMutation.error.message}</Text>
+                            ) : (
+                                <div>
+                                    <Button onClick={() => acceptInviteMutation.mutate(inviteParams!)}>Accept</Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() =>
+                                            cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
+                                        }
+                                    >
+                                        Decline
+                                    </Button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </CodyAlert>
+            )
+        }
+        case UserInviteStatus.InvitedTeamMember: {
+            if (cancelInviteMutation.isIdle) {
+                void cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
+            }
+            // TODO: ensure this banner is still visible when cancelInviteMutation settles, query params are cleared and now we userInviteStatus is UserInviteStatus.Error
+            return (
+                <CodyAlert variant="purple">
+                    <H3 className="mt-4">You are already memeber of the team.</H3>
+                    <Text>You've been invited to a new Cody Pro team by rob@acmecorp.com.</Text>
+                    <Text>This invite will be canceled.</Text>
+                </CodyAlert>
+            )
+        }
+        case UserInviteStatus.Error: {
+            // TODO: handle error
+            return null
+        }
+        default: {
+            return null
+        }
+    }
+}

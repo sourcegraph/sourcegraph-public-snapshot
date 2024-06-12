@@ -11,8 +11,12 @@ import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { WhiteIcon } from '../components/WhiteIcon'
+import { useInviteParams, useUserInviteStatus } from '../invites/AcceptInvitePage'
+import { useAcceptInvite, useCancelInvite } from '../management/api/react-query/invites'
+import { useTeamMembers } from '../management/api/react-query/teams'
 import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
 import { useSSCQuery } from '../util'
 
@@ -73,6 +77,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Manage Cody team" />
+                {isAdmin ? <AcceptInviteBanner /> : null}
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
@@ -93,7 +98,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                 </Link>
                                 <Button
                                     as={Link}
-                                    to="/cody/manage/subscription/new"
+                                    to={CodyProRoutes.NewProSubscription}
                                     variant="success"
                                     className="text-nowrap"
                                 >
@@ -151,3 +156,38 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
 }
 
 export const CodyManageTeamPage = withAuthenticatedUser(AuthenticatedCodyManageTeamPage)
+
+const AcceptInviteBanner: React.FC = () => {
+    const { params: inviteParams, clear: clearInviteParams } = useInviteParams()
+
+    const teamMembersQuery = useTeamMembers({ enabled: inviteParams !== undefined })
+    const acceptInviteMutation = useAcceptInvite()
+    const cancelInviteMutation = useCancelInvite()
+
+    if (inviteParams === undefined || !teamMembersQuery.data) {
+        return null
+    }
+
+    const adminsCount = teamMembersQuery.data.members.filter(member => member.role === 'admin').length
+
+    return (
+        <CodyAlert variant="purple">
+            <H3 className="mt-4">Join new Cody Pro team?</H3>
+            <Text>You've been invited to a new Cody Pro team by rob@acmecorp.com.</Text>
+            <Text>
+                To accept this invite you need to transfer your administrative role to another member of your team.
+            </Text>
+            <div>
+                <Button disabled={adminsCount === 1} onClick={() => acceptInviteMutation.mutate(inviteParams!)}>
+                    Accept
+                </Button>
+                <Button
+                    variant="secondary"
+                    onClick={() => cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })}
+                >
+                    Decline
+                </Button>
+            </div>
+        </CodyAlert>
+    )
+}
