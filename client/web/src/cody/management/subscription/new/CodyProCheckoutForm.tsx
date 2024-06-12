@@ -44,7 +44,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
     const elements = useElements()
     const navigate = useNavigate()
 
-    const creatingTeamMutation = initialSeatCount > 1
+    const isTeam = initialSeatCount > 1
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     const [seatCount, setSeatCount] = React.useState(initialSeatCount)
@@ -156,7 +156,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             <Container>
                 <Grid columnCount={2} spacing={4}>
                     <div>
-                        <H2>{creatingTeamMutation ? 'Add seats' : 'Select number of seats'}</H2>
+                        <H2>{isTeam ? 'Add seats' : 'Select number of seats'}</H2>
                         <div className="d-flex flex-row align-items-center pb-3 mb-4 border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
                             <Button
@@ -176,7 +176,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         <H2>Summary</H2>
                         <div className="d-flex flex-row align-items-center mb-4">
                             <div className="flex-1">
-                                {creatingTeamMutation ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
+                                {isTeam ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
                             </div>
                             <div>
                                 <strong>${total} / month</strong>
