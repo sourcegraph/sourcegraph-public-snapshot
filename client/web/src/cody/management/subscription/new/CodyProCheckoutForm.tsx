@@ -2,6 +2,8 @@ import React from 'react'
 
 import { mdiMinusThick, mdiPlusThick } from '@mdi/js'
 import { AddressElement, useStripe, useElements, CardNumberElement } from '@stripe/react-stripe-js'
+import type { Stripe, StripeCardNumberElement } from '@stripe/stripe-js'
+import type { StripeAddressElementChangeEvent } from '@stripe/stripe-js/dist/stripe-js/elements/address'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -34,6 +36,38 @@ const MAX_SEAT_COUNT = 50
 interface CodyProCheckoutFormProps {
     initialSeatCount: number
     customerEmail: string | undefined
+}
+
+async function createStripeToken(
+    stripe: Stripe,
+    cardNumberElement: StripeCardNumberElement,
+    suppliedAddress: StripeAddressElementChangeEvent['value']['address']
+): Promise<string> {
+    let response
+    try {
+        // Note that Stripe may have returned an error response.
+        response = await stripe.createToken(cardNumberElement, {
+            // We send the address data along with the card info to let Stripe do more validation such as
+            // confirming the zip code matches the card's. Later, we'll also store this as the Customer's address.
+            address_line1: suppliedAddress.line1,
+            address_line2: suppliedAddress.line2 || '',
+            address_city: suppliedAddress.city,
+            address_state: suppliedAddress.state,
+            address_zip: suppliedAddress.postal_code,
+            address_country: suppliedAddress.country,
+            currency: 'usd',
+        })
+    } catch (error) {
+        throw new Error(`We couldn't create the team. This is what happened: ${error}`)
+    }
+    if (response.error) {
+        throw new Error(response.error.message ?? 'We got an unknown error from Stripe.')
+    }
+    const tokenId = response.token?.id
+    if (!tokenId) {
+        throw new Error('Stripe token not found.')
+    }
+    return tokenId
 }
 
 export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormProps> = ({
@@ -81,59 +115,36 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         const suppliedAddress = addressElementValue.value.address
 
         setSubmitting(true)
-        try {
-            // Note that Stripe may have returned an error response.
-            const response = await stripe.createToken(cardNumberElement, {
-                // We want to include the address data along with the card info so Stripe can do
-                // more validation such as confirming the zip code matches the card's.
-                //
-                // This is information we'll also want to pass along to the backend, so
-                // we can store it as the Customer's address as well.
-                address_line1: suppliedAddress.line1,
-                address_line2: suppliedAddress.line2 || '',
-                address_city: suppliedAddress.city,
-                address_state: suppliedAddress.state,
-                address_zip: suppliedAddress.postal_code,
-                address_country: suppliedAddress.country,
-                currency: 'usd',
-            })
-            if (response.error) {
-                setErrorMessage(response.error.message ?? 'We got an unknown error from Stripe.')
-                setSubmitting(false)
-                return
-            }
-            const token = response.token?.id
-            if (!token) {
-                setErrorMessage('Stripe token not found.')
-                setSubmitting(false)
-                return
-            }
 
-            // This is where we send the token to the backend to create a subscription.
-            try {
-                // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
-                // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
-                await createTeamMutation.mutateAsync({
-                    name: '(no name yet)',
-                    slug: '(no slug yet)',
-                    seats: seatCount,
-                    address: {
-                        line1: suppliedAddress.line1,
-                        line2: suppliedAddress.line2 || '',
-                        city: suppliedAddress.city,
-                        state: suppliedAddress.state,
-                        postalCode: suppliedAddress.postal_code,
-                        country: suppliedAddress.country,
-                    },
-                    billingInterval: 'monthly',
-                    couponCode: '',
-                    creditCardToken: token,
-                })
-            } catch (error) {
-                setErrorMessage(`We couldn't create the team. This is what happened: ${error}`)
-                setSubmitting(false)
-                return
-            }
+        let token
+        try {
+            token = await createStripeToken(stripe, cardNumberElement, suppliedAddress)
+        } catch (error) {
+            setErrorMessage(error)
+            setSubmitting(false)
+            return
+        }
+
+        // This is where we send the token to the backend to create a subscription.
+        try {
+            // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
+            // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
+            await createTeamMutation.mutateAsync({
+                name: '(no name yet)',
+                slug: '(no slug yet)',
+                seats: seatCount,
+                address: {
+                    line1: suppliedAddress.line1,
+                    line2: suppliedAddress.line2 || '',
+                    city: suppliedAddress.city,
+                    state: suppliedAddress.state,
+                    postalCode: suppliedAddress.postal_code,
+                    country: suppliedAddress.country,
+                },
+                billingInterval: 'monthly',
+                couponCode: '',
+                creditCardToken: token,
+            })
 
             navigate('/cody/manage?welcome=1')
 
