@@ -1,16 +1,21 @@
 <script lang="ts">
-    import { getFileIconInfo } from '$lib/wildcard'
+    import type { ComponentProps } from 'svelte'
+
+    import Icon2 from '$lib/Icon2.svelte'
+    import { getFileIconInfo, DEFAULT_ICON_COLOR } from '$lib/wildcard'
+
     import { FileIcon_GitBlob } from './FileIcon.gql'
-    import Icon from '$lib/Icon.svelte'
-    import { mdiFileCodeOutline } from '@mdi/js'
+
+    type $$Props = {
+        file: FileIcon_GitBlob | null
+    } & Omit<ComponentProps<Icon2>, 'icon'>
 
     export let file: FileIcon_GitBlob | null
-    export let inline = false
 
-    $: icon = (file && getFileIconInfo(file.name, file.languages.at(0) ?? '')?.svg) || {
-        path: mdiFileCodeOutline,
-        color: 'var(--gray-05)',
+    $: icon = (file && getFileIconInfo(file.name, file.languages.at(0) ?? '')) ?? {
+        icon: ILucideFileCode,
+        color: DEFAULT_ICON_COLOR,
     }
 </script>
 
-<Icon svgPath={icon.path} {inline} aria-hidden --color={icon.color} />
+<Icon2 icon={icon.icon} aria-hidden style="color: {icon.color}" {...$$restProps} />

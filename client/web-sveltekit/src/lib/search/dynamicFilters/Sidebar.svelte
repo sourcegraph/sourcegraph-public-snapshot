@@ -156,7 +156,7 @@
             onFilterSelect={handleFilterSelect}
         >
             <svelte:fragment slot="label" let:label>
-                <LanguageIcon class="icon" language={label} inline />&nbsp;
+                <LanguageIcon language={label} inline />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
