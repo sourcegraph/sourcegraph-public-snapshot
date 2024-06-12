@@ -48,7 +48,7 @@ func TestRecorderEndToEnd(t *testing.T) {
 	exportStore.(database.MockExportModeSetterTelemetryEventsExportQueueStore).
 		SetMockExportMode(licensing.TelemetryEventsExportAll)
 
-	recorder := telemetry.NewEventRecorder(telemetrystore.NewDefaultStore(exportStore, db.EventLogs()))
+	recorder := telemetry.NewEventRecorder(telemetrystore.New(exportStore, db.EventLogs()))
 
 	wantEvents := 3
 	t.Run("Record and BatchRecord", func(t *testing.T) {

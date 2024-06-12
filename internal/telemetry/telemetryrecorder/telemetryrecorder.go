@@ -25,7 +25,7 @@ func New(db database.DB) *telemetry.EventRecorder {
 		// is created but never in the test's coverage.
 		return telemetry.NewEventRecorder(nil)
 	}
-	return telemetry.NewEventRecorder(telemetrystore.NewDefaultStore(db.TelemetryEventsExportQueue(), db.EventLogs()))
+	return telemetry.NewEventRecorder(telemetrystore.New(db.TelemetryEventsExportQueue(), db.EventLogs()))
 }
 
 // New creates a default BestEffortEventRecorder for Telemetry V2, which exports

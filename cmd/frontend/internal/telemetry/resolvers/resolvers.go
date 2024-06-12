@@ -31,7 +31,7 @@ func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
 	return &Resolver{
 		logger:         logger,
 		db:             db,
-		telemetryStore: telemetrystore.NewDefaultStore(db.TelemetryEventsExportQueue(), db.EventLogs()),
+		telemetryStore: telemetrystore.New(db.TelemetryEventsExportQueue(), db.EventLogs()),
 	}
 }
 

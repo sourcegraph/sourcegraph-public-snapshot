@@ -35,7 +35,9 @@ type Store struct {
 	eventLogs   database.EventLogStore
 }
 
-func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) telemetry.EventsStore {
+var _ telemetry.EventsStore = (*Store)(nil)
+
+func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) *Store {
 	return &Store{exportQueue, eventLogs}
 }
 
