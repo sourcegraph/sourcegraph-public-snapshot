@@ -48,17 +48,25 @@ commands:
       # Access token for accessing Anthropic:
       # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&h=my.1password.com&i=athw572l6xqqvtnbbgadevgbqi&v=dnrhbauihkhjs5ag6vszsme45a
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: "..."
+      # Set other external API tokens as needed
+      CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN: "..."
       # Create a personal access token on https://sourcegraph.test:3443/user/settings/tokens
       # for your local site admin user. This allows your local Cody Gateway to
       # access user information in the Sourcegraph instance.
+      #
+      # IMPORTANT: The token needs to belong to a site admin, or have additional
+      # roles and permissions. Your end user token will not be sufficient.
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: "..."
-      # Other values, such as CODY_GATEWAY_OPENAI_ACCESS_TOKEN and
-      # CODY_GATEWAY_OPENAI_ORG_ID, can be set to access OpenAI services as well.
+      # For working with embeddings, set the following values - it's recommended to use the dev deployment.
+      CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL: 'https://embeddings.sgdev.org/v2/models/st-multi-qa-mpnet-base-dot-v1/infer' # Replace model name as needed
+      # Available in https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/nigajmdgojg3uwzd5237jfoygm
+      CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: "..."
 ```
 
 For more configuration options, refer to the [configuration source code](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/cody-gateway/shared/config.go#L60).
 
 Then, restart `sg start dotcom` and try interacting with Cody!
+If you'll be sending requests to Cody Gateway manually, you'll need to convert the Sourcegraph personal access token into a Cody Gateway access token. Run `sg cody-gateway gen-token sgp_<token>...` to generate a token that starts with `sgd_` and can be used in requests to CG as a bearer token.
 
 ## Observing Cody Gateway
 

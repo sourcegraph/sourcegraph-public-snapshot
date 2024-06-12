@@ -48,6 +48,8 @@ go_test(
             "@com_github_dustin_go_humanize//:go-humanize",
             "@com_github_google_go_cmp//cmp",
             "@com_github_sourcegraph_conc//pool",
+            "@com_github_stretchr_testify//require",
+            "@org_uber_go_goleak//:goleak",
         ],
         "@io_bazel_rules_go//go/platform:darwin": [
             "//internal/bytesize",
@@ -65,6 +67,8 @@ go_test(
             "@com_github_dustin_go_humanize//:go-humanize",
             "@com_github_google_go_cmp//cmp",
             "@com_github_sourcegraph_conc//pool",
+            "@com_github_stretchr_testify//require",
+            "@org_uber_go_goleak//:goleak",
         ],
         "//conditions:default": [],
     }),

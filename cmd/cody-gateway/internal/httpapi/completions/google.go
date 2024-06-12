@@ -41,10 +41,12 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 // The request body for Google completions.
 // Ref: https://ai.google.dev/api/rest/v1/models/generateContent#request-body
 type googleRequest struct {
-	Model            string                 `json:"model"`
-	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
-	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
+	Model             string                 `json:"model"`
+	Stream            bool                   `json:"stream,omitempty"`
+	Contents          []googleContentMessage `json:"contents"`
+	GenerationConfig  googleGenerationConfig `json:"generationConfig,omitempty"`
+	SafetySettings    []googleSafetySettings `json:"safetySettings,omitempty"`
+	SymtemInstruction string                 `json:"systemInstruction,omitempty"`
 }
 
 type googleContentMessage struct {
@@ -73,7 +75,7 @@ type googleSafetySettings struct {
 }
 
 func (r googleRequest) ShouldStream() bool {
-	return true
+	return r.Stream
 }
 
 func (r googleRequest) GetModel() string {
@@ -119,7 +121,7 @@ func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleReques
 }
 
 func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ googleRequest) error {
-	if feature == codygateway.FeatureCodeCompletions {
+	if feature == codygateway.FeatureEmbeddings {
 		return errors.Newf("feature %q is currently not supported for Google", feature)
 	}
 	return nil
@@ -141,7 +143,7 @@ func (*GoogleHandlerMethods) transformBody(_ *googleRequest, _ string) {
 }
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
-	return body.Model, map[string]any{"stream": body.ShouldStream()}
+	return body.Model, map[string]any{"stream": body.Stream}
 }
 
 func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
@@ -156,7 +158,6 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	// it as JSON.
 	if !reqBody.ShouldStream() {
 		var res googleResponse
-
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
 			return promptUsage, completionUsage

@@ -4,9 +4,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // UnionRegExps separates values with a | operator to create a string
@@ -57,8 +58,8 @@ var filenamesFromLanguage = func() map[string][]string {
 // LangToFileRegexp converts a lang: parameter to its corresponding file
 // patterns for file filters. The lang value must be valid, cf. validate.go
 func LangToFileRegexp(lang string) string {
-	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-	extensions := enry.GetLanguageExtensions(lang)
+	lang, _ = languages.GetLanguageByAlias(lang) // Invariant: lang is valid.
+	extensions := languages.GetLanguageExtensions(lang)
 	patterns := make([]string, len(extensions))
 	for i, e := range extensions {
 		// Add `\.ext$` pattern to match files with the given extension.

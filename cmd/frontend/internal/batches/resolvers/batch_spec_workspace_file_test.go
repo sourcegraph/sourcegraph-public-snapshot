@@ -61,7 +61,7 @@ func (m *mockFileResolver) Highlight(ctx context.Context, highlightArgs *graphql
 	return nil, args.Error(1)
 }
 
-func (m *mockFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {
+func (m *mockFileResolver) ToGitBlob() (*graphqlbackend.GitBlobResolver, bool) {
 	return nil, false
 }
 func (m *mockFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileResolver, bool) {
