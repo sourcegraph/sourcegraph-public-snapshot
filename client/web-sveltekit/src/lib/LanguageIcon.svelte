@@ -1,5 +1,11 @@
 <script lang="ts">
+    import type { ComponentProps } from 'svelte'
+
     import FileIcon from './repo/FileIcon.svelte'
+
+    type $$Props = {
+        language: string
+    } & Omit<ComponentProps<FileIcon>, 'file'>
 
     export let language: string
 </script>
@@ -9,4 +15,4 @@
     This allows us to use the same fallback logic.
 -->
 
-<FileIcon file={{ name: '', languages: [language] }} />
+<FileIcon file={{ name: '', languages: [language] }} {...$$restProps} />
