@@ -95,7 +95,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
-            <PageTitle title="New Subscription" />
+            <PageTitle title={addSeats ? 'Add seats' : 'New subscription'} />
             <PageHeader className="my-4">
                 <PageHeader.Heading as="h1" className={styles.h1}>
                     <div className="d-inline-flex align-items-center">
