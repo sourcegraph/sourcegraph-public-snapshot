@@ -929,13 +929,13 @@ func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
 }
 
-func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID) (uploadsshared.CompletedUpload, error) {
-	// NOTE: Because we're not filtering by path, this relies on us having only syntactic uploads for the root directory.
-	// Is that a fair assumption to make for now?
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, error) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
-		RepositoryID: int(repo.ID),
-		Commit:       string(commit),
-		Indexer:      uploadsshared.SyntacticIndexer,
+		RepositoryID:       int(repo.ID),
+		Commit:             string(commit),
+		Indexer:            uploadsshared.SyntacticIndexer,
+		Path:               path,
+		RootToPathMatching: uploadsshared.RootMustEnclosePath,
 	})
 
 	if err != nil {
@@ -950,11 +950,19 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 		)
 	}
 
-	// NOTE: Is seeing multiple syntactic uploads an error?
-	// For now we're just arbitrarily picking the first one.
+	s.logger.Warn(
+		"Multiple syntactic uploads found, picking the first one",
+		log.String("repo", repo.URI),
+		log.String("commit", commit.Short()),
+		log.String("path", path),
+	)
 	return uploads[0], nil
 }
 
+// getSyntacticSymbolsAtRange tries to look up the symbols at the given coordinates
+// in a syntactic upload. If this function returns an error you should most likely
+// log and handle it instead of rethrowing, as this could fail for a myriad of reasons
+// (some broken invariant internally, network issue etc.)
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
 	repo types.Repo,
@@ -962,8 +970,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	path string,
 	symbolRange shared.Range,
 ) (symbols []*scip.Symbol, err error) {
-	scipSymbolRange := symbolRange.ToSCIPRange()
-	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision)
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision, path)
 	if err != nil {
 		return nil, err
 	}
