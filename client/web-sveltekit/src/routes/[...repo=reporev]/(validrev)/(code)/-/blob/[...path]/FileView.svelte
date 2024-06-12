@@ -24,7 +24,6 @@
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
-    import { codeCopiedEvent, SVELTE_LOGGER } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -120,7 +119,7 @@
     }
 
     function handleCopy(): void {
-        SVELTE_LOGGER.log(...codeCopiedEvent('blob-view'))
+        TELEMETRY_V2_RECORDER.recordEvent('repo.blob', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {

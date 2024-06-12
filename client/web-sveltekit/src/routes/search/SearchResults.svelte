@@ -38,7 +38,6 @@
         type SymbolMatch,
         type ContentMatch,
     } from '$lib/shared'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS, codeCopiedEvent } from '$lib/telemetry'
     import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
@@ -132,11 +131,10 @@
     }
 
     function handleResultCopy(): void {
-        SVELTE_LOGGER.log(...codeCopiedEvent('search-result'))
+        TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'copy')
     }
 
     function handleSearchResultClick(index: number): void {
-        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SearchResultClick)
         TELEMETRY_V2_RECORDER.recordEvent('search.result.area', 'click', {
             metadata: {
                 index,

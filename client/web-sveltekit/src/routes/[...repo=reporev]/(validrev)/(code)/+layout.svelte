@@ -1,7 +1,6 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -17,12 +16,12 @@
     // to expose more info about nature of switch tab / close tab actions
     function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
         if (nextSelectedTab === 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            TELEMETRY_V2_RECORDER.recordEvent('repo.historyPanel', 'show')
             return
         }
 
         if (nextSelectedTab === null && selectedTab == 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            TELEMETRY_V2_RECORDER.recordEvent('repo.historyPanel', 'hide')
             return
         }
     }
@@ -52,6 +51,7 @@
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
+    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
