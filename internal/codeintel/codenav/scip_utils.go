@@ -10,22 +10,33 @@ type IOccurrence interface {
 	GetRange() []int32
 }
 
-func findIntersectingOccurrences[Occurrence IOccurrence](occurrences []Occurrence, search scip.Range) []Occurrence {
-	n, _ := slices.BinarySearchFunc(occurrences, search.Start, func(occ Occurrence, p scip.Position) int {
+func findOccurrencesWithEqualRange[Occurrence IOccurrence](occurrences []Occurrence, search scip.Range) []Occurrence {
+	n, found := slices.BinarySearchFunc(occurrences, search.Start, func(occ Occurrence, p scip.Position) int {
 		occRange := scip.NewRangeUnchecked(occ.GetRange())
 		return occRange.Start.Compare(p)
 	})
-	n = max(0, n-1)
-
-	result := make([]Occurrence, 0)
+	results := []Occurrence{}
+	if !found {
+		return results
+	}
+	// Binary search is not guaranteed to find the last or first index, so we need to check in both directions
 	for _, occurrence := range occurrences[n:] {
 		parsedRange := scip.NewRangeUnchecked(occurrence.GetRange())
-		if search.End.Compare(parsedRange.Start) < 0 {
+		if parsedRange.Compare(search) == 0 {
+			results = append(results, occurrence)
+		} else {
 			break
 		}
-		if search.Intersects(parsedRange) {
-			result = append(result, occurrence)
+	}
+	for i := n - 1; i >= 0; i-- {
+		occurrence := occurrences[i]
+		parsedRange := scip.NewRangeUnchecked(occurrence.GetRange())
+		if parsedRange.Compare(search) == 0 {
+			results = append(results, occurrence)
+		} else {
+			break
 		}
 	}
-	return result
+
+	return results
 }

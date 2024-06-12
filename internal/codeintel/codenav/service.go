@@ -987,7 +987,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	var parseFail *scip.Occurrence = nil
 
 	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
-	for _, occurrence := range findIntersectingOccurrences(doc.Occurrences, scipSymbolRange) {
+	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, scipSymbolRange) {
 		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 		if err != nil {
 			parseFail = occurrence

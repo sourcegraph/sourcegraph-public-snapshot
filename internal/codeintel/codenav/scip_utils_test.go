@@ -15,16 +15,17 @@ func (o testOccurrence) GetRange() []int32 {
 	return o.Ints
 }
 
-func Test_findIntersectingOccurrences(t *testing.T) {
-	type args[Occurrence IOccurrence] struct {
-		occurrences []Occurrence
-		search      scip.Range
-	}
-	type testCase[Occurrence IOccurrence] struct {
-		name string
-		args args[Occurrence]
-		want []Occurrence
-	}
+type args[Occurrence IOccurrence] struct {
+	occurrences []Occurrence
+	search      scip.Range
+}
+type testCase[Occurrence IOccurrence] struct {
+	name string
+	args args[Occurrence]
+	want []Occurrence
+}
+
+func Test_findOccurrencesWithEqualRange(t *testing.T) {
 	tests := []testCase[testOccurrence]{
 		{
 			name: "empty",
@@ -49,7 +50,7 @@ func Test_findIntersectingOccurrences(t *testing.T) {
 			},
 		},
 		{
-			name: "intersecting match",
+			name: "no match",
 			args: args[testOccurrence]{
 				occurrences: []testOccurrence{
 					{Ints: []int32{1, 0, 3}},
@@ -58,43 +59,30 @@ func Test_findIntersectingOccurrences(t *testing.T) {
 				},
 				search: scip.NewRangeUnchecked([]int32{1, 4, 6}),
 			},
-			want: []testOccurrence{
-				{Ints: []int32{1, 3, 5}},
-				{Ints: []int32{1, 5, 7}},
-			},
+			want: []testOccurrence{},
 		},
 		{
-			name: "encompassing match",
+			name: "multi match",
 			args: args[testOccurrence]{
 				occurrences: []testOccurrence{
 					{Ints: []int32{1, 0, 3}},
 					{Ints: []int32{1, 3, 7}},
+					{Ints: []int32{1, 3, 7}},
+					{Ints: []int32{1, 3, 7}},
 					{Ints: []int32{1, 7, 10}},
 				},
-				search: scip.NewRangeUnchecked([]int32{1, 4, 6}),
+				search: scip.NewRangeUnchecked([]int32{1, 3, 7}),
 			},
 			want: []testOccurrence{
 				{Ints: []int32{1, 3, 7}},
-			},
-		},
-		{
-			name: "contained match",
-			args: args[testOccurrence]{
-				occurrences: []testOccurrence{
-					{Ints: []int32{1, 0, 1}},
-					{Ints: []int32{1, 3, 5}},
-					{Ints: []int32{1, 7, 10}},
-				},
-				search: scip.NewRangeUnchecked([]int32{1, 2, 6}),
-			},
-			want: []testOccurrence{
-				{Ints: []int32{1, 3, 5}},
+				{Ints: []int32{1, 3, 7}},
+				{Ints: []int32{1, 3, 7}},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := findIntersectingOccurrences(tt.args.occurrences, tt.args.search)
+			got := findOccurrencesWithEqualRange(tt.args.occurrences, tt.args.search)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 			}
