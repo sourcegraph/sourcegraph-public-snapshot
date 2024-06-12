@@ -2,8 +2,6 @@
     import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
-    import { getButtonClassName } from '@sourcegraph/wildcard'
-
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
     import Icon2 from '$lib/Icon2.svelte'
@@ -17,6 +15,7 @@
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
 
