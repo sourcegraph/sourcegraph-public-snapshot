@@ -10,12 +10,12 @@
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     import CodyUpsellBanner from './cody-upsell/CodyUpsellBanner.svelte'
-    import HomeFooterLinks from './HomeFooterLinks.svelte'
+    import DotcomFooterLinks from './DotcomFooterLinks.svelte'
     import SearchHomeNotifications from './SearchHomeNotifications.svelte'
 
     export let queryState: QueryStateStore
     export let codyHref: string = '/cody'
-    export let footerLinks: { name: string; href: string; handleClick: () => void }[]
+    export let showDotcomFooterLinks: boolean = false
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
@@ -42,7 +42,9 @@
             <SearchHomeNotifications />
         </div>
         <CodyUpsellBanner {codyHref} />
-        <HomeFooterLinks links={footerLinks} />
+        {#if showDotcomFooterLinks}
+            <DotcomFooterLinks />
+        {/if}
     </div>
 </section>
 

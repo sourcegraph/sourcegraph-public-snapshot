@@ -142,6 +142,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
 
         return {
             codyHref,
+            showDotcomFooterLinks: window.context.sourcegraphDotComMode,
             searchStream,
             queryFilters,
             queryFromURL: query,
@@ -156,6 +157,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
     }
     return {
         codyHref,
+        showDotcomFooterLinks: window.context.sourcegraphDotComMode,
         queryOptions: {
             query: '',
         },
