@@ -42,7 +42,7 @@
         TELEMETRY_V2_RECORDER.recordEvent('home.footer.CTA', 'click', { metadata: { type: v2LinkNameTypes[name] } })
     }
 
-    const footerLinks = true
+    const footerLinks = window.context.sourcegraphDotComMode
         ? [
               {
                   name: 'Docs',
