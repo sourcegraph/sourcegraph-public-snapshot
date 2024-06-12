@@ -50,6 +50,7 @@ export {
     type Filter,
     type SearchEvent,
     type Alert,
+    TELEMETRY_FILTER_TYPES,
 } from '@sourcegraph/shared/src/search/stream'
 export {
     type MatchItem,

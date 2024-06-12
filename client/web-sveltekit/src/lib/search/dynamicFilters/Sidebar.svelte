@@ -28,9 +28,6 @@
 <script lang="ts">
     import { onMount } from 'svelte'
 
-    import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-    import { TELEMETRY_FILTER_TYPES } from '@sourcegraph/shared/src/search/stream'
-
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
@@ -41,7 +38,8 @@
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import type { Filter as QueryFilter } from '$lib/shared'
+    import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
