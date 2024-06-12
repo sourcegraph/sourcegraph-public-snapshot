@@ -107,6 +107,7 @@ func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetInt
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
