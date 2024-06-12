@@ -1,15 +1,12 @@
 <script lang="ts">
-    import { mdiFileCodeOutline } from '@mdi/js'
-
-    import { getFileIconInfo } from '$lib/wildcard'
-
-    import Icon from './Icon.svelte'
+    import FileIcon from './repo/FileIcon.svelte'
 
     export let language: string
-
-    $: icon = getFileIconInfo('', language)?.svg
-    $: svgPath = icon?.path ?? mdiFileCodeOutline
-    $: svgColor = icon?.color
 </script>
 
-<Icon {svgPath} --color={svgColor} {...$$restProps} />
+<!--
+    This component abstracts from FileIcon specifics when we only have the language available.
+    This allows us to use the same fallback logic.
+-->
+
+<FileIcon file={{ name: '', languages: [language] }} />
