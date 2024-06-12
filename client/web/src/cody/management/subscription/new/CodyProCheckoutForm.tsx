@@ -28,7 +28,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
-import { useCreateTeam, usePreviewUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+import { useCreateTeam, usePreviewUpdateCurrentSubscription, useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/types'
 import { BillingAddressPreview } from '../BillingAddressPreview'
 import { PaymentMethodPreview } from '../PaymentMethodPreview'
@@ -114,6 +114,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
     const createTeamMutation = useCreateTeam()
     const previewUpdateCurrentSubscriptionMutation = usePreviewUpdateCurrentSubscription()
+    const updateCurrentSubscriptionMutation = useUpdateCurrentSubscription()
 
     const [teamSizeChange, setTeamSizeChange] = React.useState<TeamSizeChange>({
         seatCountDiff: initialNewSeats,
@@ -168,7 +169,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         }
     }, [addSeats, initialNewSeats, onSeatCountDiffChange])
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    const handleSubscribeSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault()
 
         if (!stripe || !elements) {
@@ -208,7 +209,8 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         try {
             // Even though .mutate is recommended (https://tkdodo.eu/blog/mastering-mutations-in-react-query#mutate-or-mutateasync),
             // this use makes it very convenient to just have a linear flow with error handling and a redirect at the end.
-            await createTeamMutation.mutateAsync({
+            // And `.call` is a workaround to https://github.com/TanStack/query/issues/1858#issuecomment-1255678830
+            await createTeamMutation.mutateAsync.call(undefined, {
                 name: '(no name yet)',
                 slug: '(no slug yet)',
                 seats: teamSizeChange.seatCountDiff,
@@ -232,7 +234,34 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             setErrorMessage(`We couldn't create the Stripe token. This is what happened: ${error}`)
             setSubmitting(false)
         }
-    }
+    }, [stripe, elements, createTeamMutation.mutateAsync, teamSizeChange, navigate])
+
+    const handlePlanChangeSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        event.preventDefault()
+
+        if (!stripe || !elements) {
+            setErrorMessage('Stripe or Stripe Elements libraries not available.')
+            return
+        }
+
+        setSubmitting(true)
+
+        try {
+            await updateCurrentSubscriptionMutation.mutateAsync.call(undefined, {
+                subscriptionUpdate: {
+                    newSeatCount: initialSeatCount + teamSizeChange.seatCountDiff
+                }
+            })
+        } catch (error) {
+            setErrorMessage(`We couldn't update your subscription. This is what happened: ${error}`)
+            setSubmitting(false)
+            return
+        }
+
+        navigate('/cody/team/manage')
+
+        setSubmitting(false)
+    }, [elements, initialSeatCount, navigate, teamSizeChange.seatCountDiff, stripe, updateCurrentSubscriptionMutation.mutateAsync])
 
     return (
         <>
@@ -266,7 +295,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         <H2 className="font-medium">
                             Purchase {teamSizeChange.seatCountDiff} {pluralize('seat', teamSizeChange.seatCountDiff)}
                         </H2>
-                        <Form onSubmit={handleSubmit}>
+                        <Form onSubmit={addSeats ? handlePlanChangeSubmit : handleSubscribeSubmit}>
                             {addSeats && subscription /* TypeScript needs this */ ? (
                                 <Collapse
                                     isOpen={isCardAndAddressSectionExpanded}
@@ -319,7 +348,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                                 {submitting ? (
                                     <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
                                 ) : (
-                                    'Subscribe'
+                                    addSeats ? 'Confirm plan changes' : 'Subscribe'
                                 )}
                             </Button>
 
