@@ -46,6 +46,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     telemetryRecorder,
 }) => {
     const [urlSearchParams] = useSearchParams()
+    const addSeats = urlSearchParams.get('addSeats') === '1'
     const initialSeatCount = useMemo(() => {
         // Team=1 means the user is purchasing a subscription for a team.
         // Any other value means an individual subscription, except if seats is explicitly set to > 1.
@@ -67,7 +68,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     if (dataLoadError) {
         throw dataLoadError
     }
-    if (data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
+    if (!addSeats && data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
         return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
 
