@@ -16,6 +16,8 @@
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
+    import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
+    import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     import type { LayoutData } from './$types'
     import { setRepositoryPageContext, type RepositoryPageContext } from './context'
@@ -126,10 +128,28 @@
         },
     }}
 >
-    <a href={data.repoURL}>
-        <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
-        <h1>{displayRepoName}</h1>
-    </a>
+    <DropdownMenu triggerButtonClass="repo-button">
+        <svelte:fragment slot="trigger">
+            <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
+            <h1>{displayRepoName}</h1>
+        </svelte:fragment>
+        <MenuLink href={data.repoURL}>
+            <Icon icon={ILucideHome} inline />
+            <span>Go to repository root</span>
+        </MenuLink>
+        <MenuButton>
+            <Icon icon={ILucideRepeat} inline />
+            <span>Switch repo</span>
+        </MenuButton>
+        <MenuLink href={data.repoURL + '/-/settings'}>
+            <Icon icon={ILucideSettings} inline />
+            <span>Settings</span>
+        </MenuLink>
+        {#if data.repo.externalURLs.length > 0}
+            <MenuSeparator />
+            <MenuLink href={'TODO'}>Hosted on TODO</MenuLink>
+        {/if}
+    </DropdownMenu>
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
 
@@ -177,19 +197,15 @@
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
 
-        a {
-            all: unset;
-
+        :global(.repo-button) {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0 1rem;
-            cursor: pointer;
             &:hover {
                 background-color: var(--color-bg-2);
             }
 
-            h1 {
+            :global(h1) {
                 display: contents;
                 font-size: 1rem;
                 white-space: nowrap;
