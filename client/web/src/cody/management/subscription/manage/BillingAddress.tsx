@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react'
 
 import { mdiPencilOutline, mdiCheck } from '@mdi/js'
-import { useStripe, useElements, AddressElement } from '@stripe/react-stripe-js'
-import type { StripeElementsOptions } from '@stripe/stripe-js'
+import { useStripe, useElements, AddressElement, Elements } from '@stripe/react-stripe-js'
+import type { Stripe, StripeElementsOptions } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
@@ -61,13 +61,16 @@ export const useBillingAddressStripeElementsOptions = (): StripeElementsOptions 
 }
 
 interface BillingAddressProps {
+    stripe: Stripe | null
     subscription: Subscription
     title?: string
     editable: boolean
 }
 
-export const BillingAddress: React.FC<BillingAddressProps> = ({ subscription, title, editable }) => {
+export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscription, title, editable }) => {
     const [isEditMode, setIsEditMode] = useState(false)
+
+    const options = useBillingAddressStripeElementsOptions()
 
     return (
         <div>
@@ -81,11 +84,13 @@ export const BillingAddress: React.FC<BillingAddressProps> = ({ subscription, ti
             </div>
 
             {isEditMode ? (
-                <BillingAddressForm
-                    subscription={subscription}
-                    onReset={() => setIsEditMode(false)}
-                    onSubmit={() => setIsEditMode(false)}
-                />
+                <Elements stripe={stripe} options={options}>
+                    <BillingAddressForm
+                        subscription={subscription}
+                        onReset={() => setIsEditMode(false)}
+                        onSubmit={() => setIsEditMode(false)}
+                    />
+                </Elements>
             ) : (
                 <NonEditableBillingAddress subscription={subscription} />
             )}

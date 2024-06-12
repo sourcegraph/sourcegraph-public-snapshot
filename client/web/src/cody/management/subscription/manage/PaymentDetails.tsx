@@ -9,10 +9,12 @@ import { logger } from '@sourcegraph/common'
 import { Button, Form, Grid, H3, Icon, Text } from '@sourcegraph/wildcard'
 
 import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
+// Suppressing false positive caused by an ESLint bug. See https://github.com/typescript-eslint/typescript-eslint/issues/4608
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import type { PaymentMethod, Subscription } from '../../api/types'
 import { StripeCardDetails } from '../StripeCardDetails'
 
-import { BillingAddress, useBillingAddressStripeElementsOptions } from './BillingAddress'
+import { BillingAddress } from './BillingAddress'
 import { LoadingIconButton } from './LoadingIconButton'
 
 import styles from './PaymentDetails.module.scss'
@@ -29,22 +31,16 @@ const stripe = await loadStripe(publishableKey || '')
 const updateSubscriptionMutationErrorText =
     "We couldn't update your credit card info. Please try again. If this happens again, contact support at support@sourcegraph.com."
 
-export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => {
-    const options = useBillingAddressStripeElementsOptions()
-
-    return (
-        <Grid columnCount={2} spacing={0}>
-            <div className={styles.gridItem}>
-                <PaymentMethod paymentMethod={subscription.paymentMethod} />
-            </div>
-            <div className={styles.gridItem}>
-                <Elements stripe={stripe} options={options}>
-                    <BillingAddress subscription={subscription} title="Billing address" editable={true} />
-                </Elements>
-            </div>
-        </Grid>
-    )
-}
+export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subscription }) => (
+    <Grid columnCount={2} spacing={0}>
+        <div className={styles.gridItem}>
+            <PaymentMethod paymentMethod={subscription.paymentMethod} />
+        </div>
+        <div className={styles.gridItem}>
+            <BillingAddress stripe={stripe} subscription={subscription} title="Billing address" editable={true} />
+        </div>
+    </Grid>
+)
 
 const PaymentMethod: React.FC<{ paymentMethod: PaymentMethod | undefined }> = ({ paymentMethod }) => {
     const [isEditMode, setIsEditMode] = useState(false)

@@ -40,7 +40,7 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
     return useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.updateCurrentSubscription(requestBody))
-            return await response.json() as Subscription
+            return (await response.json()) as Subscription
         },
         onSuccess: data => {
             // We get updated subscription data in response - no need to refetch subscription.
@@ -69,6 +69,6 @@ export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefi
     useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.previewCreateTeam(requestBody))
-            return await response.json() as PreviewResult
+            return (await response.json()) as PreviewResult
         },
     })

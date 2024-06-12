@@ -58,5 +58,5 @@ export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => 
         throw new CodyProApiError(`Request to Cody Pro API failed: ${await response.text()}`, response.status)
     }
 
-    return response;
+    return response
 }
