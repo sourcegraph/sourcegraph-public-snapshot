@@ -19,6 +19,7 @@ import { StripeCardDetails } from '../StripeCardDetails'
 
 import styles from './NewCodyProSubscriptionPage.module.scss'
 
+// Hard limits
 const MIN_SEAT_COUNT = 1
 const MAX_SEAT_COUNT = 50
 
@@ -62,6 +63,14 @@ async function createStripeToken(
     return tokenId
 }
 
+interface TeamSizeChange {
+    seatCountDiff: number
+    dueNow: number
+    monthlyPriceDiff: number
+    newMonthlyPrice: number
+    dueDate?: string
+}
+
 export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormProps> = ({
     subscription,
     customerEmail,
@@ -82,26 +91,30 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
     const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
     // In the case of new subscriptions we have 0 initial seats, so "addedSeatCount" is actually just "seatCount".
-    const [seatCountDiff, setSeatCountDiff] = React.useState(initialNewSeats)
     const [submitting, setSubmitting] = React.useState(false)
 
     const createTeamMutation = useCreateTeam()
     const previewUpdateCurrentSubscriptionMutation = usePreviewUpdateCurrentSubscription()
 
-    const [proRatedPrice, setProRatedPrice] = React.useState(initialNewSeats * SEAT_PRICE)
-    const [dueNow, setDueNow] = React.useState(initialNewSeats * SEAT_PRICE)
-    const [totalMonthlyPrice, setTotalMonthlyPrice] = React.useState((initialSeatCount + initialNewSeats) * SEAT_PRICE)
-    const [dueDate, setDueDate] = React.useState<string | undefined>(undefined)
+    const [teamSizeChange, setTeamSizeChange] = React.useState<TeamSizeChange>({
+        seatCountDiff: initialNewSeats,
+        monthlyPriceDiff: initialNewSeats * SEAT_PRICE,
+        newMonthlyPrice: (initialSeatCount + initialNewSeats) * SEAT_PRICE,
+        dueNow: initialNewSeats * SEAT_PRICE,
+        dueDate: undefined,
+    })
 
     const onSeatCountDiffChange = useCallback(
         (newSeatCountDiff: number): void => {
-            setSeatCountDiff(newSeatCountDiff)
-
             // In the case of a new subscription, we can recalculate prices locally. Otherwise, use the back end.
             if (!addSeats) {
-                setProRatedPrice(newSeatCountDiff * SEAT_PRICE)
-                setDueNow(newSeatCountDiff * SEAT_PRICE)
-                setTotalMonthlyPrice((initialSeatCount + newSeatCountDiff) * SEAT_PRICE)
+                setTeamSizeChange({
+                    seatCountDiff: newSeatCountDiff,
+                    monthlyPriceDiff: newSeatCountDiff * SEAT_PRICE,
+                    newMonthlyPrice: (initialSeatCount + newSeatCountDiff) * SEAT_PRICE,
+                    dueNow: newSeatCountDiff * SEAT_PRICE,
+                    dueDate: undefined,
+                })
             } else {
                 // The `.call` call is a workaround because `previewUpdateCurrentSubscriptionMutation` is not referentially stable,
                 // and adding `previewUpdateCurrentSubscriptionMutation` to the list of dependencies causes an infinite loop.
@@ -113,10 +126,13 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     {
                         onSuccess: result => {
                             if (result) {
-                                setProRatedPrice(result.dueNow / 100)
-                                setDueNow(result.newPrice / 100 - initialSeatCount * SEAT_PRICE)
-                                setTotalMonthlyPrice(result.newPrice / 100)
-                                setDueDate(result.dueDate)
+                                setTeamSizeChange({
+                                    seatCountDiff: newSeatCountDiff,
+                                    monthlyPriceDiff: result.newPrice / 100 - initialSeatCount * SEAT_PRICE,
+                                    newMonthlyPrice: result.newPrice / 100,
+                                    dueNow: result.dueNow / 100,
+                                    dueDate: result.dueDate,
+                                })
                             }
                         },
                     }
@@ -176,7 +192,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             await createTeamMutation.mutateAsync({
                 name: '(no name yet)',
                 slug: '(no slug yet)',
-                seats: seatCountDiff,
+                seats: teamSizeChange.seatCountDiff,
                 address: {
                     line1: suppliedAddress.line1,
                     line2: suppliedAddress.line2 || '',
@@ -201,7 +217,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
 
     return (
         <>
-            {seatCountDiff >= 30 && (
+            {initialSeatCount + teamSizeChange.seatCountDiff >= 30 && (
                 <CodyAlert variant="purple">
                     <H3>Explore an enterprise plan</H3>
                     <Text className="mb-0">
@@ -213,71 +229,23 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             <Container>
                 <Grid columnCount={2} spacing={4} className="mb-0">
                     <div>
-                        <H2 className="font-medium mb-3c">{isTeam ? 'Add seats' : 'Select number of seats'}</H2>
-                        <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
-                            <div className="flex-1">$9 per seat / month</div>
-                            <Button
-                                disabled={seatCountDiff === MIN_SEAT_COUNT}
-                                onClick={() => onSeatCountDiffChange(seatCountDiff > MIN_SEAT_COUNT ? seatCountDiff - 1 : seatCountDiff)}
-                                className="px-3c py-2 border-0"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiMinusThick} className={styles.plusMinusButton} />
-                            </Button>
-                            <div className={styles.seatCountSelectorValue}>{seatCountDiff}</div>
-                            <Button
-                                disabled={seatCountDiff === maxNewSeatCount}
-                                onClick={() => onSeatCountDiffChange(seatCountDiff < maxNewSeatCount ? seatCountDiff + 1 : seatCountDiff)}
-                                className="px-3c py-2 border-0"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlusThick} />
-                            </Button>
-                        </div>
-
-                        <H2 className="font-medium mb-3c">Summary</H2>
-                        {addSeats && (
-                            <div className="d-flex flex-row align-items-center mb-4">
-                                <div className="flex-1">Pro-rated cost for this month</div>
-                                <div className={styles.price}>
-                                    {previewUpdateCurrentSubscriptionMutation.isPending ? (
-                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
-                                    ) : (
-                                        <strong>${proRatedPrice} / month</strong>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                        <div className="d-flex flex-row align-items-center mb-4">
-                            <div className="flex-1">
-                                {addSeats ? 'Adding ' : ''} {seatCountDiff} {pluralize('seat', seatCountDiff)}
-                            </div>
-                            <div className={styles.price}>
-                                {previewUpdateCurrentSubscriptionMutation.isPending ? (
-                                    <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
-                                ) : (
-                                    <strong>${dueNow} / month</strong>
-                                )}
-                            </div>
-                        </div>
-                        {addSeats && (
-                            <div className="d-flex flex-row align-items-center mb-4">
-                                <div className="flex-1">
-                                    Total for {initialSeatCount + seatCountDiff} {pluralize('seat', initialSeatCount + seatCountDiff)}
-                                </div>
-                                <div className={styles.price}>
-                                    {previewUpdateCurrentSubscriptionMutation.isPending ? (
-                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
-                                    ) : (
-                                        <strong>${totalMonthlyPrice} / month</strong>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                        {addSeats && (
-                            <Text size="small" className={styles.disclaimer}>New seats are pro-rated this month, and will be charged at the full rate {dueDate ? `on ${new Date(dueDate).toLocaleDateString()}` : 'next month'}.</Text>
-                        )}                    </div>
+                        <SeatCountSelector
+                            header={isTeam ? 'Add seats' : 'Select number of seats'}
+                            current={teamSizeChange.seatCountDiff}
+                            min={MIN_SEAT_COUNT}
+                            max={maxNewSeatCount}
+                            setCount={onSeatCountDiffChange}
+                        />
+                        <Summary
+                            addSeats={addSeats}
+                            isLoading={previewUpdateCurrentSubscriptionMutation.isPending}
+                            initialSeatCount={initialSeatCount}
+                            change={teamSizeChange}
+                        />
+                    </div>
                     <div>
                         <H2 className="font-medium">
-                            Purchase {seatCountDiff} {pluralize('seat', seatCountDiff)}
+                            Purchase {teamSizeChange.seatCountDiff} {pluralize('seat', teamSizeChange.seatCountDiff)}
                         </H2>
                         <Form onSubmit={handleSubmit}>
                             <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
@@ -324,3 +292,75 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         </>
     )
 }
+
+const SeatCountSelector: React.FunctionComponent<{
+    header: string
+    current: number
+    min: number
+    max: number
+    setCount: (count: number) => void
+}> = ({ header, current, min, max, setCount }) => (
+    <>
+        <H2 className="font-medium mb-3c">{header}</H2>
+        <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
+            <div className="flex-1">$9 per seat / month</div>
+            <Button disabled={current === min} onClick={() => setCount(current > min ? current - 1 : current)} className="px-3c py-2 border-0">
+                <Icon aria-hidden={true} svgPath={mdiMinusThick}  className={styles.plusMinusButton} />
+            </Button>
+            <div className={styles.seatCountSelectorValue}>{current}</div>
+            <Button disabled={current === max} onClick={() => setCount(current < max ? current + 1 : current)} className="px-3c py-2 border-0">
+                <Icon aria-hidden={true} svgPath={mdiPlusThick}  className={styles.plusMinusButton} />
+            </Button>
+        </div>
+    </>
+)
+
+const Summary: React.FunctionComponent<{
+    addSeats: boolean
+    isLoading: boolean
+    initialSeatCount: number
+    change: TeamSizeChange
+}> = ({ addSeats, isLoading, initialSeatCount, change }) => (
+    <>
+        <H2 className="font-medium mb-3c">Summary</H2>
+        {addSeats && (
+            <PriceOrSpinner price={change.dueNow} isLoading={isLoading}>
+                Pro-rated cost for this month
+            </PriceOrSpinner>
+        )}
+        <PriceOrSpinner price={change.monthlyPriceDiff} isLoading={isLoading}>
+            {addSeats ? 'Adding ' : ''} {change.seatCountDiff} {pluralize('seat', change.seatCountDiff)}
+        </PriceOrSpinner>
+        {addSeats && (
+            <PriceOrSpinner price={change.newMonthlyPrice} isLoading={isLoading}>
+                New total for {initialSeatCount + change.seatCountDiff}{' '}
+                {pluralize('seat', initialSeatCount + change.seatCountDiff)}
+            </PriceOrSpinner>
+        )}
+        {addSeats && (
+            <Text size="small" className={styles.disclaimer}>
+                    New seats are pro-rated this month, and will be charged at the full rate{' '}
+                    {change.dueDate ? `on ${new Date(change.dueDate).toLocaleDateString()}` : 'next month'}.
+            </Text>
+        )}
+    </>
+)
+
+interface PriceOrSpinnerProps {
+    price: number
+    isLoading: boolean
+    children: React.ReactNode
+}
+
+const PriceOrSpinner: React.FunctionComponent<PriceOrSpinnerProps> = ({ price, isLoading, children }) => (
+    <div className="d-flex flex-row align-items-center mb-4">
+        <div className="flex-1">{children}</div>
+        <div className={styles.price}>
+            {isLoading ? (
+                <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+            ) : (
+                <strong>${price} / month</strong>
+            )}
+        </div>
+    </div>
+)
