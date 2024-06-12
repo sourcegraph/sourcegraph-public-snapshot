@@ -23,10 +23,12 @@ extend type Query {
     """
     EXPERIMENTAL: Detect intent for a given Cody query.
     """
-    getCodyIntent(      """
-    A natural language query string.
-    """ query: String!): CodyIntentResponse!
-
+    getCodyIntent(
+        """
+        A natural language query string.
+        """
+        query: String!
+    ): CodyIntentResponse!
 }
 
 """
@@ -62,8 +64,12 @@ type FileChunkContext {
 EXPERIMENTAL: A response from Cody intent detection API.
 """
 type CodyIntentResponse {
-    """ Intent that was detected """
+    """
+    Intent that was detected
+    """
     intent: String!
-    """ Confidence score as assigned by the intent detection model """
+    """
+    Confidence score as assigned by the intent detection model
+    """
     score: Float!
 }
