@@ -110,8 +110,11 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
-	podTemplate.Template.Spec.ServiceAccountName = name
 	podTemplate.Template.Spec.Volumes = podVolumes
+
+	if semver := sg.SemVer(); semver.Major() < 5 || (semver.Major() == 5 && semver.Minor() <= 4) {
+		podTemplate.Template.Spec.ServiceAccountName = name
+	}
 
 	pvc, err := pvc.NewPersistentVolumeClaim("repos", sg.Namespace, sg.Spec.GitServer)
 	if err != nil {
@@ -141,6 +144,11 @@ func (r *Reconciler) reconcileGitServerService(ctx context.Context, sg *config.S
 func (r *Reconciler) reconcileGitServerServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.GitServer
 	sa := serviceaccount.NewServiceAccount("gitserver", sg.Namespace, cfg)
+
+	// 5.5 and up
+	if semver := sg.SemVer(); semver.Major() > 5 || (semver.Major() == 5 && semver.Minor() > 4) {
+		return r.ensureObjectDeleted(ctx, &sa)
+	}
 	return reconcileObject(ctx, r, sg.Spec.GitServer, &sa, &corev1.ServiceAccount{}, sg, owner)
 }
 
