@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -80,7 +81,12 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	})
 }
 
+// GetCodyIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
+// Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
 func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetIntentArgs) (graphqlbackend.IntentResolver, error) {
+	if !dotcom.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
 	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
 		return nil, errors.Newf("cody is not enabled: %s", reason)
 	}
