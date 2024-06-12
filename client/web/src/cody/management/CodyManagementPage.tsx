@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -216,11 +216,20 @@ const AcceptInviteBanner: React.FC = () => {
     const acceptInviteMutation = useAcceptInvite()
     const cancelInviteMutation = useCancelInvite()
 
+    // Keep track only of initial non-undefined userInviteStatus.
+    // userInviteStatus depends on search params and backend state, so it can change over time
+    // (e.g., accept invite and instead of UserInviteStatus.NoCurrentTeam user has UserInviteStatus.InvitedTeamMember status).
+    // TODO: this implemetation is far from ideal. Refactor it in the current PR.
+    const [status, setStatus] = useState<UserInviteStatus>()
+    useEffect(() => {
+        setStatus(s => (s === undefined ? userInviteStatus : s))
+    }, [userInviteStatus])
+
     if (inviteParams === undefined && acceptInviteMutation.isIdle && cancelInviteMutation.isIdle) {
         return null
     }
 
-    switch (userInviteStatus) {
+    switch (status) {
         case UserInviteStatus.NoCurrentTeam:
         case UserInviteStatus.AnotherTeamMember: {
             const sentBy = inviteQuery.data?.sentBy
