@@ -19,7 +19,8 @@ import {
     CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
-import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
+import { CodyProIcon } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
@@ -117,7 +118,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <PageHeader className="mb-4 mt-4">
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <DashboardIcon className="mr-2" /> Dashboard
+                            <PageHeaderIcon className="mr-2" name="dashboard" /> Dashboard
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
