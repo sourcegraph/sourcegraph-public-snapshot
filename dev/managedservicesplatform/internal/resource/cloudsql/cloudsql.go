@@ -198,6 +198,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Length:  pointers.Float64(32),
 		Special: pointers.Ptr(false),
 	})
+	// sqluser.NewSqlUser has 'cloudsqlsuperuser' by default
 	adminUser := sqluser.NewSqlUser(scope, id.TerraformID("admin_user"), &sqluser.SqlUserConfig{
 		Instance: instance.Name(),
 		Project:  &config.ProjectID,

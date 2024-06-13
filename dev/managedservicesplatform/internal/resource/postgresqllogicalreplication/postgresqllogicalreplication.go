@@ -80,18 +80,25 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-publication-and-replication-slot
 		publicationOutputs = append(publicationOutputs, PublicationOutput{
 			EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec: p,
-			PublicationName: publication.NewPublication(scope, id.TerraformID("publication"), &publication.PublicationConfig{
-				Provider: config.PostgreSQLProvider,
-				Name:     pointers.Ptr(p.Name),
-				Database: pointers.Ptr(p.Database),
-				Tables:   pointers.Ptr(pointers.Slice(p.Tables)),
-			}).Name(),
-			ReplicationSlotName: replicationslot.NewReplicationSlot(scope, id.TerraformID("replication_slot"), &replicationslot.ReplicationSlotConfig{
-				Provider: config.PostgreSQLProvider,
-				Name:     pointers.Ptr(p.Name + "_pgoutput"),
-				Database: pointers.Ptr(p.Database),
-				Plugin:   pointers.Ptr("pgoutput"),
-			}).Name(),
+			PublicationName: publication.NewPublication(scope,
+				id.TerraformID("publication"),
+				&publication.PublicationConfig{
+					// Tables are created (and therefore owned) by the application
+					// workload user by default, so we use the provider authenticated
+					// as the workload user.
+					Provider: config.PostgreSQLProvider,
+					Name:     pointers.Ptr(p.Name),
+					Database: pointers.Ptr(p.Database),
+					Tables:   pointers.Ptr(pointers.Slice(p.Tables)),
+				}).Name(),
+			ReplicationSlotName: replicationslot.NewReplicationSlot(scope,
+				id.TerraformID("replication_slot"),
+				&replicationslot.ReplicationSlotConfig{
+					Provider: config.PostgreSQLProvider,
+					Name:     pointers.Ptr(p.Name + "_pgoutput"),
+					Database: pointers.Ptr(p.Database),
+					Plugin:   pointers.Ptr("pgoutput"),
+				}).Name(),
 			User: logicalReplicationUser,
 		})
 	}

@@ -282,21 +282,26 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// magically handles certs for us, so we don't need to mount certs in
 		// Cloud Run.
 
-		// Apply additional runtime configuration
-		pgRuntimeProvider := postgresql.NewPostgresqlProvider(stack, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
-			Scheme:    pointers.Ptr("gcppostgres"),
-			Host:      sqlInstance.Instance.ConnectionName(),
-			Username:  sqlInstance.AdminUser.Name(),
-			Password:  sqlInstance.AdminUser.Password(),
-			Port:      jsii.Number(5432),
-			Superuser: jsii.Bool(false),
-		})
+		// There are additional runtime configuration we need to apply directly
+		// in the PostgreSQL instance. To do this we use a different provider
+		// authenticated by the users we just created.
+		pgRuntimeAdminProvider := postgresql.NewPostgresqlProvider(stack,
+			id.TerraformID("postgresql_admin_provider"),
+			&postgresql.PostgresqlProviderConfig{
+				Scheme:    pointers.Ptr("gcppostgres"),
+				Host:      sqlInstance.Instance.ConnectionName(),
+				Username:  sqlInstance.AdminUser.Name(),
+				Password:  sqlInstance.AdminUser.Password(),
+				Port:      jsii.Number(5432),
+				Superuser: jsii.Bool(false),
+			})
+		// Apply runtime configuration
 		var publications []postgresqllogicalreplication.PublicationOutput
 		if pgSpec.LogicalReplication != nil {
 			replication, err := postgresqllogicalreplication.New(stack,
 				id.Group("postgresqllogicalreplication"),
 				postgresqllogicalreplication.Config{
-					PostgreSQLProvider: pgRuntimeProvider,
+					PostgreSQLProvider: pgRuntimeAdminProvider,
 					CloudSQL:           sqlInstance,
 					Spec:               *pgSpec.LogicalReplication,
 				})
@@ -328,7 +333,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			}
 		}
 		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
-			PostgreSQLProvider: pgRuntimeProvider,
+			PostgreSQLProvider: pgRuntimeAdminProvider,
 			Databases:          pgSpec.Databases,
 			CloudSQL:           sqlInstance,
 			Publications:       publications,
