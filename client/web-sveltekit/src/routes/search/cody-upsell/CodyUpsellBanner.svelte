@@ -1,5 +1,5 @@
 <script lang="ts">
-    import CodyIcon from '$lib/icons/Cody.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import MultiLineCompletion from './MultiLineCompletion.svelte'
 
@@ -8,7 +8,7 @@
 
 <section>
     <div class="meta">
-        <div class="logo"><CodyIcon /></div>
+        <div class="logo"><Icon icon={ISgCody} aria-label="Cody logo" /></div>
         <h2 class="title">Introducing Cody: your new AI coding assistant.</h2>
         <p class="description">
             Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of your
@@ -35,8 +35,7 @@
             align-self: center;
 
             .logo {
-                width: 2.5rem;
-                height: 2.5rem;
+                --icon-size: 2.5rem;
                 margin-bottom: 1rem;
             }
 

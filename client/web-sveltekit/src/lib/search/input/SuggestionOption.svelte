@@ -8,7 +8,7 @@
 
 <script lang="ts">
     import { type Option, type Action, RenderAs } from '$lib/branded'
-    import Icon from '$lib/Icon.svelte'
+    import SVGIcon from '$lib/SVGIcon.svelte'
 
     import EmphasizedLabel from '../EmphasizedLabel.svelte'
     import SyntaxHighlightedQuery from '../SyntaxHighlightedQuery.svelte'
@@ -41,7 +41,7 @@
 <li role="row" id="{groupIndex}x{rowIndex}" aria-selected={selected}>
     {#if option.icon}
         <div class="icon">
-            <Icon svgPath={option.icon} aria-hidden="true" inline />
+            <SVGIcon svgPath={option.icon} aria-hidden="true" inline />
         </div>
     {/if}
     <div class="inner-row">

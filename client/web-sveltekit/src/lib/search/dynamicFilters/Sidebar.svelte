@@ -34,7 +34,6 @@
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
@@ -114,7 +113,7 @@
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
                 <svelte:fragment slot="label" let:label>
-                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                    <Icon icon={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}
                 </svelte:fragment>
             </Section>
@@ -198,7 +197,7 @@
             <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
                 <svelte:fragment>
                     Move filters to query&nbsp;
-                    <ArrowBendIcon aria-hidden class="arrow-icon" />
+                    <Icon icon={ILucideCornerRightDown} aria-hidden inline />
                 </svelte:fragment>
             </Button>
         </div>

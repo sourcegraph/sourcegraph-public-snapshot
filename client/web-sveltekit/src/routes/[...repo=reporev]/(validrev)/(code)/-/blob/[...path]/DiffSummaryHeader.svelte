@@ -1,6 +1,6 @@
 <script lang="ts">
     import { numberWithCommas } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import DiffSquares from '$lib/repo/DiffSquares.svelte'
     import { Badge } from '$lib/wildcard'
 
@@ -18,7 +18,7 @@
             <a href={commit.canonicalURL}>{commit.abbreviatedOID}</a>
         </Badge>&nbsp;(selected)</span
     >
-    <Icon2 icon={ILucideGitCompareArrows} inline aria-hidden />
+    <Icon icon={ILucideGitCompareArrows} inline aria-hidden />
     <span class="label">
         {#if parent}
             <Badge variant="link">

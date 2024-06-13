@@ -1,8 +1,6 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -25,9 +23,9 @@
      */
     function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
-            return mdiFolderArrowUpOutline
+            return ILucideFolderUp
         }
-        return open ? mdiFolderOpenOutline : mdiFolderOutline
+        return open ? ILucideFolderOpen : ILucideFolderClosed
     }
 
     /**
@@ -134,7 +132,7 @@
                             fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >
                         {#if entry.isDirectory}
-                            <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
+                            <Icon icon={getDirectoryIconPath(entry, expanded)} inline aria-hidden="true" />
                         {:else}
                             <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                         {/if}

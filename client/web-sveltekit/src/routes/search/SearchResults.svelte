@@ -14,7 +14,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiCloseOctagonOutline } from '@mdi/js'
     import type { Observable } from 'rxjs'
     import { onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
@@ -204,7 +203,7 @@
                     </ol>
                     {#if resultsToShow.length === 0 && state !== 'loading'}
                         <div class="message-container">
-                            <Icon svgPath={mdiCloseOctagonOutline} />
+                            <Icon icon={ILucideOctagonX} aria-hidden="true" />
                             <p>No results found</p>
                         </div>
                     {/if}

@@ -24,15 +24,15 @@ SRCS = [
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
 ] + glob(
-    ["src/" + d for d in [
-        "**/*.scss",
-        "**/*.svg",
-        "**/*.ts",
-        "**/*.svelte",
-        "**/*.html",
-        "**/*.tsx",
-        "**/*.gql",
-    ]],
+    [
+        "assets/**/*.svg",
+        "src/**/*.scss",
+        "src/**/*.svg",
+        "src/**/*.ts",
+        "src/**/*.svelte",
+        "src/**/*.html",
+        "src/**/*.gql",
+    ],
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
@@ -59,7 +59,6 @@ BUILD_DEPS = [
     "//:node_modules/@codemirror/search",
     "//:node_modules/@codemirror/state",
     "//:node_modules/@codemirror/view",
-    "//:node_modules/@mdi/js",
     "//:node_modules/@reach/combobox",
     "//:node_modules/@reach/menu-button",
     "//:node_modules/@types/lodash",
