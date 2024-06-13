@@ -24,7 +24,7 @@ func findCandidateOccurrencesViaSearch(
 	symbol *scip.Symbol,
 	language string,
 	commit api.CommitID,
-) (map[string][]result.Range, error) {
+) (map[string][]scip.Range, error) {
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
@@ -48,7 +48,7 @@ func findCandidateOccurrencesViaSearch(
 		return nil, err
 	}
 
-	matches := make(map[string][]result.Range)
+	matches := make(map[string][]scip.Range)
 	for _, match := range stream.Results {
 		t, ok := match.(*result.FileMatch)
 		if !ok {
@@ -58,9 +58,15 @@ func findCandidateOccurrencesViaSearch(
 			for _, matchRange := range chunkMatch.Ranges {
 				path := match.Key().Path
 				if matches[path] == nil {
-					matches[path] = []result.Range{}
+					matches[path] = []scip.Range{}
 				}
-				matches[path] = append(matches[path], matchRange)
+				scipRange := scip.NewRangeUnchecked([]int32{
+					int32(matchRange.Start.Line),
+					int32(matchRange.Start.Column),
+					int32(matchRange.End.Line),
+					int32(matchRange.End.Column),
+				})
+				matches[path] = append(matches[path], scipRange)
 			}
 		}
 	}
