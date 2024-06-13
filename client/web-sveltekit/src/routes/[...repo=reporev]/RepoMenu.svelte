@@ -32,14 +32,14 @@
         <div class="menu-item">
             <Icon icon={ILucideHome} inline />
             <span>Go to repository root</span>
-            <KeyboardShortcut shorcut={{ key: 'ctrl+backspace', mac: 'cmd+backspace' }} />
+            <KeyboardShortcut shortcut={{ key: 'ctrl+backspace', mac: 'cmd+backspace' }} />
         </div>
     </MenuLink>
     <MenuButton class="menu-item" on:click={() => openFuzzyFinder('repos')}>
         <div class="menu-item">
             <Icon icon={ILucideRepeat} inline />
             <span>Switch repo</span>
-            <KeyboardShortcut shorcut={reposHotkey} />
+            <KeyboardShortcut shortcut={reposHotkey} />
         </div>
     </MenuButton>
     <MenuLink href={repoURL + '/-/settings'} class="menu-item">
