@@ -7,6 +7,10 @@
 ##########################################################################################
 -->
 
+**Note**: this is no longer used! Please see
+https://www.notion.so/sourcegraph/Writing-a-changelog-entry-dd997f411d524caabf0d8d38a24a878c
+for instructions on how to write changelog entries in your PR description.
+
 # Changelog
 
 All notable changes to Sourcegraph are documented in this file.
