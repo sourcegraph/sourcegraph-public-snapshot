@@ -16,8 +16,8 @@ import (
 )
 
 type candidateFile struct {
-	matches  []scip.Range // Guaranteed to be sorted
-	complete bool         // Was this file searched in its entirety, or did we hit the search count limit?
+	matches             []scip.Range // Guaranteed to be sorted
+	didSearchEntireFile bool         // Or did we hit the search count limit?
 }
 
 // findCandidateOccurrencesViaSearch calls out to Searcher/Zoekt to find candidate occurrences of the given symbol.
@@ -83,8 +83,8 @@ func findCandidateOccurrencesViaSearch(
 			panic("FileMatch with no ranges")
 		}
 		results[path] = candidateFile{
-			matches:  scip.SortRanges(matches),
-			complete: !fileMatch.LimitHit,
+			matches:             scip.SortRanges(matches),
+			didSearchEntireFile: !fileMatch.LimitHit,
 		}
 	}
 	return results, nil
