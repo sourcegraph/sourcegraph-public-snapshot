@@ -1005,11 +1005,11 @@ func (s *Service) getSyntacticSymbolsAtRange(
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	path string,
-	symbolRange shared.Range,
+	symbolRange scip.Range,
 	repo types.Repo,
 	commit api.CommitID,
 ) ([]struct{}, error) {
-	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange.ToSCIPRange())
+	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
