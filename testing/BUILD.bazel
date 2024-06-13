@@ -1,4 +1,8 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load(":defs.bzl", "server_integration_test")
+load("@npm//testing:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
 
 server_integration_test(
     name = "e2e_test",
@@ -238,5 +242,35 @@ server_integration_test(
         "manual",
         "no-sandbox",
         TAG_PLATFORM_GRAPH,
+    ],
+)
+
+PLAYWRIGHT_DEPS = [
+    "//testing:node_modules/@playwright/test",
+    "//testing:node_modules/playwright",
+]
+
+playwright_test_bin.playwright_test(
+    name = "playwright",
+    timeout = "short",
+    args = [
+        "test",
+        "--config $(location playwright.config.ts)",
+    ],
+    data = glob(
+        [
+            "tests/**/*.spec.ts",
+        ],
+    ) + [
+        "playwright.config.ts",
+        "//dev/tools:chromium",
+    ] + PLAYWRIGHT_DEPS,
+    env = {
+        "CHROMIUM_BIN": "$(rootpath //dev/tools:chromium)",
+        "BAZEL": "1",
+    },
+    tags = [
+        "manual",
+        "requires-network",
     ],
 )
