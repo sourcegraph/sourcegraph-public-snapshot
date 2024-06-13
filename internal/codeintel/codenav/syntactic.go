@@ -26,9 +26,9 @@ func findCandidateOccurrencesViaSearch(
 	ctx context.Context,
 	client searchclient.SearchClient,
 	repo types.Repo,
+	commit api.CommitID,
 	symbol *scip.Symbol,
 	language string,
-	commit api.CommitID,
 ) (map[string]candidateFile, error) {
 	var contextLines int32 = 0
 	patternType := "standard"

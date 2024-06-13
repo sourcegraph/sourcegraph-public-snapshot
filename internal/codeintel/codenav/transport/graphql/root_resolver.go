@@ -212,7 +212,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.svc.SyntacticUsages(ctx, args.Path, scipRange, args.Repo, args.CommitID)
+		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, scipRange)
 		if err != nil {
 			return nil, err
 		}

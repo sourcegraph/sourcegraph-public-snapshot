@@ -966,11 +966,11 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
 	repo types.Repo,
-	revision api.CommitID,
+	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
 ) (symbols []*scip.Symbol, err error) {
-	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision, path)
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -1004,10 +1004,10 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
-	path string,
-	symbolRange scip.Range,
 	repo types.Repo,
 	commit api.CommitID,
+	path string,
+	symbolRange scip.Range,
 ) ([]struct{}, error) {
 	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
@@ -1026,7 +1026,7 @@ func (s *Service) SyntacticUsages(
 	// For now we only support Java.
 	language := "java"
 
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, searchSymbol, language, commit)
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, commit, searchSymbol, language)
 	if err != nil {
 		return nil, err
 	}
