@@ -41,12 +41,12 @@ export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: s
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.acceptInvite(teamId, inviteId)),
-        onSuccess: () =>
+        onSuccess: (_, { teamId, inviteId }) =>
             queryClient.invalidateQueries({
                 queryKey: [
                     ...queryKeys.subscriptions.all,
                     ...queryKeys.teams.all,
-                    // TODO: invalidate invite queries too
+                    ...queryKeys.invites.invite(teamId, inviteId),
                 ],
             }),
     })
@@ -56,13 +56,7 @@ export const useCancelInvite = (): UseMutationResult<unknown, Error, { teamId: s
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.cancelInvite(teamId, inviteId)),
-        onSuccess: () =>
-            queryClient.invalidateQueries({
-                queryKey: [
-                    ...queryKeys.subscriptions.all,
-                    ...queryKeys.teams.all,
-                    // TODO: invalidate invite queries too
-                ],
-            }),
+        onSuccess: (_, { teamId, inviteId }) =>
+            queryClient.invalidateQueries({ queryKey: queryKeys.invites.invite(teamId, inviteId) }),
     })
 }

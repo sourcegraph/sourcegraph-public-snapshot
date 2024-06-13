@@ -229,48 +229,66 @@ const AcceptInviteBanner: React.FC = () => {
         return null
     }
 
+    // TODO: handle invite states other than "sent"
+
     switch (status) {
         case UserInviteStatus.NoCurrentTeam:
         case UserInviteStatus.AnotherTeamMember: {
             const sentBy = inviteQuery.data?.sentBy
-            return (
-                <CodyAlert variant="purple">
-                    <H3 className="mt-4">{acceptInviteMutation.isSuccess ? 'Success' : 'Join new Cody Pro team?'}</H3>
-                    {acceptInviteMutation.isSuccess ? (
-                        <Text>You joined the new Cody Pro team.</Text>
-                    ) : (
-                        <>
-                            <Text>You've been invited to a new Cody Pro team${sentBy ? ` by ${sentBy}` : ''}.</Text>
+
+            switch (acceptInviteMutation.status) {
+                case 'error': {
+                    return (
+                        <CodyAlert variant="purple">
+                            <H3 className="mt-4">Failed to accept invite</H3>
+                            <Text className="text-danger">{acceptInviteMutation.error.message}</Text>
+                        </CodyAlert>
+                    )
+                }
+                case 'success': {
+                    return (
+                        <CodyAlert variant="purple">
+                            <H3 className="mt-4">Success</H3>
+                            <Text>You joined the new Cody Pro team.</Text>
+                        </CodyAlert>
+                    )
+                }
+                default: {
+                    return (
+                        <CodyAlert variant="purple">
+                            <H3 className="mt-4">Join new Cody Pro team?</H3>
+                            <Text>You've been invited to a new Cody Pro team{sentBy ? ` by ${sentBy}` : ''}.</Text>
                             <Text>
                                 {userInviteStatus === UserInviteStatus.NoCurrentTeam
                                     ? 'You will get unlimited autocompletions chat messages.'
                                     : 'This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not lose access to your Cody Pro benefits.'}
                             </Text>
-                            {acceptInviteMutation.isError ? (
-                                <Text className="text-danger">{acceptInviteMutation.error.message}</Text>
-                            ) : (
-                                <div>
-                                    <Button onClick={() => acceptInviteMutation.mutate(inviteParams!)}>Accept</Button>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() =>
-                                            cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
-                                        }
-                                    >
-                                        Decline
-                                    </Button>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </CodyAlert>
-            )
+                            <div>
+                                <Button
+                                    onClick={() =>
+                                        acceptInviteMutation.mutate(inviteParams!, { onSuccess: clearInviteParams })
+                                    }
+                                >
+                                    Accept
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() =>
+                                        cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
+                                    }
+                                >
+                                    Decline
+                                </Button>
+                            </div>
+                        </CodyAlert>
+                    )
+                }
+            }
         }
         case UserInviteStatus.InvitedTeamMember: {
-            if (cancelInviteMutation.isIdle) {
-                void cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
+            if (inviteParams && cancelInviteMutation.isIdle) {
+                void cancelInviteMutation.mutate(inviteParams, { onSettled: clearInviteParams })
             }
-            // TODO: ensure this banner is still visible when cancelInviteMutation settles, query params are cleared and now we userInviteStatus is UserInviteStatus.Error
             return (
                 <CodyAlert variant="purple">
                     <H3 className="mt-4">You are already memeber of the team.</H3>
@@ -280,8 +298,19 @@ const AcceptInviteBanner: React.FC = () => {
             )
         }
         case UserInviteStatus.Error: {
-            // TODO: handle error
-            return null
+            if (inviteParams && cancelInviteMutation.isIdle) {
+                void cancelInviteMutation.mutate(inviteParams, { onSettled: clearInviteParams })
+            }
+            return (
+                <CodyAlert variant="error">
+                    <H3 className="mt-4">Failed to process an invite.</H3>
+                    <Text>Invite link is broken or failed to fetch subscription data.</Text>
+                    <Text>
+                        Ask an admin for another invite. If the problem persist, reach out to support@sourcegraph.com.
+                    </Text>
+                    <Text>This invite will be canceled.</Text>
+                </CodyAlert>
+            )
         }
         default: {
             return null
