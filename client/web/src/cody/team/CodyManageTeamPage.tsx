@@ -77,7 +77,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
-                        codySubscriptionSummary?.userRole === 'admin' && (
+                        isAdmin && (
                             <div className="d-flex">
                                 <Link
                                     to="/cody/manage"
@@ -115,7 +115,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 {codySubscriptionError || codySubscriptionSummaryError || membersDataError || invitesDataError ? (
                     <CodyAlert variant="error">
                         <H3>We couldn't load team data this time. Please try a bit later.</H3>
-                        {errorMessage ?? (
+                        {!!errorMessage && (
                             <Text size="small" className="text-muted mb-0">
                                 {errorMessage}
                             </Text>
