@@ -6,15 +6,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/go-enry/go-enry/v2"
-	"github.com/go-enry/go-enry/v2/data"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"go.opentelemetry.io/otel/attribute"
 	"io"
 	"io/fs"
 
+	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2/data"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -91,7 +94,7 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 		if err != nil && err != io.ErrUnexpectedEOF {
 			return lang, errors.Wrap(err, "reading initial file data")
 		}
-		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
+		matchedLang, _ = languages.GetFirstMatchingLanguage(file.Name(), buf[:n])
 		lang.TotalBytes += uint64(n)
 		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
 		lang.Name = matchedLang

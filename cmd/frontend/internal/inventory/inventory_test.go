@@ -117,6 +117,10 @@ func TestGet_readFile(t *testing.T) {
 		want string
 	}{
 		{file: fi{"a.java", "aaaaaaaaa"}, want: "Java"},
+		{file: fi{"a.magik", "aaaaaaaaa"}, want: "Magik"},
+		{file: fi{"a.cs", "aaaaaaaaa"}, want: "C#"},
+		{file: fi{"a.hh", "<?hh"}, want: "Hack"},
+		{file: fi{"a.hh", "#import"}, want: "C++"},
 		{file: fi{"b.md", "# Hello"}, want: "Markdown"},
 
 		// The .m extension is used by many languages, but this code is obviously Objective-C. This

@@ -6,32 +6,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetLanguages(t *testing.T) {
-	testCases := []struct {
-		path              string
-		content           string
-		expectedLanguages []string
-		compareFirstOnly  bool
-	}{
-		{path: "perlscript", content: "#!/usr/bin/env perl\n$version = $ARGV[0];", expectedLanguages: []string{"Perl"}},
-		{path: "rakuscript", content: "#!/usr/bin/env perl6\n$version = $ARGV[0];", expectedLanguages: []string{"Raku"}},
-		{path: "ambiguous.h", content: "", expectedLanguages: []string{"C", "C++", "Objective-C"}},
-		{path: "cpp.h", content: "namespace x { }", expectedLanguages: []string{"C++"}},
-		{path: "c.h", content: "typedef struct { int x; } Int;", expectedLanguages: []string{"C"}},
-		{path: "matlab.m", content: "function [out] = square(x)\nout = x * x;\nend", expectedLanguages: []string{"MATLAB"}, compareFirstOnly: true},
-		{path: "mathematica.m", content: "f[x_] := x ^ 2\ng[y_] := f[y]", expectedLanguages: []string{"Mathematica"}, compareFirstOnly: true},
-		{
-			path: "mathematica2.m",
-			content: `
-s := StringRiffle[{"a", "b", "c", "d", "e"}, ", "]
-Flatten[{{a, b}, {c, {d}, e}, {f, {g, h}}}]
-square[x_] := x ^ 2
-fourthpower[x_] := square[square[x]]
-`,
-			expectedLanguages: []string{"Mathematica"},
-			compareFirstOnly:  true,
-		},
+var testCases = []struct {
+	path              string
+	content           string
+	expectedLanguages []string
+	compareFirstOnly  bool
+}{
+	{path: "perlscript", content: "#!/usr/bin/env perl\n$version = $ARGV[0];", expectedLanguages: []string{"Perl"}},
+	{path: "rakuscript", content: "#!/usr/bin/env perl6\n$version = $ARGV[0];", expectedLanguages: []string{"Raku"}},
+	{path: "ambiguous.h", content: "", expectedLanguages: []string{"C", "C++", "Objective-C"}},
+	{path: "cpp.h", content: "namespace x { }", expectedLanguages: []string{"C++"}},
+	{path: "c.h", content: "typedef struct { int x; } Int;", expectedLanguages: []string{"C"}},
+	{path: "matlab.m", content: "function [out] = square(x)\nout = x * x;\nend", expectedLanguages: []string{"MATLAB"}, compareFirstOnly: true},
+	{path: "mathematica.m", content: "f[x_] := x ^ 2\ng[y_] := f[y]", expectedLanguages: []string{"Mathematica"}, compareFirstOnly: true},
+	{
+		path: "mathematica2.m",
+		content: `
+	s := StringRiffle[{"a", "b", "c", "d", "e"}, ", "]
+	Flatten[{{a, b}, {c, {d}, e}, {f, {g, h}}}]
+	square[x_] := x ^ 2
+	fourthpower[x_] := square[square[x]]
+	`,
+		expectedLanguages: []string{"Mathematica"},
+		compareFirstOnly:  true,
+	},
+	{path: "f.hh", content: "<?hh", expectedLanguages: []string{"Hack"}},
+	{path: "f.hh", content: "#import", expectedLanguages: []string{"C++", "Hack"}},
+	{path: "f.magik", content: "", expectedLanguages: []string{"Magik"}},
+	{path: "f.cs", content: "", expectedLanguages: []string{"C#"}},
+}
+
+func TestGetFirstMatchingLanguage(t *testing.T) {
+	for _, testCase := range testCases {
+		gotLanguage, found := GetFirstMatchingLanguage(testCase.path, []byte(testCase.content))
+		require.True(t, found)
+		require.Equal(t, testCase.expectedLanguages[0], gotLanguage)
 	}
+}
+
+func TestGetLanguages(t *testing.T) {
 
 	for _, testCase := range testCases {
 		var getContent func() ([]byte, error)

@@ -9,11 +9,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-enry/go-enry/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 )
 
 // Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
@@ -273,7 +273,7 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Content: string(m.Name),
 		}
 	case *searchresult.FileMatch:
-		lang, _ := enry.GetLanguageByExtension(m.Path)
+		lang, _ := languages.GetFirstMatchingLanguage(m.Path, nil)
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Path:    m.Path,
@@ -292,7 +292,7 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 		}
 	case *searchresult.CommitDiffMatch:
 		path := m.Path()
-		lang, _ := enry.GetLanguageByExtension(path)
+		lang, _ := languages.GetFirstMatchingLanguage(path, nil)
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),

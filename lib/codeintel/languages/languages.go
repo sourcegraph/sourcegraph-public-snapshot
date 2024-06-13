@@ -41,6 +41,28 @@ func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
 	return "", false
 }
 
+// GetFirstMatchingLanguage is a replacement for enry.GetLanguage which picks the first
+// matching language from languages.GetLanguages. If you need to see all possible matches use
+// GetLanguages instead. See languages.GetLanguages for more details.
+func GetFirstMatchingLanguage(path string, contents []byte) (language string, found bool) {
+	languages, err := GetLanguages(path, func() ([]byte, error) {
+		if len(contents) > 2048 {
+			return []byte(contents[:2048]), nil
+		}
+		return []byte(contents), nil
+	})
+	if err != nil {
+		return "", false
+	}
+	for _, lang := range languages {
+		if lang != "" {
+			return lang, true
+		}
+	}
+
+	return "", false
+}
+
 // GetLanguages is a replacement for enry.GetLanguages which
 // avoids incorrect fallback behavior that is present in DefaultStrategies,
 // where it will misclassify '.h' header files as C when file contents
