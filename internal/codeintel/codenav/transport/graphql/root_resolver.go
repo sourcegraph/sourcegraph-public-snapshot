@@ -208,11 +208,10 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
-		scipRange, err := scip.NewRange([]int32{args.Start.Line, args.Start.Character, args.End.Line, args.End.Character})
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, scipRange)
+		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
 		if err != nil {
 			return nil, err
 		}
