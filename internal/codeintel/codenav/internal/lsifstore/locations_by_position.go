@@ -97,7 +97,7 @@ outer:
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
 				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {
@@ -128,7 +128,7 @@ ORDER BY ss.upload_id, msn.symbol_name
 func (s *store) getLocations(
 	ctx context.Context,
 	scipFieldName string,
-	scipExtractor func(*scip.Document, *scip.Occurrence) []*scip.Range,
+	scipExtractor func(*scip.Document, *scip.Occurrence) []scip.Range,
 	operation *observation.Operation,
 	bundleID int,
 	path string,
@@ -179,7 +179,7 @@ func (s *store) getLocations(
 					locations = append(locations, shared.Location{
 						UploadID: monikerLocation.UploadID,
 						Path:     row.URI,
-						Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+						Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 					})
 				}
 			}
@@ -237,26 +237,26 @@ WHERE
 `
 
 type extractedOccurrenceData struct {
-	definitions     []*scip.Range
-	references      []*scip.Range
-	implementations []*scip.Range
-	prototypes      []*scip.Range
+	definitions     []scip.Range
+	references      []scip.Range
+	implementations []scip.Range
+	prototypes      []scip.Range
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).prototypes
 }
 
@@ -309,10 +309,10 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 	}
 
-	definitions := []*scip.Range{}
-	references := []*scip.Range{}
-	implementations := []*scip.Range{}
-	prototypes := []*scip.Range{}
+	definitions := []scip.Range{}
+	references := []scip.Range{}
+	implementations := []scip.Range{}
+	prototypes := []scip.Range{}
 
 	// Include original symbol names for reference search below
 	referencesBySymbol.Add(occurrence.Symbol)
@@ -325,22 +325,22 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRange(occ.Range))
+			definitions = append(definitions, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
 		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
-			references = append(references, scip.NewRange(occ.Range))
+			references = append(references, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
 		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRange(occ.Range))
+			implementations = append(implementations, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
 		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
-			prototypes = append(prototypes, scip.NewRange(occ.Range))
+			prototypes = append(prototypes, scip.NewRangeUnchecked(occ.Range))
 		}
 	}
 
@@ -434,7 +434,7 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 
 func (s *store) extractLocationsFromPosition(
 	ctx context.Context,
-	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range,
+	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []scip.Range,
 	extractSymbolNames func(document *scip.Document, symbolName string) []string,
 	operation *observation.Operation,
 	locationKey LocationKey,
@@ -578,7 +578,7 @@ outer:
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
 				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {

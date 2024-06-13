@@ -2,9 +2,6 @@
     import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
-    import { getButtonClassName } from '@sourcegraph/wildcard'
-
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
     import Icon2 from '$lib/Icon2.svelte'
@@ -12,13 +9,13 @@
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { QueryState, queryStateStore } from '$lib/search/state'
-    import { repositoryInsertText } from '$lib/shared'
+    import { queryStateStore } from '$lib/search/state'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE, repositoryInsertText } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
 
@@ -88,14 +85,9 @@
     $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
-    function handleSearchSubmit(state: QueryState): void {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'repo', query: state.query },
-            { source: 'repo', patternType: state.patternType }
-        )
-        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
-            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['repo'] },
+    function handleSearchSubmit(): void {
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },
         })
     }
 </script>

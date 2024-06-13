@@ -138,7 +138,7 @@ export class SourcegraphAuthActions {
         try {
             await this.secretStorage.store(secretTokenKey, newtoken)
             if (this.currentEndpoint !== newuri) {
-                await setEndpoint(newuri)
+                setEndpoint(newuri)
             }
             return
         } catch (error) {
@@ -147,6 +147,7 @@ export class SourcegraphAuthActions {
     }
 
     public async logout(): Promise<void> {
+        setEndpoint(undefined)
         await this.secretStorage.delete(secretTokenKey)
         await commands.executeCommand('workbench.action.reloadWindow')
         return

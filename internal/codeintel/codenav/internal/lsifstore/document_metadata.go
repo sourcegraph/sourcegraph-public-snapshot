@@ -60,7 +60,7 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 
 	ranges := make([]shared.Range, 0, len(documentData.SCIPData.Occurrences))
 	for _, occurrence := range documentData.SCIPData.Occurrences {
-		ranges = append(ranges, translateRange(scip.NewRange(occurrence.Range)))
+		ranges = append(ranges, shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range)))
 	}
 
 	return ranges, nil
@@ -100,7 +100,8 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 
 	var ranges []shared.CodeIntelligenceRange
 	for _, occurrence := range documentData.SCIPData.Occurrences {
-		r := translateRange(scip.NewRange(occurrence.Range))
+
+		r := shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range))
 
 		if (startLine <= r.Start.Line && r.Start.Line < endLine) || (startLine <= r.End.Line && r.End.Line < endLine) {
 			data := extractOccurrenceData(documentData.SCIPData, occurrence)
@@ -131,13 +132,13 @@ WHERE
 LIMIT 1
 `
 
-func convertSCIPRangesToLocations(ranges []*scip.Range, uploadID int, path string) []shared.Location {
+func convertSCIPRangesToLocations(ranges []scip.Range, uploadID int, path string) []shared.Location {
 	locations := make([]shared.Location, 0, len(ranges))
 	for _, r := range ranges {
 		locations = append(locations, shared.Location{
 			UploadID: uploadID,
 			Path:     path,
-			Range:    translateRange(r),
+			Range:    shared.TranslateRange(r),
 		})
 	}
 

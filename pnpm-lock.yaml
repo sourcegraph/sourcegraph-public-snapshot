@@ -1551,6 +1551,9 @@ importers:
       '@floating-ui/dom':
         specifier: ^1.6.3
         version: 1.6.3
+      '@fontsource-variable/inter':
+        specifier: ^5.0.18
+        version: 5.0.18
       '@melt-ui/svelte':
         specifier: ^0.76.0
         version: 0.76.0(svelte@4.1.1)
@@ -1636,9 +1639,18 @@ importers:
       '@graphql-typed-document-node/core':
         specifier: ^3.2.0
         version: 3.2.0(graphql@15.4.0)
+      '@iconify-json/devicon-plain':
+        specifier: ^1.1.42
+        version: 1.1.42
       '@iconify-json/lucide':
         specifier: ^1.1.188
         version: 1.1.188
+      '@iconify-json/ph':
+        specifier: ^1.1.13
+        version: 1.1.13
+      '@iconify-json/simple-icons':
+        specifier: ^1.1.104
+        version: 1.1.104
       '@playwright/test':
         specifier: 1.42.1
         version: 1.42.1
@@ -4195,6 +4207,10 @@ packages:
   /@floating-ui/utils@0.2.1:
     resolution: {integrity: sha512-9TANp6GPoMtYzQdt54kfAyMmz1+osLlXdg2ENroU7zzrtflTLrrC/lgrIfaSe+Wu0b89GKccT7vxXA0MoAIO+Q==}
 
+  /@fontsource-variable/inter@5.0.18:
+    resolution: {integrity: sha512-rJzSrtJ3b7djiGFvRuTe6stDfbYJGhdQSfn2SI2WfXviee7Er0yKAHE5u7FU7OWVQQQ1x3+cxdmx9NdiAkcrcA==}
+    dev: false
+
   /@gql2ts/from-query@1.9.0(graphql@14.7.0):
     resolution: {integrity: sha512-hfH2Oq3ikHu+zKE4b9kdGbzEqFiX+VxIg0nhgpY5iUgl975cAtTFhAdwfzr/jKdZhC9Ad5dE1CPrjEA+G7hzMg==}
     peerDependencies:
@@ -5501,8 +5517,26 @@ packages:
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
     dev: true
 
+  /@iconify-json/devicon-plain@1.1.42:
+    resolution: {integrity: sha512-NGCuw6BHn8lpjbVVa4XvYnprhWZ6IWkr6O19b69ySpDyi8QF3lh/Pe5As7C6eAG1KsblxQFqwcztgILOOmZqAA==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
   /@iconify-json/lucide@1.1.188:
     resolution: {integrity: sha512-yJNoU7vX11OvdeSKBiAvmbk/etAq2HPCZQkZX1U687NZhn8dTfx1PfyNhPxtJilrd288XGDKK+NQgygcZ+Ho4g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/ph@1.1.13:
+    resolution: {integrity: sha512-xtM4JJ63HCKj09WRqrBswXiHrpliBlqboWSZH8odcmqYXbvIFceU9/Til4V+MQr6+MoUC+KB72cxhky2+A6r/g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/simple-icons@1.1.104:
+    resolution: {integrity: sha512-986r56QHsIqa84MdGpV+tUJVhJjDXFb1OfFJZKMDiuQOi0CacK5QsM3if5RNjmT9WhrQtm5uTRHy4/4u7Cb9oQ==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true
@@ -15561,12 +15595,18 @@ packages:
 
   /debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.0.0
       supports-color: 8.1.1
 
   /debug@3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.1.3
       supports-color: 8.1.1
@@ -15575,6 +15615,9 @@ packages:
   /debug@4.3.1:
     resolution: {integrity: sha512-doEwdvm4PCeK4K3RQN2ZC2BYUBaxwLARCqZmMjtF8a51J2Rb0xpVloFRnCODwqjpwnAoao4pelN8l3RJdv3gRQ==}
     engines: {node: '>=6.0'}
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.1.2
       supports-color: 8.1.1
@@ -15583,6 +15626,9 @@ packages:
   /debug@4.3.4:
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
     engines: {node: '>=6.0'}
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.1.2
       supports-color: 8.1.1
@@ -17554,6 +17600,9 @@ packages:
   /follow-redirects@1.15.1:
     resolution: {integrity: sha512-yLAMQs+k0b2m7cVxpS1VKJVvoz7SS9Td1zss3XRwXj+ZDH00RJgnuLx7E44wx02kQLrdM3aOOy+FpzS7+8OizA==}
     engines: {node: '>=4.0'}
+    peerDependenciesMeta:
+      debug:
+        optional: true
     dependencies:
       debug: 4.3.4
     dev: true

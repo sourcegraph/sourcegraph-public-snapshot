@@ -9,5 +9,6 @@ go_library(
     deps = [
         "//internal/codeintel/uploads/shared",
         "//lib/codeintel/precise",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )

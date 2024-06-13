@@ -18,10 +18,10 @@ type InvertedRangeIndex struct {
 // given document.
 func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 	rangesBySymbol := make(map[string]struct {
-		definitionRanges     []*scip.Range
-		referenceRanges      []*scip.Range
-		implementationRanges []*scip.Range
-		typeDefinitionRanges []*scip.Range
+		definitionRanges     []scip.Range
+		referenceRanges      []scip.Range
+		implementationRanges []scip.Range
+		typeDefinitionRanges []scip.Range
 	}, len(document.Occurrences))
 
 	for _, occurrence := range document.Occurrences {
@@ -32,7 +32,7 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 		// Get (or create) a rangeSet for this key
 		rangeSet := rangesBySymbol[occurrence.Symbol]
 		{
-			r := scip.NewRange(occurrence.Range)
+			r := scip.NewRangeUnchecked(occurrence.Range)
 
 			if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
 				rangeSet.definitionRanges = append(rangeSet.definitionRanges, r)
@@ -88,7 +88,7 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 // collapseRanges returns a flattened sequence of int32 components encoding the given ranges.
 // The output is a concatenation of quads suitable for `types.EncodeRanges`. The output ranges
 // are sorted by ascending starting position, so range sequences are also in canonical form.
-func collapseRanges(ranges []*scip.Range) []int32 {
+func collapseRanges(ranges []scip.Range) []int32 {
 	if len(ranges) == 0 {
 		return nil
 	}
