@@ -6,6 +6,7 @@
 export {}
 declare global {
   const IDeviconPlainJava: typeof import('~icons/devicon-plain/java')['default']
+  const IFileIconsHack: typeof import('~icons/file-icons/hack')['default']
   const ILucideArrowDownFromLine: typeof import('~icons/lucide/arrow-down-from-line')['default']
   const ILucideArrowLeftFromLine: typeof import('~icons/lucide/arrow-left-from-line')['default']
   const ILucideArrowRightFromLine: typeof import('~icons/lucide/arrow-right-from-line')['default']

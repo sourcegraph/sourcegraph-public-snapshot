@@ -32,6 +32,7 @@
     "@graphql-tools/utils": "^10.0.11",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@iconify-json/devicon-plain": "^1.1.42",
+    "@iconify-json/file-icons": "^1.1.8",
     "@iconify-json/lucide": "^1.1.188",
     "@iconify-json/ph": "^1.1.13",
     "@iconify-json/simple-icons": "^1.1.104",
