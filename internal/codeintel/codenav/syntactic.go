@@ -15,6 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type candidateFile struct {
+	matches  []scip.Range // Guaranteed to be sorted
+	complete bool         // Was this file searched in its entirety, or did we hit the search count limit?
+}
+
 // findCandidateOccurrencesViaSearch calls out to Searcher/Zoekt to find candidate occurrences of the given symbol.
 // It returns a map of file paths to candidate ranges.
 func findCandidateOccurrencesViaSearch(
@@ -24,7 +29,7 @@ func findCandidateOccurrencesViaSearch(
 	symbol *scip.Symbol,
 	language string,
 	commit api.CommitID,
-) (map[string][]scip.Range, error) {
+) (map[string]candidateFile, error) {
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
@@ -34,9 +39,9 @@ func findCandidateOccurrencesViaSearch(
 	} else {
 		return nil, errors.Errorf("can't find occurrences for locals via search")
 	}
-	// TODO: This should probably be dependent on the number of requested usages, with a configured global limit
+	// TODO: This should be dependent on the number of requested usages, with a configured global limit
 	countLimit := 500
-	searchQuery := fmt.Sprintf("repo:%s rev:%s language:%s count:%d %s", repoName, string(commit), language, countLimit, identifier)
+	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d %s", repoName, string(commit), language, countLimit, identifier)
 
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
 	if err != nil {
@@ -48,17 +53,21 @@ func findCandidateOccurrencesViaSearch(
 		return nil, err
 	}
 
-	matches := make(map[string][]scip.Range)
+	results := make(map[string]candidateFile)
 	for _, match := range stream.Results {
-		t, ok := match.(*result.FileMatch)
+		fileMatch, ok := match.(*result.FileMatch)
 		if !ok {
-			continue
+			// Is it worth asserting this can't happen?
+			panic("non file match in search results. The `type:file` on the query should guarantee this")
+			// continue
 		}
-		for _, chunkMatch := range t.ChunkMatches {
+		path := fileMatch.Path
+		matches := []scip.Range{}
+		for _, chunkMatch := range fileMatch.ChunkMatches {
 			for _, matchRange := range chunkMatch.Ranges {
-				path := match.Key().Path
-				if matches[path] == nil {
-					matches[path] = []scip.Range{}
+				if path != match.Key().Path {
+					// Is it worth asserting this can't happen?
+					panic("FileMatch with chunkMatch.Ranges from a different file")
 				}
 				scipRange := scip.NewRangeUnchecked([]int32{
 					int32(matchRange.Start.Line),
@@ -66,11 +75,19 @@ func findCandidateOccurrencesViaSearch(
 					int32(matchRange.End.Line),
 					int32(matchRange.End.Column),
 				})
-				matches[path] = append(matches[path], scipRange)
+				matches = append(matches, scipRange)
 			}
 		}
+		if len(matches) == 0 {
+			// Is it worth asserting this can't happen?
+			panic("FileMatch with no ranges")
+		}
+		results[path] = candidateFile{
+			matches:  scip.SortRanges(matches),
+			complete: !fileMatch.LimitHit,
+		}
 	}
-	return matches, nil
+	return results, nil
 }
 
 // TODO: Check for local symbols, and don't return a name (needs an isLocal method for scip.Symbol)

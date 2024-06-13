@@ -968,7 +968,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	repo types.Repo,
 	revision api.CommitID,
 	path string,
-	symbolRange shared.Range,
+	symbolRange scip.Range,
 ) (symbols []*scip.Symbol, err error) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision, path)
 	if err != nil {
@@ -982,12 +982,11 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
 
-	scipSymbolRange := symbolRange.ToSCIPRange()
 	symbols = make([]*scip.Symbol, 0)
 	var parseFail *scip.Occurrence = nil
 
 	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
-	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, scipSymbolRange) {
+	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, symbolRange) {
 		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 		if err != nil {
 			parseFail = occurrence
@@ -1001,4 +1000,39 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	}
 
 	return symbols, nil
+}
+
+func (s *Service) SyntacticUsages(
+	ctx context.Context,
+	path string,
+	symbolRange shared.Range,
+	repo types.Repo,
+	commit api.CommitID,
+) ([]struct{}, error) {
+	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange.ToSCIPRange())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(symbols) == 0 {
+		return nil, errors.Newf("no matching occurrences found for range")
+	}
+	// Overlapping occurrences should lead to the same display name, but be scored separately.
+	// (Meaning we just need a single Searcher/Zoekt search)
+	// TODO: Assert this?
+	searchSymbol := symbols[0]
+
+	// FIXME: Maybe we can extract this from the syntactic SCIP document?
+	// For now we only support Java.
+	language := "java"
+
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, searchSymbol, language, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%+v\n", candidateMatches)
+	_ = candidateMatches
+
+	return []struct{}{}, nil
 }
