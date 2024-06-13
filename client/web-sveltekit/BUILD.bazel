@@ -92,6 +92,7 @@ BUILD_DEPS = [
     ":node_modules/@sourcegraph/client-api",
     ":node_modules/@sourcegraph/common",
     ":node_modules/@fontsource-variable/inter",
+    ":node_modules/@fontsource-variable/roboto-mono",
     ":node_modules/@sourcegraph/http-client",
     ":node_modules/@sourcegraph/shared",
     ":node_modules/@sourcegraph/web",
