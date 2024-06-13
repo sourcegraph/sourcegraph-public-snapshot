@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVersion'
+import { extensionContext } from '../extension'
 import { secretTokenKey } from '../webview/platform/AuthProvider'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
@@ -25,6 +26,11 @@ export async function processOldToken(secretStorage: vscode.SecretStorage): Prom
 export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
     const currentToken = await secretStorage.get(secretTokenKey)
     return currentToken || ''
+}
+
+export async function getAccessToken(): Promise<string | undefined> {
+    const token = await extensionContext?.secrets.get(secretTokenKey)
+    return token
 }
 
 // Ensure that only one access token error message is shown at a time.
