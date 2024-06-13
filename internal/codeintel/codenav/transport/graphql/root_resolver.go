@@ -198,7 +198,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	if err != nil {
 		return nil, err
 	}
-	remainingCount := int(*unresolvedArgs.First)
+	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
