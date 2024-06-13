@@ -929,7 +929,39 @@ func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
 }
 
-func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, error) {
+type SyntacticUsagesErrorCode = int
+
+const (
+	SU_NoSyntacticIndex SyntacticUsagesErrorCode = iota
+	SU_NoSymbolAtRequestedRange
+	SU_FailedToSearch
+	SU_Fatal
+)
+
+type SyntacticUsagesError struct {
+	Code            SyntacticUsagesErrorCode
+	UnderlyingError error
+}
+
+func (e SyntacticUsagesError) Error() string {
+	msg := ""
+	switch e.Code {
+	case SU_NoSyntacticIndex:
+		msg = "No syntactic index"
+	case SU_NoSymbolAtRequestedRange:
+		msg = "No symbol at requested range"
+	case SU_FailedToSearch:
+		msg = "Failed to get candidate matches via searcher"
+	case SU_Fatal:
+		msg = "fatal error"
+	}
+	if e.UnderlyingError == nil {
+		return fmt.Sprintf("%s", msg)
+	}
+	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
+}
+
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
 		RepositoryID:       int(repo.ID),
 		Commit:             string(commit),
@@ -938,16 +970,11 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 		RootToPathMatching: uploadsshared.RootMustEnclosePath,
 	})
 
-	if err != nil {
-		return uploadsshared.CompletedUpload{}, err
-	}
-
-	if len(uploads) == 0 {
-		return uploadsshared.CompletedUpload{}, errors.Newf(
-			"no syntactic uploads found for repository %q at commit %q",
-			repo.Name,
-			string(commit),
-		)
+	if err != nil || len(uploads) == 0 {
+		return uploadsshared.CompletedUpload{}, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: err,
+		}
 	}
 
 	s.logger.Warn(
@@ -969,15 +996,18 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
-) (symbols []*scip.Symbol, err error) {
+) (symbols []*scip.Symbol, err *SyntacticUsagesError) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
 
-	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, path)
-	if err != nil {
-		return nil, err
+	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, path)
+	if docErr != nil {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: docErr,
+		}
 	}
 
 	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
@@ -996,7 +1026,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	}
 
 	if parseFail != nil {
-		s.logger.Error("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+		s.logger.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
 	}
 
 	return symbols, nil
@@ -1008,14 +1038,17 @@ func (s *Service) SyntacticUsages(
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
-) ([]struct{}, error) {
+) ([]struct{}, *SyntacticUsagesError) {
 	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(symbols) == 0 {
-		return nil, errors.Newf("no matching occurrences found for range")
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: nil,
+		}
 	}
 	// Overlapping occurrences should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
@@ -1026,9 +1059,12 @@ func (s *Service) SyntacticUsages(
 	// For now we only support Java.
 	language := "java"
 
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, commit, searchSymbol, language)
-	if err != nil {
-		return nil, err
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, commit, searchSymbol, language)
+	if searchErr != nil {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: searchErr,
+		}
 	}
 
 	fmt.Printf("%+v\n", candidateMatches)
