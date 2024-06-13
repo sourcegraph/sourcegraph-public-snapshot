@@ -23,10 +23,6 @@ export async function processOldToken(secretStorage: vscode.SecretStorage): Prom
     }
     return
 }
-export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
-    const currentToken = await secretStorage.get(secretTokenKey)
-    return currentToken || ''
-}
 
 export async function getAccessToken(): Promise<string | undefined> {
     const token = await extensionContext?.secrets.get(secretTokenKey)
