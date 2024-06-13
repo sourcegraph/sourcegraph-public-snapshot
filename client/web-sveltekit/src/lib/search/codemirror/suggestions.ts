@@ -3,10 +3,8 @@ import { dirname } from 'path'
 import type { Extension } from '@codemirror/state'
 import { escapeRegExp } from 'lodash'
 
-import { getRelevantTokens } from '@sourcegraph/shared/src/search/query/analyze'
-
 import { getQueryInformation, type Option, suggestionSources, RenderAs } from '$lib/branded'
-import { FilterType, isFilterOfType, type Token } from '$lib/shared'
+import { EMPTY_RELEVANT_TOKEN_RESULT, FilterType, getRelevantTokens, isFilterOfType, type RelevantTokenResult } from '$lib/shared'
 
 interface ScopeInformation {
     repoName: string
@@ -26,14 +24,15 @@ function createFilterSuggestion(
     filterType: FilterType,
     filterValue: string,
     description: string,
-    tokens: Token[],
+    result: RelevantTokenResult,
     position: number
 ): Option | null {
-    const existingFilter = tokens.find(token => isFilterOfType(token, filterType))
+    const existingFilter = result.tokens.find(token => isFilterOfType(token, filterType))
     if (existingFilter && existingFilter.type === 'filter' && existingFilter.value?.value === filterValue) {
         return null
     }
 
+    const existingRange = existingFilter ? result.sourceMap.get(existingFilter) : undefined
     const label = `${filterType}:${filterValue}`
 
     return {
@@ -42,10 +41,10 @@ function createFilterSuggestion(
         description,
         action: {
             type: 'completion',
-            from: existingFilter ? existingFilter.range.start : position,
-            to: existingFilter ? existingFilter.range.end : undefined,
+            from: existingRange ? existingRange.start : position,
+            to: existingRange ? existingRange.end : undefined,
             insertValue: label + ' ',
-            name: existingFilter ? 'Replace' : 'Add',
+            name: existingRange ? 'Replace' : 'Add',
         },
         render: RenderAs.QUERY,
     }
@@ -70,7 +69,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
         // Example: sourcegraph/sourcegraph
         //       -> repo:^sourcegraph
         //          repo:^sourcegraph/sourcegraph$
-        (tokens: Token[], position: number, { repoName, revision }: ScopeInformation): Option[] => {
+        (result: RelevantTokenResult, position: number, { repoName, revision }: ScopeInformation): Option[] => {
             const options: Option[] = []
 
             {
@@ -80,7 +79,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                         FilterType.repo,
                         `^${escapeRegExp(group)}`,
                         'Search within organization/group',
-                        tokens,
+                        result,
                         position
                     )
                     if (option) {
@@ -94,7 +93,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     FilterType.repo,
                     `^${escapeRegExp(repoName)}$${revision ? `@${revision}` : ''}`,
                     'Search in current repository',
-                    tokens,
+                    result,
                     position
                 )
                 if (option) {
@@ -105,7 +104,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
             return options
         },
         // Creates directory and file suggestions, which include the file itself and the directory.
-        (tokens: Token[], position: number, { filePath, directoryPath }: ScopeInformation) => {
+        (result: RelevantTokenResult, position: number, { filePath, directoryPath }: ScopeInformation) => {
             const options: Option[] = []
 
             if (directoryPath && directoryPath !== '.') {
@@ -113,7 +112,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     FilterType.file,
                     `^${escapeRegExp(directoryPath)}`,
                     'Search in current directory',
-                    tokens,
+                    result,
                     position
                 )
                 if (option) {
@@ -126,7 +125,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     FilterType.file,
                     `^${escapeRegExp(filePath)}$`,
                     'Search in current file',
-                    tokens,
+                    result,
                     position
                 )
                 if (option) {
@@ -136,7 +135,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
 
             return options
         },
-        (tokens: Token[], position: number, { fileLanguage }: ScopeInformation) => {
+        (result: RelevantTokenResult, position: number, { fileLanguage }: ScopeInformation) => {
             if (!fileLanguage) {
                 return EMPTY
             }
@@ -145,7 +144,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                 FilterType.lang,
                 `${fileLanguage}`,
                 `Search in other ${fileLanguage} files`,
-                tokens,
+                result,
                 position
             )
 
@@ -166,7 +165,7 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                       { start: position, end: position },
                       token => token.type === 'parameter'
                   )
-                : []
+                : EMPTY_RELEVANT_TOKEN_RESULT
             const context = options.getContextInformation()
             return {
                 result: [

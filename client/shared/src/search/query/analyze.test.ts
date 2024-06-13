@@ -8,7 +8,7 @@ import { stringHuman } from './printer'
 import { scanSearchQuery } from './scanner'
 import { Token } from './token'
 
-function parse(input: string, filter = (_node: Node) => true): Token[] {
+function parse(input: string, filter = (_node: Node) => true): ReturnType<typeof getRelevantTokens> {
     const inputPosition = input.indexOf('|')
     if (inputPosition < 0) {
         throw new Error('Query must indicate cursor position via |.')
@@ -23,17 +23,18 @@ function parse(input: string, filter = (_node: Node) => true): Token[] {
     return getRelevantTokens(result.node, { start: inputPosition, end: inputPosition }, filter)
 }
 
-function annotateToken(token: Token, prefix?: string): string {
+function annotateToken(token: Token, prefix?: string, sourceMap?: Map<Token, Token['range']>): string {
+    const range = sourceMap?.get(token) ?? token.range
     const tokenAnnotation =
-        ' '.repeat(token.range.start) +
-        '^'.repeat(token.range.end - token.range.start) +
+        ' '.repeat(range.start) +
+        '^'.repeat(range.end - range.start) +
         ` (${prefix ?? ''}${token.type})`
 
     switch (token.type) {
         case 'filter':
             return [
-                annotateToken(token.field, 'filter.field: '),
-                token.value ? annotateToken(token.value, 'filter.value: ') : '',
+                annotateToken(token.field, 'filter.field: ', sourceMap),
+                token.value ? annotateToken(token.value, 'filter.value: ', sourceMap) : '',
                 tokenAnnotation,
             ].join('\n')
         default:
@@ -42,7 +43,7 @@ function annotateToken(token: Token, prefix?: string): string {
 }
 
 expect.addSnapshotSerializer({
-    serialize: value => stringHuman(value),
+    serialize: value => stringHuman(value.tokens),
     test: () => true,
 })
 
@@ -95,28 +96,53 @@ describe('getRelevantTokens', () => {
     })
 
     describe('character ranges', () => {
-        it('preservers character ranges of patterns and filters and keywords', () => {
+        it('generates proper character ranges for returned tokens', () => {
             expect.addSnapshotSerializer({
-                serialize: tokens =>
+                serialize: result =>
                     [
-                        stringHuman(tokens),
-                        ...(tokens as Token[])
-                            .filter(token => ['pattern', 'filter'].includes(token.type))
-                            .map(token => annotateToken(token)),
+                        stringHuman(result.tokens),
+                        ...(result.tokens as Token[]).map(token => annotateToken(token)),
                     ].join('\n'),
                 test: () => true,
             })
 
-            expect(parse('abc content:"with  space" def /regex literal/ ghi |')).toMatchInlineSnapshot(`
-              abc content:"with  space" def /regex literal/ ghi
-              ^^^ (pattern)
-                  ^^^^^^^ (filter.field: literal)
-                          ^^^^^^^^^^^^^ (filter.value: literal)
-                  ^^^^^^^^^^^^^^^^^^^^^ (filter)
-                                        ^^^ (pattern)
-                                            ^^^^^^^^^^^^^^^ (pattern)
-                                                            ^^^ (pattern)
+            expect(parse('abc AND content:"with  space" def| OR /regex literal/ ghi')).toMatchInlineSnapshot(`
+              (abc AND content:"with  space" def)
+              ^ (openingParen)
+               ^^^ (pattern)
+                  ^ (whitespace)
+                   ^^^ (keyword)
+                      ^ (whitespace)
+                       ^^^^^^^ (filter.field: literal)
+                               ^^^^^^^^^^^^^ (filter.value: literal)
+                       ^^^^^^^^^^^^^^^^^^^^^ (filter)
+                                            ^ (whitespace)
+                                             ^^^ (pattern)
+                                                ^ (closingParen)
             `)
         })
     })
+
+    it('maps tokens to their original positions in the query', () => {
+            const input = 'abc AND content:"with  space" def| OR /regex literal/ ghi'
+            expect.addSnapshotSerializer({
+                serialize: result =>
+                    [
+                        input,
+                        ...(result.tokens as Token[])
+                        .filter(token => result.sourceMap.has(token))
+                        .map(token => annotateToken(token, '', result.sourceMap)),
+                    ].join('\n'),
+                test: () => true,
+            })
+
+            expect(parse(input)).toMatchInlineSnapshot(`
+                                 abc AND content:"with  space" def| OR /regex literal/ ghi
+                                 ^^^ (pattern)
+                                         ^^^^^^^ (filter.field: literal)
+                                                 ^^^^^^^^^^^^^ (filter.value: literal)
+                                         ^^^^^^^^^^^^^^^^^^^^^ (filter)
+                                                               ^^^ (pattern)
+                               `)
+        })
 })

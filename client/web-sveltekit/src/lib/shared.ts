@@ -62,6 +62,7 @@ export {
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+export { getRelevantTokens, type RelevantTokenResult, EMPTY_RELEVANT_TOKEN_RESULT } from '@sourcegraph/shared/src/search/query/analyze'
 export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 export { KeywordKind, type Token } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
