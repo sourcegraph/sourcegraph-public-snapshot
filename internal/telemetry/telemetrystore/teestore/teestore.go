@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -33,6 +34,8 @@ type Store struct {
 	exportQueue database.TelemetryEventsExportQueueStore
 	eventLogs   database.EventLogStore
 }
+
+var _ telemetry.EventsStore = (*Store)(nil)
 
 func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) *Store {
 	return &Store{exportQueue, eventLogs}
