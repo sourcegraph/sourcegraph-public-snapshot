@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -161,7 +162,7 @@ func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryE
 		}
 	}
 	for i := range values {
-		values[i].Locations = deduplicateBy(values[i].Locations, locationDataKey)
+		values[i].Locations = collections.DeduplicateBy(values[i].Locations, locationDataKey)
 	}
 
 	return values, nil
