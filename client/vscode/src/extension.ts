@@ -19,7 +19,7 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import type { Event } from './graphql-operations'
-import { accessTokenSetting, processOldToken } from './settings/accessTokenSetting'
+import { getAccessToken, processOldToken } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
@@ -44,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         )
     )
     await processOldToken(secretStorage)
-    const initialAccessToken = await secretStorage.get(secretTokenKey)
+    const initialAccessToken = await getAccessToken()
     const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
     const session = await vscode.authentication.getSession(initialInstanceURL, [], createIfNone)
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
@@ -91,7 +91,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         openSourcegraphFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
         openLink: uri => openSourcegraphLinks(uri),
         copyLink: uri => copySourcegraphLinks(uri),
-        getAccessToken: accessTokenSetting(context.secrets),
+        getAccessToken: getAccessToken(),
         removeAccessToken: () => authActions.logout(),
         setEndpointUri: (accessToken, uri) => authActions.login(accessToken, uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
