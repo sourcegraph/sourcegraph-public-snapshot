@@ -8,14 +8,16 @@
 
     import type { RepositoryGitRevAuthor } from './RepositoryRevPicker.gql'
 
-    export let icon: ComponentProps<Icon>['icon']
+    export let icon: ComponentProps<Icon>['icon']|undefined = undefined
     export let label: string
     export let author: RepositoryGitRevAuthor['author'] | null | undefined
 </script>
 
 <span class="title">
     <slot name="title">
-        <Icon {icon} inline />
+        {#if icon}
+            <Icon {icon} inline />
+        {/if}
         <Badge variant="link">{label}</Badge>
     </slot>
 </span>

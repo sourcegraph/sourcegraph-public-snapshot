@@ -1,5 +1,6 @@
 import type { Page } from '@sveltejs/kit'
-import type { ComponentType } from 'svelte'
+
+import type { IconComponent } from '$lib/Icon.svelte'
 
 /**
  * Indicates to the UI to show a status badge next to the navigation entry.
@@ -54,7 +55,7 @@ export interface NavigationMenu {
     /**
      * An optional icon to display next to the label.
      */
-    icon?: string | ComponentType
+    icon?: IconComponent
     /**
      * A function to determine if current page is part of the menu.
      * This is used to mark the menu as "current" in the UI.

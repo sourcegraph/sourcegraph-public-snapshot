@@ -111,8 +111,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClockOutline } from '@mdi/js'
-
     import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false

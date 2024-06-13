@@ -194,7 +194,7 @@
                 }}
             />
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon svgPath={ILucideX} aria-label="Close" inline />
+                <Icon icon={ILucideX} aria-label="Close" inline />
             </Button>
         </header>
         <main>

@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { mdiChevronRight } from '@mdi/js'
-    import { getContext } from './DropdownMenu.svelte'
     import Icon from '$lib/Icon.svelte'
+
+    import { getContext } from './DropdownMenu.svelte'
 
     const {
         elements: { subMenu, subTrigger },

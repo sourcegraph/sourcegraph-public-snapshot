@@ -25,8 +25,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -163,7 +161,7 @@
                     }}
                     let:value
                 >
-                    <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
+                    <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
                             <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                             <Badge variant="link">{value.abbreviatedOID}</Badge>

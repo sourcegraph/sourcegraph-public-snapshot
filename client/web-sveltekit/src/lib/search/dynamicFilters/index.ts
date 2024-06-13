@@ -1,5 +1,3 @@
-import { mdiCodeBraces, mdiFileOutline, mdiFunction, mdiPlusMinus, mdiSourceCommit, mdiSourceFork } from '@mdi/js'
-
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import type { IconComponent } from '$lib/Icon.svelte'
