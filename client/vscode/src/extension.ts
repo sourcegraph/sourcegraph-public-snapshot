@@ -45,8 +45,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     )
     await processOldToken(secretStorage)
     const initialAccessToken = await getAccessToken()
-    const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
-    const session = await vscode.authentication.getSession(initialInstanceURL, [], createIfNone)
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
@@ -70,11 +68,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Use for file tree panel
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
     // Use api endpoint for stream search
-    const streamSearch = createStreamSearch({
+    const streamSearch = await createStreamSearch({
         context,
         stateMachine,
         sourcegraphURL: `${initialInstanceURL}/.api`,
-        session,
     })
     const authActions = new SourcegraphAuthActions(secretStorage)
     const extensionCoreAPI: ExtensionCoreAPI = {
