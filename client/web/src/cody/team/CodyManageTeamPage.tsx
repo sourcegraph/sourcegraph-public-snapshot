@@ -13,7 +13,7 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
-import { WhiteIcon } from '../components/WhiteIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
 import { useSSCQuery } from '../util'
 
@@ -106,7 +106,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
+                            <PageHeaderIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
                             Manage team
                         </div>
                     </PageHeader.Heading>
