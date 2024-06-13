@@ -2,7 +2,7 @@
     import { writable } from 'svelte/store'
 
     import Avatar from '$lib/Avatar.svelte'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { ThemeSetting, themeSetting } from '$lib/theme'
     import { DropdownMenu, MenuLink, MenuRadioGroup, MenuSeparator, Submenu } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
@@ -24,7 +24,7 @@
 >
     <svelte:fragment slot="trigger">
         <Avatar avatar={user} --avatar-size="1.5rem" />
-        <Icon2 icon={$open ? ILucideChevronUp : ILucideChevronDown} aria-hidden={true} inline />
+        <Icon icon={$open ? ILucideChevronUp : ILucideChevronDown} aria-hidden={true} inline />
     </svelte:fragment>
     <h6>Signed in as <strong>@{user.username}</strong></h6>
     <MenuSeparator />
@@ -53,7 +53,7 @@
         <MenuLink href="/site-admin">Site admin</MenuLink>
     {/if}
     <MenuLink href="/help" target="_blank" rel="noopener">
-        Help <Icon2 aria-hidden={true} icon={ILucideExternalLink} inline />
+        Help <Icon aria-hidden={true} icon={ILucideExternalLink} inline />
     </MenuLink>
     <MenuLink href="/-/sign-out">Sign out</MenuLink>
 </DropdownMenu>

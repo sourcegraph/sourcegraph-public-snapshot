@@ -2,7 +2,7 @@
     import { createEventDispatcher } from 'svelte'
 
     import { preloadData } from '$app/navigation'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert, Button } from '$lib/wildcard'
@@ -40,7 +40,7 @@
         <FileView data={$filePageData.value} embedded disableCodeIntel>
             <svelte:fragment slot="actions">
                 <Button variant="icon" aria-label="Close preview" on:click={() => dispatch('close')}>
-                    <Icon2 icon={ILucideX} aria-hidden inline />
+                    <Icon icon={ILucideX} aria-hidden inline />
                 </Button>
             </svelte:fragment>
         </FileView>

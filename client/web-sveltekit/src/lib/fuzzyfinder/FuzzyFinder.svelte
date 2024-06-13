@@ -15,7 +15,7 @@
 
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
@@ -194,7 +194,7 @@
                 }}
             />
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon2 svgPath={ILucideX} aria-label="Close" inline />
+                <Icon svgPath={ILucideX} aria-label="Close" inline />
             </Button>
         </header>
         <main>

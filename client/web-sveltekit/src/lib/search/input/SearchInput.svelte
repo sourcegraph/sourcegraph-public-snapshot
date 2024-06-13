@@ -26,7 +26,7 @@
     } from '$lib/branded'
     import { query, type DocumentInput } from '$lib/graphql'
     import { SearchPatternType } from '$lib/graphql-operations'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
     import { user } from '$lib/stores'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -241,7 +241,7 @@
         <div class="mode-switcher" class:active={!!mode}>
             <Tooltip tooltip="Recent searches">
                 <button class="icon" type="button" on:click={toggleMode}>
-                    <Icon2 icon={ILucideHistory} inline aria-hidden />
+                    <Icon icon={ILucideHistory} inline aria-hidden />
                     {#if mode}
                         <span>{mode}:</span>
                     {/if}
@@ -268,7 +268,7 @@
                     class:active={$queryState.caseSensitive}
                     on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                 >
-                    <Icon2 icon={ILucideCaseSensitive} inline aria-hidden />
+                    <Icon icon={ILucideCaseSensitive} inline aria-hidden />
                 </button>
             </Tooltip>
             <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
@@ -278,7 +278,7 @@
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
-                    <Icon2 icon={ILucideRegex} inline aria-hidden />
+                    <Icon icon={ILucideRegex} inline aria-hidden />
                 </button>
             </Tooltip>
             {#if structuralEnabled}
@@ -289,7 +289,7 @@
                         class:active={structuralEnabled}
                         on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
                     >
-                        <Icon2 icon={ILucideBrackets} inline aria-hidden />
+                        <Icon icon={ILucideBrackets} inline aria-hidden />
                     </button>
                 </Tooltip>
             {/if}

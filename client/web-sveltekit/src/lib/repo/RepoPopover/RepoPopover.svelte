@@ -14,7 +14,7 @@
 
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
@@ -35,14 +35,14 @@
     {#if withHeader}
         <div class="header">
             <div class="left">
-                <Icon2 icon={ILucideGitMerge} aria-hidden --icon-fill-color="var(--primary)" />
+                <Icon icon={ILucideGitMerge} aria-hidden --icon-fill-color="var(--primary)" />
                 <h4>{displayRepoName(data.name)}</h4>
                 <Badge variant="outlineSecondary" small pill>
                     {data.isPrivate ? 'Private' : 'Public'}
                 </Badge>
             </div>
             <div class="right">
-                <Icon2
+                <Icon
                     icon={getIconForCodeHost(data.externalRepository.serviceType)}
                     --icon-fill-color="var(--text-body)"
                     --size={24}

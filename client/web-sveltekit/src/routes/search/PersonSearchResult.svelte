@@ -2,7 +2,7 @@
 
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
     import type { PersonMatch } from '$lib/shared'
 
@@ -36,7 +36,7 @@
             {displayName}
         {/if}
         <span class="info">
-            <Icon2 aria-hidden="true" icon={ILucideUser} inline />
+            <Icon aria-hidden="true" icon={ILucideUser} inline />
             <small>Owner (person)</small>
         </span>
     </div>

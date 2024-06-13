@@ -2,7 +2,7 @@
 
 <script lang="ts">
     import { goto } from '$app/navigation'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import { type FileTreeProvider, NODE_LIMIT, type TreeEntry } from '$lib/repo/api/tree'
     import FileIcon from '$lib/repo/FileIcon.svelte'
@@ -132,7 +132,7 @@
                             fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >
                         {#if entry.isDirectory}
-                            <Icon2 icon={getDirectoryIconPath(entry, expanded)} inline aria-hidden="true" />
+                            <Icon icon={getDirectoryIconPath(entry, expanded)} inline aria-hidden="true" />
                         {:else}
                             <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                         {/if}

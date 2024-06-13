@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { getIconForCodeHost } from '$lib/repo/shared/codehost'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -11,5 +11,5 @@
 </script>
 
 <Tooltip tooltip={disableTooltip ? '' : hostName}>
-    <Icon2 aria-label={hostName} icon={getIconForCodeHost(codeHost ?? hostName)} inline />
+    <Icon aria-label={hostName} icon={getIconForCodeHost(codeHost ?? hostName)} inline />
 </Tooltip>

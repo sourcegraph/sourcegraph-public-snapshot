@@ -1,16 +1,16 @@
 <script lang="ts">
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import type { ComponentProps } from 'svelte'
 
     export let title: string
-    export let icon: ComponentProps<Icon2>['icon']
+    export let icon: ComponentProps<Icon>['icon']
 </script>
 
 <div class="root">
     {#if icon || $$slots.icon}
         <div class="icon-wrapper">
             <slot name="icon">
-                <Icon2 icon={icon} aria-hidden="true" inline --icon-inline-size="4rem" />
+                <Icon icon={icon} aria-hidden="true" inline --icon-inline-size="4rem" />
             </slot>
         </div>
     {/if}

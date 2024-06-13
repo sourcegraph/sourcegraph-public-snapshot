@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import type { TreeEntryWithCommitInfo } from './FileTable.gql'
     import { replaceRevisionInURL } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
@@ -31,7 +31,7 @@
                     {#if isFileEntry(entry)}
                         <FileIcon file={entry} inline />
                     {:else}
-                        <Icon2 icon={entry.isDirectory ? ILucideFolder : ILucideFileText} inline aria-hidden />
+                        <Icon icon={entry.isDirectory ? ILucideFolder : ILucideFileText} inline aria-hidden />
                     {/if}
                     <a href={replaceRevisionInURL(entry.canonicalURL, revision)}>{entry.name}</a>
                 </td>

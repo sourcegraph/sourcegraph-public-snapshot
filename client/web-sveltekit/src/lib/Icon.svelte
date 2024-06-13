@@ -4,7 +4,7 @@
 
   Use Lucide icons by referring to them as `ILucide<IconName>`. For example:
 
-      <Icon2 icon={ILucideChevronDown} />
+      <Icon icon={ILucideChevronDown} />
 
   See https://lucide.dev/icons/ for a list of available icons.
 -->
@@ -13,11 +13,10 @@
 </script>
 
 <script lang="ts">
-    // todo(@fkling): Rename to Icon.svelte once all references to the old Icon.svelte have been removed.
     import type { ComponentType, SvelteComponent } from 'svelte'
     import type { SvelteHTMLElements } from 'svelte/elements'
 
-    import style from './Icon2.module.scss'
+    import style from './Icon.module.scss'
 
     type $$Props = SvelteHTMLElements['svg'] & {
         /**

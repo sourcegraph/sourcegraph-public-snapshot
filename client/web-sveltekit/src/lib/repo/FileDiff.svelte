@@ -4,7 +4,7 @@
     import { createEventDispatcher } from 'svelte'
 
     import { numberWithCommas } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
     import Button from '$lib/wildcard/Button.svelte'
 
@@ -34,7 +34,7 @@
 
 <div class="header">
     <Button variant="icon" on:click={toggle} aria-label="{expanded ? 'Hide' : 'Show'} file diff">
-        <Icon2 inline icon={expanded ? ILucideChevronDown : ILucideChevronRight} />
+        <Icon inline icon={expanded ? ILucideChevronDown : ILucideChevronRight} />
     </Button>
     {#if isNew}
         <Badge variant="success">Added</Badge>

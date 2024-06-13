@@ -11,7 +11,7 @@
     import Avatar from '$lib/Avatar.svelte'
     import { SourcegraphURL } from '$lib/common'
     import { scrollIntoViewOnMount } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -91,7 +91,7 @@
                         <td>
                             <Tooltip tooltip={selected ? 'Close commit' : 'View at commit'}>
                                 <a href={selected ? closeURL : `?rev=${commit.oid}`}
-                                    ><Icon2 icon={ILucideFileText} inline aria-hidden /></a
+                                    ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                 >
                             </Tooltip>
                         </td>
@@ -102,7 +102,7 @@
                                 href={replaceRevisionInURL(
                                     SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
                                     commit.oid
-                                )}><Icon2 icon={ILucideFolderGit} inline aria-hidden /></a
+                                )}><Icon icon={ILucideFolderGit} inline aria-hidden /></a
                             >
                         </Tooltip>
                     </td>

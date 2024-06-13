@@ -6,7 +6,7 @@
 
     import { getSuggestionsState, type Option, type Group, type Action } from '$lib/branded'
     import { restrictToViewport } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import ActionInfo from './ActionInfo.svelte'
     import SuggestionOption from './SuggestionOption.svelte'
@@ -90,7 +90,7 @@
                         <ActionInfo action={selectedOption.alternativeAction} shortcut="Mod+Enter" />
                     {/if}
                 </span>
-                <Icon2 icon={ILucideInfo} aria-hidden="true" inline />
+                <Icon icon={ILucideInfo} aria-hidden="true" inline />
             </div>
         {/if}
     {/if}

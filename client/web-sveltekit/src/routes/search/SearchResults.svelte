@@ -20,7 +20,7 @@
 
     import { beforeNavigate, goto } from '$app/navigation'
     import { limitHit } from '$lib/branded'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { observeIntersection } from '$lib/intersection-observer'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import type { URLQueryFilter } from '$lib/search/dynamicFilters'
@@ -203,7 +203,7 @@
                     </ol>
                     {#if resultsToShow.length === 0 && state !== 'loading'}
                         <div class="message-container">
-                            <Icon2 icon={ILucideOctagonX} aria-hidden="true" />
+                            <Icon icon={ILucideOctagonX} aria-hidden="true" />
                             <p>No results found</p>
                         </div>
                     {/if}

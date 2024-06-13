@@ -3,7 +3,7 @@
 
     import { pluralize } from '$lib/common'
     import { formatShortcut } from '$lib/Hotkey'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import type { SearchPanelState } from '$lib/web'
@@ -59,22 +59,22 @@
     />
     <Tooltip tooltip="{caseSensitive ? 'Disable' : 'Enable'} case sensitivity">
         <button class:enabled={caseSensitive} on:click={() => setCaseSensitive(!caseSensitive)}>
-            <Icon2 icon={ILucideCaseSensitive} inline aria-hidden />
+            <Icon icon={ILucideCaseSensitive} inline aria-hidden />
         </button>
     </Tooltip>
     <Tooltip tooltip="{regexp ? 'Disable' : 'Enable'} regular expression">
         <button class:enabled={regexp} on:click={() => setRegexp(!regexp)}>
-            <Icon2 icon={ILucideRegex} inline aria-hidden />
+            <Icon icon={ILucideRegex} inline aria-hidden />
         </button>
     </Tooltip>
 </span>
 {#if matches.size > 1}
     <ButtonGroup --icon-fill-color="var(--icon-color)">
         <Button size="sm" outline variant="secondary" on:click={findPrevious} aria-label="previous result">
-            <Icon2 inline icon={ILucideChevronLeft} aria-hidden />
+            <Icon inline icon={ILucideChevronLeft} aria-hidden />
         </Button>
         <Button size="sm" outline variant="secondary" on:click={findNext} aria-label="next result">
-            <Icon2 inline icon={ILucideChevronRight} aria-hidden />
+            <Icon inline icon={ILucideChevronRight} aria-hidden />
         </Button>
     </ButtonGroup>
 {/if}
@@ -103,10 +103,10 @@
             keyboardShortcut
         )} for changes to apply."
     >
-        <Icon2 icon={ILucideInfo} inline aria-hidden />
+        <Icon icon={ILucideInfo} inline aria-hidden />
     </Tooltip>
     <Button variant="icon" aria-label="Close" on:click={onClose}>
-        <Icon2 icon={ILucideX} inline aria-hidden />
+        <Icon icon={ILucideX} inline aria-hidden />
     </Button>
 </div>
 

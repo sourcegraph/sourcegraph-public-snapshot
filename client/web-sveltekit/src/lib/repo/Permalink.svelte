@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
     import { page } from '$app/stores'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -15,7 +15,7 @@
 
 {#if href}
     <Tooltip tooltip="Permalink (with full git commit SHA)">
-        <a {href}><Icon2 icon={ILucideLink} inline aria-hidden /> <span data-action-label>Permalink</span></a>
+        <a {href}><Icon icon={ILucideLink} inline aria-hidden /> <span data-action-label>Permalink</span></a>
     </Tooltip>
 {/if}
 

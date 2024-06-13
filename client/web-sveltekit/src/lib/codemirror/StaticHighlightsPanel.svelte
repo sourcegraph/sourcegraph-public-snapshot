@@ -1,6 +1,6 @@
 <script lang="ts">
     import { pluralize } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { Button } from '$lib/wildcard'
 
     import type { HighlightedRange } from './static-highlights'
@@ -25,7 +25,7 @@
                     data-testid="blob-view-static-previous"
                     aria-label="previous result"
                 >
-                    <Icon2 inline icon={ILucideChevronLeft} aria-hidden={true} />
+                    <Icon inline icon={ILucideChevronLeft} aria-hidden={true} />
                 </Button>
             </div>
             <div class="right">
@@ -37,7 +37,7 @@
                     data-testid="blob-view-static-next"
                     aria-label="next result"
                 >
-                    <Icon2 inline icon={ILucideChevronRight} aria-hidden={true} />
+                    <Icon inline icon={ILucideChevronRight} aria-hidden={true} />
                 </Button>
             </div>
         </div>

@@ -2,7 +2,7 @@
     import { page } from '$app/stores'
     import { createDropdownMenu } from '@melt-ui/svelte'
 
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import MainNavigationLink from './MainNavigationLink.svelte'
     import { isCurrent, type NavigationEntry, type NavigationMenu } from './mainNavigation'
@@ -31,12 +31,12 @@
     {:else}
         <button {...$trigger} use:trigger>
             {#if typeof entry.icon === 'string'}
-                <Icon2 icon={entry.icon} aria-hidden="true" inline />&nbsp;
+                <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
             {:else if entry.icon}
                 <span class="icon"><svelte:component this={entry.icon} /></span>&nbsp;
             {/if}
             {entry.label}
-            <Icon2 icon={$open ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden />
+            <Icon icon={$open ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden />
         </button>
         <ul {...$menu} use:menu>
             {#each entry.children as subEntry (subEntry.label)}

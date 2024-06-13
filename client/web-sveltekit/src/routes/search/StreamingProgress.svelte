@@ -3,7 +3,7 @@
 
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import ResultsIndicator from '$lib/search/resultsIndicator/ResultsIndicator.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
@@ -13,7 +13,7 @@
     export let progress: Progress
     export let state: 'complete' | 'error' | 'loading'
 
-    const icons: Record<string, ComponentProps<Icon2>['icon']> = {
+    const icons: Record<string, ComponentProps<Icon>['icon']> = {
         info: ILucideInfo,
         warning: ILucideAlertCircle,
         error: ILucideCircleX,
@@ -61,7 +61,7 @@
                 {@const open = openItems[index]}
                 <button type="button" class="toggle" aria-expanded={open} on:click={() => (openItems[index] = !open)}>
                     <h4>
-                        <Icon2
+                        <Icon
                             icon={icons[item.severity]}
                             aria-label={item.severity}
                             inline
@@ -69,7 +69,7 @@
                         />
                         <span class="title">{item.title}</span>
                         {#if item.message}
-                            <Icon2 icon={open ? ILucideChevronDown : ILucideChevronLeft} inline aria-hidden />
+                            <Icon icon={open ? ILucideChevronDown : ILucideChevronLeft} inline aria-hidden />
                         {/if}
                     </h4>
                 </button>
@@ -99,7 +99,7 @@
                 <Button variant="primary">
                     <svelte:fragment slot="custom" let:buttonClass>
                         <button class="{buttonClass} search" disabled={searchAgainDisabled}>
-                            <Icon2 icon={ILucideSearch} aria-hidden="true" inline />
+                            <Icon icon={ILucideSearch} aria-hidden="true" inline />
                             <span>Search again</span>
                         </button>
                     </svelte:fragment>

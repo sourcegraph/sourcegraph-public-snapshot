@@ -1,5 +1,5 @@
 <script>
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 </script>
 
-<Icon2 aria-hidden icon={ILucidePencil} inline />
+<Icon aria-hidden icon={ILucidePencil} inline />

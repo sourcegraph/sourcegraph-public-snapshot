@@ -9,7 +9,7 @@
 <script lang="ts">
     import { page } from '$app/stores'
     import { onClickOutside, portal } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
 
     import { isCurrent } from './mainNavigation'
@@ -23,7 +23,7 @@
     <div class="content" use:onClickOutside on:click-outside={onClose}>
         <header>
             <button class="close-button" on:click={onClose}>
-                <Icon2 icon={ILucideX} aria-label="Close sidebar navigation" />
+                <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
             </button>
 
             <a href="/search" class="logo-link">

@@ -3,7 +3,7 @@
 
     import type { Evaluated, ActionContribution } from '$lib/client-api'
     import { isExternalLink } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Button } from '$lib/wildcard'
 
@@ -99,7 +99,7 @@
             {content}
         </Button>
     {:else if action.title === '?'}
-        <Icon2 aria-hidden icon={ILucideCircleHelp} inline />
+        <Icon aria-hidden icon={ILucideCircleHelp} inline />
     {:else}
         {content}
     {/if}

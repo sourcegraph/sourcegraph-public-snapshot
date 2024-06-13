@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { Badge } from '$lib/wildcard'
 
     import { type NavigationEntry, Status } from './mainNavigation'
@@ -9,7 +9,7 @@
 
 <a href={entry.href}>
     {#if entry.icon}
-        <Icon2 icon={entry.icon} aria-hidden="true" inline />&nbsp;
+        <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
     {/if}
     {entry.label}
     {#if entry.status && entry.status & Status.BETA}

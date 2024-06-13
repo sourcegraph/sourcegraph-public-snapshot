@@ -5,7 +5,7 @@
         id: string
         title: string
         // An icon for the tab. Shown to the left of the title.
-        icon?: ComponentProps<Icon2>['icon']
+        icon?: ComponentProps<Icon>['icon']
         // A shortcut to activate the tab. Shown to the right of the title.
         shortcut?: Keys
         // If provided, will cause the tab to be rendered as a link
@@ -18,7 +18,7 @@
 
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
 
-    import Icon2 from './Icon2.svelte'
+    import Icon from './Icon.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -48,7 +48,7 @@
             href={tab.href}
         >
             {#if tab.icon}
-                <Icon2 icon={tab.icon} aria-hidden inline />
+                <Icon icon={tab.icon} aria-hidden inline />
             {/if}
             <span data-tab-title={tab.title}>
                 {tab.title}

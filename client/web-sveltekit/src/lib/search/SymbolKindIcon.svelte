@@ -1,11 +1,11 @@
 <script lang="ts" context="module">
     import type { ComponentProps } from 'svelte'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import { SymbolKind } from '$lib/graphql-types'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    const icons: Map<string, ComponentProps<Icon2>['icon']> = new Map([
+    const icons: Map<string, ComponentProps<Icon>['icon']> = new Map([
         [SymbolKind.ARRAY, ISymbolArray],
         [SymbolKind.BOOLEAN, ISymbolBoolean],
         [SymbolKind.CLASS, ISymbolClass],
@@ -76,7 +76,7 @@
         class:function={functionFamily.has(symbolKind)}
         class:variable={variableFamily.has(symbolKind)}
     >
-        <Icon2
+        <Icon
             icon={icons.get(symbolKind) ?? ISymbolUnknown}
             aria-label="Symbol kind {symbolKind.toLowerCase()}"
         />

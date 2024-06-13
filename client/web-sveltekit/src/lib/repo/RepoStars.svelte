@@ -1,13 +1,13 @@
 <script lang="ts">
     import { formatRepositoryStarCount } from '$lib/branded'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     export let repoStars: number
     export let small = false
 </script>
 
 <span>
-    <Icon2 inline icon={ILucideStar} aria-label="Repository stars" />
+    <Icon inline icon={ILucideStar} aria-label="Repository stars" />
     {#if small}
         <small>&nbsp;{formatRepositoryStarCount(repoStars)}</small>
     {:else}

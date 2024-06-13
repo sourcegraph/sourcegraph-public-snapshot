@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { ComponentProps } from 'svelte'
 
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import ProgressMessage from '$lib/search/resultsIndicator/ProgressMessage.svelte'
     import SuggestedAction from '$lib/search/resultsIndicator/SuggestedAction.svelte'
@@ -15,7 +15,7 @@
 
     const SEARCH_JOB_THRESHOLD = 10000
 
-    const icons: Record<string, ComponentProps<Icon2>['icon']> = {
+    const icons: Record<string, ComponentProps<Icon>['icon']> = {
         info: ILucideInfo,
         warning: ILucideAlertCircle,
         error: ILucideCircleX,
@@ -40,7 +40,7 @@
     {#if loading}
         <LoadingSpinner --size="16px" />
     {:else}
-        <Icon2
+        <Icon
             icon={icons[severity]}
             aria-label={severity}
             --icon-size="16px"
@@ -59,7 +59,7 @@
         {/if}
     </div>
 
-    <Icon2 icon={ILucideChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon icon={ILucideChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">

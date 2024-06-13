@@ -28,7 +28,7 @@
     import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
 
     import { goto } from '$app/navigation'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
     import TabPanel from '$lib/TabPanel.svelte'
@@ -96,7 +96,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon2 icon={ILucideX} aria-hidden="true" --icon-size="16px" />
+                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -123,7 +123,7 @@
                         author={value.target.commit?.author}
                     >
                         <svelte:fragment slot="title">
-                            <Icon2 icon={ILucideGitBranch} inline aria-hidden="true" />
+                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
                             <Badge variant="link">{value.displayName}</Badge>
                             {#if value.displayName === resolvedRevision.defaultBranch}
                                 <Badge variant="secondary" small>DEFAULT</Badge>
@@ -165,7 +165,7 @@
                 >
                     <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
                         <svelte:fragment slot="title">
-                            <Icon2 icon={ILucideGitCommitVertical} inline aria-hidden="true" />
+                            <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                             <Badge variant="link">{value.abbreviatedOID}</Badge>
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>

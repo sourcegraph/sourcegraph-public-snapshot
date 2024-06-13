@@ -3,7 +3,7 @@
 
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -30,7 +30,7 @@
         /**
          * The icon to display next to the title.
          */
-        icon?: ComponentProps<Icon2>['icon']
+        icon?: ComponentProps<Icon>['icon']
         /**
          * Who can see this entry.
          */
@@ -123,7 +123,7 @@
         aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
     >
         <svelte:fragment slot="trigger">
-            <Icon2 icon={ILucideEllipsis} aria-label="More repo navigation items" />
+            <Icon icon={ILucideEllipsis} aria-label="More repo navigation items" />
         </svelte:fragment>
         {#each allMenuEntries as entry}
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
@@ -131,7 +131,7 @@
                 <MenuLink {href}>
                     <span class="overflow-entry" class:active={isActive(href, $page.url)}>
                         {#if entry.icon}
-                            <Icon2 icon={entry.icon} inline aria-hidden />
+                            <Icon icon={entry.icon} inline aria-hidden />
                         {/if}
                         <span>{entry.label}</span>
                     </span>

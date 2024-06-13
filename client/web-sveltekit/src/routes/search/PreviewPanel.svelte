@@ -17,7 +17,7 @@
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import {
         getFileMatchUrl,
@@ -79,7 +79,7 @@
     <div class="header">
         <h3>File Preview</h3>
         <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
-            <Icon2 icon={ILucideX} --icon-size="16px" inline />
+            <Icon icon={ILucideX} --icon-size="16px" inline />
         </button>
     </div>
     <div class="file-link">

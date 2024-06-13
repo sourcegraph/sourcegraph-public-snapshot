@@ -3,7 +3,7 @@
 <script lang="ts">
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import RepoStars from '$lib/repo/RepoStars.svelte'
     import { limitDescription, getRepositoryBadges, simplifyLineRange } from '$lib/search/results'
     import type { RepositoryMatch } from '$lib/shared'
@@ -30,19 +30,19 @@
         <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
-                <Icon2 aria-label="Forked repository" icon={ILucideGitFork} inline />
+                <Icon aria-label="Forked repository" icon={ILucideGitFork} inline />
                 <small>Fork</small>
             </span>
         {/if}
         {#if result.archived}
             <span class="info">
-                <Icon2 aria-label="Archived repository" icon={ILucideArchive} inline />
+                <Icon aria-label="Archived repository" icon={ILucideArchive} inline />
                 <small>Archive</small>
             </span>
         {/if}
         {#if result.private}
             <span class="info">
-                <Icon2 aria-label="Private repository" icon={ILucideLock} inline />
+                <Icon aria-label="Private repository" icon={ILucideLock} inline />
                 <small>Private</small>
             </span>
         {/if}

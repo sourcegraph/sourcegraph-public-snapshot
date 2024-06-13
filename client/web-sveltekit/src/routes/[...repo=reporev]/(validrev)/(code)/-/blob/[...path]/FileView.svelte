@@ -15,7 +15,7 @@
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, pluralize, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
     import { getGraphQLClient, toGraphQLResult } from '$lib/graphql'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { renderMermaid } from '$lib/repo/mermaid'
@@ -168,13 +168,13 @@
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
-                <Icon2 icon={ILucideEye} inline aria-hidden /> View raw
+                <Icon icon={ILucideEye} inline aria-hidden /> View raw
             </MenuLink>
             <MenuButton
                 on:click={() => lineWrap.update(wrap => !wrap)}
                 disabled={fileViewModeFromURL === CodeViewMode.Default && isRichFile}
             >
-                <Icon2 icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
+                <Icon icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
             </MenuButton>
         </svelte:fragment>
@@ -187,7 +187,7 @@
             <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
         </Badge>
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
-            <Icon2 icon={ILucideX} inline aria-hidden />
+            <Icon icon={ILucideX} inline aria-hidden />
             <span>Close commit</span>
         </a>
     </div>
@@ -226,7 +226,7 @@
         </Alert>
     {:else if fileNotFound}
         <div class="circle">
-            <Icon2 icon={ILucideSearchX} --icon-size="80px" />
+            <Icon icon={ILucideSearchX} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
     {:else if isBinaryFile}

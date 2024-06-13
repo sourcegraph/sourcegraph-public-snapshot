@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Writable } from 'svelte/store'
 
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import { getContext } from './DropdownMenu.svelte'
 
@@ -25,7 +25,7 @@
             </slot>
             {#if checked}
                 <span>
-                    <Icon2 icon={ILucideCheck} inline aria-hidden />
+                    <Icon icon={ILucideCheck} inline aria-hidden />
                 </span>
             {/if}
         </div>

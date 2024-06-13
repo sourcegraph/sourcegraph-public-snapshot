@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from '$app/stores'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import { Param } from './Paginator'
     import { Button } from './wildcard'
@@ -57,21 +57,21 @@
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a href={firstPageURL} class={buttonClass} aria-disabled={firstAndPreviousDisabled}>
-                <Icon2 icon={ILucideChevronFirst} aria-label="First page" inline />
+                <Icon icon={ILucideChevronFirst} aria-label="First page" inline />
             </a>
         </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a class={buttonClass} href={previousPageURL} aria-disabled={firstAndPreviousDisabled}>
-                <Icon2 icon={ILucideChevronLeft} inline aria-hidden="true" />Previous
+                <Icon icon={ILucideChevronLeft} inline aria-hidden="true" />Previous
             </a>
         </svelte:fragment>
     </Button>
     <Button variant="secondary" outline>
         <svelte:fragment slot="custom" let:buttonClass>
             <a class={buttonClass} href={nextPageURL} aria-disabled={nextAndLastDisabled}>
-                Next <Icon2 icon={ILucideChevronRight} inline aria-hidden="true" />
+                Next <Icon icon={ILucideChevronRight} inline aria-hidden="true" />
             </a>
         </svelte:fragment>
     </Button>
@@ -79,7 +79,7 @@
         <Button variant="secondary" outline>
             <svelte:fragment slot="custom" let:buttonClass>
                 <a class={buttonClass} href={lastPageURL} aria-disabled={nextAndLastDisabled}>
-                    <Icon2 icon={ILucideChevronLast} inline aria-label="Last page" />
+                    <Icon icon={ILucideChevronLast} inline aria-label="Last page" />
                 </a>
             </svelte:fragment>
         </Button>

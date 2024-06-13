@@ -1,7 +1,7 @@
 <script lang="ts">
 
     import { page } from '$app/stores'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import CountBadge from './CountBadge.svelte'
     import { updateFilterInURL, type SectionItemData } from './index'
@@ -23,7 +23,7 @@
     <CountBadge count={item.count} exhaustive={item.exhaustive} />
     {#if item.selected}
         <span class="close">
-            <Icon2 icon={ILucideX} inline aria-hidden />
+            <Icon icon={ILucideX} inline aria-hidden />
         </span>
     {/if}
 </a>

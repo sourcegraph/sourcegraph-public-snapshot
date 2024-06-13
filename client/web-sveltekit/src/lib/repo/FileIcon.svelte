@@ -1,14 +1,14 @@
 <script lang="ts">
     import type { ComponentProps } from 'svelte'
 
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { getFileIconInfo, DEFAULT_ICON_COLOR } from '$lib/wildcard'
 
     import { FileIcon_GitBlob } from './FileIcon.gql'
 
     type $$Props = {
         file: FileIcon_GitBlob | null
-    } & Omit<ComponentProps<Icon2>, 'icon'>
+    } & Omit<ComponentProps<Icon>, 'icon'>
 
     export let file: FileIcon_GitBlob | null
 
@@ -18,4 +18,4 @@
     }
 </script>
 
-<Icon2 icon={icon.icon} aria-hidden style="color: {icon.color}" {...$$restProps} />
+<Icon icon={icon.icon} aria-hidden style="color: {icon.color}" {...$$restProps} />

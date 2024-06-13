@@ -2,7 +2,7 @@
 
 <script lang="ts">
     import Avatar from '$lib/Avatar.svelte'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
@@ -52,7 +52,7 @@
                     on:click={() => (expanded = !expanded)}
                     aria-label="{expanded ? 'Hide' : 'Show'} commit message"
                 >
-                    <Icon2 icon={ILucideEllipsis} inline aria-hidden />
+                    <Icon icon={ILucideEllipsis} inline aria-hidden />
                 </button>
             {/if}
         </span>

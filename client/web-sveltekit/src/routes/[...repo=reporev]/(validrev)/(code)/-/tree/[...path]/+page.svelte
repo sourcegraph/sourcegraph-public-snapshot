@@ -1,6 +1,6 @@
 <script lang="ts">
     // @sg EnableRollout
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import type { TreeEntryWithCommitInfo } from '$lib/repo/FileTable.gql'
@@ -37,7 +37,7 @@
         {#if result === null}
             <div class="error-wrapper">
                 <div class="circle">
-                    <Icon2 icon={ILucideSearchX} --icon-size="80px" />
+                    <Icon icon={ILucideSearchX} --icon-size="80px" />
                 </div>
                 <h2>Directory not found</h2>
             </div>
