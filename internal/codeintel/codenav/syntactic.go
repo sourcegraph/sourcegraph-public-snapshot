@@ -43,7 +43,7 @@ func findCandidateOccurrencesViaSearch(
 	countLimit := 500
 	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d %s", repoName, string(commit), language, countLimit, identifier)
 
-	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, 0, &contextLines)
+	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
 	if err != nil {
 		return nil, err
 	}
