@@ -6,17 +6,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import {
-    ButtonLink,
-    H1,
-    H2,
-    Icon,
-    Link,
-    PageHeader,
-    Text,
-    useSearchParameters,
-    Button,
-} from '@sourcegraph/wildcard'
+import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, Button } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'

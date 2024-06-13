@@ -30,6 +30,8 @@ import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
+import styles from './NewCodyProSubscriptionPage.module.scss'
+
 // NOTE: Call loadStripe outside a component’s render to avoid recreating the object.
 // We do it here, meaning that "stripe.js" will get loaded lazily, when the user
 // routes to this page.
@@ -53,6 +55,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         const seatCountString = urlSearchParams.get('seats') || defaultSeatCount.toString()
         return parseInt(seatCountString, 10) || defaultSeatCount
     }, [urlSearchParams])
+    const isTeam = initialSeatCount > 1
 
     const options = useBillingAddressStripeElementsOptions()
 
@@ -70,13 +73,16 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     }
 
     return (
-        <Page className={classNames('d-flex flex-column')}>
+        <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="New Subscription" />
-            <PageHeader className="mb-4 mt-4">
-                <PageHeader.Heading as="h2" styleAs="h1">
+            <PageHeader className="my-4">
+                <PageHeader.Heading as="h1" className={styles.h1}>
                     <div className="d-inline-flex align-items-center">
-                        <PageHeaderIcon name="cody-logo" className="mr-3" />{' '}
-                        {initialSeatCount > 1 ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
+                        <PageHeaderIcon
+                            name={isTeam ? 'mdi-account-multiple-plus-gradient' : 'cody-logo'}
+                            className="mr-3"
+                        />{' '}
+                        {isTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
                     </div>
                 </PageHeader.Heading>
             </PageHeader>
