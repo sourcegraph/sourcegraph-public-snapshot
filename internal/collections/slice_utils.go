@@ -2,6 +2,7 @@ package collections
 
 import (
 	"golang.org/x/exp/constraints"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,4 +26,24 @@ func SplitIntoChunks[T any](slice []T, size int) ([][]T, error) {
 		chunks[i] = slice[i*size : maxIndex]
 	}
 	return chunks, nil
+}
+
+type HalfOpenRange struct {
+	Start int // Start is inclusive
+	End   int // End is exclusive
+}
+
+func BinarySearchRangeFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) int) (HalfOpenRange, bool) {
+	insertIndex, found := slices.BinarySearchFunc(x, target, cmp)
+	if !found {
+		return HalfOpenRange{insertIndex, insertIndex + 1}, false
+	}
+	start := insertIndex
+	for ; start >= 0 && cmp(x[start], target) == 0; start-- {
+	}
+	start += 1
+	end := insertIndex
+	for ; end < len(x) && cmp(x[end], target) == 0; end++ {
+	}
+	return HalfOpenRange{Start: start, End: end}, true
 }
