@@ -49,7 +49,7 @@ func GetFirstMatchingLanguage(path string, contents []byte) (language string, fo
 		if len(contents) > 2048 {
 			return []byte(contents[:2048]), nil
 		}
-		return []byte(contents), nil
+		return contents, nil
 	})
 	if err != nil {
 		return "", false
