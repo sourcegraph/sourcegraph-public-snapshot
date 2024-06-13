@@ -22,18 +22,18 @@ export const useInvite = (
             TeamInvite | undefined,
             ReturnType<typeof queryKeys.invites.invite>
         >,
-        'queryKey' | 'queryFn' | 'enabled'
+        'queryKey' | 'queryFn'
     > = {}
 ): UseQueryResult<TeamInvite | undefined> =>
     useQuery({
         queryKey: queryKeys.invites.invite(inviteParams?.teamId || '', inviteParams?.inviteId || ''),
         queryFn: async () => {
-            if (inviteParams) {
-                const response = await callCodyProApi(Client.getInvite(inviteParams.teamId, inviteParams.inviteId))
-                return response?.json()
+            if (!inviteParams) {
+                return undefined
             }
+            const response = await callCodyProApi(Client.getInvite(inviteParams.teamId, inviteParams.inviteId))
+            return response?.json()
         },
-        enabled: inviteParams !== undefined,
         ...options,
     })
 
@@ -42,13 +42,11 @@ export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: s
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.acceptInvite(teamId, inviteId)),
         onSuccess: (_, { teamId, inviteId }) =>
-            queryClient.invalidateQueries({
-                queryKey: [
-                    ...queryKeys.subscriptions.all,
-                    ...queryKeys.teams.all,
-                    ...queryKeys.invites.invite(teamId, inviteId),
-                ],
-            }),
+            Promise.all([
+                queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.teams.all }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.invites.invite(teamId, inviteId) }),
+            ]),
     })
 }
 

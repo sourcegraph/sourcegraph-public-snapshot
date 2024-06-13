@@ -145,7 +145,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
+                const response = await requestSSC(`/team/current/members/${accountId}`, 'PATCH')
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({

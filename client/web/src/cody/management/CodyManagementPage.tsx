@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -29,15 +29,15 @@ import {
     type UserCodyUsageVariables,
     CodySubscriptionPlan,
 } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
-import { useInviteParams, UserInviteStatus, useUserInviteStatus } from '../invites/AcceptInvitePage'
+import { UserInviteStatus, useInviteState } from '../invites/AcceptInvitePage'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL } from '../util'
 
-import { useAcceptInvite, useCancelInvite, useInvite } from './api/react-query/invites'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
@@ -77,7 +77,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const welcomeToPro = parameters.get('welcome') === '1'
 
-    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError, refetch } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
         USER_CODY_USAGE,
@@ -117,7 +117,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
-                <AcceptInviteBanner />
+                <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
                     <CodyAlert variant="purpleCodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
@@ -208,34 +208,33 @@ const UpgradeToProBanner: React.FunctionComponent<{
     </div>
 )
 
-const AcceptInviteBanner: React.FC = () => {
-    const { params: inviteParams, clear: clearInviteParams } = useInviteParams()
-    const userInviteStatus = useUserInviteStatus()
+const AcceptInviteBanner: React.FC<{ onSuccess: () => unknown }> = ({ onSuccess }) => {
+    const location = useLocation()
+    const inviteState = useInviteState()
 
-    const inviteQuery = useInvite(inviteParams)
-    const acceptInviteMutation = useAcceptInvite()
-    const cancelInviteMutation = useCancelInvite()
-
-    // Keep track only of initial non-undefined userInviteStatus.
-    // userInviteStatus depends on search params and backend state, so it can change over time
-    // (e.g., accept invite and instead of UserInviteStatus.NoCurrentTeam user has UserInviteStatus.InvitedTeamMember status).
-    // TODO: this implemetation is far from ideal. Refactor it in the current PR.
-    const [status, setStatus] = useState<UserInviteStatus>()
-    useEffect(() => {
-        setStatus(s => (s === undefined ? userInviteStatus : s))
-    }, [userInviteStatus])
-
-    if (inviteParams === undefined && acceptInviteMutation.isIdle && cancelInviteMutation.isIdle) {
-        return null
+    switch (inviteState.status) {
+        case 'pending': {
+            return null
+        }
+        case 'error': {
+            return (
+                <CodyAlert variant="error">
+                    <H3 className="mt-4">Invite can't be accepted.</H3>
+                    <Text className="text-danger">This invite can't be accepted. Ask admin for another invite.</Text>
+                </CodyAlert>
+            )
+        }
+        case 'success':
+        default: {
+            break
+        }
     }
 
-    // TODO: handle invite states other than "sent"
+    const { invite, userStatus, acceptInviteMutation, cancelInviteMutation } = inviteState
 
-    switch (status) {
+    switch (userStatus) {
         case UserInviteStatus.NoCurrentTeam:
         case UserInviteStatus.AnotherTeamMember: {
-            const sentBy = inviteQuery.data?.sentBy
-
             switch (acceptInviteMutation.status) {
                 case 'error': {
                     return (
@@ -253,30 +252,24 @@ const AcceptInviteBanner: React.FC = () => {
                         </CodyAlert>
                     )
                 }
+                case 'idle':
+                case 'pending':
                 default: {
+                    if (cancelInviteMutation.isSuccess) {
+                        return null
+                    }
                     return (
                         <CodyAlert variant="purple">
                             <H3 className="mt-4">Join new Cody Pro team?</H3>
-                            <Text>You've been invited to a new Cody Pro team{sentBy ? ` by ${sentBy}` : ''}.</Text>
+                            <Text>You've been invited to a new Cody Pro team by {invite.sentBy}.</Text>
                             <Text>
-                                {userInviteStatus === UserInviteStatus.NoCurrentTeam
+                                {userStatus === UserInviteStatus.NoCurrentTeam
                                     ? 'You will get unlimited autocompletions chat messages.'
                                     : 'This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not lose access to your Cody Pro benefits.'}
                             </Text>
                             <div>
-                                <Button
-                                    onClick={() =>
-                                        acceptInviteMutation.mutate(inviteParams!, { onSuccess: clearInviteParams })
-                                    }
-                                >
-                                    Accept
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() =>
-                                        cancelInviteMutation.mutate(inviteParams!, { onSettled: clearInviteParams })
-                                    }
-                                >
+                                <Button onClick={() => acceptInviteMutation.mutate({ onSuccess })}>Accept</Button>
+                                <Button variant="secondary" onClick={() => cancelInviteMutation.mutate()}>
                                     Decline
                                 </Button>
                             </div>
@@ -286,20 +279,20 @@ const AcceptInviteBanner: React.FC = () => {
             }
         }
         case UserInviteStatus.InvitedTeamMember: {
-            if (inviteParams && cancelInviteMutation.isIdle) {
-                void cancelInviteMutation.mutate(inviteParams, { onSettled: clearInviteParams })
+            if (cancelInviteMutation.isIdle) {
+                void cancelInviteMutation.mutate()
             }
             return (
                 <CodyAlert variant="purple">
-                    <H3 className="mt-4">You are already memeber of the team.</H3>
-                    <Text>You've been invited to a new Cody Pro team by rob@acmecorp.com.</Text>
+                    <H3 className="mt-4">You are already member of the team.</H3>
+                    <Text>You've been invited to a new Cody Pro team by {invite.sentBy}.</Text>
                     <Text>This invite will be canceled.</Text>
                 </CodyAlert>
             )
         }
         case UserInviteStatus.Error: {
-            if (inviteParams && cancelInviteMutation.isIdle) {
-                void cancelInviteMutation.mutate(inviteParams, { onSettled: clearInviteParams })
+            if (cancelInviteMutation.isIdle) {
+                void cancelInviteMutation.mutate()
             }
             return (
                 <CodyAlert variant="error">
@@ -312,8 +305,13 @@ const AcceptInviteBanner: React.FC = () => {
                 </CodyAlert>
             )
         }
-        default: {
+        case UserInviteStatus.AnotherTeamSoleAdmin: {
+            // TODO: redirect to the Manage Team page and handle invite there
+            // return <Navigate to={CodyProRoutes.ManageTeam + location.search} replace={true} />
             return null
+        }
+        default: {
+            throw new Error('Unexpected invite user status')
         }
     }
 }
