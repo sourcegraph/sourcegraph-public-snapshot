@@ -1059,7 +1059,7 @@ func (s *Service) SyntacticUsages(
 	// For now we only support Java.
 	language := "java"
 
-	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, repo, commit, searchSymbol, language)
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, language)
 	if searchErr != nil {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,

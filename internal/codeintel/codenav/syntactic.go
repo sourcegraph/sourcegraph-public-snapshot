@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,6 +26,7 @@ type candidateFile struct {
 func findCandidateOccurrencesViaSearch(
 	ctx context.Context,
 	client searchclient.SearchClient,
+	logger log.Logger,
 	repo types.Repo,
 	commit api.CommitID,
 	symbol *scip.Symbol,
@@ -53,34 +55,45 @@ func findCandidateOccurrencesViaSearch(
 		return nil, err
 	}
 
+	nonFileMatches := 0
+	inconsistentFilepaths := 0
+
 	results := make(map[string]candidateFile)
-	for _, match := range stream.Results {
-		fileMatch, ok := match.(*result.FileMatch)
+	for _, streamResult := range stream.Results {
+		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
-			// Is it worth asserting this can't happen?
-			panic("non file match in search results. The `type:file` on the query should guarantee this")
-			// continue
+			nonFileMatches += 1
+			continue
 		}
 		path := fileMatch.Path
 		matches := []scip.Range{}
 		for _, chunkMatch := range fileMatch.ChunkMatches {
 			for _, matchRange := range chunkMatch.Ranges {
-				if path != match.Key().Path {
-					// Is it worth asserting this can't happen?
-					panic("FileMatch with chunkMatch.Ranges from a different file")
+				if path != streamResult.Key().Path {
+					inconsistentFilepaths = 1
+					continue
 				}
-				scipRange := scip.NewRangeUnchecked([]int32{
+				scipRange, err := scip.NewRange([]int32{
 					int32(matchRange.Start.Line),
 					int32(matchRange.Start.Column),
 					int32(matchRange.End.Line),
 					int32(matchRange.End.Column),
 				})
+				if err != nil {
+					logger.Error("Failed to create scip range from match range",
+						log.String("error", err.Error()),
+						log.String("matchRange", fmt.Sprintf("%+v", matchRange)),
+					)
+					continue
+				}
 				matches = append(matches, scipRange)
 			}
 		}
-		if len(matches) == 0 {
-			// Is it worth asserting this can't happen?
-			panic("FileMatch with no ranges")
+		if nonFileMatches != 0 {
+			logger.Error("Saw non file match in search results. The `type:file` on the query should guarantee this")
+		}
+		if inconsistentFilepaths != 0 {
+			logger.Error("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
 		}
 		results[path] = candidateFile{
 			matches:             scip.SortRanges(matches),
