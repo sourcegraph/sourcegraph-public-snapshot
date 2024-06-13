@@ -130,7 +130,7 @@ func New(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract 
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
 
-		PostgreSQL: loadPostgreSQLContract(env),
+		PostgreSQL: loadPostgreSQLContract(env, isMSP),
 		BigQuery:   loadBigQueryContract(env),
 
 		Diagnostics: loadDiagnosticsContract(logger, env, defaultGCPProjectID, internal, isMSP),

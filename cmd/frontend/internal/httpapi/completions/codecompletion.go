@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -67,6 +68,8 @@ func allowedCustomModel(model string) string {
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2-cyan",
+		"google/" + google.Gemini15Flash,
+		"google/" + google.GeminiPro,
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
 		"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",

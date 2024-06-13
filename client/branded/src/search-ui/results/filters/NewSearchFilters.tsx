@@ -7,7 +7,7 @@ import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery, succeedScan } from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { TELEMETRY_V2_FILTER_TYPES, type Filter } from '@sourcegraph/shared/src/search/stream'
+import { TELEMETRY_FILTER_TYPES, type Filter } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H1, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -72,7 +72,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
         (filter: URLQueryFilter, remove: boolean): void => {
             telemetryService.log('SearchFiltersTypeClick', { filterType: filter.label }, { filterType: filter.label })
             telemetryRecorder.recordEvent('search.filters.type', 'click', {
-                metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[filter.kind] },
+                metadata: { filterKind: TELEMETRY_FILTER_TYPES[filter.kind] },
             })
             if (remove) {
                 setSelectedFilters(
@@ -96,7 +96,7 @@ export const NewSearchFilters: FC<NewSearchFiltersProps> = ({
             setSelectedFilters(filters)
             telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
             telemetryRecorder.recordEvent('search.filters', 'select', {
-                metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[filterKind] },
+                metadata: { filterKind: TELEMETRY_FILTER_TYPES[filterKind] },
             })
         },
         [setSelectedFilters, telemetryService, telemetryRecorder]
@@ -303,7 +303,7 @@ const SyntheticCountFilter: FC<SyntheticCountFilterProps> = props => {
     const handleCountAllFilter = (filterKind: Filter['kind'], countFilters: URLQueryFilter[]): void => {
         telemetryService.log('SearchFiltersSelectFilter', { filterKind }, { filterKind })
         telemetryRecorder.recordEvent('search.filters', 'select', {
-            metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[filterKind] },
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[filterKind] },
         })
 
         if (countFilters.length > 0) {

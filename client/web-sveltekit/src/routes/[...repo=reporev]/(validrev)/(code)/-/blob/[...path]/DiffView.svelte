@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from '$app/stores'
     import { SourcegraphURL } from '$lib/common'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileDiffHunks from '$lib/repo/FileDiffHunks.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -28,7 +28,7 @@
     {#if $commit.value}
         <DiffSummaryHeader commit={$commit.value} />
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()}>
-            <Icon2 icon={ILucideX} inline aria-hidden />
+            <Icon icon={ILucideX} inline aria-hidden />
             <span>Close diff</span>
         </a>
     {/if}

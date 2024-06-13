@@ -20,6 +20,15 @@ extend type Query {
         """
         textResultsCount: Int!
     ): [CodyContextResult!]!
+    """
+    EXPERIMENTAL: Detect intent for a given Cody query.
+    """
+    getCodyIntent(
+        """
+        A natural language query string.
+        """
+        query: String!
+    ): CodyIntentResponse!
 }
 
 """
@@ -49,4 +58,18 @@ type FileChunkContext {
     The relevant content of the file from start line to end line.
     """
     chunkContent: String!
+}
+
+"""
+EXPERIMENTAL: A response from Cody intent detection API.
+"""
+type CodyIntentResponse {
+    """
+    Intent that was detected
+    """
+    intent: String!
+    """
+    Confidence score as assigned by the intent detection model
+    """
+    score: Float!
 }

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { EditorView } from '@codemirror/view'
-    import { mdiInformationOutline } from '@mdi/js'
     import { createEventDispatcher, tick } from 'svelte'
 
     import { isSafari } from '@sourcegraph/common/src/util'
@@ -91,7 +90,7 @@
                         <ActionInfo action={selectedOption.alternativeAction} shortcut="Mod+Enter" />
                     {/if}
                 </span>
-                <Icon svgPath={mdiInformationOutline} aria-hidden="true" inline />
+                <Icon icon={ILucideInfo} aria-hidden="true" inline />
             </div>
         {/if}
     {/if}

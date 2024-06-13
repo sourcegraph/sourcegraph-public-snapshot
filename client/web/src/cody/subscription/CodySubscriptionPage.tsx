@@ -227,7 +227,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 // We add ?team=1 to the URL to indicate that the user is creating a team.
                                                 // We can use this info to initialize the UI differently,
                                                 // or even display an entirely different UI.
-                                                const url = new URL(manageSubscriptionRedirectURL)
+                                                const url = new URL(
+                                                    '/cody/manage/subscription/new',
+                                                    window.location.origin
+                                                )
                                                 url.searchParams.append('team', '1')
                                                 window.location.href = url.toString()
                                             }}
@@ -237,7 +240,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to={manageSubscriptionRedirectURL}
+                                            to="/cody/manage/subscription/new"
                                             target="_blank"
                                             rel="noreferrer noopener"
                                             onClick={event => {
@@ -245,7 +248,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL
+                                                navigate('/cody/manage/subscription/new')
                                             }}
                                         >
                                             Upgrade yourself to Pro

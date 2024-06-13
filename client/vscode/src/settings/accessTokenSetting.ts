@@ -4,7 +4,6 @@ import { isOlderThan, observeInstanceVersionNumber } from '../backend/instanceVe
 import { secretTokenKey } from '../webview/platform/AuthProvider'
 
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
-import { readConfiguration } from './readConfiguration'
 
 // IMPORTANT: Call this function only once when extention is first activated
 export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
@@ -25,8 +24,12 @@ export async function accessTokenSetting(secretStorage: vscode.SecretStorage): P
 }
 
 export async function removeOldAccessTokenSetting(): Promise<void> {
-    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Global)
-    await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Workspace)
+    await vscode.workspace
+        .getConfiguration()
+        .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Global)
+    await vscode.workspace
+        .getConfiguration()
+        .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Workspace)
     return
 }
 

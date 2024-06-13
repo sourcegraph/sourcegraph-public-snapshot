@@ -13,8 +13,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiMenu } from '@mdi/js'
-
     import { browser } from '$app/environment'
     import Icon from '$lib/Icon.svelte'
     import { mark } from '$lib/images'
@@ -48,7 +46,7 @@
     <div class="logo" class:with-custom-content={withCustomContent}>
         {#if withCustomContent}
             <button class="menu-button" on:click={() => (isSidebarNavigationOpen = true)}>
-                <Icon svgPath={mdiMenu} aria-label="Navigation menu" />
+                <Icon icon={ILucideMenu} aria-label="Navigation menu" />
             </button>
         {/if}
 

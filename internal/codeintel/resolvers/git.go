@@ -1,3 +1,8 @@
+// Package resolvers contains slimmed down copies of some of
+// the resolvers in the jumbo graphqlbackend package.
+//
+// Ideally, we would not have these duplicate copies at all,
+// so avoid adding new functionality here.
 package resolvers
 
 import (
@@ -54,6 +59,20 @@ type GitTreeEntryResolver interface {
 	Name() string
 	URL() string
 	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+}
+
+// GitBlobResolver is a thin wrapper around GitTreeEntryResolver for readability.
+//
+// By embedding GitTreeEntryResolver, we enable seamless conversion between the interfaces.
+type GitBlobResolver interface {
+	GitTreeEntryResolver
+}
+
+// GitTreeResolver is a thin wrapper around GitTreeEntryResolver for readability.
+//
+// By embedding GitTreeEntryResolver, we enable seamless conversion between the interfaces.
+type GitTreeResolver interface {
+	GitTreeEntryResolver
 }
 
 type GitTreeContentPageArgs struct {

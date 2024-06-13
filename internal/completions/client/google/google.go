@@ -30,10 +30,6 @@ func (c *googleCompletionStreamClient) Complete(
 	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
 ) (*types.CompletionResponse, error) {
-	if !isSupportedFeature(feature) {
-		return nil, errors.Newf("feature %q is currently not supported for Google", feature)
-	}
-
 	var resp *http.Response
 	var err error
 	defer (func() {
@@ -79,10 +75,6 @@ func (c *googleCompletionStreamClient) Stream(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
-	if !isSupportedFeature(feature) {
-		return errors.Newf("feature %q is currently not supported for Google", feature)
-	}
-
 	var resp *http.Response
 	var err error
 
@@ -151,6 +143,7 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 
 	payload := googleRequest{
 		Model:    requestParams.Model,
+		Stream:   stream,
 		Contents: prompt,
 		GenerationConfig: googleGenerationConfig{
 			Temperature:     requestParams.Temperature,
@@ -226,17 +219,6 @@ func getgRPCMethod(stream bool) string {
 		return "streamGenerateContent"
 	}
 	return "generateContent"
-}
-
-// isSupportedFeature checks if the given CompletionsFeature is supported.
-// Currently, only the CompletionsFeatureChat feature is supported.
-func isSupportedFeature(feature types.CompletionsFeature) bool {
-	switch feature {
-	case types.CompletionsFeatureChat:
-		return true
-	default:
-		return false
-	}
 }
 
 // isDefaultAPIEndpoint checks if the given API endpoint URL is the default API endpoint.

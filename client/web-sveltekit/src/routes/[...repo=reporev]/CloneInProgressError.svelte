@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { mdiSourceRepository } from '@mdi/js'
     import { onMount } from 'svelte'
 
     import { invalidate } from '$app/navigation'
@@ -20,7 +19,7 @@
     })
 </script>
 
-<HeroPage title={displayRepoName(repoName)} svgIconPath={mdiSourceRepository}>
+<HeroPage title={displayRepoName(repoName)} icon={ILucideFolderGit2}>
     <code><pre>{progress}</pre></code>
     <!--TODO add DirectImportRepoAlert -->
 </HeroPage>

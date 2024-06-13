@@ -1,7 +1,3 @@
-import { mdiChartBar, mdiMagnify } from '@mdi/js'
-
-import BatchChangesIcon from '$lib/icons/BatchChanges.svelte'
-import CodyIcon from '$lib/icons/Cody.svelte'
 import { isRepoRoute } from '$lib/navigation'
 import { Status, isCurrent, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
 
@@ -11,7 +7,7 @@ import { Status, isCurrent, type NavigationEntry, type NavigationMenu } from '$l
 export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Code Search',
-        icon: mdiMagnify,
+        icon: ILucideSearch,
         href: '/search',
         children: [
             {
@@ -48,7 +44,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     },
     {
         label: 'Cody AI',
-        icon: CodyIcon,
+        icon: ISgCody,
         href: '/cody',
         isCurrent(this: NavigationMenu, page) {
             return this.children.some(entry => isCurrent(entry, page))
@@ -66,12 +62,12 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
     },
     {
         label: 'Batch Changes',
-        icon: BatchChangesIcon,
+        icon: ISgBatchChanges,
         href: '/batch-changes',
     },
     {
         label: 'Insights',
-        icon: mdiChartBar,
+        icon: ILucideBarChartBig,
         href: '/insights',
     },
 ]
@@ -82,12 +78,12 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
 export const dotcomMainNavigation: (NavigationMenu | NavigationEntry)[] = [
     {
         label: 'Code Search',
-        icon: mdiMagnify,
+        icon: ILucideSearch,
         href: '/search',
     },
     {
         label: 'Cody AI',
-        icon: CodyIcon,
+        icon: ISgCody,
         href: '/cody',
         children: [
             {

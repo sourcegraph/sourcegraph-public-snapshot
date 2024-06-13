@@ -36,7 +36,6 @@ go_library(
         "//internal/codeintel/uploads/shared",
         "//internal/codeintel/uploads/transport/graphql",
         "//internal/database",
-        "//internal/dotcom",
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",

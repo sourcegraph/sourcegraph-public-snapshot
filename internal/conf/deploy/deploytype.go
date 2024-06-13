@@ -15,6 +15,7 @@ const (
 	Helm          = "helm"
 	Kustomize     = "kustomize"
 	K3s           = "k3s"
+	Appliance     = "appliance"
 )
 
 var mock string
@@ -46,7 +47,7 @@ func Mock(val string) {
 func IsDeployTypeKubernetes(deployType string) bool {
 	switch deployType {
 	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", Kubernetes, Helm, Kustomize, K3s:
+	case "k8s", "cluster", Kubernetes, Helm, Kustomize, K3s, Appliance:
 		return true
 	}
 

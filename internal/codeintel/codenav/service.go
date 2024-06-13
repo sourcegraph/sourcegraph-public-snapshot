@@ -22,17 +22,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
-	repoStore  database.RepoStore
-	lsifstore  lsifstore.LsifStore
-	gitserver  gitserver.Client
-	uploadSvc  UploadService
-	operations *operations
-	logger     log.Logger
+	repoStore    database.RepoStore
+	lsifstore    lsifstore.LsifStore
+	gitserver    gitserver.Client
+	uploadSvc    UploadService
+	searchClient searcher.SearchClient
+	operations   *operations
+	logger       log.Logger
 }
 
 func newService(
@@ -41,14 +44,17 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver gitserver.Client,
+	searchClient searcher.SearchClient,
+	logger log.Logger,
 ) *Service {
 	return &Service{
-		repoStore:  repoStore,
-		lsifstore:  lsifstore,
-		gitserver:  gitserver,
-		uploadSvc:  uploadSvc,
-		operations: newOperations(observationCtx),
-		logger:     log.Scoped("codenav"),
+		repoStore:    repoStore,
+		lsifstore:    lsifstore,
+		gitserver:    gitserver,
+		uploadSvc:    uploadSvc,
+		searchClient: searchClient,
+		operations:   newOperations(observationCtx),
+		logger:       logger,
 	}
 }
 
@@ -835,7 +841,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
 		}
 
-		originalRange := scip.NewRange(occ.Range)
+		originalRange := scip.NewRangeUnchecked(occ.Range)
 
 		lineOffset := int32(linemap.positions[originalRange.Start.Line])
 		line := file[lineOffset : lineOffset+originalRange.Start.Character]
@@ -921,4 +927,78 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+}
+
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, error) {
+	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
+		RepositoryID:       int(repo.ID),
+		Commit:             string(commit),
+		Indexer:            uploadsshared.SyntacticIndexer,
+		Path:               path,
+		RootToPathMatching: uploadsshared.RootMustEnclosePath,
+	})
+
+	if err != nil {
+		return uploadsshared.CompletedUpload{}, err
+	}
+
+	if len(uploads) == 0 {
+		return uploadsshared.CompletedUpload{}, errors.Newf(
+			"no syntactic uploads found for repository %q at commit %q",
+			repo.Name,
+			string(commit),
+		)
+	}
+
+	s.logger.Warn(
+		"Multiple syntactic uploads found, picking the first one",
+		log.String("repo", repo.URI),
+		log.String("commit", commit.Short()),
+		log.String("path", path),
+	)
+	return uploads[0], nil
+}
+
+// getSyntacticSymbolsAtRange tries to look up the symbols at the given coordinates
+// in a syntactic upload. If this function returns an error you should most likely
+// log and handle it instead of rethrowing, as this could fail for a myriad of reasons
+// (some broken invariant internally, network issue etc.)
+func (s *Service) getSyntacticSymbolsAtRange(
+	ctx context.Context,
+	repo types.Repo,
+	revision api.CommitID,
+	path string,
+	symbolRange shared.Range,
+) (symbols []*scip.Symbol, err error) {
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, revision, path)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := s.SCIPDocument(ctx, syntacticUpload.ID, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
+
+	scipSymbolRange := symbolRange.ToSCIPRange()
+	symbols = make([]*scip.Symbol, 0)
+	var parseFail *scip.Occurrence = nil
+
+	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
+	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, scipSymbolRange) {
+		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+		if err != nil {
+			parseFail = occurrence
+			continue
+		}
+		symbols = append(symbols, parsedSymbol)
+	}
+
+	if parseFail != nil {
+		s.logger.Error("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+	}
+
+	return symbols, nil
 }

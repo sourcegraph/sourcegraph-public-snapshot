@@ -1,5 +1,11 @@
 import type { Call } from '../client'
 
+export class CodyProApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message)
+    }
+}
+
 /**
  * Builds the RequestInit object for the fetch API with the necessary headers and options
  * to authenticate the request with the Sourcegraph backend.
@@ -29,7 +35,9 @@ const signOutAndRedirectToSignIn = async (): Promise<void> => {
     }
 }
 
-export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | undefined> => {
+// Important: This function has the side effect of logging the user out and redirecting them
+// to the sign-in page with the current page as the return URL if they are not authenticated.
+export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => {
     const response = await fetch(
         `/.api/ssc/proxy${call.urlSuffix}`,
         buildRequestInit({
@@ -41,14 +49,14 @@ export const callCodyProApi = async <Data>(call: Call<Data>): Promise<Data | und
     if (!response.ok) {
         if (response.status === 401) {
             await signOutAndRedirectToSignIn()
-            // user is redirected to another page, no need to throw an error
-            return undefined
+            // User is redirected to another page, so no need to throw an error.
+            return response
         }
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new Error(`Request to Cody Pro API failed with status ${response.status}`)
+        throw new CodyProApiError(`Request to Cody Pro API failed: ${await response.text()}`, response.status)
     }
 
-    return (await response.json()) as Data
+    return response
 }

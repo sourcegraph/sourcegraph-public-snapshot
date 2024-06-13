@@ -1,6 +1,6 @@
 import { FILTERS_URL_KEY } from '@sourcegraph/branded/src/search-ui/results/filters/hooks'
 import { compatNavigate } from '@sourcegraph/common'
-import { type SubmitSearchParameters, TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
+import { type SubmitSearchParameters, TELEMETRY_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
@@ -72,7 +72,7 @@ export function submitSearch({
         },
         { source, patternType }
     )
-    telemetryRecorder.recordEvent('search', 'submit', { metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE[source] } })
+    telemetryRecorder.recordEvent('search', 'submit', { metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE[source] } })
 
     const state = {
         ...(typeof location.state === 'object' ? location.state : null),

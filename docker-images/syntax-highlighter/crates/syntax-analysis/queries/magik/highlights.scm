@@ -13,11 +13,11 @@
 (documentation) @comment
 (comment) @comment
 
+"_package" @include
 (package (identifier) @identifier.module)
 
 ; Expression
 [
-    "<<"
     ">>"
     ">"
     ">="
@@ -136,7 +136,6 @@
   "_with"
 ] @keyword
 
-"_package" @include
 
 (regex_literal) @string.special
 
@@ -148,28 +147,27 @@
 ; Literals
 (number) @number
 
-(string_literal) @string
+[
+  (string_literal)
+  (symbol)
+] @string
+
+(character_literal) @character
 
 [
   (true)
   (false)
 ] @boolean
 
-[
-  (maybe)
-  (unset)
-] @constant.builtin
+(maybe) @constant.builtin
+
+(unset) @constant.null
 
 [
  (self)
  (super)
  (clone)
 ] @variable.builtin
-
-[
- (symbol)
- (character_literal)
-] @constant
 
 [
  (variable)

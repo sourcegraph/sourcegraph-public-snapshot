@@ -105,8 +105,8 @@
     // unwatch the old trigger and watch the new trigger.
     let oldTrigger: HTMLElement | null
     $: {
-        oldTrigger && unwatchTrigger(oldTrigger)
-        trigger && watchTrigger(trigger)
+        oldTrigger && showOnHover && unwatchTrigger(oldTrigger)
+        trigger && showOnHover && watchTrigger(trigger)
         oldTrigger = trigger
     }
 

@@ -91,7 +91,7 @@ export interface SubmitSearchParameters
     searchMode?: SearchMode
 }
 
-export const TELEMETRY_V2_SEARCH_SOURCE_TYPE: { [key in SubmitSearchParameters['source']]: number } = {
+export const TELEMETRY_SEARCH_SOURCE_TYPE: { [key in SubmitSearchParameters['source']]: number } = {
     home: 1,
     nav: 2,
     repo: 3,

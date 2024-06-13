@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -17,12 +17,12 @@
     // to expose more info about nature of switch tab / close tab actions
     function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
         if (nextSelectedTab === 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'show')
             return
         }
 
         if (nextSelectedTab === null && selectedTab == 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'hide')
             return
         }
     }
@@ -44,7 +44,7 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -138,13 +138,11 @@
         }
     })
 
-    async function selectTab(event: { detail: number | null }) {
+    function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
         if (event.detail === null) {
-            const url = new URL($page.url)
-            url.searchParams.delete('rev')
-            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+            handleBottomPanelCollapse().catch(() => {})
         }
         selectedTab = event.detail
     }
@@ -155,7 +153,13 @@
         }
     }
 
-    function handleBottomPanelCollapse() {
+    async function handleBottomPanelCollapse() {
+        // Removing the URL parameter causes the diff view to close
+        if ($page.url.searchParams.has('rev')) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
         selectedTab = null
     }
 
@@ -199,7 +203,11 @@
                             on:click={toggleFileSidePanel}
                             aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                         >
-                            <Icon2 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                            <Icon
+                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
+                                inline
+                                aria-hidden
+                            />
                         </Button>
                     </Tooltip>
                     <RepositoryRevPicker
@@ -221,7 +229,7 @@
                                     on:click={() => openFuzzyFinder('files')}
                                 >
                                     {#if isCollapsed}
-                                        <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
+                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
                                     {:else}
                                         <span>Search files</span>
                                         <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
@@ -288,7 +296,7 @@
                                     aria-label="Hide bottom panel"
                                     on:click={handleBottomPanelCollapse}
                                 >
-                                    <Icon2 icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                                    <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
                                 </Button>
                             {/if}
                         </svelte:fragment>

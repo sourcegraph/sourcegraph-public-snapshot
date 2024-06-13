@@ -68,7 +68,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 })
 
                 try {
-                    const response = await requestSSC(`/team/current/members/${accountId}?newRole=${newRole}`, 'PATCH')
+                    const response = await requestSSC('/team/current/members', 'PATCH', {
+                        updateMemberRole: { accountId, teamRole: newRole },
+                    })
                     if (!response.ok) {
                         setLoading(false)
                         setActionResult({
@@ -145,7 +147,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC(`/team/current/members/${accountId}`, 'DELETE')
+                const response = await requestSSC('/team/current/members', 'PATCH', {
+                    removeMember: { accountId, teamRole: 'member' },
+                })
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({

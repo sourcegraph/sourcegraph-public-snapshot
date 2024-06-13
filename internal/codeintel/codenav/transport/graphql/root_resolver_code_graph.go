@@ -150,7 +150,7 @@ func (s scipOccurrence) Symbol() (*string, error) {
 
 func (s scipOccurrence) Range() (resolverstubs.RangeResolver, error) {
 	// FIXME(issue: GRAPH-571): Below code is correct iff the indexer uses UTF-16 offsets
-	r := scip.NewRange(s.impl.Range)
+	r := scip.NewRangeUnchecked(s.impl.Range)
 	return newRangeResolver(lsp.Range{
 		Start: lsp.Position{Line: int(r.Start.Line), Character: int(r.Start.Character)},
 		End:   lsp.Position{Line: int(r.End.Line), Character: int(r.End.Character)},

@@ -9,7 +9,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { isMacPlatform } from '@sourcegraph/common'
@@ -195,7 +194,7 @@
                 }}
             />
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon svgPath={mdiClose} aria-label="Close" inline />
+                <Icon icon={ILucideX} aria-label="Close" inline />
             </Button>
         </header>
         <main>

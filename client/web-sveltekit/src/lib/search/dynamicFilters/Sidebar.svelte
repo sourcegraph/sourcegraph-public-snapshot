@@ -34,16 +34,13 @@
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
-    import { TELEMETRY_V2_FILTER_TYPES } from '@sourcegraph/shared/src/search/stream'
+    import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -91,9 +88,8 @@
     }
 
     function handleFilterSelect(kind: SectionItemData['kind']): void {
-        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
-        TELEMETRY_V2_RECORDER.recordEvent('search.filters', 'select', {
-            metadata: { filterKind: TELEMETRY_V2_FILTER_TYPES[kind] },
+        TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
         })
     }
 
@@ -117,7 +113,7 @@
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
                 <svelte:fragment slot="label" let:label>
-                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                    <Icon icon={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}
                 </svelte:fragment>
             </Section>
@@ -156,7 +152,7 @@
             onFilterSelect={handleFilterSelect}
         >
             <svelte:fragment slot="label" let:label>
-                <LanguageIcon class="icon" language={label} inline />&nbsp;
+                <LanguageIcon language={label} inline />&nbsp;
                 {label}
             </svelte:fragment>
         </Section>
@@ -201,7 +197,7 @@
             <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
                 <svelte:fragment>
                     Move filters to query&nbsp;
-                    <ArrowBendIcon aria-hidden class="arrow-icon" />
+                    <Icon icon={ILucideCornerRightDown} aria-hidden inline />
                 </svelte:fragment>
             </Button>
         </div>
