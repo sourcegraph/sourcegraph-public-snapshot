@@ -7,30 +7,24 @@ import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSett
 
 // IMPORTANT: Call this function only once when extention is first activated
 export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
-    // Process the token that lives in user configuration
-    // Move them to secrets and then remove them by setting it as undefined
+    // Process the token that used to live in user configuration
+    // Move it to secrets and then remove it from user configuration
     const storageToken = await secretStorage.get(secretTokenKey)
     const oldToken = vscode.workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
     if (!storageToken && oldToken.length > 8) {
         await secretStorage.store(secretTokenKey, oldToken)
-        await removeOldAccessTokenSetting()
+        await vscode.workspace
+            .getConfiguration()
+            .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Global)
+        await vscode.workspace
+            .getConfiguration()
+            .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Workspace)
     }
     return
 }
-
 export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
     const currentToken = await secretStorage.get(secretTokenKey)
     return currentToken || ''
-}
-
-export async function removeOldAccessTokenSetting(): Promise<void> {
-    await vscode.workspace
-        .getConfiguration()
-        .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Global)
-    await vscode.workspace
-        .getConfiguration()
-        .update('sourcegraph.accessToken', undefined, vscode.ConfigurationTarget.Workspace)
-    return
 }
 
 // Ensure that only one access token error message is shown at a time.
