@@ -79,6 +79,7 @@
   "dependencies": {
     "@floating-ui/dom": "^1.6.3",
     "@fontsource-variable/inter": "^5.0.18",
+    "@fontsource-variable/roboto-mono": "^5.0.19",
     "@melt-ui/svelte": "^0.76.0",
     "@sentry/sveltekit": "^8.7.0",
     "@sourcegraph/branded": "workspace:*",

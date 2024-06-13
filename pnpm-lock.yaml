@@ -1554,6 +1554,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.0.18
         version: 5.0.18
+      '@fontsource-variable/roboto-mono':
+        specifier: ^5.0.19
+        version: 5.0.19
       '@melt-ui/svelte':
         specifier: ^0.76.0
         version: 0.76.0(svelte@4.1.1)
@@ -4212,6 +4215,10 @@ packages:
 
   /@fontsource-variable/inter@5.0.18:
     resolution: {integrity: sha512-rJzSrtJ3b7djiGFvRuTe6stDfbYJGhdQSfn2SI2WfXviee7Er0yKAHE5u7FU7OWVQQQ1x3+cxdmx9NdiAkcrcA==}
+    dev: false
+
+  /@fontsource-variable/roboto-mono@5.0.19:
+    resolution: {integrity: sha512-EGHx+Av6qNZf1XUM69eE1dwG3vtZHTpRETlkgt9BoRcN0T9xG+Boo/TzznmhI40CLI1zwBjmglEIu2qNI462Vw==}
     dev: false
 
   /@gql2ts/from-query@1.9.0(graphql@14.7.0):

@@ -10,6 +10,7 @@
     import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
+    import '@fontsource-variable/roboto-mono'
     import '@fontsource-variable/inter'
     import './styles.scss'
 
