@@ -1,5 +1,6 @@
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
 load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
@@ -158,6 +159,16 @@ compile_app(
     visibility = ["//client/web/dist:__pkg__"],
 )
 
+build_test(
+    name = "build-test",
+    targets = [
+        ":web-sveltekit",
+    ],
+    tags = [
+        TAG_SEARCHSUITE,
+    ],
+)
+
 playwright_test_bin.playwright_test(
     name = "playwright_install",
     args = [
@@ -211,6 +222,12 @@ playwright_test_bin.playwright_test(
         "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
+    tags = [
+        TAG_SEARCHSUITE,
+        # Playwright tests are flaky and should be run manually.
+        # We need to investigate what makes them flaky and fix it.
+        "manual",
+    ],
 )
 
 TESTS = glob([
