@@ -1067,7 +1067,6 @@ func (s *Service) SyntacticUsages(
 		}
 	}
 
-	fmt.Printf("%+v\n", candidateMatches)
 	_ = candidateMatches
 
 	return []struct{}{}, nil
