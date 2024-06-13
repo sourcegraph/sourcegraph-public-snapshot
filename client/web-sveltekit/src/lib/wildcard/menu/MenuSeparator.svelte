@@ -9,7 +9,7 @@
 <style lang="scss">
     div {
         height: 0;
-        margin: 0.25rem 0;
+        margin: var(--dropdown-padding-y) 0;
         overflow: hidden;
         border-top: 1px solid var(--dropdown--separator-color, var(--border-color));
     }

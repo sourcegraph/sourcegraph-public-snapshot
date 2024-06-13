@@ -2,11 +2,14 @@
     import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
+    import { getButtonClassName } from '@sourcegraph/wildcard'
+
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
+    import { registerHotkey } from '$lib/Hotkey'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
@@ -15,12 +18,10 @@
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
-    import { getButtonClassName } from '$lib/wildcard/Button'
-    import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
-    import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     import type { LayoutData } from './$types'
     import { setRepositoryPageContext, type RepositoryPageContext } from './context'
+    import RepoMenu from './RepoMenu.svelte'
 
     interface MenuEntry {
         /**
@@ -99,7 +100,7 @@
     }))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
-    $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
+    $: ({ repoName, revision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
     function handleSearchSubmit(): void {
@@ -107,6 +108,17 @@
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },
         })
     }
+
+    registerHotkey({
+        keys: {
+            key: 'ctrl+backspace',
+            mac: 'cmd+backspace',
+        },
+        ignoreInputFields: false,
+        handler: () => {
+            goto(data.repoURL)
+        },
+    })
 </script>
 
 <GlobalHeaderPortal>
@@ -128,28 +140,13 @@
         },
     }}
 >
-    <DropdownMenu triggerButtonClass="repo-button">
-        <svelte:fragment slot="trigger">
-            <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
-            <h1>{displayRepoName}</h1>
-        </svelte:fragment>
-        <MenuLink href={data.repoURL}>
-            <Icon icon={ILucideHome} inline />
-            <span>Go to repository root</span>
-        </MenuLink>
-        <MenuButton>
-            <Icon icon={ILucideRepeat} inline />
-            <span>Switch repo</span>
-        </MenuButton>
-        <MenuLink href={data.repoURL + '/-/settings'}>
-            <Icon icon={ILucideSettings} inline />
-            <span>Settings</span>
-        </MenuLink>
-        {#if data.repo.externalURLs.length > 0}
-            <MenuSeparator />
-            <MenuLink href={'TODO'}>Hosted on TODO</MenuLink>
-        {/if}
-    </DropdownMenu>
+    <RepoMenu
+        repoName={data.repoName}
+        displayRepoName={data.displayRepoName}
+        repoURL={data.repoURL}
+        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
+        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+    />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
 
@@ -165,12 +162,10 @@
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
                 {@const href = data.repoURL + entry.path}
                 <MenuLink {href}>
-                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
-                        {#if entry.icon}
-                            <Icon icon={entry.icon} inline aria-hidden />
-                        {/if}
-                        <span>{entry.label}</span>
-                    </span>
+                    {#if entry.icon}
+                        <Icon icon={entry.icon} inline aria-hidden />
+                    {/if}
+                    <span>{entry.label}</span>
                 </MenuLink>
             {/if}
         {/each}
@@ -196,36 +191,5 @@
         overflow: hidden;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
-
-        :global(.repo-button) {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            &:hover {
-                background-color: var(--color-bg-2);
-            }
-
-            :global(h1) {
-                display: contents;
-                font-size: 1rem;
-                white-space: nowrap;
-                color: var(--text-title);
-                font-weight: normal;
-            }
-        }
-
-        :global([data-dropdown-trigger]) {
-            height: 100%;
-            align-self: stretch;
-            padding: 0.5rem;
-            --icon-fill-color: var(--text-muted);
-        }
-    }
-
-    .overflow-entry {
-        width: 100%;
-        display: inline-block;
-        padding: 0 0.25rem;
-        border-radius: var(--border-radius);
     }
 </style>
