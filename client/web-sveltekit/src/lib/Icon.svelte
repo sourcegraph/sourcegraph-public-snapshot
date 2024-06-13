@@ -9,7 +9,9 @@
   See https://lucide.dev/icons/ for a list of available icons.
 -->
 <script lang="ts" context="module">
-    export type IconComponent = ComponentType<SvelteComponent<SvelteHTMLElements['svg'] & {[key: `data-${string}`]: any }>>
+    export type IconComponent = ComponentType<
+        SvelteComponent<SvelteHTMLElements['svg'] & { [key: `data-${string}`]: any }>
+    >
 </script>
 
 <script lang="ts">
@@ -33,4 +35,4 @@
     export let inline: boolean = false
 </script>
 
-<svelte:component data-icon this={icon} class="{style.icon} {inline ? style.iconInline : ''}" {...$$restProps} />
+<svelte:component this={icon} data-icon class="{style.icon} {inline ? style.iconInline : ''}" {...$$restProps} />

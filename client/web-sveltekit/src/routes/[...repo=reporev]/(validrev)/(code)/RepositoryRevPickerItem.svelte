@@ -15,7 +15,7 @@
 
 <span class="title">
     <slot name="title">
-        <Icon icon={icon} inline />
+        <Icon {icon} inline />
         <Badge variant="link">{label}</Badge>
     </slot>
 </span>

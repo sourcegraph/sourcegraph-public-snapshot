@@ -2,9 +2,10 @@ import { mdiCodeBraces, mdiFileOutline, mdiFunction, mdiPlusMinus, mdiSourceComm
 
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
 
+import type { IconComponent } from '$lib/Icon.svelte'
+
 import { parseExtendedSearchURL } from '..'
 import { SearchCachePolicy, setCachePolicyInURL } from '../state'
-import type { IconComponent } from '$lib/Icon.svelte'
 
 export type SectionItemData = Omit<Filter, 'count'> & {
     count?: Filter['count']

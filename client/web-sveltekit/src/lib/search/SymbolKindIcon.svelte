@@ -76,10 +76,7 @@
         class:function={functionFamily.has(symbolKind)}
         class:variable={variableFamily.has(symbolKind)}
     >
-        <Icon
-            icon={icons.get(symbolKind) ?? ISymbolUnknown}
-            aria-label="Symbol kind {symbolKind.toLowerCase()}"
-        />
+        <Icon icon={icons.get(symbolKind) ?? ISymbolUnknown} aria-label="Symbol kind {symbolKind.toLowerCase()}" />
     </div>
 </Tooltip>
 

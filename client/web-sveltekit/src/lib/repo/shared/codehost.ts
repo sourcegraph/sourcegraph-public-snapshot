@@ -1,5 +1,6 @@
 import { mdiBitbucket, mdiGithub, mdiGitlab, mdiSourceRepository } from '@mdi/js'
 import { capitalize } from 'lodash'
+
 import type { IconComponent } from '$lib/Icon.svelte'
 
 const iconMap: { [key: string]: IconComponent } = {
