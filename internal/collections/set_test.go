@@ -2,6 +2,8 @@ package collections
 
 import (
 	"cmp"
+	"pgregory.net/rapid"
+	"slices"
 	"testing"
 
 	"github.com/grafana/regexp"
@@ -124,5 +126,22 @@ func TestSet(t *testing.T) {
 
 		// empty set
 		require.Equal(t, "Set[]", NewSet[int]().String())
+	})
+}
+
+func TestDeduplicateBy(t *testing.T) {
+	t.Run("Deduplicates values by key", func(t *testing.T) {
+		got := DeduplicateBy([]int{1, 7, 8, 15}, func(i int) int { return i % 7 })
+		slices.Sort(got)
+		want := []int{1, 7}
+		require.Equal(t, want, got)
+	})
+
+	rapid.Check(t, func(t *rapid.T) {
+		slice := rapid.SliceOfN(rapid.IntRange(0, 10), 0, 10).Draw(t, "slice")
+		viaSet := NewSet(slice...).Sorted(cmp.Less[int])
+		viaDedupe := DeduplicateBy(slice, func(i int) int { return i })
+		slices.Sort(viaDedupe)
+		require.Equal(t, viaSet, viaDedupe)
 	})
 }

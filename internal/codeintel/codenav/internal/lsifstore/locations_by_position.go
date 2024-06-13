@@ -472,25 +472,11 @@ func (s *store) extractLocationsFromPosition(
 		}
 	}
 
-	return deduplicateLocations(locations), deduplicateBy(symbols, func(s string) string { return s }), nil
-}
-
-func deduplicateBy[T any](locations []T, keyFn func(T) string) []T {
-	seen := collections.NewSet[string]()
-	filtered := locations[:0]
-	for _, l := range locations {
-		k := keyFn(l)
-		if seen.Has(k) {
-			continue
-		}
-		seen.Add(k)
-		filtered = append(filtered, l)
-	}
-	return filtered
+	return deduplicateLocations(locations), collections.DeduplicateBy(symbols, func(s string) string { return s }), nil
 }
 
 func deduplicateLocations(locations []shared.Location) []shared.Location {
-	return deduplicateBy(locations, locationKey)
+	return collections.DeduplicateBy(locations, locationKey)
 }
 
 func locationKey(l shared.Location) string {
