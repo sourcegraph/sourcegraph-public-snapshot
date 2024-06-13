@@ -37,14 +37,19 @@ A component to display the keyboard shortcuts for the application.
             display: inline;
         }
 
-        box-sizing: border-box;
-        line-height: 1;
-        $height: (20 / 16) * 1em;
-        $verticalPadding: $height * 0.1875;
-        padding: $verticalPadding ($verticalPadding * 1.5);
-        border-radius: 0.375em;
-        font-size: $height - $verticalPadding * 2;
+        // NOTE: the height of the kdb element is based on the base
+        // line height. There is no way to query the line height of the
+        // parent, so we assume that the container has the standard
+        // line height. In the case the parent has a line height of 1,
+        // this will grow the container slightly. This can be overridden
+        // by setting `--line-height-base` if overriding it in the parent.
+        --height: calc(var(--line-height-base) * 1em);
+        --vertical-padding: calc(var(--height) * 0.25);
+        padding: var(--vertical-padding) calc(1.5 * var(--vertical-padding));
+        font-size: calc(var(--height) - 2 * var(--vertical-padding));
         font-family: var(--font-family-base);
+        border-radius: 0.5em;
+        line-height: 1;
 
         background-color: var(--secondary-4);
         color: var(--text-muted);
