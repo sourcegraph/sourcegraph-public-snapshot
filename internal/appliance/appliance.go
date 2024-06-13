@@ -3,9 +3,10 @@ package appliance
 import (
 	"context"
 
-	"github.com/Masterminds/semver"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -15,9 +16,7 @@ import (
 )
 
 type Appliance struct {
-	client client.Client
-
-	version     semver.Version
+	client      client.Client
 	status      Status
 	sourcegraph config.Sourcegraph
 
@@ -27,43 +26,33 @@ type Appliance struct {
 	pb.UnimplementedApplianceServiceServer
 }
 
-type Status struct {
-	stage Stage
-}
-
-// Stage is a Stage that an Appliance can be in.
-type Stage string
+// Status is a Stage that an Appliance can be in.
+type Status string
 
 const (
-	StageUnknown         Stage = "unknown"
-	StageIdle            Stage = "idle"
-	StageInstall         Stage = "install"
-	StageInstalling      Stage = "installing"
-	StageUpgrading       Stage = "upgrading"
-	StageWaitingForAdmin Stage = "waitingForAdmin"
-	StageRefresh         Stage = "refresh"
+	StatusUnknown    Status = "unknown"
+	StatusSetup      Status = "setup"
+	StatusInstalling Status = "installing"
 )
 
-func (s Stage) String() string {
+func (s Status) String() string {
 	return string(s)
 }
 
 func NewAppliance(client client.Client) *Appliance {
 	return &Appliance{
-		client: client,
-		status: Status{
-			stage: StageUnknown,
-		},
+		client:      client,
+		status:      StatusSetup,
 		sourcegraph: config.Sourcegraph{},
 	}
 }
 
-func (a *Appliance) GetCurrentVersion(ctx context.Context) semver.Version {
-	return a.version
+func (a *Appliance) GetCurrentVersion(ctx context.Context) string {
+	return a.sourcegraph.Status.CurrentVersion
 }
 
-func (a *Appliance) GetCurrentStage(ctx context.Context) Stage {
-	return a.status.stage
+func (a *Appliance) GetCurrentStatus(ctx context.Context) Status {
+	return a.status
 }
 
 func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error) {
@@ -91,4 +80,34 @@ func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string)
 	}
 
 	return configMap, nil
+}
+
+func (a *Appliance) GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error) {
+	var applianceSpec corev1.ConfigMap
+	err := a.client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &applianceSpec)
+	if apierrors.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &applianceSpec, nil
+}
+
+func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
+	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance", "default") //TODO unhardcode and load namespace properly
+	switch {
+	case err != nil:
+		return false, err
+	case a.status == StatusInstalling:
+		return false, nil
+	case cfgMap == nil:
+		// configMap does not exist
+		return true, nil
+	case cfgMap.Annotations[config.AnnotationKeyManaged] == "false":
+		// appliance is not managed
+		return false, nil
+	default:
+		return true, nil
+	}
 }

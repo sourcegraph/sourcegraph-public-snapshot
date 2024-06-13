@@ -260,10 +260,18 @@ type SourcegraphSpec struct {
 	StorageClass StorageClassSpec `json:"storageClass,omitempty"`
 }
 
+// SetupStatus defines the observes status of the setup process.
+type SetupStatus struct {
+	Progress int32
+}
+
 // SourcegraphStatus defines the observed state of Sourcegraph
 type SourcegraphStatus struct {
 	// CurrentVersion is the version of Sourcegraph currently running.
 	CurrentVersion string `json:"currentVersion"`
+
+	// Setup tracks the progress of the setup process.
+	Setup SetupStatus `json:"setup,omitempty"`
 
 	// Represents the latest available observations of Sourcegraph's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`

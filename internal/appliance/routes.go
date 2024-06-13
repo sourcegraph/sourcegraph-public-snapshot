@@ -1,27 +1,20 @@
 package appliance
 
 import (
-	htmltemplate "html/template"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-const templateIndex = "ui/template/index.gohtml"
-
-func init() {
-	indexTmpl := htmltemplate.Must(htmltemplate.New("index").ParseFS(templateFS, templateIndex))
-}
-
 func (a *Appliance) Routes() *mux.Router {
-	staticFileServer := http.FileServer(http.FS(staticFS))
-
 	r := mux.NewRouter()
-	r.Handle("/static/*", http.StripPrefix("/static/", staticFileServer))
-
-	r.Handle("/", nil)
-
-	indexTe
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/appliance", http.StatusFound)
+	})
+	r.HandleFunc("/appliance", a.applianceHandler).Methods(http.MethodGet)
+	r.HandleFunc("/appliance/setup", a.getSetupHandler).Methods(http.MethodGet)
+	r.HandleFunc("/appliance/setup", a.postSetupHandler).Methods(http.MethodPost)
 
 	return r
 }
