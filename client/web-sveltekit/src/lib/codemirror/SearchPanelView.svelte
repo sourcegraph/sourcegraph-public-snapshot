@@ -94,7 +94,7 @@
     -->
     <label>
         <Switch checked={searchPanelState.overrideBrowserSearch} on:change={handleOverrideBrowserSearchChange} />
-        <KeyboardShortcut shorcut={keyboardShortcut} />
+        <KeyboardShortcut shortcut={keyboardShortcut} />
     </label>
     <Tooltip
         tooltip="When enabled, {formatShortcut(

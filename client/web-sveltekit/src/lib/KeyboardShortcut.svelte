@@ -5,14 +5,14 @@ A component to display the keyboard shortcuts for the application.
     import { isMacPlatform } from '$lib/common'
     import { formatShortcutParts, type Keys } from '$lib/Hotkey'
 
-    export let shorcut: Keys
+    export let shortcut: Keys
     export let inline: boolean = false
 
     const separator = isMacPlatform() ? '' : '+'
 
     $: parts = (() => {
         const result: string[] = []
-        let parts = formatShortcutParts(shorcut)
+        let parts = formatShortcutParts(shortcut)
         for (let i = 0; i < parts.length; i++) {
             if (i > 0) {
                 result.push(separator)
@@ -31,16 +31,28 @@ A component to display the keyboard shortcuts for the application.
 
 <style lang="scss">
     kbd {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.125rem;
-    }
+        all: unset;
+        display: inline-block;
+        &.inline {
+            display: inline;
+        }
 
-    .inline {
-        margin: 0;
-        padding: 0;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
+        box-sizing: border-box;
+        line-height: 1;
+        $height: (20 / 16) * 1em;
+        $verticalPadding: $height * 0.1875;
+        padding: $verticalPadding ($verticalPadding * 1.5);
+        border-radius: 0.375em;
+        font-size: $height - $verticalPadding * 2;
+        font-family: var(--font-family-base);
+
+        background-color: var(--secondary-4);
+        color: var(--text-muted);
+
+        // When inside a selected container, show the selected variant
+        :global([aria-selected='true']) & {
+            color: white;
+            background-color: var(--primary);
+        }
     }
 </style>

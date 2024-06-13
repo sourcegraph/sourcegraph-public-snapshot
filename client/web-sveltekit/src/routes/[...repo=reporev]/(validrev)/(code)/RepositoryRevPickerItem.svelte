@@ -8,7 +8,7 @@
 
     import type { RepositoryGitRevAuthor } from './RepositoryRevPicker.gql'
 
-    export let icon: ComponentProps<Icon>['icon']|undefined = undefined
+    export let icon: ComponentProps<Icon>['icon'] | undefined = undefined
     export let label: string
     export let author: RepositoryGitRevAuthor['author'] | null | undefined
 </script>
