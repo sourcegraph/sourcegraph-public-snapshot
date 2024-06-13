@@ -23,7 +23,7 @@ import {
     CodySubscriptionPlan,
 } from '../../../../graphql-operations'
 import { CodyProRoutes } from '../../../codyProRoutes'
-import { WhiteIcon } from '../../../components/WhiteIcon'
+import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress'
@@ -75,7 +75,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             <PageHeader className="mb-4 mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <div className="d-inline-flex align-items-center">
-                        <WhiteIcon name="cody-logo" className="mr-3" />{' '}
+                        <PageHeaderIcon name="cody-logo" className="mr-3" />{' '}
                         {initialSeatCount > 1 ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
                     </div>
                 </PageHeader.Heading>
