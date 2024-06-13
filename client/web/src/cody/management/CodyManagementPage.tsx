@@ -1,12 +1,22 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiCreditCardOutline } from '@mdi/js'
+import { mdiCreditCardOutline, mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import {
+    ButtonLink,
+    H1,
+    H2,
+    Icon,
+    Link,
+    PageHeader,
+    Text,
+    useSearchParameters,
+    Button,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
@@ -25,6 +35,7 @@ import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
 import { getManageSubscriptionPageURL } from '../util'
 
 import { SubscriptionStats } from './SubscriptionStats'
@@ -53,7 +64,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
 
-    // The cody_client_user URL query param is added by the VS Code & Jetbrains
+    // The cody_client_user URL query param is added by the VS Code & JetBrains
     // extensions. We redirect them to a "switch account" screen if they are
     // logged into their IDE as a different user account than their browser.
     const codyClientUser = parameters.get('cody_client_user')
@@ -72,6 +83,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         USER_CODY_USAGE,
         {}
     )
+
+    const [codySubscriptionSummary] = useCodySubscriptionSummaryData()
+    const isAdmin = codySubscriptionSummary?.userRole === 'admin'
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
@@ -115,7 +129,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </Text>
                     </CodyAlert>
                 )}
-                <PageHeader className="mb-4 mt-4">
+                <PageHeader
+                    className="mb-4 mt-4"
+                    actions={
+                        isAdmin && (
+                            <div className="d-flex">
+                                <Button
+                                    as={Link}
+                                    to="/cody/manage/subscription/new?addSeats=1"
+                                    variant="success"
+                                    className="text-nowrap"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlusThick} /> Invite co-workers
+                                </Button>
+                            </div>
+                        )
+                    }
+                >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
                             <PageHeaderIcon className="mr-2" name="dashboard" /> Dashboard
