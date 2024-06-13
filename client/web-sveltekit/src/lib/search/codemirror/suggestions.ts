@@ -2,6 +2,7 @@ import { dirname } from 'path'
 
 import type { Extension } from '@codemirror/state'
 import { escapeRegExp } from 'lodash'
+import { mdiFilterOutline } from '@mdi/js'
 
 import { getQueryInformation, type Option, suggestionSources, RenderAs } from '$lib/branded'
 import { EMPTY_RELEVANT_TOKEN_RESULT, FilterType, getRelevantTokens, isFilterOfType, type RelevantTokenResult } from '$lib/shared'
@@ -46,6 +47,7 @@ function createFilterSuggestion(
             insertValue: label + ' ',
             name: existingRange ? 'Replace' : 'Add',
         },
+        icon: mdiFilterOutline,
         render: RenderAs.QUERY,
     }
 }
@@ -161,10 +163,10 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
             }
             const relevantTokens = parsedQuery
                 ? getRelevantTokens(
-                      parsedQuery,
-                      { start: position, end: position },
-                      token => token.type === 'parameter'
-                  )
+                    parsedQuery,
+                    { start: position, end: position },
+                    token => token.type === 'parameter'
+                )
                 : EMPTY_RELEVANT_TOKEN_RESULT
             const context = options.getContextInformation()
             return {
