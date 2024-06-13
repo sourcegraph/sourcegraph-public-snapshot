@@ -9,14 +9,13 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { isMacPlatform } from '@sourcegraph/common'
 
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
@@ -195,7 +194,7 @@
                 }}
             />
             <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon svgPath={mdiClose} aria-label="Close" inline />
+                <Icon2 svgPath={ILucideX} aria-label="Close" inline />
             </Button>
         </header>
         <main>

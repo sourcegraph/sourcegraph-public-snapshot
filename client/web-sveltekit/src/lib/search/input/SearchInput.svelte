@@ -6,7 +6,6 @@
 
     import { EditorSelection, EditorState, Prec, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
-    import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 
     import { goto, invalidate } from '$app/navigation'
     import {
@@ -27,7 +26,7 @@
     } from '$lib/branded'
     import { query, type DocumentInput } from '$lib/graphql'
     import { SearchPatternType } from '$lib/graphql-operations'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import BaseCodeMirrorQueryInput from '$lib/search/BaseQueryInput.svelte'
     import { user } from '$lib/stores'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -113,6 +112,7 @@
 
 <script lang="ts">
     import { mdiClockOutline } from '@mdi/js'
+
     import { registerHotkey } from '$lib/Hotkey'
 
     export let autoFocus = false
@@ -241,7 +241,7 @@
         <div class="mode-switcher" class:active={!!mode}>
             <Tooltip tooltip="Recent searches">
                 <button class="icon" type="button" on:click={toggleMode}>
-                    <Icon svgPath={mdiClockOutline} inline />
+                    <Icon2 icon={ILucideHistory} inline aria-hidden />
                     {#if mode}
                         <span>{mode}:</span>
                     {/if}
@@ -268,7 +268,7 @@
                     class:active={$queryState.caseSensitive}
                     on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                 >
-                    <Icon svgPath={mdiFormatLetterCase} inline />
+                    <Icon2 icon={ILucideCaseSensitive} inline aria-hidden />
                 </button>
             </Tooltip>
             <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
@@ -278,7 +278,7 @@
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
-                    <Icon svgPath={mdiRegex} inline />
+                    <Icon2 icon={ILucideRegex} inline aria-hidden />
                 </button>
             </Tooltip>
             {#if structuralEnabled}
@@ -289,7 +289,7 @@
                         class:active={structuralEnabled}
                         on:click={() => setOrUnsetPatternType(SearchPatternType.structural)}
                     >
-                        <Icon svgPath={mdiCodeBrackets} inline />
+                        <Icon2 icon={ILucideBrackets} inline aria-hidden />
                     </button>
                 </Tooltip>
             {/if}

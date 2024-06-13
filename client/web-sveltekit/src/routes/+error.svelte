@@ -17,7 +17,7 @@
 {:else if isRevisionNotFoundErrorLike($page.error)}
     <RevisionNotFoundError />
 {:else}
-    <HeroPage title="Error" svgIconPath={mdiAlertCircle}>
+    <HeroPage title="Error" icon={ILucideCircleX}>
         <!-- TODO: format error message with markdown -->
         {$page.error?.message ?? 'Unknown Error'}
     </HeroPage>

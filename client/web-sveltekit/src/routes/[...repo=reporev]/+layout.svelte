@@ -1,11 +1,9 @@
 <script lang="ts">
-    import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
     import { writable } from 'svelte/store'
 
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
     import Icon2 from '$lib/Icon2.svelte'
-    import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
@@ -18,6 +16,7 @@
     import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
+    import type { ComponentProps } from 'svelte'
 
     interface MenuEntry {
         /**
@@ -31,7 +30,7 @@
         /**
          * The icon to display next to the title.
          */
-        icon?: string
+        icon?: ComponentProps<Icon2>['icon']
         /**
          * Who can see this entry.
          */
@@ -42,19 +41,19 @@
 
     const menuOpen = writable(false)
     const navEntries: MenuEntry[] = [
-        { path: '', icon: mdiCodeTags, label: 'Code', visibility: 'user' },
-        { path: '/-/commits', icon: mdiSourceCommit, label: 'Commits', visibility: 'user' },
-        { path: '/-/branches', icon: mdiSourceBranch, label: 'Branches', visibility: 'user' },
-        { path: '/-/tags', icon: mdiTag, label: 'Tags', visibility: 'user' },
-        { path: '/-/stats/contributors', icon: mdiAccount, label: 'Contributors', visibility: 'user' },
+        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user' },
+        { path: '/-/commits', icon: ILucideGitCommitVertical, label: 'Commits', visibility: 'user' },
+        { path: '/-/branches', icon: ILucideGitBranch, label: 'Branches', visibility: 'user' },
+        { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
+        { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
-        { path: '/-/compare', icon: mdiHistory, label: 'Compare', visibility: 'user' },
-        { path: '/-/own', icon: mdiAccount, label: 'Ownership', visibility: 'admin' },
-        { path: '/-/embeddings', label: 'Embeddings', visibility: 'admin' },
-        { path: '/-/code-graph', label: 'Code graph data', visibility: 'admin' },
-        { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
-        { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
+        { path: '/-/compare', icon: ILucideHistory, label: 'Compare', visibility: 'user' },
+        { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
+        { path: '/-/embeddings', icon: ILucideSpline, label: 'Embeddings', visibility: 'admin' },
+        { path: '/-/code-graph', icon: ILucideBrainCircuit, label: 'Code graph data', visibility: 'admin' },
+        { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
+        { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
 
     $: viewableNavEntries = navEntries.filter(
@@ -132,7 +131,7 @@
                 <MenuLink {href}>
                     <span class="overflow-entry" class:active={isActive(href, $page.url)}>
                         {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
+                            <Icon2 icon={entry.icon} inline aria-hidden />
                         {/if}
                         <span>{entry.label}</span>
                     </span>

@@ -3,7 +3,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
@@ -16,7 +15,7 @@
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike, pluralize, SourcegraphURL, type LineOrPositionOrRange } from '$lib/common'
     import { getGraphQLClient, toGraphQLResult } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import FileIcon from '$lib/repo/FileIcon.svelte'
     import { renderMermaid } from '$lib/repo/mermaid'
@@ -169,13 +168,13 @@
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
-                <Icon svgPath={mdiFileEyeOutline} inline /> View raw
+                <Icon2 icon={ILucideEye} inline aria-hidden /> View raw
             </MenuLink>
             <MenuButton
                 on:click={() => lineWrap.update(wrap => !wrap)}
                 disabled={fileViewModeFromURL === CodeViewMode.Default && isRichFile}
             >
-                <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
+                <Icon2 icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
             </MenuButton>
         </svelte:fragment>
@@ -188,7 +187,7 @@
             <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
         </Badge>
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
-            <Icon svgPath={mdiClose} inline />
+            <Icon2 icon={ILucideX} inline aria-hidden />
             <span>Close commit</span>
         </a>
     </div>
@@ -227,7 +226,7 @@
         </Alert>
     {:else if fileNotFound}
         <div class="circle">
-            <Icon svgPath={mdiMapSearch} --icon-size="80px" />
+            <Icon2 icon={ILucideSearchX} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
     {:else if isBinaryFile}

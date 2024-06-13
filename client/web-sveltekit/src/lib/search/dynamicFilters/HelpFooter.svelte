@@ -1,16 +1,15 @@
-<script>
-    import LinkShareIcon from '$lib/icons/LinkShare.svelte'
-    import OpenBookIcon from '$lib/icons/OpenBook.svelte'
+<script lang="ts">
+    import Icon2 from '$lib/Icon2.svelte'
 </script>
 
 <footer>
     <a href="/help/code_search/reference/queries" class="link">
-        <div class="icon"><OpenBookIcon aria-hidden /></div>
+        <div class="icon"><Icon2 icon={ILucideBookOpen} aria-hidden /></div>
         <div>
             <h4>Need more advanced filters?</h4>
             <small>Explore the query syntax docs</small>
         </div>
-        <div class="icon"><LinkShareIcon aria-hidden /></div>
+        <div class="icon"><Icon2 icon={ILucideExternalLink} aria-hidden inline /></div>
     </a>
 </footer>
 

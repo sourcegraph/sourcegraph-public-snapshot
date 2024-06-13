@@ -10,7 +10,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
     import { from } from 'rxjs'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
@@ -18,7 +17,7 @@
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import { isErrorLike } from '$lib/common'
     import { getGraphQLClient, mapOrThrow, toGraphQLResult } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import {
         getFileMatchUrl,
@@ -80,7 +79,7 @@
     <div class="header">
         <h3>File Preview</h3>
         <button data-testid="preview-close" on:click={() => searchResultContext.setPreview(null)}>
-            <Icon svgPath={mdiClose} class="close-icon" --icon-size="16px" inline />
+            <Icon2 icon={ILucideX} --icon-size="16px" inline />
         </button>
     </div>
     <div class="file-link">

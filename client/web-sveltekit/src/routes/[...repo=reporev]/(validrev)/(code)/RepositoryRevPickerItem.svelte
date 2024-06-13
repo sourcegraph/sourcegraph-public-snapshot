@@ -1,18 +1,21 @@
 <script lang="ts">
-    import { Badge } from '$lib/wildcard'
+    import type { ComponentProps } from 'svelte'
+
     import Avatar from '$lib/Avatar.svelte'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import Timestamp from '$lib/Timestamp.svelte'
+    import { Badge } from '$lib/wildcard'
+
     import type { RepositoryGitRevAuthor } from './RepositoryRevPicker.gql'
 
-    export let iconPath: string
+    export let icon: ComponentProps<Icon2>['icon']
     export let label: string
     export let author: RepositoryGitRevAuthor['author'] | null | undefined
 </script>
 
 <span class="title">
     <slot name="title">
-        <Icon svgPath={iconPath} inline />
+        <Icon2 icon={icon} inline />
         <Badge variant="link">{label}</Badge>
     </slot>
 </span>

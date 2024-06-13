@@ -24,7 +24,7 @@ export interface NavigationEntry {
     /**
      * An optional icon to display next to the label.
      */
-    icon?: string | ComponentType
+    icon?: IconComponent
     /**
      * An optional status to display next to the label. See {@link Status}.
      */

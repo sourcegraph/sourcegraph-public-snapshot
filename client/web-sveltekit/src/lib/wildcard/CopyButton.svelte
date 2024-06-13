@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { mdiContentCopy } from '@mdi/js'
     import copy from 'copy-to-clipboard'
 
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Button } from '$lib/wildcard'
 
@@ -24,7 +23,7 @@
 <span class="copy-path-button">
     <Tooltip {tooltip} placement="bottom">
         <Button on:click={handleCopyPath} variant="icon" size="sm" aria-label={label}>
-            <Icon inline svgPath={mdiContentCopy} aria-hidden />
+            <Icon2 inline icon={ILucideCopy} aria-hidden />
         </Button>
     </Tooltip>
 </span>

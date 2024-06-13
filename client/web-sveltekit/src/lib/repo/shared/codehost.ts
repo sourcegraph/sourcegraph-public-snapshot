@@ -1,13 +1,14 @@
 import { mdiBitbucket, mdiGithub, mdiGitlab, mdiSourceRepository } from '@mdi/js'
 import { capitalize } from 'lodash'
+import type { IconComponent } from '$lib/Icon2.svelte'
 
-const iconMap: { [key: string]: string } = {
-    github: mdiGithub,
-    'github.com': mdiGithub,
-    gitlab: mdiGitlab,
-    'gitlab.com': mdiGitlab,
-    bitbucket: mdiBitbucket,
-    'bitbucket.org': mdiBitbucket,
+const iconMap: { [key: string]: IconComponent } = {
+    github: ISimpleIconsGithub,
+    'github.com': ISimpleIconsGithub,
+    gitlab: ISimpleIconsGitlab,
+    'gitlab.com': ISimpleIconsGitlab,
+    bitbucket: ISimpleIconsBitbucket,
+    'bitbucket.org': ISimpleIconsBitbucket,
 }
 
 const humanNameMap: { [key: string]: string } = {
@@ -20,15 +21,15 @@ const humanNameMap: { [key: string]: string } = {
 }
 
 /**
- * Returns the SVG icon path for the given code host. Accepts the code host's name
+ * Returns the SVG icon component for the given code host. Accepts the code host's name
  * (e.g. 'github') or hostname  (e.g. 'github.com'). Defaults to a generic source
  * repository icon.
  *
  * @param codeHost The code host name or hostname.
- * @returns The SVG icon path for the code host.
+ * @returns The SVG icon component for the code host.
  */
-export function getIconPathForCodeHost(codeHost: string): string {
-    return iconMap[codeHost.toLowerCase()] ?? mdiSourceRepository
+export function getIconForCodeHost(codeHost: string): IconComponent {
+    return iconMap[codeHost.toLowerCase()] ?? ILucideFolderGit2
 }
 
 /**

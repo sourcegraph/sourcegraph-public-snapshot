@@ -22,13 +22,11 @@
 </script>
 
 <script lang="ts">
-    import { mdiFolder } from '@mdi/js'
-
     import { resolveRoute } from '$app/paths'
     import Avatar from '$lib/Avatar.svelte'
     import { pluralize } from '$lib/common'
     import { getGraphQLClient } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import { displayRepoName } from '$lib/shared'
     import Timestamp from '$lib/Timestamp.svelte'
     import { formatBytes } from '$lib/utils'
@@ -94,7 +92,7 @@
                 </small>
             </div>
         {:else if entry.__typename === 'GitTree'}
-            <Icon svgPath={mdiFolder} --icon-fill-color="var(--primary)" --icon-size="1.5rem" />
+            <Icon2 icon={ILucideFolder} --icon-fill-color="var(--primary)" --icon-size="1.5rem" />
             <div class="file mono">
                 <div class="title">{baseName}</div>
                 <small>

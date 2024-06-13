@@ -7,11 +7,9 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-
     import { page } from '$app/stores'
     import { onClickOutside, portal } from '$lib/dom'
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
 
     import { isCurrent } from './mainNavigation'
@@ -25,7 +23,7 @@
     <div class="content" use:onClickOutside on:click-outside={onClose}>
         <header>
             <button class="close-button" on:click={onClose}>
-                <Icon svgPath={mdiClose} aria-label="Close sidebar navigation" />
+                <Icon2 icon={ILucideX} aria-label="Close sidebar navigation" />
             </button>
 
             <a href="/search" class="logo-link">

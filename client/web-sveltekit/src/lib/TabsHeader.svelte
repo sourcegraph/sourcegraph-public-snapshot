@@ -5,7 +5,7 @@
         id: string
         title: string
         // An icon for the tab. Shown to the left of the title.
-        icon?: string
+        icon?: ComponentProps<Icon2>['icon']
         // A shortcut to activate the tab. Shown to the right of the title.
         shortcut?: Keys
         // If provided, will cause the tab to be rendered as a link
@@ -14,11 +14,11 @@
 </script>
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, type ComponentProps } from 'svelte'
 
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
 
-    import Icon from './Icon.svelte'
+    import Icon2 from './Icon2.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -48,7 +48,7 @@
             href={tab.href}
         >
             {#if tab.icon}
-                <Icon svgPath={tab.icon} aria-hidden inline />
+                <Icon2 icon={tab.icon} aria-hidden inline />
             {/if}
             <span data-tab-title={tab.title}>
                 {tab.title}
@@ -76,7 +76,7 @@
         cursor: pointer;
         align-items: center;
         min-height: 2rem;
-        padding: 0.25rem var(--tabs-horizontal-spacing, 0.75rem);
+        padding: 0.25rem 0.75rem;
         color: var(--text-body);
         display: inline-flex;
         flex-flow: row nowrap;
@@ -100,6 +100,8 @@
         }
 
         &[aria-selected='true'] {
+            --icon-fill-color: currentColor;
+
             font-weight: 500;
             color: var(--text-title);
             background-color: var(--secondary-2);

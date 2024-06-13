@@ -1,15 +1,16 @@
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
+    import Icon2 from '$lib/Icon2.svelte'
+    import type { ComponentProps } from 'svelte'
 
     export let title: string
-    export let svgIconPath: string = ''
+    export let icon: ComponentProps<Icon2>['icon']
 </script>
 
 <div class="root">
-    {#if svgIconPath || $$slots.icon}
+    {#if icon || $$slots.icon}
         <div class="icon-wrapper">
             <slot name="icon">
-                <Icon svgPath={svgIconPath} aria-hidden="true" inline --icon-inline-size="4rem" />
+                <Icon2 icon={icon} aria-hidden="true" inline --icon-inline-size="4rem" />
             </slot>
         </div>
     {/if}
@@ -23,6 +24,8 @@
         display: flex;
         flex-direction: column;
         width: 100%;
+        max-width: var(--viewport-xl);
+        margin: 0 auto;
         min-height: 0;
         align-items: center;
         overflow-y: auto;
