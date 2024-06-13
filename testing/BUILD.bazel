@@ -251,7 +251,7 @@ PLAYWRIGHT_DEPS = [
 ]
 
 playwright_test_bin.playwright_test(
-    name = "playwright",
+    name = "poc_release_test",
     timeout = "short",
     args = [
         "test",
@@ -270,7 +270,37 @@ playwright_test_bin.playwright_test(
         "BAZEL": "1",
     },
     tags = [
-        "manual",
+        "manual",  # We never want normal CI runs to include this.
+        "no-cache",  # Because those tests are meant to target a real live instance, that lives outside the inputs, there's no point in caching.
+        "requires-network",
+    ],
+)
+
+# This should be a run, but I'm getting weird errors when I try.
+# To reproduce, ...bin.playwright_test -> ...bin.playwright_binary and bazel run the target.
+playwright_test_bin.playwright_test(
+    name = "poc_release_test_ui",
+    timeout = "eternal",
+    args = [
+        "test",
+        "--config $(location playwright.config.ts)",
+        "--ui",
+    ],
+    data = glob(
+        [
+            "tests/**/*.spec.ts",
+        ],
+    ) + [
+        "playwright.config.ts",
+        "//dev/tools:chromium",
+    ] + PLAYWRIGHT_DEPS,
+    env = {
+        "CHROMIUM_BIN": "$(rootpath //dev/tools:chromium)",
+        "BAZEL": "1",
+    },
+    tags = [
+        "manual",  # We never want normal CI runs to include this.
+        "no-cache",  # Because those tests are meant to target a real live instance, that lives outside the inputs, there's no point in caching.
         "requires-network",
     ],
 )
