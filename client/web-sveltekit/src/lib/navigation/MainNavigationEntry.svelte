@@ -1,7 +1,6 @@
 <script lang="ts">
     import { page } from '$app/stores'
     import { createDropdownMenu } from '@melt-ui/svelte'
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
 
@@ -32,12 +31,12 @@
     {:else}
         <button {...$trigger} use:trigger>
             {#if typeof entry.icon === 'string'}
-                <Icon svgPath={entry.icon} aria-hidden="true" inline />&nbsp;
+                <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
             {:else if entry.icon}
                 <span class="icon"><svelte:component this={entry.icon} /></span>&nbsp;
             {/if}
             {entry.label}
-            <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} inline />
+            <Icon icon={$open ? ILucideChevronUp : ILucideChevronDown} inline aria-hidden />
         </button>
         <ul {...$menu} use:menu>
             {#each entry.children as subEntry (subEntry.label)}
@@ -51,7 +50,7 @@
 
 <style lang="scss">
     li.toplevel-naventry {
-        --color: var(--header-icon-color);
+        --icon-fill-color: var(--header-icon-color);
 
         position: relative;
         display: flex;

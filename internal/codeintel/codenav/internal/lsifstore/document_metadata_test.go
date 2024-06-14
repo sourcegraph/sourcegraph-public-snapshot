@@ -156,22 +156,22 @@ func TestGetRanges(t *testing.T) {
 	)
 
 	var (
-		nonEmptyDefinitionLocations = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 16, 15, 24)}}
-		tDefinitionLocations        = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 25, 15, 26)}}
-		valueDefinitionLocations    = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 28, 15, 33)}}
+		nonEmptyDefinitionLocations = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 16, 15, 24)}}
+		tDefinitionLocations        = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 25, 15, 26)}}
+		valueDefinitionLocations    = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 28, 15, 33)}}
 
 		nonEmptyReferenceLocations = []shared.Location{}
 		tReferenceLocations        = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 35, 15, 36)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 39, 15, 40)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 73, 15, 74)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 77, 15, 78)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 35, 15, 36)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 39, 15, 40)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 73, 15, 74)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 77, 15, 78)},
 		}
 		valueReferenceLocations = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 64, 15, 69)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 13, 16, 18)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 38, 16, 43)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 48, 16, 53)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 64, 15, 69)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 13, 16, 18)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 38, 16, 43)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 48, 16, 53)},
 		}
 
 		nonEmptyImplementationLocations = []shared.Location(nil)
@@ -182,7 +182,7 @@ func TestGetRanges(t *testing.T) {
 	expectedRanges := []shared.CodeIntelligenceRange{
 		{
 			// `nonEmpty`
-			Range:           newRange(15, 16, 15, 24),
+			Range:           shared.NewRange(15, 16, 15, 24),
 			Definitions:     nonEmptyDefinitionLocations,
 			References:      nonEmptyReferenceLocations,
 			Implementations: nonEmptyImplementationLocations,
@@ -190,7 +190,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 25, 15, 26),
+			Range:           shared.NewRange(15, 25, 15, 26),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -198,7 +198,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `value`
-			Range:           newRange(15, 28, 15, 33),
+			Range:           shared.NewRange(15, 28, 15, 33),
 			Definitions:     valueDefinitionLocations,
 			References:      valueReferenceLocations,
 			Implementations: valueImplementationLocations,
@@ -206,7 +206,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 35, 15, 36),
+			Range:           shared.NewRange(15, 35, 15, 36),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -214,7 +214,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 39, 15, 40),
+			Range:           shared.NewRange(15, 39, 15, 40),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -222,7 +222,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `value`
-			Range:           newRange(15, 64, 15, 69),
+			Range:           shared.NewRange(15, 64, 15, 69),
 			Definitions:     valueDefinitionLocations,
 			References:      valueReferenceLocations,
 			Implementations: valueImplementationLocations,
@@ -230,7 +230,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 73, 15, 74),
+			Range:           shared.NewRange(15, 73, 15, 74),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -238,7 +238,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 77, 15, 78),
+			Range:           shared.NewRange(15, 77, 15, 78),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,

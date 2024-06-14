@@ -2,6 +2,7 @@ import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
 import AutoImport from 'unplugin-auto-import/vite'
+import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
@@ -26,16 +27,24 @@ export default defineConfig(({ mode }) => {
                 resolvers: [
                     IconsResolver({
                         prefix: 'i',
+                        customCollections: ['sg', 'symbol'],
                     }),
                 ],
             }),
             Icons({
                 compiler: 'svelte',
+                customCollections: {
+                    sg: FileSystemIconLoader('./assets/icons'),
+                    symbol: FileSystemIconLoader('./assets/symbol-icons'),
+                },
             }),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
             inspect(),
         ],
+        build: {
+            sourcemap: true,
+        },
         define:
             mode === 'test'
                 ? {}

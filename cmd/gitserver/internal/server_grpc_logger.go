@@ -91,15 +91,12 @@ func (l *loggingGRPCServer) CreateCommitFromPatchBinary(server proto.GitserverSe
 }
 
 func createCommitFromPatchBinaryRequestMetadataToLogFields(req *proto.CreateCommitFromPatchBinaryRequest_Metadata) []log.Field {
-
 	return []log.Field{
 		log.String("repo", req.GetRepo()),
 		log.String("baseCommit", req.GetBaseCommit()),
 		log.String("targetRef", req.GetTargetRef()),
-		log.Bool("uniqueRef", req.GetUniqueRef()),
 		log.Object("commitInfo", patchCommitInfoToLogFields(req.GetCommitInfo())...),
 		log.Object("push", pushConfigToLogFields(req.GetPush())...),
-		log.Strings("gitApplyArgs", req.GetGitApplyArgs()),
 		log.String("pushRef", req.GetPushRef()),
 	}
 }
@@ -148,38 +145,6 @@ func (l *loggingGRPCServer) DiskInfo(ctx context.Context, request *proto.DiskInf
 	}()
 
 	return l.base.DiskInfo(ctx, request)
-}
-
-func (l *loggingGRPCServer) Exec(request *proto.ExecRequest, server proto.GitserverService_ExecServer) (err error) {
-	start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-
-		doLog(
-			l.logger,
-			proto.GitserverService_Exec_FullMethodName,
-			status.Code(err),
-			trace.Context(server.Context()).TraceID,
-			elapsed,
-
-			execRequestToLogFields(request)...)
-	}()
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	return l.base.Exec(request, server)
-}
-
-func execRequestToLogFields(req *proto.ExecRequest) []log.Field {
-	return []log.Field{
-		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-		log.String("repo", req.GetRepo()),
-		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-		log.String("ensureRevision", string(req.GetEnsureRevision())),
-		//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-		log.Strings("args", byteSlicesToStrings(req.GetArgs())),
-		// 🚨SECURITY: We don't log the stdin field because it could 1) contain sensitive data 2) be very large.
-	}
 }
 
 func (l *loggingGRPCServer) GetObject(ctx context.Context, request *proto.GetObjectRequest) (response *proto.GetObjectResponse, err error) {

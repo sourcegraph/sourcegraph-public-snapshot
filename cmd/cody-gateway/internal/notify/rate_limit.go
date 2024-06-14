@@ -150,7 +150,7 @@ func handleNotify(
 
 	var actorLink string
 	switch actor.GetSource() {
-	case codygateway.ActorSourceProductSubscription:
+	case codygateway.ActorSourceEnterpriseSubscription:
 		actorLink = fmt.Sprintf("<%s/site-admin/dotcom/product/subscriptions/%s|%s>", dotcomURL, actor.GetID(), actor.GetName())
 	default:
 		actorLink = fmt.Sprintf("`%s`", actor.GetID())

@@ -40,7 +40,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	for _, occurrence := range occurrences {
 		// Return the hover data we can extract from the most specific occurrence
 		if hoverText := extractHoverData(documentData.SCIPData, occurrence); len(hoverText) != 0 {
-			return strings.Join(hoverText, "\n"), translateRange(scip.NewRange(occurrence.Range)), true, nil
+			return strings.Join(hoverText, "\n"), shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range)), true, nil
 		}
 	}
 
@@ -62,7 +62,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 
 		if _, ok := rangeBySymbol[occurrence.Symbol]; !ok {
 			symbolNames = append(symbolNames, occurrence.Symbol)
-			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
+			rangeBySymbol[occurrence.Symbol] = shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range))
 		}
 	}
 
@@ -227,7 +227,7 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 				continue
 			}
 
-			r := scip.NewRange(occurrence.Range)
+			r := scip.NewRangeUnchecked(occurrence.Range)
 
 			for _, diagnostic := range occurrence.Diagnostics {
 				offset--

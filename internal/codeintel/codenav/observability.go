@@ -23,6 +23,7 @@ type operations struct {
 	getClosestCompletedUploadsForBlob *observation.Operation
 	snapshotForDocument               *observation.Operation
 	visibleUploadsForPath             *observation.Operation
+	syntacticUsages                   *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -57,6 +58,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getClosestCompletedUploadsForBlob: op("GetClosestCompletedUploadsForBlob"),
 		snapshotForDocument:               op("SnapshotForDocument"),
 		visibleUploadsForPath:             op("VisibleUploadsForPath"),
+		syntacticUsages:                   op("SyntacticUsages"),
 	}
 }
 

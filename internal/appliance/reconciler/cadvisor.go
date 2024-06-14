@@ -32,10 +32,7 @@ func (r *Reconciler) reconcileCadvisorDaemonset(ctx context.Context, sg *config.
 	name := "cadvisor"
 	cfg := sg.Spec.Cadvisor
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

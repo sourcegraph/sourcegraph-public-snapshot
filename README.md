@@ -53,7 +53,6 @@ Refer to the [Developing Sourcegraph guide](https://docs-legacy.sourcegraph.com/
 
 The `doc` directory has additional documentation for developing and understanding Sourcegraph:
 
-- [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/background-information/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/background-information/postgresql.md): database best practices
 - [Go style guide](./doc/dev/background-information/languages/go.md)

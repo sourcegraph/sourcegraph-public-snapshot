@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gitcli"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -97,6 +95,15 @@ func (gs *grpcServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 		return status.New(codes.InvalidArgument, "must send metadata event first").Err()
 	}
 
+	if metadata.GetRepo() == "" {
+		return status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	repoName := api.RepoName(metadata.GetRepo())
+	if err := gs.checkRepoExists(s.Context(), repoName); err != nil {
+		return err
+	}
+
 	patchReader := streamio.NewReader(func() ([]byte, error) {
 		msg, err := s.Recv()
 		if err != nil {
@@ -133,110 +140,6 @@ func (gs *grpcServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 		FreeSpace:   usage.Free(),
 		PercentUsed: usage.PercentUsed(),
 	}, nil
-}
-
-func (gs *grpcServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
-	ctx := ss.Context()
-
-	// Log which actor is accessing the repo.
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	args := byteSlicesToStrings(req.GetArgs())
-	logAttrs := []log.Field{}
-	if len(args) > 0 {
-		logAttrs = append(logAttrs,
-			log.String("cmd", args[0]),
-			log.Strings("args", args[1:]),
-		)
-	}
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	accesslog.Record(ctx, req.GetRepo(), logAttrs...)
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	if req.GetRepo() == "" {
-		return status.New(codes.InvalidArgument, "repo must be specified").Err()
-	}
-
-	//lint:ignore SA1019 existing usage of deprecated functionality. We are just logging an existing field.
-	repoName := api.RepoName(req.GetRepo())
-	repoDir := gs.fs.RepoDir(repoName)
-	backend := gs.gitBackendSource(repoDir, repoName)
-
-	if err := gs.checkRepoExists(ctx, repoName); err != nil {
-		return err
-	}
-
-	w := streamio.NewWriter(func(p []byte) error {
-		return ss.Send(&proto.ExecResponse{
-			Data: p,
-		})
-	})
-
-	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(args) == 2 && args[0] == "rev-parse" && args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickRevParseHead(repoDir); err == nil && gitdomain.IsAbsoluteRevision(resolved) {
-			_, _ = w.Write([]byte(resolved))
-			return nil
-		}
-	}
-
-	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
-	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
-	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
-	if len(args) == 2 && args[0] == "symbolic-ref" && args[1] == "HEAD" {
-		if resolved, err := gitcli.QuickSymbolicRefHead(repoDir); err == nil {
-			_, _ = w.Write([]byte(resolved))
-			return nil
-		}
-	}
-
-	stdout, err := backend.Exec(ctx, args...)
-	if err != nil {
-		if errors.Is(err, gitcli.ErrBadGitCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
-		}
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		return err
-	}
-	defer stdout.Close()
-
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
-		}
-
-		commandFailedErr := &gitcli.CommandFailedError{}
-		if errors.As(err, &commandFailedErr) {
-			gRPCStatus := codes.Unknown
-			if strings.Contains(commandFailedErr.Error(), "signal: killed") {
-				gRPCStatus = codes.Aborted
-			}
-
-			var errString string
-			if commandFailedErr.Unwrap() != nil {
-				errString = commandFailedErr.Unwrap().Error()
-			}
-			s, err := status.New(gRPCStatus, errString).WithDetails(&proto.ExecStatusPayload{
-				StatusCode: int32(commandFailedErr.ExitStatus),
-				Stderr:     string(commandFailedErr.Stderr),
-			})
-			if err != nil {
-				gs.logger.Error("failed to marshal status", log.Error(err))
-				return err
-			}
-			return s.Err()
-		}
-		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		return err
-	}
-
-	return nil
 }
 
 func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
@@ -298,7 +201,6 @@ func (gs *grpcServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -779,7 +681,6 @@ func (gs *grpcServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -826,7 +727,6 @@ func (gs *grpcServer) GetCommit(ctx context.Context, req *proto.GetCommitRequest
 			return nil, s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -908,7 +808,6 @@ func (gs *grpcServer) Blame(req *proto.BlameRequest, ss proto.GitserverService_B
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -954,7 +853,6 @@ func (gs *grpcServer) DefaultBranch(ctx context.Context, req *proto.DefaultBranc
 	refName, err := backend.SymbolicRefHead(ctx, req.GetShortRef())
 	if err != nil {
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -1037,7 +935,6 @@ func (gs *grpcServer) ReadFile(req *proto.ReadFileRequest, ss proto.GitserverSer
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -1077,7 +974,7 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 	if err != nil {
 		// If that fails to resolve the revspec, try to ensure the revision exists,
 		// if requested by the caller.
-		if req.GetEnsureRevision() && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if req.GetEnsureRevision() && errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 			// We ensured the revision exists, so try to resolve it again.
 			if gs.svc.EnsureRevision(ctx, repoName, revspec) {
 				sha, err = backend.ResolveRevision(ctx, revspec)
@@ -1099,7 +996,6 @@ func (gs *grpcServer) ResolveRevision(ctx context.Context, req *proto.ResolveRev
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 
@@ -1189,7 +1085,6 @@ func (gs *grpcServer) ListRefs(req *proto.ListRefsRequest, ss proto.GitserverSer
 	it, err := backend.ListRefs(ss.Context(), opt)
 	if err != nil {
 		gs.svc.LogIfCorrupt(ss.Context(), repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 
@@ -1296,7 +1191,6 @@ func (gs *grpcServer) RawDiff(req *proto.RawDiffRequest, ss proto.GitserverServi
 			return s.Err()
 		}
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return err
 	}
 	defer r.Close()
@@ -1349,7 +1243,6 @@ func (gs *grpcServer) ContributorCounts(ctx context.Context, req *proto.Contribu
 		}
 
 		gs.svc.LogIfCorrupt(ctx, repoName, err)
-		// TODO: Better error checking.
 		return nil, err
 	}
 

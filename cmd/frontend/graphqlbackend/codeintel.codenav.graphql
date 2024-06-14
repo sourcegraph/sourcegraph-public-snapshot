@@ -63,6 +63,9 @@ extend type GitBlob {
 
     EXPERIMENTAL: This API may change in the future.
     """
+    # Implementation status(June 12 2024): At the moment, this API
+    # only returns results when the underlying code has a precise
+    # SCIP index (GA) or syntactic SCIP index (enabled in dev only).
     codeGraphData(filter: CodeGraphDataFilter): [CodeGraphData!]
 }
 

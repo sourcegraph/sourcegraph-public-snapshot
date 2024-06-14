@@ -284,31 +284,28 @@ type CreateCommitFromPatchRequest struct {
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
 	Patch []byte
+	// PatchFilenamesNoPrefix indicates that the filenames in patch are not prefixed
+	// with the usual a/ and b/ prefixes.
+	PatchFilenamesNoPrefix bool
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
-	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
-	UniqueRef bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
 	// Push specifies whether the target ref will be pushed to the code host: if
 	// nil, no push will be attempted, if non-nil, a push will be attempted.
 	Push *PushConfig
-	// GitApplyArgs are the arguments that will be passed to `git apply` along
-	// with `--cached`.
-	GitApplyArgs []string
 	// If specified, the changes will be pushed to this ref as opposed to TargetRef.
 	PushRef *string
 }
 
 func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
 	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
-		Repo:         string(c.Repo),
-		BaseCommit:   string(c.BaseCommit),
-		TargetRef:    c.TargetRef,
-		UniqueRef:    c.UniqueRef,
-		CommitInfo:   c.CommitInfo.ToProto(),
-		GitApplyArgs: c.GitApplyArgs,
-		PushRef:      c.PushRef,
+		Repo:                   string(c.Repo),
+		BaseCommit:             string(c.BaseCommit),
+		TargetRef:              c.TargetRef,
+		CommitInfo:             c.CommitInfo.ToProto(),
+		PushRef:                c.PushRef,
+		PatchFilenamesNoPrefix: c.PatchFilenamesNoPrefix,
 	}
 
 	if c.Push != nil {
@@ -327,13 +324,12 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	}
 
 	*c = CreateCommitFromPatchRequest{
-		Repo:         api.RepoName(p.GetRepo()),
-		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		TargetRef:    p.GetTargetRef(),
-		UniqueRef:    p.GetUniqueRef(),
-		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
-		Push:         pushConfig,
-		GitApplyArgs: p.GetGitApplyArgs(),
+		Repo:                   api.RepoName(p.GetRepo()),
+		BaseCommit:             api.CommitID(p.GetBaseCommit()),
+		TargetRef:              p.GetTargetRef(),
+		CommitInfo:             PatchCommitInfoFromProto(p.GetCommitInfo()),
+		Push:                   pushConfig,
+		PatchFilenamesNoPrefix: p.GetPatchFilenamesNoPrefix(),
 	}
 
 	if p != nil {

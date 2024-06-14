@@ -28,6 +28,8 @@ const Llama27bCode = "accounts/fireworks/models/llama-v2-7b-code"
 const Llama213bCode = "accounts/fireworks/models/llama-v2-13b-code"
 const Llama213bCodeInstruct = "accounts/fireworks/models/llama-v2-13b-code-instruct"
 const Llama234bCodeInstruct = "accounts/fireworks/models/llama-v2-34b-code-instruct"
+const Llama38bInstruct = "accounts/fireworks/models/llama-v3-8b-instruct"
+const Llama370bInstruct = "accounts/fireworks/models/llama-v3-70b-instruct"
 const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
@@ -94,9 +96,9 @@ func (c *fireworksClient) Complete(
 	if response.Choices[0].Text != "" {
 		// The /completion endpoint returns a text field ...
 		completion = response.Choices[0].Text
-	} else if response.Choices[0].Delta != nil {
+	} else if response.Choices[0].Message != nil {
 		// ... whereas the /chat/completion endpoints returns this structure
-		completion = response.Choices[0].Delta.Content
+		completion = response.Choices[0].Message.Content
 	}
 
 	return &types.CompletionResponse{
@@ -143,7 +145,7 @@ func (c *fireworksClient) Stream(
 			continue
 		}
 
-		var event fireworksResponse
+		var event fireworksStreamingResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
@@ -294,8 +296,24 @@ type message struct {
 	Content string `json:"content"`
 }
 
-// response for a non streaming request
+// Response for a non-streaming request.
+// It differs from the streaming response in the Choices list.
+// This response uses the Message field whereas the streaming response uses the Delta field.
+// https://readme.fireworks.ai/reference/createchatcompletion
 type fireworksResponse struct {
+	Choices []struct {
+		Text    string `json:"text"`
+		Message *struct {
+			Content string `json:"content"`
+		} `json:"message"`
+		Index        int             `json:"index"`
+		FinishReason string          `json:"finish_reason"`
+		Logprobs     *types.Logprobs `json:"logprobs"`
+	} `json:"choices"`
+	Usage fireworksUsage `json:"usage"`
+}
+
+type fireworksStreamingResponse struct {
 	Choices []struct {
 		Text  string `json:"text"`
 		Delta *struct {
@@ -305,9 +323,11 @@ type fireworksResponse struct {
 		FinishReason string          `json:"finish_reason"`
 		Logprobs     *types.Logprobs `json:"logprobs"`
 	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		TotalTokens      int `json:"total_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
+	Usage fireworksUsage `json:"usage"`
+}
+
+type fireworksUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
 }

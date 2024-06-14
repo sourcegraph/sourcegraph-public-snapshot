@@ -7,7 +7,6 @@
 </script>
 
 <script lang="ts" generics="T">
-    import { mdiChevronDown, mdiChevronRight, mdiImageFilterCenterFocusStrong } from '@mdi/js'
     import { createEventDispatcher, getContext, setContext } from 'svelte'
 
     import Icon from '$lib/Icon.svelte'
@@ -81,7 +80,7 @@
 >
     <span bind:this={label} class="label" data-treeitem-label class:expandable>
         <Button variant="icon" on:click={handleScopeChange} data-scope-button>
-            <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
+            <Icon icon={ILucideFocus} inline aria-hidden="true" />
         </Button>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
         {#if expandable}
@@ -96,10 +95,10 @@
                 }}
                 tabindex={-1}
             >
-                <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
+                <Icon icon={expanded ? ILucideChevronDown : ILucideChevronRight} inline />
             </Button>
         {/if}
-        <slot {entry} {expanded} toggle={toggleOpen} />
+        <slot {entry} {expanded} toggle={toggleOpen} {label} />
     </span>
     {#if expanded && children}
         {#await children}
@@ -109,8 +108,8 @@
         {:then treeProvider}
             <ul role="group">
                 {#each treeProvider.getEntries() as entry (treeProvider.getNodeID(entry))}
-                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded on:scope-change>
-                        <slot {entry} {toggle} {expanded} />
+                    <svelte:self {entry} {treeProvider} let:entry let:toggle let:expanded let:label on:scope-change>
+                        <slot {entry} {toggle} {expanded} {label} />
                     </svelte:self>
                 {/each}
             </ul>

@@ -19,8 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )

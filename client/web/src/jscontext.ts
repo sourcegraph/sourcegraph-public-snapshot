@@ -5,7 +5,14 @@ import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/ba
 
 import type { TemporarySettingsResult } from './graphql-operations'
 
-export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
+export type DeployType =
+    | 'kubernetes'
+    | 'docker-container'
+    | 'docker-compose'
+    | 'pure-docker'
+    | 'dev'
+    | 'helm'
+    | 'appliance'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct

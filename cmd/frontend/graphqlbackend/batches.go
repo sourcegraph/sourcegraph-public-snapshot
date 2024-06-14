@@ -715,7 +715,7 @@ type BatchWorkspaceFileResolver interface {
 	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 	Languages() ([]string, error)
 
-	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToGitBlob() (*GitBlobResolver, bool)
 	ToVirtualFile() (*VirtualFileResolver, bool)
 	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
 }

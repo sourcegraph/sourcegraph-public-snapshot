@@ -65,3 +65,21 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
         },
     })
 }
+
+export const useCreateTeam = (): UseMutationResult<void, Error, CreateTeamRequest> => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async requestBody => {
+            await callCodyProApi(Client.createTeam(requestBody))
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
+    })
+}
+
+export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefined, Error, PreviewCreateTeamRequest> =>
+    useMutation({
+        mutationFn: async requestBody => {
+            const response = await callCodyProApi(Client.previewCreateTeam(requestBody))
+            return (await response.json()) as PreviewResult
+        },
+    })

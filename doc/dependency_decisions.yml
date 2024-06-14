@@ -608,3 +608,16 @@
     :why: permissive open source license
     :versions: []
     :when: 2024-05-17 13:21:45.702008000 Z
+- - :license
+  - pgregory.net/rapid
+  - MPL-2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2024-06-05 15:32:44.440111000 Z
+- - :permit
+  - OFL-1.1
+  - :who:
+    :why: Safe open font license
+    :versions: []
+    :when: 2024-06-12 01:39:30.854523000 Z

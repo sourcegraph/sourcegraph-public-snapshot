@@ -3,8 +3,12 @@ package codygateway
 type ActorSource string
 
 const (
-	ActorSourceProductSubscription ActorSource = "dotcom-product-subscriptions"
-	ActorSourceDotcomUser          ActorSource = "dotcom-user"
+	// We retain legacy naming just in case there are hard dependencies on this
+	// name. Today, these are Enterprise Subscriptions sourced from the Enterprise
+	// Portal service.
+	ActorSourceEnterpriseSubscription ActorSource = "dotcom-product-subscriptions"
+	// Sourcegraph.com user actors.
+	ActorSourceDotcomUser ActorSource = "dotcom-user"
 )
 
 const CompletionsEventFeatureMetadataField = "feature"

@@ -13,6 +13,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Fixes
 
 - Various UI fixes for dark and light themes [pull/50598](https://github.com/sourcegraph/sourcegraph/pull/50598)
+- Fix authentication so it works through the UI instead of requiring manual modification of `settings.json` [pull/63175](https://github.com/sourcegraph/sourcegraph/pull/63175)
 
 ## 2.2.15
 

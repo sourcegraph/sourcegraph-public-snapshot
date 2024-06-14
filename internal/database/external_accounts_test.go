@@ -109,6 +109,104 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	}
 }
 
+func TestExternalAccounts_UpsertSCIMData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	before := keyring.Default()
+	keyring.MockDefault(keyring.Ring{UserExternalAccountKey: &encryption.NoopKey{}})
+	t.Cleanup(func() {
+		keyring.MockDefault(before)
+	})
+
+	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Upserting SCIM data for a new user should pass.
+	err = db.UserExternalAccounts().UpsertSCIMData(
+		ctx,
+		user.ID,
+		"theuser",
+		extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage(`{"login": "user@sourcegraph.com"}`))},
+	)
+	require.NoError(t, err)
+	all, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*extsvc.Account{
+		{
+			ID:     all[0].ID,
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "scim",
+				ServiceID:   "scim",
+				AccountID:   "theuser",
+			},
+			AccountData: all[0].AccountData,
+			CreatedAt:   all[0].CreatedAt,
+			UpdatedAt:   all[0].UpdatedAt,
+		},
+	}, all)
+
+	// Upserting SCIM data for an existing user should pass as well:
+	err = db.UserExternalAccounts().UpsertSCIMData(
+		ctx,
+		user.ID,
+		"theuser",
+		extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage(`{"login": "user2@sourcegraph.com"}`))},
+	)
+	require.NoError(t, err)
+	all, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*extsvc.Account{
+		{
+			ID:     all[0].ID,
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "scim",
+				ServiceID:   "scim",
+				AccountID:   "theuser",
+			},
+			AccountData: all[0].AccountData,
+			CreatedAt:   all[0].CreatedAt,
+			UpdatedAt:   all[0].UpdatedAt,
+		},
+	}, all)
+
+	// Soft delete:
+	err = db.UserExternalAccounts().Delete(ctx, ExternalAccountsDeleteOptions{IDs: []int32{all[0].ID}})
+	require.NoError(t, err)
+	// Creating a new entry after soft delete works:
+	err = db.UserExternalAccounts().UpsertSCIMData(
+		ctx,
+		user.ID,
+		"theuser",
+		extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage(`{"login": "user@sourcegraph.com"}`))},
+	)
+	require.NoError(t, err)
+	all, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*extsvc.Account{
+		{
+			ID:     all[0].ID,
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "scim",
+				ServiceID:   "scim",
+				AccountID:   "theuser",
+			},
+			AccountData: all[0].AccountData,
+			CreatedAt:   all[0].CreatedAt,
+			UpdatedAt:   all[0].UpdatedAt,
+		},
+	}, all)
+}
+
 func TestExternalAccounts_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

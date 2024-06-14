@@ -5,7 +5,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiNotebookOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { page } from '$app/stores'
@@ -92,7 +91,7 @@
                         <td>
                             <Tooltip tooltip={selected ? 'Close commit' : 'View at commit'}>
                                 <a href={selected ? closeURL : `?rev=${commit.oid}`}
-                                    ><Icon svgPath={mdiFileDocumentOutline} inline /></a
+                                    ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                 >
                             </Tooltip>
                         </td>
@@ -103,7 +102,7 @@
                                 href={replaceRevisionInURL(
                                     SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
                                     commit.oid
-                                )}><Icon svgPath={mdiNotebookOutline} inline /></a
+                                )}><Icon icon={ILucideFolderGit} inline aria-hidden /></a
                             >
                         </Tooltip>
                     </td>

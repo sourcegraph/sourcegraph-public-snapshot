@@ -393,7 +393,7 @@ func HTTPErrorCode(err error) int {
 // IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	return errors.HasType(err, &ProjectNotFoundError{}) ||
+	return errors.HasType[*ProjectNotFoundError](err) ||
 		errors.Is(err, ErrMergeRequestNotFound) ||
 		HTTPErrorCode(err) == http.StatusNotFound
 }

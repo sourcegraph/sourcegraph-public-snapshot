@@ -2,12 +2,11 @@
 
 <script lang="ts">
     import Icon from '$lib/Icon.svelte'
-    import { mdiAccountGroup } from '@mdi/js'
+    import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
+    import type { TeamMatch } from '$lib/shared'
 
     import SearchResult from './SearchResult.svelte'
     import { getSearchResultsContext } from './searchResultsContext'
-    import { getOwnerDisplayName, getOwnerMatchURL, buildSearchURLQueryForOwner } from '$lib/search/results'
-    import type { TeamMatch } from '$lib/shared'
 
     export let result: TeamMatch
 
@@ -27,7 +26,7 @@
             {displayName}
         {/if}
         <span class="info">
-            <Icon aria-label="Forked repository" svgPath={mdiAccountGroup} inline />
+            <Icon aria-hidden="true" icon={ILucideUsers} inline />
             <small>Owner (team)</small>
         </span>
     </div>

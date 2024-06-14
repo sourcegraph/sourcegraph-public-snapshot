@@ -73,7 +73,7 @@ resources:
                       name: pgsql-auth
                 - name: POSTGRES_DB
                   value: $(POSTGRES_DATABASE)
-              image: index.docker.io/sourcegraph/postgres-12-alpine:5.3.2@sha256:1e0e93661a65c832b9697048c797f9894dfb502e2e1da2b8209f0018a6632b79
+              image: index.docker.io/sourcegraph/postgres-12-alpine:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 exec:
@@ -153,7 +153,7 @@ resources:
                   value: 127.0.0.1:$(DATA_SOURCE_PORT)/$(DATA_SOURCE_DB)?sslmode=disable
                 - name: PG_EXPORTER_EXTEND_QUERY_PATH
                   value: /config/queries.yaml
-              image: index.docker.io/sourcegraph/postgres_exporter:5.3.2@sha256:b9fa66fbcb4cc2d466487259db4ae2deacd7651dac4a9e28c9c7fc36523699d0
+              image: index.docker.io/sourcegraph/postgres_exporter:5.3.9104
               imagePullPolicy: IfNotPresent
               name: pgsql-exporter
               resources:
@@ -176,7 +176,7 @@ resources:
                 - sh
                 - -c
                 - if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi
-              image: index.docker.io/sourcegraph/alpine-3.14:5.3.2@sha256:982220e0fd8ce55a73798fa7e814a482c4807c412f054c8440c5970b610239b7
+              image: index.docker.io/sourcegraph/alpine-3.14:5.3.9104
               imagePullPolicy: IfNotPresent
               name: correct-data-dir-permissions
               resources:
@@ -363,9 +363,6 @@ resources:
             disabled: true
 
           prometheus:
-            disabled: true
-
-          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:

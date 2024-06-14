@@ -8,7 +8,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -45,9 +44,9 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
+func NewClient(observationCtx *observation.Context, inner gitserver.Client) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient("symbols"),
+		innerClient: inner,
 		operations:  newOperations(observationCtx),
 	}
 }

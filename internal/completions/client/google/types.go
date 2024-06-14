@@ -8,11 +8,16 @@ type googleCompletionStreamClient struct {
 	endpoint    string
 }
 
+// The request body for the completion stream endpoint.
+// Ref: https://ai.google.dev/api/rest/v1beta/models/generateContent
+// Ref: https://ai.google.dev/api/rest/v1beta/models/streamGenerateContent
 type googleRequest struct {
-	Model            string                 `json:"model"`
-	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
-	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
+	Model             string                 `json:"model"`
+	Stream            bool                   `json:"stream,omitempty"`
+	Contents          []googleContentMessage `json:"contents"`
+	GenerationConfig  googleGenerationConfig `json:"generationConfig,omitempty"`
+	SafetySettings    []googleSafetySettings `json:"safetySettings,omitempty"`
+	SymtemInstruction string                 `json:"systemInstruction,omitempty"`
 }
 
 type googleContentMessage struct {

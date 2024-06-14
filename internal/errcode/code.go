@@ -41,10 +41,10 @@ func HTTP(err error) int {
 		return e.HTTPStatusCode()
 	}
 
-	if errors.HasType(err, schema.ConversionError{}) {
+	if errors.HasType[schema.ConversionError](err) {
 		return http.StatusBadRequest
 	}
-	if errors.HasType(err, schema.MultiError{}) {
+	if errors.HasType[schema.MultiError](err) {
 		return http.StatusBadRequest
 	}
 

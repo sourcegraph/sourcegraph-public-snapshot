@@ -1,74 +1,67 @@
 {
-  "eventKey": "repo:refs_changed",
-  "date": "2022-12-21T14:49:22+0000",
-  "actor": {
-    "name": "milton",
-    "emailAddress": "dev@sourcegraph.com",
-    "id": 1,
-    "displayName": "milton woof",
+  "createdDate": 1717777064737,
+  "user": {
+    "name": "admin",
+    "emailAddress": "admin@example.com",
     "active": true,
-    "slug": "milton",
+    "displayName": "Administrator",
+    "id": 2,
+    "slug": "admin",
     "type": "NORMAL",
-    "links": {
-      "self": [
-        {
-          "href": "https://bitbucket.sgdev.org/users/milton"
-        }
-      ]
-    }
+    "links": { "self": [{ "href": "http://localhost:7990/users/admin" }] },
+    "avatarUrl": "https://secure.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61.jpg?s\u003d64\u0026d\u003dmm"
   },
   "repository": {
-    "slug": "test-2020-06-01",
-    "id": 10092,
-    "name": "test-2020-06-01",
-    "hierarchyId": "f6bb9c710c413bb2c5f0",
+    "slug": "rep_1",
+    "id": 1,
+    "name": "rep_1",
+    "hierarchyId": "2bba4665b20d5005be17",
     "scmId": "git",
     "state": "AVAILABLE",
     "statusMessage": "Available",
     "forkable": true,
     "project": {
-      "key": "PRIVATE",
-      "id": 3,
-      "name": "Private",
+      "key": "PROJECT_1",
+      "id": 1,
+      "name": "Project 1",
+      "description": "Default configuration project #1",
       "public": false,
       "type": "NORMAL",
       "links": {
-        "self": [
-          {
-            "href": "https://bitbucket.sgdev.org/projects/PRIVATE"
-          }
-        ]
-      }
+        "self": [{ "href": "http://localhost:7990/projects/PROJECT_1" }]
+      },
+      "avatarUrl": "/projects/PROJECT_1/avatar.png?s\u003d64\u0026v\u003d1681176287106"
     },
     "public": false,
+    "archived": false,
     "links": {
       "clone": [
         {
-          "href": "ssh://git@bitbucket.sgdev.org:7999/private/test-2020-06-01.git",
-          "name": "ssh"
+          "href": "http://localhost:7990/scm/project_1/rep_1.git",
+          "name": "http"
         },
         {
-          "href": "https://bitbucket.sgdev.org/scm/private/test-2020-06-01.git",
-          "name": "http"
+          "href": "ssh://git@localhost:7999/project_1/rep_1.git",
+          "name": "ssh"
         }
       ],
       "self": [
         {
-          "href": "https://bitbucket.sgdev.org/projects/PRIVATE/repos/test-2020-06-01/browse"
+          "href": "http://localhost:7990/projects/PROJECT_1/repos/rep_1/browse"
         }
       ]
     }
   },
-  "changes": [
+  "refChanges": [
     {
       "ref": {
-        "id": "refs/heads/rs/test-branch",
-        "displayId": "rs/test-branch",
+        "id": "refs/heads/master",
+        "displayId": "master",
         "type": "BRANCH"
       },
-      "refId": "refs/heads/rs/test-branch",
-      "fromHash": "e6dcba6b52fd349279a38d9fa25db894467de609",
-      "toHash": "4cd5ee68a039032fe8a613879fd73b242592ea6a",
+      "refId": "refs/heads/master",
+      "fromHash": "e54a46d4e4ddb7bb370070aa8a9b68e0ed959e5b",
+      "toHash": "b14f55bd2b206c1128676131f9d66c56ec19e388",
       "type": "UPDATE"
     }
   ]

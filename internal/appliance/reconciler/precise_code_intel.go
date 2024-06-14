@@ -37,10 +37,7 @@ func (r *Reconciler) reconcilePreciseCodeIntelDeployment(ctx context.Context, sg
 	name := "precise-code-intel-worker"
 	cfg := sg.Spec.PreciseCodeIntel
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

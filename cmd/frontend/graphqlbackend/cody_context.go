@@ -8,6 +8,7 @@ import (
 
 type CodyContextResolver interface {
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
+	GetCodyIntent(ctx context.Context, args GetIntentArgs) (IntentResolver, error)
 }
 
 type GetContextArgs struct {
@@ -15,6 +16,15 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+}
+
+type GetIntentArgs struct {
+	Query string
+}
+
+type IntentResolver interface {
+	Intent() string
+	Score() float64
 }
 
 type ContextResultResolver interface {
