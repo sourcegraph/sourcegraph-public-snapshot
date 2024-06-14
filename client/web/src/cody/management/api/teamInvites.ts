@@ -1,4 +1,4 @@
-import { TeamRole } from './teamMembers'
+import type { TeamRole } from './teamMembers'
 
 export type TeamInviteStatus = 'sent' | 'errored' | 'accepted' | 'canceled'
 
@@ -12,6 +12,7 @@ export interface TeamInvite {
     error?: string
 
     sentAt: Date
+    sentBy: string
     acceptedAt?: Date
 }
 
@@ -21,6 +22,6 @@ export interface CreateTeamInviteRequest {
 }
 
 export interface ListTeamInvitesResponse {
-    invites: TeamInvite[]
+    invites: Omit<TeamInvite, 'sentBy'>[]
     continuationToken?: string
 }

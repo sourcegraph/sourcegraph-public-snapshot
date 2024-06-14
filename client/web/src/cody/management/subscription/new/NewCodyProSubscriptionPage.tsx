@@ -22,6 +22,7 @@ import {
     type UserCodyPlanVariables,
     CodySubscriptionPlan,
 } from '../../../../graphql-operations'
+import { CodyProRoutes } from '../../../codyProRoutes'
 import { WhiteIcon } from '../../../components/WhiteIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
@@ -65,7 +66,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         throw dataLoadError
     }
     if (data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
-        return <Navigate to="/cody/manage" replace={true} />
+        return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
 
     return (

@@ -31,7 +31,7 @@ const buildRequestInit = ({ headers = {}, ...init }: RequestInit): RequestInit =
 const signOutAndRedirectToSignIn = async (): Promise<void> => {
     const response = await fetch('/-/sign-out', buildRequestInit({ method: 'GET' }))
     if (response.ok) {
-        window.location.href = `/sign-in?returnTo=${window.location.pathname}`
+        window.location.href = `/sign-in?returnTo=${window.location.pathname + window.location.search}`
     }
 }
 
@@ -55,7 +55,7 @@ export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => 
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new CodyProApiError(`Request to Cody Pro API failed: ${await response.text()}`, response.status)
+        throw new CodyProApiError(await response.text(), response.status)
     }
 
     return response
