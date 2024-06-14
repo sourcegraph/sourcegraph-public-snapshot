@@ -1,4 +1,4 @@
-import { Button, ButtonLink, H1, H3, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H1, Text } from '@sourcegraph/wildcard'
 
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'

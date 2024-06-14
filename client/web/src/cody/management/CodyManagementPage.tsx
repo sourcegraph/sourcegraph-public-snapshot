@@ -2,23 +2,11 @@ import React, { useCallback, useEffect } from 'react'
 
 import { mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
-import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import {
-    Button,
-    ButtonLink,
-    H1,
-    H2,
-    H3,
-    Icon,
-    Link,
-    PageHeader,
-    Text,
-    useSearchParameters,
-} from '@sourcegraph/wildcard'
+import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'

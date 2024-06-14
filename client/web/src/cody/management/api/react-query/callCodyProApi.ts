@@ -55,7 +55,7 @@ export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => 
 
         // Throw errors for unsuccessful HTTP calls so that `callCodyProApi` callers don't need to check whether the response is OK.
         // Motivation taken from here: https://tanstack.com/query/latest/docs/framework/react/guides/query-functions#usage-with-fetch-and-other-clients-that-do-not-throw-by-default
-        throw new Error(await response.text(), response.status)
+        throw new CodyProApiError(await response.text(), response.status)
     }
 
     return response

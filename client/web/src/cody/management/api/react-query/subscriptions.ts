@@ -8,7 +8,13 @@ import {
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
-import type { UpdateSubscriptionRequest, Subscription, SubscriptionSummary } from '../teamSubscriptions'
+import type {
+    UpdateSubscriptionRequest,
+    Subscription,
+    SubscriptionSummary,
+    CreateTeamRequest,
+    PreviewResult,
+} from '../teamSubscriptions'
 
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
