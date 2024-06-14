@@ -354,7 +354,7 @@ func (s *store) extractLocationsFromPosition(
 		}
 	}
 
-	// We only need to unique by the range, since all location objects share the same path and uploadID.
+	// We only need to deduplicate by the range, since all location objects share the same path and uploadID.
 	return collections.DeduplicateBy(locations, uniqueByRange), collections.Deduplicate(symbols), nil
 }
 
