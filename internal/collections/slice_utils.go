@@ -30,7 +30,7 @@ func SplitIntoChunks[T any](slice []T, size int) ([][]T, error) {
 
 type HalfOpenRange struct {
 	Start int // Start is inclusive
-	End   int // End is exclusive
+	End   int // End is exclusive, End >= Start
 }
 
 func (r HalfOpenRange) IsEmpty() bool {
