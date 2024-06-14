@@ -48,7 +48,8 @@ func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
 //
 // The content can be optionally passed via a callback instead of
 // directly, so that in the common case, the caller can avoid fetching
-// the content.
+// the content. The full content returned by getContent will be used for
+// language detection.
 //
 // getContent is not called if the file is likely to be a binary file,
 // as enry only covers programming languages.
