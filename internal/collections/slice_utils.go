@@ -2,6 +2,7 @@ package collections
 
 import (
 	"golang.org/x/exp/constraints"
+	"slices"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,4 +26,41 @@ func SplitIntoChunks[T any](slice []T, size int) ([][]T, error) {
 		chunks[i] = slice[i*size : maxIndex]
 	}
 	return chunks, nil
+}
+
+type HalfOpenRange struct {
+	Start int // Start is inclusive
+	End   int // End is exclusive, End >= Start
+}
+
+func (r HalfOpenRange) IsEmpty() bool {
+	return r.Start == r.End
+}
+
+func (r HalfOpenRange) Len() int {
+	return r.End - r.Start
+}
+
+// BinarySearchRangeFunc does a binary search over the underlying
+// sorted slice x for the target value, and returns the range of
+// indexes which equals the target value.
+//
+// The length of the returned range indicates the number of matched values.
+// So if there was no match, the returned range will be empty.
+// In that case, the Start value can be used for insertion.
+func BinarySearchRangeFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) int) HalfOpenRange {
+	insertIndex, found := slices.BinarySearchFunc(x, target, cmp)
+	if !found {
+		return HalfOpenRange{insertIndex, insertIndex}
+	}
+	start := insertIndex
+	if subRange := BinarySearchRangeFunc(x[:start], target, cmp); !subRange.IsEmpty() {
+		start = subRange.Start
+	}
+	end := insertIndex + 1
+	if subRange := BinarySearchRangeFunc(x[end:], target, cmp); !subRange.IsEmpty() {
+		// subRange.End will have been computed from the start of the sub-slice
+		end = end + subRange.End
+	}
+	return HalfOpenRange{Start: start, End: end}
 }
