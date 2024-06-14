@@ -1,13 +1,11 @@
 import { commands, type SecretStorage } from 'vscode'
 
-import { endpointSetting, setEndpoint } from '../../settings/endpointSetting'
+import { setEndpoint } from '../../settings/endpointSetting'
 
 export const secretTokenKey = 'SOURCEGRAPH_AUTH'
 
 export class SourcegraphAuthActions {
-    private currentEndpoint = endpointSetting()
-
-    constructor(private readonly secretStorage: SecretStorage) {}
+    constructor(private readonly secretStorage: SecretStorage, private currentEndpoint: string) {}
 
     public async login(newtoken: string, newuri: string): Promise<void> {
         try {
