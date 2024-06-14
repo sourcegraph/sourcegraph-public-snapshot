@@ -354,22 +354,12 @@ func (s *store) extractLocationsFromPosition(
 		}
 	}
 
-	return deduplicateLocations(locations), collections.DeduplicateBy(symbols, func(s string) string { return s }), nil
+	// We only need to unique by the range, since all location objects share the same path and uploadID.
+	return collections.DeduplicateBy(locations, uniqueByRange), collections.Deduplicate(symbols), nil
 }
 
-func deduplicateLocations(locations []shared.Location) []shared.Location {
-	return collections.DeduplicateBy(locations, locationKey)
-}
-
-func locationKey(l shared.Location) string {
-	return fmt.Sprintf("%d:%s:%d:%d:%d:%d",
-		l.UploadID,
-		l.Path,
-		l.Range.Start.Line,
-		l.Range.Start.Character,
-		l.Range.End.Line,
-		l.Range.End.Character,
-	)
+func uniqueByRange(l shared.Location) [4]int {
+	return [4]int{l.Range.Start.Line, l.Range.Start.Character, l.Range.End.Character}
 }
 
 //
