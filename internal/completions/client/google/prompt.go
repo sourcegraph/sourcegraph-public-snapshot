@@ -5,10 +5,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// getPrompt converts a slice of types.Message into a slice of googleContentMessage.
-// It returns an error if the input messages are invalid, such as an empty slice,
-// the first message is not a non-empty assistant message, or any message content is empty
-// (except for the last message if it's an assistant message).
+// getPrompt converts a slice of types.Message into a slice of googleContentMessage,
+// which is the format expected by the Google Completions API. It ensures that the
+// speaker roles are consistent and that the message content is not empty.
 func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 	googleMessages := make([]googleContentMessage, 0, len(messages))
 

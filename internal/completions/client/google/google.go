@@ -63,7 +63,7 @@ func (c *googleCompletionStreamClient) Complete(
 	// which is not currently supported by Cody. For now, we only return the first completion.
 	return &types.CompletionResponse{
 		Completion: response.Candidates[0].Content.Parts[0].Text,
-		StopReason: response.Candidates[0].StopReason,
+		StopReason: response.Candidates[0].FinishReason,
 	}, nil
 }
 
@@ -114,7 +114,7 @@ func (c *googleCompletionStreamClient) Stream(
 
 			ev = types.CompletionResponse{
 				Completion: content,
-				StopReason: event.Candidates[0].StopReason,
+				StopReason: event.Candidates[0].FinishReason,
 			}
 			err = sendEvent(ev)
 			if err != nil {
