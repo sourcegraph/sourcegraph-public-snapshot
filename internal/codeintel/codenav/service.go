@@ -930,7 +930,7 @@ func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
 }
 
-type SyntacticUsagesErrorCode = int
+type SyntacticUsagesErrorCode int
 
 const (
 	SU_NoSyntacticIndex SyntacticUsagesErrorCode = iota
