@@ -208,9 +208,6 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
-		if err != nil {
-			return nil, err
-		}
 		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
 		if err != nil {
 			switch err.Code {
