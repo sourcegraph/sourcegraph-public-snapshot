@@ -25,7 +25,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
             description = (
                 <Text>
                     <Link
-                        to="/help/admin/external_service/bitbucket_server#webhooks"
+                        to="/help/admin/code_hosts/bitbucket_server#webhooks"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -34,7 +34,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
                     will be created automatically on the configured Bitbucket Server instance. In case you don't provide
                     an admin token,{' '}
                     <Link
-                        to="/help/admin/external_service/bitbucket_server#manual-configuration"
+                        to="/help/admin/code_hosts/bitbucket_server#manual-configuration"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -93,7 +93,7 @@ function commonDescription(url: string): JSX.Element {
     return (
         <Text>
             Point{' '}
-            <Link to={`/help/admin/external_service/${url}#webhooks`} target="_blank" rel="noopener noreferrer">
+            <Link to={`/help/admin/code_hosts/${url}#webhooks`} target="_blank" rel="noopener noreferrer">
                 webhooks
             </Link>{' '}
             for this code host connection at the following URL:
