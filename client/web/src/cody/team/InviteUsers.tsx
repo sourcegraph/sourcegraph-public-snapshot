@@ -6,7 +6,8 @@ import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
-import { isValidEmailAddress, requestSSC } from '../util'
+import { useSendInvite } from '../management/api/react-query/invites'
+import { isValidEmailAddress } from '../util'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string | undefined
@@ -23,6 +24,8 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     const [invitesSendingStatus, setInvitesSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
     const [invitesSentCount, setInvitesSentCount] = useState(0)
     const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
+
+    const sendInviteMutation = useSendInvite()
 
     const onSendInvitesClicked = useCallback(async () => {
         const { emails: emailAddresses, error: emailParsingError } = parseEmailList(
@@ -42,7 +45,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
         try {
             const responses = await Promise.all(
                 emailAddresses.map(emailAddress =>
-                    requestSSC('/team/current/invites', 'POST', { email: emailAddress, role: 'member' })
+                    sendInviteMutation.mutateAsync.call(undefined, { email: emailAddress, role: 'member' })
                 )
             )
             if (responses.some(response => response.status !== 200)) {
@@ -70,7 +73,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                 privateMetadata: { teamId, emailAddresses },
             })
         }
-    }, [emailAddressesString, remainingInviteCount, teamId, telemetryRecorder])
+    }, [emailAddressesString, remainingInviteCount, sendInviteMutation.mutateAsync, teamId, telemetryRecorder])
 
     return (
         <>

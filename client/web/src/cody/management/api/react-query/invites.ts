@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
-import type { TeamInvite, ListTeamInvitesResponse } from '../teamInvites'
+import type { TeamInvite, ListTeamInvitesResponse, CreateTeamInviteRequest } from '../teamInvites'
 
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
@@ -35,6 +35,14 @@ export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undef
             return response.ok ? response.json() : undefined
         },
     })
+
+export const useSendInvite = (): UseMutationResult<Response, Error, CreateTeamInviteRequest> => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async requestBody => callCodyProApi(Client.sendInvite(requestBody)),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.teamInvites() }),
+    })
+}
 
 export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: string; inviteId: string }> => {
     const queryClient = useQueryClient()
