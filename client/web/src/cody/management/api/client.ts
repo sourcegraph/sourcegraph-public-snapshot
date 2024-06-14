@@ -76,7 +76,7 @@ export module Client {
 }
 
 // Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
+// This is a sort of "meta request" in the same vein as the `gql`
 // template tag, see: https://github.com/apollographql/graphql-tag
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
