@@ -1,3 +1,4 @@
+import { ExternalServiceKind } from '../../testing/graphql-type-mocks'
 import { test, expect } from '../../testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
@@ -106,9 +107,7 @@ test.describe('repo menu', () => {
                     },
                     externalURLs: [
                         {
-                            // TODO: add service kind. It's not currently possible
-                            // to import that type because playwright does not
-                            // know how to resolve `$lib` or `$testing` syntax.
+                            serviceKind: ExternalServiceKind.GITHUB,
                             url: 'https://github.com/sourcegraph/sourcegraph',
                         },
                     ],
@@ -132,7 +131,7 @@ test.describe('repo menu', () => {
 
     test('github url', async ({ page }) => {
         await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
-        const url = await page.getByRole('menuitem', { name: 'Hosted on' }).getAttribute('href')
+        const url = await page.getByRole('menuitem', { name: 'Hosted on GitHub' }).getAttribute('href')
         expect(url).toEqual(`https://github.com/sourcegraph/sourcegraph`)
     })
 })
