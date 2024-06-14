@@ -162,10 +162,12 @@
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
                 {@const href = data.repoURL + entry.path}
                 <MenuLink {href}>
-                    {#if entry.icon}
-                        <Icon icon={entry.icon} inline aria-hidden />
-                    {/if}
-                    <span>{entry.label}</span>
+                    <div class="overflow-entry">
+                        {#if entry.icon}
+                            <Icon icon={entry.icon} inline aria-hidden />
+                        {/if}
+                        <span>{entry.label}</span>
+                    </div>
                 </MenuLink>
             {/if}
         {/each}
@@ -191,5 +193,11 @@
         overflow: hidden;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
+    }
+
+    .overflow-entry {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
     }
 </style>
