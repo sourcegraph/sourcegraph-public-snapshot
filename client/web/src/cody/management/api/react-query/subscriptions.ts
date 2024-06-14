@@ -14,6 +14,7 @@ import type {
     SubscriptionSummary,
     CreateTeamRequest,
     PreviewResult,
+    PreviewCreateTeamRequest,
 } from '../teamSubscriptions'
 
 import { callCodyProApi } from './callCodyProApi'
@@ -78,7 +79,7 @@ export const useCreateTeam = (): UseMutationResult<void, Error, CreateTeamReques
         mutationFn: async requestBody => {
             await callCodyProApi(Client.createTeam(requestBody))
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions.all }),
     })
 }
 
