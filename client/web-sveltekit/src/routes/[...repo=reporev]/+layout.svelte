@@ -2,11 +2,14 @@
     import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
+    import { getButtonClassName } from '@sourcegraph/wildcard'
+
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
+    import { registerHotkey } from '$lib/Hotkey'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
@@ -15,10 +18,10 @@
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
-    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
     import { setRepositoryPageContext, type RepositoryPageContext } from './context'
+    import RepoMenu from './RepoMenu.svelte'
 
     interface MenuEntry {
         /**
@@ -50,10 +53,10 @@
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
-        { path: '/-/compare', icon: ILucideHistory, label: 'Compare', visibility: 'user' },
+        { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
         { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
         { path: '/-/embeddings', icon: ILucideSpline, label: 'Embeddings', visibility: 'admin' },
-        { path: '/-/code-graph', icon: ILucideBrainCircuit, label: 'Code graph data', visibility: 'admin' },
+        { path: '/-/code-graph', icon: ILucideCodesandbox, label: 'Code graph data', visibility: 'admin' },
         { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
@@ -97,7 +100,7 @@
     }))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
-    $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
+    $: ({ repoName, revision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
     function handleSearchSubmit(): void {
@@ -105,6 +108,17 @@
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },
         })
     }
+
+    registerHotkey({
+        keys: {
+            key: 'ctrl+backspace',
+            mac: 'cmd+backspace',
+        },
+        ignoreInputFields: false,
+        handler: () => {
+            goto(data.repoURL)
+        },
+    })
 </script>
 
 <GlobalHeaderPortal>
@@ -126,10 +140,13 @@
         },
     }}
 >
-    <a href={data.repoURL}>
-        <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
-        <h1>{displayRepoName}</h1>
-    </a>
+    <RepoMenu
+        repoName={data.repoName}
+        displayRepoName={data.displayRepoName}
+        repoURL={data.repoURL}
+        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
+        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+    />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
 
@@ -145,12 +162,12 @@
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
                 {@const href = data.repoURL + entry.path}
                 <MenuLink {href}>
-                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                    <div class="overflow-entry">
                         {#if entry.icon}
                             <Icon icon={entry.icon} inline aria-hidden />
                         {/if}
                         <span>{entry.label}</span>
-                    </span>
+                    </div>
                 </MenuLink>
             {/if}
         {/each}
@@ -176,40 +193,11 @@
         overflow: hidden;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
-
-        a {
-            all: unset;
-
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0 1rem;
-            cursor: pointer;
-            &:hover {
-                background-color: var(--color-bg-2);
-            }
-
-            h1 {
-                display: contents;
-                font-size: 1rem;
-                white-space: nowrap;
-                color: var(--text-title);
-                font-weight: normal;
-            }
-        }
-
-        :global([data-dropdown-trigger]) {
-            height: 100%;
-            align-self: stretch;
-            padding: 0.5rem;
-            --icon-fill-color: var(--text-muted);
-        }
     }
 
     .overflow-entry {
-        width: 100%;
-        display: inline-block;
-        padding: 0 0.25rem;
-        border-radius: var(--border-radius);
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
     }
 </style>
