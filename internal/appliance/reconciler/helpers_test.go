@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,7 +40,8 @@ type ApplianceTestSuite struct {
 	testEnv     *envtest.Environment
 	ctrlMgrDone chan struct{}
 
-	k8sClient *kubernetes.Clientset
+	k8sClient        *kubernetes.Clientset
+	dynamicK8sClient *dynamic.DynamicClient
 }
 
 func TestApplianceTestSuite(t *testing.T) {
@@ -88,6 +90,9 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 	suite.k8sClient, err = kubernetes.NewForConfig(cfg)
 	require.NoError(t, err)
 
+	suite.dynamicK8sClient, err = dynamic.NewForConfig(cfg)
+	require.NoError(t, err)
+
 	reconciler := &Reconciler{
 		Client:   ctrlMgr.GetClient(),
 		Scheme:   ctrlMgr.GetScheme(),
@@ -130,6 +135,12 @@ func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
 }
 
 func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
+	namespace := suite.createRandomNamespace()
+	suite.createConfigMapInNamespaceAndAwaitReconciliation(fixtureFileName, namespace)
+	return namespace
+}
+
+func (suite *ApplianceTestSuite) createRandomNamespace() string {
 	// Create a random namespace for each test
 	namespace := "test-appliance-" + suite.randomSlug()
 	ns := &corev1.Namespace{
@@ -139,13 +150,15 @@ func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFi
 	}
 	_, err := suite.k8sClient.CoreV1().Namespaces().Create(suite.ctx, ns, metav1.CreateOptions{})
 	suite.Require().NoError(err)
+	return namespace
+}
 
+func (suite *ApplianceTestSuite) createConfigMapInNamespaceAndAwaitReconciliation(fixtureFileName, namespace string) {
 	cfgMap := suite.newConfigMap(namespace, fixtureFileName)
 	suite.awaitReconciliation(namespace, func() {
 		_, err := suite.k8sClient.CoreV1().ConfigMaps(namespace).Create(suite.ctx, cfgMap, metav1.CreateOptions{})
 		suite.Require().NoError(err)
 	})
-	return namespace
 }
 
 func (suite *ApplianceTestSuite) updateConfigMapAndAwaitReconciliation(namespace, fixtureFileName string) {

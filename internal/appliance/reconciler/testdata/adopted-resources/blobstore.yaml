@@ -1,0 +1,141 @@
+---
+# Source: sourcegraph/templates/blobstore/blobstore.Deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    description: blobstore for storing LSIF uploads.
+  labels:
+    helm.sh/chart: sourcegraph-5.3.9104
+    app.kubernetes.io/name: sourcegraph
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "5.3.9104"
+    app.kubernetes.io/managed-by: Helm
+    deploy: sourcegraph
+    app.kubernetes.io/component: blobstore
+  name: blobstore
+spec:
+  minReadySeconds: 10
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sourcegraph
+      app.kubernetes.io/instance: release-name
+      app: blobstore
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: blobstore
+      labels:
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/instance: release-name
+        deploy: sourcegraph
+        app: blobstore
+    spec:
+      containers:
+      - name: blobstore
+        env:
+        image: index.docker.io/sourcegraph/blobstore:5.3.9104@sha256:32733bb1777c3f6d08460ef8ee93e5a1b7555f6c494b7003a66cee6dfcbe4aeb
+        imagePullPolicy: IfNotPresent
+        args:
+        - ""
+        terminationMessagePolicy: FallbackToLogsOnError
+        ports:
+        - containerPort: 9000
+          name: blobstore
+        livenessProbe:
+          httpGet:
+            path: /
+            port: blobstore
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: blobstore
+            scheme: HTTP
+          periodSeconds: 5
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "1"
+            memory: 500M
+          requests:
+            cpu: "1"
+            memory: 500M
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsGroup: 101
+          runAsUser: 100
+        volumeMounts:
+        - name: blobstore-data
+          mountPath: /data
+        - name: blobstore
+          mountPath: /blobstore
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 101
+        runAsUser: 100
+      nodeSelector:
+      affinity:
+      tolerations:
+      serviceAccountName: blobstore
+      volumes:
+      - name: blobstore-data
+        persistentVolumeClaim:
+          claimName: blobstore
+      - name: blobstore
+        emptyDir: {}
+---
+# Source: sourcegraph/templates/blobstore/blobstore.ServiceAccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    category: rbac
+    deploy: sourcegraph
+    app.kubernetes.io/component: blobstore
+
+  name: blobstore
+---
+# Source: sourcegraph/templates/blobstore/blobstore.PersistentVolumeClaim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    deploy: sourcegraph
+    app.kubernetes.io/component: blobstore
+  name: blobstore
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: sourcegraph
+---
+# Source: sourcegraph/templates/blobstore/blobstore.Service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    app: blobstore
+    deploy: sourcegraph
+    app.kubernetes.io/component: blobstore
+  name: blobstore
+spec:
+  ports:
+  - name: blobstore
+    port: 9000
+    targetPort: blobstore
+  selector:
+    app.kubernetes.io/name: sourcegraph
+    app.kubernetes.io/instance: release-name
+    app: blobstore
+  type: ClusterIP

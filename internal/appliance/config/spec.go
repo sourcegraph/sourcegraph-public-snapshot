@@ -188,6 +188,8 @@ type SourcegraphSpec struct {
 	// RequestedVersion is the user-requested version of Sourcegraph to deploy.
 	RequestedVersion string `json:"requestedVersion,omitempty"`
 
+	AdoptExistingResources bool `json:"adoptExistingResources,omitempty"`
+
 	// ImageRepository overrides the default image repository.
 	ImageRepository string `json:"imageRepository,omitempty"`
 
