@@ -240,12 +240,11 @@ function tokenize(node: SyntheticNode | null, context: { sourceMap: Map<Token, C
 }
 
 /**
- * Mutates the range of the tokens in place to align them with the given offset.
+ * Mutates the range of the tokens in place to align them relative to each other.
  * Returns the same tokens for convenience.
  *
  * @param tokens The tokens to shift
- * @param offset The offset to shift the tokens by
- * @returns The shifted tokens
+ * @returns The passed in tokens
  */
 function alignTokenRanges(tokens: Token[]): Token[] {
     let position = 0

@@ -2,7 +2,7 @@ import { getContext, setContext } from 'svelte'
 import type { Writable } from 'svelte/store'
 
 /**
- * This context allows repository pages to propagte relevant information to other components.
+ * This context allows repository pages to propagate relevant information to other components.
  * Right now it is used to generate context-related suggestions in the repository search input.
  */
 export interface RepositoryPageContext {
