@@ -37,8 +37,6 @@ const signOutAndRedirectToSignIn = async (): Promise<void> => {
     }
 }
 
-window.signOutAndRedirectToSignIn = signOutAndRedirectToSignIn
-
 // Important: This function has the side effect of logging the user out and redirecting them
 // to the sign-in page with the current page as the return URL if they are not authenticated.
 export const callCodyProApi = async (call: Call<unknown>): Promise<Response> => {
