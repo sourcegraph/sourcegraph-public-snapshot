@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -32,8 +32,6 @@ interface Props extends Pick<LegacyLayoutRouteContext, 'telemetryRecorder'> {
 }
 
 const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRecorder }) => {
-    const location = useLocation()
-    console.log('STATE 2', location.state)
     const {
         loading: userCodyPlanLoading,
         error: useCodyPlanError,
