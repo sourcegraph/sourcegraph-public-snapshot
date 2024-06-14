@@ -4,7 +4,6 @@ import {
     useQueryClient,
     type UseMutationResult,
     type UseQueryResult,
-    type UseQueryOptions,
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
@@ -29,24 +28,13 @@ export const useCurrentSubscription = (): UseQueryResult<Subscription | undefine
         },
     })
 
-export const useSubscriptionSummary = (
-    options: Omit<
-        UseQueryOptions<
-            SubscriptionSummary | undefined,
-            Error,
-            SubscriptionSummary | undefined,
-            ReturnType<typeof queryKeys.subscriptions.subscriptionSummary>
-        >,
-        'queryKey' | 'queryFn'
-    > = {}
-): UseQueryResult<SubscriptionSummary | undefined> =>
+export const useSubscriptionSummary = (): UseQueryResult<SubscriptionSummary | undefined> =>
     useQuery({
         queryKey: queryKeys.subscriptions.subscriptionSummary(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscriptionSummary())
             return response?.json()
         },
-        ...options,
     })
 
 export const useUpdateCurrentSubscription = (): UseMutationResult<

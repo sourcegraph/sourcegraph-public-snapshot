@@ -3,7 +3,6 @@ import {
     useQuery,
     useQueryClient,
     type UseMutationResult,
-    type UseQueryOptions,
     type UseQueryResult,
 } from '@tanstack/react-query'
 
@@ -13,25 +12,19 @@ import type { TeamInvite } from '../teamInvites'
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
 
-export const useInvite = (
-    { teamId, inviteId }: { teamId: string; inviteId: string },
-    options: Omit<
-        UseQueryOptions<
-            TeamInvite | undefined,
-            Error,
-            TeamInvite | undefined,
-            ReturnType<typeof queryKeys.invites.invite>
-        >,
-        'queryKey' | 'queryFn'
-    > = {}
-): UseQueryResult<TeamInvite | undefined> =>
+export const useInvite = ({
+    teamId,
+    inviteId,
+}: {
+    teamId: string
+    inviteId: string
+}): UseQueryResult<TeamInvite | undefined> =>
     useQuery({
         queryKey: queryKeys.invites.invite(teamId, inviteId),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getInvite(teamId, inviteId))
             return response?.json()
         },
-        ...options,
     })
 
 export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: string; inviteId: string }> => {
