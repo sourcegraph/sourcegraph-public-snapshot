@@ -1,7 +1,7 @@
 import { dirname } from 'path'
 
 import type { Extension } from '@codemirror/state'
-import { mdiFilterOutline } from '@mdi/js'
+import { mdiFileOutline, mdiFilterOutline, mdiFolderOutline, mdiSourceRepository } from '@mdi/js'
 import { escapeRegExp } from 'lodash'
 
 import { getQueryInformation, type Option, suggestionSources, RenderAs } from '$lib/branded'
@@ -32,7 +32,8 @@ function createFilterSuggestion(
     filterValue: string,
     description: string,
     result: RelevantTokenResult,
-    position: number
+    position: number,
+    icon: string
 ): Option | null {
     const existingFilter = result.tokens.find(token => isFilterOfType(token, filterType))
     if (existingFilter && existingFilter.type === 'filter' && existingFilter.value?.value === filterValue) {
@@ -53,7 +54,7 @@ function createFilterSuggestion(
             insertValue: label + ' ',
             name: existingRange ? 'Replace' : 'Add',
         },
-        icon: mdiFilterOutline,
+        icon,
         render: RenderAs.QUERY,
     }
 }
@@ -88,7 +89,8 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                         `^${escapeRegExp(group)}`,
                         'Search within organization/group',
                         result,
-                        position
+                        position,
+                        mdiSourceRepository
                     )
                     if (option) {
                         options.push(option)
@@ -102,7 +104,8 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     `^${escapeRegExp(repoName)}$${revision ? `@${revision}` : ''}`,
                     'Search in current repository',
                     result,
-                    position
+                    position,
+                    mdiSourceRepository
                 )
                 if (option) {
                     options.push(option)
@@ -121,7 +124,8 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     `^${escapeRegExp(directoryPath)}`,
                     'Search in current directory',
                     result,
-                    position
+                    position,
+                    mdiFolderOutline
                 )
                 if (option) {
                     options.push(option)
@@ -134,7 +138,8 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                     `^${escapeRegExp(filePath)}$`,
                     'Search in current file',
                     result,
-                    position
+                    position,
+                    mdiFileOutline
                 )
                 if (option) {
                     options.push(option)
@@ -153,7 +158,8 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
                 `${fileLanguage}`,
                 `Search in other ${fileLanguage} files`,
                 result,
-                position
+                position,
+                mdiFilterOutline
             )
 
             return option ? [option] : EMPTY
