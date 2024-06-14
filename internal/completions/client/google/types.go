@@ -12,12 +12,7 @@ type googleCompletionStreamClient struct {
 // Ref: https://ai.google.dev/api/rest/v1beta/models/generateContent
 // Ref: https://ai.google.dev/api/rest/v1beta/models/streamGenerateContent
 type googleRequest struct {
-	Model             string                 `json:"model"`
-	Stream            bool                   `json:"stream,omitempty"`
-	Contents          []googleContentMessage `json:"contents"`
-	GenerationConfig  googleGenerationConfig `json:"generationConfig,omitempty"`
-	SafetySettings    []googleSafetySettings `json:"safetySettings,omitempty"`
-	SymtemInstruction string                 `json:"systemInstruction,omitempty"`
+	Contents []googleContentMessage `json:"contents"`
 }
 
 type googleContentMessage struct {
@@ -41,7 +36,6 @@ type googleGenerationConfig struct {
 }
 
 type googleResponse struct {
-	Model      string `json:"model"`
 	Candidates []struct {
 		Content    googleContentMessage `json:"content,omitempty"`
 		StopReason string               `json:"finishReason,omitempty"`
@@ -49,6 +43,15 @@ type googleResponse struct {
 
 	UsageMetadata  googleUsage            `json:"usageMetadata"`
 	SafetySettings []googleSafetySettings `json:"safetySettings,omitempty"`
+	SafetyRatings  []googleSafetyRating   `json:"safetyRatings,omitempty"`
+}
+
+type googleSafetyRating struct {
+	Category         string  `json:"category"`
+	Probability      string  `json:"probability"`
+	ProbabilityScore float64 `json:"probabilityScore"`
+	Severity         string  `json:"severity"`
+	SeverityScore    float64 `json:"severityScore"`
 }
 
 // Safety setting, affecting the safety-blocking behavior.

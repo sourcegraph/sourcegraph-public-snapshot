@@ -3,9 +3,8 @@ package google
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const maxPayloadSize = 10 * 1024 * 1024 // 10mb
@@ -21,25 +20,42 @@ type decoder struct {
 }
 
 func NewDecoder(r io.Reader) *decoder {
+	// Custom split function to handle JSON objects separated by commas and newlines
 	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
-	// bufio.ScanLines, except we look for \r\n\r\n which separate events.
-	split := func(data []byte, atEOF bool) (int, []byte, error) {
+	scanner.Buffer(make([]byte, 0, 262144), maxPayloadSize)
+	// Custom split function to handle JSON objects separated by commas and newlines
+	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
-		if i := bytes.Index(data, []byte("\r\n\r\n")); i >= 0 {
-			return i + 4, data[:i], nil
+		// Look for the end of a JSON object
+		openBraces := 0
+		start := 0
+		for i := 0; i < len(data); i++ {
+			switch data[i] {
+			case '{':
+				if openBraces == 0 {
+					start = i
+				}
+				openBraces++
+			case '}':
+				openBraces--
+				if openBraces == 0 {
+					// Found a complete JSON object
+					return i + 1, data[start : i+1], nil
+				}
+			case ',':
+				// Ignore commas between top-level JSON objects
+				if openBraces == 0 && start == i {
+					start = i + 1
+				}
+			}
 		}
-		if i := bytes.Index(data, []byte("\n\n")); i >= 0 {
-			return i + 2, data[:i], nil
+		// If we're at EOF and we have a final, non-terminated JSON object
+		if atEOF && openBraces == 0 {
+			return len(data), data[start:], nil
 		}
-		// If we're at EOF, we have a final, non-terminated event. This should
-		// be empty.
-		if atEOF {
-			return len(data), data, nil
-		}
-		// Request more data.
+		// Request more data
 		return 0, nil, nil
 	}
 	scanner.Split(split)
@@ -56,21 +72,16 @@ func (d *decoder) Scan() bool {
 	}
 	for d.scanner.Scan() {
 		line := d.scanner.Bytes()
-		typ, data := splitColon(line)
-		switch {
-		case bytes.Equal(typ, []byte("data")):
-			d.data = data
-			// Check for special sentinel value used by the Google API to
-			// indicate that the stream is done.
-			if bytes.Equal(data, doneBytes) {
-				d.done = true
-				return false
-			}
-			return true
-		default:
-			d.err = errors.Errorf("malformed data, expected data: %s", typ)
+		// Directly use the line as data without looking for "data:" prefix
+		d.data = line
+		fmt.Println("the line is", string(line))
+		// Check for special sentinel value used by the Google API to
+		// indicate that the stream is done.
+		if bytes.Equal(line, doneBytes) {
+			d.done = true
 			return false
 		}
+		return true
 	}
 
 	d.err = d.scanner.Err()

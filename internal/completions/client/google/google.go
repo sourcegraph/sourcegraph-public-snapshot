@@ -142,16 +142,7 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	}
 
 	payload := googleRequest{
-		Model:    requestParams.Model,
-		Stream:   stream,
 		Contents: prompt,
-		GenerationConfig: googleGenerationConfig{
-			Temperature:     requestParams.Temperature,
-			TopP:            requestParams.TopP,
-			TopK:            requestParams.TopK,
-			MaxOutputTokens: requestParams.MaxTokensToSample,
-			StopSequences:   requestParams.StopSequences,
-		},
 	}
 
 	reqBody, err := json.Marshal(payload)
