@@ -43,8 +43,10 @@ func findCandidateOccurrencesViaSearch(
 		return nil, 0, errors.Errorf("can't find occurrences for locals via search")
 	}
 	// TODO: This should be dependent on the number of requested usages, with a configured global limit
-	countLimit := 500
-	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d %s", repoName, string(commit), language, countLimit, identifier)
+	countLimit := 1000
+	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d case:yes /\\b%s\\b/", repoName, string(commit), language, countLimit, identifier)
+
+	logger.Info("Running query", log.String("q", searchQuery))
 
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
 	if err != nil {
