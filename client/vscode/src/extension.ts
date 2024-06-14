@@ -25,7 +25,7 @@ import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './setting
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, type VSCEQueryState } from './state'
 import { copySourcegraphLinks, focusSearchPanel, openSourcegraphLinks, registerWebviews } from './webview/commands'
-import { secretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { SourcegraphAuthActions } from './webview/platform/AuthProvider'
 
 export let extensionContext: vscode.ExtensionContext
 /**
