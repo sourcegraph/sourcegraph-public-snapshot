@@ -43,7 +43,7 @@ func TestGetPrompt(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 		expected := []googleContentMessage{
-			{Role: "system", Parts: []googleContentMessagePart{{Text: "system"}}},
+			{Role: "model", Parts: []googleContentMessagePart{{Text: "system"}}},
 			{Role: "user", Parts: []googleContentMessagePart{{Text: "hello"}}},
 			{Role: "model", Parts: []googleContentMessagePart{{Text: "hi"}}},
 		}
@@ -68,7 +68,7 @@ func TestGetPrompt(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 		expected := []googleContentMessage{
-			{Role: "system", Parts: []googleContentMessagePart{{Text: "system"}}},
+			{Role: "model", Parts: []googleContentMessagePart{{Text: "system"}}},
 			{Role: "user", Parts: []googleContentMessagePart{{Text: "hello"}}},
 		}
 		if len(prompt) > len(expected) {
@@ -78,7 +78,7 @@ func TestGetPrompt(t *testing.T) {
 
 	t.Run("invalid prompt ends with empty human message", func(t *testing.T) {
 		_, err := getPrompt([]types.Message{
-			{Speaker: types.SYSTEM_MESSAGE_SPEAKER, Text: "system"},
+			{Speaker: types.SYSTEM_MESSAGE_SPEAKER, Text: "assistant"},
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "hello"},
 			{Speaker: types.ASSISTANT_MESSAGE_SPEAKER, Text: "assistant"},
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: ""},

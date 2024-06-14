@@ -9,6 +9,7 @@ go_library(
         "fireworks.go",
         "flagging.go",
         "google.go",
+        "google_types.go",
         "openai.go",
         "upstream.go",
     ],
