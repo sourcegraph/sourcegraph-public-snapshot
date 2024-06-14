@@ -1823,7 +1823,6 @@ ts_project(
         "//:node_modules/@stripe/react-stripe-js",
         "//:node_modules/@stripe/stripe-js",
         "//:node_modules/@tanstack/react-query",
-        "//:node_modules/@tanstack/react-query-devtools",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
