@@ -25,9 +25,8 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0px 193px 54px 0px rgba(0, 0, 0, 0), 0px 123px 49px 0px rgba(0, 0, 0, 0.01),
-        0px 69px 42px 0px rgba(0, 0, 0, 0.04), 0px 31px 31px 0px rgba(0, 0, 0, 0.07),
-        0px 8px 17px 0px rgba(0, 0, 0, 0.08);
+    --dropdown-shadow: 0 193px 54px 0 rgba(0, 0, 0, 0), 0 123px 49px 0 rgba(0, 0, 0, 0.01),
+        0 69px 42px 0 rgba(0, 0, 0, 0.04), 0 31px 31px 0 rgba(0, 0, 0, 0.07), 0 8px 17px 0 rgba(0, 0, 0, 0.08);
 }
 
 .theme-dark {
@@ -41,7 +40,6 @@
     --dropdown-link-active-bg: var(--primary);
     --dropdown-link-active-color: var(--white);
     --dropdown-link-disabled-color: var(--text-muted);
-    --dropdown-shadow: 0px 309px 87px 0px rgba(0, 0, 0, 0.01), 0px 198px 79px 0px rgba(0, 0, 0, 0.07),
-        0px 111px 67px 0px rgba(0, 0, 0, 0.24), 0px 49px 49px 0px rgba(0, 0, 0, 0.41),
-        0px 12px 27px 0px rgba(0, 0, 0, 0.47);
+    --dropdown-shadow: 0 309px 87px 0 rgba(0, 0, 0, 0.01), 0 198px 79px 0 rgba(0, 0, 0, 0.07),
+        0 111px 67px 0 rgba(0, 0, 0, 0.24), 0 49px 49px 0 rgba(0, 0, 0, 0.41), 0 12px 27px 0 rgba(0, 0, 0, 0.47);
 }
