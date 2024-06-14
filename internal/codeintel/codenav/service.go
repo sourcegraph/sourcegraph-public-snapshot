@@ -1034,6 +1034,39 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	return symbols, syntacticUpload.ID, nil
 }
+
+func (s *Service) findSyntacticMatchesForCandidateFile(
+	ctx context.Context,
+	uploadId int,
+	filePath string,
+	candidateFile candidateFile,
+) []SyntacticMatch {
+	results := make([]SyntacticMatch, 0)
+
+	document, docErr := s.SCIPDocument(ctx, uploadId, filePath)
+	if docErr != nil {
+		return results
+	}
+
+	for _, candidateRange := range candidateFile.matches {
+		for _, occ := range findOccurrencesWithEqualRange(document.Occurrences, candidateRange) {
+			results = append(results, SyntacticMatch{
+				Path:       filePath,
+				Occurrence: occ,
+			})
+		}
+	}
+
+	return results
+}
+
+type SyntacticMatch struct {
+	Path       string
+	Occurrence *scip.Occurrence
+}
+
+func (m *SyntacticMatch) Range() scip.Range {
+	return scip.NewRangeUnchecked(m.Occurrence.Range)
 }
 
 func (s *Service) SyntacticUsages(
@@ -1042,7 +1075,7 @@ func (s *Service) SyntacticUsages(
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
-) ([]struct{}, *SyntacticUsagesError) {
+) ([]SyntacticMatch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(repo.ID)),
@@ -1080,7 +1113,10 @@ func (s *Service) SyntacticUsages(
 		}
 	}
 
-	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, langs[0])
+	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(
+		ctx, s.searchClient, s.logger,
+		repo, commit, searchSymbol, langs[0],
+	)
 	if searchErr != nil {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -1089,7 +1125,10 @@ func (s *Service) SyntacticUsages(
 	}
 	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
 
-	_ = candidateMatches
-
-	return []struct{}{}, nil
+	results := make([][]SyntacticMatch, 0)
+	for filePath, file := range candidateMatches {
+		syntacticMatches := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, filePath, file)
+		results = append(results, syntacticMatches)
+	}
+	return slices.Concat(results...), nil
 }
