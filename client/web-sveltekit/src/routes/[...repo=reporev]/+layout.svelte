@@ -53,10 +53,10 @@
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
-        { path: '/-/compare', icon: ILucideHistory, label: 'Compare', visibility: 'user' },
+        { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
         { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
         { path: '/-/embeddings', icon: ILucideSpline, label: 'Embeddings', visibility: 'admin' },
-        { path: '/-/code-graph', icon: ILucideBrainCircuit, label: 'Code graph data', visibility: 'admin' },
+        { path: '/-/code-graph', icon: ILucideCodesandbox, label: 'Code graph data', visibility: 'admin' },
         { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
