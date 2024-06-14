@@ -156,3 +156,18 @@ func DeduplicateBy[T any, K comparable](xs []T, keyFn func(T) K) []T {
 	}
 	return filtered
 }
+
+// Deduplicate modifies the argument slice in-place,
+// and maintains ordering unlike NewSet(...).Values().
+func Deduplicate[T comparable](xs []T) []T {
+	seen := NewSet[T]()
+	filtered := xs[:0]
+	for _, x := range xs {
+		if seen.Has(x) {
+			continue
+		}
+		seen.Add(x)
+		filtered = append(filtered, x)
+	}
+	return filtered
+}

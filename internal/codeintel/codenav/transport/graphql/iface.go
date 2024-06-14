@@ -5,9 +5,11 @@ import (
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CodeNavService interface {
@@ -25,6 +27,7 @@ type CodeNavService interface {
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
 	SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error)
+	SyntacticUsages(ctx context.Context, repo types.Repo, commit api.CommitID, path string, symbolRange scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)
 }
 
 type AutoIndexingService interface {
