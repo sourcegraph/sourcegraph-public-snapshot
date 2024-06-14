@@ -45,7 +45,7 @@
             <KeyboardShortcut shortcut={reposHotkey} />
         </div>
     </MenuButton>
-    <MenuLink href={repoURL + '/-/settings'}>
+    <MenuLink href="{repoURL}/-/settings">
         <div class="menu-item">
             <Icon icon={ILucideSettings} inline />
             <span>Settings</span>
