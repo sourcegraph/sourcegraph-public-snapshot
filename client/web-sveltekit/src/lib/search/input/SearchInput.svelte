@@ -86,6 +86,7 @@
             },
             '.cm-scroller': {
                 overflowX: 'hidden',
+                lineHeight: '1.6',
             },
             '.cm-content': {
                 paddingLeft: '0.25rem',
