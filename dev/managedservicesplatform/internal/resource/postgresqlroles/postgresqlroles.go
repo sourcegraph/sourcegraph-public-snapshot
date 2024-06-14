@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grant"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grantrole"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/role"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqllogicalreplication"
@@ -83,21 +82,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		id := id.Group("publication")
 
-		replicationRole := role.NewRole(scope, id.TerraformID("replicationrole"), &role.RoleConfig{
-			Provider:    config.PostgreSQLProvider,
-			Name:        pointers.Ptr("replication_role"),
-			Replication: pointers.Ptr(true),
-		})
-
 		for _, p := range config.Publications {
 			id := id.Group(p.Name)
-
-			// 	CREATE USER USER_NAME WITH REPLICATION LOGIN <...>;
-			_ = grantrole.NewGrantRole(scope, id.TerraformID("user_replicationrole_grant"), &grantrole.GrantRoleConfig{
-				Provider:  config.PostgreSQLProvider,
-				Role:      p.User.Name(),
-				GrantRole: replicationRole.Name(),
-			})
 
 			// 	GRANT SELECT ON ALL TABLES IN SCHEMA SCHEMA_NAME TO USER_NAME;
 			_ = grant.NewGrant(scope, id.TerraformID("user_table_select_grant"), &grant.GrantConfig{
@@ -123,10 +109,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 					"USAGE",
 				})),
 			})
-			// Unnecessary?
-			//
-			// 	ALTER DEFAULT PRIVILEGES IN SCHEMA SCHEMA_NAME
-			// 		GRANT SELECT ON TABLES TO USER_NAME;
 		}
 	}
 

@@ -2,11 +2,13 @@ package postgresqllogicalreplication
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqluser"
+	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/publication"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/replicationslot"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/role"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/random/password"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
@@ -30,7 +32,7 @@ type PublicationOutput struct {
 	// you create a stream in the Datastream stream creation wizard.
 	ReplicationSlotName *string
 	// User for subscribing to the publication.
-	User sqluser.SqlUser
+	User role.Role
 	// The original publication spec.
 	spec.EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec
 }
@@ -55,25 +57,42 @@ type Output struct {
 //
 // TODO(@bobheadxi): Improve documentation around this teardown scenario.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
+	// TODO explain
+	replicationSlotCreator := role.NewRole(scope, id.TerraformID("replicationslotcreator"), &role.RoleConfig{
+		Provider: config.PostgreSQLProvider,
+		Name:     pointers.Ptr("msp-replicationslotcreator"),
+		Password: password.NewPassword(scope, id.TerraformID("replicationslotcreator_password"), &password.PasswordConfig{
+			Length:  pointers.Float64(32),
+			Special: pointers.Ptr(false),
+		}).Result(),
+		Replication: pointers.Ptr(true),
+	})
+	replicationSlotProvider := postgresql.NewPostgresqlProvider(scope,
+		id.TerraformID("postgresql_replicationslotcreator_provider"),
+		&postgresql.PostgresqlProviderConfig{
+			Scheme:    pointers.Ptr("gcppostgres"),
+			Host:      config.CloudSQL.Instance.ConnectionName(),
+			Username:  replicationSlotCreator.Name(),
+			Password:  replicationSlotCreator.Password(),
+			Port:      jsii.Number(5432),
+			Superuser: jsii.Bool(false),
+			Alias:     pointers.Ptr("postgresql_replicationslotcreator_provider"),
+		})
+
 	var publicationOutputs []PublicationOutput
 	for _, p := range config.Spec.Publications {
 		id := id.Group("publications").Group(p.Name)
 
 		// Create user for Datastream:
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
-		logicalReplicationUserPassword := password.NewPassword(scope, id.TerraformID("user_password"), &password.PasswordConfig{
-			Length:  pointers.Float64(32),
-			Special: pointers.Ptr(false),
-		})
-		logicalReplicationUser := sqluser.NewSqlUser(scope, id.TerraformID("user"), &sqluser.SqlUserConfig{
-			Instance: config.CloudSQL.Instance.Name(),
-			Project:  config.CloudSQL.Instance.Project(),
+		logicalReplicationUser := role.NewRole(scope, id.TerraformID("user"), &role.RoleConfig{
+			Provider: config.PostgreSQLProvider,
 			Name:     pointers.Stringf("publication_%s_user", p.Name),
-			Password: logicalReplicationUserPassword.Result(),
-
-			// PostgreSQL cannot delete users with roles, so we just abandon the
-			// users in a deletion event.
-			DeletionPolicy: pointers.Ptr("ABANDON"),
+			Password: password.NewPassword(scope, id.TerraformID("user_password"), &password.PasswordConfig{
+				Length:  pointers.Float64(32),
+				Special: pointers.Ptr(false),
+			}).Result(),
+			Replication: pointers.Ptr(true),
 		})
 
 		// Provision publication and replication slot:
@@ -94,10 +113,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			ReplicationSlotName: replicationslot.NewReplicationSlot(scope,
 				id.TerraformID("replication_slot"),
 				&replicationslot.ReplicationSlotConfig{
-					Provider: config.PostgreSQLProvider,
-					Name:     pointers.Ptr(p.Name + "_pgoutput"),
-					Database: pointers.Ptr(p.Database),
-					Plugin:   pointers.Ptr("pgoutput"),
+					Provider:  replicationSlotProvider,
+					Name:      pointers.Ptr(p.Name + "_pgoutput"),
+					Database:  pointers.Ptr(p.Database),
+					Plugin:    pointers.Ptr("pgoutput"),
+					DependsOn: &[]cdktf.ITerraformDependable{replicationSlotCreator},
 				}).Name(),
 			User: logicalReplicationUser,
 		})

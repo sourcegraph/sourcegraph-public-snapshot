@@ -288,6 +288,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		pgRuntimeAdminProvider := postgresql.NewPostgresqlProvider(stack,
 			id.TerraformID("postgresql_admin_provider"),
 			&postgresql.PostgresqlProviderConfig{
+				Alias:     pointers.Ptr("postgresql_admin_provider"),
 				Scheme:    pointers.Ptr("gcppostgres"),
 				Host:      sqlInstance.Instance.ConnectionName(),
 				Username:  sqlInstance.AdminUser.Name(),
