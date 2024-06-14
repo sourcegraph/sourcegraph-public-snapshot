@@ -38,7 +38,7 @@ export async function handleAccessTokenError(badToken: string, endpointURL: stri
 
         const message = !badToken
             ? `A valid access token is required to connect to ${endpointURL}`
-            : `Connection to ${endpointURL} failed. Please try reloading VS Code if your Sourcegraph instance URL has been updated.`
+            : `Connection to ${endpointURL} failed. Please check your access token and network connection.`
 
         const version = await observeInstanceVersionNumber(badToken, endpointURL).toPromise()
         const supportsTokenCallback = version && isOlderThan(version, { major: 3, minor: 41 })
