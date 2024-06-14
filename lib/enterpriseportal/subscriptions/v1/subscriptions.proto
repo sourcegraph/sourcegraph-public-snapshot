@@ -48,8 +48,7 @@ service SubscriptionsService {
     option idempotency_level = IDEMPOTENT;
   }
 
-  // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
-  // Only properties specified by the update_mask are applied.
+  // UpdateEnterpriseSubscription updates an existing enterprise subscription.
   rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -69,9 +68,8 @@ service SubscriptionsService {
     // optional idempotency in the future.
   }
 
-  // UpdateSubscriptionMembership updates a subscription membership. It creates
-  // a new one if it does not exist and allow_missing is set to true.
-  rpc UpdateSubscriptionMembership(UpdateSubscriptionMembershipRequest) returns (UpdateSubscriptionMembershipResponse) {
+  // UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+  rpc UpdateEnterpriseSubscriptionMembership(UpdateEnterpriseSubscriptionMembershipRequest) returns (UpdateEnterpriseSubscriptionMembershipResponse) {
     option idempotency_level = IDEMPOTENT;
   }
 }
@@ -216,6 +214,17 @@ enum EnterpriseSubscriptionLicenseType {
   ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY = 1;
 }
 
+message ListEnterpriseSubscriptionsFilter {
+  oneof filter {
+    // Return only product subscriptions has the given subscription ID.
+    string subscription_id = 1;
+    // Return only product subscriptions with the given archival status.
+    bool is_archived = 2;
+    // Return only product subscriptions that satisfies the given permission.
+    Permission permission = 3;
+  }
+}
+
 message ListEnterpriseSubscriptionsRequest {
   // Clients use this field to specify the maximum number of results to be
   // returned by the server. The server may further constrain the maximum number
@@ -228,6 +237,10 @@ message ListEnterpriseSubscriptionsRequest {
   //
   // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
   string page_token = 2;
+
+  // Filters define the lookup strategy for this list request. Multiple filters
+  // are treated as AND-concatenated.
+  repeated ListEnterpriseSubscriptionsFilter filters = 3;
 }
 
 message ListEnterpriseSubscriptionsResponse {
@@ -250,16 +263,6 @@ message ListEnterpriseSubscriptionLicensesFilter {
     // Return only product subscriptions whose license key contains this
     // substring.
     string license_key_substring = 4;
-    // Return only product subscriptions whose license key contains the given member.
-    Member member = 5;
-  }
-
-  message Member {
-    // Return only product subscriptions contains the member with given SAMS
-    // account ID.
-    string sams_account_id = 1;
-    // Return only product subscriptions contains the member with the given permission.
-    string permission = 2;
   }
 }
 
@@ -332,8 +335,7 @@ message UpdateEnterpriseSubscriptionRequest {
 
   // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
   // Updatable fields are:
-  //  - display_name
-  //  - domain
+  //  - instance_domain
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -376,20 +378,45 @@ message EnterpriseSubscriptionMembership {
   string instance_domain = 2;
   // The SAMS account ID of the member.
   string member_sams_account_id = 3;
-  // The roles of the member, e.g. "cody_analytics::customer_admin".
-  repeated string member_roles = 4;
+  // The roles of the member.
+  repeated Role member_roles = 4;
 }
 
-message UpdateSubscriptionMembershipRequest {
+message UpdateEnterpriseSubscriptionMembershipRequest {
   // The membership to update.
-  // The following fields are used to identify the membership to update:
+  // The first non-empty field of the following fields is used to identify the product subscription to update:
   //  - subscription_id
   //  - instance_domain
   // Multiple fields are treated as AND-concatenated.
   EnterpriseSubscriptionMembership membership = 1;
-
-  // If set to true, and the membership is not found, a new membership will be created.
-  bool allow_missing = 2;
 }
 
-message UpdateSubscriptionMembershipResponse {}
+message UpdateEnterpriseSubscriptionMembershipResponse {}
+
+// Role represents a role that can be granted to a user.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN = 1;
+}
+
+// Permission represents a permission that can be performed by a user.
+message Permission {
+  // The type of the permission.
+  PermissionType type = 1;
+  // The relation between the user and the resource.
+  PermissionRelation relation = 2;
+  // The SAMS account ID of the user.
+  string sams_account_id = 3;
+}
+
+// PermissionType represents the type of permissions.
+enum PermissionType {
+  PERMISSION_TYPE_UNSPECIFIED = 0;
+  PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS = 1;
+}
+
+// PermissionRelation represents the relation between the user and the resource.
+enum PermissionRelation {
+  PERMISSION_RELATION_UNSPECIFIED = 0;
+  PERMISSION_RELATION_VIEW = 1;
+}

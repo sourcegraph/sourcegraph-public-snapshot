@@ -16,21 +16,14 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/plugin/opentelemetry/tracing"
 
-	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/redislock"
 )
 
 // maybeMigrate runs the auto-migration for the database when needed based on
 // the given version.
 func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) (err error) {
-	// TODO(jchen): We need to figure otu a way to make local dev more seamless.
-	// Until then, only run migrations in MSP. See
-	// https://linear.app/sourcegraph/issue/CORE-176/enterprise-portal-do-not-require-a-separate-database-in-local-dev
-	if !contract.MSP {
-		return nil
-	}
-
 	ctx, span := databaseTracer.Start(
 		ctx,
 		"database.maybeMigrate",
@@ -46,7 +39,8 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		span.End()
 	}()
 
-	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, databaseName)
+	dbName := databaseName(contract.MSP)
+	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, dbName)
 	if err != nil {
 		return errors.Wrap(err, "open database")
 	}
@@ -79,18 +73,18 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 	return redislock.OnlyOne(
 		logger,
 		redisClient,
-		fmt.Sprintf("%s:auto-migrate", databaseName),
+		fmt.Sprintf("%s:auto-migrate", dbName),
 		15*time.Second,
 		func() error {
-			versionKey := fmt.Sprintf("%s:db_version", databaseName)
 			span.AddEvent("lock.acquired")
 
+			versionKey := fmt.Sprintf("%s:db_version", dbName)
 			if shouldSkipMigration(
 				redisClient.Get(context.Background(), versionKey).Val(),
 				currentVersion,
 			) {
 				logger.Info("skipped auto-migration",
-					log.String("database", databaseName),
+					log.String("database", dbName),
 					log.String("currentVersion", currentVersion),
 				)
 				span.SetAttributes(attribute.Bool("skipped", true))
