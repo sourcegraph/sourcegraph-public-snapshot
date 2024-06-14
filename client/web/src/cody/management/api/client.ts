@@ -20,6 +20,14 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
+    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/members' }
+    }
+
+    export function getCurrentTeamInvites(): Call<types.ListTeamInvitesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/invites' }
+    }
+
     export function previewUpdateCurrentSubscription(
         requestBody: types.PreviewUpdateSubscriptionRequest
     ): Call<types.PreviewResult> {
