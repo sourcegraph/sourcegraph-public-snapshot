@@ -84,12 +84,15 @@ export const MODIFIER_KEYS = [
     'FnLock',
     'Hyper',
     'Meta',
-    'NumLock',
-    'ScrollLock',
     'Shift',
     'Super',
     'Symbol',
-    'SymbolLock',
+    // We are explicitly excluding these keys because they usually should not impact
+    // they keys used for keyboard shortcuts. We've gotten reports that single letter
+    // keyboard shortcuts are not working as expected when e.g. num lock is on.
+    // 'SymbolLock',
+    // 'NumLock',
+    // 'ScrollLock',
 ] as const
 
 export type ModifierKey = typeof MODIFIER_KEYS[number]
