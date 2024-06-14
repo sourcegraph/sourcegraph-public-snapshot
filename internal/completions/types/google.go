@@ -1,4 +1,4 @@
-package google
+package types
 
 import "github.com/sourcegraph/sourcegraph/internal/httpcli"
 

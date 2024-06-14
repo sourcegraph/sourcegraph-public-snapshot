@@ -160,8 +160,7 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	}
 
 	apiURL := c.getAPIURL(requestParams, stream)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}

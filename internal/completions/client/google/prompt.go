@@ -10,10 +10,6 @@ import (
 // the first message is not a non-empty assistant message, or any message content is empty
 // (except for the last message if it's an assistant message).
 func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
-	if len(messages) == 0 {
-		return nil, errors.New("messages cannot be empty")
-	}
-
 	googleMessages := make([]googleContentMessage, 0, len(messages))
 
 	for i, message := range messages {
@@ -24,12 +20,9 @@ func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 			if i != 0 {
 				return nil, errors.New("system role can only be used in the first message")
 			}
-			googleRole = message.Speaker
+			googleRole = "model"
 		case types.ASSISTANT_MESSAGE_SPEAKER:
 			googleRole = "model"
-			if i == 0 {
-				googleRole = "system"
-			}
 		case types.HUMAN_MESSAGE_SPEAKER:
 			googleRole = "user"
 		default:
