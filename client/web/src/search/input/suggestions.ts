@@ -843,7 +843,7 @@ function symbolSuggestions(cache: Caches['symbol']): InternalSource {
                 parsedQuery,
                 token.range,
                 node => node.type === 'parameter' && resolveFilterMemoized(node.field)?.type === FilterType.type
-            ).length === 0
+            ).tokens.length === 0
 
         return cache.query(
             token.value,
@@ -1094,7 +1094,7 @@ export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source
 }
 
 function buildSuggestionQuery(query: Node, target: CharacterRange, filter: (node: Node) => boolean): string {
-    return stringHuman(getRelevantTokens(query, target, filter))
+    return stringHuman(getRelevantTokens(query, target, filter).tokens)
 }
 
 function isNonEmptyParameter(node: Node): node is Parameter {

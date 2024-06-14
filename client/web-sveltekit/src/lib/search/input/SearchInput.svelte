@@ -118,6 +118,7 @@
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
     export let onSubmit: (state: QueryState) => void = () => {}
+    export let extension: Extension = []
 
     export function focus() {
         input?.focus()
@@ -176,6 +177,7 @@
     })
 
     $: extension = [
+        extension,
         onModeChange((_view, newMode) => (mode = newMode ?? '')),
         hasInteractedExtension,
         suggestionsExtension,

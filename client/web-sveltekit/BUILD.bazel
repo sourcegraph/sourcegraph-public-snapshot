@@ -59,6 +59,7 @@ BUILD_DEPS = [
     "//:node_modules/@codemirror/search",
     "//:node_modules/@codemirror/state",
     "//:node_modules/@codemirror/view",
+    "//:node_modules/@mdi/js",
     "//:node_modules/@reach/combobox",
     "//:node_modules/@reach/menu-button",
     "//:node_modules/@types/lodash",

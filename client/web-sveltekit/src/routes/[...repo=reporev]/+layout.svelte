@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { page } from '$app/stores'
@@ -6,6 +7,7 @@
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import { queryStateStore } from '$lib/search/state'
     import { TELEMETRY_SEARCH_SOURCE_TYPE, repositoryInsertText } from '$lib/shared'
@@ -16,7 +18,7 @@
     import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
-    import type { ComponentProps } from 'svelte'
+    import { setRepositoryPageContext, type RepositoryPageContext } from './context'
 
     interface MenuEntry {
         /**
@@ -55,6 +57,20 @@
         { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
+    const repositoryContext = writable<RepositoryPageContext>({})
+    const contextSearchSuggestions = createScopeSuggestions({
+        getContextInformation() {
+            return {
+                repoName: data.repoName,
+                revision: $repositoryContext.revision ?? data.displayRevision,
+                directoryPath: $repositoryContext.directoryPath,
+                filePath: $repositoryContext.filePath,
+                fileLanguage: $repositoryContext.fileLanguage,
+            }
+        },
+    })
+
+    setRepositoryPageContext(repositoryContext)
 
     $: viewableNavEntries = navEntries.filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
@@ -93,7 +109,7 @@
 
 <GlobalHeaderPortal>
     <div class="search-header">
-        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} />
+        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} extension={contextSearchSuggestions} />
     </div>
 </GlobalHeaderPortal>
 
