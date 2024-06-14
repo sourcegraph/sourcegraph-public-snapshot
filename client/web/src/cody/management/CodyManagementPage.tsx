@@ -2,8 +2,9 @@ import React, { useCallback, useEffect } from 'react'
 
 import { mdiCreditCardOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
@@ -29,10 +30,9 @@ import {
     type UserCodyUsageVariables,
     CodySubscriptionPlan,
 } from '../../graphql-operations'
-import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
-import { UserInviteStatus, useInviteState } from '../invites/AcceptInvitePage'
+import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
@@ -119,7 +119,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <PageTitle title="Dashboard" />
                 <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
-                    <CodyAlert variant="purpleCodyPro">
+                    <CodyAlert variant="greenCodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
                         <Text size="small" className="mb-0">
                             You now have Cody Pro with access to unlimited autocomplete, chats, and commands.
@@ -207,111 +207,3 @@ const UpgradeToProBanner: React.FunctionComponent<{
         </div>
     </div>
 )
-
-const AcceptInviteBanner: React.FC<{ onSuccess: () => unknown }> = ({ onSuccess }) => {
-    const location = useLocation()
-    const inviteState = useInviteState()
-
-    switch (inviteState.status) {
-        case 'pending': {
-            return null
-        }
-        case 'error': {
-            return (
-                <CodyAlert variant="error">
-                    <H3 className="mt-4">Invite can't be accepted.</H3>
-                    <Text className="text-danger">This invite can't be accepted. Ask admin for another invite.</Text>
-                </CodyAlert>
-            )
-        }
-        case 'success':
-        default: {
-            break
-        }
-    }
-
-    const { invite, userStatus, acceptInviteMutation, cancelInviteMutation } = inviteState
-
-    switch (userStatus) {
-        case UserInviteStatus.NoCurrentTeam:
-        case UserInviteStatus.AnotherTeamMember: {
-            switch (acceptInviteMutation.status) {
-                case 'error': {
-                    return (
-                        <CodyAlert variant="purple">
-                            <H3 className="mt-4">Failed to accept invite</H3>
-                            <Text className="text-danger">{acceptInviteMutation.error.message}</Text>
-                        </CodyAlert>
-                    )
-                }
-                case 'success': {
-                    return (
-                        <CodyAlert variant="purple">
-                            <H3 className="mt-4">Success</H3>
-                            <Text>You joined the new Cody Pro team.</Text>
-                        </CodyAlert>
-                    )
-                }
-                case 'idle':
-                case 'pending':
-                default: {
-                    if (cancelInviteMutation.isSuccess) {
-                        return null
-                    }
-                    return (
-                        <CodyAlert variant="purple">
-                            <H3 className="mt-4">Join new Cody Pro team?</H3>
-                            <Text>You've been invited to a new Cody Pro team by {invite.sentBy}.</Text>
-                            <Text>
-                                {userStatus === UserInviteStatus.NoCurrentTeam
-                                    ? 'You will get unlimited autocompletions chat messages.'
-                                    : 'This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not lose access to your Cody Pro benefits.'}
-                            </Text>
-                            <div>
-                                <Button onClick={() => acceptInviteMutation.mutate({ onSuccess })}>Accept</Button>
-                                <Button variant="secondary" onClick={() => cancelInviteMutation.mutate()}>
-                                    Decline
-                                </Button>
-                            </div>
-                        </CodyAlert>
-                    )
-                }
-            }
-        }
-        case UserInviteStatus.InvitedTeamMember: {
-            if (cancelInviteMutation.isIdle) {
-                void cancelInviteMutation.mutate()
-            }
-            return (
-                <CodyAlert variant="purple">
-                    <H3 className="mt-4">You are already member of the team.</H3>
-                    <Text>You've been invited to a new Cody Pro team by {invite.sentBy}.</Text>
-                    <Text>This invite will be canceled.</Text>
-                </CodyAlert>
-            )
-        }
-        case UserInviteStatus.Error: {
-            if (cancelInviteMutation.isIdle) {
-                void cancelInviteMutation.mutate()
-            }
-            return (
-                <CodyAlert variant="error">
-                    <H3 className="mt-4">Failed to process an invite.</H3>
-                    <Text>Invite link is broken or failed to fetch subscription data.</Text>
-                    <Text>
-                        Ask an admin for another invite. If the problem persist, reach out to support@sourcegraph.com.
-                    </Text>
-                    <Text>This invite will be canceled.</Text>
-                </CodyAlert>
-            )
-        }
-        case UserInviteStatus.AnotherTeamSoleAdmin: {
-            // TODO: redirect to the Manage Team page and handle invite there
-            // return <Navigate to={CodyProRoutes.ManageTeam + location.search} replace={true} />
-            return null
-        }
-        default: {
-            throw new Error('Unexpected invite user status')
-        }
-    }
-}

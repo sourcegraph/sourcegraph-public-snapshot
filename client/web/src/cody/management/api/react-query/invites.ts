@@ -14,7 +14,7 @@ import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
 
 export const useInvite = (
-    inviteParams: { teamId: string; inviteId: string } | undefined,
+    { teamId, inviteId }: { teamId: string; inviteId: string },
     options: Omit<
         UseQueryOptions<
             TeamInvite | undefined,
@@ -26,12 +26,9 @@ export const useInvite = (
     > = {}
 ): UseQueryResult<TeamInvite | undefined> =>
     useQuery({
-        queryKey: queryKeys.invites.invite(inviteParams?.teamId || '', inviteParams?.inviteId || ''),
+        queryKey: queryKeys.invites.invite(teamId, inviteId),
         queryFn: async () => {
-            if (!inviteParams) {
-                return undefined
-            }
-            const response = await callCodyProApi(Client.getInvite(inviteParams.teamId, inviteParams.inviteId))
+            const response = await callCodyProApi(Client.getInvite(teamId, inviteId))
             return response?.json()
         },
         ...options,
