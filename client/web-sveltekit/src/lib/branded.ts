@@ -1,7 +1,7 @@
 export { formatRepositoryStarCount } from '@sourcegraph/branded/src/search-ui/util/stars'
 export { limitHit, sortBySeverity, getProgressText } from '@sourcegraph/branded/src/search-ui/results/progress/utils'
 export { createDefaultSuggestions } from '@sourcegraph/branded/src/search-ui/input/codemirror'
-export { parseInputAsQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
+export { parseInputAsQuery, getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 export { querySyntaxHighlighting } from '@sourcegraph/branded/src/search-ui/input/codemirror/syntax-highlighting'
 export { decorateQuery } from '@sourcegraph/branded/src/search-ui/util/query'
 export * from '@sourcegraph/branded/src/search-ui/input/codemirror/multiline'
