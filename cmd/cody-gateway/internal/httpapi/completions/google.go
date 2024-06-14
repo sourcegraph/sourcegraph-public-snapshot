@@ -89,9 +89,8 @@ func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger
 	return result, err
 }
 
-// used to modify the request body before it is sent to upstream.
-func (*GoogleHandlerMethods) transformBody(gr *googleRequest, _ string) {
-}
+// Used to modify the request body before it is sent to upstream.
+func (*GoogleHandlerMethods) transformBody(*googleRequest, string) {}
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}

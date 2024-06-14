@@ -30,7 +30,7 @@ func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 		}
 
 		if message.Text == "" {
-			// skip empty assistant messages only if it's the last message.
+			// Skip empty assistant messages only if it's the last message.
 			if googleRole == "model" && i != 0 && i == len(messages)-1 {
 				continue
 			}
