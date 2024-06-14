@@ -999,15 +999,15 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
-) (symbols []*scip.Symbol, err *SyntacticUsagesError) {
+) (symbols []*scip.Symbol, uploadId int, err *SyntacticUsagesError) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, path)
 	if docErr != nil {
-		return nil, &SyntacticUsagesError{
+		return nil, 0, &SyntacticUsagesError{
 			Code:            SU_NoSyntacticIndex,
 			UnderlyingError: docErr,
 		}
@@ -1032,7 +1032,8 @@ func (s *Service) getSyntacticSymbolsAtRange(
 		s.logger.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
 	}
 
-	return symbols, nil
+	return symbols, syntacticUpload.ID, nil
+}
 }
 
 func (s *Service) SyntacticUsages(
@@ -1051,12 +1052,13 @@ func (s *Service) SyntacticUsages(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	symbolsAtRange, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
+	symbolsAtRange, uploadId, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(symbolsAtRange) == 0 {
+		s.logger.Warn("getSyntacticSymbolsAtRange: No symbols found at requested range")
 		return nil, &SyntacticUsagesError{
 			Code:            SU_NoSymbolAtRequestedRange,
 			UnderlyingError: nil,
