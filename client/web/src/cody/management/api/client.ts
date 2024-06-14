@@ -52,6 +52,10 @@ export module Client {
         return { method: 'GET', urlSuffix: '/team/current/members' }
     }
 
+    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<types.ListTeamMembersResponse> {
+        return { method: 'PATCH', urlSuffix: '/team/current/members', requestBody }
+    }
+
     // Invites
 
     export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
@@ -64,6 +68,10 @@ export module Client {
 
     export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<Response> {
         return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
+    }
+
+    export function resendInvite(inviteId: string): Call<Response> {
+        return { method: 'POST', urlSuffix: `/team/current/invites/${inviteId}/resend` }
     }
 
     export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {

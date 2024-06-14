@@ -10,7 +10,7 @@ import { useSendInvite } from '../management/api/react-query/invites'
 import { isValidEmailAddress } from '../util'
 
 interface InviteUsersProps extends TelemetryV2Props {
-    teamId: string | undefined
+    teamId: string
     remainingInviteCount: number
 }
 

@@ -43,28 +43,3 @@ export function isValidEmailAddress(emailAddress: string): boolean {
  * and keep in mind that the backend validation has the final say, validation in the web app is only for UX improvement.
  */
 const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
-
-/**
- * So the request is kinda made to two backends. Dotcom's `.api/ssc/proxy` endpoint
- * exchanges the Sourcegraph session credentials for a SAMS access token
- * and then proxy the request to the SSC backend.
- * @param sscUrl The SSC API URL to call. Example: "/checkout/session".
- * @param method E.g. "POST".
- * @param params The body to send to the SSC API. Will be JSON-encoded.
- *               In the case of GET and HEAD, use the query string instead.
- */
-export function requestSSC(sscUrl: string, method: string, params?: object): Promise<Response> {
-    // /.api/ssc/proxy endpoint exchanges the Sourcegraph session credentials for a SAMS access token.
-    // And then proxy the request onto the SSC backend, which will actually create the
-    // checkout session.
-    return fetch(`/.api/ssc/proxy${sscUrl}`, {
-        // Pass along the "sgs" session cookie to identify the caller.
-        credentials: 'same-origin',
-        headers: {
-            ...window.context.xhrHeaders,
-            'Content-Type': 'application/json',
-        },
-        method,
-        ...(!['GET', 'HEAD'].includes(method) && params ? { body: JSON.stringify(params) } : null),
-    })
-}

@@ -19,7 +19,7 @@ export interface ListTeamMembersResponse {
 }
 
 export interface UpdateTeamMembersRequest {
-    addMembver?: TeamMemberRef
+    addMember?: TeamMemberRef
     removeMember?: TeamMemberRef
     updateMemberRole?: TeamMemberRef
 }

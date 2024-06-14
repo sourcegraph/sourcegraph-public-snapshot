@@ -8,13 +8,14 @@ import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
+import { useCancelInvite, useResendInvite } from '../management/api/react-query/invites'
+import { useUpdateTeamMember } from '../management/api/react-query/teams'
 import type { TeamMember, TeamInvite } from '../management/api/types'
-import { requestSSC } from '../util'
 
 import styles from './TeamMemberList.module.scss'
 
 interface TeamMemberListProps extends TelemetryV2Props {
-    teamId: string | null
+    teamId: string
     teamMembers: TeamMember[]
     invites: Omit<TeamInvite, 'sentBy'>[]
     isAdmin: boolean
@@ -41,6 +42,9 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 }) => {
     const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
+    const updateTeamMemberMutation = useUpdateTeamMember()
+    const cancelInviteMutation = useCancelInvite()
+    const resendInviteMutation = useResendInvite()
     const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
             if (!loading) {
@@ -51,7 +55,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 })
 
                 try {
-                    const response = await requestSSC('/team/current/members', 'PATCH', {
+                    const response = await updateTeamMemberMutation.mutateAsync.call(undefined, {
                         updateMemberRole: { accountId, teamRole: newRole },
                     })
                     if (!response.ok) {
@@ -73,7 +77,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 }
             }
         },
-        [loading, telemetryRecorder, teamId]
+        [loading, telemetryRecorder, teamId, updateTeamMemberMutation.mutateAsync]
     )
 
     const revokeInvite = useCallback(
@@ -83,7 +87,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC(`/team/current/invites/${inviteId}/cancel`, 'POST')
+                const response = await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -96,7 +100,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 }
             }
         },
-        [loading, telemetryRecorder, teamId]
+        [loading, telemetryRecorder, teamId, cancelInviteMutation.mutateAsync]
     )
 
     const resendInvite = useCallback(
@@ -106,7 +110,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
+                const response = await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
                 if (!response.ok) {
                     setLoading(false)
                     setActionResult({
@@ -121,7 +125,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
 
             telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
         },
-        [loading, telemetryRecorder, teamId]
+        [loading, telemetryRecorder, teamId, resendInviteMutation.mutateAsync]
     )
 
     const removeMember = useCallback(
@@ -130,7 +134,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC('/team/current/members', 'PATCH', {
+                const response = await updateTeamMemberMutation.mutateAsync.call(undefined, {
                     removeMember: { accountId, teamRole: 'member' },
                 })
                 if (!response.ok) {
@@ -145,7 +149,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 }
             }
         },
-        [telemetryRecorder, teamId, loading]
+        [loading, telemetryRecorder, teamId, updateTeamMemberMutation.mutateAsync]
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])

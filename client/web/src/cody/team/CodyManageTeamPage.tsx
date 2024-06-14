@@ -132,20 +132,22 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </CodyAlert>
                 )}
 
-                {isAdmin && !!remainingInviteCount && (
+                {isAdmin && !!remainingInviteCount && !!subscriptionSummaryQueryResult.data && (
                     <InviteUsers
-                        teamId={subscriptionSummaryQueryResult.data?.teamId}
+                        teamId={subscriptionSummaryQueryResult.data.teamId}
                         remainingInviteCount={remainingInviteCount}
                         telemetryRecorder={telemetryRecorder}
                     />
                 )}
-                <TeamMemberList
-                    teamId={subscriptionSummaryQueryResult.data?.teamId ?? null}
-                    teamMembers={teamMembers || []}
-                    invites={teamInvites || []}
-                    isAdmin={isAdmin}
-                    telemetryRecorder={telemetryRecorder}
-                />
+                {!!subscriptionSummaryQueryResult.data && (
+                    <TeamMemberList
+                        teamId={subscriptionSummaryQueryResult.data.teamId}
+                        teamMembers={teamMembers || []}
+                        invites={teamInvites || []}
+                        isAdmin={isAdmin}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                )}
             </Page>
         </>
     )

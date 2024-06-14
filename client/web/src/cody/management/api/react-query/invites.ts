@@ -44,6 +44,14 @@ export const useSendInvite = (): UseMutationResult<Response, Error, CreateTeamIn
     })
 }
 
+export const useResendInvite = (): UseMutationResult<Response, Error, { inviteId: string }> => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ inviteId }) => callCodyProApi(Client.resendInvite(inviteId)),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.teamInvites() }),
+    })
+}
+
 export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: string; inviteId: string }> => {
     const queryClient = useQueryClient()
     return useMutation({
@@ -57,11 +65,10 @@ export const useAcceptInvite = (): UseMutationResult<unknown, Error, { teamId: s
     })
 }
 
-export const useCancelInvite = (): UseMutationResult<unknown, Error, { teamId: string; inviteId: string }> => {
+export const useCancelInvite = (): UseMutationResult<Response, Error, { teamId: string; inviteId: string }> => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.cancelInvite(teamId, inviteId)),
-        onSuccess: (_, { teamId, inviteId }) =>
-            queryClient.invalidateQueries({ queryKey: queryKeys.invites.invite(teamId, inviteId) }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.all }),
     })
 }
