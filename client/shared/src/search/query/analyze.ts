@@ -3,9 +3,6 @@ import { isDefined } from '@sourcegraph/common'
 import { type Node, OperatorKind, Parameter } from './parser'
 import { type CharacterRange, KeywordKind, type Token, PatternKind, Pattern } from './token'
 
-// Empty range to create valid nodes
-const placeholderRange: CharacterRange = { start: 0, end: 0 }
-
 interface SyntheticSequence {
     type: 'sequence'
     nodes: SyntheticNode[]
@@ -42,7 +39,11 @@ export const EMPTY_RELEVANT_TOKEN_RESULT: RelevantTokenResult = { tokens: [], so
  * @param filter A filter function to control which tokens should be included
  * @returns A list of relevant tokens and a source map
  */
-export function getRelevantTokens(query: Node, target: CharacterRange, filter: (node: Node) => boolean): RelevantTokenResult {
+export function getRelevantTokens(
+    query: Node,
+    target: CharacterRange,
+    filter: (node: Node) => boolean
+): RelevantTokenResult {
     function processNode(node: Node): SyntheticNode | null {
         switch (node.type) {
             case 'parameter':
@@ -118,7 +119,7 @@ export function getRelevantTokens(query: Node, target: CharacterRange, filter: (
     }
 
     const sourceMap = new Map<Token, CharacterRange>()
-    const tokens = alignTokenRanges(tokenize(processNode(query), {sourceMap}))
+    const tokens = alignTokenRanges(tokenize(processNode(query), { sourceMap }))
     return { tokens, sourceMap }
 }
 
@@ -144,7 +145,7 @@ function tokenize(node: SyntheticNode | null, context: { sourceMap: Map<Token, C
             return []
         }
         case 'parameter': {
-            const fieldStart = (node.negated ? 1 : 0)
+            const fieldStart = node.negated ? 1 : 0
             const fieldEnd = fieldStart + node.field.length
 
             const field: Token = {
@@ -174,8 +175,8 @@ function tokenize(node: SyntheticNode | null, context: { sourceMap: Map<Token, C
                 range: { start: 0, end: valueEnd },
             }
 
-            context.sourceMap.set(field, {start: node.range.start + fieldStart, end: node.range.start + fieldEnd })
-            context.sourceMap.set(value, {start: node.range.start + valueStart, end: node.range.start + valueEnd })
+            context.sourceMap.set(field, { start: node.range.start + fieldStart, end: node.range.start + fieldEnd })
+            context.sourceMap.set(value, { start: node.range.start + valueStart, end: node.range.start + valueEnd })
             context.sourceMap.set(filter, node.range)
             return [filter]
         }
@@ -187,7 +188,7 @@ function tokenize(node: SyntheticNode | null, context: { sourceMap: Map<Token, C
                 range: {
                     start: 0,
                     end: node.value.length + (delimited ? 2 : 0),
-                }
+                },
             }
 
             context.sourceMap.set(pattern, node.range)
@@ -220,7 +221,7 @@ function tokenize(node: SyntheticNode | null, context: { sourceMap: Map<Token, C
                 }
                 default: {
                     return [
-                        { type: 'openingParen', range: { start: 0, end: 1 }},
+                        { type: 'openingParen', range: { start: 0, end: 1 } },
                         ...(node.left ? tokenize(node.left, context) : []),
                         { type: 'whitespace', range: { start: 0, end: 1 } },
                         {
@@ -270,4 +271,3 @@ function alignTokenRanges(tokens: Token[]): Token[] {
 
     return tokens
 }
-

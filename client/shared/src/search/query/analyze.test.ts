@@ -26,9 +26,7 @@ function parse(input: string, filter = (_node: Node) => true): ReturnType<typeof
 function annotateToken(token: Token, prefix?: string, sourceMap?: Map<Token, Token['range']>): string {
     const range = sourceMap?.get(token) ?? token.range
     const tokenAnnotation =
-        ' '.repeat(range.start) +
-        '^'.repeat(range.end - range.start) +
-        ` (${prefix ?? ''}${token.type})`
+        ' '.repeat(range.start) + '^'.repeat(range.end - range.start) + ` (${prefix ?? ''}${token.type})`
 
     switch (token.type) {
         case 'filter':
@@ -99,10 +97,9 @@ describe('getRelevantTokens', () => {
         it('generates proper character ranges for returned tokens', () => {
             expect.addSnapshotSerializer({
                 serialize: result =>
-                    [
-                        stringHuman(result.tokens),
-                        ...(result.tokens as Token[]).map(token => annotateToken(token)),
-                    ].join('\n'),
+                    [stringHuman(result.tokens), ...(result.tokens as Token[]).map(token => annotateToken(token))].join(
+                        '\n'
+                    ),
                 test: () => true,
             })
 
@@ -124,19 +121,19 @@ describe('getRelevantTokens', () => {
     })
 
     it('maps tokens to their original positions in the query', () => {
-            const input = 'abc AND content:"with  space" def| OR /regex literal/ ghi'
-            expect.addSnapshotSerializer({
-                serialize: result =>
-                    [
-                        input,
-                        ...(result.tokens as Token[])
+        const input = 'abc AND content:"with  space" def| OR /regex literal/ ghi'
+        expect.addSnapshotSerializer({
+            serialize: result =>
+                [
+                    input,
+                    ...(result.tokens as Token[])
                         .filter(token => result.sourceMap.has(token))
                         .map(token => annotateToken(token, '', result.sourceMap)),
-                    ].join('\n'),
-                test: () => true,
-            })
+                ].join('\n'),
+            test: () => true,
+        })
 
-            expect(parse(input)).toMatchInlineSnapshot(`
+        expect(parse(input)).toMatchInlineSnapshot(`
                                  abc AND content:"with  space" def| OR /regex literal/ ghi
                                  ^^^ (pattern)
                                          ^^^^^^^ (filter.field: literal)
@@ -144,5 +141,5 @@ describe('getRelevantTokens', () => {
                                          ^^^^^^^^^^^^^^^^^^^^^ (filter)
                                                                ^^^ (pattern)
                                `)
-        })
+    })
 })
