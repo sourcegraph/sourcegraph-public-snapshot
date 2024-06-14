@@ -43,30 +43,20 @@ export const useInviteState: UseInviteStateHook = (teamId, inviteId) => {
                 return prevStatus
             }
 
+            if (subscriptionSummaryQuery.isPending) {
+                return undefined
+            }
+
             // There are two distinct cases when subscription summary query may fail:
             // 1. 404 error indicating that user is not on a team yet. Return the no current team status.
             // 2. Other kind of error indicating that we failed to get subscription data for other reason.
-            // We can't define user status without subscription data so retunr the error status.
-            if (subscriptionSummaryQuery.isError) {
+            // We can't define user status without subscription summary data so return the error status.
+            if (subscriptionSummaryQuery.isError || !subscriptionSummaryQuery.data) {
                 return subscriptionSummaryQuery.error instanceof CodyProApiError &&
                     subscriptionSummaryQuery.error.status === 404
                     ? UserInviteStatus.NoCurrentTeam
                     : UserInviteStatus.Error
             }
-
-            // Wait for the subscription summary query to succeed. We handle the error case above.
-            if (!subscriptionSummaryQuery.data) {
-                return undefined
-            }
-
-            // Team members query is executed only if the user is an admin.
-            // If it fails, we can't define whether the user is the sole admin of the team.
-            // Return the error status.
-            if (teamMembersQuery.isError) {
-                return UserInviteStatus.Error
-            }
-
-            // Now subscription summary is available.
 
             // User is already on the team they have been invited to.
             if (subscriptionSummaryQuery.data.teamId === teamId) {
@@ -77,14 +67,11 @@ export const useInviteState: UseInviteStateHook = (teamId, inviteId) => {
 
             // If user is admin, check if they are a sole admin on a team.
             if (subscriptionSummaryQuery.data.userRole === 'admin') {
-                if (!teamMembersQuery.isSuccess) {
-                    // Waiting for team members query to succeed. We handle the error case above.
+                if (teamMembersQuery.isPending) {
                     return undefined
                 }
-
-                if (!teamMembersQuery.data) {
-                    // Team members query is fetched, but data is undefined.
-                    // We can define whether the user is a sole admin on a team.
+                if (teamMembersQuery.isError || !teamMembersQuery.data) {
+                    // We can't define whether the user is a sole admin on a team.
                     // Return error status.
                     return UserInviteStatus.Error
                 }
