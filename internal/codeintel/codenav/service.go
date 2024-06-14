@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -956,7 +957,7 @@ func (e SyntacticUsagesError) Error() string {
 		msg = "fatal error"
 	}
 	if e.UnderlyingError == nil {
-		return fmt.Sprintf("%s", msg)
+		return msg
 	}
 	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
 }
@@ -1039,33 +1040,46 @@ func (s *Service) SyntacticUsages(
 	path string,
 	symbolRange scip.Range,
 ) ([]struct{}, *SyntacticUsagesError) {
-	symbols, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
+	// The `nil` in the second argument is here, because `With` does not work with custom error types.
+	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoId", int(repo.ID)),
+		attribute.String("commit", string(commit)),
+		attribute.String("path", path),
+		attribute.String("symbolRange", symbolRange.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	symbolsAtRange, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(symbols) == 0 {
+	if len(symbolsAtRange) == 0 {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_NoSymbolAtRequestedRange,
 			UnderlyingError: nil,
 		}
 	}
-	// Overlapping occurrences should lead to the same display name, but be scored separately.
+	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
-	// TODO: Assert this?
-	searchSymbol := symbols[0]
+	searchSymbol := symbolsAtRange[0]
 
-	// FIXME: Maybe we can extract this from the syntactic SCIP document?
-	// For now we only support Java.
-	language := "java"
+	langs, langErr := languages.GetLanguages(path, func() ([]byte, error) { return nil, errors.New("Ambiguous language") })
+	if langErr != nil || len(langs) == 0 {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: langErr,
+		}
+	}
 
-	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, language)
+	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, langs[0])
 	if searchErr != nil {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
 	}
+	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
 
 	_ = candidateMatches
 

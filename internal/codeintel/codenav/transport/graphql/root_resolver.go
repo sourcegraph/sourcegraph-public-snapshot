@@ -221,7 +221,8 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			case codenav.SU_FailedToSearch:
 			default:
 				// None of these errors should cause the whole request to fail
-				// We might want to log some of them in the future
+				// TODO: We might want to log some of them in the future
+
 			}
 		}
 		numSyntacticResults = len(results)
