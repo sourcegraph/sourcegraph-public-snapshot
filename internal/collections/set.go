@@ -142,3 +142,32 @@ func Intersection[T comparable](a, b Set[T]) Set[T] {
 
 	return itrsc
 }
+
+func DeduplicateBy[T any, K comparable](xs []T, keyFn func(T) K) []T {
+	seen := NewSet[K]()
+	filtered := xs[:0]
+	for _, x := range xs {
+		k := keyFn(x)
+		if seen.Has(k) {
+			continue
+		}
+		seen.Add(k)
+		filtered = append(filtered, x)
+	}
+	return filtered
+}
+
+// Deduplicate modifies the argument slice in-place,
+// and maintains ordering unlike NewSet(...).Values().
+func Deduplicate[T comparable](xs []T) []T {
+	seen := NewSet[T]()
+	filtered := xs[:0]
+	for _, x := range xs {
+		if seen.Has(x) {
+			continue
+		}
+		seen.Add(x)
+		filtered = append(filtered, x)
+	}
+	return filtered
+}

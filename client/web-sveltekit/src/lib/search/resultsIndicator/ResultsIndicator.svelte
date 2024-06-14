@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { mdiChevronDown, mdiInformationOutline, mdiAlert, mdiAlertCircle } from '@mdi/js'
+    import type { ComponentProps } from 'svelte'
 
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
@@ -15,10 +15,10 @@
 
     const SEARCH_JOB_THRESHOLD = 10000
 
-    const icons: Record<string, string> = {
-        info: mdiInformationOutline,
-        warning: mdiAlert,
-        error: mdiAlertCircle,
+    const icons: Record<string, ComponentProps<Icon>['icon']> = {
+        info: ILucideInfo,
+        warning: ILucideAlertCircle,
+        error: ILucideCircleX,
     }
 
     $: elapsedDuration = progress.durationMs
@@ -40,7 +40,12 @@
     {#if loading}
         <LoadingSpinner --size="16px" />
     {:else}
-        <Icon svgPath={icons[severity]} --icon-size="16px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+        <Icon
+            icon={icons[severity]}
+            aria-label={severity}
+            --icon-size="16px"
+            --color={isError ? 'var(--danger)' : 'var(--text-title)'}
+        />
     {/if}
 
     <div class="messages">
@@ -54,7 +59,7 @@
         {/if}
     </div>
 
-    <Icon svgPath={mdiChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon icon={ILucideChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
 </div>
 
 <style lang="scss">

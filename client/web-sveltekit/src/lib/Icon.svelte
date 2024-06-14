@@ -1,42 +1,38 @@
 <!--
-    @deprecated Use Icon2.svelte instead.
-    @component
-    Creates an SVG icon. You can overwrite the color by using the --color
-    style directive:
+  @component
+  Provides a convenient API to render SVG icons.
 
-    <Icon svgPath={...} --color="other color" />
+  Use Lucide icons by referring to them as `ILucide<IconName>`. For example:
 
-    Otherwise the current text color is used.
+      <Icon icon={ILucideChevronDown} />
+
+  See https://lucide.dev/icons/ for a list of available icons.
 -->
-<script lang="ts">
-    import type { SVGAttributes } from 'svelte/elements'
+<script lang="ts" context="module">
+    export type IconComponent = ComponentType<
+        SvelteComponent<SvelteHTMLElements['svg'] & { [key: `data-${string}`]: any }>
+    >
+</script>
 
-    type $$Props = SVGAttributes<SVGElement> & {
-        svgPath: string
+<script lang="ts">
+    import type { ComponentType, SvelteComponent } from 'svelte'
+    import type { SvelteHTMLElements } from 'svelte/elements'
+
+    import style from './Icon.module.scss'
+
+    type $$Props = SvelteHTMLElements['svg'] & {
+        /**
+         * The SVG icon component to render.
+         */
+        icon: IconComponent
+        /**
+         * Render the icon inline next to text.
+         */
         inline?: boolean
     }
 
-    export let svgPath: string
+    export let icon: IconComponent
     export let inline: boolean = false
 </script>
 
-<svg class:icon-inline={inline} viewBox="0 0 24 24" data-icon {...$$restProps}>
-    <path d={svgPath} />
-</svg>
-
-<style lang="scss">
-    $iconSize: var(--icon-size, 1.5rem);
-    $iconInlineSize: var(--icon-inline-size, #{(16 / 14)}em);
-
-    svg {
-        width: $iconSize;
-        height: $iconSize;
-        &.icon-inline {
-            width: $iconInlineSize;
-            height: $iconInlineSize;
-            vertical-align: text-bottom;
-        }
-        color: var(--icon-fill-color, var(--color, inherit));
-        fill: currentColor;
-    }
-</style>
+<svelte:component this={icon} data-icon class="{style.icon} {inline ? style.iconInline : ''}" {...$$restProps} />

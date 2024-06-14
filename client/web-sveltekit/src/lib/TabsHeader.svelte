@@ -5,7 +5,7 @@
         id: string
         title: string
         // An icon for the tab. Shown to the left of the title.
-        icon?: string
+        icon?: ComponentProps<Icon>['icon']
         // A shortcut to activate the tab. Shown to the right of the title.
         shortcut?: Keys
         // If provided, will cause the tab to be rendered as a link
@@ -14,7 +14,7 @@
 </script>
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, type ComponentProps } from 'svelte'
 
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
 
@@ -48,13 +48,13 @@
             href={tab.href}
         >
             {#if tab.icon}
-                <Icon svgPath={tab.icon} aria-hidden inline />
+                <Icon icon={tab.icon} aria-hidden inline />
             {/if}
             <span data-tab-title={tab.title}>
                 {tab.title}
             </span>
             {#if tab.shortcut}
-                <KeyboardShortcut shorcut={tab.shortcut} />
+                <KeyboardShortcut shortcut={tab.shortcut} />
             {/if}
         </svelte:element>
     {/each}
@@ -76,13 +76,13 @@
         cursor: pointer;
         align-items: center;
         min-height: 2rem;
-        padding: 0.25rem var(--tabs-horizontal-spacing, 0.75rem);
+        padding: 0.25rem 0.75rem;
         color: var(--text-body);
         display: inline-flex;
         flex-flow: row nowrap;
         justify-content: center;
         white-space: nowrap;
-        gap: 0.25rem;
+        gap: 0.5rem;
         position: relative;
 
         &::after {
@@ -100,16 +100,11 @@
         }
 
         &[aria-selected='true'] {
+            --icon-fill-color: currentColor;
+
             font-weight: 500;
             color: var(--text-title);
             background-color: var(--secondary-2);
-
-            :global(kbd) {
-                color: white;
-                box-shadow: none;
-                border-color: var(--primary);
-                background-color: var(--primary);
-            }
 
             &::after {
                 border-color: var(--primary);

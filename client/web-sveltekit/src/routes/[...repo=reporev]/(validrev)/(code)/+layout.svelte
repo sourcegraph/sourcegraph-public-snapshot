@@ -44,7 +44,7 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -203,7 +203,7 @@
                             on:click={toggleFileSidePanel}
                             aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                         >
-                            <Icon2
+                            <Icon
                                 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
                                 inline
                                 aria-hidden
@@ -229,10 +229,10 @@
                                     on:click={() => openFuzzyFinder('files')}
                                 >
                                     {#if isCollapsed}
-                                        <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
+                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
                                     {:else}
                                         <span>Search files</span>
-                                        <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
+                                        <KeyboardShortcut shortcut={filesHotkey} />
                                     {/if}
                                 </button>
                             </Tooltip>
@@ -296,7 +296,7 @@
                                     aria-label="Hide bottom panel"
                                     on:click={handleBottomPanelCollapse}
                                 >
-                                    <Icon2 icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                                    <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
                                 </Button>
                             {/if}
                         </svelte:fragment>

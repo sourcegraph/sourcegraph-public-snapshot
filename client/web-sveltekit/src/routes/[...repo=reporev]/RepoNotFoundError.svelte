@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiMapSearch } from '@mdi/js'
-
     import HeroPage from '$lib/HeroPage.svelte'
     import { logViewEvent } from '$lib/logger'
 
@@ -10,7 +8,7 @@
     logViewEvent('RepositoryError')
 </script>
 
-<HeroPage title="Repository not found" svgIconPath={mdiMapSearch}>
+<HeroPage title="Repository not found" icon={ILucideBookX}>
     {#if viewerCanAdminister}
         <p>
             As a site admin, you can add <code>{repoName}</code> to Sourcegraph to allow users to search and view it by

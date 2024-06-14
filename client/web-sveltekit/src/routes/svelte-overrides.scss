@@ -12,6 +12,8 @@ h6 {
 
 body {
     --font-family-base: 'Inter Variable', sans-serif;
+    --monospace-font-family: 'Roboto Mono Variable', monospace;
+    --code-font-family: var(--monospace-font-family);
     --font-size-base: 0.9375rem;
     --font-size-small: 0.875rem;
     --font-size-tiny: 0.8125rem;

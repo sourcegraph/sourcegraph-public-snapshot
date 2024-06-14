@@ -7,22 +7,6 @@
         const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
         return filters.some(filter => filter.field.value === 'type')
     }
-
-    function inferOperatingSystem(userAgent: string): 'Windows' | 'MacOS' | 'Linux' | undefined {
-        if (userAgent.includes('Win')) {
-            return 'Windows'
-        }
-
-        if (userAgent.includes('Mac')) {
-            return 'MacOS'
-        }
-
-        if (userAgent.includes('Linux')) {
-            return 'Linux'
-        }
-
-        return undefined
-    }
 </script>
 
 <script lang="ts">
@@ -34,7 +18,7 @@
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
@@ -78,7 +62,6 @@
         }
     })
 
-    $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
 
@@ -105,16 +88,17 @@
         <div class="header">
             <h3>Filter results</h3>
             {#if enableReset}
-                <a href={resetURL}>
-                    <small>Reset all <kbd>{resetModifier} ⌫</kbd></small>
-                </a>
+                <div class="reset">
+                    <a href={resetURL}>Reset all</a>&nbsp;
+                    <KeyboardShortcut shortcut={{ key: 'alt+⌫' }} />
+                </div>
             {/if}
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
                 <svelte:fragment slot="label" let:label>
-                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
+                    <Icon icon={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
                     {label}
                 </svelte:fragment>
             </Section>
@@ -198,7 +182,7 @@
             <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
                 <svelte:fragment>
                     Move filters to query&nbsp;
-                    <ArrowBendIcon aria-hidden class="arrow-icon" />
+                    <Icon icon={ILucideCornerRightDown} aria-hidden inline />
                 </svelte:fragment>
             </Button>
         </div>
@@ -227,17 +211,9 @@
             h3 {
                 margin: 0;
             }
-            a {
+            .reset {
+                font-size: var(--font-size-tiny);
                 margin-left: auto;
-                line-height: 1;
-                kbd {
-                    // TODO: use this style globally
-                    font-family: var(--font-family-base);
-                    color: var(--text-muted);
-                    background: var(--color-bg-1);
-                    box-shadow: inset 0 -2px 0 var(--border-color-2);
-                    border: 1px solid var(--border-color-2);
-                }
             }
         }
 

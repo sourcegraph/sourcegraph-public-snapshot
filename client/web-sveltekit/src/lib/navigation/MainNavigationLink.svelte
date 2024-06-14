@@ -8,10 +8,8 @@
 </script>
 
 <a href={entry.href}>
-    {#if typeof entry.icon === 'string'}
-        <Icon svgPath={entry.icon} aria-hidden="true" inline />&nbsp;
-    {:else if entry.icon}
-        <span class="icon"><svelte:component this={entry.icon} /></span>&nbsp;
+    {#if entry.icon}
+        <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
     {/if}
     {entry.label}
     {#if entry.status && entry.status & Status.BETA}

@@ -22,8 +22,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiFolder } from '@mdi/js'
-
     import { resolveRoute } from '$app/paths'
     import Avatar from '$lib/Avatar.svelte'
     import { pluralize } from '$lib/common'
@@ -94,7 +92,7 @@
                 </small>
             </div>
         {:else if entry.__typename === 'GitTree'}
-            <Icon svgPath={mdiFolder} --icon-fill-color="var(--primary)" --icon-size="1.5rem" />
+            <Icon icon={ILucideFolder} --icon-fill-color="var(--primary)" --icon-size="1.5rem" />
             <div class="file mono">
                 <div class="title">{baseName}</div>
                 <small>

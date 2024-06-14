@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiStarOutline } from '@mdi/js'
-
     import { formatRepositoryStarCount } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
 
@@ -9,7 +7,7 @@
 </script>
 
 <span>
-    <Icon inline svgPath={mdiStarOutline} />
+    <Icon inline icon={ILucideStar} aria-label="Repository stars" />
     {#if small}
         <small>&nbsp;{formatRepositoryStarCount(repoStars)}</small>
     {:else}
