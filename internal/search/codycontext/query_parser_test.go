@@ -166,28 +166,7 @@ func TestExpandQuery(t *testing.T) {
 			want:        []string{kwReadme},
 		},
 		{
-			queryString: "What does github.com/sourcegraph/zoekt do?",
-			want:        []string{kwReadme},
-		},
-		{
-			queryString: "what does batch-change-buddy/jtest do?",
-			want:        []string{kwReadme},
-		},
-		// Punctuation
-		{
-			queryString: "describe sourcegraph/zoekt",
-			want:        []string{kwReadme},
-		},
-		{
-			queryString: "describe sourcegraph/zoekt.",
-			want:        []string{kwReadme},
-		},
-		{
-			queryString: "describe sourcegraph/zoekt. Details please!",
-			want:        []string{kwReadme},
-		},
-		{
-			queryString: "describe sourcegraph/zoekt!",
+			queryString: "Explain what this project is about",
 			want:        []string{kwReadme},
 		},
 		// Negative tests

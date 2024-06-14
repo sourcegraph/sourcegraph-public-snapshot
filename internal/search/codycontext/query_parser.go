@@ -195,14 +195,6 @@ func isLikelySymbol(pattern string) bool {
 	return strings.Contains(pattern, "_") || camelCaseRegexp.MatchString(pattern)
 }
 
-// matches project names such as "github.com/sourcegraph/sourcegraph or
-// golang/go", but doesn't match file paths with extensions.
-var projectRegex = regexp.MustCompile(`([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)(?:\.?([?!\s]|$))`)
-
-func maybeContainsProjectName(input string) bool {
-	return projectRegex.MatchString(input)
-}
-
 var projectSignifiers = []string{
 	"code",
 	"codebase",
@@ -242,7 +234,7 @@ func needsReadmeContext(input string) bool {
 		}
 	}
 
-	return maybeContainsProjectName(input)
+	return false
 }
 
 const (
