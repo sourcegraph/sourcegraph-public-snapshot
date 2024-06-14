@@ -5,6 +5,7 @@
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { getButtonClassName } from '$lib/wildcard/Button'
     import DropdownMenu from '$lib/wildcard/menu/DropdownMenu.svelte'
     import MenuButton from '$lib/wildcard/menu/MenuButton.svelte'
     import MenuLink from '$lib/wildcard/menu/MenuLink.svelte'
@@ -18,14 +19,16 @@
     export let externalServiceKind: string | undefined
 </script>
 
-<DropdownMenu triggerButtonClass="trigger">
+<DropdownMenu triggerButtonClass={getButtonClassName({ variant: 'text' })}>
     <svelte:fragment slot="trigger">
-        <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
-        <h2>
-            {#each displayRepoName.split('/') as segment, i}
-                {#if i > 0}<span class="slash">/</span>{/if}{segment}
-            {/each}
-        </h2>
+        <div class="trigger">
+            <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
+            <h2>
+                {#each displayRepoName.split('/') as segment, i}
+                    {#if i > 0}<span class="slash">/</span>{/if}{segment}
+                {/each}
+            </h2>
+        </div>
     </svelte:fragment>
 
     <MenuLink href={repoURL}>
@@ -69,18 +72,11 @@
 </DropdownMenu>
 
 <style lang="scss">
-    :global(.trigger) {
-        all: unset;
-
+    .trigger {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0 1rem;
         white-space: nowrap;
-
-        &:hover {
-            background-color: var(--secondary-2);
-        }
 
         h2 {
             font-size: var(--font-size-large);
@@ -88,8 +84,10 @@
             margin: 0;
 
             .slash {
+                font-weight: 400;
                 color: var(--text-muted);
-                margin: 0.25rem;
+                margin: 0.25em;
+                letter-spacing: -0.25px;
             }
         }
     }
