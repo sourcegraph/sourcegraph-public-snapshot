@@ -23,11 +23,6 @@ func TestGetLanguages(t *testing.T) {
 	}{
 		{path: "perlscript", content: "#!/usr/bin/env perl\n$version = $ARGV[0];", expectedLanguages: []string{"Perl"}},
 		{path: "rakuscript", content: "#!/usr/bin/env perl6\n$version = $ARGV[0];", expectedLanguages: []string{"Raku"}},
-		{path: "ambiguous.h", content: "", expectedLanguages: []string{"C", "C++", "Objective-C"}},
-		{path: "cpp.h", content: "namespace x { }", expectedLanguages: []string{"C++"}},
-		{path: "c.h", content: "typedef struct { int x; } Int;", expectedLanguages: []string{"C"}},
-		{path: "matlab.m", content: "function [out] = square(x)\nout = x * x;\nend", expectedLanguages: []string{"MATLAB"}, compareFirstOnly: true},
-		{path: "mathematica.m", content: "f[x_] := x ^ 2\ng[y_] := f[y]", expectedLanguages: []string{"Mathematica"}, compareFirstOnly: true},
 		{path: "ambiguous.h", content: emptyContent, expectedLanguages: []string{"C", "C++", "Objective-C"}},
 		{path: "cpp.h", content: cppContent, expectedLanguages: []string{"C++"}},
 		{path: "c.h", content: cContent, expectedLanguages: []string{"C"}},
