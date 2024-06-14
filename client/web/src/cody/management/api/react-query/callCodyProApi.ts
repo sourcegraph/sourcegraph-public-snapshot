@@ -31,7 +31,9 @@ const buildRequestInit = ({ headers = {}, ...init }: RequestInit): RequestInit =
 const signOutAndRedirectToSignIn = async (): Promise<void> => {
     const response = await fetch('/-/sign-out', buildRequestInit({ method: 'GET' }))
     if (response.ok) {
-        window.location.href = `/sign-in?returnTo=${window.location.pathname + window.location.search}`
+        window.location.href = `/sign-in?returnTo=${
+            window.location.pathname + encodeURIComponent(window.location.search)
+        }`
     }
 }
 
