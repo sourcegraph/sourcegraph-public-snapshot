@@ -5,14 +5,12 @@ import { setEndpoint } from '../../settings/endpointSetting'
 export const secretTokenKey = 'SOURCEGRAPH_AUTH'
 
 export class SourcegraphAuthActions {
-    constructor(private readonly secretStorage: SecretStorage, private currentEndpoint: string) {}
+    constructor(private readonly secretStorage: SecretStorage) {}
 
     public async login(newtoken: string, newuri: string): Promise<void> {
         try {
             await this.secretStorage.store(secretTokenKey, newtoken)
-            if (this.currentEndpoint !== newuri) {
-                setEndpoint(newuri)
-            }
+            setEndpoint(newuri)
             return
         } catch (error) {
             console.error(error)

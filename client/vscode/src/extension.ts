@@ -65,7 +65,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         stateMachine,
         sourcegraphURL: `${initialInstanceURL}/.api`,
     })
-    const authActions = new SourcegraphAuthActions(secretStorage, initialInstanceURL)
+    const authActions = new SourcegraphAuthActions(secretStorage)
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
