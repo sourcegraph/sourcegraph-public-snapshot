@@ -286,6 +286,22 @@ load("//:deps.bzl", "go_dependencies")
 load("//:linter_deps.bzl", "linter_dependencies")
 
 go_repository(
+    name = "in_gopkg_cenkalti_backoff_v1",
+    importpath = "gopkg.in/cenkalti/backoff.v1",
+    remote = "https://github.com/cenkalti/backoff",
+    tag = "v1.1.0",  # Use the appropriate version
+    vcs = "git",
+)
+
+go_repository(
+    name = "com_github_r3labs_sse_v2",
+    importpath = "github.com/r3labs/sse/v2",
+    remote = "https://github.com/r3labs/sse",
+    tag = "v2.0.0",  # Use the appropriate version
+    vcs = "git",
+)
+
+go_repository(
     name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",

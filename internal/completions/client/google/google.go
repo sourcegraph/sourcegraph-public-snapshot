@@ -1,12 +1,15 @@
 package google
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -15,11 +18,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	Gemini    ModelFamily = "gemini"
+	Anthropic ModelFamily = "opus"
+)
+
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+	modelFamily := Gemini
+	if strings.Contains(endpoint, "anthropic") {
+		modelFamily = Anthropic
+	}
 	return &googleCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
 		endpoint:    endpoint,
+		modelFamily: modelFamily,
 	}
 }
 
@@ -38,7 +51,7 @@ func (c *googleCompletionStreamClient) Complete(
 		}
 	})()
 
-	resp, err = c.makeRequest(ctx, requestParams, false)
+	resp, err = c.makeAnthopicRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +72,10 @@ func (c *googleCompletionStreamClient) Complete(
 		return &types.CompletionResponse{}, nil
 	}
 
-	// NOTE:  Candidates can be used to get multiple completions when CandidateCount is set,
+	// NOTE: Candidates can be used to get multiple completions when CandidateCount is set,
 	// which is not currently supported by Cody. For now, we only return the first completion.
 	return &types.CompletionResponse{
 		Completion: response.Candidates[0].Content.Parts[0].Text,
-		StopReason: response.Candidates[0].FinishReason,
 	}, nil
 }
 
@@ -84,59 +96,153 @@ func (c *googleCompletionStreamClient) Stream(
 		}
 	})()
 
-	resp, err = c.makeRequest(ctx, requestParams, true)
-	if err != nil {
-		return err
-	}
-
-	dec := NewDecoder(resp.Body)
-	var content string
-	var ev types.CompletionResponse
-
-	for dec.Scan() {
-		if ctx.Err() != nil && ctx.Err() == context.Canceled {
-			return nil
+	if c.modelFamily == Anthropic {
+		resp, err = c.makeAnthopicRequest(ctx, requestParams, true)
+		if err != nil {
+			return err
 		}
 
-		data := dec.Data()
-		// Gracefully skip over any data that isn't JSON-like.
-		if !bytes.HasPrefix(data, []byte("{")) {
-			continue
-		}
-
-		var event googleResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
-		}
-
-		if len(event.Candidates) > 0 && len(event.Candidates[0].Content.Parts) > 0 {
-			content += event.Candidates[0].Content.Parts[0].Text
-
-			ev = types.CompletionResponse{
-				Completion: content,
-				StopReason: event.Candidates[0].FinishReason,
+		reader := bufio.NewReader(resp.Body)
+		var (
+			event             []byte
+			emptyMessageCount uint
+			totalCompletion   string
+			sentEvent         bool
+		)
+		for {
+			rawLine, readErr := reader.ReadBytes('\n')
+			if readErr != nil {
+				if errors.Is(readErr, io.EOF) {
+					break
+				}
+				return readErr
 			}
-			err = sendEvent(ev)
-			if err != nil {
-				return err
+
+			noSpaceLine := bytes.TrimSpace(rawLine)
+			if len(noSpaceLine) == 0 {
+				continue
+			}
+
+			if bytes.HasPrefix(noSpaceLine, []byte("event:")) {
+				event = bytes.TrimSpace(bytes.TrimPrefix(noSpaceLine, []byte("event:")))
+				continue
+			}
+
+			if bytes.HasPrefix(noSpaceLine, []byte("data:")) {
+				data := bytes.TrimPrefix(noSpaceLine, []byte("data:"))
+				eventType := string(event)
+
+				switch eventType {
+				case "message_start":
+					// Handle message_start event
+					var d anthropicStreamingResponse
+					if err := json.Unmarshal(data, &d); err != nil {
+						return err
+					}
+					// Process message_start event if needed
+					continue
+
+				case "content_block_delta":
+					// Handle content_block_delta event
+					var d anthropicStreamingResponse
+					if err := json.Unmarshal(data, &d); err != nil {
+						return err
+					}
+					totalCompletion += d.Delta.Text
+					sentEvent = true
+					err = sendEvent(types.CompletionResponse{
+						Completion: totalCompletion,
+					})
+					if err != nil {
+						return err
+					}
+					continue
+				case "message_delta":
+					// Handle message_delta event
+					var d anthropicStreamingResponseTextBucket
+					if err := json.Unmarshal(data, &d); err != nil {
+						return err
+					}
+					// Process message_delta event if needed
+					continue
+
+				case "message_stop":
+					// Handle message_stop event
+					// Process message_stop event if needed
+					continue
+
+				default:
+					// Handle other events if needed
+					continue
+				}
+			}
+
+			emptyMessageCount++
+			if emptyMessageCount > 100 { // Adjust the limit as needed
+				return errors.New("too many empty stream messages")
 			}
 		}
-	}
-	if dec.Err() != nil {
-		return dec.Err()
-	}
 
-	return nil
+		if !sentEvent {
+			return errors.New("stream closed with no events")
+		}
+
+		return nil
+	} else {
+		resp, err = c.makeGeminiRequest(ctx, requestParams, true)
+		if err != nil {
+			return err
+		}
+
+		dec := NewDecoder(resp.Body)
+		var content string
+		var ev types.CompletionResponse
+
+		for dec.Scan() {
+			if ctx.Err() != nil && ctx.Err() == context.Canceled {
+				return nil
+			}
+
+			data := dec.Data()
+			// Gracefully skip over any data that isn't JSON-like.
+			if !bytes.HasPrefix(data, []byte("{")) {
+				continue
+			}
+
+			var event googleResponse
+			if err := json.Unmarshal(data, &event); err != nil {
+				return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+			}
+
+			if len(event.Candidates) > 0 && len(event.Candidates[0].Content.Parts) > 0 {
+				content += event.Candidates[0].Content.Parts[0].Text
+
+				ev = types.CompletionResponse{
+					Completion: content,
+					StopReason: event.Candidates[0].FinishReason,
+				}
+				err = sendEvent(ev)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		if dec.Err() != nil {
+			return dec.Err()
+		}
+
+		return nil
+	}
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	// Ensure TopK and TopP are non-negative
 	requestParams.TopK = max(0, requestParams.TopK)
 	requestParams.TopP = max(0, requestParams.TopP)
 
 	// Generate the prompt
-	prompt, err := getPrompt(requestParams.Messages)
+	prompt, err := getGeminiPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +291,52 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 	return resp, nil
 }
 
+// makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
+func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+	// Generate the prompt
+	prompt, err := getAnthropicPrompt(requestParams.Messages)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := anthropicRequest{
+		Messages:         prompt,
+		MaxTokens:        requestParams.MaxTokensToSample,
+		Stream:           true,
+		AnthropicVersion: "vertex-2023-10-16",
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	apiURL := c.getAPIURL(requestParams, stream)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL.String(), bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Vertex AI API requires an Authorization header with the access token.
+	// Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini#sample-requests
+	// TODO: Weird Oauth2 thingy here
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+
+	resp, err := c.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, types.NewErrStatusNotOK("Google", resp)
+	}
+
+	return resp, nil
+}
+
 // In the latest API Docs, the model name and API key must be used with the default API endpoint URL.
 // Ref: https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=rest#gemini_and_content_based_apis
 func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionRequestParameters, stream bool) *url.URL {
@@ -197,7 +349,7 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 		}
 	}
 
-	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream)
+	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream, c.modelFamily)
 
 	// We need to append the API key to the default API endpoint URL.
 	if isDefaultAPIEndpoint(apiURL) {
@@ -213,8 +365,11 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 }
 
 // getgRPCMethod returns the gRPC method name based on the stream flag.
-func getgRPCMethod(stream bool) string {
-	if stream {
+func getgRPCMethod(stream bool, modelFamily ModelFamily) string {
+	if stream == true {
+		if modelFamily == Anthropic {
+			return "streamRawPredict"
+		}
 		return "streamGenerateContent"
 	}
 	return "generateContent"

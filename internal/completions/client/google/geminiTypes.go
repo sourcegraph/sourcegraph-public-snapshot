@@ -2,10 +2,12 @@ package google
 
 import "github.com/sourcegraph/sourcegraph/internal/httpcli"
 
+type ModelFamily string
 type googleCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	endpoint    string
+	modelFamily ModelFamily
 }
 
 // The request body for the completion stream endpoint.
