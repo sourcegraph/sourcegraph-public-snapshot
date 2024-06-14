@@ -1524,7 +1524,6 @@ Go,github.com/rs/cors,v1.9.0,MIT,github.com/rs/cors,Approved
 Go,github.com/rs/xid,v1.5.0,MIT,github.com/rs/xid,Approved
 Go,github.com/russellhaering/gosaml2,v0.9.1,Apache 2.0,github.com/russellhaering/gosaml2,Approved
 Go,github.com/russellhaering/goxmldsig,v1.3.0,Apache 2.0,github.com/russellhaering/goxmldsig,Approved
-Go,github.com/russross/blackfriday/v2,v2.1.0,Simplified BSD,github.com/russross/blackfriday,Approved
 Go,github.com/sabhiram/go-gitignore,v0.0.0-20210923224102-525f6e181f06,MIT,github.com/sabhiram/go-gitignore,Approved
 Go,github.com/schollz/progressbar/v3,v3.13.1,MIT,github.com/schollz/progressbar,Approved
 Go,github.com/scim2/filter-parser/v2,v2.2.0,MIT,github.com/scim2/filter-parser,Approved

@@ -5240,21 +5240,6 @@ def go_dependencies():
         version = "v1.4.0",
     )
     go_repository(
-        name = "com_github_russross_blackfriday",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/russross/blackfriday",
-        replace = "github.com/russross/blackfriday",
-        sum = "h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=",
-        version = "v1.5.2",
-    )
-    go_repository(
-        name = "com_github_russross_blackfriday_v2",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/russross/blackfriday/v2",
-        sum = "h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=",
-        version = "v2.1.0",
-    )
-    go_repository(
         name = "com_github_ryanuber_columnize",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/ryanuber/columnize",
