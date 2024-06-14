@@ -1,12 +1,4 @@
-package google
-
-import "github.com/sourcegraph/sourcegraph/internal/httpcli"
-
-type googleCompletionStreamClient struct {
-	cli         httpcli.Doer
-	accessToken string
-	endpoint    string
-}
+package completions
 
 // The request body for the completion stream endpoint.
 // Ref: https://ai.google.dev/api/rest/v1beta/models/generateContent
