@@ -35,14 +35,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     extensionContext = context
     const initialInstanceURL = endpointSetting()
     const secretStorage = context.secrets
-    // Register SourcegraphAuthProvider
-    context.subscriptions.push(
-        vscode.authentication.registerAuthenticationProvider(
-            initialInstanceURL,
-            secretTokenKey,
-            new SourcegraphAuthProvider(secretStorage)
-        )
-    )
     await processOldToken(secretStorage)
     const initialAccessToken = await getAccessToken()
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
