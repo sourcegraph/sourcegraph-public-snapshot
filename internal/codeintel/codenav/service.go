@@ -944,6 +944,8 @@ type SyntacticUsagesError struct {
 	UnderlyingError error
 }
 
+var _ error = SyntacticUsagesError{}
+
 func (e SyntacticUsagesError) Error() string {
 	msg := ""
 	switch e.Code {
