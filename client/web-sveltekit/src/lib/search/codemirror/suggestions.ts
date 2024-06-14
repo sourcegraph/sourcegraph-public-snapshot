@@ -82,8 +82,11 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
             const options: Option[] = []
 
             {
-                const group = dirname(repoName)
+                let group = dirname(repoName)
                 if (group !== '.') {
+                    if (!group.endsWith('/')) {
+                        group += '/'
+                    }
                     const option = createFilterSuggestion(
                         FilterType.repo,
                         `^${escapeRegExp(group)}`,
@@ -119,6 +122,9 @@ export function createScopeSuggestions(options: ScopeSuggestionsOptions): Extens
             const options: Option[] = []
 
             if (directoryPath && directoryPath !== '.') {
+                if (!directoryPath.endsWith('/')) {
+                    directoryPath += '/'
+                }
                 const option = createFilterSuggestion(
                     FilterType.file,
                     `^${escapeRegExp(directoryPath)}`,
