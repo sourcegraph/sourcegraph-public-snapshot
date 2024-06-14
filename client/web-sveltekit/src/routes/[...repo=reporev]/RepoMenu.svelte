@@ -35,14 +35,14 @@
             <KeyboardShortcut shortcut={{ key: 'ctrl+backspace', mac: 'cmd+backspace' }} />
         </div>
     </MenuLink>
-    <MenuButton class="menu-item" on:click={() => openFuzzyFinder('repos')}>
+    <MenuButton on:click={() => openFuzzyFinder('repos')}>
         <div class="menu-item">
             <Icon icon={ILucideRepeat} inline />
             <span>Switch repo</span>
             <KeyboardShortcut shortcut={reposHotkey} />
         </div>
     </MenuButton>
-    <MenuLink href={repoURL + '/-/settings'} class="menu-item">
+    <MenuLink href={repoURL + '/-/settings'}>
         <div class="menu-item">
             <Icon icon={ILucideSettings} inline />
             <span>Settings</span>
@@ -59,7 +59,7 @@
                         View on code host
                     {/if}
                 </small>
-                <div class="">
+                <div>
                     <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
                     <span>{displayRepoName}</span>
                 </div>
@@ -82,7 +82,7 @@
             background-color: var(--secondary-2);
         }
 
-        :global(h2) {
+        h2 {
             font-size: var(--font-size-large);
             font-weight: 500;
             margin: 0;
@@ -94,7 +94,7 @@
         }
     }
 
-    :global(.menu-item) {
+    .menu-item {
         display: flex;
         gap: 0.5rem;
         min-width: 20rem;
@@ -114,6 +114,12 @@
 
         small {
             color: var(--text-muted);
+        }
+
+        div {
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
         }
     }
 </style>
