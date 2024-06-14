@@ -122,6 +122,8 @@ func TestGet_readFile(t *testing.T) {
 		{file: fi{"a.hh", "<?hh"}, want: "Hack"},
 		{file: fi{"a.hh", "#import"}, want: "C++"},
 		{file: fi{"b.md", "# Hello"}, want: "Markdown"},
+		// We may have empty string for language if there is not known language for file path
+		{file: fi{"b.blahblah", "# Hello"}, want: ""},
 
 		// The .m extension is used by many languages, but this code is obviously Objective-C. This
 		// test checks that this file is detected correctly as Objective-C.

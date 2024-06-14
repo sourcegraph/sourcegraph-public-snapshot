@@ -94,17 +94,24 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 		if err != nil && err != io.ErrUnexpectedEOF {
 			return lang, errors.Wrap(err, "reading initial file data")
 		}
-		matchedLang, _ = languages.GetFirstMatchingLanguage(file.Name(), buf[:n])
-		lang.TotalBytes += uint64(n)
-		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
-		lang.Name = matchedLang
-		if err == io.ErrUnexpectedEOF {
-			// File is smaller than buf, we can exit early
-			if !bytes.HasSuffix(buf[:n], newLine) {
-				// Add final line
-				lang.TotalLines++
+
+		// GetLanguages can return multiple matches for ambiguous languages. If there are multiple
+		// we will take the first one.
+		languages, _ := languages.GetLanguages(file.Name(), func() ([]byte, error) { return buf[:n], nil })
+		if len(languages) > 0 {
+			matchedLang = languages[0]
+
+			lang.TotalBytes += uint64(n)
+			lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+			lang.Name = matchedLang
+			if err == io.ErrUnexpectedEOF {
+				// File is smaller than buf, we can exit early
+				if !bytes.HasSuffix(buf[:n], newLine) {
+					// Add final line
+					lang.TotalLines++
+				}
+				return lang, nil
 			}
-			return lang, nil
 		}
 	}
 	lang.Name = matchedLang
