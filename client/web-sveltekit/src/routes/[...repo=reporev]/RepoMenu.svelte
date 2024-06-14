@@ -106,7 +106,7 @@
     }
 
     .code-host-item {
-        display: grid;
+        display: flex;
         flex-direction: column;
         gap: 0.25rem;
 
