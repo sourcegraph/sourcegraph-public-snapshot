@@ -145,7 +145,10 @@ func TestRun(t *testing.T) {
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, commitDiffMatch("foo/bar/lang.magik", "anything")))
 	autogold.Expect("C#\n").
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, commitDiffMatch("foo/bar/lang.cs", "anything")))
-
 	autogold.Expect(`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
 		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
+
+		// We may have empty string for language if there is not known language for file path
+	autogold.Expect("\n").
+		Equal(t, test(`content:output((.|\n)* -> $lang)`, commitDiffMatch("foo/bar/lang.blahblahblah", "anything")))
 }

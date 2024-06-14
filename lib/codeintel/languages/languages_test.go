@@ -36,14 +36,6 @@ var testCases = []struct {
 	{path: "f.cs", content: "", expectedLanguages: []string{"C#"}},
 }
 
-func TestGetFirstMatchingLanguage(t *testing.T) {
-	for _, testCase := range testCases {
-		gotLanguage, found := GetFirstMatchingLanguage(testCase.path, []byte(testCase.content))
-		require.True(t, found)
-		require.Equal(t, testCase.expectedLanguages[0], gotLanguage)
-	}
-}
-
 func TestGetLanguages(t *testing.T) {
 
 	for _, testCase := range testCases {

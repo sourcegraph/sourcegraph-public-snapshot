@@ -273,7 +273,13 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Content: string(m.Name),
 		}
 	case *searchresult.FileMatch:
-		lang, _ := languages.GetFirstMatchingLanguage(m.Path, nil)
+		// GetLanguages can return multiple matches for ambiguous languages. If there are multiple
+		// we will take the first one.
+		languages, _ := languages.GetLanguages(m.Path, nil)
+		var lang string
+		if len(languages) > 0 {
+			lang = languages[0]
+		}
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Path:    m.Path,
@@ -292,7 +298,13 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 		}
 	case *searchresult.CommitDiffMatch:
 		path := m.Path()
-		lang, _ := languages.GetFirstMatchingLanguage(path, nil)
+		// GetLanguages can return multiple matches for ambiguous languages. If there are multiple
+		// we will take the first one.
+		languages, _ := languages.GetLanguages(path, nil)
+		var lang string
+		if len(languages) > 0 {
+			lang = languages[0]
+		}
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),
