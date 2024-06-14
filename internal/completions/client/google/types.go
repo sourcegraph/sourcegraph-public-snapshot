@@ -43,8 +43,8 @@ type googleGenerationConfig struct {
 type googleResponse struct {
 	Model      string `json:"model"`
 	Candidates []struct {
-		Content      googleContentMessage
-		FinishReason string `json:"finishReason"`
+		Content    googleContentMessage `json:"content,omitempty"`
+		StopReason string               `json:"finishReason,omitempty"`
 	} `json:"candidates"`
 
 	UsageMetadata  googleUsage            `json:"usageMetadata"`
