@@ -9,7 +9,7 @@ import { CodyContainer } from '../components/CodyContainer'
 import { isValidEmailAddress, requestSSC } from '../util'
 
 interface InviteUsersProps extends TelemetryV2Props {
-    teamId: string | null
+    teamId: string | undefined
     remainingInviteCount: number
 }
 

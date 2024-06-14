@@ -8,33 +8,16 @@ import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
+import type { TeamMember, TeamInvite } from '../management/api/types'
 import { requestSSC } from '../util'
 
 import styles from './TeamMemberList.module.scss'
 
-export interface TeamMember {
-    accountId: string
-    displayName: string | null
-    email: string
-    avatarUrl: string | null
-    role: 'admin' | 'member'
-}
-
 interface TeamMemberListProps extends TelemetryV2Props {
     teamId: string | null
     teamMembers: TeamMember[]
-    invites: TeamInvite[]
+    invites: Omit<TeamInvite, 'sentBy'>[]
     isAdmin: boolean
-}
-
-export interface TeamInvite {
-    id: string
-    email: string
-    role: 'admin' | 'member' | 'none'
-    status: 'sent' | 'errored' | 'accepted' | 'canceled'
-    error: string | null
-    sentAt: string | null
-    acceptedAt: string | null
 }
 
 // This tiny function is extracted to make it testable. Same for the "now" parameter.

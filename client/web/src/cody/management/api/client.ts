@@ -20,14 +20,6 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
-    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
-        return { method: 'GET', urlSuffix: '/team/current/members' }
-    }
-
-    export function getCurrentTeamInvites(): Call<types.ListTeamInvitesResponse> {
-        return { method: 'GET', urlSuffix: '/team/current/invites' }
-    }
-
     export function previewUpdateCurrentSubscription(
         requestBody: types.PreviewUpdateSubscriptionRequest
     ): Call<types.PreviewResult> {
@@ -64,6 +56,10 @@ export module Client {
 
     export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
         return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function getTeamInvites(): Call<types.ListTeamInvitesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/invites' }
     }
 
     export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {

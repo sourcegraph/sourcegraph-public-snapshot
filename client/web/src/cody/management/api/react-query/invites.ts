@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
-import type { TeamInvite } from '../teamInvites'
+import type { TeamInvite, ListTeamInvitesResponse } from '../teamInvites'
 
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
@@ -24,6 +24,15 @@ export const useInvite = ({
         queryFn: async () => {
             const response = await callCodyProApi(Client.getInvite(teamId, inviteId))
             return response?.json()
+        },
+    })
+
+export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undefined> =>
+    useQuery({
+        queryKey: queryKeys.invites.teamInvites(),
+        queryFn: async () => {
+            const response = await callCodyProApi(Client.getTeamInvites())
+            return response.ok ? response.json() : undefined
         },
     })
 

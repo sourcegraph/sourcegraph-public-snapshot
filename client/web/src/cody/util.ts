@@ -1,6 +1,3 @@
-// The URL to direct users in order to manage their Cody Pro subscription.
-import { useState, useEffect } from 'react'
-
 import { CodyProRoutes } from './codyProRoutes'
 
 // URL the user needs to navigate to in order to modify their Cody Pro subscription.
@@ -70,26 +67,4 @@ export function requestSSC(sscUrl: string, method: string, params?: object): Pro
         method,
         ...(!['GET', 'HEAD'].includes(method) && params ? { body: JSON.stringify(params) } : null),
     })
-}
-
-// React hook to fetch data through the SSC proxy and convert the response to a more usable format.
-// This is a low-level hook that is meant to be used by other hooks that need to fetch data from the SSC API.
-export const useSSCQuery = <T extends object>(endpoint: string): [T | null, Error | null] => {
-    const [data, setData] = useState<T | null>(null)
-    const [error, setError] = useState<Error | null>(null)
-    useEffect(() => {
-        async function loadData(): Promise<void> {
-            try {
-                const response = await requestSSC(endpoint, 'GET')
-                const responseJson = await response.json()
-                setData(responseJson)
-            } catch (error) {
-                setError(error)
-            }
-        }
-
-        void loadData()
-    }, [endpoint])
-
-    return [data, error]
 }
