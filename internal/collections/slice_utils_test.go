@@ -80,11 +80,11 @@ func Test_SplitIntoChunks(t *testing.T) {
 
 func TestBinarySearchRangeFunc(t *testing.T) {
 	t.Run("returns the range of elements that are equal to the target", func(t *testing.T) {
-		got, ok := BinarySearchRangeFunc([]int{1, 2, 2, 2, 3, 4, 5, 6, 7, 8, 9}, 2, func(x, y int) int {
+		got := BinarySearchRangeFunc([]int{1, 2, 2, 2, 3, 4, 5, 6, 7, 8, 9}, 2, func(x, y int) int {
 			return x - y
 		})
 		want := HalfOpenRange{Start: 1, End: 4}
-		if ok && got != want {
+		if got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
@@ -94,7 +94,8 @@ func TestBinarySearchRangeFunc(t *testing.T) {
 		slices.Sort(s)
 		cmpFunc := stdcmp.Compare[int]
 		target := rapid.IntRange(0, 10).Draw(t, "target")
-		got, binarySearchFound := BinarySearchRangeFunc(s, target, cmpFunc)
+		got := BinarySearchRangeFunc(s, target, cmpFunc)
+		binarySearchFound := !got.IsEmpty()
 		expected, linearSearchFound := linearSearchRangeFunc(s, target, cmpFunc)
 		if binarySearchFound != linearSearchFound {
 			t.Errorf("BinarySearchRangeFunc returned %v, but linearSearchRangeFunc returned %v", binarySearchFound, linearSearchFound)

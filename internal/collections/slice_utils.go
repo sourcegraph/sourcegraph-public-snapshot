@@ -33,17 +33,34 @@ type HalfOpenRange struct {
 	End   int // End is exclusive
 }
 
-func BinarySearchRangeFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) int) (HalfOpenRange, bool) {
+func (r HalfOpenRange) IsEmpty() bool {
+	return r.Start == r.End
+}
+
+func (r HalfOpenRange) Len() int {
+	return r.End - r.Start
+}
+
+// BinarySearchRangeFunc does a binary search over the underlying
+// sorted slice x for the target value, and returns the range of
+// indexes which equals the target value.
+//
+// The length of the returned range indicates the number of matched values.
+// So if there was no match, the returned range will be empty.
+// In that case, the Start value can be used for insertion.
+func BinarySearchRangeFunc[S ~[]E, E, T any](x S, target T, cmp func(E, T) int) HalfOpenRange {
 	insertIndex, found := slices.BinarySearchFunc(x, target, cmp)
 	if !found {
-		return HalfOpenRange{insertIndex, insertIndex + 1}, false
+		return HalfOpenRange{insertIndex, insertIndex}
 	}
 	start := insertIndex
-	for ; start >= 0 && cmp(x[start], target) == 0; start-- {
+	if subRange := BinarySearchRangeFunc(x[:start], target, cmp); !subRange.IsEmpty() {
+		start = subRange.Start
 	}
-	start += 1
-	end := insertIndex
-	for ; end < len(x) && cmp(x[end], target) == 0; end++ {
+	end := insertIndex + 1
+	if subRange := BinarySearchRangeFunc(x[end:], target, cmp); !subRange.IsEmpty() {
+		// subRange.End will have been computed from the start of the sub-slice
+		end = end + subRange.End
 	}
-	return HalfOpenRange{Start: start, End: end}, true
+	return HalfOpenRange{Start: start, End: end}
 }
