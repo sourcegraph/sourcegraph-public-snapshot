@@ -94,7 +94,7 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 	case string(conftypes.CompletionsProviderNameFireworks):
 		return fireworks.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/fireworks"), "", ""), nil
 	case string(conftypes.CompletionsProviderNameGoogle):
-		return google.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/google"), "", "", true), nil
+		return google.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/google"), "", "", true)
 	case "":
 		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)
 	default:
