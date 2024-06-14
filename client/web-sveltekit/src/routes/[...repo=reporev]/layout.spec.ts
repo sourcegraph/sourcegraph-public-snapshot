@@ -93,3 +93,46 @@ test('not cloned', async ({ sg, page }) => {
     // Shows queue message
     await expect(page.getByText('queued for cloning')).toBeVisible()
 })
+
+test.describe('repo menu', () => {
+    test.beforeEach(async ({ sg, page }) => {
+        sg.mockOperations({
+            ResolveRepoRevision: ({ repoName }) => ({
+                repositoryRedirect: {
+                    id: '1',
+                    name: repoName,
+                    commit: {
+                        oid: '123456789',
+                    },
+                    externalURLs: [
+                        {
+                            // TODO: add service kind. It's not currently possible
+                            // to import that type because playwright does not
+                            // know how to resolve `$lib` or `$testing` syntax.
+                            url: 'https://github.com/sourcegraph/sourcegraph',
+                        },
+                    ],
+                },
+            }),
+        })
+        await page.goto(`/${repoName}`)
+    })
+
+    test('click switch repo', async ({ page }) => {
+        await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
+        await page.getByRole('menuitem', { name: 'Switch repo' }).click()
+        await expect(page.getByPlaceholder('Enter a fuzzy query')).toBeVisible()
+    })
+
+    test('settings url', async ({ page }) => {
+        await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
+        const url = await page.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')
+        expect(url).toEqual(`/${repoName}/-/settings`)
+    })
+
+    test('github url', async ({ page }) => {
+        await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
+        const url = await page.getByRole('menuitem', { name: 'Hosted on' }).getAttribute('href')
+        expect(url).toEqual(`https://github.com/sourcegraph/sourcegraph`)
+    })
+})
