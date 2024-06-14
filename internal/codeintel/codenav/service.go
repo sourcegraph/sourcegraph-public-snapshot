@@ -1125,7 +1125,7 @@ func (s *Service) SyntacticUsages(
 	}
 	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
 
-	results := make([][]SyntacticMatch, 0)
+	results := make([][]SyntacticMatch, len(candidateMatches))
 	for filePath, file := range candidateMatches {
 		syntacticMatches := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, filePath, file)
 		results = append(results, syntacticMatches)
