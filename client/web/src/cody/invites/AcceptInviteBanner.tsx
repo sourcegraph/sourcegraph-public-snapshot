@@ -55,7 +55,7 @@ const AcceptInviteBannerContent: React.FC<{
         case UserInviteStatus.NoCurrentTeam:
         case UserInviteStatus.AnotherTeamMember: {
             // Invite has been canceled. Remove the banner.
-            if (cancelInviteMutation.isSuccess) {
+            if (cancelInviteMutation.isSuccess || cancelInviteMutation.isError) {
                 return null
             }
 
