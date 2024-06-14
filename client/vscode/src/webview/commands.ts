@@ -10,7 +10,7 @@ import { initializeCodeIntel } from '../code-intel/initialize'
 import type { ExtensionCoreAPI } from '../contract'
 import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SearchPatternType } from '../graphql-operations'
-import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
+import { endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
 import {
     initializeHelpSidebarWebview,
@@ -59,14 +59,12 @@ export function registerWebviews({
     )
 
     // Update `EventSource` Authorization header on access token / headers change.
-    // It will also be changed when the token has been changed --handled by Auth Provider
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(async config => {
-            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
-            if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
-                const newCustomHeaders = endpointRequestHeadersSetting()
+            if (config.affectsConfiguration('sourcegraph.requestHeaders')) {
+                const token = await extensionCoreAPI.getAccessToken
                 polyfillEventSource(
-                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {},
+                    token ? { Authorization: `token ${token}`, ...endpointRequestHeadersSetting() } : {},
                     getProxyAgent()
                 )
             }
