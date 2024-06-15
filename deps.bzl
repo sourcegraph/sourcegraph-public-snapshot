@@ -2012,8 +2012,8 @@ def go_dependencies():
         name = "com_github_go_enry_go_enry_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-enry/go-enry/v2",
-        sum = "h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=",
-        version = "v2.8.4",
+        sum = "h1:EhfxWpw4DQ3WEFB1Y77X8vKqZL0D0EDUUWYDUAIv9/4=",
+        version = "v2.8.8",
     )
     go_repository(
         name = "com_github_go_enry_go_oniguruma",

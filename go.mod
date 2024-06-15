@@ -106,7 +106,7 @@ require (
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
-	github.com/go-enry/go-enry/v2 v2.8.4
+	github.com/go-enry/go-enry/v2 v2.8.8
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/gobwas/glob v0.2.3
