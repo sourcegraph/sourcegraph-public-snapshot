@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2/google"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -291,6 +293,15 @@ func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, re
 	return resp, nil
 }
 
+// DecodeBase64 decodes a base64 string
+func decodeBase64(encoded string) ([]byte, error) {
+	decodedBytes, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, err
+	}
+	return decodedBytes, nil
+}
+
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	// Generate the prompt
@@ -318,12 +329,27 @@ func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, 
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+
+	serviceAccountInfo, err := decodeBase64(c.accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	scopes := "https://www.googleapis.com/auth/cloud-platform"
+	creds, err := google.CredentialsFromJSON(nil, serviceAccountInfo, scopes)
+	if err != nil {
+		return nil, err
+	}
+	token, err := creds.TokenSource.Token()
+	if err != nil {
+		return nil, err
+	}
 
 	// Vertex AI API requires an Authorization header with the access token.
 	// Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini#sample-requests
 	// TODO: Weird Oauth2 thingy here
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
