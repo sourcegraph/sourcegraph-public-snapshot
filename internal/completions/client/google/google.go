@@ -22,7 +22,7 @@ import (
 
 const (
 	Gemini    ModelFamily = "gemini"
-	Anthropic ModelFamily = "opus"
+	Anthropic ModelFamily = "anthropic"
 )
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
@@ -337,7 +337,7 @@ func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, 
 	}
 
 	scopes := "https://www.googleapis.com/auth/cloud-platform"
-	creds, err := google.CredentialsFromJSON(nil, serviceAccountInfo, scopes)
+	creds, err := google.CredentialsFromJSON(ctx, serviceAccountInfo, scopes)
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +392,7 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 
 // getgRPCMethod returns the gRPC method name based on the stream flag.
 func getgRPCMethod(stream bool, modelFamily ModelFamily) string {
-	if stream == true {
+	if stream {
 		if modelFamily == Anthropic {
 			return "streamRawPredict"
 		}
