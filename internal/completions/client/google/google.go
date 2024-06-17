@@ -21,10 +21,16 @@ import (
 )
 
 const (
-	Gemini    ModelFamily = "gemini"
-	Anthropic ModelFamily = "anthropic"
+	Gemini APIFamily = "gemini-public"
+	// This one reaches the Gemini Models through the Vertex API
+	VertexGemini APIFamily = "gemini-vertex"
+	//
+	VertexAnthropic APIFamily = "anthropic"
 )
 
+// Case 1 endpoint not specified -> Gemini API
+// Case 2 ednpoint specificed -> Gemini through vertex.  Create HTTP Client with persisting
+// Case 3 endpoint specifided -> Anthropic through vertex Create HTTP CLient
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	modelFamily := Gemini
 	if strings.Contains(endpoint, "anthropic") {
@@ -89,16 +95,17 @@ func (c *googleCompletionStreamClient) Stream(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
-	var resp *http.Response
-	var err error
 
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-
+	// Make separate functions for large functions
 	if c.modelFamily == Anthropic {
+		var resp *http.Response
+		var err error
+
+		defer (func() {
+			if resp != nil {
+				resp.Body.Close()
+			}
+		})()
 		resp, err = c.makeAnthopicRequest(ctx, requestParams, true)
 		if err != nil {
 			return err
@@ -191,6 +198,14 @@ func (c *googleCompletionStreamClient) Stream(
 
 		return nil
 	} else {
+		var resp *http.Response
+		var err error
+
+		defer (func() {
+			if resp != nil {
+				resp.Body.Close()
+			}
+		})()
 		resp, err = c.makeGeminiRequest(ctx, requestParams, true)
 		if err != nil {
 			return err

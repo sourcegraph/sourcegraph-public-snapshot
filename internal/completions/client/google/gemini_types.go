@@ -4,7 +4,8 @@ import "github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 type ModelFamily string
 type googleCompletionStreamClient struct {
-	cli         httpcli.Doer
+	httpCli     httpcli.Doer
+	gcpCli      gcpStuff
 	accessToken string
 	endpoint    string
 	modelFamily ModelFamily

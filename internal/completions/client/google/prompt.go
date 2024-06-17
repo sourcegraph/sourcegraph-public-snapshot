@@ -16,36 +16,26 @@ func getAnthropicPrompt(messages []types.Message) ([]anthropicMessage, error) {
 	anthropicMessages := make([]anthropicMessage, 0, len(messages))
 
 	for i, message := range messages {
-		var anthropicRole string
+		speaker := message.Speaker
+		text := message.Text
 
-		switch message.Speaker {
+		anthropicRole := message.Speaker
+
+		switch speaker {
 		case types.SYSTEM_MESSAGE_SPEAKER:
+			anthropicRole = "user"
 			if i != 0 {
 				return nil, errors.New("system role can only be used in the first message")
 			}
-			anthropicRole = message.Speaker
 		case types.ASSISTANT_MESSAGE_SPEAKER:
-			anthropicRole = "assistant"
-			if i == 0 {
-				anthropicRole = "system"
-			}
 		case types.HUMAN_MESSAGE_SPEAKER:
 			anthropicRole = "user"
 		default:
-			return nil, errors.Errorf("unexpected role: %s", message.Text)
+			return nil, errors.Errorf("unexpected role: %s", text)
 		}
 
-		if message.Text == "" {
-			// skip empty assistant messages only if it's the last message.
-			if anthropicRole == "assistant" && i != 0 && i == len(messages)-1 {
-				continue
-			}
+		if text == "" {
 			return nil, errors.New("message content cannot be empty")
-		}
-		if len(anthropicMessages) > 0 {
-			if anthropicMessages[i-1].Role == anthropicRole {
-				return nil, errors.New("consistent speaker role is not allowed")
-			}
 		}
 
 		anthropicMessages = append(anthropicMessages, anthropicMessage{
