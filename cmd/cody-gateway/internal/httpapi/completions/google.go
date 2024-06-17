@@ -43,7 +43,8 @@ type GoogleHandlerMethods struct {
 }
 
 func (r googleRequest) ShouldStream() bool {
-	return r.Stream
+	// NOTE: Always returns ture until we support Code Completions for Google models on the client side.
+	return true
 }
 
 func (r googleRequest) GetModel() string {
