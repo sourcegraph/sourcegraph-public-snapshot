@@ -197,6 +197,5 @@
         }
 
         --icon-size: 1rem;
-        --icon-fill-color: var(--icon-color);
     }
 </style>

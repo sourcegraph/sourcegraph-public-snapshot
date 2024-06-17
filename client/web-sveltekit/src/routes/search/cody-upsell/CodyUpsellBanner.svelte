@@ -35,6 +35,7 @@
             align-self: center;
 
             .logo {
+                --icon-color: initial;
                 --icon-size: 2.5rem;
                 margin-bottom: 1rem;
             }

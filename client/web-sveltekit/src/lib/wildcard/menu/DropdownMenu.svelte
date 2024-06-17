@@ -59,6 +59,8 @@
         padding: var(--dropdown-padding-y) 0;
 
         :global([role^='menuitem']) {
+            --icon-color: currentColor;
+
             all: unset;
             cursor: pointer;
             display: block;

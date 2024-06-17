@@ -48,6 +48,8 @@
 
 <style lang="scss">
     .root {
+        --icon-color: currentColor;
+
         display: inline-flex;
         align-items: center;
         gap: 0.375rem;

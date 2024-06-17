@@ -146,6 +146,8 @@
     }
 
     .parents {
+        --icon-color: currentColor;
+
         span,
         a {
             vertical-align: middle;

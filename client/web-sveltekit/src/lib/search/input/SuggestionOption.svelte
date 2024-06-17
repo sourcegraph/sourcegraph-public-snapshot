@@ -99,8 +99,6 @@
 
 <style lang="scss">
     [role='row'] {
-        --color: var(icon-color);
-
         display: flex;
         align-items: center;
         padding: 0.25rem 0.5rem;

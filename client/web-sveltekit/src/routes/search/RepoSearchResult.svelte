@@ -96,6 +96,8 @@
     }
 
     .info {
+        --icon-color: currentColor;
+
         border-left: 1px solid var(--border-color);
         margin-left: 0.5rem;
         padding-left: 0.5rem;
