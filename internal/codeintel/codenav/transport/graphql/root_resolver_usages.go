@@ -2,37 +2,59 @@ package graphql
 
 import (
 	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type usageConnectionResolver struct {
+	nodes    []resolverstubs.UsageResolver
+	pageInfo resolverstubs.PageInfo
 }
 
 var _ resolverstubs.UsageConnectionResolver = &usageConnectionResolver{}
 
 func (u *usageConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.UsageResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.nodes, nil
 }
 
 func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	//TODO implement me
-	panic("implement me")
+	return u.pageInfo
 }
 
 type usageResolver struct {
+	symbol     resolverstubs.SymbolInformationResolver
+	usageRange resolverstubs.UsageRangeResolver
 }
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
+func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+	return &usageResolver{
+		symbol: &symbolInformationResolver{
+			name:       usage.Occurrence.Symbol,
+			provenance: resolverstubs.ProvenanceSyntactic,
+		},
+		usageRange: &usageRangeResolver{
+			repository: repository,
+			revision:   revision,
+			path:       usage.Path,
+			rx: &rangeResolver{
+				lspRange: convertRange(shared.TranslateRange(usage.Range())),
+			},
+		},
+	}
+}
+
 func (u *usageResolver) Symbol(ctx context.Context) (resolverstubs.SymbolInformationResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.symbol, nil
 }
 
 func (u *usageResolver) UsageRange(ctx context.Context) (resolverstubs.UsageRangeResolver, error) {
-	//TODO implement me
-	panic("implement me")
+	return u.usageRange, nil
 }
 
 func (u *usageResolver) SurroundingContent(_ context.Context, args *struct {
@@ -47,13 +69,14 @@ func (u *usageResolver) UsageKind() resolverstubs.SymbolUsageKind {
 }
 
 type symbolInformationResolver struct {
+	name       string
+	provenance resolverstubs.CodeGraphDataProvenance
 }
 
 var _ resolverstubs.SymbolInformationResolver = &symbolInformationResolver{}
 
 func (s *symbolInformationResolver) Name() (string, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.name, nil
 }
 
 func (s *symbolInformationResolver) Documentation() (*[]string, error) {
@@ -62,8 +85,7 @@ func (s *symbolInformationResolver) Documentation() (*[]string, error) {
 }
 
 func (s *symbolInformationResolver) Provenance() (resolverstubs.CodeGraphDataProvenance, error) {
-	//TODO implement me
-	panic("implement me")
+	return s.provenance, nil
 }
 
 func (s *symbolInformationResolver) DataSource() *string {
@@ -71,26 +93,27 @@ func (s *symbolInformationResolver) DataSource() *string {
 	panic("implement me")
 }
 
-type usageRangeResolver struct{}
+type usageRangeResolver struct {
+	repository types.Repo
+	revision   api.CommitID
+	path       string
+	rx         *rangeResolver
+}
 
 var _ resolverstubs.UsageRangeResolver = &usageRangeResolver{}
 
 func (u *usageRangeResolver) Repository() string {
-	//TODO implement me
-	panic("implement me")
+	return string(u.repository.Name)
 }
 
 func (u *usageRangeResolver) Revision() string {
-	//TODO implement me
-	panic("implement me")
+	return string(u.revision)
 }
 
 func (u *usageRangeResolver) Path() string {
-	//TODO implement me
-	panic("implement me")
+	return u.path
 }
 
 func (u *usageRangeResolver) Range() resolverstubs.RangeResolver {
-	//TODO implement me
-	panic("implement me")
+	return u.rx
 }
