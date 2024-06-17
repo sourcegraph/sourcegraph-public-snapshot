@@ -74,7 +74,6 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Manage Cody team" />
-                {/* {isAdmin ? <AcceptInviteBanner /> : null} */}
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
