@@ -32,10 +32,7 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 		httpClient,
 		string(conftypes.CompletionsProviderNameGoogle),
 		config.AllowedModels,
-		&GoogleHandlerMethods{
-			config: config,
-			logger: baseLogger,
-		},
+		&GoogleHandlerMethods{config: config},
 		promptRecorder,
 		upstreamConfig,
 	)
@@ -43,7 +40,6 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 
 type GoogleHandlerMethods struct {
 	config config.GoogleConfig
-	logger log.Logger
 }
 
 func (r googleRequest) ShouldStream() bool {
