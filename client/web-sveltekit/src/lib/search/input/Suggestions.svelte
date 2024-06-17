@@ -102,8 +102,6 @@
 
 <style lang="scss">
     .root {
-        --color: var(--icon-color);
-
         overflow-y: hidden;
         display: flex;
         flex-direction: column;

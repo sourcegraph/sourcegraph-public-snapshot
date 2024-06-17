@@ -55,6 +55,8 @@
 }
 
 .btn-link {
+    --icon-color: currentColor;
+
     color: var(--link-color);
     background-color: var(--link-1);
 
@@ -82,6 +84,8 @@
 }
 
 .btn-text {
+    --icon-color: currentColor;
+
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
@@ -178,6 +182,8 @@
     --btn-dark-color-variant: var(--primary-3);
     --btn-light-disabled-text-color: var(--light-text);
     --btn-dark-disabled-text-color: var(--text-disabled);
+
+    --icon-color: currentColor;
 
     color: var(--btn-text-color);
     border-color: var(--btn-base-color);
