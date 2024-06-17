@@ -2,6 +2,7 @@ package languages
 
 import (
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -34,12 +35,23 @@ func GetLanguageByAlias(alias string) (lang string, ok bool) {
 // The returned slice will be empty iff the language is not known.
 //
 // Handles more languages than enry.GetLanguageExtensions.
+//
+// Mutually consistent with getLanguagesByExtension, see the tests
+// for the exact invariants.
 func GetLanguageExtensions(language string) []string {
 	if lang, ok := unsupportedByEnryNameToExtensionMap[language]; ok {
 		return []string{lang}
 	}
 
-	return enry.GetLanguageExtensions(language)
+	ignoreExts, isNiche := nicheExtensionUsages[language]
+	enryExts := enry.GetLanguageExtensions(language)
+	if !isNiche {
+		return enryExts
+	}
+	return slices.DeleteFunc(enryExts, func(ext string) bool {
+		_, shouldIgnore := ignoreExts[ext]
+		return shouldIgnore
+	})
 }
 
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
@@ -107,6 +119,48 @@ var unsupportedByEnryExtensionToNameMap = map[string]string{
 	// Magik Language
 	".magik": "Magik",
 }
+
+// nicheExtensionUsage keeps track of which (lang, extension) mappings
+// should not be considered.
+//
+// We cannot wholesale ignore these languages, as this list includes
+// languages like XML, but it can contain unusual extensions like '.tsx'
+// which we generally want to classify as TypeScript.
+var nicheExtensionUsages = func() map[string]map[string]struct{} {
+	niche := map[string]map[string]struct{}{}
+	considered := map[string]struct{}{}
+	for _, lang := range overrideAmbiguousExtensionsMap {
+		considered[lang] = struct{}{}
+	}
+	for ext, _ := range overrideAmbiguousExtensionsMap {
+		langs := enry.GetLanguagesByExtension("x"+ext, nil, nil)
+		for _, lang := range langs {
+			if _, found := considered[lang]; !found {
+				if m, hasMap := niche[lang]; hasMap {
+					m[ext] = struct{}{}
+					niche[lang] = m
+				} else {
+					niche[lang] = map[string]struct{}{ext: struct{}{}}
+				}
+			}
+		}
+	}
+	for specialOverrideExt, lang := range unsupportedByEnryExtensionToNameMap {
+		considered[lang] = struct{}{}
+		langs := enry.GetLanguagesByExtension("x"+specialOverrideExt, nil, nil)
+		for _, lang := range langs {
+			if _, found := considered[lang]; !found {
+				if m, hasMap := niche[lang]; hasMap {
+					m[specialOverrideExt] = struct{}{}
+					niche[lang] = m
+				} else {
+					niche[lang] = map[string]struct{}{specialOverrideExt: struct{}{}}
+				}
+			}
+		}
+	}
+	return niche
+}()
 
 var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
 
