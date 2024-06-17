@@ -97,9 +97,12 @@
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
-                <svelte:fragment slot="label" let:label>
-                    <Icon icon={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
-                    {label}
+                <svelte:fragment slot="item" let:item>
+                    <SectionItem {item}>
+                        <svelte:fragment slot="icon">
+                            <Icon icon={typeFilterIcons[item.label]} inline />
+                        </svelte:fragment>
+                    </SectionItem>
                 </svelte:fragment>
             </Section>
         {/if}
@@ -114,8 +117,10 @@
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {item}>
+                            <svelte:fragment slot="icon">
+                                <CodeHostIcon disableTooltip repository={item.label} />
+                            </svelte:fragment>
                             <svelte:fragment slot="label" let:label>
-                                <CodeHostIcon disableTooltip repository={label} />
                                 <span>{displayRepoName(label)}</span>
                             </svelte:fragment>
                         </SectionItem>
@@ -136,10 +141,11 @@
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="label" let:label>
-                <LanguageIcon language={label} inline />&nbsp;
-                {label}
-            </svelte:fragment>
+            <SectionItem {item} slot="item" let:item>
+                <svelte:fragment slot="icon">
+                    <LanguageIcon language={item.label} inline />
+                </svelte:fragment>
+            </SectionItem>
         </Section>
         <Section
             items={groupedFilters['symbol type']}

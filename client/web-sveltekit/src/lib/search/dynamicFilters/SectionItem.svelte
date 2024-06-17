@@ -14,6 +14,7 @@
     class:selected={item.selected}
     on:click={() => onFilterSelect(item.kind)}
 >
+    <slot name="icon" />
     <span class="label">
         <slot name="label" label={item.label} value={item.value}>
             {item.label}
@@ -38,7 +39,7 @@
         border-radius: var(--border-radius);
         color: inherit;
         white-space: nowrap;
-        gap: 0.25rem;
+        gap: 0.5rem;
 
         padding: 0.25rem 0.5rem;
         margin: 0;
