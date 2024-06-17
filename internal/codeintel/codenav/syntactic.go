@@ -3,11 +3,9 @@ package codenav
 import (
 	"context"
 	"fmt"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
-	"strings"
-
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -114,7 +112,7 @@ func findCandidateOccurrencesViaSearch(
 
 func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
 	if len(symbol.Descriptors) > 0 {
-		if strings.HasSuffix(symbol.Descriptors[0].Name, "local") {
+		if symbol.Descriptors[0].Suffix == scip.Descriptor_Local {
 			return "", false
 		}
 		return symbol.Descriptors[len(symbol.Descriptors)-1].Name, true
