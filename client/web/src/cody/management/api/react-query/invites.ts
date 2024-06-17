@@ -32,7 +32,7 @@ export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undef
         queryKey: queryKeys.invites.teamInvites(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getTeamInvites())
-            return response.ok ? response.json() : undefined
+            return response.json()
         },
     })
 

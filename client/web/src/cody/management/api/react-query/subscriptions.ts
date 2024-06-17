@@ -27,7 +27,7 @@ export const useCurrentSubscription = (): UseQueryResult<Subscription | undefine
         queryKey: queryKeys.subscriptions.subscription(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscription())
-            return response?.json()
+            return response.json()
         },
     })
 
@@ -36,7 +36,7 @@ export const useSubscriptionSummary = (): UseQueryResult<SubscriptionSummary | u
         queryKey: queryKeys.subscriptions.subscriptionSummary(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscriptionSummary())
-            return response?.json()
+            return response.json()
         },
     })
 
@@ -76,7 +76,7 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
     return useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.updateCurrentSubscription(requestBody))
-            return response?.json()
+            return response.json()
         },
         onSuccess: data => {
             // We get updated subscription data in response - no need to refetch subscription.
