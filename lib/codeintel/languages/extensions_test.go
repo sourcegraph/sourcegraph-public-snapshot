@@ -1,6 +1,7 @@
 package languages
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/go-enry/go-enry/v2"
@@ -111,5 +112,28 @@ func TestGetLanguagesByExtension_BinaryExtensions(t *testing.T) {
 		require.Truef(t, isLikelyBinary, "filename: %v was not guessed to be binary;"+
 			"bug in extension matching logic in getLanguagesByExtension maybe?",
 			filename)
+	}
+}
+
+func TestGetLanguageExtensions_Consistency(t *testing.T) {
+	for ext, overrideLang := range overrideAmbiguousExtensionsMap {
+		filepath := "foo" + ext
+		langs := enry.GetLanguagesByExtension(filepath, nil, nil)
+		require.Containsf(t, langs, overrideLang, "overrideAmbiguousExtensionsMap maps extension %q to language %q but "+
+			"that mapping is not present in enry's list %v", ext, overrideLang, langs)
+		require.Greaterf(t, len(langs), 1, "overrideAmbiguousExtensionsMap states that"+
+			"%q extension is ambiguous, but only found langs: %v", ext, langs)
+		langs = slices.DeleteFunc(langs, func(s string) bool {
+			return s == overrideLang
+		})
+		candidates, isLikelyBinary := getLanguagesByExtension(filepath)
+		require.False(t, isLikelyBinary, "ambiguous files are all source code")
+		require.True(t, len(candidates) == 1, "getLanguagesByExtension should respect overrideAmbiguousExtensionsMap")
+		for _, otherLang := range langs {
+			// This is currently wrong.
+			require.NotEqualf(t, len(GetLanguageExtensions(otherLang)), 0,
+				"GetLanguageExtensions returned %q for alias %q, which is inconsistent with getLanguagesByExtension"+
+					"only returning language %q for %[1]q", ext, otherLang, overrideLang)
+		}
 	}
 }

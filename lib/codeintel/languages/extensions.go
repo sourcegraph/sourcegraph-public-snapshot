@@ -7,8 +7,18 @@ import (
 	"github.com/go-enry/go-enry/v2"
 )
 
-// getLanguagesByAlias is a replacement for enry.GetLanguagesByAlias
-// It supports languages that are missing in go-enry
+// GetLanguageByAlias returns the standardized name for a language
+// based on its alias, which is potentially an alternate name for
+// the language.
+//
+// Aliases are fully lowercase.
+//
+// For example,
+//
+// GetLanguageByAlias("ada") == "Ada", true
+// GetLanguageByAlias("ada95") == "Ada", true
+//
+// Handles some languages not supported by enry.GetLanguageByAlias.
 func GetLanguageByAlias(alias string) (lang string, ok bool) {
 	normalizedAlias := strings.ToLower(alias)
 	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
@@ -18,14 +28,18 @@ func GetLanguageByAlias(alias string) (lang string, ok bool) {
 	return enry.GetLanguageByAlias(normalizedAlias)
 }
 
-// getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
-// It supports languages that are missing in go-enry
-func GetLanguageExtensions(alias string) []string {
-	if lang, ok := unsupportedByEnryNameToExtensionMap[alias]; ok {
+// GetLanguageExtensions returns the list of file extensions for a given
+// language. Returned extensions are always prefixed with a '.'.
+//
+// The returned slice will be empty iff the language is not known.
+//
+// Handles more languages than enry.GetLanguageExtensions.
+func GetLanguageExtensions(language string) []string {
+	if lang, ok := unsupportedByEnryNameToExtensionMap[language]; ok {
 		return []string{lang}
 	}
 
-	return enry.GetLanguageExtensions(alias)
+	return enry.GetLanguageExtensions(language)
 }
 
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
