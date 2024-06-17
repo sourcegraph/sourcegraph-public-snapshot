@@ -100,6 +100,7 @@ func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
 	case err != nil:
 		return false, err
 	case a.status == StatusInstalling:
+		// configMap does not exist but is being created
 		return false, nil
 	case cfgMap == nil:
 		// configMap does not exist
