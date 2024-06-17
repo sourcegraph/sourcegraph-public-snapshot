@@ -46,7 +46,7 @@
 
 .purple-cody-pro {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-    padding-left: calc(2rem + 135px + 2rem);
+    padding-left: calc(1.5rem + 135px + 1.5rem);
     padding-bottom: 1rem;
     background-color: var(--violet-01);
     color: var(--gray-11);
@@ -56,7 +56,7 @@
     }
     &::after {
         top: 1.5rem;
-        left: 2rem;
+        left: 1.5rem;
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 135px;
         height: 100%;
@@ -67,7 +67,7 @@
 
 .green-cody-pro {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-    padding-left: calc(2rem + 135px + 2rem);
+    padding-left: calc(1.5rem + 135px + 1.5rem);
     padding-bottom: 1rem;
     background-color: #e0f9d5;
     color: #054410;
@@ -77,7 +77,7 @@
     }
     &::after {
         top: 1.5rem;
-        left: 2rem;
+        left: 1.5rem;
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 135px;
         height: 100%;
@@ -98,7 +98,7 @@
     }
     &::after {
         top: 1.5rem;
-        left: 2rem;
+        left: 1.5rem;
         height: 100%;
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 124px;
