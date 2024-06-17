@@ -52,10 +52,10 @@ export function CodyOnboarding({ authenticatedUser, telemetryRecorder }: CodyOnb
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (completed && returnToURL) {
+        if (returnToURL && (!(signUpFlowStatus === 'loaded' && !signUpFlowEnabled) || completed)) {
             navigate(returnToURL)
         }
-    }, [completed, returnToURL, navigate])
+    }, [completed, returnToURL, navigate, signUpFlowStatus, signUpFlowEnabled])
 
     useEffect(() => {
         if (signUpFlowStatus === 'loaded' && signUpFlowEnabled && isCody) {
