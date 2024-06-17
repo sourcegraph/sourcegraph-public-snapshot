@@ -17,9 +17,6 @@ requirements:
     only: # We only need this to create CI builds.
       - internal.create
       - promoteToPublic.create
-  - name: Security scanner token
-    # It's available in 1Password
-    env: SCANNER_TOKEN
   - name: GitHub Token to submit changelogs
     env: DEVX_SERVICE_GH_TOKEN
     only:
