@@ -980,12 +980,14 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 		}
 	}
 
-	s.logger.Warn(
-		"Multiple syntactic uploads found, picking the first one",
-		log.String("repo", repo.URI),
-		log.String("commit", commit.Short()),
-		log.String("path", path),
-	)
+	if len(uploads) > 1 {
+		s.logger.Warn(
+			"Multiple syntactic uploads found, picking the first one",
+			log.String("repo", repo.URI),
+			log.String("commit", commit.Short()),
+			log.String("path", path),
+		)
+	}
 	return uploads[0], nil
 }
 
