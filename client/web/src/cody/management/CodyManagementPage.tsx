@@ -105,16 +105,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
-                <CodyAlert variant="purpleCodyPro">
-                    <H1 as="p" className="mb-2">
-                        Issue with invite
-                    </H1>
-                    <Text className="mb-0">
-                        You've been invited to a Cody Pro team by john.doe@email.com.
-                        <br />
-                        You cannot accept this invite as as you are already on this team.
-                    </Text>
-                </CodyAlert>
                 <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
                     <CodyAlert variant="greenCodyPro">
