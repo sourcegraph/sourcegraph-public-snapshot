@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -176,10 +177,13 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 	pr.ToRef.Repository.Slug = repo.Slug
 	pr.ToRef.Repository.Project.Key = repo.Project.Key
 
+	fmt.Println("loading changeset", pr.ID)
 	err = s.client.LoadPullRequest(ctx, pr)
 	if err != nil {
 		if err == bitbucketserver.ErrPullRequestNotFound {
-			return ChangesetNotFoundError{Changeset: cs}
+			er := ChangesetNotFoundError{Changeset: cs}
+			fmt.Println("changeset not found", er.NonRetryable())
+			return er
 		}
 
 		return err
@@ -267,7 +271,6 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 		return err
 
 	}
-
 	return c.Changeset.SetMetadata(reopened)
 }
 
@@ -318,11 +321,14 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	}
 
 	err := fn(ctx, pr)
+	fmt.Println("callAndRetryIfOutdated err 1: ", err.Error())
 	if err == nil {
 		return pr, nil
 	}
 
-	if !bitbucketserver.IsPullRequestOutOfDate(err) {
+	isOutdataed := bitbucketserver.IsPullRequestOutOfDate(err)
+	fmt.Println("callAndRetryIfOutdated err 2: ", isOutdataed)
+	if !isOutdataed {
 		return nil, err
 	}
 
