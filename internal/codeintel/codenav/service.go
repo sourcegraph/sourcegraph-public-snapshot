@@ -995,6 +995,10 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 // in a syntactic upload. If this function returns an error you should most likely
 // log and handle it instead of rethrowing, as this could fail for a myriad of reasons
 // (some broken invariant internally, network issue etc.)
+//
+// NOTE(id: single-syntactic-upload): This function returns the uploadId in because we're
+// making the assumption that there'll only be a single syntactic upload at the root
+// directory for a particular commit.
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
 	repo types.Repo,
@@ -1134,6 +1138,8 @@ func (s *Service) SyntacticUsages(
 	results := make([][]SyntacticMatch, candidateMatches.Len())
 
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		// We're assuming the upload we found earlier contains the relevant SCIP document
+		// see NOTE(id: single-syntactic-upload)
 		syntacticMatches := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, pair.Key, pair.Value)
 		results = append(results, syntacticMatches)
 	}
