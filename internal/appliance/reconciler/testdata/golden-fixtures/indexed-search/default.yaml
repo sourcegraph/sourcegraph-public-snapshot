@@ -3,15 +3,15 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
+        appliance.sourcegraph.com/configHash: cfc45be08799ca9f9c20c0397e85487708e5c826bd50715ae1fb1b1280b62b65
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
-        app.kubernetes.io/component: symbols
+        app.kubernetes.io/component: indexed-search
         app.kubernetes.io/name: sourcegraph
         app.kubernetes.io/version: 5.3.9104
         deploy: sourcegraph
-      name: symbols
+      name: indexed-search
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -32,41 +32,20 @@ resources:
       revisionHistoryLimit: 10
       selector:
         matchLabels:
-          app: symbols
-      serviceName: symbols
+          app: indexed-search
+      serviceName: indexed-search
       template:
         metadata:
           annotations:
-            kubectl.kubernetes.io/default-container: symbols
+            kubectl.kubernetes.io/default-container: indexed-search
           creationTimestamp: null
           labels:
-            app: symbols
+            app: indexed-search
             deploy: sourcegraph
-          name: symbols
+          name: indexed-search
         spec:
           containers:
             - env:
-                - name: REDIS_CACHE_ENDPOINT
-                  valueFrom:
-                    secretKeyRef:
-                      key: endpoint
-                      name: redis-cache
-                - name: REDIS_STORE_ENDPOINT
-                  valueFrom:
-                    secretKeyRef:
-                      key: endpoint
-                      name: redis-store
-                - name: SYMBOLS_CACHE_SIZE_MB
-                  value: "11059"
-                - name: POD_NAME
-                  valueFrom:
-                    fieldRef:
-                      apiVersion: v1
-                      fieldPath: metadata.name
-                - name: SYMBOLS_CACHE_DIR
-                  value: /mnt/cache/$(POD_NAME)
-                - name: TMPDIR
-                  value: /mnt/tmp
                 - name: OTEL_AGENT_HOST
                   valueFrom:
                     fieldRef:
@@ -74,25 +53,14 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/symbols:5.3.9104
+                - name: OPENTELEMETRY_DISABLED
+                  value: "false"
+              image: index.docker.io/sourcegraph/indexed-search:5.3.9104
               imagePullPolicy: IfNotPresent
-              livenessProbe:
-                failureThreshold: 3
-                httpGet:
-                  path: /healthz
-                  port: http
-                  scheme: HTTP
-                initialDelaySeconds: 60
-                periodSeconds: 10
-                successThreshold: 1
-                timeoutSeconds: 5
-              name: symbols
+              name: zoekt-webserver
               ports:
-                - containerPort: 3184
+                - containerPort: 6070
                   name: http
-                  protocol: TCP
-                - containerPort: 6060
-                  name: debug
                   protocol: TCP
               readinessProbe:
                 failureThreshold: 3
@@ -100,17 +68,16 @@ resources:
                   path: /healthz
                   port: http
                   scheme: HTTP
-                initialDelaySeconds: 60
                 periodSeconds: 5
                 successThreshold: 1
-                timeoutSeconds: 1
+                timeoutSeconds: 5
               resources:
                 limits:
                   cpu: "2"
-                  memory: 2G
+                  memory: 4G
                 requests:
                   cpu: 500m
-                  memory: 500M
+                  memory: 2G
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
@@ -119,10 +86,42 @@ resources:
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: FallbackToLogsOnError
               volumeMounts:
-                - mountPath: /mnt/cache
-                  name: cache
-                - mountPath: /mnt/tmp
-                  name: tmp
+                - mountPath: /data
+                  name: data
+            - env:
+                - name: OTEL_AGENT_HOST
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: status.hostIP
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: http://$(OTEL_AGENT_HOST):4317
+                - name: OPENTELEMETRY_DISABLED
+                  value: "false"
+              image: index.docker.io/sourcegraph/search-indexer:5.3.9104
+              imagePullPolicy: IfNotPresent
+              name: zoekt-indexserver
+              ports:
+                - containerPort: 6072
+                  name: index-http
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: "8"
+                  memory: 8G
+                requests:
+                  cpu: "4"
+                  memory: 4G
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 101
+                runAsUser: 100
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /data
+                  name: data
           dnsPolicy: ClusterFirst
           restartPolicy: Always
           schedulerName: default-scheduler
@@ -131,14 +130,13 @@ resources:
             fsGroupChangePolicy: OnRootMismatch
             runAsGroup: 101
             runAsUser: 100
-          serviceAccount: symbols
-          serviceAccountName: symbols
+          serviceAccount: indexed-search
+          serviceAccountName: indexed-search
           terminationGracePeriodSeconds: 30
           volumes:
-            - emptyDir: {}
-              name: cache
-            - emptyDir: {}
-              name: tmp
+            - name: data
+              persistentVolumeClaim:
+                claimName: data
       updateStrategy:
         type: RollingUpdate
       volumeClaimTemplates:
@@ -148,14 +146,14 @@ resources:
             creationTimestamp: null
             labels:
               deploy: sourcegraph
-            name: cache
+            name: data
             namespace: NORMALIZED_FOR_TESTING
           spec:
             accessModes:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 12Gi
+                storage: 200Gi
             volumeMode: Filesystem
           status:
             phase: Pending
@@ -183,8 +181,7 @@ resources:
           gitServer:
             disabled: true
 
-          indexedSearch:
-            disabled: true
+          indexedSearch: {}
 
           pgsql:
             disabled: true
@@ -198,6 +195,9 @@ resources:
           redisCache:
             disabled: true
 
+          redisExporter:
+            disabled: true
+
           redisStore:
             disabled: true
 
@@ -207,7 +207,8 @@ resources:
           searcher:
             disabled: true
 
-          symbols: {}
+          symbols:
+            disabled: true
 
           syntectServer:
             disabled: true
@@ -231,11 +232,11 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
+        appliance.sourcegraph.com/configHash: cfc45be08799ca9f9c20c0397e85487708e5c826bd50715ae1fb1b1280b62b65
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
-      name: symbols
+      name: indexed-search
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -250,15 +251,15 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 8f39500e7d6a3030c52d43d407f6b64f5a303ba418a28f6049a03aabd1d3a544
-        prometheus.io/port: "6060"
+        appliance.sourcegraph.com/configHash: cfc45be08799ca9f9c20c0397e85487708e5c826bd50715ae1fb1b1280b62b65
+        prometheus.io/port: "6070"
         sourcegraph.prometheus/scrape: "true"
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
-        app: symbols
-        app.kubernetes.io/component: symbols
+        app: indexed-search
+        app.kubernetes.io/component: indexed-search
         deploy: sourcegraph
-      name: symbols
+      name: indexed-search
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1
@@ -278,16 +279,52 @@ resources:
         - IPv4
       ipFamilyPolicy: SingleStack
       ports:
-        - name: http
-          port: 3184
+        - port: 6070
           protocol: TCP
-          targetPort: http
-        - name: debug
-          port: 6060
-          protocol: TCP
-          targetPort: debug
+          targetPort: 6070
       selector:
-        app: symbols
+        app: indexed-search
+      sessionAffinity: None
+      type: ClusterIP
+    status:
+      loadBalancer: {}
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: cfc45be08799ca9f9c20c0397e85487708e5c826bd50715ae1fb1b1280b62b65
+        prometheus.io/port: "6072"
+        sourcegraph.prometheus/scrape: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        app: indexed-search-indexer
+        app.kubernetes.io/component: indexed-search-indexer
+        deploy: sourcegraph
+      name: indexed-search-indexer
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      clusterIP: NORMALIZED_FOR_TESTING
+      clusterIPs:
+        - NORMALIZED_FOR_TESTING
+      internalTrafficPolicy: Cluster
+      ipFamilies:
+        - IPv4
+      ipFamilyPolicy: SingleStack
+      ports:
+        - port: 6072
+          protocol: TCP
+          targetPort: 6072
+      selector:
+        app: indexed-search
       sessionAffinity: None
       type: ClusterIP
     status:

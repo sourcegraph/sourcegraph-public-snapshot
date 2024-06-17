@@ -16,8 +16,7 @@ spec:
   gitServer:
     disabled: true
 
-  indexedSearch:
-    disabled: true
+  indexedSearch: {}
 
   pgsql:
     disabled: true
@@ -31,6 +30,9 @@ spec:
   redisCache:
     disabled: true
 
+  redisExporter:
+    disabled: true
+
   redisStore:
     disabled: true
 
@@ -41,8 +43,7 @@ spec:
     disabled: true
 
   symbols:
-    persistentVolumeConfig:
-      storageSize: "100Gi"
+    disabled: true
 
   syntectServer:
     disabled: true
