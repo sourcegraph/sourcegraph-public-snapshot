@@ -88,7 +88,7 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx)
+	a, err := c.credential.Authenticator(ctx, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving authenticator")
 	}
@@ -109,7 +109,7 @@ func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
 }
 
 func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
+	return c.credential.Authenticator(ctx, nil)
 }
 
 func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool {

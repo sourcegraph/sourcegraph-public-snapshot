@@ -34,7 +34,6 @@ import (
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -1941,9 +1940,11 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, ErrIDIsZero{}
 	}
 
+	validateArgs := service.ValidateAuthenticatorArgs{
+		ExternalServiceID:   cred.ExternalServiceURL(),
+		ExternalServiceType: extsvc.KindToType(cred.ExternalServiceKind()),
+	}
 	as := sources.AuthenticationStrategyUserCredential
-	var ghak *types.GitHubAppKind
-	var firstInstall *ghtypes.GitHubAppInstallation
 	if cred.IsGitHubApp() {
 		as = sources.AuthenticationStrategyGitHubApp
 
@@ -1965,8 +1966,8 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 			return nil, ghstore.ErrNoGitHubAppFound{}
 		}
 
-		ghak = &ghApp.Kind
-		firstInstall = installs[0]
+		validateArgs.GitHubAppKind = &ghApp.Kind
+		validateArgs.Username = pointers.Ptr(installs[0].AccountLogin)
 	}
 
 	a, err := cred.authenticator(ctx)
@@ -1974,13 +1975,10 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, err
 	}
 
+	fmt.Println("cred auth", a == nil)
+
 	svc := service.New(r.store)
-	if err := svc.ValidateAuthenticator(ctx, a, as, service.ValidateAuthenticatorArgs{
-		ExternalServiceID:   cred.ExternalServiceURL(),
-		ExternalServiceType: extsvc.KindToType(cred.ExternalServiceKind()),
-		GitHubAppKind:       ghak,
-		Username:            pointers.Ptr(firstInstall.AccountLogin),
-	}); err != nil {
+	if err := svc.ValidateAuthenticator(ctx, a, as, validateArgs); err != nil {
 		return nil, &service.ErrVerifyCredentialFailed{SourceErr: err}
 	}
 

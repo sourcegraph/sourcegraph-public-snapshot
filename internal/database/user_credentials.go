@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+
+	// ghappAuth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,9 +61,15 @@ func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *Encryptab
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
+type CredentialGetter interface {
+	UserCredentials() UserCredentialsStore
+}
+
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	if uc.GitHubAppID == 0 {
+func (uc *UserCredential) Authenticator(ctx context.Context, tx CredentialGetter) (auth.Authenticator, error) {
+	if uc.GitHubAppID != 0 {
+		// uc.
+		// return ghappAuth.NewGitHubAppAuthenticator(0, nil)
 		return nil, nil
 	}
 
