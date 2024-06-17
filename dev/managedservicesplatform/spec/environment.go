@@ -888,6 +888,10 @@ type EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec struct {
 	// Database containing the tables you want to replicate and publish. Required.
 	Database string `yaml:"database"`
 	// Tables to replicate and publish. Required.
+	//
+	// Note that curerntly, referenced tables MUST exist BEFORE a publication
+	// is provisioned on them. Database tables should be created and owned by
+	// the application workload identity.
 	Tables []string `yaml:"tables"`
 }
 

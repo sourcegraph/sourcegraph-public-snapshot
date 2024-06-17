@@ -2,10 +2,8 @@ package postgresqllogicalreplication
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/publication"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/replicationslot"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/role"
@@ -18,10 +16,14 @@ import (
 )
 
 type Config struct {
-	PostgreSQLProvider cdktf.TerraformProvider
+	AdminPostgreSQLProvider        cdktf.TerraformProvider
+	WorkloadUserPostgreSQLProvider cdktf.TerraformProvider
+	ReplicationPostgreSQLProvider  cdktf.TerraformProvider
 
 	CloudSQL *cloudsql.Output
 	Spec     spec.EnvironmentResourcePostgreSQLLogicalReplicationSpec
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
 type PublicationOutput struct {
@@ -57,28 +59,6 @@ type Output struct {
 //
 // TODO(@bobheadxi): Improve documentation around this teardown scenario.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	// TODO explain
-	replicationSlotCreator := role.NewRole(scope, id.TerraformID("replicationslotcreator"), &role.RoleConfig{
-		Provider: config.PostgreSQLProvider,
-		Name:     pointers.Ptr("msp-replicationslotcreator"),
-		Password: password.NewPassword(scope, id.TerraformID("replicationslotcreator_password"), &password.PasswordConfig{
-			Length:  pointers.Float64(32),
-			Special: pointers.Ptr(false),
-		}).Result(),
-		Replication: pointers.Ptr(true),
-	})
-	replicationSlotProvider := postgresql.NewPostgresqlProvider(scope,
-		id.TerraformID("postgresql_replicationslotcreator_provider"),
-		&postgresql.PostgresqlProviderConfig{
-			Scheme:    pointers.Ptr("gcppostgres"),
-			Host:      config.CloudSQL.Instance.ConnectionName(),
-			Username:  replicationSlotCreator.Name(),
-			Password:  replicationSlotCreator.Password(),
-			Port:      jsii.Number(5432),
-			Superuser: jsii.Bool(false),
-			Alias:     pointers.Ptr("postgresql_replicationslotcreator_provider"),
-		})
-
 	var publicationOutputs []PublicationOutput
 	for _, p := range config.Spec.Publications {
 		id := id.Group("publications").Group(p.Name)
@@ -86,13 +66,15 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// Create user for Datastream:
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		logicalReplicationUser := role.NewRole(scope, id.TerraformID("user"), &role.RoleConfig{
-			Provider: config.PostgreSQLProvider,
-			Name:     pointers.Stringf("publication_%s_user", p.Name),
+			Provider: config.AdminPostgreSQLProvider,
+			Name:     pointers.Stringf("publication-%s-user", p.Name),
 			Password: password.NewPassword(scope, id.TerraformID("user_password"), &password.PasswordConfig{
 				Length:  pointers.Float64(32),
 				Special: pointers.Ptr(false),
 			}).Result(),
+			Login:       pointers.Ptr(true),
 			Replication: pointers.Ptr(true),
+			DependsOn:   &config.DependsOn,
 		})
 
 		// Provision publication and replication slot:
@@ -105,19 +87,24 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 					// Tables are created (and therefore owned) by the application
 					// workload user by default, so we use the provider authenticated
 					// as the workload user.
-					Provider: config.PostgreSQLProvider,
+					Provider: config.WorkloadUserPostgreSQLProvider,
 					Name:     pointers.Ptr(p.Name),
 					Database: pointers.Ptr(p.Database),
-					Tables:   pointers.Ptr(pointers.Slice(p.Tables)),
+					Tables: pointers.Ptr(pointers.Slice(
+						// Avoid infinite drift as the table name needs the
+						// schema, and we assume tables are created in 'public'.
+						mapPrefix(p.Tables, "public."),
+					)),
+					DependsOn: &config.DependsOn,
 				}).Name(),
 			ReplicationSlotName: replicationslot.NewReplicationSlot(scope,
 				id.TerraformID("replication_slot"),
 				&replicationslot.ReplicationSlotConfig{
-					Provider:  replicationSlotProvider,
+					Provider:  config.ReplicationPostgreSQLProvider,
 					Name:      pointers.Ptr(p.Name + "_pgoutput"),
 					Database:  pointers.Ptr(p.Database),
 					Plugin:    pointers.Ptr("pgoutput"),
-					DependsOn: &[]cdktf.ITerraformDependable{replicationSlotCreator},
+					DependsOn: &config.DependsOn,
 				}).Name(),
 			User: logicalReplicationUser,
 		})
@@ -126,4 +113,12 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	return &Output{
 		Publications: publicationOutputs,
 	}, nil
+}
+
+func mapPrefix(values []string, prefix string) []string {
+	out := make([]string, len(values))
+	for i, v := range values {
+		out[i] = prefix + v
+	}
+	return out
 }
