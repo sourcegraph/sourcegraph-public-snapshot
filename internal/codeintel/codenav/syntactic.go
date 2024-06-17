@@ -3,6 +3,7 @@ package codenav
 import (
 	"context"
 	"fmt"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -32,15 +33,16 @@ func findCandidateOccurrencesViaSearch(
 	commit api.CommitID,
 	symbol *scip.Symbol,
 	language string,
-) (map[string]candidateFile, int, error) {
+) (orderedmap.OrderedMap[string, candidateFile], int, error) {
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
 	var identifier string
+	resultMap := *orderedmap.New[string, candidateFile]()
 	if name, ok := nameFromSymbol(symbol); ok {
 		identifier = name
 	} else {
-		return nil, 0, errors.Errorf("can't find occurrences for locals via search")
+		return resultMap, 0, errors.Errorf("can't find occurrences for locals via search")
 	}
 	// TODO: This should be dependent on the number of requested usages, with a configured global limit
 	countLimit := 1000
@@ -50,19 +52,18 @@ func findCandidateOccurrencesViaSearch(
 
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
 	if err != nil {
-		return nil, 0, err
+		return resultMap, 0, err
 	}
 	stream := streaming.NewAggregatingStream()
 	_, err = client.Execute(ctx, stream, plan)
 	if err != nil {
-		return nil, 0, err
+		return resultMap, 0, err
 	}
 
 	nonFileMatches := 0
 	inconsistentFilepaths := 0
 	matchCount := 0
 
-	results := make(map[string]candidateFile)
 	for _, streamResult := range stream.Results {
 		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
@@ -94,18 +95,21 @@ func findCandidateOccurrencesViaSearch(
 				matches = append(matches, scipRange)
 			}
 		}
+		_, alreadyPresent := resultMap.Set(path, candidateFile{
+			matches:             scip.SortRanges(matches),
+			didSearchEntireFile: !fileMatch.LimitHit,
+		})
+		if alreadyPresent {
+			logger.Error("Saw the same filepath twice in search results", log.String("path", path))
+		}
 		if nonFileMatches != 0 {
 			logger.Error("Saw non file match in search results. The `type:file` on the query should guarantee this")
 		}
 		if inconsistentFilepaths != 0 {
 			logger.Error("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
 		}
-		results[path] = candidateFile{
-			matches:             scip.SortRanges(matches),
-			didSearchEntireFile: !fileMatch.LimitHit,
-		}
 	}
-	return results, matchCount, nil
+	return resultMap, matchCount, nil
 }
 
 func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
