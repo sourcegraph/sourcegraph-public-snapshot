@@ -181,9 +181,7 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 	err = s.client.LoadPullRequest(ctx, pr)
 	if err != nil {
 		if err == bitbucketserver.ErrPullRequestNotFound {
-			er := ChangesetNotFoundError{Changeset: cs}
-			fmt.Println("changeset not found", er.NonRetryable())
-			return er
+			return ChangesetNotFoundError{Changeset: cs}
 		}
 
 		return err
@@ -321,14 +319,11 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	}
 
 	err := fn(ctx, pr)
-	fmt.Println("callAndRetryIfOutdated err 1: ", err.Error())
 	if err == nil {
 		return pr, nil
 	}
 
-	isOutdataed := bitbucketserver.IsPullRequestOutOfDate(err)
-	fmt.Println("callAndRetryIfOutdated err 2: ", isOutdataed)
-	if !isOutdataed {
+	if !bitbucketserver.IsPullRequestOutOfDate(err) {
 		return nil, err
 	}
 
