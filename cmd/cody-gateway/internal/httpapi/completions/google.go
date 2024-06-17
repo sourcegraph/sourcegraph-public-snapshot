@@ -79,15 +79,7 @@ func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 
 func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ googleRequest) (*flaggingResult, error) {
 	// This entirely disables flagging for Google.
-	result := flaggingResult{
-		shouldBlock:       false,
-		blockedPhrase:     nil,
-		reasons:           nil,
-		promptPrefix:      "",
-		maxTokensToSample: 0,
-		promptTokenCount:  0,
-	}
-	return &result, nil
+	return nil, nil
 }
 
 // Used to modify the request body before it is sent to upstream.
