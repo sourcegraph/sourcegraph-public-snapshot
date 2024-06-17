@@ -86,9 +86,6 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	grpcServer := makeGRPCServer(logger, app)
 
-	// Mark health server as ready
-	ready()
-
 	g, ctx := errgroup.WithContext(ctx)
 	ctx = shutdownOnSignal(ctx)
 
@@ -101,7 +98,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return nil
 	})
 	g.Go(func() error {
-		logger.Info("http server listening", log.String("address", "TODO"))
+		logger.Info("http server listening", log.String("address", config.http.addr))
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("problem running http server", log.Error(err))
 			return err
@@ -124,6 +121,9 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		logger.Info("shutting down http server gracefully")
 		return ctx.Err()
 	})
+
+	// Mark health server as ready
+	ready()
 
 	return g.Wait()
 }
