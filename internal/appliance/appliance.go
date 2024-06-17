@@ -3,6 +3,7 @@ package appliance
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +20,7 @@ type Appliance struct {
 	client      client.Client
 	status      Status
 	sourcegraph config.Sourcegraph
+	logger      log.Logger
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
 	// compiled against a newer version of the proto file, the server will still have default implementations of any new
@@ -39,11 +41,12 @@ func (s Status) String() string {
 	return string(s)
 }
 
-func NewAppliance(client client.Client) *Appliance {
+func NewAppliance(client client.Client, logger log.Logger) *Appliance {
 	return &Appliance{
 		client:      client,
 		status:      StatusSetup,
 		sourcegraph: config.Sourcegraph{},
+		logger:      logger,
 	}
 }
 
@@ -77,6 +80,10 @@ func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string)
 		Data: map[string]string{
 			"spec": string(spec),
 		},
+	}
+
+	if err := a.client.Create(ctx, configMap); err != nil {
+		return nil, err
 	}
 
 	return configMap, nil
