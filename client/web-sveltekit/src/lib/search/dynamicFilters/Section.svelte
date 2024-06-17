@@ -32,15 +32,7 @@
             {#each limitedItems as item}
                 <li>
                     <slot name="item" {item}>
-                        {#if $$slots.label}
-                            <SectionItem {item} {onFilterSelect}>
-                                <svelte:fragment slot="label" let:label let:value>
-                                    <slot name="label" {label} {value} />
-                                </svelte:fragment>
-                            </SectionItem>
-                        {:else}
-                            <SectionItem {item} {onFilterSelect} />
-                        {/if}
+                        <SectionItem {item} {onFilterSelect} />
                     </slot>
                 </li>
             {/each}
