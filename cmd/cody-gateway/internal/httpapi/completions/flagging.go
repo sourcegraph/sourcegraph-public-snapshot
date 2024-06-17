@@ -70,6 +70,13 @@ type flaggingResult struct {
 // as the goal isn't for 100% accuracy - isFlaggedRequest should catch obvious abuse patterns, and let other backend
 // systems do a more thorough review async.
 func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
+	// Verify that we were given a legitimate flaggingConfig. Blocking all requests is
+	// kinda lame. But failing loudly is preferable to banning users because 100% of their
+	// requests get flagged.
+	if cfg.MaxTokensToSampleFlaggingLimit == 0 || cfg.ResponseTokenBlockingLimit == 0 {
+		return nil, errors.New("flaggingConfig object is invalid")
+	}
+
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
 
