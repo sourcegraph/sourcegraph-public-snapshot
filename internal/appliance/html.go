@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 )
 
@@ -29,6 +31,7 @@ func (a *Appliance) applianceHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
 	err := setupTmpl.Execute(w, "")
 	if err != nil {
+		a.logger.Error("failed to execute templating", log.Error(err))
 		// Handle err
 	}
 }
@@ -36,6 +39,7 @@ func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		a.logger.Error("failed to parse http form request", log.Error(err))
 		// Handle err
 	}
 
@@ -67,6 +71,7 @@ func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance", "default") //TODO namespace
 	if err != nil {
+		a.logger.Error("failed to create configMap sourcegraph-appliance", log.Error(err))
 		// Handle err
 	}
 	a.status = StatusInstalling
