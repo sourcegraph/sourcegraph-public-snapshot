@@ -156,10 +156,15 @@ Triggers:
  updated_at            | timestamp with time zone |           | not null | now()
  credential            | bytea                    |           | not null | 
  encryption_key_id     | text                     |           | not null | ''::text
+ github_app_id         | integer                  |           |          | 
 Indexes:
     "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
     "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
     "batch_changes_site_credentials_credential_idx" btree ((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text])))
+Check constraints:
+    "check_github_app_id_and_external_service_type" CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)
+Foreign-key constraints:
+    "batch_changes_site_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id)
 
 ```
 
@@ -1894,6 +1899,7 @@ Indexes:
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
 Referenced by:
+    TABLE "batch_changes_site_credentials" CONSTRAINT "batch_changes_site_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id)
     TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id)
 

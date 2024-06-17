@@ -980,7 +980,9 @@ CREATE TABLE batch_changes_site_credentials (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     credential bytea NOT NULL,
-    encryption_key_id text DEFAULT ''::text NOT NULL
+    encryption_key_id text DEFAULT ''::text NOT NULL,
+    github_app_id integer,
+    CONSTRAINT check_github_app_id_and_external_service_type CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
 );
 
 CREATE SEQUENCE batch_changes_site_credentials_id_seq
@@ -6518,6 +6520,9 @@ ALTER TABLE ONLY batch_changes
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY batch_changes_site_credentials
+    ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id);
 
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
