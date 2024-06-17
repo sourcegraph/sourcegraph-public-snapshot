@@ -25,14 +25,14 @@ func Get(
 	provider conftypes.CompletionsProviderName,
 	accessToken string,
 ) (types.CompletionsClient, error) {
-	client, err := getBasic(endpoint, provider, accessToken)
+	client, err := getBasic(logger, endpoint, provider, accessToken)
 	if err != nil {
 		return nil, err
 	}
 	return newObservedClient(logger, events, client), nil
 }
 
-func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
+func getBasic(logger log.Logger, endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
 	tokenManager := tokenusage.NewManager()
 	switch provider {
 	case conftypes.CompletionsProviderNameAnthropic:
@@ -44,7 +44,7 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 	case conftypes.CompletionsProviderNameGoogle:
 		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameSourcegraph:
-		return codygateway.NewClient(httpcli.CodyGatewayDoer, endpoint, accessToken, *tokenManager)
+		return codygateway.NewClient(logger, httpcli.CodyGatewayDoer, endpoint, accessToken, *tokenManager)
 	case conftypes.CompletionsProviderNameFireworks:
 		return fireworks.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameAWSBedrock:

@@ -26,12 +26,13 @@ import (
 
 // NewClient instantiates a completions provider backed by Sourcegraph's managed
 // Cody Gateway service.
-func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
+func NewClient(logger log.Logger, cli httpcli.Doer, endpoint, accessToken string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
 	gatewayURL, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
 	return &codyGatewayClient{
+		logger:      logger,
 		upstream:    cli,
 		gatewayURL:  gatewayURL,
 		accessToken: accessToken,
@@ -40,6 +41,7 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string, tokenizer tokenus
 }
 
 type codyGatewayClient struct {
+	logger      log.Logger
 	upstream    httpcli.Doer
 	gatewayURL  *url.URL
 	accessToken string
@@ -80,6 +82,11 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 	// the request parameter's model.
 	provider, model := getProviderFromGatewayModel(strings.ToLower(requestParams.Model))
 	requestParams.Model = model
+
+	c.logger.Info("creating CompletionsClient for request",
+		log.String("provider", provider),
+		log.String("model", model),
+		log.Int("maxTokens", requestParams.MaxTokensToSample))
 
 	// Based on the provider, instantiate the appropriate client backed by a
 	// gatewayDoer that authenticates against the Gateway's API.

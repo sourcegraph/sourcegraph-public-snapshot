@@ -32,7 +32,10 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 		httpClient,
 		string(conftypes.CompletionsProviderNameGoogle),
 		config.AllowedModels,
-		&GoogleHandlerMethods{config: config},
+		&GoogleHandlerMethods{
+			config: config,
+			logger: baseLogger,
+		},
 		promptRecorder,
 		upstreamConfig,
 	)
@@ -40,6 +43,7 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 
 type GoogleHandlerMethods struct {
 	config config.GoogleConfig
+	logger log.Logger
 }
 
 func (r googleRequest) ShouldStream() bool {
@@ -77,8 +81,26 @@ func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 	return nil
 }
 
-func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ googleRequest) (*flaggingResult, error) {
-	// This entirely disables flagging for Google.
+func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req googleRequest) (*flaggingResult, error) {
+	// TODO[abuse-ban-bot#32]: Track down why Google-routed LLM requests are getting flagged, despite
+	// everything appearing to be correct.
+	result, err := isFlaggedRequest(
+		nil, // tokenizer, meaning token counts aren't considered when for flagging consideration.
+		flaggingRequest{
+			ModelName:       req.Model,
+			FlattenedPrompt: req.BuildPrompt(),
+			MaxTokens:       req.GenerationConfig.MaxOutputTokens,
+		},
+		makeFlaggingConfig(g.config.FlaggingConfig))
+	if result != nil && err == nil {
+		g.logger.Info(
+			"shouldFlagRequest results for Google model",
+			log.Int("generationConfig.maxOutputTokens", req.GenerationConfig.MaxOutputTokens),
+			log.Bool("flagged", result.IsFlagged()),
+			log.Strings("reasons", result.reasons))
+	}
+
+	// Carry on as if the request was not flagged.
 	return nil, nil
 }
 
