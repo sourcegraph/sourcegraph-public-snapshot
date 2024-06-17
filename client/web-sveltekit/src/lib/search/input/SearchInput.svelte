@@ -86,6 +86,7 @@
             },
             '.cm-scroller': {
                 overflowX: 'hidden',
+                lineHeight: '1.6',
             },
             '.cm-content': {
                 paddingLeft: '0.25rem',
@@ -117,6 +118,7 @@
     export let size: 'normal' | 'compat' = 'normal'
     export let queryState: QueryStateStore
     export let onSubmit: (state: QueryState) => void = () => {}
+    export let extension: Extension = []
 
     export function focus() {
         input?.focus()
@@ -175,6 +177,7 @@
     })
 
     $: extension = [
+        extension,
         onModeChange((_view, newMode) => (mode = newMode ?? '')),
         hasInteractedExtension,
         suggestionsExtension,
@@ -370,6 +373,8 @@
     }
 
     button.toggle {
+        --icon-color: currentColor;
+
         width: 1.5rem;
         height: 1.5rem;
         cursor: pointer;
@@ -407,6 +412,8 @@
         --color: var(--text-muted);
 
         button {
+            --icon-color: currentColor;
+
             padding: 0.0625rem 0.125rem;
             color: var(--color);
             border-radius: var(--border-radius);

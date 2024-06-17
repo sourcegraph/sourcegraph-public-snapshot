@@ -232,7 +232,7 @@
                                         <Icon icon={ILucideSquareSlash} inline aria-hidden />
                                     {:else}
                                         <span>Search files</span>
-                                        <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
+                                        <KeyboardShortcut shortcut={filesHotkey} />
                                     {/if}
                                 </button>
                             </Tooltip>

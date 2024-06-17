@@ -85,9 +85,13 @@
         {#if selectedOption}
             <div class="footer">
                 <span>
-                    <ActionInfo action={selectedOption.action} shortcut="Enter" />{' '}
+                    <ActionInfo action={selectedOption.action} shortcut={{ key: 'enter' }} />
                     {#if selectedOption.alternativeAction}
-                        <ActionInfo action={selectedOption.alternativeAction} shortcut="Mod+Enter" />
+                        {' '}
+                        <ActionInfo
+                            action={selectedOption.alternativeAction}
+                            shortcut={{ key: 'mod+enter', mac: 'cmd+enter' }}
+                        />
                     {/if}
                 </span>
                 <Icon icon={ILucideInfo} aria-hidden="true" inline />
@@ -98,8 +102,6 @@
 
 <style lang="scss">
     .root {
-        --color: var(--icon-color);
-
         overflow-y: hidden;
         display: flex;
         flex-direction: column;

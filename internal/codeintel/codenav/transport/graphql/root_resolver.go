@@ -198,7 +198,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	if err != nil {
 		return nil, err
 	}
-	remainingCount := int(*unresolvedArgs.First)
+	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
@@ -208,6 +208,21 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
+		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		if err != nil {
+			switch err.Code {
+			case codenav.SU_Fatal:
+				return nil, err
+			case codenav.SU_NoSymbolAtRequestedRange:
+			case codenav.SU_NoSyntacticIndex:
+			case codenav.SU_FailedToSearch:
+			default:
+				// None of these errors should cause the whole request to fail
+				// TODO: We might want to log some of them in the future
+
+			}
+		}
+		numSyntacticResults = len(results)
 		remainingCount = remainingCount - numSyntacticResults
 	}
 

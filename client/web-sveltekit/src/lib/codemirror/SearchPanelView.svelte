@@ -69,7 +69,7 @@
     </Tooltip>
 </span>
 {#if matches.size > 1}
-    <ButtonGroup --icon-fill-color="var(--icon-color)">
+    <ButtonGroup --icon-color="var(--icon-color)">
         <Button size="sm" outline variant="secondary" on:click={findPrevious} aria-label="previous result">
             <Icon inline icon={ILucideChevronLeft} aria-hidden />
         </Button>
@@ -94,7 +94,7 @@
     -->
     <label>
         <Switch checked={searchPanelState.overrideBrowserSearch} on:change={handleOverrideBrowserSearchChange} />
-        <KeyboardShortcut shorcut={keyboardShortcut} />
+        <KeyboardShortcut shortcut={keyboardShortcut} />
     </label>
     <Tooltip
         tooltip="When enabled, {formatShortcut(
@@ -127,6 +127,8 @@
         }
 
         button {
+            --icon-color: currentColor;
+
             all: unset;
 
             width: 1.5rem;
@@ -162,8 +164,6 @@
     }
 
     .actions {
-        --icon-fill-color: var(--icon-color);
-
         margin-left: auto;
         display: flex;
         align-items: center;

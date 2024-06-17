@@ -333,10 +333,13 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"anthropic/claude-instant-1",
 	"anthropic/claude-instant-1.2-cyan",
 	"anthropic/claude-instant-1.2",
+	"google/" + google.Gemini15Flash,
 	"fireworks/starcoder",
 	"fireworks/" + fireworks.Llama213bCode,
 	"fireworks/" + fireworks.StarcoderTwo15b,
-	"fireworks/" + fireworks.StarcoderTwo7b},
+	"fireworks/" + fireworks.StarcoderTwo7b,
+	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoder7b},
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
 	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
 

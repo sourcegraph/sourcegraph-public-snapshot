@@ -2,6 +2,7 @@
     // @sg EnableRollout
     import { get } from 'svelte/store'
 
+    import { afterNavigate, beforeNavigate } from '$app/navigation'
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import { pluralize } from '$lib/common'
@@ -13,6 +14,8 @@
     import Alert from '$lib/wildcard/Alert.svelte'
     import Badge from '$lib/wildcard/Badge.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
+
+    import { getRepositoryPageContext } from '../../../../context'
 
     import type { PageData, Snapshot } from './$types'
 
@@ -42,11 +45,19 @@
         },
     }
 
+    const repositoryContext = getRepositoryPageContext()
     let scroller: Scroller
     let expandedDiffs = new Map<number, boolean>()
 
     $: diffQuery = data.diff
     $: diffs = $diffQuery?.data?.repository?.comparison.fileDiffs ?? null
+
+    afterNavigate(() => {
+        repositoryContext.set({ revision: data.commit.abbreviatedOID })
+    })
+    beforeNavigate(() => {
+        repositoryContext.set({})
+    })
 </script>
 
 <svelte:head>
@@ -135,6 +146,8 @@
     }
 
     .parents {
+        --icon-color: currentColor;
+
         span,
         a {
             vertical-align: middle;

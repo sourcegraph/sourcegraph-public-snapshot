@@ -1,8 +1,9 @@
 package collections
 
 import (
+	"cmp"
 	"fmt"
-	"sort"
+	"slices"
 
 	"golang.org/x/exp/maps"
 )
@@ -48,20 +49,26 @@ func (s Set[T]) Values() []T {
 	return maps.Keys(s)
 }
 
-// Sorted returns the values of the set in sorted order using the given
+// SortedFunc returns the values of the set in sorted order using the given
 // comparator function.
 //
-// The comparator function should return true if the first argument is less than
-// the second, and false otherwise.
+// The comparator should return -1 / 0 / +1 based on comparison,
+// similar to cmp.Compare.
 //
-// Example:
-//
-//	s.Sorted(func(a, b int) bool { return a < b })
-func (s Set[T]) Sorted(comparator func(a, b T) bool) []T {
+// Prefer SortedSetValues for primitive types.
+func (s Set[T]) SortedFunc(comparator func(a, b T) int) []T {
 	vals := s.Values()
-	sort.Slice(vals, func(i, j int) bool {
-		return comparator(vals[i], vals[j])
-	})
+	slices.SortFunc(vals, comparator)
+	return vals
+}
+
+// SortedSetValues is equivalent to SortedFunc(s, cmp.Compare).
+//
+// Ideally, this would be a method on Set[T], but Go does not allow
+// adding constraints to type parameters in methods.
+func SortedSetValues[T cmp.Ordered](s Set[T]) []T {
+	vals := s.Values()
+	slices.Sort(vals)
 	return vals
 }
 
@@ -152,6 +159,21 @@ func DeduplicateBy[T any, K comparable](xs []T, keyFn func(T) K) []T {
 			continue
 		}
 		seen.Add(k)
+		filtered = append(filtered, x)
+	}
+	return filtered
+}
+
+// Deduplicate modifies the argument slice in-place,
+// and maintains ordering unlike NewSet(...).Values().
+func Deduplicate[T comparable](xs []T) []T {
+	seen := NewSet[T]()
+	filtered := xs[:0]
+	for _, x := range xs {
+		if seen.Has(x) {
+			continue
+		}
+		seen.Add(x)
 		filtered = append(filtered, x)
 	}
 	return filtered

@@ -12,7 +12,7 @@ import (
 func TestFileMatchToContextMatches(t *testing.T) {
 	cases := []struct {
 		fileMatch *result.FileMatch
-		want      []FileChunkContext
+		want      FileChunkContext
 	}{
 		{
 			// No chunk matches returns first 20 lines
@@ -27,13 +27,13 @@ func TestFileMatchToContextMatches(t *testing.T) {
 				},
 				ChunkMatches: nil,
 			},
-			want: []FileChunkContext{{
+			want: FileChunkContext{
 				RepoName:  "repo",
 				RepoID:    1,
 				CommitID:  "abc123",
 				Path:      "main.go",
 				StartLine: 0,
-			}},
+			},
 		},
 		{
 			// With chunk match returns context around first chunk
@@ -54,18 +54,18 @@ func TestFileMatchToContextMatches(t *testing.T) {
 					ContentStart: result.Location{Line: 37, Column: 10},
 				}},
 			},
-			want: []FileChunkContext{{
+			want: FileChunkContext{
 				RepoName:  "repo",
 				RepoID:    1,
 				CommitID:  "abc123",
 				Path:      "main.go",
 				StartLine: 85,
-			}},
+			},
 		},
 	}
 
 	for _, tc := range cases {
-		got := fileMatchToContextMatches(tc.fileMatch)
+		got := fileMatchToContextMatch(tc.fileMatch)
 		if diff := cmp.Diff(tc.want, got); diff != "" {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
