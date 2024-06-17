@@ -18,4 +18,4 @@
     }
 </script>
 
-<Icon icon={icon.icon} aria-hidden style="color: {icon.color}" {...$$restProps} />
+<Icon icon={icon.icon} aria-hidden style="color: var(--file-icon-color, {icon.color})" {...$$restProps} />

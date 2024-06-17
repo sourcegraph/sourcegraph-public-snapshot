@@ -78,20 +78,10 @@ type GrafanaSpec struct {
 	StandardConfig
 }
 
-// IndexedSearchSpec defines the desired state of Index Search.
 type IndexedSearchSpec struct {
-	// Replicas defines the number of Index Search pod replicas.
-	// Default: 1
+	StandardConfig
+
 	Replicas int32 `json:"replicas,omitempty"`
-
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
-}
-
-// IndexedSearchIndexerSpec defines the desired state of the Index Search Indexer.
-type IndexedSearchIndexerSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type JaegerSpec struct {
@@ -230,9 +220,6 @@ type SourcegraphSpec struct {
 
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
-
-	// IndexedSearchIndexer defines the desired state of the Indexed Search Indexer service.
-	IndexedSearchIndexer IndexedSearchIndexerSpec `json:"indexedSearchIndexer,omitempty"`
 
 	Jaeger JaegerSpec `json:"jaeger,omitempty"`
 

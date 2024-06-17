@@ -46,6 +46,26 @@ export module Client {
         return { method: 'POST', urlSuffix: '/team/preview', requestBody }
     }
 
+    // Team members
+
+    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/members' }
+    }
+
+    // Invites
+
+    export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
+        return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/accept` }
+    }
+
+    export function cancelInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/cancel` }
+    }
+
     // Stripe Checkout
 
     export function createStripeCheckoutSession(

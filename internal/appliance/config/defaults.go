@@ -159,6 +159,15 @@ func NewDefaultConfig() Sourcegraph {
 				},
 				Replicas: 1,
 			},
+			IndexedSearch: IndexedSearchSpec{
+				StandardConfig: StandardConfig{
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "200Gi",
+					},
+					PrometheusPort: pointers.Ptr(6070),
+				},
+				Replicas: 1,
+			},
 
 			// Grafana and Jaeger are opt-in
 			Grafana: GrafanaSpec{

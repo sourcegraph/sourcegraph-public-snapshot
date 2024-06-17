@@ -8,6 +8,7 @@
 
 <script lang="ts">
     import { type Option, type Action, RenderAs } from '$lib/branded'
+    import { SearchPatternType } from '$lib/graphql-types'
     import SVGIcon from '$lib/SVGIcon.svelte'
 
     import EmphasizedLabel from '../EmphasizedLabel.svelte'
@@ -64,7 +65,15 @@
                         {/if}
                     </span>
                 {:else if option.render === RenderAs.QUERY}
-                    <SyntaxHighlightedQuery query={option.label} matches={option.matches} />
+                    <!--
+                        The keyword pattern type is the default pattern type.
+                        It will match most queries.
+                    -->
+                    <SyntaxHighlightedQuery
+                        query={option.label}
+                        matches={option.matches}
+                        patternType={SearchPatternType.keyword}
+                    />
                 {:else}
                     <EmphasizedLabel label={option.label} matches={option.matches} />
                 {/if}
@@ -90,8 +99,6 @@
 
 <style lang="scss">
     [role='row'] {
-        --color: var(icon-color);
-
         display: flex;
         align-items: center;
         padding: 0.25rem 0.5rem;

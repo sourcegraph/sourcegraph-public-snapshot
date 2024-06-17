@@ -62,7 +62,7 @@
 
 <style lang="scss">
     .tabs-header {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
 
         display: flex;
         align-items: stretch;
@@ -100,7 +100,7 @@
         }
 
         &[aria-selected='true'] {
-            --icon-fill-color: currentColor;
+            --icon-color: currentColor;
 
             font-weight: 500;
             color: var(--text-title);

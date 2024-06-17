@@ -10,27 +10,30 @@ import { Client } from '../client'
 import type {
     UpdateSubscriptionRequest,
     Subscription,
+    SubscriptionSummary,
     CreateTeamRequest,
     PreviewResult,
     PreviewCreateTeamRequest,
-} from '../types'
+} from '../teamSubscriptions'
 
 import { callCodyProApi } from './callCodyProApi'
-
-// Use query key factories to re-use produced query keys in queries and mutations.
-// Motivation taken from here: https://tkdodo.eu/blog/effective-react-query-keys#use-query-key-factories
-const queryKeys = {
-    all: ['subscription'] as const,
-    subscription: () => [...queryKeys.all, 'current-subscription'] as const,
-    subscriptionSummary: () => [...queryKeys.all, 'current-subscription-summary'] as const,
-}
+import { queryKeys } from './queryKeys'
 
 export const useCurrentSubscription = (): UseQueryResult<Subscription | undefined> =>
     useQuery({
-        queryKey: queryKeys.subscription(),
+        queryKey: queryKeys.subscriptions.subscription(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscription())
-            return response.ok ? response.json() : undefined
+            return response?.json()
+        },
+    })
+
+export const useSubscriptionSummary = (): UseQueryResult<SubscriptionSummary | undefined> =>
+    useQuery({
+        queryKey: queryKeys.subscriptions.subscriptionSummary(),
+        queryFn: async () => {
+            const response = await callCodyProApi(Client.getCurrentSubscriptionSummary())
+            return response?.json()
         },
     })
 
@@ -43,17 +46,17 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
     return useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.updateCurrentSubscription(requestBody))
-            return (await response.json()) as Subscription
+            return response?.json()
         },
         onSuccess: data => {
             // We get updated subscription data in response - no need to refetch subscription.
             // All the `queryKeys.subscription()` subscribers (`useCurrentSubscription` callers) will get the updated value automatically.
-            queryClient.setQueryData(queryKeys.subscription(), data)
+            queryClient.setQueryData(queryKeys.subscriptions.subscription(), data)
 
             // Invalidate `queryKeys.subscriptionSummary()` queries. If the subscription summary is a subset of subscription, we can
             // derive the updated subscription summary from the subscription response eliminating the need in subscription summary query invalidation
             // causing data refetching.
-            return queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionSummary() })
+            return queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions.subscriptionSummary() })
         },
     })
 }
@@ -64,7 +67,7 @@ export const useCreateTeam = (): UseMutationResult<void, Error, CreateTeamReques
         mutationFn: async requestBody => {
             await callCodyProApi(Client.createTeam(requestBody))
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.subscriptions.all }),
     })
 }
 
