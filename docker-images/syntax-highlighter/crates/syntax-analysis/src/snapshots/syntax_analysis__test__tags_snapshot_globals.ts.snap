@@ -23,6 +23,3 @@ expression: "String::from_utf8_lossy(&output)"
 {"_type":"tag","name":"myMethod","path":"globals.ts","language":"typescript","line":44,"kind":"function","scope":"myObject"}
 {"_type":"tag","name":"myProperty","path":"globals.ts","language":"typescript","line":42,"kind":"property","scope":"myObject"}
 {"_type":"tag","name":"func","path":"globals.ts","language":"typescript","line":31,"kind":"function","scope":null}
-{"_type":"tag","name":"React","path":"globals.ts","language":"typescript","line":5,"kind":"variable","scope":null}
-{"_type":"tag","name":"uS","path":"globals.ts","language":"typescript","line":4,"kind":"variable","scope":null}
-{"_type":"tag","name":"useState","path":"globals.ts","language":"typescript","line":3,"kind":"variable","scope":null}
