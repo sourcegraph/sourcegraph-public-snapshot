@@ -1,0 +1,42 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.root {
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size;
+    padding-bottom: 0 !important;
+
+    @media (--sm-breakpoint-down) {
+        // These need to be !important to override the `py-4`
+        // default padding on the page
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+
+        .page-header {
+            display: none;
+        }
+    }
+}
+
+.page-header {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.chat-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 0.5rem;
+}
+
+.chat-history {
+    width: 30%;
+    flex-shrink: 0;
+}
+
+.chat {
+    flex-grow: 1;
+    height: 100%;
+    border-left: 1px solid var(--border-color);
+}

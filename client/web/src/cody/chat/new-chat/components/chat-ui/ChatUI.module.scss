@@ -1,0 +1,25 @@
+.chat {
+    --vscode-editor-background: var(--body-bg);
+    --vscode-editor-foreground: var(--body-color);
+    --vscode-input-background: rgb(255 255 255);
+    --vscode-input-foreground: var(--body-color);
+    --vscode-textLink-foreground: var(--primary);
+    --vscode-input-border: var(--border-color-2);
+
+    h3 {
+        font-size: inherit;
+        margin: 0;
+    }
+
+    ul {
+        margin: 0;
+    }
+}
+
+[data-floating-ui-portal] {
+    --vscode-quickInput-background: var(--secondary-2);
+    --vscode-widget-border: var(--border-color);
+    --vscode-list-activeSelectionBackground: var(--primary);
+    --vscode-foreground: var(--body-color);
+    --vscode-widget-shadow: rgba(36, 41, 54, 0.2);
+}

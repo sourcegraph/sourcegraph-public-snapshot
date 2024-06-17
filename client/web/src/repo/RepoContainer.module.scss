@@ -4,8 +4,6 @@
     overflow-x: hidden;
 }
 
-[data-cody-web-chat] {
-    height: auto;
-    flex-grow: 1;
-    overflow: hidden;
+.cody-sidebar-panel {
+    border-left: 1px solid var(--border-color);
 }

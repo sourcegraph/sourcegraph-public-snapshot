@@ -4,16 +4,16 @@ import { mdiClose, mdiHistory, mdiPlus, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { CodyLogo } from '@sourcegraph/cody-ui'
+import { CodyWebChatProvider } from '@sourcegraph/cody-web'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, Badge, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { ChatUi } from '../chat/new-chat/components/chat-ui/ChatUi'
 import { ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
 
 import { useCodySidebar } from './Provider'
-
-import { CodyWebChat } from '@sourcegraph/cody-web'
 
 import '@sourcegraph/cody-web/dist/style.css'
 
@@ -21,16 +21,25 @@ import styles from './CodySidebar.module.scss'
 
 export const SCROLL_THRESHOLD = 100
 
+interface Repository {
+    id: string
+    name: string
+}
+
 interface CodySidebarProps extends TelemetryV2Props {
     onClose?: () => void
     authenticatedUser: AuthenticatedUser | null
-    repository: {
-        id: string
-        name: string
-    }
+    repository: Repository
+    filePath?: string
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ repository, onClose, authenticatedUser, telemetryRecorder }) => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({
+    repository,
+    filePath,
+    onClose,
+    authenticatedUser,
+    telemetryRecorder,
+}) => {
     const codySidebarStore = useCodySidebar()
     const {
         initializeNewChat,
@@ -47,6 +56,15 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ repository, onClose, a
     const [showHistory, setShowHistory] = useState(false)
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
     const [showScrollDownButton, setShowScrollDownButton] = useState(false)
+    const [contextToChatIds, setContextToChatIds] = useLocalStorage<Record<string, string>>(
+        'cody.context-to-chat-ids',
+        {}
+    )
+
+    const handleNewChatCreated = (chatId: string): void => {
+        contextToChatIds[`${repository.id}-${filePath}`] = chatId
+        setContextToChatIds(contextToChatIds)
+    }
 
     const handleScroll = useCallback(() => {
         if (codySidebarRef.current) {
@@ -154,11 +172,18 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ repository, onClose, a
                         deleteHistoryItem={deleteHistoryItem}
                     />
                 ) : (
-                    <CodyWebChat
-                        accessToken=''
-                        repositories={[repository]}
+                    <CodyWebChatProvider
+                        accessToken=""
                         serverEndpoint={window.location.origin}
-                    />
+                        initialContext={{
+                            repositories: [repository],
+                            fileURL: `/${filePath}`,
+                        }}
+                        chatID={contextToChatIds[`${repository.id}-${filePath}`]}
+                        onNewChatCreated={handleNewChatCreated}
+                    >
+                        <ChatUi />
+                    </CodyWebChatProvider>
                 )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}

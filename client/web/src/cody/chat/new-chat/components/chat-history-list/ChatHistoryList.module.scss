@@ -1,15 +1,30 @@
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
 .history-item {
+    width: 100%;
     display: flex;
     flex-direction: column;
     margin-bottom: 0;
-    padding: var(--spacing);
+    padding: 0.5rem 0.75rem;
     border: none;
     cursor: pointer;
     border-radius: 0.25rem;
+    text-align: left;
     background: var(--body-bg);
 
     &:hover {
         background: var(--color-bg-1);
+
+        .delete-button {
+            visibility: visible;
+        }
     }
 
     &.selected,
@@ -18,10 +33,7 @@
     }
 
     .delete-button {
+        color: var(--icon-color);
         visibility: hidden;
-    }
-
-    &:hover .delete-button {
-        visibility: visible;
     }
 }
