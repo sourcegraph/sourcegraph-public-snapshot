@@ -132,7 +132,7 @@ var nicheExtensionUsages = func() map[string]map[string]struct{} {
 	for _, lang := range overrideAmbiguousExtensionsMap {
 		considered[lang] = struct{}{}
 	}
-	for ext, _ := range overrideAmbiguousExtensionsMap {
+	for ext := range overrideAmbiguousExtensionsMap {
 		langs := enry.GetLanguagesByExtension("x"+ext, nil, nil)
 		for _, lang := range langs {
 			if _, found := considered[lang]; !found {
