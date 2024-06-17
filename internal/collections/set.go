@@ -3,8 +3,9 @@ package collections
 import (
 	"cmp"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"slices"
+
+	"golang.org/x/exp/maps"
 )
 
 // Set is a set (collection of unique elements) implemented as a map.
