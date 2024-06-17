@@ -293,6 +293,8 @@ func (c *Config) Load() {
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			fireworks.DeepseekCoder1p3b,
+			fireworks.DeepseekCoder7b,
 		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
