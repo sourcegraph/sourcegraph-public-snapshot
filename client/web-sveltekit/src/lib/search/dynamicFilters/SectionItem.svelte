@@ -29,6 +29,8 @@
 
 <style lang="scss">
     a {
+        --icon-color: currentColor;
+
         display: flex;
         width: 100%;
         align-items: center;
@@ -60,9 +62,12 @@
         }
 
         &.selected {
+            // Explicitly override icon color to ensure that icons with custom colors
+            // are visible on the primary background
+            --file-icon-color: currentColor;
+
             background-color: var(--primary);
             color: var(--light-text);
-            --color: var(--light-text);
 
             .label {
                 color: var(--light-text);

@@ -65,7 +65,7 @@
                             icon={icons[item.severity]}
                             aria-label={item.severity}
                             inline
-                            --icon-fill-color="var(--primary)"
+                            --icon-color="var(--primary)"
                         />
                         <span class="title">{item.title}</span>
                         {#if item.message}

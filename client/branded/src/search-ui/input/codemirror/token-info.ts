@@ -107,7 +107,13 @@ export function tokenInfo(): Extension {
                         return null
                     }
 
-                    return getTokensTooltipInformation(state.facet(decoratedTokens), position)
+                    const tooltipInformation = getTokensTooltipInformation(state.facet(decoratedTokens), position)
+
+                    // Do not show tooltips with empty content
+                    if (!tooltipInformation?.value) {
+                        return null
+                    }
+                    return tooltipInformation
                 }),
 
                 EditorView.decorations.compute([field, tooltipInformationFacet, 'selection'], state => {

@@ -136,9 +136,6 @@ resources:
           indexedSearch:
             disabled: true
 
-          indexedSearchIndexer:
-            disabled: true
-
           pgsql:
             disabled: true
 

@@ -27,7 +27,7 @@
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
-    $: isError = severity === 'error' || state === 'error'
+    $: error = severity === 'error' || state === 'error'
     /*
      * NOTE: progress.done and state === 'complete' will sometimes be different values.
      * Only one of them needs to evaluate to true in order for the ResultIndicator to
@@ -36,16 +36,11 @@
     $: done = progress.done || state === 'complete'
 </script>
 
-<div class="indicator">
+<div class="indicator" class:error>
     {#if loading}
         <LoadingSpinner --size="16px" />
     {:else}
-        <Icon
-            icon={icons[severity]}
-            aria-label={severity}
-            --icon-size="16px"
-            --color={isError ? 'var(--danger)' : 'var(--text-title)'}
-        />
+        <Icon icon={icons[severity]} aria-label={severity} --icon-size="16px" />
     {/if}
 
     <div class="messages">
@@ -59,11 +54,13 @@
         {/if}
     </div>
 
-    <Icon icon={ILucideChevronDown} --icon-size="12px" --color={isError ? 'var(--danger)' : 'var(--text-title)'} />
+    <Icon icon={ILucideChevronDown} --icon-size="12px" />
 </div>
 
 <style lang="scss">
     .indicator {
+        --icon-color: var(--text-title);
+
         display: flex;
         flex-flow: row nowrap;
         justify-content: space-between;
@@ -71,6 +68,10 @@
         gap: 0.75rem;
         padding: 0.375rem 0.75rem;
         border-radius: var(--border-radius);
+
+        &.error {
+            --icon-color: var(--danger);
+        }
 
         &:hover {
             background-color: var(--color-bg-2);

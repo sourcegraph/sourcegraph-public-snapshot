@@ -135,11 +135,11 @@
     }
 
     tr {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
         border-bottom: 1px solid var(--border-color);
 
         &.selected {
-            --icon-fill-color: inherit;
+            --icon-color: currentColor;
 
             color: var(--light-text);
             background-color: var(--primary);

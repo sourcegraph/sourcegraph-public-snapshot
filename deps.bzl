@@ -6281,8 +6281,8 @@ def go_dependencies():
         name = "com_github_yuin_goldmark",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/yuin/goldmark",
-        sum = "h1:3bajkSilaCbjdKVsKdZjZCLBNPL9pYzrCakKaf4U49U=",
-        version = "v1.7.1",
+        sum = "h1:NjGd7lO7zrUn/A7eKwn5PEOt4ONYGqpxSEeZuduvgxc=",
+        version = "v1.7.2",
     )
     go_repository(
         name = "com_github_yuin_goldmark_emoji",

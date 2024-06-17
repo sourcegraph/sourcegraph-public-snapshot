@@ -13,11 +13,14 @@ type googleCompletionStreamClient struct {
 // Ref: https://ai.google.dev/api/rest/v1beta/models/streamGenerateContent
 type googleRequest struct {
 	Model             string                 `json:"model"`
-	Stream            bool                   `json:"stream,omitempty"`
 	Contents          []googleContentMessage `json:"contents"`
 	GenerationConfig  googleGenerationConfig `json:"generationConfig,omitempty"`
 	SafetySettings    []googleSafetySettings `json:"safetySettings,omitempty"`
 	SymtemInstruction string                 `json:"systemInstruction,omitempty"`
+
+	// Stream is used for our internal routing of the Google Request, and is not part
+	// of the Google API shape. So we make sure to not include it when marshaling into JSON.
+	Stream bool `json:"-"` // This field will not be marshaled into JSON
 }
 
 type googleContentMessage struct {
@@ -41,21 +44,13 @@ type googleGenerationConfig struct {
 }
 
 type googleResponse struct {
-	Model      string `json:"model"`
 	Candidates []struct {
-		Content      googleContentMessage
-		FinishReason string `json:"finishReason"`
+		Content      googleContentMessage `json:"content,omitempty"`
+		FinishReason string               `json:"finishReason,omitempty"`
 	} `json:"candidates"`
 
-	UsageMetadata  googleUsage            `json:"usageMetadata"`
-	SafetySettings []googleSafetySettings `json:"safetySettings,omitempty"`
-}
-
-// Safety setting, affecting the safety-blocking behavior.
-// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
-type googleSafetySettings struct {
-	Category  string `json:"category"`
-	Threshold string `json:"threshold"`
+	UsageMetadata googleUsage           `json:"usageMetadata,omitempty"`
+	SafetyRatings []googleSafetyRatings `json:"safetyRatings,omitempty"`
 }
 
 type googleUsage struct {
@@ -63,4 +58,15 @@ type googleUsage struct {
 	// Use the same name we use elsewhere (completion instead of candidates)
 	CompletionTokenCount int `json:"candidatesTokenCount"`
 	TotalTokenCount      int `json:"totalTokenCount"`
+}
+
+// Safety setting, affecting the safety-blocking behavior.
+// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
+type googleSafetySettings struct {
+	Category  string `json:"category,omitempty"`
+	Threshold string `json:"threshold,omitempty"`
+}
+type googleSafetyRatings struct {
+	Category    string `json:"category,omitempty"`
+	Probability string `json:"probability,omitempty"`
 }

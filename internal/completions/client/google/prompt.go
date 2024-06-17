@@ -5,6 +5,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// getPrompt converts a slice of types.Message into a slice of googleContentMessage,
+// which is the format expected by the Google Completions API. It ensures that the
+// speaker roles are consistent and that the message content is not empty.
 func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 	googleMessages := make([]googleContentMessage, 0, len(messages))
 
@@ -16,11 +19,8 @@ func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 			if i != 0 {
 				return nil, errors.New("system role can only be used in the first message")
 			}
-			googleRole = message.Speaker
+			googleRole = "model"
 		case types.ASSISTANT_MESSAGE_SPEAKER:
-			if i == 0 {
-				return nil, errors.New("assistant role cannot be used in the first message")
-			}
 			googleRole = "model"
 		case types.HUMAN_MESSAGE_SPEAKER:
 			googleRole = "user"
@@ -29,7 +29,16 @@ func getPrompt(messages []types.Message) ([]googleContentMessage, error) {
 		}
 
 		if message.Text == "" {
+			// Skip empty assistant messages only if it's the last message.
+			if googleRole == "model" && i != 0 && i == len(messages)-1 {
+				continue
+			}
 			return nil, errors.New("message content cannot be empty")
+		}
+		if len(googleMessages) > 0 {
+			if googleMessages[i-1].Role == googleRole {
+				return nil, errors.New("consistent speaker role is not allowed")
+			}
 		}
 
 		googleMessages = append(googleMessages, googleContentMessage{

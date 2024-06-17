@@ -20,6 +20,7 @@ import {
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
+import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
@@ -64,7 +65,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const welcomeToPro = parameters.get('welcome') === '1'
 
-    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const { data, error: dataError, refetch } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
         USER_CODY_USAGE,
@@ -104,8 +105,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
+                <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
-                    <CodyAlert variant="purpleCodyPro">
+                    <CodyAlert variant="greenCodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
                         <Text size="small" className="mb-0">
                             You now have Cody Pro with access to unlimited autocomplete, chats, and commands.
