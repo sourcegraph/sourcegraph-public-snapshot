@@ -1050,12 +1050,16 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 		return results
 	}
 
+	// TODO: We can optimize this further by continuously slicing the occurrences array
+	// as both these arrays are sorted
 	for _, candidateRange := range candidateFile.matches {
 		for _, occ := range findOccurrencesWithEqualRange(document.Occurrences, candidateRange) {
-			results = append(results, SyntacticMatch{
-				Path:       filePath,
-				Occurrence: occ,
-			})
+			if !scip.IsLocalSymbol(occ.Symbol) {
+				results = append(results, SyntacticMatch{
+					Path:       filePath,
+					Occurrence: occ,
+				})
+			}
 		}
 	}
 
