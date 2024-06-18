@@ -250,7 +250,6 @@ export class CodeIntelAPIAdapter {
 
     public getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
         const { occurrence, range } = this.findOccurrenceAt(offset, state)
-        console.log({ occurrence, range })
         if (!occurrence || !range) {
             return Promise.resolve(null)
         }
