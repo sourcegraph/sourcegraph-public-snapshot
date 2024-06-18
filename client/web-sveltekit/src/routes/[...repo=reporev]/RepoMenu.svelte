@@ -62,9 +62,12 @@
                         View on code host
                     {/if}
                 </small>
-                <div>
+                <div class="repo-name">
                     <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
                     <span>{displayRepoName}</span>
+                </div>
+                <div class="external-link-icon">
+                    <Icon icon={ILucideExternalLink} aria-hidden />
                 </div>
             </div>
         </MenuLink>
@@ -114,15 +117,30 @@
     .code-host-item {
         --icon-color: currentColor;
 
-        display: flex;
-        flex-direction: column;
+        display: grid;
         gap: 0.25rem;
+        grid-template-columns: 1fr 1rem;
+        grid-template-rows: min-content min-content;
 
         small {
             color: var(--text-muted);
+            grid-column: 1;
+            grid-row: 1;
         }
 
-        div {
+        div.repo-name {
+            grid-column: 1;
+            grid-row: 2;
+
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
+        }
+
+        div.external-link-icon {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+
             display: flex;
             gap: 0.5em;
             align-items: center;
