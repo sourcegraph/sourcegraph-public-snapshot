@@ -82,6 +82,15 @@ message EnterpriseSubscription {
   string display_name = 3;
   // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
   string instance_domain = 4;
+
+  message SalesforceMetadata {
+    // The Salesforce subscription ID associated with this Enterprise subscription.
+    string subscription_id = 1;
+    // The Salesforce opportunity ID associated with this Enterprise subscription.
+    string opportunity_id = 2;
+  }
+  // Salesforce details associated with this subscription.
+  SalesforceMetadata salesforce = 5;
 }
 
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription member.
@@ -289,6 +298,8 @@ message CreateEnterpriseSubscriptionRequest {
   //
   // Optional attributes:
   // - instance_domain
+  // - salesforce.subscription_id
+  // - salesforce.opportunity_id
   EnterpriseSubscription subscription = 1;
 }
 
