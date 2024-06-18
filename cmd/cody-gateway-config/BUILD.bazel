@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/modelconfig/types",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
