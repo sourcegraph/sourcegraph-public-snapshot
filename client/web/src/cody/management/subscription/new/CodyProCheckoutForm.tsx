@@ -8,20 +8,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
-import {
-    Form,
-    Link,
-    Button,
-    Grid,
-    H2,
-    Text,
-    Container,
-    Icon,
-    Input,
-    Label,
-    H3,
-    LoadingSpinner,
-} from '@sourcegraph/wildcard'
+import { Form, Link, Button, Grid, H2, Text, Container, Icon, H3, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
 import { useCreateTeam } from '../../api/react-query/subscriptions'
@@ -203,16 +190,19 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         <H2 className="font-medium">
                             Purchase {seatCount} {pluralize('seat', seatCount)}
                         </H2>
-                        <Label>Email</Label>
-                        <Input value={customerEmail || ''} disabled={true} className="mb-4" />
                         <Form onSubmit={handleSubmit}>
-                            <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
+                            <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
+
+                            <Text className="mb-2 font-medium text-sm">Email</Text>
+                            <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
+
                             <StripeAddressElement onFocus={() => setErrorMessage('')} />
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
 
                             <Button
+                                variant="primary"
                                 disabled={submitting}
                                 className={classNames('d-block w-100 mb-4', styles.payButton)}
                                 type="submit"
