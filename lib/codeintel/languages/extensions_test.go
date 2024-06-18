@@ -164,6 +164,9 @@ func TestExtensionsConsistency2(t *testing.T) {
 	}
 }
 
+// TODO(id: remove-pkl-special-case) Linguist v7.30.0 adds support for Pkl,
+// so when we upgrade to a matching go-enry version, we can remove special
+// cases for Pkl.
 func TestUnsupportedByEnry(t *testing.T) {
 	for lang := range unsupportedByEnryNameToExtensionMap {
 		_, found := enrydata.ExtensionsByLanguage[lang]

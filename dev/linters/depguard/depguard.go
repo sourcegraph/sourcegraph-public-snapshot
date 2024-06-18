@@ -24,6 +24,8 @@ var Deny map[string]string = map[string]string{
 	"regexp$":                             "Use github.com/grafana/regexp instead",
 	"github.com/hexops/autogold$":         "Use github.com/hexops/autogold/v2 instead",
 	"github.com/google/go-github/github$": "Use github.com/google/go-github/v55/github instead. To convert between v48 and v55, use the internal/extsvc/github/githubconvert package",
+	"github.com/go-enry/go-enry$":         "Use github.com/sourcegraph/sourcegraph/lib/codeintel/languages instead. If some docs are not clear, please ask in #discuss-graph.",
+	"github.com/go-enry/go-enry/v2$":      "Use github.com/sourcegraph/sourcegraph/lib/codeintel/languages instead. If some docs are not clear, please ask in #discuss-graph.",
 }
 
 func createAnalyzer() *analysis.Analyzer {

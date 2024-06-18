@@ -114,12 +114,8 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 }
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
-	// Pkl Configuration Language (https://pkl-lang.org/)
-	// NOTE: Add to linguist on 6/7/24
-	// can remove once go-enry package updates
-	// to that linguist version
-	".pkl": "Pkl",
-	// Magik Language
+	// See TODO(id: remove-pkl-special-case)
+	".pkl":   "Pkl",
 	".magik": "Magik",
 }
 
@@ -165,12 +161,15 @@ var nicheExtensionUsages = func() map[string]map[string]struct{} {
 
 var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
 
-var unsupportedByEnryAliasMap = map[string]string{
-	// Pkl Configuration Language (https://pkl-lang.org/)
-	"pkl": "Pkl",
-	// Magik Language
-	"magik": "Magik",
-}
+// unsupportedByEnryAliasMap maps alias -> language name for languages
+// not tracked by go-enry.
+var unsupportedByEnryAliasMap = func() map[string]string {
+	out := map[string]string{}
+	for _, lang := range unsupportedByEnryExtensionToNameMap {
+		out[convertToAliasKey(lang)] = lang
+	}
+	return out
+}()
 
 func reverseMap(m map[string]string) map[string]string {
 	n := make(map[string]string, len(m))

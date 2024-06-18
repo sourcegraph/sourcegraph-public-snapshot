@@ -54,9 +54,7 @@ const LANGUAGES_NOT_IN_ENRY = [
     // Not in Linguist and they are not likely to add
     'Magik',
 
-    // Add to linguist on 6/7/24
-    // can remove once go-enry package updates
-    // to that linguist version
+    // See TODO(id: remove-pkl-special-case)
     'Pkl',
 ]
 
@@ -71,7 +69,7 @@ const LANGUAGES_NOT_IN_ENRY = [
  | sort | uniq
  */
 export const ALL_LANGUAGES = uniq(
-    POPULAR_LANGUAGES.concat([
+    POPULAR_LANGUAGES.concat(LANGUAGES_NOT_IN_ENRY).concat([
         '1C Enterprise',
         '2-Dimensional Array',
         '4D',
@@ -734,7 +732,5 @@ export const ALL_LANGUAGES = uniq(
         'wdl',
         'wisp',
         'xBase',
-    ])
-        .concat(LANGUAGES_NOT_IN_ENRY)
-        .sort()
+    ]).sort()
 )
