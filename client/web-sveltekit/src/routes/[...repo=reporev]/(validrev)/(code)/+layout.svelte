@@ -473,6 +473,7 @@
 
         :global([data-tabs]) {
             flex: 1;
+            min-width: 0;
         }
 
         .last-commit {
