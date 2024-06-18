@@ -49,11 +49,11 @@ export interface Location {
 
 export type Definition =
     | {
-          type: 'at-definition' | 'single' | 'multiple'
-          readonly destination: Location
-          readonly from: Location
-          occurrence: Occurrence
-      }
+        type: 'at-definition' | 'single' | 'multiple'
+        readonly destination: Location
+        readonly from: Location
+        occurrence: Occurrence
+    }
     | { type: 'none'; occurrence: Occurrence }
 
 export interface GoToDefinitionOptions {
@@ -250,6 +250,7 @@ export class CodeIntelAPIAdapter {
 
     public getHoverTooltip(state: EditorState, offset: number): Promise<(Tooltip & { end: number }) | null> {
         const { occurrence, range } = this.findOccurrenceAt(offset, state)
+        console.log({ occurrence, range })
         if (!occurrence || !range) {
             return Promise.resolve(null)
         }
@@ -271,9 +272,9 @@ export class CodeIntelAPIAdapter {
                     result === null || result === undefined || result.contents.length === 0
                         ? ''
                         : result.contents
-                              .map(({ value }) => value)
-                              .join('\n\n----\n\n')
-                              .trimEnd()
+                            .map(({ value }) => value)
+                            .join('\n\n----\n\n')
+                            .trimEnd()
                 const precise = isPrecise(result)
                 if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
                     return null
@@ -283,30 +284,30 @@ export class CodeIntelAPIAdapter {
                 }
                 return markdownContents
                     ? {
-                          pos: range.from,
-                          end: range.to,
-                          above: true,
-                          create: view =>
-                              this.config.createTooltipView({
-                                  view,
-                                  token: occurrence.range.withIncrementedValues(),
-                                  hovercardData: this.getHoverActions(view, occurrence, precise).pipe(
-                                      map(actions => ({
-                                          actionsOrError: actions,
-                                          hoverOrError: {
-                                              range: occurrence.range,
-                                              aggregatedBadges: result?.aggregatedBadges,
-                                              contents: [
-                                                  {
-                                                      value: markdownContents,
-                                                      kind: MarkupKind.Markdown,
-                                                  },
-                                              ],
-                                          },
-                                      }))
-                                  ),
-                              }),
-                      }
+                        pos: range.from,
+                        end: range.to,
+                        above: true,
+                        create: view =>
+                            this.config.createTooltipView({
+                                view,
+                                token: occurrence.range.withIncrementedValues(),
+                                hovercardData: this.getHoverActions(view, occurrence, precise).pipe(
+                                    map(actions => ({
+                                        actionsOrError: actions,
+                                        hoverOrError: {
+                                            range: occurrence.range,
+                                            aggregatedBadges: result?.aggregatedBadges,
+                                            contents: [
+                                                {
+                                                    value: markdownContents,
+                                                    kind: MarkupKind.Markdown,
+                                                },
+                                            ],
+                                        },
+                                    }))
+                                ),
+                            }),
+                    }
                     : null
             })
 

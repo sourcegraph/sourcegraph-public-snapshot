@@ -6,10 +6,11 @@ import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 
 export interface CodeGraphData {
     provenance: string
-    toolInfo?: {
-        name?: string
-        version?: string
-    }
+    commit: string
+    toolInfo: {
+        name: string | null
+        version: string | null
+    } | null
     // Guaranteed to be sorted by range
     occurrences: Occurrence[]
 }

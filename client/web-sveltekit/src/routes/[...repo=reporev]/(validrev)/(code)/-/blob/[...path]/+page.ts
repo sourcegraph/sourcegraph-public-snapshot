@@ -77,6 +77,8 @@ async function fetchCodeGraphData(
     return (
         rawCodeGraphData.map(datum => ({
             provenance: datum.provenance,
+            toolInfo: datum.toolInfo,
+            commit: datum.commit,
             occurrences:
                 datum.occurrences?.nodes.map(
                     occ =>
