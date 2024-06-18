@@ -13,7 +13,7 @@ import (
 )
 
 var rawAdditionalAllowedEventTypes = env.Get("SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES", "",
-	"Additional event types to include in sensitivemetadataallowlist.AllowedEventTypes, in comma-separated '${feature}::${action}::${key1}::${key2}' format.")
+	"Additional event types to include in sensitivemetadataallowlist.AllowedEventTypes, in comma-separated '${feature}::${key1}::${key2}' format.")
 var additionalAllowedEventTypes = func() []EventType {
 	types, err := parseAdditionalAllowedEventTypes(rawAdditionalAllowedEventTypes)
 	if err != nil {
@@ -32,27 +32,15 @@ func AllowedEventTypes() EventTypes {
 		// Always provide a reason for allowlisting an event.
 		EventType{
 			Feature: string(telemetry.FeatureExample),
-			Action:  string(telemetry.ActionExample),
 			AllowedPrivateMetadataKeys: []string{
 				"testField",
 			},
 		},
-		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
+		// The 'languageId' key is included for feature:'cody.completions' events to provide
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "cody.completion",
-			Action:  "suggested",
-			AllowedPrivateMetadataKeys: []string{
-				"languageId",
-			},
-		},
-		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
-		// customers with valuable language-specific insights from the analytics we offer.
-		// This information helps them better understand code completion usage patterns.
-		EventType{
-			Feature: "cody.completion",
-			Action:  "accepted",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
 			},
@@ -62,14 +50,14 @@ func AllowedEventTypes() EventTypes {
 
 type EventTypes struct {
 	types []EventType
-	// index of '{feature}.{action}:{allowedfields}' for checking
+	// index of '{feature}:{allowedfields}' for checking
 	index map[string][]string
 }
 
 func eventTypes(types ...EventType) EventTypes {
 	index := make(map[string][]string, len(types))
 	for _, t := range types {
-		index[fmt.Sprintf("%s.%s", t.Feature, t.Action)] = t.AllowedPrivateMetadataKeys
+		index[fmt.Sprintf("%s", t.Feature)] = t.AllowedPrivateMetadataKeys
 	}
 	return EventTypes{types: types, index: index}
 }
@@ -90,7 +78,7 @@ func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that
 // are allowed.
 func (e EventTypes) IsAllowed(event *telemetrygatewayv1.Event) ([]string, bool) {
-	key := fmt.Sprintf("%s.%s", event.GetFeature(), event.GetAction())
+	key := fmt.Sprintf("%s", event.GetFeature())
 	allowedKeys, allowed := e.index[key]
 	return allowedKeys, allowed
 }
@@ -106,7 +94,6 @@ func (e EventTypes) validate() error {
 
 type EventType struct {
 	Feature string
-	Action  string
 	// AllowedPrivateMetadataKeys is a slice of strings representing the top-level field names
 	// from the `privateMetadata` object that ARE allowed to be exported for ALL users. Any field not present
 	// in this slice will be considered sensitive and redacted during the export process.
@@ -115,8 +102,8 @@ type EventType struct {
 }
 
 func (e EventType) validate() error {
-	if e.Feature == "" || e.Action == "" {
-		return errors.New("feature and action are required")
+	if e.Feature == "" {
+		return errors.New("feature is required")
 	}
 	if len(e.AllowedPrivateMetadataKeys) == 0 {
 		return errors.New("allowedPrivateMetadataKeys are required")
@@ -138,21 +125,20 @@ func parseAdditionalAllowedEventTypes(config string) ([]EventType, error) {
 	var types []EventType
 	for _, rawType := range strings.Split(config, ",") {
 		parts := strings.Split(rawType, "::")
-		if len(parts) < 2 {
+		if len(parts) < 1 {
 			return nil, errors.Newf(
 				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q",
 				rawType)
 		}
 		// indicates that the user has not specified any allowlisted fields
-		if len(parts) < 3 {
+		if len(parts) < 2 {
 			return nil, errors.Newf(
 				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q, missing allowlisted fields",
 				rawType)
 		}
 		types = append(types, EventType{
 			Feature:                    parts[0],
-			Action:                     parts[1],
-			AllowedPrivateMetadataKeys: parts[2:],
+			AllowedPrivateMetadataKeys: parts[1:],
 		})
 	}
 	return types, nil
