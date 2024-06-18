@@ -120,7 +120,6 @@
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
-    $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -313,11 +312,24 @@
                             {/key}
                         </TabPanel>
                         <TabPanel title="References" shortcut={referenceHotkey}>
-                            <ReferencePanel
-                                connection={references}
-                                loading={referencesLoading}
-                                on:more={referenceQuery?.fetchMore}
-                            />
+                            {#if !referenceQuery}
+                                <div class="info">
+                                    <Alert variant="info"
+                                        >Hover over a symbol and click "Find references" to find references to the
+                                        symbol.</Alert
+                                    >
+                                </div>
+                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
+                                <div class="info">
+                                    <Alert variant="info">No references found.</Alert>
+                                </div>
+                            {:else}
+                                <ReferencePanel
+                                    connection={references}
+                                    loading={$referenceQuery?.fetching ?? false}
+                                    on:more={referenceQuery?.fetchMore}
+                                />
+                            {/if}
                         </TabPanel>
                     </Tabs>
                     {#if lastCommit && isCollapsed}
@@ -480,5 +492,9 @@
             max-width: min-content;
             margin-right: 0.5rem;
         }
+    }
+
+    .info {
+        padding: 1rem;
     }
 </style>
