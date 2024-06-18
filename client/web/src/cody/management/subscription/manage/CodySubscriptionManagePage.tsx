@@ -18,6 +18,7 @@ import {
 } from '../../../../graphql-operations'
 import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { CodyProRoutes } from '../../../codyProRoutes'
+import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 
@@ -26,7 +27,6 @@ import { PaymentDetails } from './PaymentDetails'
 import { SubscriptionDetails } from './SubscriptionDetails'
 
 import styles from './CodySubscriptionManagePage.module.scss'
-import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 
 interface Props extends Pick<LegacyLayoutRouteContext, 'telemetryRecorder'> {
     authenticatedUser: AuthenticatedUser
