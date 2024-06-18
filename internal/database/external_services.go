@@ -67,8 +67,7 @@ type ExternalServiceStore interface {
 
 	// GetLatestSyncErrors returns the most recent sync failure message for
 	// each external service. If the latest sync did not have an error, the
-	// string will be empty. We exclude cloud_default external services as they
-	// are never synced.
+	// string will be empty.
 	GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error)
 
 	// GetByID returns the external service for id.
@@ -254,9 +253,6 @@ type ExternalServicesListOptions struct {
 	UpdatedAfter time.Time
 	// Possible values are ASC or DESC. Defaults to DESC.
 	OrderByDirection string
-	// When true, will only return services that have the cloud_default flag set to
-	// true.
-	OnlyCloudDefault bool
 	// When specified, only include external services which contain repository with a given ID.
 	RepoID api.RepoID
 
@@ -285,9 +281,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if !o.UpdatedAfter.IsZero() {
 		conds = append(conds, sqlf.Sprintf(`updated_at > %s`, o.UpdatedAfter))
-	}
-	if o.OnlyCloudDefault {
-		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
 	}
 	if o.CodeHostID != 0 {
 		conds = append(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
@@ -535,18 +528,6 @@ func validatePerforceConnection(perforceValidators []PerforceValidatorFunc, _ in
 	return err
 }
 
-// disablePermsSyncingForExternalService removes "authorization" or
-// "enforcePermissions" fields from the external service config
-// when present on the external service config.
-func disablePermsSyncingForExternalService(config string) (string, error) {
-	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
-	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
-	if err != nil {
-		withoutEnforcePermissions = config
-	}
-	return jsonc.Remove(withoutEnforcePermissions, "authorization")
-}
-
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) (err error) {
 	rawConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
@@ -561,18 +542,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	})
 	if err != nil {
 		return err
-	}
-
-	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-	// we always want to disable repository permissions to prevent
-	// permission syncing from trying to sync permissions from public code.
-	if dotcom.SourcegraphDotComMode() {
-		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
-		if err != nil {
-			return err
-		}
-
-		es.Config.Set(rawConfig)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -611,7 +580,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			es.CreatedAt,
 			es.UpdatedAt,
 			es.Unrestricted,
-			es.CloudDefault,
 			es.HasWebhooks,
 			es.CodeHostID,
 			es.CreatorID,
@@ -622,8 +590,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id, creator_id, last_updater_id)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, has_webhooks, code_host_id, creator_id, last_updater_id)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -662,18 +630,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		})
 		if err != nil {
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
-		}
-
-		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-		// we always want to disable repository permissions to prevent
-		// permission syncing from trying to sync permissions from public code.
-		if dotcom.SourcegraphDotComMode() {
-			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
-			if err != nil {
-				return err
-			}
-
-			s.Config.Set(rawConfig)
 		}
 
 		e.recalculateFields(s, string(normalized))
@@ -739,7 +695,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&svcs[i].Unrestricted,
-			&svcs[i].CloudDefault,
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 			&svcs[i].CodeHostID,
@@ -777,7 +732,6 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			dbutil.NullTimeColumn(s.LastSyncAt),
 			dbutil.NullTimeColumn(s.NextSyncAt),
 			s.Unrestricted,
-			s.CloudDefault,
 			s.HasWebhooks,
 			s.CodeHostID,
 			s.CreatorID,
@@ -792,7 +746,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -808,7 +762,6 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   unrestricted,
-  cloud_default,
   has_webhooks,
   code_host_id,
   creator_id,
@@ -827,7 +780,6 @@ SET
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
   unrestricted       = excluded.unrestricted,
-  cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks,
   code_host_id       = excluded.code_host_id,
   last_updater_id    = excluded.last_updater_id
@@ -842,7 +794,6 @@ RETURNING
 	last_sync_at,
 	next_sync_at,
 	unrestricted,
-	cloud_default,
 	encryption_key_id,
 	has_webhooks,
 	code_host_id,
@@ -854,7 +805,6 @@ RETURNING
 type ExternalServiceUpdate struct {
 	DisplayName    *string
 	Config         *string
-	CloudDefault   *bool
 	TokenExpiresAt *time.Time
 	LastSyncAt     *time.Time
 	NextSyncAt     *time.Time
@@ -922,17 +872,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 
-		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-		// we always want to disable repository permissions to prevent
-		// permission syncing from trying to sync permissions from public code.
-		if dotcom.SourcegraphDotComMode() {
-			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
-			if err != nil {
-				return err
-			}
-			newSvc.Config.Set(unredactedConfig)
-		}
-
 		chID, err := ensureCodeHost(ctx, tx, externalService.Kind, string(normalized))
 		if err != nil {
 			return err
@@ -950,17 +889,13 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := calcUnrestricted(string(normalized), dotcom.SourcegraphDotComMode(), conf.PermissionsUserMapping().Enabled)
+		unrestricted := calcUnrestricted(string(normalized), conf.PermissionsUserMapping().Enabled)
 
 		updates = append(updates,
 			sqlf.Sprintf(
 				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s, last_updater_id = %s",
 				encryptedConfig, keyID, unrestricted, hasWebhooks, update.LastUpdaterID,
 			))
-	}
-
-	if update.CloudDefault != nil {
-		updates = append(updates, sqlf.Sprintf("cloud_default = %s", update.CloudDefault))
 	}
 
 	if update.TokenExpiresAt != nil {
@@ -1469,7 +1404,7 @@ FROM external_services es
                    ON es.id = essj.external_service_id
                        AND essj.state IN ('completed', 'errored', 'failed')
                        AND essj.finished_at IS NOT NULL
-WHERE es.deleted_at IS NULL AND NOT es.cloud_default
+WHERE es.deleted_at IS NULL
 ORDER BY es.id, essj.finished_at DESC
 `)
 
@@ -1497,7 +1432,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			last_sync_at,
 			next_sync_at,
 			unrestricted,
-			cloud_default,
 			has_webhooks,
 			token_expires_at,
 			code_host_id,
@@ -1541,7 +1475,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&lastSyncAt,
 			&nextSyncAt,
 			&h.Unrestricted,
-			&h.CloudDefault,
 			&hasWebhooks,
 			&tokenExpiresAt,
 			&h.CodeHostID,
@@ -1697,17 +1630,7 @@ WHERE EXISTS(
 
 // calcUnrestricted determines whether or not permissions should be enforced
 // on an external service.
-//
-// isDotComMode and permissionsUserMappingEnabled can be passed via
-//
-//	dotcom.SourcegraphDotComMode() and globals.PermissionsUserMapping().Enabled
-//
-// respectively.
-func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEnabled bool) bool {
-	if isDotComMode {
-		return false
-	}
-
+func calcUnrestricted(config string, permissionsUserMappingEnabled bool) bool {
 	// If PermissionsUserMapping is enabled, we return false since permissions
 	// will be managed by the explicit permissions API.
 	if permissionsUserMappingEnabled {
@@ -1737,7 +1660,7 @@ func calcUnrestricted(config string, isDotComMode bool, permissionsUserMappingEn
 // calculated depending on the external service configuration, namely
 // `Unrestricted` and `HasWebhooks`.
 func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) {
-	es.Unrestricted = calcUnrestricted(rawConfig, dotcom.SourcegraphDotComMode(), conf.PermissionsUserMapping().Enabled)
+	es.Unrestricted = calcUnrestricted(rawConfig, conf.PermissionsUserMapping().Enabled)
 
 	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)

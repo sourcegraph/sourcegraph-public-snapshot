@@ -18,7 +18,6 @@ go_library(
         "//internal/api",
         "//internal/conf",
         "//internal/database",
-        "//internal/dotcom",
         "//internal/limiter",
         "//internal/ratelimit",
         "//internal/repoupdater/protocol",
