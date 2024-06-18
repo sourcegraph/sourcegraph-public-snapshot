@@ -327,6 +327,9 @@ resources:
           indexedSearch:
             disabled: true
 
+          openTelemetry:
+            disabled: true
+
           pgsql: {}
 
           postgresExporter:
