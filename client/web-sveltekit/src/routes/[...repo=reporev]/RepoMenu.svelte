@@ -19,7 +19,7 @@
     export let externalServiceKind: string | undefined
 </script>
 
-<DropdownMenu triggerButtonClass={getButtonClassName({ variant: 'text' })}>
+<DropdownMenu triggerButtonClass="{getButtonClassName({ variant: 'text' })} triggerButton">
     <svelte:fragment slot="trigger">
         <div class="trigger">
             <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
@@ -72,6 +72,9 @@
 </DropdownMenu>
 
 <style lang="scss">
+    :global(.triggerButton) {
+        border-radius: 0;
+    }
     .trigger {
         --icon-color: currentColor;
 
