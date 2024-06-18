@@ -1,0 +1,80 @@
+package modelconfig
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+// IMPORTANT: Validation MUST be backwards-compatible.
+//
+// We can NEVER "relax" any validation checks we perform. Because that would lead to older
+// Sourcegraph instances failing to accept newer versions of the configuration data.
+
+// resourceIDRE is a regular expression for verifying resource IDs are
+// of a simple format.
+var resourceIDRE = regexp.MustCompile(`[a-z][a-z-]*[a-z]`)
+
+func validateProvider(p types.Provider) error {
+	if l := len(p.DisplayName); l < 5 || l > 40 {
+		return errors.Errorf("display name length: %d", l)
+	}
+	if !resourceIDRE.MatchString(string(p.ID)) {
+		return errors.New("id format")
+	}
+
+	// We intentionally don't validate any provider configuration
+	// data here, as it isn't clear if that is even a good idea
+	// in the first place. (e.g. we may not know the exact format
+	// of some 3rd party provider's configuration knob.)
+	return nil
+}
+
+func validateModelRef(ref types.ModelRef) error {
+	parts := strings.Split(string(ref), "::")
+	if len(parts) != 3 {
+		return errors.New("invalid number of parts")
+	}
+	if !resourceIDRE.MatchString(parts[0]) {
+		return errors.New("invalid ProviderID")
+	}
+	// We don't impose any constraints on the API Version ID, because
+	// while it's something Sourcegraph manages, there are lots of exotic
+	// but reasonable forms it could take. e.g. "2024-06-01" or
+	// "v1+beta2/with-git-lfs-context-support".
+	if !resourceIDRE.MatchString(parts[2]) {
+		return errors.New("invalid ModelID")
+	}
+
+	return nil
+}
+
+func validateModel(m types.Model) error {
+	if l := len(m.DisplayName); l < 5 || l > 40 {
+		return errors.Errorf("display name length: %d", l)
+	}
+	// We don't do any validation of the ModelName, as that the
+	// values needed by LLM providers is outside of our control.
+	if !resourceIDRE.MatchString(string(m.ID)) {
+		return errors.New("id format")
+	}
+
+	if err := validateModelRef(m.ModelRef); err != nil {
+		return errors.Wrap(err, "modelref")
+	}
+
+	ctxWin := m.ContextWindow
+	if ctxWin.MaxInputTokens <= 0 {
+		return errors.New("invalid max input tokens")
+	}
+	if ctxWin.MaxOutputTokens <= 0 {
+		return errors.New("invalid max output tokens")
+	}
+
+	// We intentionally do not validate any of the enum metadata fields, because
+	// older Sourcegraph instances wouldn't be able to recognize any newer values.
+
+	return nil
+}
