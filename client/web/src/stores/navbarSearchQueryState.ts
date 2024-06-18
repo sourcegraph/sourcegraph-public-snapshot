@@ -13,6 +13,7 @@ import {
     InitialParametersSource,
     SearchMode,
 } from '@sourcegraph/shared/src/search'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -108,8 +109,14 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         // Only update flags if the URL contains a search query.
         newState.parametersSource = InitialParametersSource.URL
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
-        if (parsedSearchURL.patternType !== undefined) {
-            newState.searchPatternType = parsedSearchURL.patternType
+
+        const parsedPatternType = parsedSearchURL.patternType
+        if (parsedPatternType !== undefined) {
+            newState.searchPatternType = parsedPatternType
+            // Only keyword and regexp are represented in the UI, so surface other patterntypes in the query input.
+            if (parsedPatternType !== SearchPatternType.regexp && parsedPatternType !== SearchPatternType.keyword) {
+                query += ' ' + FilterType.patterntype + ':' + parsedPatternType
+            }
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query
