@@ -4,7 +4,8 @@ $icon-inline-size: var(--icon-inline-size, #{(16 / 14)}em);
 svg.icon {
     width: $icon-size;
     height: $icon-size;
-    color: var(--icon-fill-color, var(--color, inherit));
+    // Note that --icon-color is defined globally
+    color: var(--icon-color, inherit);
     fill: currentColor;
     stroke-width: var(--stroke-width, 2);
 

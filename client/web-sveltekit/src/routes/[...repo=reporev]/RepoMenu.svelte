@@ -73,6 +73,8 @@
 
 <style lang="scss">
     .trigger {
+        --icon-color: currentColor;
+
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -93,12 +95,13 @@
     }
 
     .menu-item {
+        --icon-color: currentColor;
+
         display: flex;
         gap: 0.5rem;
         min-width: 20rem;
         align-items: center;
         color: var(--color-text);
-        --icon-color: currentColor;
 
         :global(kbd) {
             margin-left: auto;
@@ -106,6 +109,8 @@
     }
 
     .code-host-item {
+        --icon-color: currentColor;
+
         display: flex;
         flex-direction: column;
         gap: 0.25rem;

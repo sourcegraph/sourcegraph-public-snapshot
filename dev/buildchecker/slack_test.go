@@ -26,18 +26,3 @@ func TestBranchEventSummary(t *testing.T) {
 		want.Equal(t, got)
 	})
 }
-
-func TestWeeklySummary(t *testing.T) {
-	fromString := "2006-01-02"
-	toString := "2006-01-03"
-	got := generateWeeklySummary(fromString, toString, 5, 1, 20, 150)
-	want := autogold.Expect(`:bar_chart: Welcome to the weekly CI report for period *2006-01-02* to *2006-01-03*!
-
-• Total builds: *5*
-• Total flakes: *1*
-• Average % of build flakes: *20%*
-• Total incident duration: *150ns*
-
-`)
-	want.Equal(t, got)
-}

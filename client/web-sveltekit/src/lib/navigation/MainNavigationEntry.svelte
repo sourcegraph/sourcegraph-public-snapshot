@@ -50,7 +50,7 @@
 
 <style lang="scss">
     li.toplevel-naventry {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
 
         position: relative;
         display: flex;

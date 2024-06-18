@@ -64,7 +64,7 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled, telemetry
                 description={
                     <>
                         Create and connect a GitHub App to better manage GitHub code host connections.{' '}
-                        <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
+                        <Link to="/help/admin/code_hosts/github#using-a-github-app" target="_blank">
                             See how GitHub App configuration works.
                         </Link>
                         {batchChangesEnabled && (

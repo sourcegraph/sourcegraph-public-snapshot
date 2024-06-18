@@ -149,10 +149,13 @@
         align-items: center;
 
         // Change icon color based on selected item state
-        --icon-fill-color: var(--tree-node-expand-icon-color);
+        --icon-color: var(--tree-node-expand-icon-color);
         color: var(--tree-node-label-color, var(--text-body));
 
         li[data-treeitem][aria-selected='true'] > & {
+            --icon-color: currentColor;
+            --file-icon-color: currentColor;
+
             color: var(--tree-node-label-color, var(--body-bg));
         }
 

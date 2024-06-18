@@ -373,6 +373,8 @@
     }
 
     button.toggle {
+        --icon-color: currentColor;
+
         width: 1.5rem;
         height: 1.5rem;
         cursor: pointer;
@@ -410,6 +412,8 @@
         --color: var(--text-muted);
 
         button {
+            --icon-color: currentColor;
+
             padding: 0.0625rem 0.125rem;
             color: var(--color);
             border-radius: var(--border-radius);

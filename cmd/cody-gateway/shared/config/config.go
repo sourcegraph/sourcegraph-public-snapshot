@@ -293,6 +293,8 @@ func (c *Config) Load() {
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			fireworks.DeepseekCoder1p3b,
+			fireworks.DeepseekCoder7b,
 		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
@@ -317,6 +319,10 @@ func (c *Config) Load() {
 	if c.Google.AccessToken != "" && len(c.Google.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Google"))
 	}
+
+	// Load configuration settings specific to how we flag Google-routed requests.
+	// HACK: Same as the comment on OpenAI or Fireworks, re: only using one env var prefix.
+	c.loadFlaggingConfig(&c.Google.FlaggingConfig, "CODY_GATEWAY_ANTHROPIC")
 
 	defaultEmbeddingModels := strings.Join([]string{
 		string(embeddings.ModelNameOpenAIAda),

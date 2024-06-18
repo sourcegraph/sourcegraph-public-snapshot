@@ -540,13 +540,13 @@ func TestCreateWebhook(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "webhooks do not support secrets for code host kind BITBUCKETCLOUD",
+					Message: "webhooks do not support secrets for code host kind AZUREDEVOPS",
 					Path:    []any{"createWebhook"},
 				},
 			},
 			Variables: map[string]any{
 				"name":         "webhookName",
-				"codeHostKind": "BITBUCKETCLOUD",
+				"codeHostKind": "AZUREDEVOPS",
 				"codeHostURN":  "https://bitbucket.com",
 				"secret":       "mysupersecret",
 			},
