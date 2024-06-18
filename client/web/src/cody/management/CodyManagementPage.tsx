@@ -19,7 +19,7 @@ import {
     CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
-import { ProIcon } from '../components/CodyIcon'
+import { ProIconSquashed } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
@@ -211,7 +211,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
             </div>
             <div>
                 <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
-                    <ProIcon className="mr-1" />
+                    <ProIconSquashed className="mr-1" />
                     Upgrade
                 </ButtonLink>
             </div>

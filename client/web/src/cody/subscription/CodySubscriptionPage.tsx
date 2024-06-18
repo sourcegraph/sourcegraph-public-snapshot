@@ -26,6 +26,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
+import { ProIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
@@ -235,7 +236,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 window.location.href = url.toString()
                                             }}
                                         >
-                                            <span className={classNames(styles.proBadge, 'mr-1')} />
+                                            <ProIcon className="mr-1" />
                                             <span>Create a Cody Pro team</span>
                                         </Button>
                                         <Link
