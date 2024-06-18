@@ -15,8 +15,8 @@ const (
 
 var (
 	chatAndEdit = []types.ModelCapability{
+		types.ModelCapabilityAutocomplete,
 		types.ModelCapabilityChat,
-		types.ModelCapabilityEdit,
 	}
 
 	// Standard context window sizes.

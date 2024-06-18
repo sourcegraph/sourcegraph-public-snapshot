@@ -10,8 +10,8 @@ type ContextWindow struct {
 type ModelCapability string
 
 const (
-	ModelCapabilityChat ModelCapability = "chat"
-	ModelCapabilityEdit ModelCapability = "edit"
+	ModelCapabilityAutocomplete ModelCapability = "autocomplete"
+	ModelCapabilityChat         ModelCapability = "chat"
 )
 
 type ModelStatus string
