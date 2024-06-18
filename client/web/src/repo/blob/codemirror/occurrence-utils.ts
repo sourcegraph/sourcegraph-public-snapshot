@@ -1,13 +1,7 @@
 import { EditorSelection, type Text, type EditorState, type SelectionRange } from '@codemirror/state'
 
 import type { Range } from '@sourcegraph/extension-api-types'
-import {
-    Occurrence,
-    Position,
-    Range as ScipRange,
-    SymbolRole,
-    SyntaxKind,
-} from '@sourcegraph/shared/src/codeintel/scip'
+import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { CodeGraphData, codeGraphData } from './codeintel/occurrences'
 import { type HighlightIndex, syntaxHighlight } from './highlight'
@@ -33,13 +27,8 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
 ])
 
 export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
-    if (occurrence.symbolRoles) {
-        // TODO: is this actually correct?
-        return (
-            (occurrence.symbolRoles &
-                (SymbolRole.Definition | SymbolRole.Import | SymbolRole.ReadAccess | SymbolRole.WriteAccess)) >
-            0
-        )
+    if (occurrence.symbolRoles !== undefined && occurrence.symbolRoles > 0) {
+        return true
     }
     if (!occurrence.kind) {
         return false
