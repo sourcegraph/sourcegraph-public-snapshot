@@ -34,8 +34,6 @@ type CodyAccessServiceClient interface {
 	ListCodyGatewayAccesses(ctx context.Context, in *ListCodyGatewayAccessesRequest, opts ...grpc.CallOption) (*ListCodyGatewayAccessesResponse, error)
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
-	//
-	// Only properties specified by the update_mask are applied.
 	UpdateCodyGatewayAccess(ctx context.Context, in *UpdateCodyGatewayAccessRequest, opts ...grpc.CallOption) (*UpdateCodyGatewayAccessResponse, error)
 }
 
@@ -84,8 +82,6 @@ type CodyAccessServiceServer interface {
 	ListCodyGatewayAccesses(context.Context, *ListCodyGatewayAccessesRequest) (*ListCodyGatewayAccessesResponse, error)
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
-	//
-	// Only properties specified by the update_mask are applied.
 	UpdateCodyGatewayAccess(context.Context, *UpdateCodyGatewayAccessRequest) (*UpdateCodyGatewayAccessResponse, error)
 	mustEmbedUnimplementedCodyAccessServiceServer()
 }

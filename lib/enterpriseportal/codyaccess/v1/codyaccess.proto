@@ -24,8 +24,6 @@ service CodyAccessService {
 
   // UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
   // Enterprise subscription.
-  //
-  // Only properties specified by the update_mask are applied.
   rpc UpdateCodyGatewayAccess(UpdateCodyGatewayAccessRequest) returns (UpdateCodyGatewayAccessResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -116,8 +114,12 @@ message ListCodyGatewayAccessesResponse {
 }
 
 message UpdateCodyGatewayAccessRequest {
-  // The Cody Gateway access to update. The subscription_id field is used to
-  // identify the Cody Gateway access to update.
+  // The Cody Gateway access to update. See `update_mask` for the fields that
+  // can be updated.
+  //
+  // The following fields are used to identify the Cody Gateway access to update:
+  //  - subscription_id
+  // Multiple fields are treated as AND-concatenated.
   CodyGatewayAccess access = 1;
 
   // The list of fields to update, fields are specified relative to the CodyGatewayAccess.
@@ -129,6 +131,7 @@ message UpdateCodyGatewayAccessRequest {
   //  - code_completions_rate_limit.interval_duration
   //  - embeddings_rate_limit.limit
   //  - embeddings_rate_limit.interval_duration
+  // An omitted `update_mask` implies that all populated fields are updated.
   google.protobuf.FieldMask update_mask = 2;
 }
 

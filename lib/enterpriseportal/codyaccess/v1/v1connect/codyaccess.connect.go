@@ -61,8 +61,6 @@ type CodyAccessServiceClient interface {
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
-	//
-	// Only properties specified by the update_mask are applied.
 	UpdateCodyGatewayAccess(context.Context, *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error)
 }
 
@@ -134,8 +132,6 @@ type CodyAccessServiceHandler interface {
 	ListCodyGatewayAccesses(context.Context, *connect.Request[v1.ListCodyGatewayAccessesRequest]) (*connect.Response[v1.ListCodyGatewayAccessesResponse], error)
 	// UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
 	// Enterprise subscription.
-	//
-	// Only properties specified by the update_mask are applied.
 	UpdateCodyGatewayAccess(context.Context, *connect.Request[v1.UpdateCodyGatewayAccessRequest]) (*connect.Response[v1.UpdateCodyGatewayAccessResponse], error)
 }
 

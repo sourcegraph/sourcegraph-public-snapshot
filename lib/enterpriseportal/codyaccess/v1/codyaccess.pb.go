@@ -552,8 +552,13 @@ type UpdateCodyGatewayAccessRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Cody Gateway access to update. The subscription_id field is used to
-	// identify the Cody Gateway access to update.
+	// The Cody Gateway access to update. See `update_mask` for the fields that
+	// can be updated.
+	//
+	// The following fields are used to identify the Cody Gateway access to update:
+	//   - subscription_id
+	//
+	// Multiple fields are treated as AND-concatenated.
 	Access *CodyGatewayAccess `protobuf:"bytes,1,opt,name=access,proto3" json:"access,omitempty"`
 	// The list of fields to update, fields are specified relative to the CodyGatewayAccess.
 	// Updatable fields are:
@@ -564,6 +569,8 @@ type UpdateCodyGatewayAccessRequest struct {
 	//   - code_completions_rate_limit.interval_duration
 	//   - embeddings_rate_limit.limit
 	//   - embeddings_rate_limit.interval_duration
+	//
+	// An omitted `update_mask` implies that all populated fields are updated.
 	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 }
 
