@@ -19,6 +19,7 @@ import {
     CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
+import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
@@ -31,7 +32,6 @@ import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
 import styles from './CodyManagementPage.module.scss'
-import { ProIcon } from '../components/CodyIcon'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
@@ -201,7 +201,9 @@ const UpgradeToProBanner: React.FunctionComponent<{
     <CodyAlert variant="purpleCodyPro">
         <div className="d-flex justify-content-between align-items-center p-4">
             <div>
-                <H1>Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span></H1>
+                <H1>
+                    Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span>
+                </H1>
                 <ul className="pl-4 mb-0">
                     <li>Unlimited autocompletions</li>
                     <li>Unlimited chat messages</li>
