@@ -1,7 +1,6 @@
 package sensitivemetadataallowlist
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,7 +56,7 @@ type EventTypes struct {
 func eventTypes(types ...EventType) EventTypes {
 	index := make(map[string][]string, len(types))
 	for _, t := range types {
-		index[fmt.Sprintf("%s", t.Feature)] = t.AllowedPrivateMetadataKeys
+		index[t.Feature] = t.AllowedPrivateMetadataKeys
 	}
 	return EventTypes{types: types, index: index}
 }
@@ -78,7 +77,7 @@ func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that
 // are allowed.
 func (e EventTypes) IsAllowed(event *telemetrygatewayv1.Event) ([]string, bool) {
-	key := fmt.Sprintf("%s", event.GetFeature())
+	key := event.GetFeature()
 	allowedKeys, allowed := e.index[key]
 	return allowedKeys, allowed
 }
