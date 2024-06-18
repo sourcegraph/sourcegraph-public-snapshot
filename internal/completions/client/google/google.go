@@ -128,7 +128,8 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 		return nil, err
 	}
 	payload := googleRequest{
-		Model: requestParams.Model,
+		Model:    requestParams.Model,
+		Contents: prompt,
 		GenerationConfig: googleGenerationConfig{
 			Temperature:     requestParams.Temperature,
 			TopP:            requestParams.TopP,
@@ -137,13 +138,12 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 			StopSequences:   requestParams.StopSequences,
 		},
 	}
-
 	if c.viaGateway {
 		endpointURL = c.endpoint
+		// Add the Stream value to the payload if this is a Cody Gateway request,
+		// as it is used for internal routing but not part of the Google API shape.
 		payload.Stream = stream
 	}
-
-	payload.Contents = prompt
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
