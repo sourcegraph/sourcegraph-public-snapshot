@@ -9,7 +9,7 @@ import {
     SyntaxKind,
 } from '@sourcegraph/shared/src/codeintel/scip'
 
-import { codeGraphData } from './codeintel/occurrences'
+import { CodeGraphData, codeGraphData } from './codeintel/occurrences'
 import { type HighlightIndex, syntaxHighlight } from './highlight'
 
 /**
@@ -49,28 +49,30 @@ export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
 }
 
 export function occurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
+    const position = positionAtCmPosition(state.doc, offset)
+
     // First we try to get an occurrence from the occurrences API
-    const fromAPI = scipOccurrenceAtPosition(state, offset)
-    if (fromAPI) {
-        return fromAPI
+    const data = state.facet(codeGraphData)
+    if (data.length > 0) {
+        return scipOccurrenceAtPosition(data, position)
     }
 
     // Next we try to get an occurrence from syntax highlighting data.
-    const fromHighlighting = highlightingOccurrenceAtPosition(state, offset)
+    const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
     if (fromHighlighting) {
         return fromHighlighting
     }
+
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
-    return inferOccurrenceAtPosition(state, offset)
+    return inferOccurrenceAtOffset(state, offset)
 }
 
 // Returns the occurrence at this position based on syntax highlighting data.
 // The highlighting data can come from Syntect (low-ish quality) or tree-sitter
 // (better quality). When we implement semantic highlighting in the future, the
 // highlighting data may come from precise indexers.
-function highlightingOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
-    const position = positionAtCmPosition(state.doc, offset)
+function highlightingOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
     const table = state.facet(syntaxHighlight)
     for (
         let index = table.lineIndex[position.line];
@@ -88,14 +90,10 @@ function highlightingOccurrenceAtPosition(state: EditorState, offset: number): O
 }
 
 // TODO: document
-function scipOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
-    const position = positionAtCmPosition(state.doc, offset)
-    const data = state.facet(codeGraphData)
-    console.log(data)
+function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
     for (const datum of data) {
         for (const occurrence of datum.occurrences) {
             if (occurrence.range.contains(position)) {
-                console.log({ occurrence })
                 return occurrence
             }
         }
@@ -108,7 +106,7 @@ function scipOccurrenceAtPosition(state: EditorState, offset: number): Occurrenc
 // well for languages with C/Java-like identifiers, but we may want to customize
 // the heurstic for other languages like Clojure where kebab-case identifiers
 // are common.
-function inferOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
+function inferOccurrenceAtOffset(state: EditorState, offset: number): Occurrence | undefined {
     const identifier = state.wordAt(offset)
     // We need to ignore words that end at the requested position to match the logic
     // we use to look up occurrences in SCIP data.
