@@ -27,7 +27,6 @@ func TestIsAllowed(t *testing.T) {
 			name: "allowed event",
 			event: &v1.Event{
 				Feature: string(telemetry.FeatureExample),
-				Action:  string(telemetry.ActionExample),
 			},
 			expectAllowed:   true,
 			expectAllowlist: []string{"testField"},
@@ -36,7 +35,6 @@ func TestIsAllowed(t *testing.T) {
 			name: "disallowed event",
 			event: &v1.Event{
 				Feature: "disallowedFeature",
-				Action:  "disallowedAction",
 			},
 			expectAllowed: false,
 		},
@@ -44,7 +42,6 @@ func TestIsAllowed(t *testing.T) {
 			name: "disallowed event with additional allowed event type",
 			event: &v1.Event{
 				Feature: "cody.completion",
-				Action:  "accepted",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
@@ -71,41 +68,35 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 		{
 			name:        "invalid",
 			config:      "asdf,foobar",
-			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "asdf"`),
+			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "asdf", missing allowlisted fields`),
 		},
 		{
 			name:        "invalid, no fields",
-			config:      "foo::bar",
-			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "foo::bar", missing allowlisted fields`),
+			config:      "foo",
+			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "foo", missing allowlisted fields`),
 		},
 		{
 			name:   "1 type",
-			config: "foo::bar::field",
+			config: "foo::field",
 			expect: autogold.Expect([]EventType{{
-				Feature: "foo",
-				Action:  "bar",
-				AllowedPrivateMetadataKeys: []string{
-					"field",
-				},
+				Feature:                    "foo",
+				AllowedPrivateMetadataKeys: []string{"field"},
 			}}),
 		},
 		{
 			name:   "multiple types",
-			config: "foo::bar::field::field2,baz.bar::bar.baz::field",
+			config: "foo::field::field2,baz.bar::field",
 			expect: autogold.Expect([]EventType{
 				{
 					Feature: "foo",
-					Action:  "bar",
 					AllowedPrivateMetadataKeys: []string{
-						"field", "field2",
+						"field",
+						"field2",
 					},
 				},
 				{
-					Feature: "baz.bar",
-					Action:  "bar.baz",
-					AllowedPrivateMetadataKeys: []string{
-						"field",
-					},
+					Feature:                    "baz.bar",
+					AllowedPrivateMetadataKeys: []string{"field"},
 				},
 			}),
 		},
@@ -126,7 +117,6 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 func TestEventTypesRedact(t *testing.T) {
 	allowedTypes := eventTypes(EventType{
 		Feature:                    "example",
-		Action:                     "exampleAction",
 		AllowedPrivateMetadataKeys: []string{"foo"},
 	})
 
@@ -134,7 +124,6 @@ func TestEventTypesRedact(t *testing.T) {
 		dotcom.MockSourcegraphDotComMode(t, true)
 		mode := allowedTypes.Redact(&v1.Event{
 			Feature: "example",
-			Action:  "exampleAction",
 		})
 		assert.Equal(t, redactNothing, mode)
 
@@ -162,14 +151,12 @@ func TestEventTypesRedact(t *testing.T) {
 		t.Run("allowlisted", func(t *testing.T) {
 			mode := allowedTypes.Redact(&v1.Event{
 				Feature: "example",
-				Action:  "exampleAction",
 			})
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 		})
 		t.Run("not allowlisted", func(t *testing.T) {
 			ev := &v1.Event{
 				Feature: "foobar",
-				Action:  "exampleAction",
 				Parameters: &v1.EventParameters{
 					PrivateMetadata: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
