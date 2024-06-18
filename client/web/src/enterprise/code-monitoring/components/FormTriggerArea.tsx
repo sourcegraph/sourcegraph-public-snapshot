@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js'
+import { mdiCheck, mdiHelpCircle, mdiOpenInNew, mdiRadioboxBlank } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
@@ -9,9 +9,9 @@ import type { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Card, Checkbox, Code, H3, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../graphql-operations'
+import { useNavbarQueryState } from '../../../stores'
 
 import styles from './FormTriggerArea.module.scss'
 
@@ -28,7 +28,6 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
-const isValidPatternType = (value: string): boolean => value === 'keyword' || value === 'literal' || value === 'regexp'
 
 const ValidQueryChecklistItem: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -112,14 +111,9 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasTypeDiffOrCommitFilter, setHasTypeDiffOrCommitFilter] = useState(false)
     const [hasRepoFilter, setHasRepoFilter] = useState(false)
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
-    const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () =>
-            isValidQuery &&
-            hasTypeDiffOrCommitFilter &&
-            (!isSourcegraphDotCom || hasRepoFilter) &&
-            hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
+        () => isValidQuery && hasTypeDiffOrCommitFilter && (!isSourcegraphDotCom || hasRepoFilter),
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
@@ -132,9 +126,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         setIsValidQuery(isValidQuery)
 
         let hasTypeDiffOrCommitFilter = false
-        let hasRepoFilter = false
         let hasPatternTypeFilter = false
-        let hasValidPatternTypeFilter = true
+        let hasRepoFilter = false
 
         if (tokens.type === 'success') {
             const filters = tokens.term.filter(token => token.type === 'filter')
@@ -160,34 +153,23 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     filter.value &&
                     validateFilter(filter.field.value, filter.value)
             )
-
-            // No explicit patternType filter means we default
-            // to patternType:literal
-            hasValidPatternTypeFilter =
-                !hasPatternTypeFilter ||
-                filters.some(
-                    filter =>
-                        filter.type === 'filter' &&
-                        resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                        filter.value &&
-                        isValidPatternType(filter.value.value)
-                )
         }
 
         setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
         setHasRepoFilter(hasRepoFilter)
         setHasPatternTypeFilter(hasPatternTypeFilter)
-        setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
     }, [queryState.query])
+
+    const defaultPatternType = useNavbarQueryState(state => state.searchPatternType)
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             closeCard()
             setTriggerCompleted(true)
-            onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
+            onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ` patternType:${defaultPatternType}`}`)
         },
-        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter, defaultPatternType]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
@@ -231,7 +213,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             >
                                 <LazyQueryInput
                                     className="test-trigger-input"
-                                    patternType={SearchPatternType.standard}
+                                    patternType={defaultPatternType}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}
                                     queryState={queryState}
@@ -242,11 +224,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             </div>
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
-                                    to={`/search?${buildSearchURLQuery(
-                                        queryState.query,
-                                        SearchPatternType.standard,
-                                        false
-                                    )}`}
+                                    to={`/search?${buildSearchURLQuery(queryState.query, defaultPatternType, false)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="test-preview-link"
@@ -262,15 +240,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                         </div>
 
                         <ul className={classNames(styles.checklist, 'mb-4')}>
-                            <li>
-                                <ValidQueryChecklistItem
-                                    checked={hasValidPatternTypeFilter}
-                                    hint="Code monitors support literal and regex search. Searches are literal by default."
-                                    dataTestid="patterntype-checkbox"
-                                >
-                                    Is <Code>patternType:keyword</Code>, <Code>literal</Code> or <Code>regexp</Code>
-                                </ValidQueryChecklistItem>
-                            </li>
                             <li>
                                 <ValidQueryChecklistItem
                                     checked={hasTypeDiffOrCommitFilter}
