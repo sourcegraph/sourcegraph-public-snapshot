@@ -18,6 +18,9 @@ spec:
 
   indexedSearch: {}
 
+  openTelemetry:
+    disabled: true
+
   pgsql:
     disabled: true
 

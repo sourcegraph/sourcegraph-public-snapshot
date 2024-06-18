@@ -286,7 +286,7 @@
                 onCollapse={handleBottomPanelCollapse}
                 let:isCollapsed
             >
-                <div class="bottom-panel">
+                <div class="bottom-panel" class:collapsed={isCollapsed}>
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
                         <svelte:fragment slot="header-actions">
                             {#if !isCollapsed}
@@ -367,36 +367,36 @@
         flex-direction: column;
         overflow: hidden;
         background-color: var(--color-bg-1);
-    }
 
-    .collapsed {
-        flex-direction: column;
-        align-items: center;
-
-        header {
-            flex-wrap: nowrap;
-        }
-
-        header,
-        .sidebar-action-row {
+        &.collapsed {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-            width: 100%;
-        }
+            align-items: center;
 
-        // Hide action text and leave just icon for collapsed version
-        .search-files-button {
-            display: block;
+            header {
+                flex-wrap: nowrap;
+            }
 
-            span {
+            header,
+            .sidebar-action-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            // Hide action text and leave just icon for collapsed version
+            .search-files-button {
+                display: block;
+
+                span {
+                    display: none;
+                }
+            }
+
+            :global([data-repo-rev-picker-trigger]),
+            .sidebar-file-tree {
                 display: none;
             }
-        }
-
-        :global([data-repo-rev-picker-trigger]),
-        .sidebar-file-tree {
-            display: none;
         }
     }
 
@@ -473,6 +473,13 @@
 
         :global([data-tabs]) {
             flex: 1;
+            min-width: 0;
+        }
+
+        &.collapsed :global([data-tabs]) {
+            // Reset min-width otherwise very long commit messages will overflow
+            // the tabs.
+            min-width: initial;
         }
 
         .last-commit {

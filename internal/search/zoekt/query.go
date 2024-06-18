@@ -81,7 +81,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 }
 
 func toLangFilter(lang string) zoekt.Q {
-	lang, _ = languages.GetLanguageByAlias(lang) // Invariant: lang is valid.
+	lang, _ = languages.GetLanguageByNameOrAlias(lang) // Invariant: lang is valid.
 	return &zoekt.Language{Language: lang}
 }
 
