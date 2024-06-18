@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2" //nolint:depguard - This package is allowed to use enry.
 )
 
 // Make sure all names are lowercase here, since they are normalized

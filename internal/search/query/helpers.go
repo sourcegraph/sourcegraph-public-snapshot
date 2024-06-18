@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2/data"
+	"github.com/go-enry/go-enry/v2/data" //nolint:depguard - FIXME: Expose needed APIs in codeintel/languages
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
