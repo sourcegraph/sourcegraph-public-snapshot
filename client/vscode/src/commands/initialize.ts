@@ -5,6 +5,7 @@ import type { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
+import { endpointSetting } from '../settings/endpointSetting'
 import { type LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
 import { browserActions } from './browserActionsNode'
@@ -29,8 +30,7 @@ export function initializeCodeSharingCommands(
     // Search Selected Text in Sourcegraph Search Tab
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.selectionSearchWeb', async () => {
-            const instanceUrl =
-                vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
+            const instanceUrl = endpointSetting()
             const editor = vscode.window.activeTextEditor
             const selectedQuery = editor?.document.getText(editor.selection)
             if (!editor || !selectedQuery) {
@@ -73,9 +73,7 @@ export function generateSourcegraphBlobLink(
     endLine: number,
     endChar: number
 ): string {
-    const instanceUrl = new URL(
-        vscode.workspace.getConfiguration('sourcegraph').get<string>('url') || 'https://sourcegraph.com'
-    )
+    const instanceUrl = new URL(endpointSetting())
     // Using SourcegraphUri.parse to properly decode repo revision
     const decodedUri = SourcegraphUri.parse(uri.toString())
     const finalUri = new URL(decodedUri.uri)

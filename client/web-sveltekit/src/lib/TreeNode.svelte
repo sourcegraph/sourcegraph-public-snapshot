@@ -7,7 +7,6 @@
 </script>
 
 <script lang="ts" generics="T">
-    import { mdiChevronDown, mdiChevronRight, mdiImageFilterCenterFocusStrong } from '@mdi/js'
     import { createEventDispatcher, getContext, setContext } from 'svelte'
 
     import Icon from '$lib/Icon.svelte'
@@ -81,7 +80,7 @@
 >
     <span bind:this={label} class="label" data-treeitem-label class:expandable>
         <Button variant="icon" on:click={handleScopeChange} data-scope-button>
-            <Icon svgPath={mdiImageFilterCenterFocusStrong} inline />
+            <Icon icon={ILucideFocus} inline aria-hidden="true" />
         </Button>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
         {#if expandable}
@@ -96,7 +95,7 @@
                 }}
                 tabindex={-1}
             >
-                <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
+                <Icon icon={expanded ? ILucideChevronDown : ILucideChevronRight} inline />
             </Button>
         {/if}
         <slot {entry} {expanded} toggle={toggleOpen} {label} />
@@ -150,10 +149,13 @@
         align-items: center;
 
         // Change icon color based on selected item state
-        --icon-fill-color: var(--tree-node-expand-icon-color);
+        --icon-color: var(--tree-node-expand-icon-color);
         color: var(--tree-node-label-color, var(--text-body));
 
         li[data-treeitem][aria-selected='true'] > & {
+            --icon-color: currentColor;
+            --file-icon-color: currentColor;
+
             color: var(--tree-node-label-color, var(--body-bg));
         }
 

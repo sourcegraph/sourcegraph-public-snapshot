@@ -1,26 +1,27 @@
 <script lang="ts">
-    import { mdiAccount, mdiCodeTags, mdiCog, mdiHistory, mdiSourceBranch, mdiSourceCommit, mdiTag } from '@mdi/js'
+    import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { TELEMETRY_V2_SEARCH_SOURCE_TYPE } from '@sourcegraph/shared/src/search'
     import { getButtonClassName } from '@sourcegraph/wildcard'
 
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import { registerHotkey } from '$lib/Hotkey'
     import Icon from '$lib/Icon.svelte'
     import GlobalHeaderPortal from '$lib/navigation/GlobalHeaderPortal.svelte'
-    import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { createScopeSuggestions } from '$lib/search/codemirror/suggestions'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
-    import { QueryState, queryStateStore } from '$lib/search/state'
-    import { repositoryInsertText } from '$lib/shared'
+    import { queryStateStore } from '$lib/search/state'
+    import { TELEMETRY_SEARCH_SOURCE_TYPE, repositoryInsertText } from '$lib/shared'
     import { settings } from '$lib/stores'
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import { TELEMETRY_V2_RECORDER } from '$lib/telemetry2'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
 
     import type { LayoutData } from './$types'
+    import { setRepositoryPageContext, type RepositoryPageContext } from './context'
+    import RepoMenu from './RepoMenu.svelte'
 
     interface MenuEntry {
         /**
@@ -34,7 +35,7 @@
         /**
          * The icon to display next to the title.
          */
-        icon?: string
+        icon?: ComponentProps<Icon>['icon']
         /**
          * Who can see this entry.
          */
@@ -45,20 +46,34 @@
 
     const menuOpen = writable(false)
     const navEntries: MenuEntry[] = [
-        { path: '', icon: mdiCodeTags, label: 'Code', visibility: 'user' },
-        { path: '/-/commits', icon: mdiSourceCommit, label: 'Commits', visibility: 'user' },
-        { path: '/-/branches', icon: mdiSourceBranch, label: 'Branches', visibility: 'user' },
-        { path: '/-/tags', icon: mdiTag, label: 'Tags', visibility: 'user' },
-        { path: '/-/stats/contributors', icon: mdiAccount, label: 'Contributors', visibility: 'user' },
+        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user' },
+        { path: '/-/commits', icon: ILucideGitCommitVertical, label: 'Commits', visibility: 'user' },
+        { path: '/-/branches', icon: ILucideGitBranch, label: 'Branches', visibility: 'user' },
+        { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
+        { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
     ]
     const menuEntries: MenuEntry[] = [
-        { path: '/-/compare', icon: mdiHistory, label: 'Compare', visibility: 'user' },
-        { path: '/-/own', icon: mdiAccount, label: 'Ownership', visibility: 'admin' },
-        { path: '/-/embeddings', label: 'Embeddings', visibility: 'admin' },
-        { path: '/-/code-graph', label: 'Code graph data', visibility: 'admin' },
-        { path: '/-/batch-changes', label: 'Batch changes', visibility: 'admin' },
-        { path: '/-/settings', icon: mdiCog, label: 'Settings', visibility: 'admin' },
+        { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
+        { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
+        { path: '/-/embeddings', icon: ILucideSpline, label: 'Embeddings', visibility: 'admin' },
+        { path: '/-/code-graph', icon: ILucideCodesandbox, label: 'Code graph data', visibility: 'admin' },
+        { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
+        { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
     ]
+    const repositoryContext = writable<RepositoryPageContext>({})
+    const contextSearchSuggestions = createScopeSuggestions({
+        getContextInformation() {
+            return {
+                repoName: data.repoName,
+                revision: $repositoryContext.revision ?? data.displayRevision,
+                directoryPath: $repositoryContext.directoryPath,
+                filePath: $repositoryContext.filePath,
+                fileLanguage: $repositoryContext.fileLanguage,
+            }
+        },
+    })
+
+    setRepositoryPageContext(repositoryContext)
 
     $: viewableNavEntries = navEntries.filter(
         entry => entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)
@@ -85,24 +100,30 @@
     }))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
-    $: ({ repoName, displayRepoName, revision, resolvedRevision } = data)
+    $: ({ repoName, revision } = data)
     $: query = `repo:${repositoryInsertText({ repository: repoName })}${revision ? `@${revision}` : ''} `
     $: queryState = queryStateStore({ query }, $settings)
-    function handleSearchSubmit(state: QueryState): void {
-        SVELTE_LOGGER.log(
-            SVELTE_TELEMETRY_EVENTS.SearchSubmit,
-            { source: 'repo', query: state.query },
-            { source: 'repo', patternType: state.patternType }
-        )
-        TELEMETRY_V2_RECORDER.recordEvent('search', 'submit', {
-            metadata: { source: TELEMETRY_V2_SEARCH_SOURCE_TYPE['repo'] },
+    function handleSearchSubmit(): void {
+        TELEMETRY_RECORDER.recordEvent('search', 'submit', {
+            metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['repo'] },
         })
     }
+
+    registerHotkey({
+        keys: {
+            key: 'ctrl+backspace',
+            mac: 'cmd+backspace',
+        },
+        ignoreInputFields: false,
+        handler: () => {
+            goto(data.repoURL)
+        },
+    })
 </script>
 
 <GlobalHeaderPortal>
     <div class="search-header">
-        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} />
+        <SearchInput {queryState} size="compat" onSubmit={handleSearchSubmit} extension={contextSearchSuggestions} />
     </div>
 </GlobalHeaderPortal>
 
@@ -119,10 +140,13 @@
         },
     }}
 >
-    <a href={data.repoURL}>
-        <CodeHostIcon repository={repoName} codeHost={resolvedRevision?.repo?.externalRepository?.serviceType} />
-        <h1>{displayRepoName}</h1>
-    </a>
+    <RepoMenu
+        repoName={data.repoName}
+        displayRepoName={data.displayRepoName}
+        repoURL={data.repoURL}
+        externalURL={data.resolvedRevision?.repo?.externalURLs?.[0].url}
+        externalServiceKind={data.resolvedRevision?.repo?.externalURLs?.[0].serviceKind ?? undefined}
+    />
 
     <TabsHeader id="repoheader" {tabs} selected={selectedTab} />
 
@@ -132,18 +156,18 @@
         aria-label="{$menuOpen ? 'Close' : 'Open'} repo navigation"
     >
         <svelte:fragment slot="trigger">
-            <Icon2 icon={ILucideEllipsis} aria-label="More repo navigation items" />
+            <Icon icon={ILucideEllipsis} aria-label="More repo navigation items" />
         </svelte:fragment>
         {#each allMenuEntries as entry}
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
                 {@const href = data.repoURL + entry.path}
                 <MenuLink {href}>
-                    <span class="overflow-entry" class:active={isActive(href, $page.url)}>
+                    <div class="overflow-entry">
                         {#if entry.icon}
-                            <Icon svgPath={entry.icon} inline />
+                            <Icon icon={entry.icon} inline aria-hidden />
                         {/if}
                         <span>{entry.label}</span>
-                    </span>
+                    </div>
                 </MenuLink>
             {/if}
         {/each}
@@ -169,40 +193,11 @@
         overflow: hidden;
         border-bottom: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
-
-        a {
-            all: unset;
-
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0 1rem;
-            cursor: pointer;
-            &:hover {
-                background-color: var(--color-bg-2);
-            }
-
-            h1 {
-                display: contents;
-                font-size: 1rem;
-                white-space: nowrap;
-                color: var(--text-title);
-                font-weight: normal;
-            }
-        }
-
-        :global([data-dropdown-trigger]) {
-            height: 100%;
-            align-self: stretch;
-            padding: 0.5rem;
-            --icon-fill-color: var(--text-muted);
-        }
     }
 
     .overflow-entry {
-        width: 100%;
-        display: inline-block;
-        padding: 0 0.25rem;
-        border-radius: var(--border-radius);
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
     }
 </style>

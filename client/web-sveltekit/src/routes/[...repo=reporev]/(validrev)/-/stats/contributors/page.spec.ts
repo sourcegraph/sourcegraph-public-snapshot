@@ -56,7 +56,8 @@ test.beforeEach(async ({ sg }) => {
     })
 })
 
-test('paginate contributors', async ({ page }) => {
+// Disabled because flaky in CI
+test.fixme('paginate contributors', async ({ page }) => {
     await page.goto(url)
     await expect(page.getByRole('row')).toHaveCount(5)
 

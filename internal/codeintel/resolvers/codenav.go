@@ -353,13 +353,22 @@ func (args *UsagesForSymbolArgs) Resolve(
 		cursor.PreciseCursorType = DefinitionsCursor
 	}
 
+	scipRange, err := scip.NewRange([]int32{
+		args.Range.Start.Line,
+		args.Range.Start.Character,
+		args.Range.End.Line,
+		args.Range.End.Character,
+	})
+	if err != nil {
+		return out, errors.Newf("invalid symbol range: %s", err)
+	}
+
 	return UsagesForSymbolResolvedArgs{
 		resolvedSymbol,
 		*repo,
 		commitID,
 		args.Range.Path,
-		args.Range.Start,
-		args.Range.End,
+		scipRange,
 		resolvedFilter,
 		remainingCount,
 		cursor,
@@ -372,8 +381,7 @@ type UsagesForSymbolResolvedArgs struct {
 	Repo     types.Repo
 	CommitID api.CommitID
 	Path     string
-	Start    PositionInput
-	End      PositionInput
+	Range    scip.Range
 	Filter   *ResolvedUsagesFilter
 
 	RemainingCount int32

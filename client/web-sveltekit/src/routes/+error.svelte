@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiAlertCircle } from '@mdi/js'
-
     import { page } from '$app/stores'
     import HeroPage from '$lib/HeroPage.svelte'
     import { isCloneInProgressErrorLike, isRepoNotFoundErrorLike, isRevisionNotFoundErrorLike } from '$lib/shared'
@@ -17,7 +15,7 @@
 {:else if isRevisionNotFoundErrorLike($page.error)}
     <RevisionNotFoundError />
 {:else}
-    <HeroPage title="Error" svgIconPath={mdiAlertCircle}>
+    <HeroPage title="Error" icon={ILucideCircleX}>
         <!-- TODO: format error message with markdown -->
         {$page.error?.message ?? 'Unknown Error'}
     </HeroPage>

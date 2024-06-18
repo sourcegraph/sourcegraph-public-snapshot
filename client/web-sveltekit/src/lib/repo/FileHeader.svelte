@@ -3,7 +3,7 @@
 
     import { resolveRoute } from '$app/paths'
     import { sizeToFit } from '$lib/dom'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
@@ -71,11 +71,11 @@
                 aria-label="{$breadcrumbMenuOpen ? 'Close' : 'Open'} collapsed path elements"
             >
                 <svelte:fragment slot="trigger">
-                    <Icon2 inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
+                    <Icon inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
                 </svelte:fragment>
                 {#each breadcrumbs.slice(0, collapsedBreadcrumbCount) as [name, path]}
                     <MenuLink href={path}>
-                        <Icon2 inline icon={ILucideFolder} aria-label="Collapsed path elements" />
+                        <Icon inline icon={ILucideFolder} aria-label="Collapsed path elements" />
                         {name}
                     </MenuLink>
                 {/each}
@@ -110,7 +110,7 @@
                     aria-label="Show more actions"
                 >
                     <svelte:fragment slot="trigger">
-                        <Icon2 inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
+                        <Icon inline icon={ILucideEllipsis} aria-label="Collapsed path elements" />
                     </svelte:fragment>
                     <slot name="actionmenu" />
                 </DropdownMenu>
@@ -174,8 +174,6 @@
     }
 
     .actions {
-        --color: var(--icon-color);
-
         display: flex;
         justify-content: space-evenly;
         gap: 1rem;

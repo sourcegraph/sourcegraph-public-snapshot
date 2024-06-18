@@ -20,6 +20,12 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
+    export function previewUpdateCurrentSubscription(
+        requestBody: types.PreviewUpdateSubscriptionRequest
+    ): Call<types.PreviewResult> {
+        return { method: 'PATCH', urlSuffix: '/team/current/subscription/preview', requestBody }
+    }
+
     export function getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
@@ -28,6 +34,36 @@ export module Client {
         requestBody: types.ReactivateSubscriptionRequest
     ): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
+    }
+
+    // Teams
+
+    export function createTeam(requestBody: types.CreateTeamRequest): Call<string> {
+        return { method: 'POST', urlSuffix: '/team', requestBody }
+    }
+
+    export function previewCreateTeam(requestBody: types.PreviewCreateTeamRequest): Call<types.PreviewResult> {
+        return { method: 'POST', urlSuffix: '/team/preview', requestBody }
+    }
+
+    // Team members
+
+    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/members' }
+    }
+
+    // Invites
+
+    export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
+        return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/accept` }
+    }
+
+    export function cancelInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/cancel` }
     }
 
     // Stripe Checkout

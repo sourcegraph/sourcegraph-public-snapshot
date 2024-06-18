@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -840,7 +842,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
 		}
 
-		originalRange := scip.NewRange(occ.Range)
+		originalRange := scip.NewRangeUnchecked(occ.Range)
 
 		lineOffset := int32(linemap.positions[originalRange.Start.Line])
 		line := file[lineOffset : lineOffset+originalRange.Start.Character]
@@ -926,4 +928,162 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
 	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+}
+
+type SyntacticUsagesErrorCode int
+
+const (
+	SU_NoSyntacticIndex SyntacticUsagesErrorCode = iota
+	SU_NoSymbolAtRequestedRange
+	SU_FailedToSearch
+	SU_Fatal
+)
+
+type SyntacticUsagesError struct {
+	Code            SyntacticUsagesErrorCode
+	UnderlyingError error
+}
+
+var _ error = SyntacticUsagesError{}
+
+func (e SyntacticUsagesError) Error() string {
+	msg := ""
+	switch e.Code {
+	case SU_NoSyntacticIndex:
+		msg = "No syntactic index"
+	case SU_NoSymbolAtRequestedRange:
+		msg = "No symbol at requested range"
+	case SU_FailedToSearch:
+		msg = "Failed to get candidate matches via searcher"
+	case SU_Fatal:
+		msg = "fatal error"
+	}
+	if e.UnderlyingError == nil {
+		return msg
+	}
+	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
+}
+
+func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
+	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
+		RepositoryID:       int(repo.ID),
+		Commit:             string(commit),
+		Indexer:            uploadsshared.SyntacticIndexer,
+		Path:               path,
+		RootToPathMatching: uploadsshared.RootMustEnclosePath,
+	})
+
+	if err != nil || len(uploads) == 0 {
+		return uploadsshared.CompletedUpload{}, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: err,
+		}
+	}
+
+	s.logger.Warn(
+		"Multiple syntactic uploads found, picking the first one",
+		log.String("repo", repo.URI),
+		log.String("commit", commit.Short()),
+		log.String("path", path),
+	)
+	return uploads[0], nil
+}
+
+// getSyntacticSymbolsAtRange tries to look up the symbols at the given coordinates
+// in a syntactic upload. If this function returns an error you should most likely
+// log and handle it instead of rethrowing, as this could fail for a myriad of reasons
+// (some broken invariant internally, network issue etc.)
+func (s *Service) getSyntacticSymbolsAtRange(
+	ctx context.Context,
+	repo types.Repo,
+	commit api.CommitID,
+	path string,
+	symbolRange scip.Range,
+) (symbols []*scip.Symbol, err *SyntacticUsagesError) {
+	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, path)
+	if docErr != nil {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: docErr,
+		}
+	}
+
+	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
+
+	symbols = make([]*scip.Symbol, 0)
+	var parseFail *scip.Occurrence = nil
+
+	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
+	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, symbolRange) {
+		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
+		if err != nil {
+			parseFail = occurrence
+			continue
+		}
+		symbols = append(symbols, parsedSymbol)
+	}
+
+	if parseFail != nil {
+		s.logger.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+	}
+
+	return symbols, nil
+}
+
+func (s *Service) SyntacticUsages(
+	ctx context.Context,
+	repo types.Repo,
+	commit api.CommitID,
+	path string,
+	symbolRange scip.Range,
+) ([]struct{}, *SyntacticUsagesError) {
+	// The `nil` in the second argument is here, because `With` does not work with custom error types.
+	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoId", int(repo.ID)),
+		attribute.String("commit", string(commit)),
+		attribute.String("path", path),
+		attribute.String("symbolRange", symbolRange.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	symbolsAtRange, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(symbolsAtRange) == 0 {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: nil,
+		}
+	}
+	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
+	// (Meaning we just need a single Searcher/Zoekt search)
+	searchSymbol := symbolsAtRange[0]
+
+	langs, langErr := languages.GetLanguages(path, func() ([]byte, error) { return nil, errors.New("Ambiguous language") })
+	if langErr != nil || len(langs) == 0 {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: langErr,
+		}
+	}
+
+	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, langs[0])
+	if searchErr != nil {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_FailedToSearch,
+			UnderlyingError: searchErr,
+		}
+	}
+	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
+
+	_ = candidateMatches
+
+	return []struct{}{}, nil
 }

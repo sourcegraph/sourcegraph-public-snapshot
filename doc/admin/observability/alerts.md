@@ -3303,7 +3303,7 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 **Next steps**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/external_service/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/external_service/bitbucket_server#internal-rate-limits).
+- **Otherwise:** Increase the API rate limit to [GitHub](https://sourcegraph.com/docs/admin/code_hosts/github#github-com-rate-limits), [GitLab](https://sourcegraph.com/docs/admin/code_hosts/gitlab#internal-rate-limits) or [Bitbucket Server](https://sourcegraph.com/docs/admin/code_hosts/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-perms-syncer-outdated-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { mdiContentCopy } from '@mdi/js'
     import copy from 'copy-to-clipboard'
 
     import Icon from '$lib/Icon.svelte'
@@ -24,7 +23,7 @@
 <span class="copy-path-button">
     <Tooltip {tooltip} placement="bottom">
         <Button on:click={handleCopyPath} variant="icon" size="sm" aria-label={label}>
-            <Icon inline svgPath={mdiContentCopy} aria-hidden />
+            <Icon inline icon={ILucideCopy} aria-hidden />
         </Button>
     </Tooltip>
 </span>
@@ -32,10 +31,10 @@
 <style lang="scss">
     .copy-path-button {
         display: contents;
+        color: var(--text-muted);
 
-        --color: var(--icon-color);
         &:hover {
-            --color: var(--body-color);
+            color: var(--body-color);
         }
     }
 </style>

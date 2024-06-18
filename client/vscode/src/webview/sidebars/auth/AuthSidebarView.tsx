@@ -280,8 +280,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             </VSCodeButton>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
-                    Unable to verify your access token for {hostname}. Please try again with a new access token or
-                    restart VS Code if the instance URL has been updated.
+                    Unable to verify your access token for {hostname}. Please try again with a new access token.
                 </Alert>
             )}
             <Text className="my-0">

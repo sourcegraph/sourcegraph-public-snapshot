@@ -24,6 +24,9 @@ replace (
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+
+	// https://github.com/sourcegraph/sourcegraph/security/dependabot/397 archived but has a vulnerability
+	gopkg.in/square/go-jose.v2 v2.6.0 => gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
 // Temporary replace directives
@@ -230,7 +233,7 @@ require (
 	gonum.org/v1/gonum v0.15.0
 	google.golang.org/api v0.169.0
 	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
-	google.golang.org/protobuf v1.34.0
+	google.golang.org/protobuf v1.34.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -302,7 +305,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/notionreposync v0.0.0-20240517090426-98b2d4b017d7
-	github.com/sourcegraph/scip v0.3.3
+	github.com/sourcegraph/scip v0.4.0
 	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240531163352-fe74c17cf0d1
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240524140455-2589fef13ea8
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
@@ -313,7 +316,8 @@ require (
 	go.opentelemetry.io/collector/config/configtelemetry v0.92.0
 	go.opentelemetry.io/collector/config/configtls v0.92.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.46.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240311132316-a219d84964c2
+	go.uber.org/goleak v1.3.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
 	gorm.io/plugin/opentelemetry v0.1.4
@@ -404,7 +408,7 @@ require (
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc6 // indirect
-	github.com/pierrec/lz4/v4 v4.1.18 // indirect
+	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/prometheus/prometheus v0.40.5 // indirect
@@ -433,13 +437,13 @@ require (
 	go.opentelemetry.io/collector/extension v0.92.0 // indirect
 	go.opentelemetry.io/collector/extension/auth v0.92.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.0.1 // indirect
-	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311132316-a219d84964c2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	k8s.io/apiextensions-apiserver v0.29.2 // indirect
 	k8s.io/component-base v0.29.2 // indirect
@@ -449,7 +453,7 @@ require (
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.112.1 // indirect
-	cloud.google.com/go/compute v1.24.0 // indirect
+	cloud.google.com/go/compute v1.25.1 // indirect
 	cloud.google.com/go/iam v1.1.6 // indirect
 	cuelang.org/go v0.4.3
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -566,7 +570,7 @@ require (
 	github.com/k3a/html2text v1.1.0
 	github.com/karlseguin/typed v1.1.8 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.17.5 // indirect
+	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/pretty v0.3.1
@@ -631,7 +635,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
-	github.com/yuin/goldmark v1.7.1
+	github.com/yuin/goldmark v1.7.2
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
 	go.bobheadxi.dev/streamline v1.3.2
@@ -644,7 +648,7 @@ require (
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/grpc v1.62.1
+	google.golang.org/grpc v1.62.2
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect

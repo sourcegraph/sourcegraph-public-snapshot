@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
     import { writable } from 'svelte/store'
 
     import Avatar from '$lib/Avatar.svelte'
@@ -25,7 +24,7 @@
 >
     <svelte:fragment slot="trigger">
         <Avatar avatar={user} --avatar-size="1.5rem" />
-        <Icon svgPath={$open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} inline />
+        <Icon icon={$open ? ILucideChevronUp : ILucideChevronDown} aria-hidden={true} inline />
     </svelte:fragment>
     <h6>Signed in as <strong>@{user.username}</strong></h6>
     <MenuSeparator />
@@ -54,7 +53,7 @@
         <MenuLink href="/site-admin">Site admin</MenuLink>
     {/if}
     <MenuLink href="/help" target="_blank" rel="noopener">
-        Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} inline />
+        Help <Icon aria-hidden={true} icon={ILucideExternalLink} inline />
     </MenuLink>
     <MenuLink href="/-/sign-out">Sign out</MenuLink>
 </DropdownMenu>

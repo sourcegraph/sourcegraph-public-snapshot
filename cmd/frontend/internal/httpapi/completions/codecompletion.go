@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -61,12 +62,17 @@ func allowedCustomModel(model string) string {
 		"fireworks/" + fireworks.FineTunedFIMVariant2,
 		"fireworks/" + fireworks.FineTunedFIMVariant3,
 		"fireworks/" + fireworks.FineTunedFIMVariant4,
+		"fireworks/" + fireworks.FineTunedFIMLangSpecificMixtral,
+		"fireworks/" + fireworks.DeepseekCoder1p3b,
+		"fireworks/" + fireworks.DeepseekCoder7b,
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-3-haiku-20240307",
 		// Deprecated model identifiers
 		"anthropic/claude-instant-v1",
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2-cyan",
+		"google/" + google.Gemini15Flash,
+		"google/" + google.GeminiPro,
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
 		"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",

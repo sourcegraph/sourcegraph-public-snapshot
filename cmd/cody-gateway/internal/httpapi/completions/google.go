@@ -38,42 +38,12 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 	)
 }
 
-// The request body for Google completions.
-// Ref: https://ai.google.dev/api/rest/v1/models/generateContent#request-body
-type googleRequest struct {
-	Model            string                 `json:"model"`
-	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig googleGenerationConfig `json:"generationConfig,omitempty"`
-	SafetySettings   []googleSafetySettings `json:"safetySettings,omitempty"`
-}
-
-type googleContentMessage struct {
-	Role  string `json:"role"`
-	Parts []struct {
-		Text string `json:"text"`
-	} `json:"parts"`
-}
-
-// Configuration options for model generation and outputs.
-// Ref: https://ai.google.dev/api/rest/v1/GenerationConfig
-type googleGenerationConfig struct {
-	Temperature     float32  `json:"temperature,omitempty"`     // request.Temperature
-	TopP            float32  `json:"topP,omitempty"`            // request.TopP
-	TopK            int      `json:"topK,omitempty"`            // request.TopK
-	StopSequences   []string `json:"stopSequences,omitempty"`   // request.StopSequences
-	MaxOutputTokens int      `json:"maxOutputTokens,omitempty"` // request.MaxTokensToSample
-	CandidateCount  int      `json:"candidateCount,omitempty"`  // request.CandidateCount
-}
-
-// Safety setting, affecting the safety-blocking behavior.
-// Ref: https://ai.google.dev/gemini-api/docs/safety-settings
-type googleSafetySettings struct {
-	Category  string `json:"category"`
-	Threshold string `json:"threshold"`
+type GoogleHandlerMethods struct {
+	config config.GoogleConfig
 }
 
 func (r googleRequest) ShouldStream() bool {
-	return true
+	return r.Stream
 }
 
 func (r googleRequest) GetModel() string {
@@ -90,28 +60,10 @@ func (r googleRequest) BuildPrompt() string {
 	return sb.String()
 }
 
-type googleUsage struct {
-	PromptTokenCount int `json:"promptTokenCount"`
-	// Use the same name we use elsewhere (completion instead of candidates)
-	CompletionTokenCount int `json:"candidatesTokenCount"`
-	TotalTokenCount      int `json:"totalTokenCount"`
-}
-
-type googleResponse struct {
-	// Usage is only available for non-streaming requests.
-	UsageMetadata googleUsage                              `json:"usageMetadata"`
-	Model         string                                   `json:"model"`
-	Candidates    []struct{ Content googleContentMessage } `json:"candidates"`
-}
-
-type GoogleHandlerMethods struct {
-	config config.GoogleConfig
-}
-
-func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleRequest) string {
+func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req googleRequest) string {
 	rpc := "generateContent"
 	sseSuffix := ""
-	if req.ShouldStream() {
+	if feature == codygateway.FeatureChatCompletions {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
 	}
@@ -119,29 +71,32 @@ func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleReques
 }
 
 func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ googleRequest) error {
-	if feature == codygateway.FeatureCodeCompletions {
+	if feature == codygateway.FeatureEmbeddings {
 		return errors.Newf("feature %q is currently not supported for Google", feature)
 	}
 	return nil
 }
 
-func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, req googleRequest) (*flaggingResult, error) {
+func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req googleRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(
 		nil, // tokenizer, meaning token counts aren't considered when for flagging consideration.
 		flaggingRequest{
 			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
-			MaxTokens:       int(req.GenerationConfig.MaxOutputTokens),
+			MaxTokens:       req.GenerationConfig.MaxOutputTokens,
 		},
 		makeFlaggingConfig(g.config.FlaggingConfig))
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-func (*GoogleHandlerMethods) transformBody(_ *googleRequest, _ string) {
-}
+// Used to modify the request body before it is sent to upstream.
+func (*GoogleHandlerMethods) transformBody(*googleRequest, string) {}
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
-	return body.Model, map[string]any{"stream": body.ShouldStream()}
+	return body.Model, map[string]any{"stream": body.Stream}
 }
 
 func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
@@ -156,7 +111,6 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	// it as JSON.
 	if !reqBody.ShouldStream() {
 		var res googleResponse
-
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
 			return promptUsage, completionUsage

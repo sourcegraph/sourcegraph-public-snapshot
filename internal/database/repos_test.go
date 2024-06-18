@@ -2942,6 +2942,15 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	}
 }
 
+func TestRepoNotFoundFulfillsNotFound(t *testing.T) {
+	err := &RepoNotFoundErr{
+		ID:         api.RepoID(1),
+		Name:       api.RepoName("github.com/foo/bar"),
+		HashedName: api.RepoHashedName("github.com/foo/bar"),
+	}
+	require.True(t, errcode.IsNotFound(err))
+}
+
 func TestRepoStore_Metadata(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

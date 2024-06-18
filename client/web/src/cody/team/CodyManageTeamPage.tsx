@@ -11,6 +11,7 @@ import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { WhiteIcon } from '../components/WhiteIcon'
 import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
@@ -93,7 +94,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                 </Link>
                                 <Button
                                     as={Link}
-                                    to="/cody/manage/subscription/new"
+                                    to={CodyProRoutes.NewProSubscription}
                                     variant="success"
                                     className="text-nowrap"
                                 >

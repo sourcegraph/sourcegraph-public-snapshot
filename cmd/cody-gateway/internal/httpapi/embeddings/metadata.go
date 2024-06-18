@@ -44,7 +44,7 @@ Respond with nothing else, only the entry names and the documentation. Code: ` +
 			MaxTokensToSample: 2000,
 			Temperature:       0,
 			TopP:              1,
-			Model:             fireworks.Llama370bInstruct,
+			Model:             fireworks.Llama38bInstruct,
 		}, c.logger)
 
 	if err != nil {

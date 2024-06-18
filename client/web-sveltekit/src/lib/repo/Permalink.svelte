@@ -3,8 +3,6 @@
     Renders a permalink to the current page with the given Git commit ID.
 -->
 <script lang="ts">
-    import { mdiLink } from '@mdi/js'
-
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -17,7 +15,7 @@
 
 {#if href}
     <Tooltip tooltip="Permalink (with full git commit SHA)">
-        <a {href}><Icon svgPath={mdiLink} inline /> <span data-action-label>Permalink</span></a>
+        <a {href}><Icon icon={ILucideLink} inline aria-hidden /> <span data-action-label>Permalink</span></a>
     </Tooltip>
 {/if}
 

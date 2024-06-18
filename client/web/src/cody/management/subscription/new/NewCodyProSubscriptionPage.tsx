@@ -1,10 +1,11 @@
 import { useEffect, type FunctionComponent, useMemo } from 'react'
 
+import { Elements } from '@stripe/react-stripe-js'
 // NOTE: A side effect of loading this library will update the DOM and
 // fetch stripe.js. This is a subtle detail but means that the Stripe
 // functionality won't be loaded until this actual module does, via
 // the lazily loaded router module.
-import * as stripeJs from '@stripe/stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 import classNames from 'classnames'
 import { Navigate, useSearchParams } from 'react-router-dom'
 
@@ -21,17 +22,19 @@ import {
     type UserCodyPlanVariables,
     CodySubscriptionPlan,
 } from '../../../../graphql-operations'
+import { CodyProRoutes } from '../../../codyProRoutes'
 import { WhiteIcon } from '../../../components/WhiteIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
+import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress'
 
-import { CodyProCheckoutFormContainer } from './CodyProCheckoutFormContainer'
+import { CodyProCheckoutForm } from './CodyProCheckoutForm'
 
 // NOTE: Call loadStripe outside a component’s render to avoid recreating the object.
 // We do it here, meaning that "stripe.js" will get loaded lazily, when the user
 // routes to this page.
 const publishableKey = window.context.frontendCodyProConfig?.stripePublishableKey
-const stripe = await stripeJs.loadStripe(publishableKey || '', { betas: ['custom_checkout_beta_2'] })
+const stripe = await loadStripe(publishableKey || '')
 
 interface NewCodyProSubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
@@ -51,6 +54,8 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         return parseInt(seatCountString, 10) || defaultSeatCount
     }, [urlSearchParams])
 
+    const options = useBillingAddressStripeElementsOptions()
+
     useEffect(() => {
         telemetryRecorder.recordEvent('cody.new-subscription-checkout', 'view')
     }, [telemetryRecorder])
@@ -61,7 +66,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         throw dataLoadError
     }
     if (data?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
-        return <Navigate to="/cody/manage" replace={true} />
+        return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
 
     return (
@@ -77,11 +82,12 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             </PageHeader>
 
             <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
-                <CodyProCheckoutFormContainer
-                    stripe={stripe}
-                    initialSeatCount={initialSeatCount}
-                    customerEmail={authenticatedUser?.emails[0].email || ''}
-                />
+                <Elements stripe={stripe} options={options}>
+                    <CodyProCheckoutForm
+                        initialSeatCount={initialSeatCount}
+                        customerEmail={authenticatedUser?.emails[0].email || ''}
+                    />
+                </Elements>
             </CodyProApiClientContext.Provider>
         </Page>
     )

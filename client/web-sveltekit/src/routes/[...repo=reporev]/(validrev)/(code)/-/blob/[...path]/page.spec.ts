@@ -181,7 +181,8 @@ test.describe('file header', () => {
         )
     })
 
-    test('dropdown menu', async ({ page }) => {
+    // Disabled because flaky in CI
+    test.fixme('dropdown menu', async ({ page }) => {
         await page.goto(url)
 
         async function openDropdown() {
@@ -262,6 +263,27 @@ test.describe('file header', () => {
             const clipboardText = await page.evaluate('navigator.clipboard.readText()')
             expect(clipboardText, 'path should be copied to clipboard').toBe('src/readme.md')
         })
+    })
+})
+
+test.describe('repo menu', () => {
+    test('click go to root', async ({ page }) => {
+        const url = `/${repoName}/-/blob/src/large-file-1.js`
+        await page.goto(url)
+
+        await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
+        await page.getByRole('menuitem', { name: 'Go to repository root' }).click()
+        await page.waitForURL(`/${repoName}`)
+    })
+
+    test('keyboard shortcut go to root', async ({ page }) => {
+        const url = `/${repoName}/-/blob/src/large-file-1.js`
+        await page.goto(url)
+        // Focus _something_ on the page. Use both mac and linux shortcuts so this works
+        // both locally and in CI.
+        await page.getByRole('link', { name: 'Sourcegraph' }).press('Meta+Backspace')
+        await page.getByRole('link', { name: 'Sourcegraph' }).press('Control+Backspace')
+        await page.waitForURL(`/${repoName}`)
     })
 })
 

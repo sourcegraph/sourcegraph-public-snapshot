@@ -48,12 +48,19 @@ func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
 //
 // The content can be optionally passed via a callback instead of
 // directly, so that in the common case, the caller can avoid fetching
-// the content.
-//
-// Only returns an error if getContent returns an error.
+// the content. The full content returned by getContent will be used for
+// language detection.
 //
 // getContent is not called if the file is likely to be a binary file,
 // as enry only covers programming languages.
+//
+// Returns:
+//   - An error if the getContent func returns an error
+//   - An empty slice if language detection failed
+//   - A single-element slice if the language was determined exactly
+//   - A multi-element slice if the language was ambiguous. For example,
+//     for simple `.h` files with just comments and macros, they may
+//     be valid C, C++ or any of their derivative languages (e.g. Objective-C).
 func GetLanguages(path string, getContent func() ([]byte, error)) ([]string, error) {
 	langs := enry.GetLanguagesByFilename(path, nil, nil)
 	if len(langs) == 1 {

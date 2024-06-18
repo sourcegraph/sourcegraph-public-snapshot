@@ -13,8 +13,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiSourceMerge } from '@mdi/js'
-
     import Avatar from '$lib/Avatar.svelte'
     import Icon from '$lib/Icon.svelte'
     import { displayRepoName } from '$lib/shared'
@@ -22,7 +20,7 @@
     import Badge from '$lib/wildcard/Badge.svelte'
 
     import RepoStars from '../RepoStars.svelte'
-    import { getHumanNameForCodeHost, getIconPathForCodeHost } from '../shared/codehost'
+    import { getHumanNameForCodeHost, getIconForCodeHost } from '../shared/codehost'
 
     import type { RepoPopoverFragment } from './RepoPopover.gql'
 
@@ -37,7 +35,7 @@
     {#if withHeader}
         <div class="header">
             <div class="left">
-                <Icon svgPath={mdiSourceMerge} --icon-fill-color="var(--primary)" />
+                <Icon icon={ILucideGitMerge} aria-hidden --icon-color="var(--primary)" />
                 <h4>{displayRepoName(data.name)}</h4>
                 <Badge variant="outlineSecondary" small pill>
                     {data.isPrivate ? 'Private' : 'Public'}
@@ -45,8 +43,8 @@
             </div>
             <div class="right">
                 <Icon
-                    svgPath={getIconPathForCodeHost(data.externalRepository.serviceType)}
-                    --icon-fill-color="var(--text-body)"
+                    icon={getIconForCodeHost(data.externalRepository.serviceType)}
+                    --icon-color="var(--text-body)"
                     --size={24}
                 />
                 <small>{getHumanNameForCodeHost(data.externalRepository.serviceType)}</small>

@@ -28,7 +28,10 @@ fragment ResolvedRepository on Repository {
     defaultBranch {
         abbrevName
     }
-
+    externalURLs {
+        url
+        serviceKind
+    }
     ...RepoPage_ResolvedRevision
     ...BlobPage_ResolvedRevision
 }

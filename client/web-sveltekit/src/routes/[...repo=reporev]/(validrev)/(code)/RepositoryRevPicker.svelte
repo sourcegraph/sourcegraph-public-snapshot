@@ -25,8 +25,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -96,7 +94,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} --icon-size="16px" />
+                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -118,12 +116,12 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiSourceBranch}
+                        icon={ILucideGitBranch}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     >
                         <svelte:fragment slot="title">
-                            <Icon svgPath={mdiSourceBranch} inline />
+                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
                             <Badge variant="link">{value.displayName}</Badge>
                             {#if value.displayName === resolvedRevision.defaultBranch}
                                 <Badge variant="secondary" small>DEFAULT</Badge>
@@ -145,7 +143,7 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiTagOutline}
+                        icon={ILucideTag}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     />
@@ -163,9 +161,9 @@
                     }}
                     let:value
                 >
-                    <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
+                    <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
-                            <Icon svgPath={mdiSourceCommit} inline />
+                            <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                             <Badge variant="link">{value.abbreviatedOID}</Badge>
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>

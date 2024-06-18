@@ -21,35 +21,35 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import type { Event } from './graphql-operations'
 import { accessTokenSetting, processOldToken } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
-import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, type VSCEQueryState } from './state'
 import { copySourcegraphLinks, focusSearchPanel, openSourcegraphLinks, registerWebviews } from './webview/commands'
 import { secretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 
+export let extensionContext: vscode.ExtensionContext
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    extensionContext = context
+    const initialInstanceURL = endpointSetting()
     const secretStorage = context.secrets
     // Register SourcegraphAuthProvider
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
-            endpointSetting(),
+            initialInstanceURL,
             secretTokenKey,
             new SourcegraphAuthProvider(secretStorage)
         )
     )
     await processOldToken(secretStorage)
-    const initialInstanceURL = endpointSetting()
     const initialAccessToken = await secretStorage.get(secretTokenKey)
     const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
-    const session = await vscode.authentication.getSession(endpointSetting(), [], createIfNone)
+    const session = await vscode.authentication.getSession(initialInstanceURL, [], createIfNone)
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
-    invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]

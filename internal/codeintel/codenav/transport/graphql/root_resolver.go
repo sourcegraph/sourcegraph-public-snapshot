@@ -3,7 +3,6 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -83,15 +81,6 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 
 	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
-		return nil, err
-	}
-
-	if len(uploads) == 0 {
-		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
-		if dotcom.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
-			err = r.autoindexingSvc.QueueRepoRev(ctx, int(args.Repo.ID), string(args.Commit))
-		}
-
 		return nil, err
 	}
 
@@ -209,7 +198,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	if err != nil {
 		return nil, err
 	}
-	remainingCount := int(*unresolvedArgs.First)
+	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
 
 	if provsForSCIPData.Precise {
@@ -219,6 +208,21 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		// Attempt to get up to remainingCount syntactic results.
+		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		if err != nil {
+			switch err.Code {
+			case codenav.SU_Fatal:
+				return nil, err
+			case codenav.SU_NoSymbolAtRequestedRange:
+			case codenav.SU_NoSyntacticIndex:
+			case codenav.SU_FailedToSearch:
+			default:
+				// None of these errors should cause the whole request to fail
+				// TODO: We might want to log some of them in the future
+
+			}
+		}
+		numSyntacticResults = len(results)
 		remainingCount = remainingCount - numSyntacticResults
 	}
 

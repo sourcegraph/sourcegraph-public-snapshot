@@ -1,7 +1,6 @@
 package codenav
 
 import (
-	"cmp"
 	"context"
 	"strings"
 
@@ -341,7 +340,7 @@ func (s *Service) gatherLocalLocations(
 	}
 
 	// re-assign mutable cursor scope to response cursor
-	cursor.SymbolNames = allSymbolNames.Sorted(compareStrings)
+	cursor.SymbolNames = collections.SortedSetValues(allSymbolNames)
 	cursor.SkipPathsByUploadID = skipPathsByUploadID
 
 	return allLocations, cursor, nil
@@ -496,7 +495,7 @@ func (s *Service) prepareCandidateUploads(
 		for _, upload := range uploads {
 			idSet.Add(upload.ID)
 		}
-		ids := idSet.Sorted(cmp.Less[int])
+		ids := collections.SortedSetValues(idSet)
 
 		fallback = false
 		cursor.UploadIDs = ids

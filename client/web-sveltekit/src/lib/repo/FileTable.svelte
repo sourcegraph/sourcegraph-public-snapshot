@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
-
     import Icon from '$lib/Icon.svelte'
     import type { TreeEntryWithCommitInfo } from './FileTable.gql'
     import { replaceRevisionInURL } from '$lib/shared'
@@ -33,7 +31,7 @@
                     {#if isFileEntry(entry)}
                         <FileIcon file={entry} inline />
                     {:else}
-                        <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
+                        <Icon icon={entry.isDirectory ? ILucideFolder : ILucideFileText} inline aria-hidden />
                     {/if}
                     <a href={replaceRevisionInURL(entry.canonicalURL, revision)}>{entry.name}</a>
                 </td>
