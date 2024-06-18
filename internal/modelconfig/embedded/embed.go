@@ -3,9 +3,9 @@ package embedded
 import (
 	_ "embed"
 	"encoding/json"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Embed the latest Cody Gateway config data directly into the
@@ -29,7 +29,7 @@ func GetCodyGatewayModelConfig() (*types.ModelConfiguration, error) {
 
 	var modelConfig types.ModelConfiguration
 	if err := json.Unmarshal([]byte(rawJSON), &modelConfig); err != nil {
-		return nil, fmt.Errorf("unmarshalling %d bytes of modelConfig: %w", len(rawJSON), err)
+		return nil, errors.Errorf("unmarshalling %d bytes of modelConfig: %w", len(rawJSON), err)
 	}
 
 	return &modelConfig, nil

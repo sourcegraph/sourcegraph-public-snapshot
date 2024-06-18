@@ -5,8 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,15 +26,17 @@ var (
 func main() {
 	flag.Parse()
 
+	logger := log.Scoped("cody-gateway-config")
+
 	// Generate the configuration.
 	modelCfg, err := GenerateModelConfigurationDoc()
 	if err != nil {
-		log.Fatalf("generating model config: %v", err)
+		logger.Fatal("generating model config", log.Error(err))
 	}
 
 	modelCfgJSON, err := json.MarshalIndent(modelCfg, "", "  ")
 	if err != nil {
-		log.Fatalf("rendering model JSON: %v", err)
+		logger.Fatal("rendering model JSON", log.Error(err))
 	}
 	modelCfgJSON = append(modelCfgJSON, []byte("\n")...)
 
@@ -43,12 +46,12 @@ func main() {
 		// If set, confirm that an existing, valid JSON file exists at the target location.
 		if *flagRequireOverwrite {
 			if err := checkConfigAlreadyExists(*flagOutputPath); err != nil {
-				log.Fatalf("checking will overwrite: %v", err)
+				logger.Fatal("checking will overwrite", log.Error(err))
 			}
 		}
 		// Save the results.
 		if err := os.WriteFile(*flagOutputPath, modelCfgJSON, fs.ModePerm); err != nil {
-			log.Fatalf("writing output: %v", err)
+			logger.Fatal("writing output: %v", log.Error(err))
 		}
 	}
 }
