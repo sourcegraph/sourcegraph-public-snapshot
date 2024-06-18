@@ -42,13 +42,8 @@ type GoogleHandlerMethods struct {
 	config config.GoogleConfig
 }
 
-// HACK: Because the Stream field will be removed from the googleRequest,
-// we need to store this value in a global variable to be used to determine
-// if the request is a streaming request.
-var isStreamRequest = false
-
 func (r googleRequest) ShouldStream() bool {
-	return isStreamRequest
+	return r.Stream
 }
 
 func (r googleRequest) GetModel() string {
@@ -72,7 +67,7 @@ func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req google
 	if feature == codygateway.FeatureChatCompletions || req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
-		isStreamRequest = true
+		req.Stream = true
 	}
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
 }
