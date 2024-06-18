@@ -15,7 +15,7 @@ import (
 //
 // See cmd/cody-gateway-config for how this file gets generated.
 //
-//go:embed cody-gateway-model-config.json
+//go:embed models.json
 var modelConfigJSON string
 
 func getRawCodyGatewayModelConfig() string {

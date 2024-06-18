@@ -18,7 +18,7 @@ go run ./cmd/cody-gateway-config -dry-run=true
 go run ./cmd/cody-gateway-config \
     -dry-run=false \
     -confirm-overwrite=true \
-    -output-file="./internal/modelconfig/embedded/cody-gateway-model-config.json"
+    -output-file="./internal/modelconfig/embedded/models.json"
 
 # Run the unit tests which among other things verifies that the static
 # ModelConfiguration document is well-formed.
