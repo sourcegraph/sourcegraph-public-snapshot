@@ -72,6 +72,7 @@ func (c *googleCompletionStreamClient) Stream(
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	dec := NewDecoder(resp.Body)
 	var content string
