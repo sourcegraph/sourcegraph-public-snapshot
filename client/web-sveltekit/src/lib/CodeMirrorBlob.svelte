@@ -129,8 +129,10 @@
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
 
-    import { Occurrence, Range as SCIPRange, Position } from '@sourcegraph/shared/src/codeintel/scip'
-    import { codeGraphData as codeGraphDataFacet } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
+    import {
+        codeGraphData as codeGraphDataFacet,
+        type CodeGraphData,
+    } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
@@ -164,7 +166,6 @@
         type ScrollSnapshot,
         getScrollSnapshot as getScrollSnapshot_internal,
     } from './codemirror/utils'
-    import type { CodeGraphData } from './graphql-types'
     import { registerHotkey } from './Hotkey'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
     import { createLocalWritable } from './stores'
@@ -255,24 +256,7 @@
         : null
     $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
     $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
-    $: codeGraph = codeGraphDataFacet.of(
-        codeGraphData?.map(datum => ({
-            provenance: datum.provenance,
-            occurrences:
-                datum.occurrences?.nodes.map(
-                    occ =>
-                        new Occurrence(
-                            new SCIPRange(
-                                new Position(occ.range.start.line, occ.range.start.character),
-                                new Position(occ.range.end.line, occ.range.end.character)
-                            ),
-                            undefined,
-                            occ.symbol ?? undefined,
-                            undefined // TODO: how to convert to numberic roles?
-                        )
-                ) ?? [],
-        })) ?? []
-    )
+    $: codeGraph = codeGraphDataFacet.of(codeGraphData)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
     $: searchExtension = search({
         overrideBrowserFindInPageShortcut: $useFileSearch,

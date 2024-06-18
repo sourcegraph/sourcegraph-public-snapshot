@@ -8,6 +8,7 @@
     import { writable } from 'svelte/store'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+    import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
@@ -53,7 +54,7 @@
 
     let blob: FileViewGitBlob | null = null
     let highlights: FileViewHighlightedFile | null = null
-    let codeGraphData: FileViewCodeGraphData | null = null
+    let codeGraphData: CodeGraphData[] | null = null
     let cmblob: CodeMirrorBlob | null = null
     let initialScrollPosition: ScrollSnapshot | null = null
     let selectedPosition: LineOrPositionOrRange | null = null
@@ -272,7 +273,7 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
-                {codeGraphData}
+                codeGraphData={codeGraphData ?? undefined}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}

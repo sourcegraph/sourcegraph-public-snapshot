@@ -5,13 +5,16 @@ import { Facet } from '@codemirror/state'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 
 export interface CodeGraphData {
-    // TODO: add other relevant information here?
     provenance: string
+    toolInfo?: {
+        name?: string
+        version?: string
+    }
+    // Guaranteed to be sorted by range
     occurrences: Occurrence[]
 }
 
 export const codeGraphData = Facet.define<CodeGraphData[], CodeGraphData[]>({
     static: true,
-    // TODO: generate an index for efficient lookups
-    combine: values => values[0],
+    combine: values => values[0] ?? [],
 })
