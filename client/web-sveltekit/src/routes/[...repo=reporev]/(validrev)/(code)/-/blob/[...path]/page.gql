@@ -48,11 +48,7 @@ query BlobFileViewHighlightedFileQuery(
     }
 }
 
-query BlobFileViewCodeGraphDataQuery(
-    $repoName: String!
-    $revspec: String!
-    $path: String!
-) {
+query BlobFileViewCodeGraphDataQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id
         commit(rev: $revspec) {

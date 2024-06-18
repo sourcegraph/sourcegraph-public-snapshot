@@ -7,7 +7,6 @@ fragment FileViewGitBlob on GitBlob {
     totalLines
     byteSize
 
-
     ...OpenInCodeHostAction
     ...FileIcon_GitBlob
 }
@@ -33,30 +32,30 @@ fragment FileViewCommit on GitCommit {
 }
 
 fragment FileViewCodeGraphData on CodeGraphData {
-        provenance
-        commit
-        toolInfo {
-            name
-            version
-        }
+    provenance
+    commit
+    toolInfo {
+        name
+        version
+    }
 
-        # TODO: I do not think it is possible to use this pagination correctly.
-        # We would need a GraphQL ID on the CodeGraphData node to request followup pages
-        # for that element of the codeGraphData list
-        occurrences(first: 10000) {
-            nodes {
-                symbol
-                range {
-                   start {
-                       line
-                       character
-                   }
-                   end {
-                       line
-                       character
-                   }
+    # TODO: I do not think it is possible to use this pagination correctly.
+    # We would need a GraphQL ID on the CodeGraphData node to request followup pages
+    # for that element of the codeGraphData list
+    occurrences(first: 10000) {
+        nodes {
+            symbol
+            range {
+                start {
+                    line
+                    character
                 }
-                roles
+                end {
+                    line
+                    character
+                }
             }
+            roles
         }
+    }
 }
