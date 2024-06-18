@@ -31,7 +31,7 @@ func main() {
 		log.Fatalf("generating model config: %v", err)
 	}
 
-	modelCfgJSON, err := json.MarshalIndent(modelCfg, "", "    ")
+	modelCfgJSON, err := json.MarshalIndent(modelCfg, "", "  ")
 	if err != nil {
 		log.Fatalf("rendering model JSON: %v", err)
 	}
