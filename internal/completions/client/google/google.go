@@ -15,11 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, endpoint, accessToken string, viaGateway bool) types.CompletionsClient {
 	return &googleCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
 		endpoint:    endpoint,
+		viaGateway:  viaGateway,
 	}
 }
 
@@ -30,15 +31,7 @@ func (c *googleCompletionStreamClient) Complete(
 	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
 ) (*types.CompletionResponse, error) {
-	var resp *http.Response
-	var err error
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-
-	resp, err = c.makeRequest(ctx, requestParams, false)
+	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
 	}
@@ -75,16 +68,7 @@ func (c *googleCompletionStreamClient) Stream(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
-	var resp *http.Response
-	var err error
-
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-
-	resp, err = c.makeRequest(ctx, requestParams, true)
+	resp, err := c.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err
 	}
@@ -131,20 +115,19 @@ func (c *googleCompletionStreamClient) Stream(
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
 func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+	apiURL := c.getAPIURL(requestParams, stream)
+	endpointURL := apiURL.String()
+
 	// Ensure TopK and TopP are non-negative
 	requestParams.TopK = max(0, requestParams.TopK)
 	requestParams.TopP = max(0, requestParams.TopP)
-
 	// Generate the prompt
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
-
 	payload := googleRequest{
-		Model:    requestParams.Model,
-		Stream:   stream,
-		Contents: prompt,
+		Model: requestParams.Model,
 		GenerationConfig: googleGenerationConfig{
 			Temperature:     requestParams.Temperature,
 			TopP:            requestParams.TopP,
@@ -154,13 +137,18 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 		},
 	}
 
+	if c.viaGateway {
+		endpointURL = c.endpoint
+		payload.Stream = stream
+	}
+
+	payload.Contents = prompt
+
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
-
-	apiURL := c.getAPIURL(requestParams, stream)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +157,7 @@ func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestP
 
 	// Vertex AI API requires an Authorization header with the access token.
 	// Ref: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini#sample-requests
-	if !isDefaultAPIEndpoint(apiURL) {
+	if !c.viaGateway && !isDefaultAPIEndpoint(apiURL) {
 		req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	}
 
