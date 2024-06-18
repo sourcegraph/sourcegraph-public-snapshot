@@ -25,6 +25,7 @@ import { tokenInfo } from './codemirror/token-info'
 import type { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
+import {filterDecoration} from "./experimental/codemirror/syntax-highlighting";
 
 export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
     readOnly?: boolean
@@ -211,7 +212,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         ])
     )
 
-    const extensions = useMemo(() => [autocompletion, dynamicExtensions], [autocompletion, dynamicExtensions])
+    const extensions = useMemo(() => [filterDecoration, autocompletion, dynamicExtensions], [autocompletion, dynamicExtensions])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useOnValueChanged(selectedSearchContextSpec, () => {

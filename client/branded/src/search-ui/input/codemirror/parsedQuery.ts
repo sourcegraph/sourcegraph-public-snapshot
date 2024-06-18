@@ -3,7 +3,7 @@ import { type EditorState, type Extension, Facet, StateEffect, StateField } from
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { decorate, type DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { type ParseResult, parseSearchQuery, type Node } from '@sourcegraph/shared/src/search/query/parser'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import {detectPatternType, scanSearchQuery} from '@sourcegraph/shared/src/search/query/scanner'
 import type { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 export interface QueryTokens {
@@ -74,12 +74,14 @@ export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension 
             // recomputed whenever one of those values changes.
             return queryTokens.compute(['doc', parseOptions], state => {
                 const textDocument = state.sliceDoc()
-                const { patternType, interpretComments } = state.field(parseOptions)
+                const options= state.field(parseOptions)
                 if (!textDocument) {
-                    return { patternType, tokens: [] }
+                    return { patternType:options.patternType, tokens: [] }
                 }
 
-                const result = scanSearchQuery(textDocument, interpretComments, patternType)
+                const patternType = detectPatternType(textDocument) || options.patternType
+                const result = scanSearchQuery(textDocument, options.interpretComments, patternType)
+
                 return {
                     patternType,
                     tokens: result.type === 'success' ? result.term : [],
