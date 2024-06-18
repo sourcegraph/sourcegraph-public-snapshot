@@ -1066,8 +1066,12 @@ func (s *Service) SyntacticUsages(
 	// (Meaning we just need a single Searcher/Zoekt search)
 	searchSymbol := symbolsAtRange[0]
 
-	langs, langErr := languages.GetLanguages(path, func() ([]byte, error) { return nil, errors.New("Ambiguous language") })
-	if langErr != nil || len(langs) == 0 {
+	langs, _ := languages.GetLanguages(path, nil)
+	if len(langs) != 1 {
+		langErr := errors.New("Unknown language")
+		if len(langs) > 1 {
+			langErr = errors.New("Ambiguous language")
+		}
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,

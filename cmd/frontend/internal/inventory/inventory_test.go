@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2" //nolint:depguard - FIXME: replace this usage of enry with languages package
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

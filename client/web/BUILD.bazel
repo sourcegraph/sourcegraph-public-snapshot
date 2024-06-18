@@ -230,7 +230,6 @@ ts_project(
         "src/cody/dashboard/UpsellImage.tsx",
         "src/cody/editorGroups.ts",
         "src/cody/invites/AcceptInviteBanner.tsx",
-        "src/cody/invites/AcceptInvitePage.tsx",
         "src/cody/invites/useInviteParams.ts",
         "src/cody/invites/useInviteState.ts",
         "src/cody/isCodyEnabled.tsx",

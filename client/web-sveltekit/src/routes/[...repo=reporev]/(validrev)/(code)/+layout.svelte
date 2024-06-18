@@ -120,7 +120,6 @@
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
-    $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -286,7 +285,7 @@
                 onCollapse={handleBottomPanelCollapse}
                 let:isCollapsed
             >
-                <div class="bottom-panel">
+                <div class="bottom-panel" class:collapsed={isCollapsed}>
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
                         <svelte:fragment slot="header-actions">
                             {#if !isCollapsed}
@@ -313,11 +312,24 @@
                             {/key}
                         </TabPanel>
                         <TabPanel title="References" shortcut={referenceHotkey}>
-                            <ReferencePanel
-                                connection={references}
-                                loading={referencesLoading}
-                                on:more={referenceQuery?.fetchMore}
-                            />
+                            {#if !referenceQuery}
+                                <div class="info">
+                                    <Alert variant="info"
+                                        >Hover over a symbol and click "Find references" to find references to the
+                                        symbol.</Alert
+                                    >
+                                </div>
+                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
+                                <div class="info">
+                                    <Alert variant="info">No references found.</Alert>
+                                </div>
+                            {:else}
+                                <ReferencePanel
+                                    connection={references}
+                                    loading={$referenceQuery?.fetching ?? false}
+                                    on:more={referenceQuery?.fetchMore}
+                                />
+                            {/if}
                         </TabPanel>
                     </Tabs>
                     {#if lastCommit && isCollapsed}
@@ -367,36 +379,36 @@
         flex-direction: column;
         overflow: hidden;
         background-color: var(--color-bg-1);
-    }
 
-    .collapsed {
-        flex-direction: column;
-        align-items: center;
-
-        header {
-            flex-wrap: nowrap;
-        }
-
-        header,
-        .sidebar-action-row {
+        &.collapsed {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-            width: 100%;
-        }
+            align-items: center;
 
-        // Hide action text and leave just icon for collapsed version
-        .search-files-button {
-            display: block;
+            header {
+                flex-wrap: nowrap;
+            }
 
-            span {
+            header,
+            .sidebar-action-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            // Hide action text and leave just icon for collapsed version
+            .search-files-button {
+                display: block;
+
+                span {
+                    display: none;
+                }
+            }
+
+            :global([data-repo-rev-picker-trigger]),
+            .sidebar-file-tree {
                 display: none;
             }
-        }
-
-        :global([data-repo-rev-picker-trigger]),
-        .sidebar-file-tree {
-            display: none;
         }
     }
 
@@ -473,6 +485,13 @@
 
         :global([data-tabs]) {
             flex: 1;
+            min-width: 0;
+        }
+
+        &.collapsed :global([data-tabs]) {
+            // Reset min-width otherwise very long commit messages will overflow
+            // the tabs.
+            min-width: initial;
         }
 
         .last-commit {
@@ -480,5 +499,9 @@
             max-width: min-content;
             margin-right: 0.5rem;
         }
+    }
+
+    .info {
+        padding: 1rem;
     }
 </style>
