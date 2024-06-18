@@ -1,12 +1,12 @@
 use std::{
     collections::{HashMap, HashSet},
     io::Write,
-    path::{Path, PathBuf},
     process::{Command, Stdio},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
 use assert_cmd::{cargo::cargo_bin, prelude::*};
+use camino::{Utf8Path, Utf8PathBuf};
 use scip::types::Document;
 use scip_syntax::{
     evaluate::Evaluator,
@@ -14,28 +14,31 @@ use scip_syntax::{
     io::read_index_from_file,
 };
 
+fn current_dir() -> Utf8PathBuf {
+    Utf8PathBuf::from_path_buf(std::env::current_dir().unwrap()).unwrap()
+}
+
 lazy_static::lazy_static! {
-    static ref BINARY_LOCATION: PathBuf = {
+    static ref BINARY_LOCATION: Utf8PathBuf = {
         match std::env::var("SCIP_SYNTAX_PATH") {
-            Ok(va) => std::env::current_dir().unwrap().join(va),
-            _ => cargo_bin("scip-syntax"),
+            Ok(va) => current_dir().join(va),
+            _ => Utf8PathBuf::from_path_buf(cargo_bin("scip-syntax")).unwrap(),
         }
     };
 
-    static ref BASE: PathBuf = {
+    static ref BASE: Utf8PathBuf = {
         match std::env::var("CARGO_MANIFEST_DIR") {
-            Ok(va) => std::env::current_dir().unwrap().join(va),
-            _ => std::env::current_dir().unwrap()            }
+            Ok(va) => current_dir().join(va),
+            _ => current_dir()
+        }
     };
 
-    static ref JAVA_SCIP_INDEX: PathBuf = {
+    static ref JAVA_SCIP_INDEX: Utf8PathBuf = {
         match std::env::var("JAVA_SCIP_INDEX") {
-            Ok(va) => std::env::current_dir().unwrap().join(va),
+            Ok(va) => current_dir().join(va),
             _ => BASE.join("testdata/java/index.scip")
         }
     };
-
-
 }
 
 use syntax_analysis::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
@@ -66,8 +69,8 @@ fn java_e2e_evaluation() {
         IndexMode::Workspace {
             location: dir.clone(),
         },
-        candidate.clone(),
-        dir.clone(),
+        &candidate,
+        &dir,
         None,
         IndexOptions {
             analysis_mode: AnalysisMode::Full,
@@ -79,7 +82,7 @@ fn java_e2e_evaluation() {
     let mut str = vec![];
 
     Evaluator::default()
-        .evaluate_files(candidate, JAVA_SCIP_INDEX.to_path_buf())
+        .evaluate_files(&candidate, &JAVA_SCIP_INDEX)
         .unwrap()
         .write_summary(
             &mut str,
@@ -112,7 +115,7 @@ fn java_files_indexing() {
         "--language",
         "java",
         "--out",
-        output_location.to_str().unwrap(),
+        output_location.as_str(),
     ])
     .current_dir(&out_dir)
     .args(paths)
@@ -140,11 +143,11 @@ fn java_workspace_indexing() {
 
     cmd.args(vec![
         "workspace",
-        out_dir.to_str().unwrap(),
+        out_dir.as_str(),
         "--language",
         "java",
         "--out",
-        output_location.to_str().unwrap(),
+        output_location.as_str(),
     ])
     .assert()
     .success();
@@ -174,11 +177,11 @@ fn java_tar_file_indexing() {
 
     cmd.args(vec![
         "tar",
-        tar_file.to_str().unwrap(),
+        tar_file.as_str(),
         "--language",
         "java",
         "--out",
-        output_location.to_str().unwrap(),
+        output_location.as_str(),
     ])
     .assert()
     .success();
@@ -215,7 +218,7 @@ fn java_tar_stream_indexing() {
             "--language",
             "java",
             "--out",
-            output_location.to_str().unwrap(),
+            output_location.as_str(),
         ])
         .stdin(Stdio::piped())
         .spawn()
@@ -236,7 +239,7 @@ fn java_tar_stream_indexing() {
     insta::assert_snapshot!(index_snapshot);
 }
 
-fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) -> Result<()> {
+fn prepare(temp: &Utf8Path, files: &HashMap<Utf8PathBuf, String>) -> Result<()> {
     for (path, contents) in files.iter() {
         let file_path = temp.join(path);
         write_file_string(&file_path, contents)?;
@@ -246,40 +249,36 @@ fn prepare(temp: &Path, files: &HashMap<PathBuf, String>) -> Result<()> {
 }
 
 fn command(sub: &str) -> Command {
-    let mut cmd = Command::new(BINARY_LOCATION.to_str().unwrap());
+    let mut cmd = Command::new(BINARY_LOCATION.as_str());
 
     cmd.arg(sub);
 
     cmd
 }
 
-fn write_file_string(path: &PathBuf, contents: &String) -> Result<()> {
+fn write_file_string(path: &Utf8Path, contents: &String) -> Result<()> {
     write_file_bytes(path, contents.as_bytes())
 }
 
-fn write_file_bytes(path: &PathBuf, contents: &[u8]) -> Result<()> {
+fn write_file_bytes(path: &Utf8Path, contents: &[u8]) -> Result<()> {
     use std::io::Write;
 
     let Some(parent) = path.parent() else {
-        bail!("failed to find parent dir for {}", path.display())
+        bail!("failed to find parent dir for {path}")
     };
 
     std::fs::create_dir_all(parent)
-        .with_context(|| anyhow!("Failed to create all parent folders for {}", path.display()))?;
+        .with_context(|| anyhow!("Failed to create all parent folders for {path}"))?;
 
     let output = std::fs::File::create(path)
-        .with_context(|| anyhow!("Failed to open file {} for writing", path.to_str().unwrap()))?;
+        .with_context(|| anyhow!("Failed to open file {path} for writing"))?;
     let mut writer = std::io::BufWriter::new(output);
     writer.write_all(contents)?;
 
     Ok(())
 }
 
-fn tempdir() -> PathBuf {
-    tempfile::tempdir().unwrap().into_path()
-}
-
-fn create_tar(files: &HashMap<PathBuf, String>) -> Result<Vec<u8>, std::io::Error> {
+fn create_tar(files: &HashMap<Utf8PathBuf, String>) -> Result<Vec<u8>, std::io::Error> {
     let mut ar = Builder::new(Vec::new());
 
     for (path, text) in files.iter() {
@@ -287,7 +286,7 @@ fn create_tar(files: &HashMap<PathBuf, String>) -> Result<Vec<u8>, std::io::Erro
         let bytes = text.as_bytes();
 
         header
-            .set_path(path.to_str().unwrap())
+            .set_path(path.as_str())
             .expect("Failed to set path for archive entry");
         header.set_size(bytes.len() as u64);
         header.set_cksum();
@@ -297,24 +296,21 @@ fn create_tar(files: &HashMap<PathBuf, String>) -> Result<Vec<u8>, std::io::Erro
     ar.into_inner()
 }
 
-fn indexing_data() -> HashMap<PathBuf, String> {
+fn indexing_data() -> HashMap<Utf8PathBuf, String> {
     HashMap::from([
         (
-            PathBuf::from("src/main/java/globals.java"),
+            Utf8PathBuf::from("src/main/java/globals.java"),
             include_str!("../testdata/globals.java").to_string(),
         ),
         (
-            PathBuf::from("package-info.java"),
+            Utf8PathBuf::from("package-info.java"),
             include_str!("../testdata/package-info.java").to_string(),
         ),
     ])
 }
 
-fn extract_paths(setup: &HashMap<PathBuf, String>) -> HashSet<String> {
-    setup
-        .keys()
-        .map(|pb| pb.to_str().unwrap().to_string())
-        .collect()
+fn extract_paths(setup: &HashMap<Utf8PathBuf, String>) -> HashSet<String> {
+    setup.keys().map(|pb| pb.to_string()).collect()
 }
 
 fn extract_indexed_paths(index: &scip::types::Index) -> HashSet<String> {
@@ -325,7 +321,7 @@ fn extract_indexed_paths(index: &scip::types::Index) -> HashSet<String> {
         .collect()
 }
 
-fn snapshot_from_files(docs: &[Document], project_root: &Path) -> String {
+fn snapshot_from_files(docs: &[Document], project_root: &Utf8Path) -> String {
     let mut str = String::new();
     let mut docs = docs.to_owned();
     docs.sort_by_key(|doc| doc.relative_path.clone());
@@ -333,7 +329,7 @@ fn snapshot_from_files(docs: &[Document], project_root: &Path) -> String {
     for doc in docs {
         let path = project_root.join(doc.relative_path.clone());
         let contents = std::fs::read_to_string(path.clone())
-            .with_context(|| anyhow!("Failed to read path {}", path.display()))
+            .with_context(|| anyhow!("Failed to read path {path}"))
             .unwrap();
 
         str.push_str(&format_snapshot_document(&doc, &contents));
@@ -351,14 +347,14 @@ fn format_snapshot_document(doc: &scip::types::Document, contents: &str) -> Stri
     str
 }
 
-fn snapshot_from_data(docs: &[Document], data: &HashMap<PathBuf, String>) -> String {
+fn snapshot_from_data(docs: &[Document], data: &HashMap<Utf8PathBuf, String>) -> String {
     let mut str = String::new();
     let mut docs = docs.to_owned();
     docs.sort_by_key(|doc| doc.relative_path.clone());
 
     for doc in docs {
         let contents = data
-            .get(&PathBuf::from(&doc.relative_path))
+            .get(&Utf8PathBuf::from(&doc.relative_path))
             .context(format!("Failed to find {} in data", &doc.relative_path))
             .unwrap();
 
@@ -366,4 +362,8 @@ fn snapshot_from_data(docs: &[Document], data: &HashMap<PathBuf, String>) -> Str
     }
 
     str
+}
+
+fn tempdir() -> Utf8PathBuf {
+    Utf8PathBuf::from_path_buf(tempfile::tempdir().unwrap().into_path()).expect("non-utf8 tempdir")
 }
