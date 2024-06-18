@@ -45,6 +45,9 @@ const (
 	// SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionsService's UpdateEnterpriseSubscription RPC.
 	SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	// SubscriptionsServiceCreateEnterpriseSubscriptionProcedure is the fully-qualified name of the
+	// SubscriptionsService's CreateEnterpriseSubscription RPC.
+	SubscriptionsServiceCreateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
 	// SubscriptionsServiceUpdateSubscriptionMembershipProcedure is the fully-qualified name of the
 	// SubscriptionsService's UpdateSubscriptionMembership RPC.
 	SubscriptionsServiceUpdateSubscriptionMembershipProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
@@ -57,6 +60,7 @@ var (
 	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
 	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
 	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
+	subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscription")
 	subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateSubscriptionMembership")
 )
 
@@ -77,6 +81,8 @@ type SubscriptionsServiceClient interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
@@ -121,6 +127,12 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
+		createEnterpriseSubscription: connect.NewClient[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse](
+			httpClient,
+			baseURL+SubscriptionsServiceCreateEnterpriseSubscriptionProcedure,
+			connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		updateSubscriptionMembership: connect.NewClient[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse](
 			httpClient,
 			baseURL+SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
@@ -137,6 +149,7 @@ type subscriptionsServiceClient struct {
 	listEnterpriseSubscriptions        *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
 	listEnterpriseSubscriptionLicenses *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
 	updateEnterpriseSubscription       *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
+	createEnterpriseSubscription       *connect.Client[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse]
 	updateSubscriptionMembership       *connect.Client[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse]
 }
 
@@ -164,6 +177,12 @@ func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Co
 	return c.updateEnterpriseSubscription.CallUnary(ctx, req)
 }
 
+// CreateEnterpriseSubscription calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscription.
+func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error) {
+	return c.createEnterpriseSubscription.CallUnary(ctx, req)
+}
+
 // UpdateSubscriptionMembership calls
 // enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateSubscriptionMembership.
 func (c *subscriptionsServiceClient) UpdateSubscriptionMembership(ctx context.Context, req *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
@@ -187,6 +206,8 @@ type SubscriptionsServiceHandler interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
@@ -226,6 +247,12 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionsServiceCreateEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceCreateEnterpriseSubscriptionProcedure,
+		svc.CreateEnterpriseSubscription,
+		connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	subscriptionsServiceUpdateSubscriptionMembershipHandler := connect.NewUnaryHandler(
 		SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
 		svc.UpdateSubscriptionMembership,
@@ -243,6 +270,8 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 			subscriptionsServiceListEnterpriseSubscriptionLicensesHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure:
 			subscriptionsServiceUpdateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceCreateEnterpriseSubscriptionProcedure:
+			subscriptionsServiceCreateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceUpdateSubscriptionMembershipProcedure:
 			subscriptionsServiceUpdateSubscriptionMembershipHandler.ServeHTTP(w, r)
 		default:
@@ -268,6 +297,10 @@ func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptionLicens
 
 func (UnimplementedSubscriptionsServiceHandler) UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscription is not implemented"))
+}
+
+func (UnimplementedSubscriptionsServiceHandler) CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscription is not implemented"))
 }
 
 func (UnimplementedSubscriptionsServiceHandler) UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
