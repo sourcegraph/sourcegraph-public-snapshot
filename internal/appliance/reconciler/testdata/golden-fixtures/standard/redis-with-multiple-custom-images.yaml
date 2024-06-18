@@ -156,6 +156,9 @@ resources:
           indexedSearch:
             disabled: true
 
+          openTelemetry:
+            disabled: true
+
           pgsql:
             disabled: true
 
