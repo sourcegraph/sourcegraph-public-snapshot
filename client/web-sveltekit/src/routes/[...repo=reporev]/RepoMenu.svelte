@@ -119,7 +119,8 @@
 
         display: grid;
         gap: 0.25rem;
-        grid-template-columns: 1fr 1rem;
+        align-items: center;
+        grid-template-columns: 1fr min-content;
         grid-template-rows: min-content min-content;
 
         small {
@@ -131,19 +132,15 @@
         div.repo-name {
             grid-column: 1;
             grid-row: 2;
-
             display: flex;
-            gap: 0.5em;
+            gap: 0.5rem;
             align-items: center;
         }
 
         div.external-link-icon {
             grid-column: 2;
             grid-row: 1 / span 2;
-
-            display: flex;
-            gap: 0.5em;
-            align-items: center;
+            --icon-size: 1rem;
         }
     }
 </style>
