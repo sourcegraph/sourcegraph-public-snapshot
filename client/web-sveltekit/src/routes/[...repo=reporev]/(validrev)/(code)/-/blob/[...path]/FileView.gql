@@ -42,7 +42,7 @@ fragment FileViewCodeGraphData on CodeGraphData {
     # TODO: I do not think it is possible to use this pagination correctly.
     # We would need a GraphQL ID on the CodeGraphData node to request followup pages
     # for that element of the codeGraphData list
-    occurrences(first: 10000) {
+    occurrences(first: 50000) {
         nodes {
             symbol
             range {
