@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,6 +28,7 @@ func findCandidateOccurrencesViaSearch(
 	ctx context.Context,
 	client searchclient.SearchClient,
 	logger log.Logger,
+	trace observation.TraceLogger,
 	repo types.Repo,
 	commit api.CommitID,
 	symbol *scip.Symbol,
@@ -46,7 +48,7 @@ func findCandidateOccurrencesViaSearch(
 	countLimit := 1000
 	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d case:yes /\\b%s\\b/", repoName, string(commit), language, countLimit, identifier)
 
-	logger.Info("Running query", log.String("q", searchQuery))
+	trace.Info("Running query", log.String("q", searchQuery))
 
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
 	if err != nil {

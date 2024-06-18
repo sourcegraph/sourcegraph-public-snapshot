@@ -964,7 +964,7 @@ func (e SyntacticUsagesError) Error() string {
 	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
 }
 
-func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
+func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.TraceLogger, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
 		RepositoryID:       int(repo.ID),
 		Commit:             string(commit),
@@ -981,7 +981,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 	}
 
 	if len(uploads) > 1 {
-		s.logger.Warn(
+		trace.Warn(
 			"Multiple syntactic uploads found, picking the first one",
 			log.String("repo", repo.URI),
 			log.String("commit", commit.Short()),
@@ -1001,12 +1001,13 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 // directory for a particular commit.
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
+	trace observation.TraceLogger,
 	repo types.Repo,
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
 ) (symbols []*scip.Symbol, uploadId int, err *SyntacticUsagesError) {
-	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
+	syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1035,7 +1036,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	}
 
 	if parseFail != nil {
-		s.logger.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+		trace.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
 	}
 
 	return symbols, syntacticUpload.ID, nil
@@ -1095,7 +1096,7 @@ func (s *Service) SyntacticUsages(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	symbolsAtRange, uploadId, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
+	symbolsAtRange, uploadId, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
@@ -1124,7 +1125,7 @@ func (s *Service) SyntacticUsages(
 	}
 
 	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(
-		ctx, s.searchClient, s.logger,
+		ctx, s.searchClient, s.logger, trace,
 		repo, commit, searchSymbol, langs[0],
 	)
 	if searchErr != nil {
