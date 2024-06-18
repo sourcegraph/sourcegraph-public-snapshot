@@ -45,7 +45,7 @@ var nonAmbiguousExtensionsCheck = map[string]string{
 
 func TestGetLanguageByAlias_UnsupportedLanguages(t *testing.T) {
 	for alias, name := range unsupportedByEnryAliasMap {
-		resName, _ := GetLanguageByAlias(alias)
+		resName, _ := GetLanguageByNameOrAlias(alias)
 		require.Equal(t, name, resName,
 			"maybe a typo in `unsupportedByEnryAliasMap`?")
 	}
@@ -53,7 +53,7 @@ func TestGetLanguageByAlias_UnsupportedLanguages(t *testing.T) {
 
 func TestGetLanguageByAlias_NonAmbiguousLanguages(t *testing.T) {
 	for _, language := range nonAmbiguousExtensionsCheck {
-		_, ok := GetLanguageByAlias(language)
+		_, ok := GetLanguageByNameOrAlias(language)
 		require.True(t, ok,
 			"unable to find language %s in go-enry", language)
 	}

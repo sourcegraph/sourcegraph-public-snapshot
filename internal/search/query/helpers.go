@@ -58,7 +58,7 @@ var filenamesFromLanguage = func() map[string][]string {
 // LangToFileRegexp converts a lang: parameter to its corresponding file
 // patterns for file filters. The lang value must be valid, cf. validate.go
 func LangToFileRegexp(lang string) string {
-	lang, _ = languages.GetLanguageByAlias(lang) // Invariant: lang is valid.
+	lang, _ = languages.GetLanguageByNameOrAlias(lang) // Invariant: lang is valid.
 	extensions := languages.GetLanguageExtensions(lang)
 	patterns := make([]string, len(extensions))
 	for i, e := range extensions {

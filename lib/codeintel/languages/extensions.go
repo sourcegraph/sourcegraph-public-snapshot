@@ -3,30 +3,32 @@ package languages
 import (
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/go-enry/go-enry/v2"
 )
 
-// GetLanguageByAlias returns the standardized name for a language
-// based on its alias, which is potentially an alternate name for
+// GetLanguageByNameOrAlias returns the standardized name for
+// a language based on its name (in which case this is an identity operation)
+// or based on its alias, which is potentially an alternate name for
 // the language.
 //
-// Aliases are fully lowercase.
+// Aliases are fully lowercase, and map N-1 to languages.
 //
 // For example,
 //
-// GetLanguageByAlias("ada") == "Ada", true
-// GetLanguageByAlias("ada95") == "Ada", true
+// GetLanguageByNameOrAlias("ada") == "Ada", true
+// GetLanguageByNameOrAlias("ada95") == "Ada", true
 //
-// Handles some languages not supported by enry.GetLanguageByAlias.
-func GetLanguageByAlias(alias string) (lang string, ok bool) {
-	normalizedAlias := strings.ToLower(alias)
-	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
+// Historical note: This function was added for replacing usages of
+// enry.GetLanguageByAlias, which, unlike the name suggests, also
+// handles non-normalized names such as those with spaces.
+func GetLanguageByNameOrAlias(nameOrAlias string) (lang string, ok bool) {
+	alias := convertToAliasKey(nameOrAlias)
+	if lang, ok = unsupportedByEnryAliasMap[alias]; ok {
 		return lang, true
 	}
 
-	return enry.GetLanguageByAlias(normalizedAlias)
+	return enry.GetLanguageByAlias(alias)
 }
 
 // GetLanguageExtensions returns the list of file extensions for a given
@@ -44,9 +46,10 @@ func GetLanguageExtensions(language string) []string {
 	}
 
 	ignoreExts, isNiche := nicheExtensionUsages[language]
-	enryExts := enry.GetLanguageExtensions(language)
+	// Force a copy to avoid accidentally modifying the global variable
+	enryExts := slices.Clone(enry.GetLanguageExtensions(language))
 	if !isNiche {
-		return enryExts
+		return slices.Clone(enryExts)
 	}
 	return slices.DeleteFunc(enryExts, func(ext string) bool {
 		_, shouldIgnore := ignoreExts[ext]
@@ -133,28 +136,26 @@ var nicheExtensionUsages = func() map[string]map[string]struct{} {
 		considered[lang] = struct{}{}
 	}
 	for ext := range overrideAmbiguousExtensionsMap {
-		langs := enry.GetLanguagesByExtension("x"+ext, nil, nil)
+		langs := enry.GetLanguagesByExtension("foo"+ext, nil, nil)
 		for _, lang := range langs {
 			if _, found := considered[lang]; !found {
 				if m, hasMap := niche[lang]; hasMap {
 					m[ext] = struct{}{}
-					niche[lang] = m
 				} else {
-					niche[lang] = map[string]struct{}{ext: struct{}{}}
+					niche[lang] = map[string]struct{}{ext: {}}
 				}
 			}
 		}
 	}
 	for specialOverrideExt, lang := range unsupportedByEnryExtensionToNameMap {
 		considered[lang] = struct{}{}
-		langs := enry.GetLanguagesByExtension("x"+specialOverrideExt, nil, nil)
+		langs := enry.GetLanguagesByExtension("foo"+specialOverrideExt, nil, nil)
 		for _, lang := range langs {
 			if _, found := considered[lang]; !found {
 				if m, hasMap := niche[lang]; hasMap {
 					m[specialOverrideExt] = struct{}{}
-					niche[lang] = m
 				} else {
-					niche[lang] = map[string]struct{}{specialOverrideExt: struct{}{}}
+					niche[lang] = map[string]struct{}{specialOverrideExt: {}}
 				}
 			}
 		}
