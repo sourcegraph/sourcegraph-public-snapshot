@@ -77,9 +77,19 @@ func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, fe
 	return nil
 }
 
-func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, _ googleRequest) (*flaggingResult, error) {
-	// This entirely disables flagging for Google.
-	return nil, nil
+func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req googleRequest) (*flaggingResult, error) {
+	result, err := isFlaggedRequest(
+		nil, // tokenizer, meaning token counts aren't considered when for flagging consideration.
+		flaggingRequest{
+			ModelName:       req.Model,
+			FlattenedPrompt: req.BuildPrompt(),
+			MaxTokens:       req.GenerationConfig.MaxOutputTokens,
+		},
+		makeFlaggingConfig(g.config.FlaggingConfig))
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // Used to modify the request body before it is sent to upstream.

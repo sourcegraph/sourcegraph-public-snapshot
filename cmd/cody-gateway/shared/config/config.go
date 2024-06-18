@@ -320,6 +320,10 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Google"))
 	}
 
+	// Load configuration settings specific to how we flag Google-routed requests.
+	// HACK: Same as the comment on OpenAI or Fireworks, re: only using one env var prefix.
+	c.loadFlaggingConfig(&c.Google.FlaggingConfig, "CODY_GATEWAY_ANTHROPIC")
+
 	defaultEmbeddingModels := strings.Join([]string{
 		string(embeddings.ModelNameOpenAIAda),
 		string(embeddings.ModelNameSourcegraphSTMultiQA),
