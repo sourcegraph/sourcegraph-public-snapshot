@@ -35,6 +35,12 @@ service SubscriptionsService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
+  // CreateEnterpriseSubscription creates license for an Enterprise subscription.
+  rpc CreateEnterpriseSubscriptionLicense(CreateEnterpriseSubscriptionLicenseRequest) returns (CreateEnterpriseSubscriptionLicenseResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
+  }
+
   // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
   // Only properties specified by the update_mask are applied.
   rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
@@ -269,6 +275,27 @@ message ListEnterpriseSubscriptionLicensesResponse {
   // The list of licenses that matched the given query, sorted by the most
   // recently created licenses first.
   repeated EnterpriseSubscriptionLicense licenses = 2;
+}
+
+message CreateEnterpriseSubscriptionLicenseRequest {
+  // The license to create.
+  //
+  // Required attributes:
+  // - subscription_id (this is the parent resource, EnterpriseSubscription)
+  // - license
+  //
+  // `license` supports the following types. At least one must be provided:
+  // - license.key, which requires:
+  //   - license.key.info_version
+  //   - license.key.info.tags
+  //   - license.key.info.user_count
+  //   - license.key.info.expire_time
+  EnterpriseSubscriptionLicense license = 1;
+}
+
+message CreateEnterpriseSubscriptionLicenseResponse {
+  // The license that was created.
+  EnterpriseSubscriptionLicense license = 1;
 }
 
 message UpdateEnterpriseSubscriptionRequest {
