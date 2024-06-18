@@ -3,6 +3,7 @@ syntax = "proto3";
 package enterpriseportal.codyaccess.v1;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1";
 
@@ -10,8 +11,6 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/cod
 // Gateway access management capabilities (e.g. access quotas). It is not the
 // Cody Gateway service API itself - it serves capabilities that Cody Gateway
 // depends on.
-//
-// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service CodyAccessService {
   // Retrieve Cody Gateway access granted to an Enterprise subscription.
   rpc GetCodyGatewayAccess(GetCodyGatewayAccessRequest) returns (GetCodyGatewayAccessResponse) {
@@ -21,6 +20,14 @@ service CodyAccessService {
   // List all Cody Gateway accesses granted to any Enterprise subscription.
   rpc ListCodyGatewayAccesses(ListCodyGatewayAccessesRequest) returns (ListCodyGatewayAccessesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // UpdateEnterpriseSubscription updates the Cody Gateway access granted to an
+  // Enterprise subscription.
+  //
+  // Only properties specified by the update_mask are applied.
+  rpc UpdateCodyGatewayAccess(UpdateCodyGatewayAccessRequest) returns (UpdateCodyGatewayAccessResponse) {
+    option idempotency_level = IDEMPOTENT;
   }
 }
 
@@ -106,4 +113,26 @@ message ListCodyGatewayAccessesResponse {
   string next_page_token = 1;
   // The list of Cody Gateway access that matched the given query.
   repeated CodyGatewayAccess accesses = 2;
+}
+
+message UpdateCodyGatewayAccessRequest {
+  // The Cody Gateway access to update. The subscription_id field is used to
+  // identify the Cody Gateway access to update.
+  CodyGatewayAccess access = 1;
+
+  // The list of fields to update, fields are specified relative to the CodyGatewayAccess.
+  // Updatable fields are:
+  //  - enabled
+  //  - chat_completions_rate_limit.limit
+  //  - chat_completions_rate_limit.interval_duration
+  //  - code_completions_rate_limit.limit
+  //  - code_completions_rate_limit.interval_duration
+  //  - embeddings_rate_limit.limit
+  //  - embeddings_rate_limit.interval_duration
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateCodyGatewayAccessResponse {
+  // The updated Cody Gateway access.
+  CodyGatewayAccess access = 1;
 }

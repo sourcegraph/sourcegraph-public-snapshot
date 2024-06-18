@@ -13,7 +13,10 @@ proto_library(
     srcs = ["codyaccess.proto"],
     strip_import_prefix = "/lib",  # keep
     visibility = ["//visibility:public"],
-    deps = ["@com_google_protobuf//:duration_proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:field_mask_proto",
+    ],
 )
 
 go_library(
