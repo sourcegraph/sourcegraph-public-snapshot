@@ -41,6 +41,12 @@ service SubscriptionsService {
     option idempotency_level = IDEMPOTENT;
   }
 
+  // CreateEnterpriseSubscription creates an Enterprise subscription.
+  rpc CreateEnterpriseSubscription(CreateEnterpriseSubscriptionRequest) returns (CreateEnterpriseSubscriptionResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
+  }
+
   // UpdateSubscriptionMembership updates a subscription membership. It creates
   // a new one if it does not exist and allow_missing is set to true.
   rpc UpdateSubscriptionMembership(UpdateSubscriptionMembershipRequest) returns (UpdateSubscriptionMembershipResponse) {
@@ -272,6 +278,22 @@ message UpdateEnterpriseSubscriptionRequest {
 
 message UpdateEnterpriseSubscriptionResponse {
   // The updated subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message CreateEnterpriseSubscriptionRequest {
+  // The subscription to create.
+  //
+  // Required attributes:
+  // - display_name
+  //
+  // Optional attributes:
+  // - instance_domain
+  EnterpriseSubscription subscription = 1;
+}
+
+message CreateEnterpriseSubscriptionResponse {
+  // The created subscription.
   EnterpriseSubscription subscription = 1;
 }
 

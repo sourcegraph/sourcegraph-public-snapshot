@@ -23,6 +23,7 @@ const (
 	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
 	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
 	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	SubscriptionsService_CreateEnterpriseSubscription_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
 	SubscriptionsService_UpdateSubscriptionMembership_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
 )
 
@@ -44,6 +45,8 @@ type SubscriptionsServiceClient interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(ctx context.Context, in *UpdateSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateSubscriptionMembershipResponse, error)
@@ -93,6 +96,15 @@ func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Co
 	return out, nil
 }
 
+func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error) {
+	out := new(CreateEnterpriseSubscriptionResponse)
+	err := c.cc.Invoke(ctx, SubscriptionsService_CreateEnterpriseSubscription_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *subscriptionsServiceClient) UpdateSubscriptionMembership(ctx context.Context, in *UpdateSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateSubscriptionMembershipResponse, error) {
 	out := new(UpdateSubscriptionMembershipResponse)
 	err := c.cc.Invoke(ctx, SubscriptionsService_UpdateSubscriptionMembership_FullMethodName, in, out, opts...)
@@ -120,6 +132,8 @@ type SubscriptionsServiceServer interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error)
@@ -141,6 +155,9 @@ func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptionLicense
 }
 func (UnimplementedSubscriptionsServiceServer) UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnterpriseSubscription not implemented")
+}
+func (UnimplementedSubscriptionsServiceServer) CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEnterpriseSubscription not implemented")
 }
 func (UnimplementedSubscriptionsServiceServer) UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscriptionMembership not implemented")
@@ -230,6 +247,24 @@ func _SubscriptionsService_UpdateEnterpriseSubscription_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SubscriptionsService_CreateEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEnterpriseSubscriptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubscriptionsService_CreateEnterpriseSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscription(ctx, req.(*CreateEnterpriseSubscriptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SubscriptionsService_UpdateSubscriptionMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateSubscriptionMembershipRequest)
 	if err := dec(in); err != nil {
@@ -270,6 +305,10 @@ var SubscriptionsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateEnterpriseSubscription",
 			Handler:    _SubscriptionsService_UpdateEnterpriseSubscription_Handler,
+		},
+		{
+			MethodName: "CreateEnterpriseSubscription",
+			Handler:    _SubscriptionsService_CreateEnterpriseSubscription_Handler,
 		},
 		{
 			MethodName: "UpdateSubscriptionMembership",
