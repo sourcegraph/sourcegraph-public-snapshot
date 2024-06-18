@@ -68,7 +68,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const isSearchRelatedPage =
         (isRepositoryRelatedPage || routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search'))) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
-    const isSearchConsolePage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search/console'))
     const isSearchNotebooksPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.Notebooks))
     const isCodySearchPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.CodySearch))
 
@@ -183,9 +182,9 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     authenticatedUser={
                         props.authenticatedUser
                             ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
+                                username: props.authenticatedUser.username || '',
+                                email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
+                            }
                             : null
                     }
                     onClose={() => setFeedbackModalOpen(false)}
@@ -217,7 +216,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
                         !isSearchNotebooksPage &&
                         !isCodySearchPage
                     }

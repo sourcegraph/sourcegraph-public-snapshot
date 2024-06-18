@@ -2,7 +2,6 @@
   // This is set from an environment variable
   "experimentalFeatures": {
     "batchChangesExecution": true,
-    "showMultilineSearchConsole": true,
     "codeMonitoring": true,
     "enableLazyBlobSyntaxHighlighting": true,
     "enableLazyFileResultSyntaxHighlighting": true,
