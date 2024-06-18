@@ -145,7 +145,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
                 {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
+                <div className={classNames('p-4 border bg-1 mt-3', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>My subscription</H2>
