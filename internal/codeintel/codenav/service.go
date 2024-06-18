@@ -1039,6 +1039,14 @@ func (s *Service) getSyntacticSymbolsAtRange(
 		trace.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
 	}
 
+	if len(symbols) == 0 {
+		trace.Warn("getSyntacticSymbolsAtRange: No symbols found at requested range")
+		return nil, 0, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: nil,
+		}
+	}
+
 	return symbols, syntacticUpload.ID, nil
 }
 
@@ -1101,13 +1109,6 @@ func (s *Service) SyntacticUsages(
 		return nil, err
 	}
 
-	if len(symbolsAtRange) == 0 {
-		s.logger.Warn("getSyntacticSymbolsAtRange: No symbols found at requested range")
-		return nil, &SyntacticUsagesError{
-			Code:            SU_NoSymbolAtRequestedRange,
-			UnderlyingError: nil,
-		}
-	}
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
 	searchSymbol := symbolsAtRange[0]
