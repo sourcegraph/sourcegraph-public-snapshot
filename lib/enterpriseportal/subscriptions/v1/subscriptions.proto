@@ -14,8 +14,6 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/sub
 // defined as separate gRPC services in 'lib/enterpriseportal' - these are
 // generally all be implemented by the Enterprise Portal Service directly for
 // now.
-//
-// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service SubscriptionsService {
   // GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
   rpc GetEnterpriseSubscription(GetEnterpriseSubscriptionRequest) returns (GetEnterpriseSubscriptionResponse) {
