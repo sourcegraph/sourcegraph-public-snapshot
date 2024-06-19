@@ -267,6 +267,7 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 		return err
 
 	}
+
 	return c.Changeset.SetMetadata(reopened)
 }
 
