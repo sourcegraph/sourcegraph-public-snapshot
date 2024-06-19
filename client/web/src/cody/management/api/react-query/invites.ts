@@ -40,7 +40,12 @@ export const useSendInvite = (): UseMutationResult<TeamInvite, Error, CreateTeam
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async requestBody => (await callCodyProApi(Client.sendInvite(requestBody))).json(),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.teamInvites() }),
+        onSuccess: (newInvite: TeamInvite) => {
+            queryClient.setQueryData(queryKeys.invites.teamInvites(), (prevInvites: TeamInvite[]) => [
+                ...prevInvites,
+                newInvite,
+            ])
+        },
     })
 }
 
