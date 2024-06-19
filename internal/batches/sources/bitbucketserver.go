@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -177,7 +176,6 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 	pr.ToRef.Repository.Slug = repo.Slug
 	pr.ToRef.Repository.Project.Key = repo.Project.Key
 
-	fmt.Println("loading changeset", pr.ID)
 	err = s.client.LoadPullRequest(ctx, pr)
 	if err != nil {
 		if err == bitbucketserver.ErrPullRequestNotFound {
