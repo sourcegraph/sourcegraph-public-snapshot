@@ -75,9 +75,9 @@ var (
 func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]amconfig.Receiver, []*amconfig.Route) {
 	// Receivers must be uniquely named. They route
 	var (
-		warningReceiver     = amconfig.Receiver{Name: alertmanagerWarningReceiver}
-		criticalReceiver    = amconfig.Receiver{Name: alertmanagerCriticalReceiver}
-		additionalReceivers = map[string]amconfig.Receiver{
+		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
+		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
+		additionalReceivers = map[string]*amconfig.Receiver{
 			// stub receiver, for routes that do not have a configured receiver
 			alertmanagerNoopReceiver: {
 				Name: alertmanagerNoopReceiver,
@@ -134,7 +134,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 	// Convert site configuration alerts to Alertmanager configuration
 	for i, alert := range newAlerts {
-		var receiver amconfig.Receiver
+		var receiver *amconfig.Receiver
 		var activeColor string
 		if alert.Level == "critical" {
 			receiver = criticalReceiver
@@ -158,7 +158,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			if r, exists := additionalReceivers[receiverName]; exists {
 				receiver = r
 			} else {
-				receiver = amconfig.Receiver{Name: receiverName}
+				receiver = &amconfig.Receiver{Name: receiverName}
 				additionalReceivers[receiverName] = receiver
 				additionalRoutes = append(additionalRoutes, &amconfig.Route{
 					Receiver: receiverName,
@@ -212,11 +212,11 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				apiURL = &amconfig.URL{URL: u}
 			}
 
-			var apiKEY amconfig.Secret
+			var apiKey amconfig.Secret
 			if notifier.Opsgenie.ApiKey != "" {
-				apiKEY = amconfig.Secret(notifier.Opsgenie.ApiKey)
+				apiKey = amconfig.Secret(notifier.Opsgenie.ApiKey)
 			} else {
-				apiKEY = amconfig.Secret(opsGenieAPIKey)
+				apiKey = amconfig.Secret(opsGenieAPIKey)
 			}
 
 			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
@@ -252,7 +252,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			}
 
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
-				APIKey: apiKEY,
+				APIKey: apiKey,
 				APIURL: apiURL,
 
 				Message:     notificationTitleTemplate,
@@ -362,9 +362,9 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 	var additionalReceiversSlice []amconfig.Receiver
 	for _, r := range additionalReceivers {
-		additionalReceiversSlice = append(additionalReceiversSlice, r)
+		additionalReceiversSlice = append(additionalReceiversSlice, *r)
 	}
-	return append(additionalReceiversSlice, warningReceiver, criticalReceiver),
+	return append(additionalReceiversSlice, *warningReceiver, *criticalReceiver),
 		append(additionalRoutes, defaultRoutes...)
 }
 

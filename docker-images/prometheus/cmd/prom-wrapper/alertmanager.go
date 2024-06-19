@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2" // same as used in alertmanager
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

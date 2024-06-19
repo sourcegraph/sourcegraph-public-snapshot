@@ -1305,6 +1305,8 @@ dockerCommands:
       CONFIG_DIR: docker-images/prometheus/config
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
+      SRC_LOG_LEVEL: info
+      SRC_DEVELOPMENT: true
       DISABLE_SOURCEGRAPH_CONFIG: false
       DISABLE_ALERTMANAGER: false
       PROMETHEUS_ADDITIONAL_FLAGS: '--web.enable-lifecycle --web.enable-admin-api'
