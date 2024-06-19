@@ -39,7 +39,6 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
 
     // Load data
     const subscriptionQueryResult = useCurrentSubscription()
-    const isPro = subscriptionQueryResult.data?.subscriptionStatus !== 'canceled'
     const subscriptionSummaryQueryResult = useSubscriptionSummary()
     const isAdmin = subscriptionSummaryQueryResult.data?.userRole === 'admin'
     const teamMembersQueryResult = useTeamMembers()
@@ -53,10 +52,10 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
         teamInvitesQueryResult.error?.message
 
     useEffect(() => {
-        if (!isPro) {
+        if (subscriptionQueryResult.data && subscriptionQueryResult.data.subscriptionStatus !== 'canceled') {
             navigate('/cody/subscription')
         }
-    }, [isPro, navigate])
+    }, [navigate, subscriptionQueryResult.data])
 
     const remainingInviteCount = useMemo(() => {
         const memberCount = teamMembers?.length ?? 0
