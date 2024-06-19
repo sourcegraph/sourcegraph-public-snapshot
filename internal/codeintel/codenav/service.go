@@ -995,6 +995,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 // in a syntactic upload. If this function returns an error you should most likely
 // log and handle it instead of rethrowing, as this could fail for a myriad of reasons
 // (some broken invariant internally, network issue etc.)
+// If this function doesn't error, the returned slice is guaranteed to be non-empty
 //
 // NOTE(id: single-syntactic-upload): This function returns the uploadId in because we're
 // making the assumption that there'll only be a single syntactic upload at the root
