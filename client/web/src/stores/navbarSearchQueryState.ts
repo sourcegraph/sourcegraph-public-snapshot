@@ -8,10 +8,10 @@ import create from 'zustand'
 import {
     type BuildSearchQueryURLParameters,
     canSubmitSearch,
-    type SearchQueryState,
-    updateQuery,
     InitialParametersSource,
     SearchMode,
+    type SearchQueryState,
+    updateQuery,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -28,6 +28,11 @@ import {
 
 export interface NavbarQueryState extends SearchQueryState {}
 
+const implicitPatternTypes = new Set([
+    SearchPatternType.codycontext,
+    SearchPatternType.literal,
+    SearchPatternType.standard,
+])
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
@@ -113,9 +118,11 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         const parsedPatternType = parsedSearchURL.patternType
         if (parsedPatternType !== undefined) {
             newState.searchPatternType = parsedPatternType
-            // Only keyword and regexp are represented in the UI, so surface other patterntypes in the query input.
-            if (parsedPatternType !== SearchPatternType.regexp && parsedPatternType !== SearchPatternType.keyword) {
-                query += ' ' + FilterType.patterntype + ':' + parsedPatternType
+            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
+            // sure to surface them in the query input itself.
+            // pattern types in the query input itself.
+            if (implicitPatternTypes.has(parsedPatternType)) {
+                query += ` ${FilterType.patterntype}:${parsedPatternType}`
             }
         }
         newState.queryState = { query }
