@@ -121,12 +121,16 @@ export class PanelResizeHandleRegistry {
                     if (count > 0) {
                         // Capturing to prevent any other listeners from being triggered when the user really wants
                         // to resize a panel
-                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
+                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, {
+                            capture: true,
+                        })
                         body.addEventListener('mousemove', PanelResizeHandleRegistry.handlePointerMove)
                         body.addEventListener('touchmove', PanelResizeHandleRegistry.handlePointerMove, {
                             passive: false,
                         })
-                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
+                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, {
+                            capture: true,
+                        })
                     }
                 })
             }
