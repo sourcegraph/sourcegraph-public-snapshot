@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "batches.go",
+        "repository.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = ["//src-cli/internal/batches/util"],
+)

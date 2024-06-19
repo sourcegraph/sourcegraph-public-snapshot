@@ -1,0 +1,26 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "streaming",
+    srcs = [
+        "api.go",
+        "client.go",
+        "events.go",
+        "search.go",
+        "writer.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/streaming",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/api",
+    ],
+)
+
+go_test(
+    name = "streaming_test",
+    srcs = ["client_test.go"],
+    embed = [":streaming"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

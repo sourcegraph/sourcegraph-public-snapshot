@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "style",
+    srcs = [
+        "resource_table.go",
+        "usage_table.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/scout/style",
+    visibility = ["//src-cli:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_atotto_clipboard//:go_default_library",
+        "@com_github_charmbracelet_bubbles//table:go_default_library",
+        "@com_github_charmbracelet_bubbletea//:go_default_library",
+        "@com_github_charmbracelet_lipgloss//:go_default_library",
+    ],
+)

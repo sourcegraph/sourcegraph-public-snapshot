@@ -1,0 +1,28 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "instancehealth",
+    srcs = [
+        "checks.go",
+        "summary.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/instancehealth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//lib/output",
+        "//src-cli/internal/api",
+    ],
+)
+
+go_test(
+    name = "instancehealth_test",
+    srcs = ["checks_test.go"],
+    embed = [":instancehealth"],
+    deps = [
+        "//lib/output",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "advise",
+    srcs = [
+        "advise.go",
+        "k8s.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/scout/advise",
+    visibility = ["//src-cli:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/scout",
+        "//src-cli/internal/scout/kube",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_metrics//pkg/client/clientset/versioned:go_default_library",
+    ],
+)
+
+go_test(
+    name = "advise_test",
+    srcs = ["advise_test.go"],
+    embed = [":advise"],
+    deps = ["//src-cli/internal/scout"],
+)

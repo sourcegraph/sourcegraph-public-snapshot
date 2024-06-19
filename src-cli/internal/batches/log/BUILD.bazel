@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "log",
+    srcs = [
+        "disk_manager.go",
+        "disk_task_logger.go",
+        "logger.go",
+        "noop_task_logger.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/log",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)

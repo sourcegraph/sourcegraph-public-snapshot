@@ -1,0 +1,67 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "executor",
+    srcs = [
+        "coordinator.go",
+        "execution_cache.go",
+        "executor.go",
+        "run_steps.go",
+        "task.go",
+        "ui.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/executor",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/execution/cache",
+        "//lib/batches/git",
+        "//lib/batches/template",
+        "//lib/errors",
+        "//lib/process",
+        "//src-cli/internal/batches/docker",
+        "//src-cli/internal/batches/graphql",
+        "//src-cli/internal/batches/log",
+        "//src-cli/internal/batches/repozip",
+        "//src-cli/internal/batches/util",
+        "//src-cli/internal/batches/workspace",
+        "@com_github_neelance_parallel//:go_default_library",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "executor_test",
+    srcs = [
+        "coordinator_test.go",
+        "execution_cache_test.go",
+        "executor_test.go",
+        "main_test.go",
+        "task_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":executor"],
+    deps = [
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/execution/cache",
+        "//lib/batches/git",
+        "//lib/batches/overridable",
+        "//lib/batches/template",
+        "//lib/errors",
+        "//src-cli/internal/api",
+        "//src-cli/internal/batches/docker",
+        "//src-cli/internal/batches/graphql",
+        "//src-cli/internal/batches/mock",
+        "//src-cli/internal/batches/repozip",
+        "//src-cli/internal/batches/util",
+        "//src-cli/internal/batches/workspace",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

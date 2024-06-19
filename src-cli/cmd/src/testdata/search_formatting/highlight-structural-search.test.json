@@ -1,0 +1,210 @@
+{
+    "Cloning": [],
+    "ElapsedMilliseconds": 18,
+    "LimitHit": false,
+    "Missing": [],
+    "Query": "patterntype:structural 'WriteObject(:[args]) error {:[body]}' lang:go count:1000 file:pkg/io/config_store.go",
+    "ResultCount": 20,
+    "Results": [
+        {
+            "__typename": "FileMatch",
+            "file": {
+"content": "package io\n\nimport (\n\t\"fmt\"\n\t\"io/ioutil\"\n\n\t\"github.com/ghodss/yaml\"\n\t\"github.com/jenkins-x/jx/pkg/util\"\n\t\"github.com/jenkins-x/jx/pkg/vault\"\n\t\"github.com/pkg/errors\"\n)\n\n// ConfigStore provides an interface for storing configs\ntype ConfigStore interface {\n\t// Write saves some secret data to the store\n\tWrite(name string, bytes []byte) error\n\n\t// Read reads some secret data from the store\n\tRead(name string) ([]byte, error)\n\n\t// WriteObject writes a named object to the store\n\tWriteObject(name string, object interface{}) error\n\n\t// ReadObject reads an object from the store\n\tReadObject(name string, object interface{}) error\n}\n\ntype fileStore struct {\n}\n\n// NewFileStore creates a ConfigStore that stores its data to the filesystem\nfunc NewFileStore() ConfigStore {\n\treturn &fileStore{}\n}\n\n// Write writes a secret to the filesystem\nfunc (f *fileStore) Write(fileName string, bytes []byte) error {\n\treturn ioutil.WriteFile(fileName, bytes, util.DefaultWritePermissions)\n}\n\n// WriteObject writes a secret to the filesystem in YAML format\nfunc (f *fileStore) WriteObject(fileName string, object interface{}) error {\n\ty, err := yaml.Marshal(object)\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"unable to marshal object to yaml: %v\", object)\n\t}\n\treturn f.Write(fileName, y)\n}\n\n// Read reads a secret form the filesystem\nfunc (f *fileStore) Read(fileName string) ([]byte, error) {\n\treturn ioutil.ReadFile(fileName)\n}\n\n// ReadObject reads an object from the filesystem as yaml\nfunc (f *fileStore) ReadObject(fileName string, object interface{}) error {\n\tdata, err := f.Read(fileName)\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"unable to read %s\", fileName)\n\t}\n\treturn yaml.Unmarshal(data, object)\n}\n\ntype vaultStore struct {\n\tclient vault.Client\n\tpath   string\n}\n\n// NewVaultStore creates a new store which stores its data in Vault\nfunc NewVaultStore(client vault.Client, path string) ConfigStore {\n\treturn &vaultStore{\n\t\tclient: client,\n\t\tpath:   path,\n\t}\n}\n\n// Write store a secret in vault as an array of bytes\nfunc (v *vaultStore) Write(name string, bytes []byte) error {\n\tdata := map[string]interface{}{\n\t\t\"data\": bytes,\n\t}\n\t_, err := v.client.Write(v.secretPath(name), data)\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"unable to write data for secret '%s' to vault\", name)\n\t}\n\treturn nil\n}\n\n// Read reads a secret from vault which was stored as an array of bytes\nfunc (v *vaultStore) Read(name string) ([]byte, error) {\n\tsecret, err := v.client.Read(v.secretPath(name))\n\tif err != nil {\n\t\treturn nil, errors.Wrapf(err, \"unable to read '%s' secret from vault\", name)\n\t}\n\tdata, ok := secret[\"data\"]\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"data not found for secret '%s'\", name)\n\t}\n\n\tbytes, ok := data.([]byte)\n\tif !ok {\n\t\treturn nil, fmt.Errorf(\"unable to convert the secret content '%s' to bytes\", name)\n\t}\n\n\treturn bytes, nil\n}\n\n// WriteObject writes a generic named object to vault\nfunc (v *vaultStore) WriteObject(name string, object interface{}) error {\n\ty, err := yaml.Marshal(object)\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"unable to marshal object to yaml: %v\", object)\n\t}\n\t_, err = v.client.WriteYaml(v.secretPath(name), string(y))\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"writing the %q secret in YAMl format to vault\", name)\n\t}\n\treturn nil\n}\n\n// ReadObject reads a generic named object from vault\nfunc (v *vaultStore) ReadObject(name string, object interface{}) error {\n\tdata, err := v.client.ReadYaml(v.secretPath(name))\n\tif err != nil {\n\t\treturn errors.Wrapf(err, \"reading the %q secret in YAMl fromat from vault\", name)\n\t}\n\treturn yaml.Unmarshal([]byte(data), object)\n}\n\nfunc (v *vaultStore) secretPath(name string) string {\n\treturn v.path + name\n}\n",
+                "commit": {
+                    "oid": "6a3bc0d2f7e8a65ec0862f86e605cb0a85d3f3a7"
+                },
+                "path": "pkg/io/config_store.go",
+                "url": "/github.com/jenkins-x/jx/-/blob/pkg/io/config_store.go"
+            },
+            "limitHit": false,
+            "lineMatches": [
+                {
+                    "lineNumber": 41,
+                    "offsetAndLengths": [
+                        [
+                            20,
+                            56
+                        ]
+                    ],
+                    "preview": "WriteObject(fileName string, object interface{}) error {"
+                },
+                {
+                    "lineNumber": 42,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            31
+                        ]
+                    ],
+                    "preview": "\ty, err := yaml.Marshal(object)"
+                },
+                {
+                    "lineNumber": 43,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            16
+                        ]
+                    ],
+                    "preview": "\tif err != nil {"
+                },
+                {
+                    "lineNumber": 44,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            74
+                        ]
+                    ],
+                    "preview": "\t\treturn errors.Wrapf(err, \"unable to marshal object to yaml: %v\", object)"
+                },
+                {
+                    "lineNumber": 45,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            2
+                        ]
+                    ],
+                    "preview": "\t}"
+                },
+                {
+                    "lineNumber": 46,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            28
+                        ]
+                    ],
+                    "preview": "\treturn f.Write(fileName, y)"
+                },
+                {
+                    "lineNumber": 47,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            1
+                        ]
+                    ],
+                    "preview": "}"
+                },
+                {
+                    "lineNumber": 108,
+                    "offsetAndLengths": [
+                        [
+                            21,
+                            52
+                        ]
+                    ],
+                    "preview": "WriteObject(name string, object interface{}) error {"
+                },
+                {
+                    "lineNumber": 109,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            31
+                        ]
+                    ],
+                    "preview": "\ty, err := yaml.Marshal(object)"
+                },
+                {
+                    "lineNumber": 110,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            16
+                        ]
+                    ],
+                    "preview": "\tif err != nil {"
+                },
+                {
+                    "lineNumber": 111,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            74
+                        ]
+                    ],
+                    "preview": "\t\treturn errors.Wrapf(err, \"unable to marshal object to yaml: %v\", object)"
+                },
+                {
+                    "lineNumber": 112,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            2
+                        ]
+                    ],
+                    "preview": "\t}"
+                },
+                {
+                    "lineNumber": 113,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            59
+                        ]
+                    ],
+                    "preview": "\t_, err = v.client.WriteYaml(v.secretPath(name), string(y))"
+                },
+                {
+                    "lineNumber": 114,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            16
+                        ]
+                    ],
+                    "preview": "\tif err != nil {"
+                },
+                {
+                    "lineNumber": 115,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            81
+                        ]
+                    ],
+                    "preview": "\t\treturn errors.Wrapf(err, \"writing the %q secret in YAMl format to vault\", name)"
+                },
+                {
+                    "lineNumber": 116,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            2
+                        ]
+                    ],
+                    "preview": "\t}"
+                },
+                {
+                    "lineNumber": 117,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            11
+                        ]
+                    ],
+                    "preview": "\treturn nil"
+                },
+                {
+                    "lineNumber": 118,
+                    "offsetAndLengths": [
+                        [
+                            0,
+                            1
+                        ]
+                    ],
+                    "preview": "}"
+                }
+            ],
+            "repository": {
+                "name": "github.com/jenkins-x/jx",
+                "url": "/github.com/jenkins-x/jx"
+            }
+        }
+    ],
+    "SourcegraphEndpoint": "https://sourcegraph.com",
+    "Timedout": []
+}

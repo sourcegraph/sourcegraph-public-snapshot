@@ -1,0 +1,24 @@
+[38;5;57m✱[0m [38;5;2m20 results[0m for [38;5;68m"patterntype:structural 'WriteObject(:[args]) error {:[body]}' lang:go count:1000 file:pkg/io/config_store.go"[0m in [38;5;2m18ms[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/jenkins-x/jx/-/blob/pkg/io/config_store.go[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/jenkins-x/jx[0m › [38;5;69m<no value>[0m[38;5;2m (18 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m    42[0m[38;5;239m |  [0mfunc (f *fileStore) [38;5;0m[48;5;11mWriteObject(fileName string, object interface{}) error {[0m
+  [38;5;69m    43[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	y, err := yaml.Marshal(object)[0m
+  [38;5;69m    44[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	if err != nil {[0m
+  [38;5;69m    45[0m[38;5;239m |  [0m[38;5;0m[48;5;11m		return errors.Wrapf(err, "unable to marshal object to yaml: %v", object)[0m
+  [38;5;69m    46[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	}[0m
+  [38;5;69m    47[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	return f.Write(fileName, y)[0m
+  [38;5;69m    48[0m[38;5;239m |  [0m[38;5;0m[48;5;11m}[0m
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m   109[0m[38;5;239m |  [0mfunc (v *vaultStore) [38;5;0m[48;5;11mWriteObject(name string, object interface{}) error {[0m
+  [38;5;69m   110[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	y, err := yaml.Marshal(object)[0m
+  [38;5;69m   111[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	if err != nil {[0m
+  [38;5;69m   112[0m[38;5;239m |  [0m[38;5;0m[48;5;11m		return errors.Wrapf(err, "unable to marshal object to yaml: %v", object)[0m
+  [38;5;69m   113[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	}[0m
+  [38;5;69m   114[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	_, err = v.client.WriteYaml(v.secretPath(name), string(y))[0m
+  [38;5;69m   115[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	if err != nil {[0m
+  [38;5;69m   116[0m[38;5;239m |  [0m[38;5;0m[48;5;11m		return errors.Wrapf(err, "writing the %q secret in YAMl format to vault", name)[0m
+  [38;5;69m   117[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	}[0m
+  [38;5;69m   118[0m[38;5;239m |  [0m[38;5;0m[48;5;11m	return nil[0m
+  [38;5;69m   119[0m[38;5;239m |  [0m[38;5;0m[48;5;11m}[0m

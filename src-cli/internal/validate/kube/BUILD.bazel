@@ -1,0 +1,49 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "kube",
+    srcs = [
+        "aks.go",
+        "eks.go",
+        "gke.go",
+        "kube.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/validate/kube",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/validate",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2/types",
+        "@com_github_aws_aws_sdk_go_v2//service/eks",
+        "@com_github_aws_aws_sdk_go_v2//service/iam",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//tools/remotecommand",
+        "@io_k8s_client_go//util/homedir",
+    ],
+)
+
+go_test(
+    name = "kube_test",
+    srcs = [
+        "eks_test.go",
+        "kube_test.go",
+    ],
+    embed = [":kube"],
+    deps = [
+        "//src-cli/internal/validate",
+        "@com_github_aws_aws_sdk_go_v2//service/ec2/types",
+        "@com_github_aws_aws_sdk_go_v2//service/eks",
+        "@com_github_aws_aws_sdk_go_v2//service/iam",
+        "@com_github_aws_aws_sdk_go_v2//service/iam/types",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
+)

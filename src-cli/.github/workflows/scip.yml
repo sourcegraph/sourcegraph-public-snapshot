@@ -1,0 +1,18 @@
+name: SCIP
+'on':
+  - push
+jobs:
+  scip-go:
+    runs-on: ubuntu-latest
+    container: sourcegraph/scip-go
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get src-cli
+        run: curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src;
+          chmod +x /usr/local/bin/src
+      - name: Set directory to safe for git
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+      - name: Generate SCIP data
+        run: scip-go
+      - name: Upload SCIP data
+        run: src code-intel upload -github-token=${{ secrets.GITHUB_TOKEN }}

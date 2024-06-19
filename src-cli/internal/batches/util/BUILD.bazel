@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = ["repo.go"],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/util",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/batches/template"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mock",
+    srcs = [
+        "cache.go",
+        "docker_image_progress.go",
+        "image.go",
+        "logger.go",
+        "repo_archive.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/mock",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//src-cli/internal/batches/docker",
+        "//src-cli/internal/batches/log",
+    ],
+)

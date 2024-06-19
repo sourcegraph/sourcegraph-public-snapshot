@@ -71,6 +71,8 @@ func lintLoggingLibraries() *linter {
 			"cmd/frontend/internal/app/otlpadapter",
 			// Legacy and special case handling of panics in background routines
 			"lib/background/goroutine.go",
+			// temporarily allow usage of log in src-cli, will be removed soon
+			"src-cli",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

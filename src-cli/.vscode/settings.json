@@ -1,0 +1,13 @@
+{
+  "go.lintTool": "golangci-lint",
+  "shellformat.flag": "-i 2 -ci",
+  "editor.formatOnSave": false,
+  "[go]": {
+    "editor.formatOnSave": true,
+  },
+  "go.useLanguageServer": true,
+  "gopls": {
+    "local": "github.com/sourcegraph/src-cli",
+  },
+  "cody.codebase": "github.com/sourcegraph/src-cli",
+}

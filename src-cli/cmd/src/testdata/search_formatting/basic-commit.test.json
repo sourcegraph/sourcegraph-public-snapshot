@@ -1,0 +1,111 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:sample type:commit error max:3 repo:^github\\.com/golang/oauth2$ ",
+  "Results": [
+    {
+      "__typename": "CommitSearchResult",
+      "commit": {
+        "author": {
+          "date": "2018-05-28T21:26:48Z",
+          "person": {
+            "displayName": "Tim Cooper"
+          }
+        },
+        "oid": "30b72dfc067246f4fa261c8890160b889fdd4b29",
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "subject": "oauth2: close request body if errors occur before base RoundTripper is invoked",
+        "url": "/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29"
+      },
+      "diffPreview": null,
+      "messagePreview": {
+        "highlights": [
+          {
+            "character": 30,
+            "length": 5,
+            "line": 1
+          }
+        ],
+        "value": "oauth2: close request body if errors occur before base RoundTripper is invoked\n\nFixes golang/oauth#269\n\nChange-Id: I25eb3273a0868a999a2e98961ae5e4040e44ad7a\nReviewed-on: https://go-review.googlesource.com/114956\nReviewed-by: Brad Fitzpatrick \u003cbradfitz@golang.org\u003e"
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "commit": {
+        "author": {
+          "date": "2018-01-03T00:32:36Z",
+          "person": {
+            "displayName": "Ross Light"
+          }
+        },
+        "oid": "876b1c6ee618a9f8fa31ded3b27708d44b3153af",
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "subject": "internal: remove RegisterContextClientFunc",
+        "url": "/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af"
+      },
+      "diffPreview": null,
+      "messagePreview": {
+        "highlights": [
+          {
+            "character": 37,
+            "length": 5,
+            "line": 3
+          },
+          {
+            "character": 48,
+            "length": 5,
+            "line": 4
+          }
+        ],
+        "value": "internal: remove RegisterContextClientFunc\n\nThis function added a totally unused error path, since the only call\nsite is for App Engine, which cannot produce an error.\n\nChange-Id: I86277ab4ff96e7bd140c53c5a114a338716668e3\nReviewed-on: https://go-review.googlesource.com/85935\nReviewed-by: Brad Fitzpatrick \u003cbradfitz@golang.org\u003e"
+      }
+    },
+    {
+      "__typename": "CommitSearchResult",
+      "commit": {
+        "author": {
+          "date": "2017-12-28T19:07:42Z",
+          "person": {
+            "displayName": "Ross Light"
+          }
+        },
+        "oid": "ee2bad97a97122079f2a3d0dce09330f085b36a0",
+        "repository": {
+          "name": "github.com/golang/oauth2"
+        },
+        "subject": "internal: return error if no access_token present in server response",
+        "url": "/github.com/golang/oauth2/-/commit/ee2bad97a97122079f2a3d0dce09330f085b36a0"
+      },
+      "diffPreview": null,
+      "messagePreview": {
+        "highlights": [
+          {
+            "character": 17,
+            "length": 5,
+            "line": 1
+          },
+          {
+            "character": 56,
+            "length": 5,
+            "line": 5
+          },
+          {
+            "character": 29,
+            "length": 5,
+            "line": 7
+          }
+        ],
+        "value": "internal: return error if no access_token present in server response\n\nThis behavior and test was introduced in 0ae3d4edc99f765dc1513a9605aa96e82877a20a.\nIt is not consistent with the other test introduced in the same commit,\nwhere an incorrectly typed access_token does produce an error.  Since a\n*Token with a blank AccessToken is invalid, it is allowing an invalid\ntoken to be returned without error.\n\nCleans up some tests responding with invalid data.\n\nChange-Id: I777eb7a82ef598dc9042542ae65f8dce6768902e\nReviewed-on: https://go-review.googlesource.com/85659\nReviewed-by: Andrew Bonventre \u003candybons@golang.org\u003e"
+      }
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 3,
+  "ElapsedMilliseconds": 37
+}

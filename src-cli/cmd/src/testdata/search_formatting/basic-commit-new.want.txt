@@ -1,0 +1,36 @@
+[38;5;57m✱[0m [38;5;2m3+ results[0m for [38;5;68m"repogroup:sample type:commit error max:3 repo:^github\.com/golang/oauth2$ "[0m in [38;5;2m37ms[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/8527f56f71077909d6ead7facfe18fbf05ebdf83[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Travis Bischel   oauth2: fix error message typo[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  oauth2: fix [38;5;0m[48;5;11merror[0m message typo
+
+  PKSC1 is not a thing, but PKCS1 is, and the parse function above the
+  [38;5;0m[48;5;11merror[0m is for PKCS1.
+
+  Change-Id: I163bb158070da462caa034a19a89ce654acc7a5d
+  Reviewed-on: https://go-review.googlesource.com/c/146178
+  Reviewed-by: Brad Fitzpatrick <bradfitz@golang.org>
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/30b72dfc067246f4fa261c8890160b889fdd4b29[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Tim Cooper   oauth2: close request body if errors occur before base RoundTripper is invoked[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  oauth2: close request body if [38;5;0m[48;5;11merror[0ms occur before base RoundTripper is invoked
+
+  Fixes golang/oauth#269
+
+  Change-Id: I25eb3273a0868a999a2e98961ae5e4040e44ad7a
+  Reviewed-on: https://go-review.googlesource.com/114956
+  Reviewed-by: Brad Fitzpatrick <bradfitz@golang.org>
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/876b1c6ee618a9f8fa31ded3b27708d44b3153af[0m[38;5;239m)
+[0m[0m[38;5;68mgolang/oauth2   Ross Light   internal: remove RegisterContextClientFunc[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m[0m  internal: remove RegisterContextClientFunc
+
+  This function added a totally unused [38;5;0m[48;5;11merror[0m path, since the only call
+  site is for App Engine, which cannot produce an [38;5;0m[48;5;11merror[0m.
+
+  Change-Id: I86277ab4ff96e7bd140c53c5a114a338716668e3
+  Reviewed-on: https://go-review.googlesource.com/85935
+  Reviewed-by: Brad Fitzpatrick <bradfitz@golang.org>

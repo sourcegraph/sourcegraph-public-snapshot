@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "users",
+    srcs = ["admin.go"],
+    importpath = "github.com/sourcegraph/src-cli/internal/users",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/lazyregexp",
+        "@com_github_json_iterator_go//:go",
+    ],
+)

@@ -1,0 +1,51 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ui",
+    srcs = [
+        "exec_ui.go",
+        "interval_writer.go",
+        "json_lines.go",
+        "task_exec_tui.go",
+        "tty.go",
+        "tui.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/ui",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/git",
+        "//lib/errors",
+        "//lib/output",
+        "//src-cli/internal/api",
+        "//src-cli/internal/batches",
+        "//src-cli/internal/batches/executor",
+        "//src-cli/internal/batches/graphql",
+        "//src-cli/internal/batches/workspace",
+        "//src-cli/internal/cmderrors",
+        "@com_github_creack_goselect//:go_default_library",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_dineshappavoo_basex//:go_default_library",
+        "@com_github_neelance_parallel//:go_default_library",
+        "@com_github_sourcegraph_go_diff//diff",
+    ],
+)
+
+go_test(
+    name = "ui_test",
+    srcs = [
+        "interval_writer_test.go",
+        "task_exec_tui_test.go",
+    ],
+    embed = [":ui"],
+    deps = [
+        "//lib/batches",
+        "//lib/output",
+        "//src-cli/internal/batches/executor",
+        "//src-cli/internal/batches/graphql",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "servegit",
+    srcs = ["serve.go"],
+    importpath = "github.com/sourcegraph/src-cli/internal/servegit",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//lib/gitservice",
+    ],
+)
+
+go_test(
+    name = "servegit_test",
+    srcs = ["serve_test.go"],
+    embed = [":servegit"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+    ],
+)

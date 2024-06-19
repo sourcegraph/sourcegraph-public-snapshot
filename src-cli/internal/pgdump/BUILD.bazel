@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pgdump",
+    srcs = [
+        "extensions.go",
+        "pgdump.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/pgdump",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "pgdump_test",
+    srcs = ["extensions_test.go"],
+    embed = [":pgdump"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

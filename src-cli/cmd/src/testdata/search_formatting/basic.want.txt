@@ -1,0 +1,56 @@
+[38;5;57m✱[0m [38;5;2m22+ results[0m for [38;5;68m"repogroup:sample error max:4 repo:^github\.com/golang/oauth2$"[0m in [38;5;2m19ms[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/blob/clientcredentials/clientcredentials.go[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;69mclientcredentials.go[0m[38;5;2m (5 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m    50[0m[38;5;239m |  [0mfunc (c *Config) Token(ctx context.Context) (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    82[0m[38;5;239m |  [0mfunc (c *tokenSource) Token() (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    91[0m[38;5;239m |  [0m			return nil, fmt.[38;5;0m[48;5;11mError[0mf("oauth2: cannot overwrite parameter %q", k)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    97[0m[38;5;239m |  [0m		if rErr, ok := err.(*internal.Retrieve[38;5;0m[48;5;11mError[0m); ok {
+  [38;5;69m    98[0m[38;5;239m |  [0m			return nil, (*oauth2.Retrieve[38;5;0m[48;5;11mError[0m)(rErr)
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/blob/clientcredentials/clientcredentials_test.go[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;69mclientcredentials_test.go[0m[38;5;2m (13 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m    27[0m[38;5;239m |  [0m	rt func(req *http.Request) (resp *http.Response, err [38;5;0m[48;5;11merror[0m)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    30[0m[38;5;239m |  [0mfunc (t *mockTransport) RoundTrip(req *http.Request) (resp *http.Response, err [38;5;0m[48;5;11merror[0m) {
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    37[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("authenticate client request URL = %q; want %q", r.URL, "/token")
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    41[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("Unexpected authorization header, %v is found.", headerAuth)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    44[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("Content-Type header = %q; want %q", got, want)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    51[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("failed reading request body: %s.", err)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    54[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("payload = %q; want %q", string(body), "grant_type=client_credentials&scope=scope1+scope2")
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    63[0m[38;5;239m |  [0m		t.[38;5;0m[48;5;11mError[0m(err)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    69[0m[38;5;239m |  [0m		t.[38;5;0m[48;5;11mError[0mf("Access token = %q; want %q", tok.AccessToken, "90d64460d14870c08c81352a05dedd3465940a7c")
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    72[0m[38;5;239m |  [0m		t.[38;5;0m[48;5;11mError[0mf("token type = %q; want %q", tok.TokenType, "bearer")
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    82[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("Unexpected token refresh request URL, %v is found.", r.URL)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    86[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("Unexpected Content-Type header, %v is found.", headerContentType)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    90[0m[38;5;239m |  [0m			t.[38;5;0m[48;5;11mError[0mf("Unexpected refresh token payload, %v is found.", string(body))
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/blob/google/appengine.go[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;69mappengine.go[0m[38;5;2m (2 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m    21[0m[38;5;239m |  [0mvar appengineTokenFunc func(c context.Context, scopes ...string) (token string, expiry time.Time, err [38;5;0m[48;5;11merror[0m)
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    62[0m[38;5;239m |  [0mfunc (ts *appEngineTokenSource) Token() (*oauth2.Token, [38;5;0m[48;5;11merror[0m) {
+[38;5;239m--------------------------------------------------------------------------------
+[0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/blob/google/go19.go[0m[38;5;239m)
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;69mgo19.go[0m[38;5;2m (2 matches)[0m
+[38;5;239m--------------------------------------------------------------------------------
+[0m  [38;5;69m    47[0m[38;5;239m |  [0mfunc FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, [38;5;0m[48;5;11merror[0m) {
+[38;5;239m  ------------------------------------------------------------------------------
+[0m  [38;5;69m    55[0m[38;5;239m |  [0mfunc CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, [38;5;0m[48;5;11merror[0m) {

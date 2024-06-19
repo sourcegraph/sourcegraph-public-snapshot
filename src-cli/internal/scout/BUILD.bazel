@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scout",
+    srcs = [
+        "constants.go",
+        "helpers.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/scout",
+    visibility = ["//src-cli:__subpackages__"],
+    deps = [
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_metrics//pkg/client/clientset/versioned:go_default_library",
+    ],
+)

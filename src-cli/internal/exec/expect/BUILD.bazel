@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "expect",
+    srcs = ["expect.go"],
+    importpath = "github.com/sourcegraph/src-cli/internal/exec/expect",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/exec",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

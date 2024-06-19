@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "install",
+    srcs = [
+        "config.go",
+        "github.go",
+        "insight.go",
+        "install.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/validate/install",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//src-cli/internal/api",
+        "//src-cli/internal/validate",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)

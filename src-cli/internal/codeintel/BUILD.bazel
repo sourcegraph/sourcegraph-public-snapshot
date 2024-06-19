@@ -1,0 +1,25 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "gitutil.go",
+        "sanitation.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/codeintel",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)
+
+go_test(
+    name = "codeintel_test",
+    srcs = [
+        "gitutil_test.go",
+        "sanitation_test.go",
+    ],
+    embed = [":codeintel"],
+    env = {
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM": "1",
+    },
+)

@@ -1,0 +1,59 @@
+# See explanation of linters at https://golangci-lint.run/usage/linters/
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - gocritic
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - nolintlint
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+
+linters-settings:
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/pkg/errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/cockroachdb/errors"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "github.com/hashicorp/go-multierror"
+            desc: "Use github.com/sourcegraph/sourcegraph/lib/errors instead"
+          - pkg: "io/ioutil"
+            desc: "The ioutil package has been deprecated"
+  gocritic:
+    disabled-checks:
+      - appendAssign # Too many false positives
+      - assignOp # Maybe worth adding, but likely not worth the noise
+      - commentFormatting # No strong benefit
+      - deprecatedComment # Unnecessary
+      - exitAfterDefer # Only occurs in auxiliary tools
+      - ifElseChain # Noisy for not much gain
+      - singleCaseSwitch # Noisy for not much gain
+  govet:
+    disable:
+      - composites
+  forbidigo:
+    forbid:
+      # Use errors.New instead
+      - 'fmt\.Errorf'
+
+issues:
+  exclude-rules:
+    # Exclude bodyclose lint from tests because leaking connections in tests
+    # is a non-issue, and checking that adds unnecessary noise
+    - path: _test\.go
+      linters:
+        - bodyclose
+
+run:
+  timeout: 5m
