@@ -1,9 +1,8 @@
 package codenav
 
 import (
-	"slices"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 )
 
 type IOccurrence interface {
@@ -11,32 +10,9 @@ type IOccurrence interface {
 }
 
 func findOccurrencesWithEqualRange[Occurrence IOccurrence](occurrences []Occurrence, search scip.Range) []Occurrence {
-	n, found := slices.BinarySearchFunc(occurrences, search.Start, func(occ Occurrence, p scip.Position) int {
+	interval := collections.BinarySearchRangeFunc(occurrences, search, func(occ Occurrence, r scip.Range) int {
 		occRange := scip.NewRangeUnchecked(occ.GetRange())
-		return occRange.Start.Compare(p)
+		return occRange.CompareStrict(r)
 	})
-	results := []Occurrence{}
-	if !found {
-		return results
-	}
-	// Binary search is not guaranteed to find the last or first index, so we need to check in both directions
-	for _, occurrence := range occurrences[n:] {
-		parsedRange := scip.NewRangeUnchecked(occurrence.GetRange())
-		if parsedRange.Compare(search) == 0 {
-			results = append(results, occurrence)
-		} else {
-			break
-		}
-	}
-	for i := n - 1; i >= 0; i-- {
-		occurrence := occurrences[i]
-		parsedRange := scip.NewRangeUnchecked(occurrence.GetRange())
-		if parsedRange.Compare(search) == 0 {
-			results = append(results, occurrence)
-		} else {
-			break
-		}
-	}
-
-	return results
+	return occurrences[interval.Start:interval.End]
 }
