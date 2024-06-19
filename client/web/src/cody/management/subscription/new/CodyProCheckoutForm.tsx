@@ -360,19 +360,6 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                                         'Confirm plan changes'
                                     )}
                                 </Button>
-
-                                <div>
-                                    <Text size="small" className={styles.disclaimer}>
-                                        By clicking the button, you agree to the{' '}
-                                        <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
-                                        <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription
-                                        will renew automatically by charging your payment method on file until you{' '}
-                                        <Link to="/docs/cody/usage-and-pricing#downgrading-from-pro-to-free">
-                                            cancel
-                                        </Link>
-                                        . You may cancel at any time prior to the next billing cycle.
-                                    </Text>
-                                </div>
                             </Form>
                         ) : (
                             <Form onSubmit={handleSubscribeSubmit}>
