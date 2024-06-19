@@ -319,7 +319,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 				GcpIamImpersonateServiceAccount: &vars.IAM.CloudRunWorkloadServiceAccount.Email,
 			})
 		// The admin user's cloudsqlsuperuser does not have replication enabled,
-		// so we need another use that does have it enabled, because replication
+		// so we need another user that does have it enabled, because replication
 		// permission in roles are not inherited. We use the Postgres provider
 		// instead of the Cloud SQL providers in 'cloudsql.New' so that we can
 		// enable replication on this user.
