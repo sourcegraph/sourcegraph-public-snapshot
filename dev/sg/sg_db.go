@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
+	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
@@ -20,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -31,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
@@ -180,6 +185,12 @@ sg db add-access-token -username=foo
 				},
 				Action: dbAddAccessTokenAction,
 			},
+
+			{
+				Name:   "default-site-admin",
+				Usage:  "Create a predefined site-admin user with a preset access token",
+				Action: dbDefaultSiteAdmin,
+			},
 		},
 	}
 )
@@ -280,6 +291,74 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 
 		// Print token
 		std.Out.WriteSuccessf("New token created: %q", token)
+		return nil
+	})
+}
+
+// equivalent to "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0"
+var magicTokenSuffix = [20]byte{240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240}
+
+func dbDefaultSiteAdmin(cmd *cli.Context) error {
+	logger := log.Scoped("dbAddDefaultAccessTokenAction")
+	ttyOutput := output.NewOutput(os.Stdout, output.OutputOpts{})
+
+	conf, _ := getConfig()
+	if conf == nil {
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+	}
+
+	conn, err := connections.EnsureNewFrontendDB(observation.NewContext(logger), postgresdsn.New("", "", conf.GetEnv), "frontend")
+	if err != nil {
+		return err
+	}
+
+	db := database.NewDB(logger, conn)
+
+	const (
+		username = "sourcegraph"
+		password = "sourcegraph"
+	)
+
+	return db.WithTransact(cmd.Context, func(tx database.DB) error {
+		user, err := tx.Users().Create(cmd.Context, database.NewUser{
+			Username:        username,
+			Email:           "sourcegraph@sourcegraph.com",
+			EmailIsVerified: true,
+			Password:        password,
+		})
+		if err != nil && !database.IsUsernameExists(err) {
+			return err
+		} else if database.IsUsernameExists(err) {
+			user, err = tx.Users().GetByUsername(cmd.Context, username)
+			if err != nil {
+				return err
+			}
+			ttyOutput.WriteLine(output.Emojif(output.EmojiInfo, "User %q already exists, continuing...", username))
+		}
+
+		// Make the user site admin.
+		err = tx.Users().SetIsSiteAdmin(cmd.Context, user.ID, true)
+		if err != nil {
+			return err
+		}
+
+		token := fmt.Sprintf("%s%s_%s", accesstoken.PersonalAccessTokenPrefix, accesstoken.LocalInstanceIdentifier, hex.EncodeToString(magicTokenSuffix[:]))
+
+		if t, err := tx.AccessTokens().GetByToken(cmd.Context, token); t != nil || err != database.ErrAccessTokenNotFound {
+			if t != nil {
+				ttyOutput.WriteLine(output.Emojif(output.EmojiSuccess, "Default site-admin token already set for %q: %q", username, token))
+			}
+			return err
+		}
+
+		q := sqlf.Sprintf(`INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, expires_at, internal)
+			VALUES (%s, '{"user:all"}', %s, 'Default token for site-admin user created by sg', %s, NULL, false)`, user.ID, hashutil.ToSHA256Bytes(magicTokenSuffix[:]), user.ID)
+		if _, err = tx.ExecContext(cmd.Context, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			return err
+		}
+
+		ttyOutput.WriteLine(output.Emojif(output.EmojiSuccess, "Default site-admin successfully created with username %q, password %q and token %q", username, password, token))
+
 		return nil
 	})
 }

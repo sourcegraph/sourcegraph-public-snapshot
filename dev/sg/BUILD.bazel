@@ -97,6 +97,7 @@ go_library(
         "//internal/download",
         "//internal/encryption",
         "//internal/extsvc",
+        "//internal/hashutil",
         "//internal/lazyregexp",
         "//internal/observation",
         "//internal/types",
