@@ -6,8 +6,11 @@ import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
+import { CodyProBadgeDeck } from '../components/CodyProBadgeDeck'
 import { useSendInvite } from '../management/api/react-query/invites'
 import { isValidEmailAddress } from '../util'
+
+import styles from './InviteUsers.module.scss'
 
 interface InviteUsersProps extends TelemetryV2Props {
     teamId: string
@@ -116,16 +119,8 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
 
             <CodyContainer className="p-4 border bg-1 mb-4 d-flex flex-row">
                 <div className="d-flex justify-content-between align-items-center w-100">
-                    <div>
-                        <img
-                            src="https://storage.googleapis.com/sourcegraph-assets/cody/user-badges.png"
-                            alt="User badges"
-                            width="230"
-                            height="202"
-                            className="mr-3"
-                        />
-                    </div>
-                    <div className="flex-1 d-flex flex-column">
+                    <CodyProBadgeDeck className={styles.codyProBadgeDeck} />
+                    <div className="flex-1 d-flex flex-column ml-4">
                         <H2 className="mb-4 font-weight-normal">
                             <strong>Invite users</strong> – {remainingInviteCount}{' '}
                             {pluralize('seat', remainingInviteCount)} remaining
