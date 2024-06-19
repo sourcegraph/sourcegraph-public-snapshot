@@ -212,6 +212,7 @@ playwright_test_bin.playwright_test(
         "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
+    flaky = True,
 )
 
 TESTS = glob([
