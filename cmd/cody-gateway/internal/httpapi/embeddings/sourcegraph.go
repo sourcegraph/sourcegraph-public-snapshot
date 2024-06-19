@@ -6,7 +6,7 @@ import (
 	"io"
 	"math"
 	// nosemgrep: security-semgrep-rules.semgrep-rules.golang.math-random-used
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -93,7 +93,7 @@ func backoffInterval(attempt int) time.Duration {
 	// exponential backoff
 	dur := time.Duration(math.Pow(5, float64(attempt))) * time.Millisecond
 	// jitter
-	dur += time.Duration(rand.Intn(int(dur))) - dur/2
+	dur += time.Duration(rand.Int32N(int32(dur))) - dur/2
 	return dur
 }
 
