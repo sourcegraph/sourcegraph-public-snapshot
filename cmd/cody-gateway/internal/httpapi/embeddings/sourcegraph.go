@@ -3,7 +3,6 @@ package embeddings
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"math"
 	// nosemgrep: security-semgrep-rules.semgrep-rules.golang.math-random-used
@@ -84,9 +83,7 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 		if res, lastErr := s.fetch(req, request.Model, len(request.Input)); lastErr == nil {
 			return res, 0, nil
 		}
-		sleep := backoffInterval(i)
-		fmt.Println(i, sleep)
-		time.Sleep(sleep)
+		time.Sleep(backoffInterval(i))
 	}
 
 	return nil, 0, lastErr
