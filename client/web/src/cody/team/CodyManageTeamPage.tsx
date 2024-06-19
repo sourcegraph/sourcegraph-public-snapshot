@@ -44,7 +44,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
     const teamMembersQueryResult = useTeamMembers()
     const teamMembers = teamMembersQueryResult.data?.members
     const teamInvitesQueryResult = useTeamInvites()
-    const teamInvites = teamInvitesQueryResult.data?.invites
+    const teamInvites = teamInvitesQueryResult.data
     const errorMessage =
         subscriptionQueryResult.error?.message ||
         subscriptionSummaryQueryResult.error?.message ||
@@ -52,7 +52,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
         teamInvitesQueryResult.error?.message
 
     useEffect(() => {
-        if (subscriptionQueryResult.data && subscriptionQueryResult.data.subscriptionStatus !== 'canceled') {
+        if (subscriptionQueryResult.data?.subscriptionStatus === 'canceled') {
             navigate('/cody/subscription')
         }
     }, [navigate, subscriptionQueryResult.data])

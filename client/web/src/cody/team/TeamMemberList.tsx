@@ -137,7 +137,6 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])
-    console.log(adminCount)
 
     if (!teamMembers) {
         return null

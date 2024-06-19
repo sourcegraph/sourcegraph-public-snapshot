@@ -27,21 +27,21 @@ export const useInvite = ({
         },
     })
 
-export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undefined> =>
+export const useTeamInvites = (): UseQueryResult<Omit<TeamInvite, 'sentBy'>[] | undefined> =>
     useQuery({
         queryKey: queryKeys.invites.teamInvites(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getTeamInvites())
-            return response.json()
+            return ((await response.json()) as ListTeamInvitesResponse).invites
         },
     })
 
-export const useSendInvite = (): UseMutationResult<TeamInvite, Error, CreateTeamInviteRequest> => {
+export const useSendInvite = (): UseMutationResult<Omit<TeamInvite, 'sentBy'>, Error, CreateTeamInviteRequest> => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async requestBody => (await callCodyProApi(Client.sendInvite(requestBody))).json(),
-        onSuccess: (newInvite: TeamInvite) => {
-            queryClient.setQueryData(queryKeys.invites.teamInvites(), (prevInvites: TeamInvite[]) => [
+        onSuccess: (newInvite: Omit<TeamInvite, 'sentBy'>) => {
+            queryClient.setQueryData(queryKeys.invites.teamInvites(), (prevInvites: Omit<TeamInvite, 'sentBy'>[]) => [
                 ...prevInvites,
                 newInvite,
             ])
@@ -52,7 +52,7 @@ export const useSendInvite = (): UseMutationResult<TeamInvite, Error, CreateTeam
 export const useResendInvite = (): UseMutationResult<unknown, Error, { inviteId: string }> => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async ({ inviteId }) => (await callCodyProApi(Client.resendInvite(inviteId))).json(),
+        mutationFn: async ({ inviteId }) => callCodyProApi(Client.resendInvite(inviteId)),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.teamInvites() }),
     })
 }
@@ -74,7 +74,7 @@ export const useCancelInvite = (): UseMutationResult<unknown, Error, { teamId: s
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.cancelInvite(teamId, inviteId)),
-        onSuccess: (_, { teamId, inviteId }) =>
+        onSuccess: (_, { inviteId }) =>
             queryClient.setQueryData(queryKeys.invites.teamInvites(), (prevInvites: TeamInvite[]) =>
                 prevInvites.filter(invite => invite.id !== inviteId)
             ),
