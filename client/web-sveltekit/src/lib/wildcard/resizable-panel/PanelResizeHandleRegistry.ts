@@ -169,9 +169,6 @@ export class PanelResizeHandleRegistry {
     static handlePointerMove(event: ResizeEvent) {
         const { x, y } = getResizeEventCoordinates(event)
 
-        event.preventDefault()
-        event.stopImmediatePropagation()
-
         if (!PanelResizeHandleRegistry.isPointerDown) {
             const { target } = event
 
@@ -179,6 +176,9 @@ export class PanelResizeHandleRegistry {
             // at that point, the handles may not move with the pointer (depending on constraints)
             // but the same set of active handles should be locked until the pointer is released
             PanelResizeHandleRegistry.recalculateIntersectingHandles({ target, x, y })
+        } else {
+            event.preventDefault()
+            event.stopImmediatePropagation()
         }
 
         PanelResizeHandleRegistry.updateResizeHandlerStates('move', event)
