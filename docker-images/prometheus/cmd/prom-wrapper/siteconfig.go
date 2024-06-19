@@ -113,14 +113,14 @@ func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDif
 // applies relevant (subscribedSiteConfig) changes to Grafana.
 type SiteConfigSubscriber struct {
 	log          log.Logger
-	alertmanager *amclient.Alertmanager
+	alertmanager *amclient.AlertmanagerAPI
 
 	mux      sync.RWMutex
 	config   *subscribedSiteConfig
 	problems conf.Problems // exported by handler
 }
 
-func NewSiteConfigSubscriber(logger log.Logger, alertmanager *amclient.Alertmanager) *SiteConfigSubscriber {
+func NewSiteConfigSubscriber(logger log.Logger, alertmanager *amclient.AlertmanagerAPI) *SiteConfigSubscriber {
 	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
 	return &SiteConfigSubscriber{
 		log:          logger,

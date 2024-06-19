@@ -9,7 +9,7 @@ go 1.22.4
 replace (
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs-legacy.sourcegraph.com/dev/background-information/observability/prometheus
-	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.24.1-0.20240619011019-3695ef8bcc9a
 	// We publish 'dev/ci/images' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/dev/ci/images => ./dev/ci/images
@@ -157,8 +157,8 @@ require (
 	github.com/peterbourgon/ff/v3 v3.3.2
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.27.0
-	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/common v0.54.0
+	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/common v0.48.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rafaeljusto/redigomock/v3 v3.1.2
 	github.com/rjeczalik/notify v0.9.3
