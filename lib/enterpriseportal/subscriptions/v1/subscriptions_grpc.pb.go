@@ -23,6 +23,7 @@ const (
 	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName         = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
 	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName  = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
 	SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscriptionLicense"
+	SubscriptionsService_RevokeEnterpriseSubscriptionLicense_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/RevokeEnterpriseSubscriptionLicense"
 	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
 	SubscriptionsService_CreateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
 	SubscriptionsService_UpdateSubscriptionMembership_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
@@ -45,6 +46,10 @@ type SubscriptionsServiceClient interface {
 	ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error)
 	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
 	CreateEnterpriseSubscriptionLicense(ctx context.Context, in *CreateEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionLicenseResponse, error)
+	// RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+	// Enterprise subscription, permanently disabling its use for features
+	// managed by Sourcegraph. Revocation cannot be undone.
+	RevokeEnterpriseSubscriptionLicense(ctx context.Context, in *RevokeEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*RevokeEnterpriseSubscriptionLicenseResponse, error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error)
@@ -99,6 +104,15 @@ func (c *subscriptionsServiceClient) CreateEnterpriseSubscriptionLicense(ctx con
 	return out, nil
 }
 
+func (c *subscriptionsServiceClient) RevokeEnterpriseSubscriptionLicense(ctx context.Context, in *RevokeEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*RevokeEnterpriseSubscriptionLicenseResponse, error) {
+	out := new(RevokeEnterpriseSubscriptionLicenseResponse)
+	err := c.cc.Invoke(ctx, SubscriptionsService_RevokeEnterpriseSubscriptionLicense_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error) {
 	out := new(UpdateEnterpriseSubscriptionResponse)
 	err := c.cc.Invoke(ctx, SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName, in, out, opts...)
@@ -143,6 +157,10 @@ type SubscriptionsServiceServer interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error)
 	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
 	CreateEnterpriseSubscriptionLicense(context.Context, *CreateEnterpriseSubscriptionLicenseRequest) (*CreateEnterpriseSubscriptionLicenseResponse, error)
+	// RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+	// Enterprise subscription, permanently disabling its use for features
+	// managed by Sourcegraph. Revocation cannot be undone.
+	RevokeEnterpriseSubscriptionLicense(context.Context, *RevokeEnterpriseSubscriptionLicenseRequest) (*RevokeEnterpriseSubscriptionLicenseResponse, error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error)
@@ -169,6 +187,9 @@ func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptionLicense
 }
 func (UnimplementedSubscriptionsServiceServer) CreateEnterpriseSubscriptionLicense(context.Context, *CreateEnterpriseSubscriptionLicenseRequest) (*CreateEnterpriseSubscriptionLicenseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnterpriseSubscriptionLicense not implemented")
+}
+func (UnimplementedSubscriptionsServiceServer) RevokeEnterpriseSubscriptionLicense(context.Context, *RevokeEnterpriseSubscriptionLicenseRequest) (*RevokeEnterpriseSubscriptionLicenseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeEnterpriseSubscriptionLicense not implemented")
 }
 func (UnimplementedSubscriptionsServiceServer) UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnterpriseSubscription not implemented")
@@ -264,6 +285,24 @@ func _SubscriptionsService_CreateEnterpriseSubscriptionLicense_Handler(srv inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SubscriptionsService_RevokeEnterpriseSubscriptionLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeEnterpriseSubscriptionLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscriptionsServiceServer).RevokeEnterpriseSubscriptionLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubscriptionsService_RevokeEnterpriseSubscriptionLicense_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscriptionsServiceServer).RevokeEnterpriseSubscriptionLicense(ctx, req.(*RevokeEnterpriseSubscriptionLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SubscriptionsService_UpdateEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateEnterpriseSubscriptionRequest)
 	if err := dec(in); err != nil {
@@ -340,6 +379,10 @@ var SubscriptionsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateEnterpriseSubscriptionLicense",
 			Handler:    _SubscriptionsService_CreateEnterpriseSubscriptionLicense_Handler,
+		},
+		{
+			MethodName: "RevokeEnterpriseSubscriptionLicense",
+			Handler:    _SubscriptionsService_RevokeEnterpriseSubscriptionLicense_Handler,
 		},
 		{
 			MethodName: "UpdateEnterpriseSubscription",
