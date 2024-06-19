@@ -69,6 +69,9 @@ export const useCancelInvite = (): UseMutationResult<unknown, Error, { teamId: s
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ teamId, inviteId }) => callCodyProApi(Client.cancelInvite(teamId, inviteId)),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.all }),
+        onSuccess: (_, { teamId, inviteId }) =>
+            queryClient.setQueryData(queryKeys.invites.teamInvites(), (prevInvites: TeamInvite[]) =>
+                prevInvites.filter(invite => invite.id !== inviteId)
+            ),
     })
 }
