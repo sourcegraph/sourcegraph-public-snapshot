@@ -120,7 +120,6 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
             newState.searchPatternType = parsedPatternType
             // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
             // sure to surface them in the query input itself.
-            // pattern types in the query input itself.
             if (implicitPatternTypes.has(parsedPatternType)) {
                 query += ` ${FilterType.patterntype}:${parsedPatternType}`
             }
