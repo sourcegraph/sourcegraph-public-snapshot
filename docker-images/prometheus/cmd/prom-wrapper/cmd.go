@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/sourcegraph/log"
 	"go.bobheadxi.dev/streamline/streamexec"
@@ -18,7 +19,17 @@ func runCmd(logger log.Logger, errs chan<- error, cmd *exec.Cmd) {
 		errs <- err
 		return
 	}
-	if err := s.Stream(func(line string) { logger.Info(line) }); err != nil {
+	if err := s.Stream(func(line string) {
+		switch {
+		case strings.Contains(line, "level=warn"):
+			logger.Warn(line)
+		case strings.Contains(line, "level=error"):
+			logger.Error(line)
+		default:
+			logger.Info(line)
+		}
+	}); err != nil {
+
 		commandLog.Error("command exited", log.Error(err))
 		errs <- err
 		return

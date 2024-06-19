@@ -321,7 +321,7 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 		return "", err
 	}
 	var buf bytes.Buffer
-	enc := expfmt.NewEncoder(&buf, expfmt.NewFormat(expfmt.TypeTextPlain))
+	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
 	for _, mf := range mfs {
 		if err = enc.Encode(mf); err != nil {
 			return "", errors.Wrap(err, "encoding metric family")
