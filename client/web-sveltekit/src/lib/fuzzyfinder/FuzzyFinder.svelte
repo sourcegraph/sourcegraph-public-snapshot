@@ -296,7 +296,6 @@
         overflow: hidden;
         border: 1px solid var(--border-color);
         background-color: var(--color-bg-1);
-        margin-top: 2rem;
 
         box-shadow: var(--fuzzy-finder-shadow);
 
@@ -361,6 +360,10 @@
 
             .icon {
                 grid-area: icon;
+
+                // Centers the icon vertically
+                display: flex;
+                align-items: center;
             }
 
             .label {
