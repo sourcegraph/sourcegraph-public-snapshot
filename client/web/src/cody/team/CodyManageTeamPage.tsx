@@ -94,7 +94,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                 </Link>
                                 <Button
                                     as={Link}
-                                    to={CodyProRoutes.NewProSubscription}
+                                    to={`${CodyProRoutes.NewProSubscription}?addSeats=1`}
                                     variant="success"
                                     className="text-nowrap"
                                 >

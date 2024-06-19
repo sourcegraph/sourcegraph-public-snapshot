@@ -96,7 +96,7 @@ const PageContent: React.FC = () => {
             <PageHeader className="mt-4">
                 <PageHeader.Heading as="h2" styleAs="h1" className="mb-4 d-flex align-items-center">
                     <PageHeaderIcon name="cody-logo" className="mr-2" />
-                    <Text as="span">Manage Subscription</Text>
+                    <Text as="span">Manage subscription</Text>
                 </PageHeader.Heading>
             </PageHeader>
 
