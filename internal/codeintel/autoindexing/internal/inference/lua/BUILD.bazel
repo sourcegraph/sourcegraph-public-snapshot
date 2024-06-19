@@ -22,6 +22,7 @@ go_library(
         "typescript.lua",
         "util.lua",
         "BUILD.bazel",
+        "dotnet.lua",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua",
     tags = [TAG_PLATFORM_GRAPH],
