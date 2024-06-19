@@ -31,12 +31,12 @@ export interface PaymentMethod {
 export interface PreviewResult {
     dueNow: UsdCents
     newPrice: UsdCents
-    dueDate: Date
+    dueDate: string
 }
 
 export interface DiscountInfo {
     description: string
-    expiresAt?: Date
+    expiresAt?: string
 }
 
 export interface Invoice {

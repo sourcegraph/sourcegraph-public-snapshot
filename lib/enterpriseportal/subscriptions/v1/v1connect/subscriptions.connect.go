@@ -45,6 +45,9 @@ const (
 	// SubscriptionsServiceCreateEnterpriseSubscriptionLicenseProcedure is the fully-qualified name of
 	// the SubscriptionsService's CreateEnterpriseSubscriptionLicense RPC.
 	SubscriptionsServiceCreateEnterpriseSubscriptionLicenseProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscriptionLicense"
+	// SubscriptionsServiceRevokeEnterpriseSubscriptionLicenseProcedure is the fully-qualified name of
+	// the SubscriptionsService's RevokeEnterpriseSubscriptionLicense RPC.
+	SubscriptionsServiceRevokeEnterpriseSubscriptionLicenseProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/RevokeEnterpriseSubscriptionLicense"
 	// SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionsService's UpdateEnterpriseSubscription RPC.
 	SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
@@ -66,6 +69,7 @@ var (
 	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor         = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
 	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor  = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
 	subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscriptionLicense")
+	subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("RevokeEnterpriseSubscriptionLicense")
 	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
 	subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("ArchiveEnterpriseSubscription")
 	subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscription")
@@ -88,6 +92,10 @@ type SubscriptionsServiceClient interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
 	CreateEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionLicenseResponse], error)
+	// RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+	// Enterprise subscription, permanently disabling its use for features
+	// managed by Sourcegraph. Revocation cannot be undone.
+	RevokeEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
@@ -142,6 +150,13 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		revokeEnterpriseSubscriptionLicense: connect.NewClient[v1.RevokeEnterpriseSubscriptionLicenseRequest, v1.RevokeEnterpriseSubscriptionLicenseResponse](
+			httpClient,
+			baseURL+SubscriptionsServiceRevokeEnterpriseSubscriptionLicenseProcedure,
+			connect.WithSchema(subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
 		updateEnterpriseSubscription: connect.NewClient[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse](
 			httpClient,
 			baseURL+SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure,
@@ -178,6 +193,7 @@ type subscriptionsServiceClient struct {
 	listEnterpriseSubscriptions         *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
 	listEnterpriseSubscriptionLicenses  *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
 	createEnterpriseSubscriptionLicense *connect.Client[v1.CreateEnterpriseSubscriptionLicenseRequest, v1.CreateEnterpriseSubscriptionLicenseResponse]
+	revokeEnterpriseSubscriptionLicense *connect.Client[v1.RevokeEnterpriseSubscriptionLicenseRequest, v1.RevokeEnterpriseSubscriptionLicenseResponse]
 	updateEnterpriseSubscription        *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
 	archiveEnterpriseSubscription       *connect.Client[v1.ArchiveEnterpriseSubscriptionRequest, v1.ArchiveEnterpriseSubscriptionResponse]
 	createEnterpriseSubscription        *connect.Client[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse]
@@ -206,6 +222,12 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 // enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscriptionLicense.
 func (c *subscriptionsServiceClient) CreateEnterpriseSubscriptionLicense(ctx context.Context, req *connect.Request[v1.CreateEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionLicenseResponse], error) {
 	return c.createEnterpriseSubscriptionLicense.CallUnary(ctx, req)
+}
+
+// RevokeEnterpriseSubscriptionLicense calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.RevokeEnterpriseSubscriptionLicense.
+func (c *subscriptionsServiceClient) RevokeEnterpriseSubscriptionLicense(ctx context.Context, req *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error) {
+	return c.revokeEnterpriseSubscriptionLicense.CallUnary(ctx, req)
 }
 
 // UpdateEnterpriseSubscription calls
@@ -248,6 +270,10 @@ type SubscriptionsServiceHandler interface {
 	ListEnterpriseSubscriptionLicenses(context.Context, *connect.Request[v1.ListEnterpriseSubscriptionLicensesRequest]) (*connect.Response[v1.ListEnterpriseSubscriptionLicensesResponse], error)
 	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
 	CreateEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionLicenseResponse], error)
+	// RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+	// Enterprise subscription, permanently disabling its use for features
+	// managed by Sourcegraph. Revocation cannot be undone.
+	RevokeEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
@@ -297,6 +323,13 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionsServiceRevokeEnterpriseSubscriptionLicenseHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceRevokeEnterpriseSubscriptionLicenseProcedure,
+		svc.RevokeEnterpriseSubscriptionLicense,
+		connect.WithSchema(subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
 	subscriptionsServiceUpdateEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
 		SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure,
 		svc.UpdateEnterpriseSubscription,
@@ -334,6 +367,8 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 			subscriptionsServiceListEnterpriseSubscriptionLicensesHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceCreateEnterpriseSubscriptionLicenseProcedure:
 			subscriptionsServiceCreateEnterpriseSubscriptionLicenseHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceRevokeEnterpriseSubscriptionLicenseProcedure:
+			subscriptionsServiceRevokeEnterpriseSubscriptionLicenseHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure:
 			subscriptionsServiceUpdateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure:
@@ -365,6 +400,10 @@ func (UnimplementedSubscriptionsServiceHandler) ListEnterpriseSubscriptionLicens
 
 func (UnimplementedSubscriptionsServiceHandler) CreateEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionLicenseResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscriptionLicense is not implemented"))
+}
+
+func (UnimplementedSubscriptionsServiceHandler) RevokeEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.RevokeEnterpriseSubscriptionLicense is not implemented"))
 }
 
 func (UnimplementedSubscriptionsServiceHandler) UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error) {

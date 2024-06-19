@@ -13,22 +13,16 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
-import { WhiteIcon } from '../components/WhiteIcon'
-import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
-import { useSSCQuery } from '../util'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
+import { useTeamInvites } from '../management/api/react-query/invites'
+import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
+import { useTeamMembers } from '../management/api/react-query/teams'
 
 import { InviteUsers } from './InviteUsers'
-import { TeamMemberList, type TeamMember, type TeamInvite } from './TeamMemberList'
+import { TeamMemberList } from './TeamMemberList'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
-}
-
-type CodySubscriptionStatus = 'active' | 'past_due' | 'unpaid' | 'canceled' | 'trialing' | 'other'
-
-interface CodySubscription {
-    subscriptionStatus: CodySubscriptionStatus
-    maxSeats: number
 }
 
 const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps> = ({ telemetryRecorder }) => {
@@ -44,31 +38,30 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
     const newSeatsPurchased: number | null = newSeatsPurchasedParam ? parseInt(newSeatsPurchasedParam, 10) : null
 
     // Load data
-    const [codySubscription, codySubscriptionError] = useSSCQuery<CodySubscription>('/team/current/subscription')
-    const isPro = codySubscription?.subscriptionStatus !== 'canceled'
-    const [codySubscriptionSummary, codySubscriptionSummaryError] = useCodySubscriptionSummaryData()
-    const isAdmin = codySubscriptionSummary?.userRole === 'admin'
-    const [memberResponse, membersDataError] = useSSCQuery<{ members: TeamMember[] }>('/team/current/members')
-    const teamMembers = memberResponse?.members
-    const [invitesResponse, invitesDataError] = useSSCQuery<{ invites: TeamInvite[] }>('/team/current/invites')
-    const teamInvites = invitesResponse?.invites
+    const subscriptionQueryResult = useCurrentSubscription()
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
+    const isAdmin = subscriptionSummaryQueryResult.data?.userRole === 'admin'
+    const teamMembersQueryResult = useTeamMembers()
+    const teamMembers = teamMembersQueryResult.data?.members
+    const teamInvitesQueryResult = useTeamInvites()
+    const teamInvites = teamInvitesQueryResult.data
     const errorMessage =
-        codySubscriptionError?.message ||
-        codySubscriptionSummaryError?.message ||
-        membersDataError?.message ||
-        invitesDataError?.message
+        subscriptionQueryResult.error?.message ||
+        subscriptionSummaryQueryResult.error?.message ||
+        teamMembersQueryResult.error?.message ||
+        teamInvitesQueryResult.error?.message
 
     useEffect(() => {
-        if (!isPro) {
+        if (subscriptionQueryResult.data?.subscriptionStatus === 'canceled') {
             navigate('/cody/subscription')
         }
-    }, [isPro, navigate])
+    }, [navigate, subscriptionQueryResult.data])
 
     const remainingInviteCount = useMemo(() => {
         const memberCount = teamMembers?.length ?? 0
         const invitesUsed = (teamInvites ?? []).filter(invite => invite.status === 'sent').length
-        return Math.max((codySubscription?.maxSeats ?? 0) - (memberCount + invitesUsed), 0)
-    }, [codySubscription?.maxSeats, teamMembers, teamInvites])
+        return Math.max((subscriptionQueryResult.data?.maxSeats ?? 0) - (memberCount + invitesUsed), 0)
+    }, [subscriptionQueryResult.data?.maxSeats, teamMembers, teamInvites])
 
     return (
         <>
@@ -77,7 +70,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 <PageHeader
                     className="mb-4 mt-4"
                     actions={
-                        codySubscriptionSummary?.userRole === 'admin' && (
+                        isAdmin && (
                             <div className="d-flex">
                                 <Link
                                     to="/cody/manage"
@@ -85,7 +78,10 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                     onClick={() =>
                                         telemetryRecorder.recordEvent('cody.team.manage.subscription', 'click', {
                                             metadata: {
-                                                tier: codySubscription?.subscriptionStatus !== 'canceled' ? 1 : 0,
+                                                tier:
+                                                    subscriptionQueryResult.data?.subscriptionStatus !== 'canceled'
+                                                        ? 1
+                                                        : 0,
                                             },
                                         })
                                     }
@@ -94,7 +90,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                                 </Link>
                                 <Button
                                     as={Link}
-                                    to={CodyProRoutes.NewProSubscription}
+                                    to={`${CodyProRoutes.NewProSubscription}?addSeats=1`}
                                     variant="success"
                                     className="text-nowrap"
                                 >
@@ -106,20 +102,18 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <WhiteIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
+                            <PageHeaderIcon name="mdi-account-multiple-plus-gradient" className="mr-3" />
                             Manage team
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
 
-                {codySubscriptionError || codySubscriptionSummaryError || membersDataError || invitesDataError ? (
+                {errorMessage ? (
                     <CodyAlert variant="error">
                         <H3>We couldn't load team data this time. Please try a bit later.</H3>
-                        {errorMessage ?? (
-                            <Text size="small" className="text-muted mb-0">
-                                {errorMessage}
-                            </Text>
-                        )}
+                        <Text size="small" className="text-muted mb-0">
+                            {errorMessage}
+                        </Text>
                     </CodyAlert>
                 ) : null}
 
@@ -132,20 +126,22 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </CodyAlert>
                 )}
 
-                {isAdmin && !!remainingInviteCount && (
+                {isAdmin && !!remainingInviteCount && !!subscriptionSummaryQueryResult.data && (
                     <InviteUsers
-                        teamId={codySubscriptionSummary?.teamId}
+                        teamId={subscriptionSummaryQueryResult.data.teamId}
                         remainingInviteCount={remainingInviteCount}
                         telemetryRecorder={telemetryRecorder}
                     />
                 )}
-                <TeamMemberList
-                    teamId={codySubscriptionSummary?.teamId ?? null}
-                    teamMembers={teamMembers || []}
-                    invites={teamInvites || []}
-                    isAdmin={isAdmin}
-                    telemetryRecorder={telemetryRecorder}
-                />
+                {!!subscriptionSummaryQueryResult.data && (
+                    <TeamMemberList
+                        teamId={subscriptionSummaryQueryResult.data.teamId}
+                        teamMembers={teamMembers || []}
+                        invites={teamInvites || []}
+                        isAdmin={isAdmin}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                )}
             </Page>
         </>
     )

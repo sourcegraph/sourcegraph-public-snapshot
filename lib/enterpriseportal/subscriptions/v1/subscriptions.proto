@@ -41,6 +41,13 @@ service SubscriptionsService {
     // optional idempotency in the future.
   }
 
+  // RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+  // Enterprise subscription, permanently disabling its use for features
+  // managed by Sourcegraph. Revocation cannot be undone.
+  rpc RevokeEnterpriseSubscriptionLicense(RevokeEnterpriseSubscriptionLicenseRequest) returns (RevokeEnterpriseSubscriptionLicenseResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
   // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
   // Only properties specified by the update_mask are applied.
   rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
@@ -306,6 +313,15 @@ message CreateEnterpriseSubscriptionLicenseResponse {
   // The license that was created.
   EnterpriseSubscriptionLicense license = 1;
 }
+
+message RevokeEnterpriseSubscriptionLicenseRequest {
+  // The ID of the license to revoke.
+  string license_id = 1;
+  // Human-readable explanation for revoking the license.
+  string reason = 2;
+}
+
+message RevokeEnterpriseSubscriptionLicenseResponse {}
 
 message UpdateEnterpriseSubscriptionRequest {
   // The subscription to update.

@@ -1,4 +1,4 @@
-.white-box {
+.box {
     display: flex;
     position: relative;
     align-items: center;
@@ -8,14 +8,14 @@
     height: 60px;
 }
 
-.white-box-background {
+.box-background {
     position: absolute;
     left: -16px;
     top: -9px;
     z-index: 10;
 }
 
-.white-box-content {
+.box-content {
     z-index: 20;
     margin: 0 auto;
 }
