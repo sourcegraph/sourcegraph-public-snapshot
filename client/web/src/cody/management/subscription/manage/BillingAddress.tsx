@@ -84,7 +84,7 @@ export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscrip
                 <>
                     <BillingAddressPreview
                         subscription={subscription}
-                        editButton={true}
+                        isEditable={true}
                         onButtonClick={() => setIsEditMode(true)}
                     />
                 </>

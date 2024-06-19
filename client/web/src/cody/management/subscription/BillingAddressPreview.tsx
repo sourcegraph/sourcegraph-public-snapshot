@@ -10,14 +10,14 @@ import styles from './manage/PaymentDetails.module.scss'
 
 export const BillingAddressPreview: React.FC<{
     subscription: Subscription
-    editButton: boolean
+    isEditable: boolean
     onButtonClick?: () => void
     className?: string
-}> = ({ subscription: { name, address }, editButton, onButtonClick = () => undefined, className }) => (
+}> = ({ subscription: { name, address }, isEditable, onButtonClick = () => undefined, className }) => (
     <div className={className}>
         <div className="d-flex align-items-center justify-content-between">
             <H3>Billing address</H3>
-            {editButton && (
+            {isEditable && (
                 <Button variant="link" className={styles.titleButton} onClick={onButtonClick}>
                     <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
                 </Button>
