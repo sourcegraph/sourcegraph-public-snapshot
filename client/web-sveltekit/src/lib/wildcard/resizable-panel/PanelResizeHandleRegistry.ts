@@ -83,11 +83,11 @@ export class PanelResizeHandleRegistry {
             const { body } = ownerDocument
 
             body.removeEventListener('contextmenu', PanelResizeHandleRegistry.handlePointerUp)
-            body.removeEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown)
+            body.removeEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
             body.removeEventListener('mouseleave', PanelResizeHandleRegistry.handlePointerMove)
             body.removeEventListener('mousemove', PanelResizeHandleRegistry.handlePointerMove)
             body.removeEventListener('touchmove', PanelResizeHandleRegistry.handlePointerMove)
-            body.removeEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown)
+            body.removeEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
         })
 
         window.removeEventListener('mouseup', PanelResizeHandleRegistry.handlePointerUp)
@@ -119,12 +119,14 @@ export class PanelResizeHandleRegistry {
                     const { body } = ownerDocument
 
                     if (count > 0) {
-                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown)
+                        // Capturing to prevent any other listeners from being triggered when the user really wants
+                        // to resize a panel
+                        body.addEventListener('mousedown', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
                         body.addEventListener('mousemove', PanelResizeHandleRegistry.handlePointerMove)
                         body.addEventListener('touchmove', PanelResizeHandleRegistry.handlePointerMove, {
                             passive: false,
                         })
-                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown)
+                        body.addEventListener('touchstart', PanelResizeHandleRegistry.handlePointerDown, { capture: true })
                     }
                 })
             }
