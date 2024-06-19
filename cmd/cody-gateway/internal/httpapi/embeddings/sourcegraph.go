@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"math"
+	// nosemgrep: security-semgrep-rules.semgrep-rules.golang.math-random-used
 	"math/rand"
 	"net/http"
 	"time"
