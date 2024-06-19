@@ -98,7 +98,9 @@ EXPERIMENTAL: This type may change in a backwards-incompatible way.
 TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
 before stabilizing this API.
 """
-type CodeGraphData {
+type CodeGraphData implements Node {
+    id: ID!
+
     """
     Coarse description of the data source for this code graph data.
     """
