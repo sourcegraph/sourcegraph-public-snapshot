@@ -23,12 +23,12 @@
     "x2js": "^3.4.4"
   },
   "devDependencies": {
-    "@types/dompurify": "^3.0.2",
-    "@types/highlight.js": "^9.12.4",
-    "@types/isomorphic-fetch": "^0.0.39",
-    "@types/lodash": "^4.14.195",
-    "@types/node-fetch": "^2.6.4",
-    "@types/marked": "^5.0.0",
-    "@types/vscode": "^1.80.0"
+    "@types/dompurify": "3.0.5",
+    "@types/highlight.js": "9.12.4",
+    "@types/isomorphic-fetch": "0.0.39",
+    "@types/lodash": "4.17.0",
+    "@types/node-fetch": "2.6.11",
+    "@types/marked": "5.0.2",
+    "@types/vscode": "1.87.0"
   }
 }

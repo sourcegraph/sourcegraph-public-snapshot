@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@sourcegraph/testing": "workspace:*",
-    "@types/highlight.js": "^9.12.4"
+    "@types/highlight.js": "9.12.4"
   },
   "dependencies": {
     "dompurify": "^3.0.6",

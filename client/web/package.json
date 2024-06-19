@@ -35,8 +35,8 @@
     "@sourcegraph/extension-api-types": "workspace:*",
     "@sourcegraph/storybook": "workspace:*",
     "@sourcegraph/testing": "workspace:*",
-    "@types/node": "^20.11.19",
-    "@types/tmp": "^0.2.6",
+    "@types/node": "20.11.19",
+    "@types/tmp": "0.2.6",
     "tmp": "^0.2.3",
     "true-case-path": "^2.2.1"
   },
