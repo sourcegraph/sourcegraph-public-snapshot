@@ -3,9 +3,9 @@ package embeddings
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"io"
 	"math"
+	"math/rand"
 	"net/http"
 	"time"
 
