@@ -76,7 +76,7 @@ export interface Subscription {
     cancelAtPeriodEnd: boolean
     billingInterval: BillingInterval
 
-    discountInfo?: string
+    discountInfo?: DiscountInfo
 
     currentPeriodStart: string
     currentPeriodEnd: string
