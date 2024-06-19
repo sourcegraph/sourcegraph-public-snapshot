@@ -108,17 +108,12 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </PageHeader.Heading>
                 </PageHeader>
 
-                {subscriptionQueryResult.isError ||
-                subscriptionSummaryQueryResult.isError ||
-                teamMembersQueryResult.isError ||
-                teamInvitesQueryResult.isError ? (
+                {errorMessage ? (
                     <CodyAlert variant="error">
                         <H3>We couldn't load team data this time. Please try a bit later.</H3>
-                        {!!errorMessage && (
-                            <Text size="small" className="text-muted mb-0">
-                                {errorMessage}
-                            </Text>
-                        )}
+                        <Text size="small" className="text-muted mb-0">
+                            {errorMessage}
+                        </Text>
                     </CodyAlert>
                 ) : null}
 
