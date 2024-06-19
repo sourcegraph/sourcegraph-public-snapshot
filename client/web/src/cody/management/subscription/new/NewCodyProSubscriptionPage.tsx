@@ -113,7 +113,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
             {addSeats && subscriptionQueryResult.isError && (
                 <Alert variant="danger">Failed to fetch subscription data</Alert>
             )}
-            {addSeats && !subscription && <Alert variant="danger">Subscription data is not available</Alert>}
+            {addSeats && !subscriptionQueryResult.isLoading && !subscription && <Alert variant="danger">Subscription data is not available</Alert>}
 
             {canDisplayPage && (
                 <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
