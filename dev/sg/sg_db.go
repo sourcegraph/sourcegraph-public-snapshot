@@ -295,8 +295,8 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 	})
 }
 
-// equivalent to "8756ee46f2b54254fc52041455c2a7fda46af44a"
-var magicTokenSuffix = [20]byte{135, 86, 238, 70, 242, 181, 66, 84, 252, 82, 4, 20, 85, 194, 167, 253, 164, 106, 244, 74}
+// equivalent to "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0"
+var magicTokenSuffix = [20]byte{240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240, 240}
 
 func dbDefaultSiteAdmin(cmd *cli.Context) error {
 	logger := log.Scoped("dbAddDefaultAccessTokenAction")
