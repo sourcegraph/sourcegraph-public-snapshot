@@ -86,7 +86,7 @@
 
         // TODO(@taiyab): incorporate these colors into the semantic colors
 
-        --icon-color: var(--text-muted);
+        --icon-color: currentColor;
 
         :global(.theme-light) & {
             &.module {
