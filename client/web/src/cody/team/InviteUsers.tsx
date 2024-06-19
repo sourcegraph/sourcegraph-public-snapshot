@@ -56,23 +56,37 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
             privateMetadata: { teamId, emailAddresses },
         })
 
-        try {
-            await Promise.all(
-                emailAddresses.map(emailAddress =>
-                    sendInviteMutation.mutateAsync.call(undefined, { email: emailAddress, role: 'member' })
-                )
+        const results = await Promise.allSettled(
+            emailAddresses.map(emailAddress =>
+                sendInviteMutation.mutateAsync.call(undefined, { email: emailAddress, role: 'member' })
             )
+        )
 
-            telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
-                metadata: { count: emailAddresses.length },
-                privateMetadata: { teamId, emailAddresses },
-            })
-        } catch (error) {
+        const failures = results
+            .map((result, index) => ({
+                emailAddress: emailAddresses[index],
+                errorMessage: result.status === 'rejected' ? (result.reason as Error).message : null,
+            }))
+            .filter(({ errorMessage }) => errorMessage)
+        if (failures.length) {
+            const failureList = failures
+                .map(({ emailAddress, errorMessage }) => `"${emailAddress}": ${errorMessage}`)
+                .join(', ')
+            const errorMessage = `We couldn't send${
+                failures.length < emailAddresses.length ? ` ${failures.length} of` : ''
+            } the ${pluralize('invite', emailAddresses.length)}. This is what we got: ${failureList}`
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'error', {
                 metadata: { count: emailAddresses.length, softError: 0 },
-                privateMetadata: { teamId, emailAddresses, error },
+                privateMetadata: { teamId, emailAddresses, error: errorMessage },
             })
+            setEmailAddressErrorMessage(errorMessage)
+            return
         }
+
+        telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
+            metadata: { count: emailAddresses.length },
+            privateMetadata: { teamId, emailAddresses },
+        })
     }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
 
     return (
