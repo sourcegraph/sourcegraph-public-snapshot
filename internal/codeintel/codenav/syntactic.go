@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -60,18 +61,25 @@ func findCandidateOccurrencesViaSearch(
 	if err != nil {
 		return resultMap, err
 	}
-
+	nonFileMatches := 0
+	inconsistentFilepaths := 0
+	duplicatedFilepaths := collections.NewSet[string]()
 	matchCount := 0
 
 	for _, streamResult := range stream.Results {
 		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
+			nonFileMatches += 1
 			continue
 		}
 		path := fileMatch.Path
 		matches := []scip.Range{}
 		for _, chunkMatch := range fileMatch.ChunkMatches {
 			for _, matchRange := range chunkMatch.Ranges {
+				if path != streamResult.Key().Path {
+					inconsistentFilepaths = 1
+					continue
+				}
 				scipRange, err := scip.NewRange([]int32{
 					int32(matchRange.Start.Line),
 					int32(matchRange.Start.Column),
@@ -89,12 +97,26 @@ func findCandidateOccurrencesViaSearch(
 				matches = append(matches, scipRange)
 			}
 		}
-		resultMap.Set(path, candidateFile{
+		_, alreadyPresent := resultMap.Set(path, candidateFile{
 			matches:             scip.SortRanges(matches),
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})
+		if alreadyPresent {
+			duplicatedFilepaths.Add(path)
+		}
 	}
 	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
+
+	if !duplicatedFilepaths.IsEmpty() {
+		trace.Warn("Saw the duplicate file paths in search results", log.String("paths", duplicatedFilepaths.String()))
+	}
+	if nonFileMatches != 0 {
+		trace.Warn("Saw non file match in search results. The `type:file` on the query should guarantee this")
+	}
+	if inconsistentFilepaths != 0 {
+		trace.Warn("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
+	}
+
 	return resultMap, nil
 }
 
