@@ -27,11 +27,11 @@ import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL } from '../util'
 
+import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
 import styles from './CodyManagementPage.module.scss'
-import { useSubscriptionSummary } from './api/react-query/subscriptions'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
@@ -74,7 +74,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         {}
     )
 
-    const subscriptionSummaryQueryResult = useSubscriptionSummary();
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
     const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
