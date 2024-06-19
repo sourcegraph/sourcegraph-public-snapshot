@@ -153,6 +153,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				Ipv4Enabled:    pointers.Ptr(true),
 				PrivateNetwork: config.Network.Id(),
 				RequireSsl:     pointers.Ptr(true),
+
+				EnablePrivatePathForGoogleCloudServices: pointers.Ptr(true),
 			},
 		},
 
