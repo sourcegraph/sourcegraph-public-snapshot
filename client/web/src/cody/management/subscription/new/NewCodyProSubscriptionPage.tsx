@@ -25,7 +25,6 @@ import {
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
-import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress'
 
 import { CodyProCheckoutForm } from './CodyProCheckoutForm'
@@ -87,14 +86,12 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
                 </PageHeader.Heading>
             </PageHeader>
 
-            <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
-                <Elements stripe={stripe} options={options}>
-                    <CodyProCheckoutForm
-                        initialSeatCount={initialSeatCount}
-                        customerEmail={authenticatedUser?.emails[0].email || ''}
-                    />
-                </Elements>
-            </CodyProApiClientContext.Provider>
+            <Elements stripe={stripe} options={options}>
+                <CodyProCheckoutForm
+                    initialSeatCount={initialSeatCount}
+                    customerEmail={authenticatedUser?.emails[0].email || ''}
+                />
+            </Elements>
         </Page>
     )
 }
