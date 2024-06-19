@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "modelconfig",
+    srcs = ["validation.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/modelconfig",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/modelconfig/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "modelconfig_test",
+    srcs = ["validation_test.go"],
+    embed = [":modelconfig"],
+    deps = [
+        "//internal/modelconfig/embedded",
+        "//internal/modelconfig/types",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

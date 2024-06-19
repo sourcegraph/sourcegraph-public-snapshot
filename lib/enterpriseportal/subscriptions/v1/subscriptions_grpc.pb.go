@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	SubscriptionsService_GetEnterpriseSubscription_FullMethodName          = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
-	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
-	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
-	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
-	SubscriptionsService_UpdateSubscriptionMembership_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
+	SubscriptionsService_GetEnterpriseSubscription_FullMethodName           = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
+	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName         = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
+	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName  = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
+	SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscriptionLicense"
+	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	SubscriptionsService_CreateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
+	SubscriptionsService_UpdateSubscriptionMembership_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
 )
 
 // SubscriptionsServiceClient is the client API for SubscriptionsService service.
@@ -41,9 +43,13 @@ type SubscriptionsServiceClient interface {
 	// Each subscription owns a collection of licenses, typically a series of
 	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(ctx context.Context, in *ListEnterpriseSubscriptionLicensesRequest, opts ...grpc.CallOption) (*ListEnterpriseSubscriptionLicensesResponse, error)
+	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
+	CreateEnterpriseSubscriptionLicense(ctx context.Context, in *CreateEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionLicenseResponse, error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(ctx context.Context, in *UpdateSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateSubscriptionMembershipResponse, error)
@@ -84,9 +90,27 @@ func (c *subscriptionsServiceClient) ListEnterpriseSubscriptionLicenses(ctx cont
 	return out, nil
 }
 
+func (c *subscriptionsServiceClient) CreateEnterpriseSubscriptionLicense(ctx context.Context, in *CreateEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionLicenseResponse, error) {
+	out := new(CreateEnterpriseSubscriptionLicenseResponse)
+	err := c.cc.Invoke(ctx, SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error) {
 	out := new(UpdateEnterpriseSubscriptionResponse)
 	err := c.cc.Invoke(ctx, SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error) {
+	out := new(CreateEnterpriseSubscriptionResponse)
+	err := c.cc.Invoke(ctx, SubscriptionsService_CreateEnterpriseSubscription_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +141,13 @@ type SubscriptionsServiceServer interface {
 	// Each subscription owns a collection of licenses, typically a series of
 	// licenses with the most recent one being a subscription's active license.
 	ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error)
+	// CreateEnterpriseSubscription creates license for an Enterprise subscription.
+	CreateEnterpriseSubscriptionLicense(context.Context, *CreateEnterpriseSubscriptionLicenseRequest) (*CreateEnterpriseSubscriptionLicenseResponse, error)
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error)
+	// CreateEnterpriseSubscription creates an Enterprise subscription.
+	CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
 	// a new one if it does not exist and allow_missing is set to true.
 	UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error)
@@ -139,8 +167,14 @@ func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptions(conte
 func (UnimplementedSubscriptionsServiceServer) ListEnterpriseSubscriptionLicenses(context.Context, *ListEnterpriseSubscriptionLicensesRequest) (*ListEnterpriseSubscriptionLicensesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEnterpriseSubscriptionLicenses not implemented")
 }
+func (UnimplementedSubscriptionsServiceServer) CreateEnterpriseSubscriptionLicense(context.Context, *CreateEnterpriseSubscriptionLicenseRequest) (*CreateEnterpriseSubscriptionLicenseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEnterpriseSubscriptionLicense not implemented")
+}
 func (UnimplementedSubscriptionsServiceServer) UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnterpriseSubscription not implemented")
+}
+func (UnimplementedSubscriptionsServiceServer) CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEnterpriseSubscription not implemented")
 }
 func (UnimplementedSubscriptionsServiceServer) UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscriptionMembership not implemented")
@@ -212,6 +246,24 @@ func _SubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SubscriptionsService_CreateEnterpriseSubscriptionLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEnterpriseSubscriptionLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscriptionLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscriptionLicense(ctx, req.(*CreateEnterpriseSubscriptionLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SubscriptionsService_UpdateEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateEnterpriseSubscriptionRequest)
 	if err := dec(in); err != nil {
@@ -226,6 +278,24 @@ func _SubscriptionsService_UpdateEnterpriseSubscription_Handler(srv interface{},
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SubscriptionsServiceServer).UpdateEnterpriseSubscription(ctx, req.(*UpdateEnterpriseSubscriptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SubscriptionsService_CreateEnterpriseSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEnterpriseSubscriptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SubscriptionsService_CreateEnterpriseSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SubscriptionsServiceServer).CreateEnterpriseSubscription(ctx, req.(*CreateEnterpriseSubscriptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -268,8 +338,16 @@ var SubscriptionsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SubscriptionsService_ListEnterpriseSubscriptionLicenses_Handler,
 		},
 		{
+			MethodName: "CreateEnterpriseSubscriptionLicense",
+			Handler:    _SubscriptionsService_CreateEnterpriseSubscriptionLicense_Handler,
+		},
+		{
 			MethodName: "UpdateEnterpriseSubscription",
 			Handler:    _SubscriptionsService_UpdateEnterpriseSubscription_Handler,
+		},
+		{
+			MethodName: "CreateEnterpriseSubscription",
+			Handler:    _SubscriptionsService_CreateEnterpriseSubscription_Handler,
 		},
 		{
 			MethodName: "UpdateSubscriptionMembership",

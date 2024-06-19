@@ -8,20 +8,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
-import {
-    Form,
-    Link,
-    Button,
-    Grid,
-    H2,
-    Text,
-    Container,
-    Icon,
-    Input,
-    Label,
-    H3,
-    LoadingSpinner,
-} from '@sourcegraph/wildcard'
+import { Form, Link, Button, Grid, H2, Text, Container, Icon, H3, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../../../components/CodyAlert'
 import { useCreateTeam } from '../../api/react-query/subscriptions'
@@ -169,50 +156,53 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
             <Container>
                 <Grid columnCount={2} spacing={4}>
                     <div>
-                        <H2>{isTeam ? 'Add seats' : 'Select number of seats'}</H2>
-                        <div className="d-flex flex-row align-items-center pb-3 mb-4 border-bottom">
+                        <H2 className="font-medium mb-3c">{isTeam ? 'Add seats' : 'Select number of seats'}</H2>
+                        <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
                             <div className="flex-1">$9 per seat / month</div>
                             <Button
                                 disabled={seatCount === MIN_SEAT_COUNT}
                                 onClick={() => setSeatCount(c => (c > MIN_SEAT_COUNT ? c - 1 : c))}
+                                className="px-3c py-2 border-0"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiMinusThick} />
+                                <Icon aria-hidden={true} svgPath={mdiMinusThick} className={styles.plusMinusButton} />
                             </Button>
                             <div className={styles.seatCountSelectorValue}>{seatCount}</div>
                             <Button
                                 disabled={seatCount === MAX_SEAT_COUNT}
                                 onClick={() => setSeatCount(c => (c < MAX_SEAT_COUNT ? c + 1 : c))}
+                                className="px-3c py-2 border-0"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiPlusThick} />
+                                <Icon aria-hidden={true} svgPath={mdiPlusThick} className={styles.plusMinusButton} />
                             </Button>
                         </div>
-                        <H2>Summary</H2>
+                        <H2 className="font-medium mb-3c">Summary</H2>
                         <div className="d-flex flex-row align-items-center mb-4">
                             <div className="flex-1">
                                 {isTeam ? 'Adding ' : ''} {seatCount} {pluralize('seat', seatCount)}
                             </div>
-                            <div>
-                                <strong>${total} / month</strong>
-                            </div>
+                            <div className={styles.price}>${total} / month</div>
                         </div>
-                        <Text size="small">
-                            <em>Each seat is pro-rated this month, and will be charged at the full rate next month.</em>
+                        <Text size="small" className={styles.disclaimer}>
+                            Each seat is pro-rated this month, and will be charged at the full rate next month.
                         </Text>
                     </div>
                     <div>
-                        <H2>
+                        <H2 className="font-medium">
                             Purchase {seatCount} {pluralize('seat', seatCount)}
                         </H2>
-                        <Label>Email</Label>
-                        <Input value={customerEmail || ''} disabled={true} className="mb-4" />
                         <Form onSubmit={handleSubmit}>
-                            <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
+                            <StripeCardDetails className="mb-3" onFocus={() => setErrorMessage('')} />
+
+                            <Text className="mb-2 font-medium text-sm">Email</Text>
+                            <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
+
                             <StripeAddressElement onFocus={() => setErrorMessage('')} />
                             {errorMessage && (
                                 <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
                             )}
 
                             <Button
+                                variant="primary"
                                 disabled={submitting}
                                 className={classNames('d-block w-100 mb-4', styles.payButton)}
                                 type="submit"
@@ -225,7 +215,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             </Button>
 
                             <div>
-                                <Text>
+                                <Text size="small" className={styles.disclaimer}>
                                     By clicking the button, you agree to the{' '}
                                     <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
                                     <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription will
