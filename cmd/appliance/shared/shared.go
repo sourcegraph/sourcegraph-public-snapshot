@@ -3,9 +3,11 @@ package shared
 import (
 	"context"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var onlyOneSignalHandler = make(chan struct{})
@@ -39,7 +42,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	app := appliance.NewAppliance(k8sClient)
+	app := appliance.NewAppliance(k8sClient, logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Logger: logr,
@@ -67,13 +70,18 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	// Mark health server as ready
-	ready()
-
 	listener, err := net.Listen("tcp", config.grpc.addr)
 	if err != nil {
 		logger.Error("unable to create tcp listener", log.Error(err))
 		return err
+	}
+
+	srv := &http.Server{
+		Addr:         config.http.addr,
+		Handler:      app.Routes(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	grpcServer := makeGRPCServer(logger, app)
@@ -89,7 +97,14 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		}
 		return nil
 	})
-
+	g.Go(func() error {
+		logger.Info("http server listening", log.String("address", config.http.addr))
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("problem running http server", log.Error(err))
+			return err
+		}
+		return nil
+	})
 	g.Go(func() error {
 		logger.Info("starting manager")
 		if err := mgr.Start(ctx); err != nil {
@@ -98,13 +113,17 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		}
 		return nil
 	})
-
 	g.Go(func() error {
 		<-ctx.Done()
 		grpcServer.GracefulStop()
 		logger.Info("shutting down gRPC server gracefully")
+		_ = srv.Shutdown(ctx)
+		logger.Info("shutting down http server gracefully")
 		return ctx.Err()
 	})
+
+	// Mark health server as ready
+	ready()
 
 	return g.Wait()
 }
