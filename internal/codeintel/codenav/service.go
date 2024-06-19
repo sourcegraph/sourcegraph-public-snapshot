@@ -1128,7 +1128,7 @@ func (s *Service) SyntacticUsages(
 		}
 	}
 
-	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
 		ctx, s.searchClient, trace,
 		repo, commit, searchSymbol, langs[0],
 	)
@@ -1138,7 +1138,6 @@ func (s *Service) SyntacticUsages(
 			UnderlyingError: searchErr,
 		}
 	}
-	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
 
 	results := make([][]SyntacticMatch, candidateMatches.Len())
 

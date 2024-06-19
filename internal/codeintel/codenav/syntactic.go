@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -33,7 +34,7 @@ func findCandidateOccurrencesViaSearch(
 	commit api.CommitID,
 	symbol *scip.Symbol,
 	language string,
-) (orderedmap.OrderedMap[string, candidateFile], int, error) {
+) (orderedmap.OrderedMap[string, candidateFile], error) {
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
@@ -42,7 +43,7 @@ func findCandidateOccurrencesViaSearch(
 	if name, ok := nameFromSymbol(symbol); ok {
 		identifier = name
 	} else {
-		return resultMap, 0, errors.Errorf("can't find occurrences for locals via search")
+		return resultMap, errors.Errorf("can't find occurrences for locals via search")
 	}
 	// TODO: This should be dependent on the number of requested usages, with a configured global limit
 	countLimit := 1000
@@ -52,12 +53,12 @@ func findCandidateOccurrencesViaSearch(
 
 	plan, err := client.Plan(ctx, "V3", &patternType, searchQuery, search.Precise, search.Streaming, &contextLines)
 	if err != nil {
-		return resultMap, 0, err
+		return resultMap, err
 	}
 	stream := streaming.NewAggregatingStream()
 	_, err = client.Execute(ctx, stream, plan)
 	if err != nil {
-		return resultMap, 0, err
+		return resultMap, err
 	}
 
 	matchCount := 0
@@ -93,7 +94,8 @@ func findCandidateOccurrencesViaSearch(
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})
 	}
-	return resultMap, matchCount, nil
+	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
+	return resultMap, nil
 }
 
 func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
