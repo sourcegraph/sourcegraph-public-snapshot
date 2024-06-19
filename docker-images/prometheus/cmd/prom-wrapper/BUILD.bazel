@@ -38,6 +38,7 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@dev_bobheadxi_go_streamline//streamexec",
         "@in_gopkg_yaml_v2//:yaml_v2",
+        "@org_golang_x_exp//maps",
     ],
 )
 
