@@ -28,10 +28,10 @@ import {
 
 export interface NavbarQueryState extends SearchQueryState {}
 
-const implicitPatternTypes = new Set([
-    SearchPatternType.codycontext,
-    SearchPatternType.literal,
-    SearchPatternType.standard,
+const explicitPatternTypes = new Set([
+    SearchPatternType.keyword,
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
 ])
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
@@ -74,7 +74,10 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
 }))
 
 export function setSearchPatternType(searchPatternType: SearchPatternType): void {
-    useNavbarQueryState.setState({ searchPatternType })
+    // When changing the patterntype, we also need to reset the query to strip out any potential patterntype: filter
+    const state = useNavbarQueryState.getState()
+    const query = state.searchQueryFromURL ?? state.queryState.query
+    useNavbarQueryState.setState({ searchPatternType, queryState: { query } })
 }
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
@@ -118,10 +121,10 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         const parsedPatternType = parsedSearchURL.patternType
         if (parsedPatternType !== undefined) {
             newState.searchPatternType = parsedPatternType
-            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
-            // sure to surface them in the query input itself.
-            if (implicitPatternTypes.has(parsedPatternType)) {
-                query += ` ${FilterType.patterntype}:${parsedPatternType}`
+            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make sure to
+            //  surface them in the query input itself. This includes invalid patterntypes, which should display an error.
+            if (!explicitPatternTypes.has(parsedPatternType)) {
+                query = `${query} ${FilterType.patterntype}:${parsedPatternType}`
             }
         }
         newState.queryState = { query }
