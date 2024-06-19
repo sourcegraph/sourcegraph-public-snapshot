@@ -87,16 +87,16 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't revoke the invite (${response.status}). Please try again later.`,
-                        isError: true,
-                    })
-                } else {
+                try {
+                    await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
                     setLoading(false)
                     setActionResult({ message: 'Invite revoked.', isError: false })
+                } catch (error) {
+                    setLoading(false)
+                    setActionResult({
+                        message: `We couldn't revoke the invite. The error was: "${error}". Please try again later.`,
+                        isError: true,
+                    })
                 }
             }
         },
