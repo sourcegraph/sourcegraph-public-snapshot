@@ -1055,12 +1055,15 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 	uploadId int,
 	filePath string,
 	candidateFile candidateFile,
-) []SyntacticMatch {
+) ([]SyntacticMatch, *SyntacticUsagesError) {
 	results := []SyntacticMatch{}
 
 	document, docErr := s.SCIPDocument(ctx, uploadId, filePath)
 	if docErr != nil {
-		return results
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: docErr,
+		}
 	}
 
 	// TODO: We can optimize this further by continuously slicing the occurrences array
@@ -1076,7 +1079,7 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 		}
 	}
 
-	return results
+	return results, nil
 }
 
 type SyntacticMatch struct {
@@ -1142,7 +1145,12 @@ func (s *Service) SyntacticUsages(
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
 		// We're assuming the upload we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, pair.Key, pair.Value)
+		syntacticMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, pair.Key, pair.Value)
+		if err != nil {
+			// TODO: Errors that are not "no index found in the DB" should be reported
+			// TODO: Track metrics about how often this happens (GRAPH-693)
+			continue
+		}
 		results = append(results, syntacticMatches)
 	}
 	return slices.Concat(results...), nil
