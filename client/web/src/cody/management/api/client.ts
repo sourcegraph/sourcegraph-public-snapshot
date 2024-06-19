@@ -70,7 +70,7 @@ export module Client {
         return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
     }
 
-    export function resendInvite(inviteId: string): Call<Response> {
+    export function resendInvite(inviteId: string): Call<unknown> {
         return { method: 'POST', urlSuffix: `/team/current/invites/${inviteId}/resend` }
     }
 

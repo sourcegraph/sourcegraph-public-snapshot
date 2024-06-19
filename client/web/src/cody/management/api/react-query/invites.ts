@@ -44,10 +44,10 @@ export const useSendInvite = (): UseMutationResult<TeamInvite, Error, CreateTeam
     })
 }
 
-export const useResendInvite = (): UseMutationResult<Response, Error, { inviteId: string }> => {
+export const useResendInvite = (): UseMutationResult<unknown, Error, { inviteId: string }> => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async ({ inviteId }) => callCodyProApi(Client.resendInvite(inviteId)),
+        mutationFn: async ({ inviteId }) => (await callCodyProApi(Client.resendInvite(inviteId))).json(),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.invites.teamInvites() }),
     })
 }

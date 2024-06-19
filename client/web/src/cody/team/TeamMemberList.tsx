@@ -102,16 +102,16 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't resend the invite (${response.status}). Please try again later.`,
-                        isError: true,
-                    })
-                } else {
+                try {
+                    await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
                     setLoading(false)
                     setActionResult({ message: 'Invite resent.', isError: false })
+                } catch (error) {
+                    setLoading(false)
+                    setActionResult({
+                        message: `We couldn't resend the invite (${error}). Please try again later.`,
+                        isError: true,
+                    })
                 }
             }
 
