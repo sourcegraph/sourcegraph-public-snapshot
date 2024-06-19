@@ -20,20 +20,35 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
     telemetryRecorder,
 }) => {
     const [emailAddressesString, setEmailAddressesString] = useState<string>('')
+    const emailAddresses = emailAddressesString.split(',').map(email => email.trim())
     const [emailAddressErrorMessage, setEmailAddressErrorMessage] = useState<string | null>(null)
-    const [invitesSendingStatus, setInvitesSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
-    const [invitesSentCount, setInvitesSentCount] = useState(0)
-    const [invitesSendingErrorMessage, setInvitesSendingErrorMessage] = useState<string | null>(null)
 
     const sendInviteMutation = useSendInvite()
 
+    const verifyEmailList = useCallback((): Error | void => {
+        if (emailAddresses.length === 0) {
+            return new Error('Please enter at least one email address.')
+        }
+
+        if (emailAddresses.length > remainingInviteCount) {
+            return new Error(
+                `${emailAddresses.length} email addresses entered, but you only have ${remainingInviteCount} seats.`
+            )
+        }
+
+        const invalidEmails = emailAddresses.filter(email => !isValidEmailAddress(email))
+
+        if (invalidEmails.length > 0) {
+            return new Error(
+                `Invalid email address${invalidEmails.length > 1 ? 'es' : ''}: ${invalidEmails.join(', ')}`
+            )
+        }
+    }, [emailAddresses, remainingInviteCount])
+
     const onSendInvitesClicked = useCallback(async () => {
-        const { emails: emailAddresses, error: emailParsingError } = parseEmailList(
-            emailAddressesString,
-            remainingInviteCount
-        )
-        if (emailParsingError) {
-            setEmailAddressErrorMessage(emailParsingError)
+        const emailListError = verifyEmailList()
+        if (emailListError) {
+            setEmailAddressErrorMessage(emailListError.message)
             return
         }
         telemetryRecorder.recordEvent('cody.team.sendInvites', 'click', {
@@ -41,7 +56,6 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
             privateMetadata: { teamId, emailAddresses },
         })
 
-        setInvitesSendingStatus('sending')
         try {
             await Promise.all(
                 emailAddresses.map(emailAddress =>
@@ -49,39 +63,35 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                 )
             )
 
-            setInvitesSendingStatus('success')
-            setInvitesSentCount(emailAddresses.length)
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
                 metadata: { count: emailAddresses.length },
                 privateMetadata: { teamId, emailAddresses },
             })
         } catch (error) {
-            setInvitesSendingStatus('error')
-            setInvitesSendingErrorMessage(`Error sending invites: ${error}`)
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'error', {
                 metadata: { count: emailAddresses.length, softError: 0 },
-                privateMetadata: { teamId, emailAddresses },
+                privateMetadata: { teamId, emailAddresses, error },
             })
         }
-    }, [emailAddressesString, remainingInviteCount, sendInviteMutation.mutateAsync, teamId, telemetryRecorder])
+    }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
 
     return (
         <>
-            {invitesSendingStatus === 'success' && (
+            {sendInviteMutation.status === 'success' && (
                 <CodyAlert variant="greenSuccess">
                     <H3>
-                        {invitesSentCount} {pluralize('invite', invitesSentCount)} sent!
+                        {emailAddresses.length} {pluralize('invite', emailAddresses.length)} sent!
                     </H3>
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
                     </Text>
                 </CodyAlert>
             )}
-            {invitesSendingStatus === 'error' && (
+            {sendInviteMutation.status === 'error' && (
                 <CodyAlert variant="error">
                     <H3>Invites not sent.</H3>
                     <Text size="small" className="text-muted mb-0">
-                        {invitesSendingErrorMessage}
+                        Error sending invites: {sendInviteMutation.error?.message}
                     </Text>
                     <Text size="small" className="mb-0">
                         If you encounter this issue repeatedly, please contact support at{' '}
@@ -113,6 +123,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
                             onChange={event => {
                                 setEmailAddressErrorMessage(null)
                                 setEmailAddressesString(event.target.value)
+                                sendInviteMutation.reset()
                             }}
                             isValid={emailAddressErrorMessage ? false : undefined}
                         />
@@ -132,32 +143,4 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
             </CodyContainer>
         </>
     )
-}
-
-function parseEmailList(
-    emailAddressesString: string,
-    remainingInviteCount: number
-): { emails: string[]; error: string | null } {
-    const emails = emailAddressesString.split(',').map(email => email.trim())
-    if (emails.length === 0) {
-        return { emails, error: 'Please enter at least one email address.' }
-    }
-
-    if (emails.length > remainingInviteCount) {
-        return {
-            emails,
-            error: `${emails.length} email addresses entered, but you only have ${remainingInviteCount} seats.`,
-        }
-    }
-
-    const invalidEmails = emails.filter(email => !isValidEmailAddress(email))
-
-    if (invalidEmails.length > 0) {
-        return {
-            emails,
-            error: `Invalid email address${invalidEmails.length > 1 ? 'es' : ''}: ${invalidEmails.join(', ')}`,
-        }
-    }
-
-    return { emails, error: null }
 }
