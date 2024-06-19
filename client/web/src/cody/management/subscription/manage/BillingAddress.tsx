@@ -1,19 +1,19 @@
 import React, { useMemo, useState, useEffect } from 'react'
 
-import { mdiPencilOutline, mdiCheck } from '@mdi/js'
+import { mdiCheck } from '@mdi/js'
 import { useStripe, useElements, AddressElement, Elements } from '@stripe/react-stripe-js'
 import type { Stripe, StripeElementsOptions } from '@stripe/stripe-js'
 import classNames from 'classnames'
 
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
-import { H3, Button, Icon, Text, Form } from '@sourcegraph/wildcard'
+import { H3, Button, Text, Form } from '@sourcegraph/wildcard'
 
 import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
+import { BillingAddressPreview } from '../BillingAddressPreview'
 import { StripeAddressElement } from '../StripeAddressElement'
 
 import { LoadingIconButton } from './LoadingIconButton'
-import { NonEditableBillingAddress } from './NonEditableBillingAddress'
 
 import styles from './PaymentDetails.module.scss'
 
@@ -63,26 +63,15 @@ export const useBillingAddressStripeElementsOptions = (): StripeElementsOptions 
 interface BillingAddressProps {
     stripe: Stripe | null
     subscription: Subscription
-    title?: string
-    editable: boolean
 }
 
-export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscription, title, editable }) => {
+export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscription }) => {
     const [isEditMode, setIsEditMode] = useState(false)
 
     const options = useBillingAddressStripeElementsOptions()
 
     return (
         <div>
-            <div className="d-flex align-items-center justify-content-between">
-                {title ?? <H3>{title}</H3>}
-                {editable && (
-                    <Button variant="link" className={styles.titleButton} onClick={() => setIsEditMode(true)}>
-                        <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
-                    </Button>
-                )}
-            </div>
-
             {isEditMode ? (
                 <Elements stripe={stripe} options={options}>
                     <BillingAddressForm
@@ -92,7 +81,13 @@ export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscrip
                     />
                 </Elements>
             ) : (
-                <NonEditableBillingAddress subscription={subscription} />
+                <>
+                    <BillingAddressPreview
+                        subscription={subscription}
+                        isEditable={true}
+                        onButtonClick={() => setIsEditMode(true)}
+                    />
+                </>
             )}
         </div>
     )
@@ -169,26 +164,29 @@ const BillingAddressForm: React.FC<BillingAddressFormProps> = ({ subscription, o
     }
 
     return (
-        <Form onSubmit={handleSubmit} onReset={onReset} className={styles.billingAddressForm}>
-            <StripeAddressElement subscription={subscription} onFocus={() => setIsErrorVisible(false)} />
+        <>
+            <H3>Billing address</H3>
+            <Form onSubmit={handleSubmit} onReset={onReset} className={styles.billingAddressForm}>
+                <StripeAddressElement subscription={subscription} onFocus={() => setIsErrorVisible(false)} />
 
-            {isErrorVisible && errorMessage ? <Text className="mt-3 text-danger">{errorMessage}</Text> : null}
+                {isErrorVisible && errorMessage ? <Text className="mt-3 text-danger">{errorMessage}</Text> : null}
 
-            <div className={classNames('d-flex justify-content-end', styles.billingAddressFormButtonContainer)}>
-                <Button type="reset" variant="secondary" outline={true}>
-                    Cancel
-                </Button>
-                <LoadingIconButton
-                    type="submit"
-                    variant="primary"
-                    className="ml-2"
-                    disabled={isLoading}
-                    isLoading={isLoading}
-                    iconSvgPath={mdiCheck}
-                >
-                    Save
-                </LoadingIconButton>
-            </div>
-        </Form>
+                <div className={classNames('d-flex justify-content-end', styles.billingAddressFormButtonContainer)}>
+                    <Button type="reset" variant="secondary" outline={true}>
+                        Cancel
+                    </Button>
+                    <LoadingIconButton
+                        type="submit"
+                        variant="primary"
+                        className="ml-2"
+                        disabled={isLoading}
+                        isLoading={isLoading}
+                        iconSvgPath={mdiCheck}
+                    >
+                        Save
+                    </LoadingIconButton>
+                </div>
+            </Form>
+        </>
     )
 }

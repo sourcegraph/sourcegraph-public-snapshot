@@ -136,8 +136,7 @@ func handler(logger log.Logger, db database.DB, wh *Router) http.HandlerFunc {
 			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindBitbucketCloud:
-			// Bitbucket Cloud does not support secrets for webhooks
-			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
+			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindAzureDevOps:
 			wh.HandleAzureDevOpsWebhook(logger, w, r, webhook.CodeHostURN)

@@ -722,7 +722,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Fea
 func toLangFilters(aliases []string) []string {
 	var filters []string
 	for _, alias := range aliases {
-		lang, _ := languages.GetLanguageByAlias(alias) // Invariant: lang is valid.
+		lang, _ := languages.GetLanguageByNameOrAlias(alias) // Invariant: lang is valid.
 		if !slices.Contains(filters, lang) {
 			filters = append(filters, lang)
 		}

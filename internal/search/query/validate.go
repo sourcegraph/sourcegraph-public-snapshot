@@ -199,7 +199,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isLanguage := func() error {
-		_, ok := languages.GetLanguageByAlias(value)
+		_, ok := languages.GetLanguageByNameOrAlias(value)
 		if !ok {
 			return errors.Errorf("unknown language: %q", value)
 		}

@@ -98,7 +98,13 @@ EXPERIMENTAL: This type may change in a backwards-incompatible way.
 TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
 before stabilizing this API.
 """
-type CodeGraphData {
+type CodeGraphData implements Node {
+    """
+    ID of this object that can be used to identify the CodeGraphData
+    for pagination in the codeGraphData field.
+    """
+    id: ID!
+
     """
     Coarse description of the data source for this code graph data.
     """
@@ -119,8 +125,12 @@ type CodeGraphData {
     toolInfo: CodeGraphToolInfo
 
     """
-    Occurrences are guaranteed to be sorted by range. It is possible
-    for there to be multiple occurrences for the same exact source range.
+    Occurrences are guaranteed to be sorted by range based on
+    (start.line, start.character, end.line, end.character) as a 4-tuple.
+    It is possible for there to be:
+    - Multiple occurrences for the same exact source range.
+    - Occurrences which intersect without one containing the other.
+    - Occurrences which span across multiple lines.
 
     At the moment, using higher values of 'first:' should not cause
     significantly worst performance.
@@ -218,6 +228,9 @@ type SCIPOccurrence {
     The 'Definition' and 'Reference' roles are mutually exclusive (exactly
     one of those will be present in the array below).
     """
+    # NOTE: At the moment, we do not support all symbol roles present
+    # in SCIP because indexers do not consistently implement roles other
+    # than the ones supported below.
     roles: [SymbolRole!]
     # We can add diagnostics etc. here in the future if needed.
 }

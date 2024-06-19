@@ -2,30 +2,59 @@ package languages
 
 import (
 	"path/filepath"
-	"strings"
+	"slices"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2" //nolint:depguard - Only this package can use enry
 )
 
-// getLanguagesByAlias is a replacement for enry.GetLanguagesByAlias
-// It supports languages that are missing in go-enry
-func GetLanguageByAlias(alias string) (lang string, ok bool) {
-	normalizedAlias := strings.ToLower(alias)
-	if lang, ok = unsupportedByEnryAliasMap[normalizedAlias]; ok {
+// GetLanguageByNameOrAlias returns the standardized name for
+// a language based on its name (in which case this is an identity operation)
+// or based on its alias, which is potentially an alternate name for
+// the language.
+//
+// Aliases are fully lowercase, and map N-1 to languages.
+//
+// For example,
+//
+// GetLanguageByNameOrAlias("ada") == "Ada", true
+// GetLanguageByNameOrAlias("ada95") == "Ada", true
+//
+// Historical note: This function was added for replacing usages of
+// enry.GetLanguageByAlias, which, unlike the name suggests, also
+// handles non-normalized names such as those with spaces.
+func GetLanguageByNameOrAlias(nameOrAlias string) (lang string, ok bool) {
+	alias := convertToAliasKey(nameOrAlias)
+	if lang, ok = unsupportedByEnryAliasMap[alias]; ok {
 		return lang, true
 	}
 
-	return enry.GetLanguageByAlias(normalizedAlias)
+	return enry.GetLanguageByAlias(alias)
 }
 
-// getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
-// It supports languages that are missing in go-enry
-func GetLanguageExtensions(alias string) []string {
-	if lang, ok := unsupportedByEnryNameToExtensionMap[alias]; ok {
+// GetLanguageExtensions returns the list of file extensions for a given
+// language. Returned extensions are always prefixed with a '.'.
+//
+// The returned slice will be empty iff the language is not known.
+//
+// Handles more languages than enry.GetLanguageExtensions.
+//
+// Mutually consistent with getLanguagesByExtension, see the tests
+// for the exact invariants.
+func GetLanguageExtensions(language string) []string {
+	if lang, ok := unsupportedByEnryNameToExtensionMap[language]; ok {
 		return []string{lang}
 	}
 
-	return enry.GetLanguageExtensions(alias)
+	ignoreExts, isNiche := nicheExtensionUsages[language]
+	// Force a copy to avoid accidentally modifying the global variable
+	enryExts := slices.Clone(enry.GetLanguageExtensions(language))
+	if !isNiche {
+		return slices.Clone(enryExts)
+	}
+	return slices.DeleteFunc(enryExts, func(ext string) bool {
+		_, shouldIgnore := ignoreExts[ext]
+		return shouldIgnore
+	})
 }
 
 // getLanguagesByExtension is a replacement for enry.GetLanguagesByExtension
@@ -85,23 +114,62 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 }
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
-	// Pkl Configuration Language (https://pkl-lang.org/)
-	// NOTE: Add to linguist on 6/7/24
-	// can remove once go-enry package updates
-	// to that linguist version
-	".pkl": "Pkl",
-	// Magik Language
+	// See TODO(id: remove-pkl-special-case)
+	".pkl":   "Pkl",
 	".magik": "Magik",
 }
 
+// nicheExtensionUsage keeps track of which (lang, extension) mappings
+// should not be considered.
+//
+// We cannot wholesale ignore these languages, as this list includes
+// languages like XML, but it can contain unusual extensions like '.tsx'
+// which we generally want to classify as TypeScript.
+var nicheExtensionUsages = func() map[string]map[string]struct{} {
+	niche := map[string]map[string]struct{}{}
+	considered := map[string]struct{}{}
+	for _, lang := range overrideAmbiguousExtensionsMap {
+		considered[lang] = struct{}{}
+	}
+	for ext := range overrideAmbiguousExtensionsMap {
+		langs := enry.GetLanguagesByExtension("foo"+ext, nil, nil)
+		for _, lang := range langs {
+			if _, found := considered[lang]; !found {
+				if m, hasMap := niche[lang]; hasMap {
+					m[ext] = struct{}{}
+				} else {
+					niche[lang] = map[string]struct{}{ext: {}}
+				}
+			}
+		}
+	}
+	for specialOverrideExt, lang := range unsupportedByEnryExtensionToNameMap {
+		considered[lang] = struct{}{}
+		langs := enry.GetLanguagesByExtension("foo"+specialOverrideExt, nil, nil)
+		for _, lang := range langs {
+			if _, found := considered[lang]; !found {
+				if m, hasMap := niche[lang]; hasMap {
+					m[specialOverrideExt] = struct{}{}
+				} else {
+					niche[lang] = map[string]struct{}{specialOverrideExt: {}}
+				}
+			}
+		}
+	}
+	return niche
+}()
+
 var unsupportedByEnryNameToExtensionMap = reverseMap(unsupportedByEnryExtensionToNameMap)
 
-var unsupportedByEnryAliasMap = map[string]string{
-	// Pkl Configuration Language (https://pkl-lang.org/)
-	"pkl": "Pkl",
-	// Magik Language
-	"magik": "Magik",
-}
+// unsupportedByEnryAliasMap maps alias -> language name for languages
+// not tracked by go-enry.
+var unsupportedByEnryAliasMap = func() map[string]string {
+	out := map[string]string{}
+	for _, lang := range unsupportedByEnryExtensionToNameMap {
+		out[convertToAliasKey(lang)] = lang
+	}
+	return out
+}()
 
 func reverseMap(m map[string]string) map[string]string {
 	n := make(map[string]string, len(m))

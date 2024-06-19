@@ -63,9 +63,11 @@ func (r googleRequest) BuildPrompt() string {
 func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req googleRequest) string {
 	rpc := "generateContent"
 	sseSuffix := ""
-	if feature == codygateway.FeatureChatCompletions {
+	// If we're streaming, we need to use the stream endpoint.
+	if feature == codygateway.FeatureChatCompletions || req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
+		req.Stream = true
 	}
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
 }
@@ -93,10 +95,13 @@ func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log
 }
 
 // Used to modify the request body before it is sent to upstream.
-func (*GoogleHandlerMethods) transformBody(*googleRequest, string) {}
+func (*GoogleHandlerMethods) transformBody(gr *googleRequest, _ string) {
+	// Remove Stream from the request body before sending it to Google.
+	gr.Stream = false
+}
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
-	return body.Model, map[string]any{"stream": body.Stream}
+	return body.Model, map[string]any{"stream": body.ShouldStream()}
 }
 
 func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
@@ -106,10 +111,9 @@ func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
 func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.BuildPrompt())
-
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.ShouldStream() {
+	if !reqBody.Stream && !reqBody.ShouldStream() {
 		var res googleResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))

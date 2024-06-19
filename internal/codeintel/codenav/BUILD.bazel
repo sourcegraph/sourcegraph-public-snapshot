@@ -47,6 +47,7 @@ go_library(
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@com_github_wk8_go_ordered_map_v2//:go-ordered-map",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

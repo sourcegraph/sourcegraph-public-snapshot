@@ -11,9 +11,9 @@ export interface TeamInvite {
     status: TeamInviteStatus
     error?: string
 
-    sentAt: Date
+    sentAt: string
     sentBy: string
-    acceptedAt?: Date
+    acceptedAt?: string
 }
 
 export interface CreateTeamInviteRequest {

@@ -1409,7 +1409,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1

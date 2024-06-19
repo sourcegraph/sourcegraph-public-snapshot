@@ -31,7 +31,7 @@ func TestErrStatusNotOK(t *testing.T) {
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "", "")
+	}, "", "", false)
 
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")

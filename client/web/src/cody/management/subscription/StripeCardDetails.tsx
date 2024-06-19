@@ -40,20 +40,20 @@ export const StripeCardDetails: React.FC<StripeCardDetailsProps> = ({ onFocus, c
     return (
         <div className={className}>
             <div>
-                <Label className="d-block">
-                    <Text className="mb-2">Card number</Text>
+                <Label className="d-block font-medium text-sm">
+                    <Text className="mb-1">Card number</Text>
                     <CardNumberElement options={getOptions('number')} onFocus={onFocus} />
                 </Label>
             </div>
 
-            <Grid columnCount={2} className="mt-3 mb-0 pb-3">
+            <Grid columnCount={2} className="mt-3 mb-0 pb-3 font-medium text-sm">
                 <Label className="d-block">
-                    <Text className="mb-2">Expiry date</Text>
+                    <Text className="mb-1">Expiry date</Text>
                     <CardExpiryElement options={getOptions('expiry')} onFocus={onFocus} />
                 </Label>
 
-                <Label className="d-block">
-                    <Text className="mb-2">CVC</Text>
+                <Label className="d-block font-medium text-sm">
+                    <Text className="mb-1">CVC</Text>
                     <CardCvcElement options={getOptions('cvc')} onFocus={onFocus} />
                 </Label>
             </Grid>

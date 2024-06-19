@@ -19,6 +19,9 @@ spec:
   indexedSearch:
     replicas: 7
 
+  openTelemetry:
+    disabled: true
+
   pgsql:
     disabled: true
 
