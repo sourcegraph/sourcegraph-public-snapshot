@@ -58,6 +58,7 @@ function create_push_command() {
 
   for registry in "${registries[@]}"; do
     cmd="bazel \
+      --announce_rc
       ${bazelrc[*]} \
       run \
       $target \
