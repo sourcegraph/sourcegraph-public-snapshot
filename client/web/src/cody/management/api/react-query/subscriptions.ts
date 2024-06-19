@@ -16,7 +16,7 @@ import type {
     PreviewCreateTeamRequest,
     GetSubscriptionInvoicesResponse,
     ListTeamMembersResponse,
-    ListTeamInvitesResponse
+    ListTeamInvitesResponse,
 } from '../types'
 
 import { callCodyProApi } from './callCodyProApi'
@@ -51,7 +51,7 @@ export const useSubscriptionInvoices = (): UseQueryResult<GetSubscriptionInvoice
 
 export const useTeamMembers = (): UseQueryResult<ListTeamMembersResponse | undefined> =>
     useQuery({
-        queryKey: queryKeys.teams.currentTeamMembers(),
+        queryKey: queryKeys.teams.teamMembers(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentTeamMembers())
             return response.ok ? response.json() : undefined
@@ -60,9 +60,9 @@ export const useTeamMembers = (): UseQueryResult<ListTeamMembersResponse | undef
 
 export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undefined> =>
     useQuery({
-        queryKey: queryKeys.invites.currentTeamInvites(),
+        queryKey: queryKeys.invites.teamInvites(),
         queryFn: async () => {
-            const response = await callCodyProApi(Client.getCurrentTeamInvites())
+            const response = await callCodyProApi(Client.getTeamInvites())
             return response.ok ? response.json() : undefined
         },
     })
