@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	amconfig "github.com/prometheus/alertmanager/config"
 	commoncfg "github.com/prometheus/common/config"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -360,9 +362,12 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 	}
 
+	// Sort for stability
+	additionalReceiversKeys := maps.Keys(additionalReceivers)
+	slices.Sort(additionalReceiversKeys)
 	var additionalReceiversSlice []amconfig.Receiver
-	for _, r := range additionalReceivers {
-		additionalReceiversSlice = append(additionalReceiversSlice, *r)
+	for _, key := range additionalReceiversKeys {
+		additionalReceiversSlice = append(additionalReceiversSlice, *additionalReceivers[key])
 	}
 	return append(additionalReceiversSlice, *warningReceiver, *criticalReceiver),
 		append(additionalRoutes, defaultRoutes...)
