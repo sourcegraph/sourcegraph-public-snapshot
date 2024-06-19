@@ -4,37 +4,21 @@ import classNames from 'classnames'
 import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
+import { H2, Text, Badge, Link, ButtonLink, Button } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
-import { requestSSC } from '../util'
+import { useCancelInvite, useResendInvite } from '../management/api/react-query/invites'
+import { useUpdateTeamMember } from '../management/api/react-query/teams'
+import type { TeamMember, TeamInvite } from '../management/api/types'
 
 import styles from './TeamMemberList.module.scss'
 
-export interface TeamMember {
-    accountId: string
-    displayName: string | null
-    email: string
-    avatarUrl: string | null
-    role: 'admin' | 'member'
-}
-
 interface TeamMemberListProps extends TelemetryV2Props {
-    teamId: string | null
+    teamId: string
     teamMembers: TeamMember[]
-    invites: TeamInvite[]
+    invites: Omit<TeamInvite, 'sentBy'>[]
     isAdmin: boolean
-}
-
-export interface TeamInvite {
-    id: string
-    email: string
-    role: 'admin' | 'member' | 'none'
-    status: 'sent' | 'errored' | 'accepted' | 'canceled'
-    error: string | null
-    sentAt: string | null
-    acceptedAt: string | null
 }
 
 // This tiny function is extracted to make it testable. Same for the "now" parameter.
@@ -56,113 +40,100 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     isAdmin,
     telemetryRecorder,
 }) => {
-    const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
+    const updateTeamMemberMutation = useUpdateTeamMember()
+    const cancelInviteMutation = useCancelInvite()
+    const resendInviteMutation = useResendInvite()
+    const isLoading =
+        updateTeamMemberMutation.status === 'pending' ||
+        cancelInviteMutation.status === 'pending' ||
+        resendInviteMutation.status === 'pending'
+
     const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeAdmin', 'click', {
-                    privateMetadata: { teamId, accountId },
-                })
+            if (isLoading) {
+                return
+            }
 
-                try {
-                    const response = await requestSSC('/team/current/members', 'PATCH', {
-                        updateMemberRole: { accountId, teamRole: newRole },
-                    })
-                    if (!response.ok) {
-                        setLoading(false)
-                        setActionResult({
-                            message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
-                            isError: true,
-                        })
-                    } else {
-                        setLoading(false)
-                        setActionResult({ message: 'Team role updated.', isError: false })
-                    }
-                } catch (error) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
-                        isError: true,
-                    })
-                }
+            telemetryRecorder.recordEvent('cody.team.revokeAdmin', 'click', {
+                privateMetadata: { teamId, accountId },
+            })
+            try {
+                await updateTeamMemberMutation.mutateAsync.call(undefined, {
+                    updateMemberRole: { accountId, teamRole: newRole },
+                })
+                setActionResult({ message: 'Team role updated.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [loading, telemetryRecorder, teamId]
+        [isLoading, updateTeamMemberMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const revokeInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
-
-                const response = await requestSSC(`/team/current/invites/${inviteId}/cancel`, 'POST')
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't revoke the invite (${response.status}). Please try again later.`,
-                        isError: true,
-                    })
-                } else {
-                    setLoading(false)
-                    setActionResult({ message: 'Invite revoked.', isError: false })
-                }
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+            try {
+                await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
+                setActionResult({ message: 'Invite revoked.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't revoke the invite. The error was: "${error}". Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [loading, telemetryRecorder, teamId]
+        [isLoading, cancelInviteMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const resendInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC(`/team/current/invites/${inviteId}/resend`, 'POST')
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't resend the invite (${response.status}). Please try again later.`,
-                        isError: true,
-                    })
-                } else {
-                    setLoading(false)
-                    setActionResult({ message: 'Invite resent.', isError: false })
-                }
+            try {
+                await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
+                setActionResult({ message: 'Invite resent.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't resend the invite (${error}). Please try again later.`,
+                    isError: true,
+                })
             }
 
             telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
         },
-        [loading, telemetryRecorder, teamId]
+        [isLoading, resendInviteMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const removeMember = useCallback(
         async (accountId: string): Promise<void> => {
-            if (!loading) {
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                const response = await requestSSC('/team/current/members', 'PATCH', {
+            try {
+                await updateTeamMemberMutation.mutateAsync.call(undefined, {
                     removeMember: { accountId, teamRole: 'member' },
                 })
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't remove the team member. (${response.status}). Please try again later.`,
-                        isError: true,
-                    })
-                } else {
-                    setLoading(false)
-                    setActionResult({ message: 'Team member removed.', isError: false })
-                }
+                setActionResult({ message: 'Team member removed.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't remove the team member. (${error}). Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [telemetryRecorder, teamId, loading]
+        [isLoading, updateTeamMemberMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])
@@ -214,14 +185,14 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     <>
                                         <div />
                                         <div className="align-content-center text-center">
-                                            <Link
-                                                to="#"
+                                            <Button
+                                                variant="link"
                                                 onClick={() => updateRole(member.accountId, 'member')}
                                                 className="ml-2"
-                                                aria-disabled={adminCount < 2}
+                                                disabled={adminCount < 2}
                                             >
                                                 Revoke admin
-                                            </Link>
+                                            </Button>
                                         </div>
                                     </>
                                 ) : (

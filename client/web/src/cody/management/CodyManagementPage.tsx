@@ -25,9 +25,9 @@ import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { useCodySubscriptionSummaryData } from '../subscription/subscriptionSummary'
 import { getManageSubscriptionPageURL } from '../util'
 
+import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
@@ -74,8 +74,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         {}
     )
 
-    const [codySubscriptionSummary] = useCodySubscriptionSummaryData()
-    const isAdmin = codySubscriptionSummary?.userRole === 'admin'
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
+    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)

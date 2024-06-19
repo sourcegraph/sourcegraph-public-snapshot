@@ -16,7 +16,9 @@ import type {
     SubscriptionSummary,
     UpdateSubscriptionRequest,
     GetSubscriptionInvoicesResponse,
-} from '../teamSubscriptions'
+    ListTeamMembersResponse,
+    ListTeamInvitesResponse,
+} from '../types'
 
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
@@ -26,7 +28,7 @@ export const useCurrentSubscription = (): UseQueryResult<Subscription | undefine
         queryKey: queryKeys.subscriptions.subscription(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscription())
-            return response?.json()
+            return response.json()
         },
     })
 
@@ -35,7 +37,7 @@ export const useSubscriptionSummary = (): UseQueryResult<SubscriptionSummary | u
         queryKey: queryKeys.subscriptions.subscriptionSummary(),
         queryFn: async () => {
             const response = await callCodyProApi(Client.getCurrentSubscriptionSummary())
-            return response?.json()
+            return response.json()
         },
     })
 
@@ -48,6 +50,24 @@ export const useSubscriptionInvoices = (): UseQueryResult<GetSubscriptionInvoice
         },
     })
 
+export const useTeamMembers = (): UseQueryResult<ListTeamMembersResponse | undefined> =>
+    useQuery({
+        queryKey: queryKeys.teams.teamMembers(),
+        queryFn: async () => {
+            const response = await callCodyProApi(Client.getCurrentTeamMembers())
+            return response.ok ? response.json() : undefined
+        },
+    })
+
+export const useTeamInvites = (): UseQueryResult<ListTeamInvitesResponse | undefined> =>
+    useQuery({
+        queryKey: queryKeys.invites.teamInvites(),
+        queryFn: async () => {
+            const response = await callCodyProApi(Client.getTeamInvites())
+            return response.ok ? response.json() : undefined
+        },
+    })
+
 export const useUpdateCurrentSubscription = (): UseMutationResult<
     Subscription | undefined,
     Error,
@@ -57,7 +77,7 @@ export const useUpdateCurrentSubscription = (): UseMutationResult<
     return useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.updateCurrentSubscription(requestBody))
-            return response?.json()
+            return response.json()
         },
         onSuccess: data => {
             // We get updated subscription data in response - no need to refetch subscription.

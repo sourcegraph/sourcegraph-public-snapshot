@@ -3,8 +3,8 @@ export type TeamRole = 'member' | 'admin'
 export interface TeamMember {
     accountId: string
     displayName: string
+    email: string
     avatarUrl: string
-
     role: TeamRole
 }
 
@@ -19,7 +19,7 @@ export interface ListTeamMembersResponse {
 }
 
 export interface UpdateTeamMembersRequest {
-    addMembver?: TeamMemberRef
+    addMember?: TeamMemberRef
     removeMember?: TeamMemberRef
     updateMemberRole?: TeamMemberRef
 }
