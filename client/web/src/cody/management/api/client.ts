@@ -66,7 +66,7 @@ export module Client {
         return { method: 'GET', urlSuffix: '/team/current/invites' }
     }
 
-    export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<Response> {
+    export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<types.TeamInvite> {
         return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
     }
 

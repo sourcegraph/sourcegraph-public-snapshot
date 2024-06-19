@@ -43,22 +43,12 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
 
         setInvitesSendingStatus('sending')
         try {
-            const responses = await Promise.all(
+            await Promise.all(
                 emailAddresses.map(emailAddress =>
                     sendInviteMutation.mutateAsync.call(undefined, { email: emailAddress, role: 'member' })
                 )
             )
-            if (responses.some(response => response.status !== 200)) {
-                const responsesText = await Promise.all(responses.map(response => response.text()))
-                setInvitesSendingStatus('error')
-                setInvitesSendingErrorMessage(`Error sending invites: ${responsesText.join(', ')}`)
-                telemetryRecorder.recordEvent('cody.team.sendInvites', 'error', {
-                    metadata: { count: emailAddresses.length, softError: 1 },
-                    privateMetadata: { teamId, emailAddresses },
-                })
 
-                return
-            }
             setInvitesSendingStatus('success')
             setInvitesSentCount(emailAddresses.length)
             telemetryRecorder.recordEvent('cody.team.sendInvites', 'success', {
