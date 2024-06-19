@@ -93,6 +93,9 @@ type SubscriptionsServiceClient interface {
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
@@ -250,6 +253,9 @@ type SubscriptionsServiceHandler interface {
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)

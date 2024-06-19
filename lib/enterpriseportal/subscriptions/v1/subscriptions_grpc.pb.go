@@ -51,6 +51,9 @@ type SubscriptionsServiceClient interface {
 	UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
 	ArchiveEnterpriseSubscription(ctx context.Context, in *ArchiveEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error)
@@ -161,6 +164,9 @@ type SubscriptionsServiceServer interface {
 	UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
 	ArchiveEnterpriseSubscription(context.Context, *ArchiveEnterpriseSubscriptionRequest) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error)

@@ -49,6 +49,9 @@ service SubscriptionsService {
 
   // ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
   // subscription. This is a permanent operation, and cannot be undone.
+  //
+  // Archiving a subscription also immediately and permanently revokes all
+  // associated licenses.
   rpc ArchiveEnterpriseSubscription(ArchiveEnterpriseSubscriptionRequest) returns (ArchiveEnterpriseSubscriptionResponse) {
     option idempotency_level = IDEMPOTENT;
   }
