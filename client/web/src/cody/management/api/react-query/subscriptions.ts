@@ -86,7 +86,7 @@ export const usePreviewCreateTeam = (): UseMutationResult<PreviewResult | undefi
     useMutation({
         mutationFn: async requestBody => {
             const response = await callCodyProApi(Client.previewCreateTeam(requestBody))
-            return (await response.json()) as PreviewResult
+            return response.json()
         },
     })
 
