@@ -72,12 +72,12 @@ var (
 // * Each alert level has a receiver, which has configuration for all channels for that level.
 // * Each alert level and owner combination has a receiver and route, which has configuration for all channels for that filter.
 // * Additional routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
-func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]*amconfig.Receiver, []*amconfig.Route) {
+func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]amconfig.Receiver, []*amconfig.Route) {
 	// Receivers must be uniquely named. They route
 	var (
-		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
-		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
-		additionalReceivers = map[string]*amconfig.Receiver{
+		warningReceiver     = amconfig.Receiver{Name: alertmanagerWarningReceiver}
+		criticalReceiver    = amconfig.Receiver{Name: alertmanagerCriticalReceiver}
+		additionalReceivers = map[string]amconfig.Receiver{
 			// stub receiver, for routes that do not have a configured receiver
 			alertmanagerNoopReceiver: {
 				Name: alertmanagerNoopReceiver,
@@ -134,7 +134,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 	// Convert site configuration alerts to Alertmanager configuration
 	for i, alert := range newAlerts {
-		var receiver *amconfig.Receiver
+		var receiver amconfig.Receiver
 		var activeColor string
 		if alert.Level == "critical" {
 			receiver = criticalReceiver
@@ -158,7 +158,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 			if r, exists := additionalReceivers[receiverName]; exists {
 				receiver = r
 			} else {
-				receiver = &amconfig.Receiver{Name: receiverName}
+				receiver = amconfig.Receiver{Name: receiverName}
 				additionalReceivers[receiverName] = receiver
 				additionalRoutes = append(additionalRoutes, &amconfig.Route{
 					Receiver: receiverName,
@@ -342,7 +342,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				continue
 			}
 			receiver.WebhookConfigs = append(receiver.WebhookConfigs, &amconfig.WebhookConfig{
-				URL: &amconfig.URL{URL: u},
+				URL: &amconfig.SecretURL{URL: u},
 				HTTPConfig: &commoncfg.HTTPClientConfig{
 					BasicAuth: &commoncfg.BasicAuth{
 						Username: notifier.Webhook.Username,
@@ -360,7 +360,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 		}
 	}
 
-	var additionalReceiversSlice []*amconfig.Receiver
+	var additionalReceiversSlice []amconfig.Receiver
 	for _, r := range additionalReceivers {
 		additionalReceiversSlice = append(additionalReceiversSlice, r)
 	}
