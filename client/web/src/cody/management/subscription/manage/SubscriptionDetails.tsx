@@ -95,7 +95,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                     </LoadingIconButton>
                 ) : (
                     <>
-                        <Button variant="secondary" onClick={() => setIsConfirmationModalVisible(true)}>
+                        <Button variant="secondary" outline={true} onClick={() => setIsConfirmationModalVisible(true)}>
                             <Icon aria-hidden={true} svgPath={mdiCancel} className="mr-1" />
                             Cancel subscription
                         </Button>
