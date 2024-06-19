@@ -214,6 +214,7 @@ ts_project(
         "src/cody/components/CodyLogo.tsx",
         "src/cody/components/CodyMarketingPage/CodyMarketingPage.tsx",
         "src/cody/components/CodyMarketingPage/index.ts",
+        "src/cody/components/CodyProBadgeDeck.tsx",
         "src/cody/components/FileContentEditor.ts",
         "src/cody/components/GettingStarted.tsx",
         "src/cody/components/HistoryList/HistoryList.tsx",
