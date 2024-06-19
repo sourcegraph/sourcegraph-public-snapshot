@@ -1022,7 +1022,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
 
-	symbols = make([]*scip.Symbol, 0)
+	symbols = []*scip.Symbol{}
 	var parseFail *scip.Occurrence = nil
 
 	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
@@ -1056,7 +1056,7 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 	filePath string,
 	candidateFile candidateFile,
 ) []SyntacticMatch {
-	results := make([]SyntacticMatch, 0)
+	results := []SyntacticMatch{}
 
 	document, docErr := s.SCIPDocument(ctx, uploadId, filePath)
 	if docErr != nil {
