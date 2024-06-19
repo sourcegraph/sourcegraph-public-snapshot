@@ -29,7 +29,6 @@ func runCmd(logger log.Logger, errs chan<- error, cmd *exec.Cmd) {
 			logger.Info(line)
 		}
 	}); err != nil {
-
 		commandLog.Error("command exited", log.Error(err))
 		errs <- err
 		return
