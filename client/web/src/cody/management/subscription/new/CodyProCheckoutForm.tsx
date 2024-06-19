@@ -311,7 +311,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                             Purchase {planChange.seatCountDiff} {pluralize('seat', planChange.seatCountDiff)}
                         </H2>
                         <Form onSubmit={addSeats ? handlePlanChangeSubmit : handleSubscribeSubmit}>
-                            {addSeats && subscription /* TypeScript needs this */ ? (
+                            {addSeats && subscription ? (
                                 <Collapse
                                     isOpen={isCardAndAddressSectionExpanded}
                                     onOpenChange={setIsCardAndAddressSectionExpanded}
