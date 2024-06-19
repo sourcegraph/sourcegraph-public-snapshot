@@ -40,108 +40,97 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     isAdmin,
     telemetryRecorder,
 }) => {
-    const [loading, setLoading] = useState(false)
     const [actionResult, setActionResult] = useState<{ message: string; isError: boolean } | null>(null)
     const updateTeamMemberMutation = useUpdateTeamMember()
     const cancelInviteMutation = useCancelInvite()
     const resendInviteMutation = useResendInvite()
+    const isLoading = updateTeamMemberMutation.status === 'pending' || cancelInviteMutation.status === 'pending' || resendInviteMutation.status === 'pending'
+
     const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeAdmin', 'click', {
-                    privateMetadata: { teamId, accountId },
-                })
+            if (isLoading) {
+                return
+            }
 
-                try {
-                    await updateTeamMemberMutation.mutateAsync.call(undefined, {
-                        updateMemberRole: { accountId, teamRole: newRole },
-                    })
-                    setLoading(false)
-                    setActionResult({ message: 'Team role updated.', isError: false })
-                } catch (error) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
-                        isError: true,
-                    })
-                }
+            telemetryRecorder.recordEvent('cody.team.revokeAdmin', 'click', {
+                privateMetadata: { teamId, accountId },
+            })
+            try {
+                await updateTeamMemberMutation.mutateAsync.call(undefined, {
+                    updateMemberRole: { accountId, teamRole: newRole },
+                })
+                setActionResult({ message: 'Team role updated.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't modify the user's role. The error was: "${error}". Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [loading, telemetryRecorder, teamId, updateTeamMemberMutation.mutateAsync]
+        [isLoading, updateTeamMemberMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const revokeInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
-
-                try {
-                    await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
-                    setLoading(false)
-                    setActionResult({ message: 'Invite revoked.', isError: false })
-                } catch (error) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't revoke the invite. The error was: "${error}". Please try again later.`,
-                        isError: true,
-                    })
-                }
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.revokeInvite', 'click', { privateMetadata: { teamId } })
+            try {
+                await cancelInviteMutation.mutateAsync.call(undefined, { teamId, inviteId })
+                setActionResult({ message: 'Invite revoked.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't revoke the invite. The error was: "${error}". Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [loading, telemetryRecorder, teamId, cancelInviteMutation.mutateAsync]
+        [isLoading, cancelInviteMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const resendInvite = useCallback(
         async (inviteId: string): Promise<void> => {
-            if (!loading) {
-                // Avoids sending multiple requests at once
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
 
-                try {
-                    await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
-                    setLoading(false)
-                    setActionResult({ message: 'Invite resent.', isError: false })
-                } catch (error) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't resend the invite (${error}). Please try again later.`,
-                        isError: true,
-                    })
-                }
+            try {
+                await resendInviteMutation.mutateAsync.call(undefined, { inviteId })
+                setActionResult({ message: 'Invite resent.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't resend the invite (${error}). Please try again later.`,
+                    isError: true,
+                })
             }
 
             telemetryRecorder.recordEvent('cody.team.resendInvite', 'click', { privateMetadata: { teamId } })
         },
-        [loading, telemetryRecorder, teamId, resendInviteMutation.mutateAsync]
+        [isLoading, resendInviteMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const removeMember = useCallback(
         async (accountId: string): Promise<void> => {
-            if (!loading) {
-                setLoading(true)
-                telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
+            if (isLoading) {
+                return
+            }
+            telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                try {
-                    await updateTeamMemberMutation.mutateAsync.call(undefined, {
-                        removeMember: { accountId, teamRole: 'member' },
-                    })
-                    setLoading(false)
-                    setActionResult({ message: 'Team member removed.', isError: false })
-                } catch (error) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't remove the team member. (${error}). Please try again later.`,
-                        isError: true,
-                    })
-                }
+            try {
+                await updateTeamMemberMutation.mutateAsync.call(undefined, {
+                    removeMember: { accountId, teamRole: 'member' },
+                })
+                setActionResult({ message: 'Team member removed.', isError: false })
+            } catch (error) {
+                setActionResult({
+                    message: `We couldn't remove the team member. (${error}). Please try again later.`,
+                    isError: true,
+                })
             }
         },
-        [loading, telemetryRecorder, teamId, updateTeamMemberMutation.mutateAsync]
+        [isLoading, updateTeamMemberMutation.mutateAsync, telemetryRecorder, teamId]
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])
