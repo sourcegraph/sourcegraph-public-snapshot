@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 
 import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
 
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { codyProRoutes } from './cody/codyProRoutes'
@@ -12,7 +11,6 @@ import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
@@ -245,20 +243,6 @@ export const routes: RouteObject[] = [
         ),
     },
     {
-        path: PageRoutes.SearchConsole,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <SearchConsolePageOrRedirect
-                        {...props}
-                        telemetryRecorder={props.platformContext.telemetryRecorder}
-                    />
-                )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
-            />
-        ),
-    },
-    {
         path: PageRoutes.Welcome,
         // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
         element: <Navigate replace={true} to={PageRoutes.Search} />,
@@ -440,16 +424,6 @@ export const routes: RouteObject[] = [
         handle: { isRepoContainer: true },
     },
 ]
-
-function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
-    const showMultilineSearchConsole = useExperimentalFeatures(features => features.showMultilineSearchConsole)
-
-    return showMultilineSearchConsole ? (
-        <SearchConsolePage {...props} />
-    ) : (
-        <Navigate replace={true} to={PageRoutes.Search} />
-    )
-}
 
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
     const { isCodeSearchEnabled } = props.licenseFeatures

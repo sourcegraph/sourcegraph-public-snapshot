@@ -1419,7 +1419,6 @@ ts_project(
         "src/savedSearches/SavedSearchUpdateForm.tsx",
         "src/search-jobs/utility.ts",
         "src/search/QuickLinks.tsx",
-        "src/search/SearchConsolePage.tsx",
         "src/search/SearchPageWrapper.tsx",
         "src/search/autocompletion/hooks.ts",
         "src/search/autocompletion/source.ts",
