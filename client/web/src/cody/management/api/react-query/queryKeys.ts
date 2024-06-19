@@ -4,7 +4,8 @@ export const queryKeys = {
     subscriptions: {
         all: ['subscription'] as const,
         subscription: () => [...queryKeys.subscriptions.all, 'current-subscription'] as const,
-        subscriptionSummary: () => [...queryKeys.subscriptions.all, 'current-subscription-summary'] as const,
+        subscriptionSummary: () => [...queryKeys.subscriptions.subscription(), 'current-subscription-summary'] as const,
+        subscriptionInvoices: () => [...queryKeys.subscriptions.subscription(), 'invoices'] as const,
     },
     teams: {
         all: ['team'] as const,
