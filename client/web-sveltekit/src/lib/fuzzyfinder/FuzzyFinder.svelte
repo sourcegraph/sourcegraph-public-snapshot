@@ -13,6 +13,7 @@
 
     import { isMacPlatform } from '@sourcegraph/common'
 
+    import { dirname } from '$lib/common'
     import { nextSibling, onClickOutside, previousSibling } from '$lib/dom'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
@@ -20,6 +21,7 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import EmphasizedLabel from '$lib/search/EmphasizedLabel.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
+    import { displayRepoName } from '$lib/shared'
     import TabsHeader, { type Tab } from '$lib/TabsHeader.svelte'
     import { Input } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -181,6 +183,8 @@
 </script>
 
 <dialog bind:this={dialog} on:close>
+    <!-- We cannot use the `use:onClickOutside` directive on the dialog element itself because the element will take
+         up the entire viewport and the event will never be triggered. -->
     <div class="content" use:onClickOutside on:click-outside={() => dialog?.close()}>
         <header>
             <TabsHeader
@@ -193,9 +197,11 @@
                     input?.focus()
                 }}
             />
-            <Button variant="icon" on:click={() => dialog?.close()} size="sm">
-                <Icon icon={ILucideX} aria-label="Close" inline />
-            </Button>
+            <span class="close">
+                <Button variant="icon" on:click={() => dialog?.close()} size="sm">
+                    <Icon icon={ILucideX} aria-label="Close" />
+                </Button>
+            </span>
         </header>
         <main>
             <div class="input">
@@ -223,41 +229,51 @@
             <ul role="listbox" bind:this={listbox} aria-label="Search results">
                 {#if $source.value}
                     {#each $source.value as item, index (item.item)}
+                        {@const repo = item.item.repository.name}
+                        {@const displayRepo = displayRepoName(repo)}
                         <li role="option" aria-selected={selectedOption === index} data-index={index}>
                             {#if item.item.type === 'repo'}
+                                {@const matchOffset = repo.length - displayRepo.length}
                                 <a href="/{item.item.repository.name}" on:click={handleClick}>
-                                    <CodeHostIcon repository={item.item.repository.name} />
-                                    <span
+                                    <span class="icon"><CodeHostIcon repository={item.item.repository.name} /></span>
+                                    <span class="label"
                                         ><EmphasizedLabel
-                                            label={item.item.repository.name}
+                                            label={displayRepo}
                                             matches={item.positions}
+                                            offset={matchOffset}
                                         /></span
                                     >
+                                    <span class="info">{repo}</span>
                                 </a>
                             {:else if item.item.type == 'symbol'}
                                 <a href={item.item.symbol.location.url} on:click={handleClick}>
-                                    <SymbolKindIcon symbolKind={item.item.symbol.kind} />
-                                    <span
+                                    <span class="icon"><SymbolKindIcon symbolKind={item.item.symbol.kind} /></span>
+                                    <span class="label"
                                         ><EmphasizedLabel
                                             label={item.item.symbol.name}
                                             matches={item.positions}
                                         /></span
                                     >
-                                    <small>-</small>
-                                    <FileIcon file={item.item.file} inline />
-                                    <small
-                                        >{#if !useScope}{item.item.repository.name}/{/if}{item.item.file.path}</small
+                                    <span class="info mono"
+                                        >{#if !useScope}{displayRepo} &middot; {/if}{item.item.file.path}</span
                                     >
                                 </a>
                             {:else if item.item.type == 'file'}
+                                {@const fileName = item.item.file.name}
+                                {@const folderName = dirname(item.item.file.path)}
                                 <a href={item.item.file.url} on:click={handleClick}>
-                                    <FileIcon file={item.item.file} inline />
-                                    <span
-                                        >{#if !useScope}{item.item.repository.name}/{/if}<EmphasizedLabel
-                                            label={item.item.file.path}
+                                    <span class="icon"><FileIcon file={item.item.file} inline /></span>
+                                    <span class="label"
+                                        ><EmphasizedLabel
+                                            label={fileName}
                                             matches={item.positions}
+                                            offset={folderName.length + 1}
                                         /></span
                                     >
+                                    <span class="info mono">
+                                        {#if !useScope}{displayRepo} &middot; {/if}
+                                        <EmphasizedLabel label={folderName} matches={item.positions} />
+                                    </span>
                                 </a>
                             {/if}
                         </li>
@@ -274,14 +290,18 @@
     dialog {
         width: 80vw;
         height: 80vh;
+        border: none;
+        border-radius: 0.75rem;
         padding: 0;
         overflow: hidden;
         border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        background-color: var(--body-bg);
+        background-color: var(--color-bg-1);
+        margin-top: 2rem;
+
+        box-shadow: var(--fuzzy-finder-shadow);
 
         &::backdrop {
-            background-color: var(--modal-bg);
+            background: var(--fuzzy-finder-backdrop);
         }
     }
 
@@ -316,14 +336,18 @@
 
         [role='option'] {
             a {
-                display: flex;
-                align-items: center;
-                padding: 0.25rem 1rem;
+                display: grid;
+                grid-template-columns: [icon] auto [label] 1fr;
+                grid-template-rows: auto;
+                grid-template-areas: 'icon label' '. info';
+                column-gap: 0.5rem;
+
                 cursor: pointer;
-                color: var(--body-color);
-                gap: 0.25rem;
+                padding: 0.25rem 0.75rem;
 
                 text-decoration: none;
+                color: var(--body-color);
+                font-size: var(--font-size-small);
             }
 
             small {
@@ -333,6 +357,24 @@
             &[aria-selected='true'] a,
             a:hover {
                 background-color: var(--color-bg-2);
+            }
+
+            .icon {
+                grid-area: icon;
+            }
+
+            .label {
+                grid-area: label;
+            }
+
+            .info {
+                grid-area: info;
+                color: var(--text-muted);
+                font-size: var(--font-size-extra-small);
+
+                &.mono {
+                    font-family: var(--code-font-family);
+                }
             }
         }
 
@@ -357,6 +399,14 @@
             width: 100%;
             bottom: 0;
             left: 0;
+        }
+
+        .close {
+            color: var(--icon-color);
+            position: fixed;
+            right: 2rem;
+            background-color: var(--color-bg-1);
+            border-radius: 50%;
         }
     }
 </style>
