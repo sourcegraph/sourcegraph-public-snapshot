@@ -3,10 +3,11 @@ package embeddings
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"math"
 	// nosemgrep: security-semgrep-rules.semgrep-rules.golang.math-random-used
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -83,7 +84,9 @@ func (s sourcegraphClient) GenerateEmbeddings(ctx context.Context, request codyg
 		if res, lastErr := s.fetch(req, request.Model, len(request.Input)); lastErr == nil {
 			return res, 0, nil
 		}
-		time.Sleep(backoffInterval(i))
+		sleep := backoffInterval(i)
+		fmt.Println(i, sleep)
+		time.Sleep(sleep)
 	}
 
 	return nil, 0, lastErr
@@ -93,7 +96,7 @@ func backoffInterval(attempt int) time.Duration {
 	// exponential backoff
 	dur := time.Duration(math.Pow(5, float64(attempt))) * time.Millisecond
 	// jitter
-	dur += time.Duration(rand.Intn(int(dur))) - dur/2
+	dur += time.Duration(rand.Int32N(int32(dur))) - dur/2
 	return dur
 }
 
