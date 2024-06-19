@@ -1474,7 +1474,7 @@ func (e *httpError) Error() string {
 }
 
 func (e *httpError) Unwrap() error {
-	return errors.Newf("Bitbucket API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return errors.Newf(e.Error())
 }
 
 func (e *httpError) Unauthorized() bool {
