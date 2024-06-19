@@ -177,6 +177,8 @@ export class PanelResizeHandleRegistry {
             // but the same set of active handles should be locked until the pointer is released
             PanelResizeHandleRegistry.recalculateIntersectingHandles({ target, x, y })
         } else {
+            // These are required to prevent default browser behavior when dragging started not precisely on the handle
+            // For example when starting to drag the history panel up, the file content would be selected without these
             event.preventDefault()
             event.stopImmediatePropagation()
         }
