@@ -47,6 +47,12 @@ service SubscriptionsService {
     option idempotency_level = IDEMPOTENT;
   }
 
+  // ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
+  // subscription. This is a permanent operation, and cannot be undone.
+  rpc ArchiveEnterpriseSubscription(ArchiveEnterpriseSubscriptionRequest) returns (ArchiveEnterpriseSubscriptionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
   // CreateEnterpriseSubscription creates an Enterprise subscription.
   rpc CreateEnterpriseSubscription(CreateEnterpriseSubscriptionRequest) returns (CreateEnterpriseSubscriptionResponse) {
     // Not idempotent - we could implement https://google.aip.dev/155 for
@@ -316,6 +322,13 @@ message UpdateEnterpriseSubscriptionResponse {
   // The updated subscription.
   EnterpriseSubscription subscription = 1;
 }
+
+message ArchiveEnterpriseSubscriptionRequest {
+  // The ID of the subscription to archive.
+  string subscription_id = 1;
+}
+
+message ArchiveEnterpriseSubscriptionResponse {}
 
 message CreateEnterpriseSubscriptionRequest {
   // The subscription to create.
