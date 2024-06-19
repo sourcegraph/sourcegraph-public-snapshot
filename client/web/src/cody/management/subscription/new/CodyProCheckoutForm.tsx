@@ -310,76 +310,110 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                         <H2 className="font-medium">
                             Purchase {planChange.seatCountDiff} {pluralize('seat', planChange.seatCountDiff)}
                         </H2>
-                        <Form onSubmit={addSeats ? handlePlanChangeSubmit : handleSubscribeSubmit}>
-                            {addSeats && subscription ? (
-                                <Collapse
-                                    isOpen={isCardAndAddressSectionExpanded}
-                                    onOpenChange={setIsCardAndAddressSectionExpanded}
-                                    openByDefault={false}
-                                >
-                                    <CollapseHeader
-                                        as={Button}
-                                        variant="secondary"
-                                        outline={true}
-                                        className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                        {addSeats ? (
+                            <Form onSubmit={handlePlanChangeSubmit}>
+                                {!!subscription && (
+                                    <Collapse
+                                        isOpen={isCardAndAddressSectionExpanded}
+                                        onOpenChange={setIsCardAndAddressSectionExpanded}
+                                        openByDefault={false}
                                     >
-                                        <H4 className="m-0">Show credit card and billing info</H4>
-                                        <Icon
-                                            aria-hidden={true}
-                                            svgPath={isCardAndAddressSectionExpanded ? mdiChevronUp : mdiChevronDown}
-                                            className="mr-1"
-                                            size="md"
-                                        />
-                                    </CollapseHeader>
-                                    <CollapsePanel>
-                                        <PaymentMethodPreview
-                                            paymentMethod={subscription.paymentMethod}
-                                            editButton={false}
-                                            className="mb-4"
-                                        />
-                                        <BillingAddressPreview subscription={subscription} isEditable={false} />
-                                    </CollapsePanel>
-                                </Collapse>
-                            ) : (
-                                <>
-                                    <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
-
-                                    <Text className="mb-2 font-medium text-sm">Email</Text>
-                                    <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
-
-                                    <StripeAddressElement onFocus={() => setErrorMessage('')} />
-                                </>
-                            )}
-                            {errorMessage && (
-                                <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
-                            )}
-
-                            <Button
-                                variant="primary"
-                                disabled={submitting}
-                                className={classNames('d-block w-100 mb-4', styles.payButton)}
-                                type="submit"
-                            >
-                                {submitting ? (
-                                    <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
-                                ) : addSeats ? (
-                                    'Confirm plan changes'
-                                ) : (
-                                    'Subscribe'
+                                        <CollapseHeader
+                                            as={Button}
+                                            variant="secondary"
+                                            outline={true}
+                                            className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                                        >
+                                            <H4 className="m-0">Show credit card and billing info</H4>
+                                            <Icon
+                                                aria-hidden={true}
+                                                svgPath={
+                                                    isCardAndAddressSectionExpanded ? mdiChevronUp : mdiChevronDown
+                                                }
+                                                className="mr-1"
+                                                size="md"
+                                            />
+                                        </CollapseHeader>
+                                        <CollapsePanel>
+                                            <PaymentMethodPreview
+                                                paymentMethod={subscription.paymentMethod}
+                                                editButton={false}
+                                                className="mb-4"
+                                            />
+                                            <BillingAddressPreview subscription={subscription} isEditable={false} />
+                                        </CollapsePanel>
+                                    </Collapse>
                                 )}
-                            </Button>
+                                {errorMessage && (
+                                    <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
+                                )}
 
-                            <div>
-                                <Text size="small" className={styles.disclaimer}>
-                                    By clicking the button, you agree to the{' '}
-                                    <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
-                                    <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription will
-                                    renew automatically by charging your payment method on file until you{' '}
-                                    <Link to="/docs/cody/usage-and-pricing#downgrading-from-pro-to-free">cancel</Link>.
-                                    You may cancel at any time prior to the next billing cycle.
-                                </Text>
-                            </div>
-                        </Form>
+                                <Button
+                                    variant="primary"
+                                    disabled={submitting}
+                                    className={classNames('d-block w-100 mb-4', styles.payButton)}
+                                    type="submit"
+                                >
+                                    {submitting ? (
+                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                    ) : (
+                                        'Confirm plan changes'
+                                    )}
+                                </Button>
+
+                                <div>
+                                    <Text size="small" className={styles.disclaimer}>
+                                        By clicking the button, you agree to the{' '}
+                                        <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
+                                        <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription
+                                        will renew automatically by charging your payment method on file until you{' '}
+                                        <Link to="/docs/cody/usage-and-pricing#downgrading-from-pro-to-free">
+                                            cancel
+                                        </Link>
+                                        . You may cancel at any time prior to the next billing cycle.
+                                    </Text>
+                                </div>
+                            </Form>
+                        ) : (
+                            <Form onSubmit={handleSubscribeSubmit}>
+                                <StripeCardDetails className="mb-4" onFocus={() => setErrorMessage('')} />
+
+                                <Text className="mb-2 font-medium text-sm">Email</Text>
+                                <Text className="ml-3 mb-4 font-medium text-sm">{customerEmail || ''} </Text>
+
+                                <StripeAddressElement onFocus={() => setErrorMessage('')} />
+
+                                {errorMessage && (
+                                    <div className={classNames(styles.paymentDataErrorMessage)}>{errorMessage}</div>
+                                )}
+
+                                <Button
+                                    variant="primary"
+                                    disabled={submitting}
+                                    className={classNames('d-block w-100 mb-4', styles.payButton)}
+                                    type="submit"
+                                >
+                                    {submitting ? (
+                                        <LoadingSpinner className={styles.lineHeightLoadingSpinner} />
+                                    ) : (
+                                        'Subscribe'
+                                    )}
+                                </Button>
+
+                                <div>
+                                    <Text size="small" className={styles.disclaimer}>
+                                        By clicking the button, you agree to the{' '}
+                                        <Link to="/terms/cloud">Terms of Service</Link> and acknowledge that the{' '}
+                                        <Link to="/terms/privacy">Privacy Statement</Link> applies. Your subscription
+                                        will renew automatically by charging your payment method on file until you{' '}
+                                        <Link to="/docs/cody/usage-and-pricing#downgrading-from-pro-to-free">
+                                            cancel
+                                        </Link>
+                                        . You may cancel at any time prior to the next billing cycle.
+                                    </Text>
+                                </div>
+                            </Form>
+                        )}
                     </div>
                 </Grid>
             </Container>
@@ -397,7 +431,7 @@ const SeatCountSelector: React.FunctionComponent<{
     <>
         <H2 className="font-medium mb-3c">{header}</H2>
         <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
-            <div className="flex-1">$9 per seat / month</div>
+            <div className="flex-1">${SEAT_PRICE} per seat / month</div>
             <Button
                 disabled={current === min}
                 onClick={() => setCount(current > min ? current - 1 : current)}
