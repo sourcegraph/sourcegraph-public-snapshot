@@ -113,12 +113,8 @@ func findCandidateOccurrencesViaSearch(
 }
 
 func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
-	if len(symbol.Descriptors) > 0 {
-		if symbol.Descriptors[0].Suffix == scip.Descriptor_Local {
-			return "", false
-		}
-		return symbol.Descriptors[len(symbol.Descriptors)-1].Name, true
-	} else {
+	if len(symbol.Descriptors) == 0 || symbol.Descriptors[0].Suffix == scip.Descriptor_Local {
 		return "", false
 	}
+	return symbol.Descriptors[len(symbol.Descriptors)-1].Name, true
 }
