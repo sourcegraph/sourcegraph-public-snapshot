@@ -49,11 +49,13 @@ type awsBedrockAnthropicCompletionStreamClient struct {
 
 func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := c.makeRequest(ctx, requestParams, version, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "making request")
@@ -82,12 +84,14 @@ func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 
 func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := a.makeRequest(ctx, requestParams, version, true)
 	if err != nil {
 		return errors.Wrap(err, "making request")
