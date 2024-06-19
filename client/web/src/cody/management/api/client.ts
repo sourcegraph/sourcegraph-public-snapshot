@@ -52,7 +52,7 @@ export module Client {
         return { method: 'GET', urlSuffix: '/team/current/members' }
     }
 
-    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<types.ListTeamMembersResponse> {
+    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<unknown> {
         return { method: 'PATCH', urlSuffix: '/team/current/members', requestBody }
     }
 

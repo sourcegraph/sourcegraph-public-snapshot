@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query'
 
 import { Client } from '../client'
-import type { ListTeamMembersResponse, UpdateTeamMembersRequest, TeamMember } from '../types'
+import type { ListTeamMembersResponse, UpdateTeamMembersRequest } from '../types'
 
 import { callCodyProApi } from './callCodyProApi'
 import { queryKeys } from './queryKeys'
@@ -21,15 +21,10 @@ export const useTeamMembers = (): UseQueryResult<ListTeamMembersResponse | undef
         },
     })
 
-export const useUpdateTeamMember = (): UseMutationResult<TeamMember[], Error, UpdateTeamMembersRequest> => {
+export const useUpdateTeamMember = (): UseMutationResult<unknown, Error, UpdateTeamMembersRequest> => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async requestBody => {
-            const response = await callCodyProApi(Client.updateTeamMember(requestBody))
-            return response?.json()
-        },
-        onSuccess: (data: TeamMember[]) => {
-            queryClient.setQueryData(queryKeys.teams.teamMembers(), data)
-        },
+        mutationFn: async requestBody => callCodyProApi(Client.updateTeamMember(requestBody)),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.teams.teamMembers() }),
     })
 }
