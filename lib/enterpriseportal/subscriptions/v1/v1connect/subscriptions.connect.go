@@ -51,6 +51,9 @@ const (
 	// SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionsService's UpdateEnterpriseSubscription RPC.
 	SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	// SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure is the fully-qualified name of the
+	// SubscriptionsService's ArchiveEnterpriseSubscription RPC.
+	SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ArchiveEnterpriseSubscription"
 	// SubscriptionsServiceCreateEnterpriseSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionsService's CreateEnterpriseSubscription RPC.
 	SubscriptionsServiceCreateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
@@ -68,6 +71,7 @@ var (
 	subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscriptionLicense")
 	subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("RevokeEnterpriseSubscriptionLicense")
 	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
+	subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("ArchiveEnterpriseSubscription")
 	subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscription")
 	subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateSubscriptionMembership")
 )
@@ -95,6 +99,12 @@ type SubscriptionsServiceClient interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
+	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
+	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
@@ -154,6 +164,13 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
+		archiveEnterpriseSubscription: connect.NewClient[v1.ArchiveEnterpriseSubscriptionRequest, v1.ArchiveEnterpriseSubscriptionResponse](
+			httpClient,
+			baseURL+SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure,
+			connect.WithSchema(subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
+		),
 		createEnterpriseSubscription: connect.NewClient[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse](
 			httpClient,
 			baseURL+SubscriptionsServiceCreateEnterpriseSubscriptionProcedure,
@@ -178,6 +195,7 @@ type subscriptionsServiceClient struct {
 	createEnterpriseSubscriptionLicense *connect.Client[v1.CreateEnterpriseSubscriptionLicenseRequest, v1.CreateEnterpriseSubscriptionLicenseResponse]
 	revokeEnterpriseSubscriptionLicense *connect.Client[v1.RevokeEnterpriseSubscriptionLicenseRequest, v1.RevokeEnterpriseSubscriptionLicenseResponse]
 	updateEnterpriseSubscription        *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
+	archiveEnterpriseSubscription       *connect.Client[v1.ArchiveEnterpriseSubscriptionRequest, v1.ArchiveEnterpriseSubscriptionResponse]
 	createEnterpriseSubscription        *connect.Client[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse]
 	updateSubscriptionMembership        *connect.Client[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse]
 }
@@ -218,6 +236,12 @@ func (c *subscriptionsServiceClient) UpdateEnterpriseSubscription(ctx context.Co
 	return c.updateEnterpriseSubscription.CallUnary(ctx, req)
 }
 
+// ArchiveEnterpriseSubscription calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.ArchiveEnterpriseSubscription.
+func (c *subscriptionsServiceClient) ArchiveEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error) {
+	return c.archiveEnterpriseSubscription.CallUnary(ctx, req)
+}
+
 // CreateEnterpriseSubscription calls
 // enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscription.
 func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Context, req *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error) {
@@ -253,6 +277,12 @@ type SubscriptionsServiceHandler interface {
 	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
 	// Only properties specified by the update_mask are applied.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
+	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
+	// subscription. This is a permanent operation, and cannot be undone.
+	//
+	// Archiving a subscription also immediately and permanently revokes all
+	// associated licenses.
+	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
 	// UpdateSubscriptionMembership updates a subscription membership. It creates
@@ -307,6 +337,13 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionsServiceArchiveEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure,
+		svc.ArchiveEnterpriseSubscription,
+		connect.WithSchema(subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
+	)
 	subscriptionsServiceCreateEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
 		SubscriptionsServiceCreateEnterpriseSubscriptionProcedure,
 		svc.CreateEnterpriseSubscription,
@@ -334,6 +371,8 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 			subscriptionsServiceRevokeEnterpriseSubscriptionLicenseHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceUpdateEnterpriseSubscriptionProcedure:
 			subscriptionsServiceUpdateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure:
+			subscriptionsServiceArchiveEnterpriseSubscriptionHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceCreateEnterpriseSubscriptionProcedure:
 			subscriptionsServiceCreateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceUpdateSubscriptionMembershipProcedure:
@@ -369,6 +408,10 @@ func (UnimplementedSubscriptionsServiceHandler) RevokeEnterpriseSubscriptionLice
 
 func (UnimplementedSubscriptionsServiceHandler) UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscription is not implemented"))
+}
+
+func (UnimplementedSubscriptionsServiceHandler) ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.ArchiveEnterpriseSubscription is not implemented"))
 }
 
 func (UnimplementedSubscriptionsServiceHandler) CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error) {
