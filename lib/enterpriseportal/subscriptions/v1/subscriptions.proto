@@ -326,6 +326,8 @@ message UpdateEnterpriseSubscriptionResponse {
 message ArchiveEnterpriseSubscriptionRequest {
   // The ID of the subscription to archive.
   string subscription_id = 1;
+  // Human-readable explanation for revoking the license.
+  string reason = 2;
 }
 
 message ArchiveEnterpriseSubscriptionResponse {}

@@ -150,6 +150,7 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			httpClient,
 			baseURL+SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure,
 			connect.WithSchema(subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		createEnterpriseSubscription: connect.NewClient[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse](
@@ -301,6 +302,7 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		SubscriptionsServiceArchiveEnterpriseSubscriptionProcedure,
 		svc.ArchiveEnterpriseSubscription,
 		connect.WithSchema(subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	subscriptionsServiceCreateEnterpriseSubscriptionHandler := connect.NewUnaryHandler(
