@@ -99,6 +99,10 @@ TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
 before stabilizing this API.
 """
 type CodeGraphData implements Node {
+    """
+    ID of this object that can be used to identify the CodeGraphData
+    for pagination in the codeGraphData field.
+    """
     id: ID!
 
     """
