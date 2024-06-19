@@ -1126,7 +1126,7 @@ func (s *Service) SyntacticUsages(
 	}
 
 	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(
-		ctx, s.searchClient, s.logger, trace,
+		ctx, s.searchClient, trace,
 		repo, commit, searchSymbol, langs[0],
 	)
 	if searchErr != nil {

@@ -3,12 +3,13 @@ package codenav
 import (
 	"context"
 	"fmt"
+
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,7 +28,6 @@ type candidateFile struct {
 func findCandidateOccurrencesViaSearch(
 	ctx context.Context,
 	client searchclient.SearchClient,
-	logger log.Logger,
 	trace observation.TraceLogger,
 	repo types.Repo,
 	commit api.CommitID,
@@ -60,24 +60,17 @@ func findCandidateOccurrencesViaSearch(
 		return resultMap, 0, err
 	}
 
-	nonFileMatches := 0
-	inconsistentFilepaths := 0
 	matchCount := 0
 
 	for _, streamResult := range stream.Results {
 		fileMatch, ok := streamResult.(*result.FileMatch)
 		if !ok {
-			nonFileMatches += 1
 			continue
 		}
 		path := fileMatch.Path
 		matches := []scip.Range{}
 		for _, chunkMatch := range fileMatch.ChunkMatches {
 			for _, matchRange := range chunkMatch.Ranges {
-				if path != streamResult.Key().Path {
-					inconsistentFilepaths = 1
-					continue
-				}
 				scipRange, err := scip.NewRange([]int32{
 					int32(matchRange.Start.Line),
 					int32(matchRange.Start.Column),
@@ -85,7 +78,7 @@ func findCandidateOccurrencesViaSearch(
 					int32(matchRange.End.Column),
 				})
 				if err != nil {
-					logger.Error("Failed to create scip range from match range",
+					trace.Warn("Failed to create scip range from match range",
 						log.String("error", err.Error()),
 						log.String("matchRange", fmt.Sprintf("%+v", matchRange)),
 					)
@@ -95,19 +88,10 @@ func findCandidateOccurrencesViaSearch(
 				matches = append(matches, scipRange)
 			}
 		}
-		_, alreadyPresent := resultMap.Set(path, candidateFile{
+		resultMap.Set(path, candidateFile{
 			matches:             scip.SortRanges(matches),
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})
-		if alreadyPresent {
-			logger.Error("Saw the same filepath twice in search results", log.String("path", path))
-		}
-		if nonFileMatches != 0 {
-			logger.Error("Saw non file match in search results. The `type:file` on the query should guarantee this")
-		}
-		if inconsistentFilepaths != 0 {
-			logger.Error("Saw mismatched file paths between chunk matches in the same FileMatch. Report this to the search-platform")
-		}
 	}
 	return resultMap, matchCount, nil
 }
