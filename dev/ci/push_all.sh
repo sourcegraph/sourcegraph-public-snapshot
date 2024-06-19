@@ -167,6 +167,16 @@ honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && baz
 
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
+echo "--- :bazel::docker: Building oci_push targets"
+bazel \
+  "${bazelrc[@]}" \
+  build \
+  "${images[*]}" \
+  --stamp \
+  --workspace_status_command=./dev/bazel_stamp_vars.sh
+
+echo "--- :bash: Generating jobfile"
+
 job_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $job_file" EXIT
@@ -184,6 +194,7 @@ for target in ${images[@]}; do
 done
 
 echo "--- :bash: Generated jobfile"
+
 cat "$job_file"
 
 echo "--- :bazel::docker: Pushing images..."
