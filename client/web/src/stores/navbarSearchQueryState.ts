@@ -121,8 +121,8 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         const parsedPatternType = parsedSearchURL.patternType
         if (parsedPatternType !== undefined) {
             newState.searchPatternType = parsedPatternType
-            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make sure to
-            //  surface them in the query input itself. This includes invalid patterntypes, which should display an error.
+            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
+            // sure to surface them in the query input itself.
             if (!explicitPatternTypes.has(parsedPatternType)) {
                 query = `${query} ${FilterType.patterntype}:${parsedPatternType}`
             }
