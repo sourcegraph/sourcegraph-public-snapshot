@@ -997,7 +997,7 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 // (some broken invariant internally, network issue etc.)
 // If this function doesn't error, the returned slice is guaranteed to be non-empty
 //
-// NOTE(id: single-syntactic-upload): This function returns the uploadId in because we're
+// NOTE(id: single-syntactic-upload): This function returns the uploadID because we're
 // making the assumption that there'll only be a single syntactic upload at the root
 // directory for a particular commit.
 func (s *Service) getSyntacticSymbolsAtRange(
@@ -1007,7 +1007,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	commit api.CommitID,
 	path string,
 	symbolRange scip.Range,
-) (symbols []*scip.Symbol, uploadId int, err *SyntacticUsagesError) {
+) (symbols []*scip.Symbol, uploadID int, err *SyntacticUsagesError) {
 	syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
 	if err != nil {
 		return nil, 0, err
@@ -1053,13 +1053,13 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 func (s *Service) findSyntacticMatchesForCandidateFile(
 	ctx context.Context,
-	uploadId int,
+	uploadID int,
 	filePath string,
 	candidateFile candidateFile,
 ) ([]SyntacticMatch, *SyntacticUsagesError) {
 	results := []SyntacticMatch{}
 
-	document, docErr := s.SCIPDocument(ctx, uploadId, filePath)
+	document, docErr := s.SCIPDocument(ctx, uploadID, filePath)
 	if docErr != nil {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_NoSyntacticIndex,
@@ -1108,7 +1108,7 @@ func (s *Service) SyntacticUsages(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	symbolsAtRange, uploadId, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
+	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
@@ -1145,7 +1145,7 @@ func (s *Service) SyntacticUsages(
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
 		// We're assuming the upload we found earlier contains the relevant SCIP document
 		// see NOTE(id: single-syntactic-upload)
-		syntacticMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, uploadId, pair.Key, pair.Value)
+		syntacticMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, uploadID, pair.Key, pair.Value)
 		if err != nil {
 			// TODO: Errors that are not "no index found in the DB" should be reported
 			// TODO: Track metrics about how often this happens (GRAPH-693)
