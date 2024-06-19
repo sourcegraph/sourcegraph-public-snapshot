@@ -63,10 +63,9 @@ export const useBillingAddressStripeElementsOptions = (): StripeElementsOptions 
 interface BillingAddressProps {
     stripe: Stripe | null
     subscription: Subscription
-    editable: boolean
 }
 
-export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscription, editable }) => {
+export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscription }) => {
     const [isEditMode, setIsEditMode] = useState(false)
 
     const options = useBillingAddressStripeElementsOptions()
@@ -85,7 +84,7 @@ export const BillingAddress: React.FC<BillingAddressProps> = ({ stripe, subscrip
                 <>
                     <BillingAddressPreview
                         subscription={subscription}
-                        editButton={editable}
+                        editButton={true}
                         onButtonClick={() => setIsEditMode(true)}
                     />
                 </>

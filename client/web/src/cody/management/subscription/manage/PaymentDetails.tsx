@@ -37,7 +37,7 @@ export const PaymentDetails: React.FC<{ subscription: Subscription }> = ({ subsc
             <PaymentMethod paymentMethod={subscription.paymentMethod} />
         </div>
         <div className={styles.gridItem}>
-            <BillingAddress stripe={stripe} subscription={subscription} editable={true} />
+            <BillingAddress stripe={stripe} subscription={subscription} />
         </div>
     </Grid>
 )
