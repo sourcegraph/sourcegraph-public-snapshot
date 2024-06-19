@@ -48,29 +48,15 @@ var (
 
 	dbCommand = &cli.Command{
 		Name:  "db",
-		Usage: "Interact with local Sourcegraph databases for development",
-		UsageText: `
-# Delete test databases
-sg db delete-test-dbs
+		Usage: "Interact with local Sourcegraph databases for development purposes",
+		UsageText: `# Create the the default site-admin user with a default token, i.e. it's always going to be
+# username: sourcegraph, pw: sourcegraph, token spg_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0
+sg db default-site-admin
 
-# Reset the Sourcegraph 'frontend' database
+# Reset the database entirely
 sg db reset-pg
 
-# Reset the 'frontend' and 'codeintel' databases
-sg db reset-pg -db=frontend,codeintel
-
-# Reset all databases ('frontend', 'codeintel', 'codeinsights')
-sg db reset-pg -db=all
-
-# Reset the redis database
-sg db reset-redis
-
-# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-sg db add-user -username=foo
-
-# Create an access token for the user created above.
-sg db add-access-token -username=foo
-`,
+# ... (see below)`,
 		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			{
