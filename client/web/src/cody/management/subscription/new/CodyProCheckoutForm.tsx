@@ -17,8 +17,6 @@ import {
     Text,
     Container,
     Icon,
-    Input,
-    Label,
     H3,
     LoadingSpinner,
     Collapse,
@@ -400,12 +398,20 @@ const SeatCountSelector: React.FunctionComponent<{
         <H2 className="font-medium mb-3c">{header}</H2>
         <div className="d-flex flex-row align-items-center pb-3c mb-3c border-bottom">
             <div className="flex-1">$9 per seat / month</div>
-            <Button disabled={current === min} onClick={() => setCount(current > min ? current - 1 : current)} className="px-3c py-2 border-0">
-                <Icon aria-hidden={true} svgPath={mdiMinusThick}  className={styles.plusMinusButton} />
+            <Button
+                disabled={current === min}
+                onClick={() => setCount(current > min ? current - 1 : current)}
+                className="px-3c py-2 border-0"
+            >
+                <Icon aria-hidden={true} svgPath={mdiMinusThick} className={styles.plusMinusButton} />
             </Button>
             <div className={styles.seatCountSelectorValue}>{current}</div>
-            <Button disabled={current === max} onClick={() => setCount(current < max ? current + 1 : current)} className="px-3c py-2 border-0">
-                <Icon aria-hidden={true} svgPath={mdiPlusThick}  className={styles.plusMinusButton} />
+            <Button
+                disabled={current === max}
+                onClick={() => setCount(current < max ? current + 1 : current)}
+                className="px-3c py-2 border-0"
+            >
+                <Icon aria-hidden={true} svgPath={mdiPlusThick} className={styles.plusMinusButton} />
             </Button>
         </div>
     </>
@@ -435,8 +441,8 @@ const Summary: React.FunctionComponent<{
         )}
         {addSeats && (
             <Text size="small" className={styles.disclaimer}>
-                    New seats are pro-rated this month, and will be charged at the full rate{' '}
-                    {change.dueDate ? `on ${new Date(change.dueDate).toLocaleDateString()}` : 'next month'}.
+                New seats are pro-rated this month, and will be charged at the full rate{' '}
+                {change.dueDate ? `on ${new Date(change.dueDate).toLocaleDateString()}` : 'next month'}.
             </Text>
         )}
     </>
