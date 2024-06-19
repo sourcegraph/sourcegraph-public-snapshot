@@ -55,19 +55,11 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 })
 
                 try {
-                    const response = await updateTeamMemberMutation.mutateAsync.call(undefined, {
+                    await updateTeamMemberMutation.mutateAsync.call(undefined, {
                         updateMemberRole: { accountId, teamRole: newRole },
                     })
-                    if (!response.ok) {
-                        setLoading(false)
-                        setActionResult({
-                            message: `We couldn't modify the user's role (${response.status}). Please try again later.`,
-                            isError: true,
-                        })
-                    } else {
-                        setLoading(false)
-                        setActionResult({ message: 'Team role updated.', isError: false })
-                    }
+                    setLoading(false)
+                    setActionResult({ message: 'Team role updated.', isError: false })
                 } catch (error) {
                     setLoading(false)
                     setActionResult({
@@ -134,18 +126,18 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                 setLoading(true)
                 telemetryRecorder.recordEvent('cody.team.removeMember', 'click', { privateMetadata: { teamId } })
 
-                const response = await updateTeamMemberMutation.mutateAsync.call(undefined, {
-                    removeMember: { accountId, teamRole: 'member' },
-                })
-                if (!response.ok) {
-                    setLoading(false)
-                    setActionResult({
-                        message: `We couldn't remove the team member. (${response.status}). Please try again later.`,
-                        isError: true,
+                try {
+                    await updateTeamMemberMutation.mutateAsync.call(undefined, {
+                        removeMember: { accountId, teamRole: 'member' },
                     })
-                } else {
                     setLoading(false)
                     setActionResult({ message: 'Team member removed.', isError: false })
+                } catch (error) {
+                    setLoading(false)
+                    setActionResult({
+                        message: `We couldn't remove the team member. (${error}). Please try again later.`,
+                        isError: true,
+                    })
                 }
             }
         },

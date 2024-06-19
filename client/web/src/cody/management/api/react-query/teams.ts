@@ -30,7 +30,6 @@ export const useUpdateTeamMember = (): UseMutationResult<TeamMember[], Error, Up
         },
         onSuccess: (data: TeamMember[]) => {
             queryClient.setQueryData(queryKeys.teams.teamMembers(), data)
-            return queryClient.invalidateQueries({ queryKey: queryKeys.teams.teamMembers() })
         },
     })
 }
