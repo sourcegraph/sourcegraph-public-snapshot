@@ -42,7 +42,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	app := appliance.NewAppliance(k8sClient, logger)
+	app := appliance.NewAppliance(k8sClient, config.namespace, logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Logger: logr,

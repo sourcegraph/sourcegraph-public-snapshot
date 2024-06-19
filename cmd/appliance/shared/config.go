@@ -6,7 +6,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,7 +40,7 @@ func (c *Config) Load() {
 	c.metrics.secure = c.GetBool("APPLIANCE_METRICS_SECURE", "false", "Appliance metrics server uses https.")
 	c.grpc.addr = c.Get("APPLIANCE_GRPC_ADDR", ":9000", "Appliance gRPC address.")
 	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8080", "Appliance http address.")
-	c.namespace = c.Get("APPLIANCE_NAMESPACE", cache.AllNamespaces, "Namespace to monitor. Defaults to all.")
+	c.namespace = c.Get("APPLIANCE_NAMESPACE", "default", "Namespace to monitor.")
 }
 
 func (c *Config) Validate() error {
