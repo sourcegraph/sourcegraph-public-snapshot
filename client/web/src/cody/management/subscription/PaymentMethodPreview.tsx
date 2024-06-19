@@ -10,13 +10,13 @@ import type { Subscription } from '../api/teamSubscriptions'
 import styles from './manage/PaymentDetails.module.scss'
 
 export const PaymentMethodPreview: React.FC<
-    Pick<Subscription, 'paymentMethod'> & { editButton: boolean; onButtonClick?: () => void; className?: string }
-> = ({ paymentMethod, editButton, onButtonClick = () => undefined, className }) =>
+    Pick<Subscription, 'paymentMethod'> & { isEditable: boolean; onButtonClick?: () => void; className?: string }
+> = ({ paymentMethod, isEditable, onButtonClick = () => undefined, className }) =>
     paymentMethod ? (
         <div className={className}>
             <div className="d-flex align-items-center justify-content-between">
                 <H3>Active credit card</H3>
-                {editButton && (
+                {isEditable && (
                     <Button variant="link" className={styles.titleButton} onClick={onButtonClick}>
                         <Icon aria-hidden={true} svgPath={mdiPencilOutline} className="mr-1" /> Edit
                     </Button>
@@ -34,7 +34,7 @@ export const PaymentMethodPreview: React.FC<
     ) : (
         <div className={classNames('d-flex align-items-center justify-content-between', className)}>
             <H3>No payment method is available</H3>
-            {editButton && (
+            {isEditable && (
                 <Button variant="link" className={styles.titleButton} onClick={onButtonClick}>
                     <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-1" /> Add
                 </Button>

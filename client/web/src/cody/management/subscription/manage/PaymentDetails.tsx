@@ -56,7 +56,7 @@ const PaymentMethod: React.FC<{ paymentMethod: PaymentMethod | undefined }> = ({
     return (
         <PaymentMethodPreview
             paymentMethod={paymentMethod}
-            editButton={true}
+            isEditable={true}
             onButtonClick={() => setIsEditMode(true)}
         />
     )

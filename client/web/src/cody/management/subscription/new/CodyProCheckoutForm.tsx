@@ -337,7 +337,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                                         <CollapsePanel>
                                             <PaymentMethodPreview
                                                 paymentMethod={subscription.paymentMethod}
-                                                editButton={false}
+                                                isEditable={false}
                                                 className="mb-4"
                                             />
                                             <BillingAddressPreview subscription={subscription} isEditable={false} />
