@@ -44,7 +44,10 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     const updateTeamMemberMutation = useUpdateTeamMember()
     const cancelInviteMutation = useCancelInvite()
     const resendInviteMutation = useResendInvite()
-    const isLoading = updateTeamMemberMutation.status === 'pending' || cancelInviteMutation.status === 'pending' || resendInviteMutation.status === 'pending'
+    const isLoading =
+        updateTeamMemberMutation.status === 'pending' ||
+        cancelInviteMutation.status === 'pending' ||
+        resendInviteMutation.status === 'pending'
 
     const updateRole = useCallback(
         async (accountId: string, newRole: 'member' | 'admin'): Promise<void> => {
