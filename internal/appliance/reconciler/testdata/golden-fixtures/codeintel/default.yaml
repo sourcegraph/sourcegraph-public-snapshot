@@ -320,7 +320,7 @@ resources:
           indexedSearch:
             disabled: true
 
-          indexedSearchIndexer:
+          openTelemetry:
             disabled: true
 
           pgsql:

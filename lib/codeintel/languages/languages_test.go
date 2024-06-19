@@ -3,7 +3,7 @@ package languages
 import (
 	"testing"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2" //nolint:depguard - This package is allowed to use enry
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 )

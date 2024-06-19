@@ -663,7 +663,7 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	return NewPermissionsSyncJobsResolver(r.db, args)
+	return NewPermissionsSyncJobsResolver(r.logger, r.db, args)
 }
 
 func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.PermissionsSyncingStatsResolver, error) {

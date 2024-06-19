@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiCreditCardOutline } from '@mdi/js'
+import { mdiCreditCardOutline, mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, Button } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
@@ -19,13 +19,15 @@ import {
     CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyAlert } from '../components/CodyAlert'
-import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
+import { ProIconSquashed } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL } from '../util'
 
+import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
@@ -52,7 +54,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
 
-    // The cody_client_user URL query param is added by the VS Code & Jetbrains
+    // The cody_client_user URL query param is added by the VS Code & JetBrains
     // extensions. We redirect them to a "switch account" screen if they are
     // logged into their IDE as a different user account than their browser.
     const codyClientUser = parameters.get('cody_client_user')
@@ -71,6 +73,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         USER_CODY_USAGE,
         {}
     )
+
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
+    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
@@ -114,17 +119,33 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </Text>
                     </CodyAlert>
                 )}
-                <PageHeader className="mb-4 mt-4">
+                <PageHeader
+                    className="mb-4 mt-4"
+                    actions={
+                        isAdmin && (
+                            <div className="d-flex">
+                                <Button
+                                    as={Link}
+                                    to="/cody/manage/subscription/new?addSeats=1"
+                                    variant="success"
+                                    className="text-nowrap"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlusThick} /> Invite co-workers
+                                </Button>
+                            </div>
+                        )
+                    }
+                >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
-                            <DashboardIcon className="mr-2" /> Dashboard
+                            <PageHeaderIcon className="mr-2" name="dashboard" /> Dashboard
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
 
                 {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
+                <div className={classNames('p-4 border bg-1 mt-3', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>My subscription</H2>
@@ -177,21 +198,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 const UpgradeToProBanner: React.FunctionComponent<{
     onClick: () => void
 }> = ({ onClick }) => (
-    <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
-        <div>
-            <H1>
-                Become limitless with
-                <CodyProIcon className="ml-1" />
-            </H1>
-            <ul className="pl-4 mb-0">
-                <li>Unlimited autocompletions</li>
-                <li>Unlimited chat messages</li>
-            </ul>
+    <CodyAlert variant="purpleCodyPro">
+        <div className="d-flex justify-content-between align-items-center p-4">
+            <div>
+                <H1>
+                    Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span>
+                </H1>
+                <ul className="pl-4 mb-0">
+                    <li>Unlimited autocompletions</li>
+                    <li>Unlimited chat messages</li>
+                </ul>
+            </div>
+            <div>
+                <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
+                    <ProIconSquashed className="mr-1" />
+                    Upgrade
+                </ButtonLink>
+            </div>
         </div>
-        <div>
-            <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
-                Upgrade
-            </ButtonLink>
-        </div>
-    </div>
+    </CodyAlert>
 )

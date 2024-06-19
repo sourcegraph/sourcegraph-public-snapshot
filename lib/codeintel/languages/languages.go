@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2" //nolint:depguard - This package is allowed to use enry.
 )
 
 // Make sure all names are lowercase here, since they are normalized
@@ -62,52 +62,57 @@ func GetMostLikelyLanguage(path, contents string) (lang string, found bool) {
 //     for simple `.h` files with just comments and macros, they may
 //     be valid C, C++ or any of their derivative languages (e.g. Objective-C).
 func GetLanguages(path string, getContent func() ([]byte, error)) ([]string, error) {
-	langs := enry.GetLanguagesByFilename(path, nil, nil)
-	if len(langs) == 1 {
-		return langs, nil
-	}
-	newLangs, isLikelyBinaryFile := getLanguagesByExtension(path)
-	if isLikelyBinaryFile {
-		return nil, nil
-	}
-	switch len(newLangs) {
-	case 0:
-		break
-	case 1:
-		return newLangs, nil
-	default:
-		langs = newLangs
-	}
-	if getContent == nil {
-		return langs, nil
-	}
-	content, err := getContent()
-	if err != nil {
-		return nil, err
-	}
-	if len(content) == 0 {
-		return langs, nil
-	}
-	if enry.IsBinary(content) {
-		return nil, nil
-	}
-
-	// enry doesn't expose a way to call GetLanguages with a specific set of
-	// strategies, so just hand-roll that code here.
-	var languages = langs
-	for _, strategy := range []enry.Strategy{enry.GetLanguagesByModeline, getLanguagesByShebang, enry.GetLanguagesByContent, enry.GetLanguagesByClassifier} {
-		candidates := strategy(path, content, languages)
-		switch len(candidates) {
-		case 0:
-			continue
-		case 1:
-			return candidates, nil
-		default:
-			languages = candidates
+	impl := func() ([]string, error) {
+		langs := enry.GetLanguagesByFilename(path, nil, nil)
+		if len(langs) == 1 {
+			return langs, nil
 		}
+		newLangs, isLikelyBinaryFile := getLanguagesByExtension(path)
+		if isLikelyBinaryFile {
+			return nil, nil
+		}
+		switch len(newLangs) {
+		case 0:
+			break
+		case 1:
+			return newLangs, nil
+		default:
+			langs = newLangs
+		}
+		if getContent == nil {
+			return langs, nil
+		}
+		content, err := getContent()
+		if err != nil {
+			return nil, err
+		}
+		if len(content) == 0 {
+			return langs, nil
+		}
+		if enry.IsBinary(content) {
+			return nil, nil
+		}
+
+		// enry doesn't expose a way to call GetLanguages with a specific set of
+		// strategies, so just hand-roll that code here.
+		var languages = langs
+		for _, strategy := range []enry.Strategy{enry.GetLanguagesByModeline, getLanguagesByShebang, enry.GetLanguagesByContent, enry.GetLanguagesByClassifier} {
+			candidates := strategy(path, content, languages)
+			switch len(candidates) {
+			case 0:
+				continue
+			case 1:
+				return candidates, nil
+			default:
+				languages = candidates
+			}
+		}
+
+		return languages, nil
 	}
 
-	return languages, nil
+	langs, err := impl()
+	return slices.Clone(langs), err
 }
 
 // getLanguagesByShebang is a replacement for enry.GetLanguagesByShebang.
@@ -125,5 +130,5 @@ func getLanguagesByShebang(path string, content []byte, candidates []string) []s
 			return []string{"Raku"}
 		}
 	}
-	return languages
+	return slices.Clone(languages)
 }

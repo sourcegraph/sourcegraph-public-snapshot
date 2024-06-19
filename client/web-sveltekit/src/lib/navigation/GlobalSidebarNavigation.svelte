@@ -87,7 +87,6 @@
             }
 
             --icon-size: 1rem;
-            --icon-fill-color: var(--icon-color);
         }
 
         header {
@@ -134,8 +133,6 @@
                 gap: 0.25rem;
                 padding: 0.375rem 0.75rem;
                 font-size: 1rem;
-
-                --icon-fill-color: var(--icon-color);
 
                 &:hover {
                     background-color: var(--secondary-2);

@@ -92,7 +92,7 @@
                 </small>
             </div>
         {:else if entry.__typename === 'GitTree'}
-            <Icon icon={ILucideFolder} --icon-fill-color="var(--primary)" --icon-size="1.5rem" />
+            <Icon icon={ILucideFolder} --icon-color="var(--primary)" --icon-size="1.5rem" />
             <div class="file mono">
                 <div class="title">{baseName}</div>
                 <small>

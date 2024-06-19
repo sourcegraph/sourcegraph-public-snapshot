@@ -259,6 +259,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 
 [[package]]
+name = "camino"
+version = "1.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0ec6b951b160caa93cc0c7b209e5a3bff7aae9062213451ac99493cd844c239"
+
+[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1908,6 +1914,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
+ "camino",
  "clap 4.3.23",
  "colored",
  "indicatif",
@@ -2104,6 +2111,7 @@ dependencies = [
  "anyhow",
  "base64 0.13.1",
  "bitvec",
+ "camino",
  "clap 4.3.23",
  "id-arena",
  "if_chain",

@@ -174,8 +174,6 @@
     }
 
     .actions {
-        --color: var(--icon-color);
-
         display: flex;
         justify-content: space-evenly;
         gap: 1rem;

@@ -92,6 +92,12 @@ export const selectorCompletion = (value: Literal | undefined): string[] => {
     if (value.value.endsWith('.') || value.value.split('.').length > 1 || kinds.has(value.value)) {
         // Resolve completions to greater depth for `foo.` if the value is `foo.` or `foo.bar`.
         const kind = value.value.split('.')[0]
+
+        // Return top-level selectors if the selector prefix is not known.
+        if (!kinds.has(kind)) {
+            return selectDiscreteValues(SELECTORS, 0)
+        }
+
         return selectDiscreteValues(
             SELECTORS.filter(value => value.name === kind),
             2

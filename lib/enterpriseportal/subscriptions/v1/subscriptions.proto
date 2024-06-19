@@ -14,8 +14,6 @@ option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/sub
 // defined as separate gRPC services in 'lib/enterpriseportal' - these are
 // generally all be implemented by the Enterprise Portal Service directly for
 // now.
-//
-// DRAFT STATE - see RFC 885: https://docs.google.com/document/d/1tiaW1IVKm_YSSYhH-z7Q8sv4HSO_YJ_Uu6eYDjX7uU4/edit#heading=h.tdaxc5h34u7q
 service SubscriptionsService {
   // GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
   rpc GetEnterpriseSubscription(GetEnterpriseSubscriptionRequest) returns (GetEnterpriseSubscriptionResponse) {
@@ -37,10 +35,22 @@ service SubscriptionsService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
+  // CreateEnterpriseSubscription creates license for an Enterprise subscription.
+  rpc CreateEnterpriseSubscriptionLicense(CreateEnterpriseSubscriptionLicenseRequest) returns (CreateEnterpriseSubscriptionLicenseResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
+  }
+
   // UpdateEnterpriseSubscription updates an existing Enterprise subscription.
   // Only properties specified by the update_mask are applied.
   rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
     option idempotency_level = IDEMPOTENT;
+  }
+
+  // CreateEnterpriseSubscription creates an Enterprise subscription.
+  rpc CreateEnterpriseSubscription(CreateEnterpriseSubscriptionRequest) returns (CreateEnterpriseSubscriptionResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
   }
 
   // UpdateSubscriptionMembership updates a subscription membership. It creates
@@ -78,6 +88,15 @@ message EnterpriseSubscription {
   string display_name = 3;
   // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
   string instance_domain = 4;
+
+  message SalesforceMetadata {
+    // The Salesforce subscription ID associated with this Enterprise subscription.
+    string subscription_id = 1;
+    // The Salesforce opportunity ID associated with this Enterprise subscription.
+    string opportunity_id = 2;
+  }
+  // Salesforce details associated with this subscription.
+  SalesforceMetadata salesforce = 5;
 }
 
 // EnterpriseSubscription represents a Sourcegraph Enterprise subscription member.
@@ -258,6 +277,27 @@ message ListEnterpriseSubscriptionLicensesResponse {
   repeated EnterpriseSubscriptionLicense licenses = 2;
 }
 
+message CreateEnterpriseSubscriptionLicenseRequest {
+  // The license to create.
+  //
+  // Required attributes:
+  // - subscription_id (this is the parent resource, EnterpriseSubscription)
+  // - license
+  //
+  // `license` supports the following types. At least one must be provided:
+  // - license.key, which requires:
+  //   - license.key.info_version
+  //   - license.key.info.tags
+  //   - license.key.info.user_count
+  //   - license.key.info.expire_time
+  EnterpriseSubscriptionLicense license = 1;
+}
+
+message CreateEnterpriseSubscriptionLicenseResponse {
+  // The license that was created.
+  EnterpriseSubscriptionLicense license = 1;
+}
+
 message UpdateEnterpriseSubscriptionRequest {
   // The subscription to update.
   // The following fields are used to identify the membership to update:
@@ -274,6 +314,24 @@ message UpdateEnterpriseSubscriptionRequest {
 
 message UpdateEnterpriseSubscriptionResponse {
   // The updated subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message CreateEnterpriseSubscriptionRequest {
+  // The subscription to create.
+  //
+  // Required attributes:
+  // - display_name
+  //
+  // Optional attributes:
+  // - instance_domain
+  // - salesforce.subscription_id
+  // - salesforce.opportunity_id
+  EnterpriseSubscription subscription = 1;
+}
+
+message CreateEnterpriseSubscriptionResponse {
+  // The created subscription.
   EnterpriseSubscription subscription = 1;
 }
 

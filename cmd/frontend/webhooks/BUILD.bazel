@@ -46,6 +46,7 @@ go_test(
         "middleware_test.go",
         "webhooks_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":webhooks"],
     tags = [
         TAG_PLATFORM_SOURCE,

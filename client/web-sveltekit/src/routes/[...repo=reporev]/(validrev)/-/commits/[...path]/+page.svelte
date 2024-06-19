@@ -176,6 +176,8 @@
             }
 
             .actions {
+                --icon-color: currentColor;
+
                 flex-shrink: 0;
             }
 
