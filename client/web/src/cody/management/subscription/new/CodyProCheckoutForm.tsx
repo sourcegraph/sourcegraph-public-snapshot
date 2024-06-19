@@ -85,7 +85,7 @@ async function createStripeToken(
 
 interface TeamSizeChange {
     seatCountDiff: number
-    dueNow: number
+    priceDueNow: number
     monthlyPriceDiff: number
     newMonthlyPrice: number
     dueDate?: string
@@ -122,7 +122,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
         seatCountDiff: initialNewSeats,
         monthlyPriceDiff: initialNewSeats * SEAT_PRICE,
         newMonthlyPrice: (initialSeatCount + initialNewSeats) * SEAT_PRICE,
-        dueNow: initialNewSeats * SEAT_PRICE,
+        priceDueNow: initialNewSeats * SEAT_PRICE,
         dueDate: undefined,
     })
 
@@ -134,7 +134,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     seatCountDiff: newSeatCountDiff,
                     monthlyPriceDiff: newSeatCountDiff * SEAT_PRICE,
                     newMonthlyPrice: (initialSeatCount + newSeatCountDiff) * SEAT_PRICE,
-                    dueNow: newSeatCountDiff * SEAT_PRICE,
+                    priceDueNow: newSeatCountDiff * SEAT_PRICE,
                     dueDate: undefined,
                 })
             } else {
@@ -152,7 +152,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                                     seatCountDiff: newSeatCountDiff,
                                     monthlyPriceDiff: result.newPrice / 100 - initialSeatCount * SEAT_PRICE,
                                     newMonthlyPrice: result.newPrice / 100,
-                                    dueNow: result.dueNow / 100,
+                                    priceDueNow: result.dueNow / 100,
                                     dueDate: result.dueDate,
                                 })
                             }
@@ -426,7 +426,7 @@ const Summary: React.FunctionComponent<{
     <>
         <H2 className="font-medium mb-3c">Summary</H2>
         {addSeats && (
-            <PriceOrSpinner price={change.dueNow} isLoading={isLoading}>
+            <PriceOrSpinner price={change.priceDueNow} isLoading={isLoading}>
                 Pro-rated cost for this month
             </PriceOrSpinner>
         )}
