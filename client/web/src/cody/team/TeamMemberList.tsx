@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { H2, Text, Badge, Link, ButtonLink } from '@sourcegraph/wildcard'
+import { H2, Text, Badge, Link, ButtonLink, Button } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
@@ -137,6 +137,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     )
 
     const adminCount = useMemo(() => teamMembers?.filter(member => member.role === 'admin').length ?? 0, [teamMembers])
+    console.log(adminCount)
 
     if (!teamMembers) {
         return null
@@ -185,14 +186,14 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                     <>
                                         <div />
                                         <div className="align-content-center text-center">
-                                            <Link
-                                                to="#"
+                                            <Button
+                                                variant="link"
                                                 onClick={() => updateRole(member.accountId, 'member')}
                                                 className="ml-2"
-                                                aria-disabled={adminCount < 2}
+                                                disabled={adminCount < 2}
                                             >
                                                 Revoke admin
-                                            </Link>
+                                            </Button>
                                         </div>
                                     </>
                                 ) : (
