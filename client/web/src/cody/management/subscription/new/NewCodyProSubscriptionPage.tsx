@@ -1,4 +1,4 @@
-import { useEffect, type FunctionComponent } from 'react'
+import React, { useEffect, type FunctionComponent } from 'react'
 
 import { Elements } from '@stripe/react-stripe-js'
 // NOTE: A side effect of loading this library will update the DOM and
@@ -86,13 +86,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
 
-    const canDisplayPage =
-        !userCodyPlanLoading &&
-        !subscriptionQueryResult.isLoading &&
-        !userCodyPlanError &&
-        (!addSeats || (!subscriptionQueryResult.isError && subscription))
-
-    return (
+    const PageWithHeader = ({ children }: { children: React.ReactNode }): React.ReactElement => (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title={addSeats ? 'Add seats' : 'New subscription'} />
             <PageHeader className="my-4">
@@ -105,27 +99,55 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
                         {isTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
                     </div>
                 </PageHeader.Heading>
+
+                {children}
             </PageHeader>
-
-            {userCodyPlanLoading || (subscriptionQueryResult.isLoading && <LoadingSpinner className="mx-auto" />)}
-
-            {!!userCodyPlanError && <Alert variant="danger">Failed to fetch user Cody plan data</Alert>}
-            {addSeats && subscriptionQueryResult.isError && (
-                <Alert variant="danger">Failed to fetch subscription data</Alert>
-            )}
-            {addSeats && !subscriptionQueryResult.isLoading && !subscription && <Alert variant="danger">Subscription data is not available</Alert>}
-
-            {canDisplayPage && (
-                <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
-                    <Elements stripe={stripe} options={stripeElementsOptions}>
-                        <CodyProCheckoutForm
-                            subscription={subscription}
-                            customerEmail={authenticatedUser?.emails[0].email || ''}
-                        />
-                    </Elements>
-                </CodyProApiClientContext.Provider>
-            )}
         </Page>
+    )
+
+    if (userCodyPlanLoading || subscriptionQueryResult.isLoading) {
+        return (
+            <PageWithHeader>
+                <LoadingSpinner className="mx-auto" />
+            </PageWithHeader>
+        )
+    }
+
+    if (userCodyPlanError) {
+        return (
+            <PageWithHeader>
+                <Alert variant="danger">Failed to fetch user Cody plan data</Alert>
+            </PageWithHeader>
+        )
+    }
+
+    if (addSeats && subscriptionQueryResult.isError) {
+        return (
+            <PageWithHeader>
+                <Alert variant="danger">Failed to fetch subscription data</Alert>
+            </PageWithHeader>
+        )
+    }
+
+    if (addSeats && !subscriptionQueryResult.isLoading && !subscription) {
+        return (
+            <PageWithHeader>
+                <Alert variant="danger">Subscription data is not available</Alert>
+            </PageWithHeader>
+        )
+    }
+
+    return (
+        <PageWithHeader>
+            <CodyProApiClientContext.Provider value={defaultCodyProApiClientContext}>
+                <Elements stripe={stripe} options={stripeElementsOptions}>
+                    <CodyProCheckoutForm
+                        subscription={subscription}
+                        customerEmail={authenticatedUser?.emails[0].email || ''}
+                    />
+                </Elements>
+            </CodyProApiClientContext.Provider>
+        </PageWithHeader>
     )
 }
 
