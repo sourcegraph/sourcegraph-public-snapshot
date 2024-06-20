@@ -405,11 +405,14 @@
         }
 
         .close {
-            color: var(--icon-color);
             position: fixed;
             right: 2rem;
             background-color: var(--color-bg-1);
             border-radius: 50%;
+
+            &:hover {
+                background-color: var(--color-bg-2);
+            }
         }
     }
 </style>
