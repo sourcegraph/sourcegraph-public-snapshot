@@ -160,7 +160,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 )}
                             </Text>
                         </div>
-                        {isUserOnProTier && (
+                        {isAdmin && (
                             <div>
                                 <ButtonLink
                                     variant="primary"
