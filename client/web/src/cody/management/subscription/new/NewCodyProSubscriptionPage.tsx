@@ -48,8 +48,8 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     telemetryRecorder,
 }) => {
     const [urlSearchParams] = useSearchParams()
-    const isTeam = parseInt(urlSearchParams.get('seats') || '', 10) > 1
     const addSeats = !!urlSearchParams.get('addSeats')
+    const isTeam = addSeats || parseInt(urlSearchParams.get('seats') || '', 10) > 1
 
     const stripeElementsOptions = useBillingAddressStripeElementsOptions()
 
