@@ -93,7 +93,9 @@ func isAllowedCodeCompletionModel(model string) bool {
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2-cyan",
 		"google/" + google.Gemini15Flash,
+		"google/" + google.Gemini15FlashLatest,
 		"google/" + google.GeminiPro,
+		"google/" + google.GeminiProLatest,
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
 		"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
@@ -113,6 +115,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		case
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
