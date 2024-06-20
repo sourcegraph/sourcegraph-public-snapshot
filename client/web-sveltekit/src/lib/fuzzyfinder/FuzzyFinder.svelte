@@ -373,7 +373,7 @@
             .info {
                 grid-area: info;
                 color: var(--text-muted);
-                font-size: var(--font-size-extra-small);
+                font-size: var(--font-size-small);
 
                 &.mono {
                     font-family: var(--code-font-family);
