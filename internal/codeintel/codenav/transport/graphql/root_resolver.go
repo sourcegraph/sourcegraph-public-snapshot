@@ -395,13 +395,13 @@ func newCodeGraphDataResolverFromID(
 	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
 		return nil, errors.Wrap(err, "malformed ID")
 	}
-	repos, err := repoStore.GetByIDs(ctx, id.RepoID)
+	repo, err := repoStore.Get(ctx, id.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "repo for CodeGraphData value no longer exists")
+		return nil, err
 	}
 	opts := resolverstubs.CodeGraphDataOpts{
 		Args:   id.Args,
-		Repo:   repos[0],
+		Repo:   repo,
 		Commit: id.Commit,
 		Path:   id.Path,
 	}
