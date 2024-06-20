@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
+import { CodyProRoutes } from '../cody/codyProRoutes'
+
 interface GetCodyPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
@@ -14,7 +16,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
     const [search] = useState(location.search)
 
     if (authenticatedUser) {
-        navigate(`/cody/manage${search || ''}`)
+        navigate(`${CodyProRoutes.Manage}${search || ''}`)
     } else {
         window.location.href = '/cody'
     }

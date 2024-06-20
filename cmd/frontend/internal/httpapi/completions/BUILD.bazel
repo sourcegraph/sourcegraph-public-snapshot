@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "chat.go",
         "codecompletion.go",
+        "get_model.go",
         "handler.go",
         "limiter.go",
         "observability.go",

@@ -42,6 +42,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../../jscontext'
 import { EventName } from '../../util/constants'
+import { CodyProRoutes } from '../codyProRoutes'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
@@ -160,7 +161,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         )
     }
 
-    const codyDashboardLink = isSourcegraphDotCom ? '/cody/manage' : '/cody'
+    const codyDashboardLink = isSourcegraphDotCom ? CodyProRoutes.Manage : '/cody'
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
@@ -287,7 +288,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </Text>
                             <div className="mb-2">
                                 <Link
-                                    to="/cody/manage"
+                                    to={CodyProRoutes.Manage}
                                     className={classNames(
                                         'd-inline-flex align-items-center text-merged',
                                         styles.ctaLink

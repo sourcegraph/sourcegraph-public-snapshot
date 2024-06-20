@@ -20,7 +20,7 @@ import type { LegacyLayoutRouteContext } from '../../../../LegacyRouteContext'
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
 import { USER_CODY_PLAN } from '../../../subscription/queries'
-import { useCurrentSubscription } from '../../api/react-query/subscriptions'
+import { useCurrentSubscription, useSubscriptionSummary } from '../../api/react-query/subscriptions'
 
 import { InvoiceHistory } from './InvoiceHistory'
 import { PaymentDetails } from './PaymentDetails'
@@ -38,6 +38,7 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         error: useCodyPlanError,
         data: userCodyPlanData,
     } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+    const subscriptionSummaryQuery = useSubscriptionSummary()
 
     useEffect(
         function recordViewEvent() {
@@ -46,12 +47,17 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         [telemetryRecorder]
     )
 
-    if (userCodyPlanLoading) {
+    if (userCodyPlanLoading || subscriptionSummaryQuery.isLoading) {
         return <LoadingSpinner />
     }
 
     if (useCodyPlanError) {
         logger.error('Failed to fetch Cody subscription data', useCodyPlanError)
+        return null
+    }
+
+    if (subscriptionSummaryQuery.isError) {
+        logger.error('Failed to fetch Cody subscription summary', subscriptionSummaryQuery.error)
         return null
     }
 
@@ -61,14 +67,31 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         return null
     }
 
+    if (!subscriptionSummaryQuery.data) {
+        logger.error('Cody subscription summary is not available.')
+        return null
+    }
+
     // This page only applies to users who have a Cody Pro subscription to manage.
     // Otherwise, direct them to the ./new page to sign up.
     if (subscriptionData.plan !== CodySubscriptionPlan.PRO) {
         return <Navigate to={CodyProRoutes.NewProSubscription} replace={true} />
     }
 
+    if (subscriptionSummaryQuery.data.userRole !== 'admin') {
+        return <Navigate to={CodyProRoutes.Manage} replace={true} />
+    }
+
     return (
         <Page className="d-flex flex-column">
+            <PageTitle title="Manage subscription" />
+            <PageHeader className="my-4 d-inline-flex align-items-center">
+                <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                    <PageHeaderIcon name="cody-logo" className="mr-3" />
+                    <Text as="span">Manage subscription</Text>
+                </PageHeader.Heading>
+            </PageHeader>
+
             <PageContent />
         </Page>
     )
@@ -92,14 +115,6 @@ const PageContent: React.FC = () => {
 
     return (
         <>
-            <PageTitle title="Manage Subscription" />
-            <PageHeader className="mt-4">
-                <PageHeader.Heading as="h2" styleAs="h1" className="mb-4 d-flex align-items-center">
-                    <PageHeaderIcon name="cody-logo" className="mr-2" />
-                    <Text as="span">Manage subscription</Text>
-                </PageHeader.Heading>
-            </PageHeader>
-
             <Card className={classNames('p-4', styles.card)}>
                 <SubscriptionDetails subscription={subscription} />
 

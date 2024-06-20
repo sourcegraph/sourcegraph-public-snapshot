@@ -26,6 +26,34 @@
       "displayName": "Claude 3 Sonnet",
       "string": "claude-3-sonnet-20240229",
       "capabilities": ["chat", "edit"],
+      "category": "balanced",
+      "status": "stable",
+      "tier": "free",
+      "contextWindow": {
+        "maxInputTokens": 30000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelId": "unknown",
+      "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
+      "displayName": "Claude 3.5 Sonnet",
+      "string": "claude-3.5-sonnet-20240620",
+      "capabilities": ["chat", "edit"],
+      "category": "accuracy",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 30000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelId": "unknown",
+      "modelRef": "anthropic::2023-06-01::claude-3-opus",
+      "displayName": "Claude 3 Opus",
+      "string": "claude-3-opus-20240229",
+      "capabilities": ["chat", "edit"],
       "category": "accuracy",
       "status": "stable",
       "tier": "pro",
@@ -40,7 +68,7 @@
       "displayName": "Claude 3 Haiku",
       "string": "claude-3-haiku-20240307",
       "capabilities": ["chat", "edit"],
-      "category": "accuracy",
+      "category": "speed",
       "status": "stable",
       "tier": "pro",
       "contextWindow": {

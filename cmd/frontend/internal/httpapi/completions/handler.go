@@ -115,6 +115,9 @@ func newCompletionsHandler(
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		requestParams.User = completionsConfig.User
 		if err != nil {
+			// NOTE: We return the raw error to the user assuming that it contains relevant
+			// user-facing diagnostic information, and doesn't leak any internal details.
+			logger.Info("error fetching model", log.Error(err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -316,14 +319,21 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				f = ff
 			}
 		}
-		err := cc.Stream(ctx, feature, version, requestParams,
-			func(event types.CompletionResponse) error {
-				if !firstEventObserved {
-					firstEventObserved = true
-					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
-				}
-				return f.Send(ctx, event)
-			}, logger)
+
+		// Build and send the completions request.
+		compReq := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		sendEventFn := func(event types.CompletionResponse) error {
+			if !firstEventObserved {
+				firstEventObserved = true
+				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
+			}
+			return f.Send(ctx, event)
+		}
+		err := cc.Stream(ctx, logger, compReq, sendEventFn)
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
@@ -394,7 +404,12 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 // to the client.
 func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-		completion, err := cc.Complete(ctx, feature, version, requestParams, logger)
+		compRequest := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		completion, err := cc.Complete(ctx, logger, compRequest)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 

@@ -75,11 +75,11 @@ type fireworksClient struct {
 
 func (c *fireworksClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	feature := request.Feature
+	requestParams := request.Parameters
+
 	resp, err := c.makeRequest(ctx, feature, requestParams, false)
 	if err != nil {
 		return nil, err
@@ -114,12 +114,11 @@ func (c *fireworksClient) Complete(
 
 func (c *fireworksClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+	feature := request.Feature
+	requestParams := request.Parameters
 	logprobsInclude := uint8(0)
 	requestParams.Logprobs = &logprobsInclude
 
