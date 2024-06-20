@@ -25,6 +25,7 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
@@ -56,7 +57,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/subscription')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Subscription}`)
         }
     }, [data, navigate])
 
@@ -226,7 +227,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 })
                                                 // We add ?seats=2 to the URL to initiate creating a team.
                                                 const url = new URL(
-                                                    '/cody/manage/subscription/new',
+                                                    CodyProRoutes.NewProSubscription,
                                                     window.location.origin
                                                 )
                                                 url.searchParams.append('seats', '2')
@@ -238,7 +239,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to="/cody/manage/subscription/new"
+                                            to={CodyProRoutes.NewProSubscription}
                                             target="_blank"
                                             rel="noreferrer noopener"
                                             onClick={event => {
@@ -246,7 +247,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
-                                                navigate('/cody/manage/subscription/new')
+                                                navigate(CodyProRoutes.NewProSubscription)
                                             }}
                                         >
                                             Upgrade yourself to Pro
