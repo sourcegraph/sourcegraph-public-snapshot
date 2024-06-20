@@ -104,7 +104,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	//
 	// If data is unavailable, implementations should set relevant usage fields
 	// to -1 as a sentinel value.
-	parseResponseAndUsage(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
+	parseResponseAndUsage(log.Logger, ReqT, io.Reader, bool) (promptUsage, completionUsage usageStats)
 }
 
 type UpstreamRequest interface {
@@ -273,6 +273,13 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 		}
 
+		// Get the URL to call for the upstream provider before we transform the request.
+		upstreamURL := methods.getAPIURL(feature, body)
+
+		// Store the shouldStream value in case it changes during the transformation.
+		// Example: We remove it for Google requests.
+		shouldStream := body.ShouldStream()
+
 		// identifier that can be provided to upstream for abuse detection
 		// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
 		// (specific per-instance)
@@ -288,7 +295,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}
 
 		// Create a new request to send upstream, making sure we retain the same context.
-		upstreamURL := methods.getAPIURL(feature, body)
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
@@ -359,7 +365,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			o.Feature = feature
 			o.UpstreamLatency = upstreamLatency
 			o.Provider = upstreamName
-			o.Stream = body.ShouldStream()
+			o.Stream = shouldStream
 
 			err := eventLogger.LogEvent(
 				ctx,
@@ -461,7 +467,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 		// (so events are sent to the client as soon as possible)
 		var responseWriter io.Writer = w
-		if config.AutoFlushStreamingResponses && body.ShouldStream() {
+		if config.AutoFlushStreamingResponses && shouldStream {
 			if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 				responseWriter = fw
 			} else {
@@ -475,7 +481,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 			// Pass reader to response transformer to capture token counts.
-			promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
+			promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf, shouldStream)
 		} else if upstreamStatusCode >= 500 {
 			logger.Error("error from upstream",
 				log.Int("status_code", upstreamStatusCode))

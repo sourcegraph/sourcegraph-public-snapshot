@@ -153,7 +153,7 @@ func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
 	}
 }
 
-func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
@@ -164,7 +164,7 @@ func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body opena
 	completionUsage.tokenizerTokens = -1
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !body.Stream {
+	if !isStreamRequest {
 		var res openaiResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse OpenAI response as JSON", log.Error(err))
