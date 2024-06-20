@@ -115,6 +115,9 @@ func newCompletionsHandler(
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		requestParams.User = completionsConfig.User
 		if err != nil {
+			// NOTE: We return the raw error to the user assuming that it contains relevant
+			// user-facing diagnostic information, and doesn't leak any internal details.
+			logger.Info("error fetching model", log.Error(err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
