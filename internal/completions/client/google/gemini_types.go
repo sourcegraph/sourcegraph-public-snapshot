@@ -6,14 +6,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-type ModelFamily string
+type APIFamily string
+
 type googleCompletionStreamClient struct {
 	httpCli     httpcli.Doer
 	gcpCli      *http.Client
 	accessToken string
 	endpoint    string
 	viaGateway  bool
-	modelFamily ModelFamily
+	apiFamily APIFamily
 }
 
 // The request body for the completion stream endpoint.

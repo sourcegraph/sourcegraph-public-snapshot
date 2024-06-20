@@ -23,13 +23,13 @@ import (
 )
 
 const (
-	Gemini          ModelFamily = "gemini-public"
-	VertexGemini    ModelFamily = "gemini-vertex"
-	VertexAnthropic ModelFamily = "anthropic"
+	Gemini          APIFamily = "gemini-public"
+	VertexGemini    APIFamily = "gemini-vertex"
+	VertexAnthropic APIFamily = "anthropic"
 )
 
 func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bool) (types.CompletionsClient, error) {
-	modelFamily, client, err := determineModelFamilyAndClient(endpoint, accessToken)
+	apiFamily, client, err := determineAPIFamilyAndClient(endpoint, accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -39,22 +39,22 @@ func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bo
 		accessToken: accessToken,
 		endpoint:    endpoint,
 		viaGateway:  viaGateway,
-		modelFamily: modelFamily,
+		apiFamily: apiFamily,
 	}, nil
 
 }
 
-func determineModelFamilyAndClient(endpoint, accessToken string) (ModelFamily, *http.Client, error) {
+func determineAPIFamilyAndClient(endpoint, accessToken string) (APIFamily, *http.Client, error) {
 	if strings.Contains(endpoint, "generativelanguage") {
 		// Default to Gemini API if the endpoint contains "generativelanguage"
 		return Gemini, nil, nil
 	}
 
-	var modelFamily ModelFamily
+	var apiFamily APIFamily
 	if strings.Contains(endpoint, "anthropic") {
-		modelFamily = VertexAnthropic
+		apiFamily = VertexAnthropic
 	} else {
-		modelFamily = VertexGemini
+		apiFamily = VertexGemini
 	}
 
 	client, err := createHTTPClient(accessToken)
@@ -62,7 +62,7 @@ func determineModelFamilyAndClient(endpoint, accessToken string) (ModelFamily, *
 		return "", nil, err
 	}
 
-	return modelFamily, client, nil
+	return apiFamily, client, nil
 }
 
 func createHTTPClient(accessToken string) (*http.Client, error) {
@@ -93,7 +93,7 @@ func (c *googleCompletionStreamClient) Complete(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
-	if c.modelFamily == VertexAnthropic {
+	if c.apiFamily == VertexAnthropic {
 		return c.handleAnthropicComplete(ctx, request)
 	} else {
 		return c.handleGeminiComplete(ctx, request)
@@ -169,7 +169,7 @@ func (c *googleCompletionStreamClient) Stream(
 	logger log.Logger,
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
-	if c.modelFamily == VertexAnthropic {
+	if c.apiFamily == VertexAnthropic {
 		return c.handleVertexAnthropicStream(ctx, request.Parameters, sendEvent)
 	} else {
 		return c.handleGeminiStream(ctx, request.Parameters, sendEvent)
@@ -448,7 +448,7 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 		}
 	}
 
-	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream, c.modelFamily)
+	apiURL.Path = path.Join(apiURL.Path, requestParams.Model) + ":" + getgRPCMethod(stream, c.apiFamily)
 
 	// We need to append the API key to the default API endpoint URL.
 	if isDefaultAPIEndpoint(apiURL) {
@@ -464,8 +464,8 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 }
 
 // getgRPCMethod returns the gRPC method name based on the stream flag.
-func getgRPCMethod(stream bool, modelFamily ModelFamily) string {
-	if modelFamily == VertexAnthropic {
+func getgRPCMethod(stream bool, apiFamily APIFamily) string {
+	if apiFamily == VertexAnthropic {
 		return "streamRawPredict"
 	}
 	if stream {
