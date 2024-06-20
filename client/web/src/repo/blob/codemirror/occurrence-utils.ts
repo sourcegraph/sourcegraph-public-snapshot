@@ -85,7 +85,8 @@ function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Oc
             const mid = Math.floor((low + high) / 2)
             if (arr[mid].range.contains(position)) {
                 return arr[mid]
-            } else if (arr[mid].range.end.compare(position) < 0) {
+            }
+            if (arr[mid].range.end.compare(position) < 0) {
                 low = mid + 1
             } else {
                 high = mid
