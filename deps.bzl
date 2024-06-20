@@ -4064,6 +4064,13 @@ def go_dependencies():
         version = "v0.0.0-20240327125255-dbf53b6cbf06",
     )
     go_repository(
+        name = "com_github_life4_genesis",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/life4/genesis",
+        sum = "h1:Ww36apMVRnC7gdB7RDI5B66Q1tjmO8g1QEW5nq2c/SU=",
+        version = "v1.10.3",
+    )
+    go_repository(
         name = "com_github_linode_linodego",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/linode/linodego",
@@ -4179,8 +4186,8 @@ def go_dependencies():
         name = "com_github_matryer_is",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/matryer/is",
-        sum = "h1:92UTHpy8CDwaJ08GqLDzhhuixiBUUD1p3AU6PHddz4A=",
-        version = "v1.2.0",
+        sum = "h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=",
+        version = "v1.4.0",
     )
     go_repository(
         name = "com_github_matryer_moq",
