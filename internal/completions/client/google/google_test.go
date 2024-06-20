@@ -31,7 +31,7 @@ func TestErrStatusNotOK(t *testing.T) {
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "generativelanguage", "", false)
+	}, "https://generativelanguage.googleapis.com", "", false)
 
 	compRequest := types.CompletionRequest{
 		Feature:    types.CompletionsFeatureChat,
