@@ -115,7 +115,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <>
             <Page className={classNames('d-flex flex-column')}>
                 <PageTitle title="Dashboard" />
-                <AcceptInviteBanner onSuccess={refetch} />
+                <AcceptInviteBanner />
                 {welcomeToPro && (
                     <CodyAlert variant="greenCodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
