@@ -89,6 +89,26 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
+    const getTeamInviteButton = (): JSX.Element | null => {
+        const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
+        const hasFreeSeats = subscriptionSummaryQueryResult?.data
+            ? subscriptionSummaryQueryResult.data.teamMaxMembers >
+              subscriptionSummaryQueryResult.data.teamCurrentMembers
+            : false
+        const targetUrl = hasFreeSeats ? '/cody/team/manage' : '/cody/manage/subscription/new?addSeats=1'
+        const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
+
+        if (!subscriptionSummaryQueryResult?.data) {
+            return null
+        }
+
+        return (
+            <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
+                <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
+            </Button>
+        )
+    }
+
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
     }, [telemetryRecorder])
@@ -122,20 +142,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 )}
                 <PageHeader
                     className="mb-4 mt-4"
-                    actions={
-                        isAdmin && (
-                            <div className="d-flex">
-                                <Button
-                                    as={Link}
-                                    to="/cody/manage/subscription/new?addSeats=1"
-                                    variant="success"
-                                    className="text-nowrap"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiPlusThick} /> Invite co-workers
-                                </Button>
-                            </div>
-                        )
-                    }
+                    actions={isAdmin && <div className="d-flex">{getTeamInviteButton()}</div>}
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <div className="d-inline-flex align-items-center">
