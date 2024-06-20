@@ -426,19 +426,27 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 		limit: pageSize,
 	}
 	var args []any
+	var hasRevokedFilter bool
 	for _, filter := range filters {
 		switch filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
 			conds.addWhere(fmt.Sprintf("licenses.product_subscription_id = $%d", len(args)+1))
 			args = append(args,
 				strings.TrimPrefix(filter.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix))
-		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
-			if filter.GetIsArchived() {
-				conds.addWhere("subscriptions.archived_at IS NOT NULL")
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked:
+			hasRevokedFilter = true
+			// We treat subscription archived and revoked license the same.
+			if filter.GetIsRevoked() {
+				conds.addWhere("(subscriptions.archived_at IS NOT NULL OR licenses.revoked_at IS NOT NULL)")
 			} else {
 				conds.addWhere("subscriptions.archived_at IS NULL")
+				conds.addWhere("licenses.revoked_at IS NULL")
 			}
 		}
+	}
+	if !hasRevokedFilter {
+		conds.addWhere("subscriptions.archived_at IS NULL")
+		conds.addWhere("licenses.revoked_at IS NULL")
 	}
 
 	query := newLicensesQuery(conds, r.opts)
