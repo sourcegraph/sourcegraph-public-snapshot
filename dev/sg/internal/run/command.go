@@ -415,10 +415,7 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 			err := stream.Stream(func(line string) {
 				_, _ = sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, line)))
 			})
-			if err != nil {
-				_, _ = sgConn.Write([]byte(err.Error()))
-			}
-			_ = w.CloseWithError(nil)
+			_ = w.CloseWithError(err)
 		}()
 		go func() {
 			<-ctx.Done()
