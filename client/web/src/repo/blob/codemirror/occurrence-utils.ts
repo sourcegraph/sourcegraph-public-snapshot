@@ -28,9 +28,6 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
 ])
 
 export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
-    if (occurrence.symbolRoles !== undefined && occurrence.symbolRoles > 0) {
-        return true
-    }
     if (!occurrence.kind) {
         return false
     }
@@ -38,7 +35,7 @@ export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
     return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
 }
 
-export function occurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
+export function interactiveOccurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
     const position = positionAtCmPosition(state.doc, offset)
 
     // First we try to get an occurrence from the occurrences API
@@ -49,13 +46,18 @@ export function occurrenceAt(state: EditorState, offset: number): Occurrence | u
 
     // Next we try to get an occurrence from syntax highlighting data.
     const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
-    if (fromHighlighting) {
+    if (fromHighlighting && isInteractiveOccurrence(fromHighlighting)) {
         return fromHighlighting
     }
 
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
-    return inferOccurrenceAtOffset(state, offset)
+    const fromWords = inferOccurrenceAtOffset(state, offset)
+    if (fromWords && isInteractiveOccurrence(fromWords)) {
+        return fromWords
+    }
+
+    return undefined
 }
 
 // Returns the occurrence at this position based on syntax highlighting data.

@@ -21,8 +21,7 @@ import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverla
 import { syntaxHighlight } from '../highlight'
 import {
     contains,
-    isInteractiveOccurrence,
-    occurrenceAt,
+    interactiveOccurrenceAt,
     positionAtCmPosition,
     rangeToCmSelection,
     closestOccurrenceByCharacter,
@@ -138,10 +137,7 @@ export class CodeIntelAPIAdapter {
             return fromCache
         }
 
-        let occurrence = occurrenceAt(state, offset) ?? null
-        if (occurrence && !isInteractiveOccurrence(occurrence)) {
-            occurrence = null
-        }
+        const occurrence = interactiveOccurrenceAt(state, offset) ?? null
         const range = occurrence ? rangeToCmSelection(state.doc, occurrence.range) : null
         for (let i = range?.from ?? offset, to = range?.to ?? offset; i <= to; i++) {
             this.occurrenceCache.set(offset, { occurrence, range })
