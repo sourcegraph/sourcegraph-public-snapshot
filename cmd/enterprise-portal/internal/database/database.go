@@ -33,7 +33,7 @@ var allTables = []schema.Tabler{
 
 func databaseName(msp bool) string {
 	if msp {
-		return "enterprise-portal"
+		return "enterprise_portal"
 	}
 
 	// Use whatever the current database is for local development.
