@@ -36,9 +36,9 @@
     },
     {
       "modelId": "unknown",
-      "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
+      "modelRef": "anthropic::2023-06-01::claude-3-5-sonnet",
       "displayName": "Claude 3.5 Sonnet",
-      "string": "claude-3.5-sonnet-20240620",
+      "string": "claude-3-5-sonnet-20240620",
       "capabilities": ["chat", "edit"],
       "category": "accuracy",
       "status": "stable",
