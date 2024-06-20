@@ -120,7 +120,12 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </CodyAlert>
                 )}
 
-                {isAdmin && <InviteUsers telemetryRecorder={telemetryRecorder} />}
+                {isAdmin && !!subscriptionSummaryQueryResult.data && (
+                    <InviteUsers
+                        telemetryRecorder={telemetryRecorder}
+                        subscriptionSummary={subscriptionSummaryQueryResult.data}
+                    />
+                )}
                 {!!subscriptionSummaryQueryResult.data && (
                     <TeamMemberList
                         teamId={subscriptionSummaryQueryResult.data.teamId}

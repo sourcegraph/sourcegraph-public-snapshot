@@ -144,7 +144,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </PageHeader.Heading>
                 </PageHeader>
 
-                {isAdmin && <InviteUsers telemetryRecorder={telemetryRecorder} />}
+                {isAdmin && !!subscriptionSummaryQueryResult.data && (
+                    <InviteUsers
+                        telemetryRecorder={telemetryRecorder}
+                        subscriptionSummary={subscriptionSummaryQueryResult.data}
+                    />
+                )}
 
                 {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
