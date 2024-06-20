@@ -19,15 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	SubscriptionsService_GetEnterpriseSubscription_FullMethodName           = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
-	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName         = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
-	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName  = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
-	SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscriptionLicense"
-	SubscriptionsService_RevokeEnterpriseSubscriptionLicense_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/RevokeEnterpriseSubscriptionLicense"
-	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
-	SubscriptionsService_ArchiveEnterpriseSubscription_FullMethodName       = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ArchiveEnterpriseSubscription"
-	SubscriptionsService_CreateEnterpriseSubscription_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
-	SubscriptionsService_UpdateSubscriptionMembership_FullMethodName        = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
+	SubscriptionsService_GetEnterpriseSubscription_FullMethodName              = "/enterpriseportal.subscriptions.v1.SubscriptionsService/GetEnterpriseSubscription"
+	SubscriptionsService_ListEnterpriseSubscriptions_FullMethodName            = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptions"
+	SubscriptionsService_ListEnterpriseSubscriptionLicenses_FullMethodName     = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ListEnterpriseSubscriptionLicenses"
+	SubscriptionsService_CreateEnterpriseSubscriptionLicense_FullMethodName    = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscriptionLicense"
+	SubscriptionsService_RevokeEnterpriseSubscriptionLicense_FullMethodName    = "/enterpriseportal.subscriptions.v1.SubscriptionsService/RevokeEnterpriseSubscriptionLicense"
+	SubscriptionsService_UpdateEnterpriseSubscription_FullMethodName           = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscription"
+	SubscriptionsService_ArchiveEnterpriseSubscription_FullMethodName          = "/enterpriseportal.subscriptions.v1.SubscriptionsService/ArchiveEnterpriseSubscription"
+	SubscriptionsService_CreateEnterpriseSubscription_FullMethodName           = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
+	SubscriptionsService_UpdateEnterpriseSubscriptionMembership_FullMethodName = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscriptionMembership"
 )
 
 // SubscriptionsServiceClient is the client API for SubscriptionsService service.
@@ -51,8 +51,7 @@ type SubscriptionsServiceClient interface {
 	// Enterprise subscription, permanently disabling its use for features
 	// managed by Sourcegraph. Revocation cannot be undone.
 	RevokeEnterpriseSubscriptionLicense(ctx context.Context, in *RevokeEnterpriseSubscriptionLicenseRequest, opts ...grpc.CallOption) (*RevokeEnterpriseSubscriptionLicenseResponse, error)
-	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
-	// Only properties specified by the update_mask are applied.
+	// UpdateEnterpriseSubscription updates an existing enterprise subscription.
 	UpdateEnterpriseSubscription(ctx context.Context, in *UpdateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionResponse, error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
@@ -62,9 +61,8 @@ type SubscriptionsServiceClient interface {
 	ArchiveEnterpriseSubscription(ctx context.Context, in *ArchiveEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error)
-	// UpdateSubscriptionMembership updates a subscription membership. It creates
-	// a new one if it does not exist and allow_missing is set to true.
-	UpdateSubscriptionMembership(ctx context.Context, in *UpdateSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateSubscriptionMembershipResponse, error)
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	UpdateEnterpriseSubscriptionMembership(ctx context.Context, in *UpdateEnterpriseSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionMembershipResponse, error)
 }
 
 type subscriptionsServiceClient struct {
@@ -147,9 +145,9 @@ func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Co
 	return out, nil
 }
 
-func (c *subscriptionsServiceClient) UpdateSubscriptionMembership(ctx context.Context, in *UpdateSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateSubscriptionMembershipResponse, error) {
-	out := new(UpdateSubscriptionMembershipResponse)
-	err := c.cc.Invoke(ctx, SubscriptionsService_UpdateSubscriptionMembership_FullMethodName, in, out, opts...)
+func (c *subscriptionsServiceClient) UpdateEnterpriseSubscriptionMembership(ctx context.Context, in *UpdateEnterpriseSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionMembershipResponse, error) {
+	out := new(UpdateEnterpriseSubscriptionMembershipResponse)
+	err := c.cc.Invoke(ctx, SubscriptionsService_UpdateEnterpriseSubscriptionMembership_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +175,7 @@ type SubscriptionsServiceServer interface {
 	// Enterprise subscription, permanently disabling its use for features
 	// managed by Sourcegraph. Revocation cannot be undone.
 	RevokeEnterpriseSubscriptionLicense(context.Context, *RevokeEnterpriseSubscriptionLicenseRequest) (*RevokeEnterpriseSubscriptionLicenseResponse, error)
-	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
-	// Only properties specified by the update_mask are applied.
+	// UpdateEnterpriseSubscription updates an existing enterprise subscription.
 	UpdateEnterpriseSubscription(context.Context, *UpdateEnterpriseSubscriptionRequest) (*UpdateEnterpriseSubscriptionResponse, error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
@@ -188,9 +185,8 @@ type SubscriptionsServiceServer interface {
 	ArchiveEnterpriseSubscription(context.Context, *ArchiveEnterpriseSubscriptionRequest) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error)
-	// UpdateSubscriptionMembership updates a subscription membership. It creates
-	// a new one if it does not exist and allow_missing is set to true.
-	UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error)
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	UpdateEnterpriseSubscriptionMembership(context.Context, *UpdateEnterpriseSubscriptionMembershipRequest) (*UpdateEnterpriseSubscriptionMembershipResponse, error)
 	mustEmbedUnimplementedSubscriptionsServiceServer()
 }
 
@@ -222,8 +218,8 @@ func (UnimplementedSubscriptionsServiceServer) ArchiveEnterpriseSubscription(con
 func (UnimplementedSubscriptionsServiceServer) CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnterpriseSubscription not implemented")
 }
-func (UnimplementedSubscriptionsServiceServer) UpdateSubscriptionMembership(context.Context, *UpdateSubscriptionMembershipRequest) (*UpdateSubscriptionMembershipResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateSubscriptionMembership not implemented")
+func (UnimplementedSubscriptionsServiceServer) UpdateEnterpriseSubscriptionMembership(context.Context, *UpdateEnterpriseSubscriptionMembershipRequest) (*UpdateEnterpriseSubscriptionMembershipResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnterpriseSubscriptionMembership not implemented")
 }
 func (UnimplementedSubscriptionsServiceServer) mustEmbedUnimplementedSubscriptionsServiceServer() {}
 
@@ -382,20 +378,20 @@ func _SubscriptionsService_CreateEnterpriseSubscription_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SubscriptionsService_UpdateSubscriptionMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateSubscriptionMembershipRequest)
+func _SubscriptionsService_UpdateEnterpriseSubscriptionMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateEnterpriseSubscriptionMembershipRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SubscriptionsServiceServer).UpdateSubscriptionMembership(ctx, in)
+		return srv.(SubscriptionsServiceServer).UpdateEnterpriseSubscriptionMembership(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SubscriptionsService_UpdateSubscriptionMembership_FullMethodName,
+		FullMethod: SubscriptionsService_UpdateEnterpriseSubscriptionMembership_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SubscriptionsServiceServer).UpdateSubscriptionMembership(ctx, req.(*UpdateSubscriptionMembershipRequest))
+		return srv.(SubscriptionsServiceServer).UpdateEnterpriseSubscriptionMembership(ctx, req.(*UpdateEnterpriseSubscriptionMembershipRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -440,8 +436,8 @@ var SubscriptionsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SubscriptionsService_CreateEnterpriseSubscription_Handler,
 		},
 		{
-			MethodName: "UpdateSubscriptionMembership",
-			Handler:    _SubscriptionsService_UpdateSubscriptionMembership_Handler,
+			MethodName: "UpdateEnterpriseSubscriptionMembership",
+			Handler:    _SubscriptionsService_UpdateEnterpriseSubscriptionMembership_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

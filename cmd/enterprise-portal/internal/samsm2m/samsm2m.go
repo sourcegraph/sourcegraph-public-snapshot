@@ -27,10 +27,10 @@ func EnterprisePortalScope(permission scopes.Permission, action scopes.Action) s
 	return scopes.ToScope(scopes.ServiceEnterprisePortal, permission, action)
 }
 
-var tracer = otel.GetTracerProvider().Tracer("telemetry-gateway/samsm2m")
+var tracer = otel.GetTracerProvider().Tracer("enterprise-portal/samsm2m")
 
 type TokenIntrospector interface {
-	IntrospectToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error)
+	IntrospectSAMSToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error)
 }
 
 type Request interface {
@@ -71,7 +71,7 @@ func RequireScope(ctx context.Context, logger log.Logger, tokens TokenIntrospect
 	// TODO: as part of go/sams-m2m we need to build out a SDK for SAMS M2M
 	// consumers that has a recommended short-caching mechanism. Avoid doing it
 	// for now until we have a concerted effort.
-	result, err := tokens.IntrospectToken(ctx, token)
+	result, err := tokens.IntrospectSAMSToken(ctx, token)
 	if err != nil {
 		return nil, connectutil.InternalError(ctx, logger, err, "unable to validate token")
 	}

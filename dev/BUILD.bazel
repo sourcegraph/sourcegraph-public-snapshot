@@ -125,5 +125,6 @@ write_source_files(
         "//dev/build-tracker:generate_mocks",
         "//cmd/worker/internal/sourcegraphaccounts:generate_mocks",
         "//cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest:generate_mocks",
+        "//cmd/enterprise-portal/internal/subscriptionsservice:generate_mocks",
     ],
 )
