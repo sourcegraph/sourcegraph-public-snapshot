@@ -3,7 +3,6 @@ load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tar
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 
-
 go_library(
     name = "appliance_lib",
     srcs = ["main.go"],
