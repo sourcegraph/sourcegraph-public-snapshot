@@ -47,7 +47,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     const cancelInviteMutation = useCancelInvite()
     const resendInviteMutation = useResendInvite()
     const [confirmationModal, setConfirmationModal] = useState<{
-        action: 'remove member' | 'revoke admin'
+        action: 'removeMember' | 'revokeAdmin'
         member: TeamMember
     }>()
 
@@ -162,14 +162,14 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
         let confirmButtonText: string
         let performAction: () => Promise<void>
         switch (action) {
-            case 'revoke admin': {
+            case 'revokeAdmin': {
                 title = 'Revoke admin'
                 comfirmationText = `Do you want to revoke admin rights for ${member.email}? The user will still have access to Cody Pro and remain on the team.`
                 confirmButtonText = 'Revoke admin'
                 performAction = () => updateRole(member.accountId, 'member')
                 break
             }
-            case 'remove member': {
+            case 'removeMember': {
                 title = 'Remove user'
                 comfirmationText = `Do you want to remove ${member.email} from your Cody Pro team? The user will be downgraded to Cody Free.`
                 confirmButtonText = 'Remove from team'
@@ -256,7 +256,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="align-content-center text-center">
                                             <Button
                                                 variant="link"
-                                                onClick={() => setConfirmationModal({ action: 'revoke admin', member })}
+                                                onClick={() => setConfirmationModal({ action: 'revokeAdmin', member })}
                                                 className="ml-2"
                                                 disabled={adminCount < 2}
                                             >
@@ -278,9 +278,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="align-content-center text-center">
                                             <Button
                                                 variant="link"
-                                                onClick={() =>
-                                                    setConfirmationModal({ action: 'remove member', member })
-                                                }
+                                                onClick={() => setConfirmationModal({ action: 'removeMember', member })}
                                                 className="ml-2"
                                             >
                                                 Remove
