@@ -73,7 +73,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                         {props.subscription.cancelAtPeriodEnd
                             ? 'Subscription canceled. Access to Cody Pro will end on'
                             : 'Subscription renews on'}{' '}
-                        <Text as="span" className={styles.bold}>
+                        <Text as="span" className="font-bold">
                             {humanizeDate(props.subscription.currentPeriodEnd)}
                         </Text>
                         .
