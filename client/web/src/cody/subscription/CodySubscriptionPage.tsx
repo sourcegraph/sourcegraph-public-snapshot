@@ -25,7 +25,6 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { ProIcon } from '../components/CodyIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
@@ -33,6 +32,7 @@ import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscri
 import { USER_CODY_PLAN } from './queries'
 
 import styles from './CodySubscriptionPage.module.scss'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser?: AuthenticatedUser | null
@@ -73,9 +73,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Cody Subscription" />
+                <PageTitle title="Cody subscription" />
                 <PageHeader
-                    className="mb-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={
                         isProUser && (
                             <ButtonLink
@@ -93,13 +93,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         )
                     }
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription plans
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="cody-logo" className="mr-3" />
+                        <Text as="span">Subscription plans</Text>
                     </PageHeader.Heading>
                 </PageHeader>
-                <Link to="/cody/manage" className="my-4">
+                <Link to="/cody/manage">
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>

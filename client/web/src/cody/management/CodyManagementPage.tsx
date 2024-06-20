@@ -141,13 +141,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </CodyAlert>
                 )}
                 <PageHeader
-                    className="mb-4 mt-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={isAdmin && <div className="d-flex">{getTeamInviteButton()}</div>}
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <PageHeaderIcon className="mr-2" name="dashboard" /> Dashboard
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="dashboard" className="mr-3" />
+                        <Text as="span">Dashboard</Text>
                     </PageHeader.Heading>
                 </PageHeader>
 
