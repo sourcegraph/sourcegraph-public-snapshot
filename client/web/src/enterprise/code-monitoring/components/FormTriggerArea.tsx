@@ -10,8 +10,10 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, Checkbox, Code, H3, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
-import { useNavbarQueryState } from '../../../stores'
+import { defaultPatternTypeFromSettings } from '../../../util/settings'
+import { SearchPatternType } from '../../../graphql-operations'
 
 import styles from './FormTriggerArea.module.scss'
 
@@ -28,6 +30,9 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+
+// Code monitors don't support pattern type "structural"
+const isValidPatternType = (value: string): boolean => value === 'keyword' || value === 'standard' || value === 'literal' || value === 'regexp'
 
 const ValidQueryChecklistItem: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -111,9 +116,14 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasTypeDiffOrCommitFilter, setHasTypeDiffOrCommitFilter] = useState(false)
     const [hasRepoFilter, setHasRepoFilter] = useState(false)
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
+    const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () => isValidQuery && hasTypeDiffOrCommitFilter && (!isSourcegraphDotCom || hasRepoFilter),
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, isValidQuery, isSourcegraphDotCom]
+        () =>
+            isValidQuery &&
+            hasTypeDiffOrCommitFilter &&
+            (!isSourcegraphDotCom || hasRepoFilter) &&
+            hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
@@ -126,8 +136,9 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         setIsValidQuery(isValidQuery)
 
         let hasTypeDiffOrCommitFilter = false
-        let hasPatternTypeFilter = false
         let hasRepoFilter = false
+        let hasPatternTypeFilter = false
+        let hasValidPatternTypeFilter = true
 
         if (tokens.type === 'success') {
             const filters = tokens.term.filter(token => token.type === 'filter')
@@ -153,14 +164,26 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     filter.value &&
                     validateFilter(filter.field.value, filter.value)
             )
+
+            // No explicit patternType filter means we use the default pattern type
+            hasValidPatternTypeFilter =
+                !hasPatternTypeFilter ||
+                filters.some(
+                    filter =>
+                        filter.type === 'filter' &&
+                        resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                        filter.value &&
+                        isValidPatternType(filter.value.value)
+                )
         }
 
         setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
         setHasRepoFilter(hasRepoFilter)
         setHasPatternTypeFilter(hasPatternTypeFilter)
+        setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
     }, [queryState.query])
 
-    const defaultPatternType = useNavbarQueryState(state => state.searchPatternType)
+    let defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade()) || SearchPatternType.keyword
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
@@ -240,6 +263,15 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                         </div>
 
                         <ul className={classNames(styles.checklist, 'mb-4')}>
+                            <li>
+                                <ValidQueryChecklistItem
+                                    checked={hasValidPatternTypeFilter}
+                                    hint={`Code monitors support keyword, standard, literal and regex search. The default is ${defaultPatternType}`}
+                                    dataTestid="patterntype-checkbox"
+                                >
+                                    Is <Code>patternType:keyword</Code>, <Code>standard</Code>, <Code>literal</Code> or <Code>regexp</Code>
+                                </ValidQueryChecklistItem>
+                            </li>
                             <li>
                                 <ValidQueryChecklistItem
                                     checked={hasTypeDiffOrCommitFilter}
