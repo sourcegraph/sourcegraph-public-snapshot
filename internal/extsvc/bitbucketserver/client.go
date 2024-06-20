@@ -1473,10 +1473,6 @@ func (e *httpError) Error() string {
 	return fmt.Sprintf("Bitbucket API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }
 
-func (e *httpError) Unwrap() error {
-	return errors.Newf(e.Error())
-}
-
 func (e *httpError) Unauthorized() bool {
 	return e.StatusCode == http.StatusUnauthorized
 }
