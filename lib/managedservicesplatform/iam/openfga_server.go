@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
+	"go.uber.org/zap" //nolint:logging // dependencies require direct usage of zap
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
