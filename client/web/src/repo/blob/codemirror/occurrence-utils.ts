@@ -1,4 +1,5 @@
 import { EditorSelection, type Text, type EditorState, type SelectionRange } from '@codemirror/state'
+import { sortedIndexBy } from 'lodash'
 
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
@@ -81,11 +82,13 @@ function highlightingOccurrenceAtPosition(state: EditorState, position: Position
 // TODO: document
 function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
     for (const datum of data) {
-        for (const occurrence of datum.occurrences) {
-            if (occurrence.range.contains(position)) {
-                return occurrence
+        sortedIndexBy<Occurrence | Position>(datum.nonOverlappingOccurrences, position, (occOrPosition): Position => {
+            if (occOrPosition instanceof Position) {
+                return occOrPosition
+            } else {
+                return occOrPosition.range.start
             }
-        }
+        })
     }
     return undefined
 }

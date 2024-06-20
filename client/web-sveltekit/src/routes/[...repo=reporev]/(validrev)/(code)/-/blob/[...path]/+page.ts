@@ -1,6 +1,12 @@
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
-import { Occurrence, Range, Position, SymbolRole } from '@sourcegraph/shared/src/codeintel/scip'
+import {
+    Occurrence,
+    Range,
+    Position,
+    SymbolRole,
+    nonOverlappingOccurrences,
+} from '@sourcegraph/shared/src/codeintel/scip'
 import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
 import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
@@ -65,8 +71,9 @@ async function fetchCodeGraphData(
             case GraphQLSymbolRole.DEFINITION:
                 return SymbolRole.Definition
             case GraphQLSymbolRole.REFERENCE:
-                // TODO: is this correct?
-                return SymbolRole.Import
+                // The REFERENCE role from the API is just the negation of the
+                // DEFINITION role, so simply do not set the definition bit.
+                return SymbolRole.Unspecified
             case GraphQLSymbolRole.FORWARD_DEFINITION:
                 return SymbolRole.ForwardDefinition
             default:
@@ -74,26 +81,29 @@ async function fetchCodeGraphData(
         }
     }
 
-    return (
-        rawCodeGraphData.map(datum => ({
-            provenance: datum.provenance,
-            toolInfo: datum.toolInfo,
-            commit: datum.commit,
-            occurrences:
-                datum.occurrences?.nodes.map(
-                    occ =>
-                        new Occurrence(
-                            new Range(
-                                new Position(occ.range.start.line, occ.range.start.character),
-                                new Position(occ.range.end.line, occ.range.end.character)
-                            ),
-                            undefined,
-                            occ.symbol ?? undefined,
-                            occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0)
-                        )
-                ) ?? [],
-        })) ?? []
-    )
+    return rawCodeGraphData.map(({ provenance, toolInfo, commit, occurrences }) => {
+        const overlapping =
+            occurrences?.nodes?.map(
+                occ =>
+                    new Occurrence(
+                        new Range(
+                            new Position(occ.range.start.line, occ.range.start.character),
+                            new Position(occ.range.end.line, occ.range.end.character)
+                        ),
+                        undefined,
+                        occ.symbol ?? undefined,
+                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0)
+                    )
+            ) ?? []
+        const nonOverlapping = nonOverlappingOccurrences([...overlapping])
+        return {
+            provenance,
+            toolInfo,
+            commit,
+            occurrences: overlapping,
+            nonOverlappingOccurrences: nonOverlapping,
+        }
+    })
 }
 
 async function loadFileView({ parent, params, url }: PageLoadEvent) {
@@ -158,11 +168,11 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
-                  .query(BlobFileViewCommitQuery_revisionOverride, {
-                      repoName,
-                      revspec: revisionOverride,
-                  })
-                  .then(result => result.data?.repository?.commit)
+                .query(BlobFileViewCommitQuery_revisionOverride, {
+                    repoName,
+                    revspec: revisionOverride,
+                })
+                .then(result => result.data?.repository?.commit)
             : null,
         externalServiceType: parent()
             .then(({ resolvedRevision }) => resolvedRevision.repo?.externalRepository?.serviceType)

@@ -1,5 +1,3 @@
-// TODO: document that this is the new way to do things
-
 import { Facet } from '@codemirror/state'
 
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
@@ -11,8 +9,11 @@ export interface CodeGraphData {
         name: string | null
         version: string | null
     } | null
-    // Guaranteed to be sorted by range
+    // The raw occurrences as returned by the API
     occurrences: Occurrence[]
+    // The same as occurrences, but flattened so there are no overlapping
+    // ranges.
+    nonOverlappingOccurrences: Occurrence[]
 }
 
 export const codeGraphData = Facet.define<CodeGraphData[], CodeGraphData[]>({
