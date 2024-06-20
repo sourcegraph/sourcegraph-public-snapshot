@@ -315,7 +315,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 		for _, res := range e.Results {
 			if fm, ok := res.(*result.FileMatch); ok {
-				collected = append(collected, fileMatchToContextMatches(fm)...)
+				collected = append(collected, fileMatchToContextMatch(fm))
 			}
 		}
 	})
@@ -345,16 +345,16 @@ func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContext
 	plan.Features.CodyFileMatcher = filter
 }
 
-func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
+func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 	if len(fm.ChunkMatches) == 0 {
-		// If this is a filename-only match, we return the first 20 lines of the file.
-		return []FileChunkContext{{
+		// If this is a filename-only match, return a single chunk at the start of the file
+		return FileChunkContext{
 			RepoName:  fm.Repo.Name,
 			RepoID:    fm.Repo.ID,
 			CommitID:  fm.CommitID,
 			Path:      fm.Path,
 			StartLine: 0,
-		}}
+		}
 	}
 
 	// To provide some context variety, we just use the top-ranked
@@ -363,11 +363,11 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 	// 5 lines of leading context, clamped to zero
 	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-5)
 
-	return []FileChunkContext{{
+	return FileChunkContext{
 		RepoName:  fm.Repo.Name,
 		RepoID:    fm.Repo.ID,
 		CommitID:  fm.CommitID,
 		Path:      fm.Path,
 		StartLine: startLine,
-	}}
+	}
 }

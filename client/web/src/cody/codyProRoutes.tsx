@@ -4,7 +4,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { type LegacyLayoutRouteContext, LegacyRoute } from '../LegacyRouteContext'
 
-import { QueryClientProvider } from './management/api/react-query/QueryClientProvider'
 import { isEmbeddedCodyProUIEnabled } from './util'
 
 export enum CodyProRoutes {
@@ -17,8 +16,6 @@ export enum CodyProRoutes {
     SubscriptionManage = '/cody/subscription/manage',
 
     ManageTeam = '/cody/team/manage',
-    // Accepts an invite to join a Cody team, then redirects to the Cody team page.
-    AcceptInvite = '/cody/invites/accept',
 }
 
 /**
@@ -66,7 +63,6 @@ const routeComponents = {
         'CodySubscriptionManagePage'
     ),
     [CodyProRoutes.ManageTeam]: lazyComponent(() => import('./team/CodyManageTeamPage'), 'CodyManageTeamPage'),
-    [CodyProRoutes.AcceptInvite]: lazyComponent(() => import('./invites/AcceptInvitePage'), 'CodyAcceptInvitePage'),
 }
 
 interface CodyProPageProps extends Pick<LegacyLayoutRouteContext, 'authenticatedUser' | 'telemetryRecorder'> {
@@ -81,9 +77,5 @@ interface CodyProPageProps extends Pick<LegacyLayoutRouteContext, 'authenticated
  */
 const CodyProPage: React.FC<CodyProPageProps> = props => {
     const Component = routeComponents[props.path]
-    return (
-        <QueryClientProvider>
-            <Component authenticatedUser={props.authenticatedUser} telemetryRecorder={props.telemetryRecorder} />
-        </QueryClientProvider>
-    )
+    return <Component authenticatedUser={props.authenticatedUser} telemetryRecorder={props.telemetryRecorder} />
 }

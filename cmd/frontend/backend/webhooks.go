@@ -96,9 +96,9 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 	switch codeHostKind {
-	case extsvc.KindGitHub, extsvc.KindGitLab, extsvc.KindBitbucketServer:
+	case extsvc.KindGitHub, extsvc.KindGitLab, extsvc.KindBitbucketServer, extsvc.KindBitbucketCloud:
 		return nil
-	case extsvc.KindBitbucketCloud, extsvc.KindAzureDevOps:
+	case extsvc.KindAzureDevOps:
 		if secret != nil {
 			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
 		}

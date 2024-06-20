@@ -1,12 +1,10 @@
 pub mod syntect_html;
 pub mod syntect_scip;
 
-use std::{
-    fmt::{Debug, Display, Formatter},
-    path::Path,
-};
+use std::fmt::{Debug, Display, Formatter};
 
 use anyhow::anyhow;
+use camino::{Utf8Path, Utf8PathBuf};
 use protobuf::Message;
 use syntect::{
     html::ClassStyle,
@@ -18,15 +16,7 @@ use crate::highlighting::syntect_html::ClassedTableGenerator;
 
 #[derive(Default)]
 pub struct FileInfo<'a> {
-    // This is kept as a String instead of a PathBuf because:
-    // 1. Sourcegraph doesn't support non-UTF-8 values in paths.
-    // 2. The input received from the network is UTF-8.
-    // 3. We're not using this path to call any OS APIs
-    //    which would require Path.
-    // 4. It avoids extra conversions when interacting with
-    //    syntect or in the ad-hoc language detection code that
-    //    we currently have.
-    path: String,
+    path: Utf8PathBuf,
     pub contents: &'a str,
     pub language: Option<&'a str>,
 }
@@ -34,7 +24,7 @@ pub struct FileInfo<'a> {
 impl<'a> FileInfo<'a> {
     pub fn new(path: &str, contents: &'a str, language: Option<&'a str>) -> FileInfo<'a> {
         FileInfo {
-            path: path.to_string(),
+            path: Utf8Path::new(path).to_path_buf(),
             contents,
             language,
         }
@@ -46,20 +36,14 @@ impl<'a> FileInfo<'a> {
         language: Option<&'a str>,
     ) -> FileInfo<'a> {
         FileInfo {
-            path: format!(
-                "__highlighter_synthetic__{}{}",
-                if extension.starts_with('.') { "" } else { "." },
-                extension
-            ),
+            path: Utf8Path::new(&format!(
+                "__highlighter_synthetic__.{}",
+                extension.trim_start_matches('.')
+            ))
+            .to_path_buf(),
             contents,
             language,
         }
-    }
-
-    fn extension(&self) -> Option<&str> {
-        Path::new(&self.path)
-            .extension()
-            .and_then(|osstr| osstr.to_str())
     }
 
     pub fn determine_language(
@@ -97,9 +81,9 @@ impl<'a> FileInfo<'a> {
             }
         }
 
-        if self.path.is_empty() {
+        if self.path.as_str() == "" {
             // Legacy codepath, kept for backwards-compatability with old clients.
-            return match syntax_set.find_syntax_by_extension(self.extension().unwrap_or("")) {
+            return match syntax_set.find_syntax_by_extension(self.path.extension().unwrap_or("")) {
                 Some(v) => Ok(v),
                 // Fall back: Determine syntax definition by first line.
                 None => match syntax_set.find_syntax_by_first_line(self.contents) {
@@ -109,8 +93,8 @@ impl<'a> FileInfo<'a> {
             };
         }
 
-        let file_name = Path::new(&self.path).file_name().and_then(|n| n.to_str());
-        let extension = self.extension();
+        let file_name = self.path.file_name();
+        let extension = self.path.extension();
 
         // Override syntect's language detection for conflicting file extensions because
         // it's impossible to express this logic in a syntax definition.
@@ -172,7 +156,7 @@ impl SublimeLanguageName {
     fn into_tree_sitter_name(self, file_info: &FileInfo<'_>) -> TreeSitterLanguageName {
         if self.raw.is_empty() || self.raw.to_lowercase() == "plain text" {
             #[allow(clippy::single_match)]
-            match file_info.extension() {
+            match file_info.path.extension() {
                 Some("ncl") => return TreeSitterLanguageName::new("nickel"),
                 _ => {}
             };
@@ -187,7 +171,7 @@ impl SublimeLanguageName {
             x if x == "Rust Enhanced".to_lowercase() => "rust",
             x if x == "JS Custom - React".to_lowercase() => "javascript",
             x if x == "TypeScriptReact".to_lowercase() => {
-                if file_info.path.ends_with(".tsx") {
+                if file_info.path.extension() == Some("tsx") {
                     "tsx"
                 } else {
                     "typescript"
@@ -385,7 +369,7 @@ mod test {
         ];
 
         for (path, expected_ext) in mapping {
-            assert_eq!(FileInfo::new(path, "", None).extension(), expected_ext);
+            assert_eq!(FileInfo::new(path, "", None).path.extension(), expected_ext);
         }
     }
 }

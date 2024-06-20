@@ -1400,6 +1400,11 @@ func TestUsers_CreateCancelAccessRequest(t *testing.T) {
 	assert.Equal(t, updated.Status, types.AccessRequestStatusCanceled)
 }
 
+func TestUserNotFoundFulfillsNotFound(t *testing.T) {
+	err := NewUserNotFoundError(123)
+	require.True(t, errcode.IsNotFound(err))
+}
+
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)

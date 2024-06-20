@@ -63,6 +63,7 @@ func (g *grpcHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
+	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	cc, err := grpc.DialContext(ctx, g.target, g.dialOpts...)
 	if err != nil {
 		err = errors.Wrap(err, "dialing GRPC server")

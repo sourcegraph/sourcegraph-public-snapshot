@@ -415,6 +415,8 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/enterprise-portal github.com/sourcegraph/sourcegraph/cmd/enterprise-portal
+      # Ensure the "msp_iam" database exists (PostgreSQL has no "IF NOT EXISTS" option).
+      createdb -h $PGHOST -p $PGPORT -U $PGUSER msp_iam || true
     checkBinary: .bin/enterprise-portal
     env:
       PORT: '6081'
@@ -1305,6 +1307,8 @@ dockerCommands:
       CONFIG_DIR: docker-images/prometheus/config
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
+      SRC_LOG_LEVEL: info
+      SRC_DEVELOPMENT: true
       DISABLE_SOURCEGRAPH_CONFIG: false
       DISABLE_ALERTMANAGER: false
       PROMETHEUS_ADDITIONAL_FLAGS: '--web.enable-lifecycle --web.enable-admin-api'
@@ -1409,7 +1413,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1

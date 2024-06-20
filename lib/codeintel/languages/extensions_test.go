@@ -1,9 +1,12 @@
 package languages
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
-	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2"               //nolint:depguard - This package is allowed to use enry
+	enrydata "github.com/go-enry/go-enry/v2/data" //nolint:depguard - This package is allowed to use enry
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +45,7 @@ var nonAmbiguousExtensionsCheck = map[string]string{
 
 func TestGetLanguageByAlias_UnsupportedLanguages(t *testing.T) {
 	for alias, name := range unsupportedByEnryAliasMap {
-		resName, _ := GetLanguageByAlias(alias)
+		resName, _ := GetLanguageByNameOrAlias(alias)
 		require.Equal(t, name, resName,
 			"maybe a typo in `unsupportedByEnryAliasMap`?")
 	}
@@ -50,7 +53,7 @@ func TestGetLanguageByAlias_UnsupportedLanguages(t *testing.T) {
 
 func TestGetLanguageByAlias_NonAmbiguousLanguages(t *testing.T) {
 	for _, language := range nonAmbiguousExtensionsCheck {
-		_, ok := GetLanguageByAlias(language)
+		_, ok := GetLanguageByNameOrAlias(language)
 		require.True(t, ok,
 			"unable to find language %s in go-enry", language)
 	}
@@ -111,5 +114,70 @@ func TestGetLanguagesByExtension_BinaryExtensions(t *testing.T) {
 		require.Truef(t, isLikelyBinary, "filename: %v was not guessed to be binary;"+
 			"bug in extension matching logic in getLanguagesByExtension maybe?",
 			filename)
+	}
+}
+
+func TestExtensionsConsistency(t *testing.T) {
+	for ext, overrideLang := range overrideAmbiguousExtensionsMap {
+		filepath := "foo" + ext
+		enryLangsForExt := enry.GetLanguagesByExtension(filepath, nil, nil)
+		require.Containsf(t, enryLangsForExt, overrideLang, "overrideAmbiguousExtensionsMap maps extension %q to language %q but "+
+			"that mapping is not present in enry's list %v", ext, overrideLang, enryLangsForExt)
+		require.Greaterf(t, len(enryLangsForExt), 1, "overrideAmbiguousExtensionsMap states that"+
+			"%q extension is ambiguous, but only found langs: %v", ext, enryLangsForExt)
+
+		candidates, isLikelyBinary := getLanguagesByExtension(filepath)
+		require.False(t, isLikelyBinary, "ambiguous files are all source code")
+		require.True(t, len(candidates) == 1, "getLanguagesByExtension should respect overrideAmbiguousExtensionsMap")
+
+		shouldBeIgnoredLangsForExt := slices.DeleteFunc(enryLangsForExt, func(s string) bool {
+			return s == overrideLang
+		})
+		for _, shouldBeIgnoredLang := range shouldBeIgnoredLangsForExt {
+			ignoredExts, found := nicheExtensionUsages[shouldBeIgnoredLang]
+			require.Truef(t, found, "expected lang: %q to have an entry in nicheExtensionUsages for consistency with GetLanguagesByExtension", shouldBeIgnoredLang)
+			require.Truef(t, len(ignoredExts) >= 1, "sets in nicheExtensionUsages must be non-empty")
+
+			nonNicheExts := GetLanguageExtensions(shouldBeIgnoredLang)
+			for ignoredExt, _ := range ignoredExts {
+				require.Falsef(t, slices.Contains(nonNicheExts, ignoredExt),
+					"GetLanguageExtensions should not return %q for lang %q for consistency with GetLanguagesByExtension",
+					ignoredExt, shouldBeIgnoredLang)
+			}
+		}
+	}
+}
+
+func TestExtensionsConsistency2(t *testing.T) {
+	for lang, _ := range enrydata.ExtensionsByLanguage {
+		for _, ext := range GetLanguageExtensions(lang) {
+			if strings.Count(ext, ".") > 1 {
+				// Ignore unusual edge cases like .coffee.md for Literate CoffeeScript
+				continue
+			}
+			langsByExt, isLikelyBinary := getLanguagesByExtension("foo" + ext)
+			if !isLikelyBinary {
+				require.Truef(t, slices.Contains(langsByExt, lang),
+					"expected getLanguagesByExtension result %v to contain %q (extension: %q)", langsByExt, lang, ext)
+			}
+		}
+	}
+}
+
+// TODO(id: remove-pkl-special-case) Linguist v7.30.0 adds support for Pkl,
+// so when we upgrade to a matching go-enry version, we can remove special
+// cases for Pkl.
+func TestUnsupportedByEnry(t *testing.T) {
+	for lang := range unsupportedByEnryNameToExtensionMap {
+		_, found := enrydata.ExtensionsByLanguage[lang]
+		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryNameToExtensionMap")
+	}
+	for _, lang := range unsupportedByEnryAliasMap {
+		_, found := enrydata.ExtensionsByLanguage[lang]
+		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryAliasMap")
+	}
+	for _, lang := range unsupportedByEnryExtensionToNameMap {
+		_, found := enrydata.ExtensionsByLanguage[lang]
+		require.False(t, found, "looks like language %q is supported by enry; remove it from unsupportedByEnryExtensionToNameMap")
 	}
 }

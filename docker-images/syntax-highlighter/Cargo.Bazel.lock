@@ -1,5 +1,5 @@
 {
-  "checksum": "af874a7a007e7b8e861e3203be252436ede369e33b1819397b3428b27f7df960",
+  "checksum": "31748fbba83a1f037f24462114667576f5abb10cf202f1ae7b083d6c48c5c1f1",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -1372,6 +1372,59 @@
         "version": "1.4.0"
       },
       "license": "MIT"
+    },
+    "camino 1.1.7": {
+      "name": "camino",
+      "version": "1.1.7",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/camino/1.1.7/download",
+          "sha256": "e0ec6b951b160caa93cc0c7b209e5a3bff7aae9062213451ac99493cd844c239"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "camino",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "camino",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "camino 1.1.7",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.1.7"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
+      },
+      "license": "MIT OR Apache-2.0"
     },
     "cast 0.3.0": {
       "name": "cast",
@@ -10536,6 +10589,10 @@
               "target": "assert_cmd"
             },
             {
+              "id": "camino 1.1.7",
+              "target": "camino"
+            },
+            {
               "id": "clap 4.3.23",
               "target": "clap"
             },
@@ -11595,6 +11652,10 @@
             {
               "id": "bitvec 1.0.1",
               "target": "bitvec"
+            },
+            {
+              "id": "camino 1.1.7",
+              "target": "camino"
             },
             {
               "id": "clap 4.3.23",
@@ -18679,6 +18740,7 @@
     "assert_cmd 2.0.12",
     "base64 0.13.1",
     "bitvec 1.0.1",
+    "camino 1.1.7",
     "clap 4.3.23",
     "colored 2.0.4",
     "futures 0.3.28",

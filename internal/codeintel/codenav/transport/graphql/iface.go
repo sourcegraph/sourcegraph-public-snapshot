@@ -27,7 +27,7 @@ type CodeNavService interface {
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
 	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
 	SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error)
-	SyntacticUsages(ctx context.Context, repo types.Repo, commit api.CommitID, path string, symbolRange scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)
+	SyntacticUsages(ctx context.Context, repo types.Repo, commit api.CommitID, path string, symbolRange scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
 }
 
 type AutoIndexingService interface {

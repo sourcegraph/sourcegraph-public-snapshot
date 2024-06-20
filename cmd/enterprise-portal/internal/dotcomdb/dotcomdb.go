@@ -413,6 +413,10 @@ func scanLicenseAttributes(row pgx.Row) (*LicenseAttributes, error) {
 	return &attrs, nil
 }
 
+// ListEnterpriseSubscriptionLicenses returns a list of enterprise subscription
+// license attributes with the given filters. It silently ignores any
+// non-matching filters. The caller should check the length of the returned
+// slice to ensure all requested licenses were found.
 func (r *Reader) ListEnterpriseSubscriptionLicenses(
 	ctx context.Context,
 	filters []*subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter,
@@ -450,6 +454,40 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 			return nil, errors.Wrap(err, "failed to scan cody gateway access attributes")
 		}
 		attrs = append(attrs, attr)
+	}
+	return attrs, rows.Err()
+}
+
+type SubscriptionAttributes struct {
+	ID         string
+	CreatedAt  time.Time
+	ArchivedAt *time.Time
+}
+
+// ListEnterpriseSubscriptions returns a list of enterprise subscription
+// attributes with the given IDs. It silently ignores any non-existent
+// subscription IDs. The caller should check the length of the returned slice to
+// ensure all requested subscriptions were found.
+func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*SubscriptionAttributes, error) {
+	if len(subscriptionIDs) == 0 {
+		return []*SubscriptionAttributes{}, nil
+	}
+
+	query := `SELECT id, created_at, archived_at FROM product_subscriptions WHERE id = ANY(@ids)`
+	namedArgs := pgx.NamedArgs{"ids": subscriptionIDs}
+	rows, err := r.db.Query(ctx, query, namedArgs)
+	if err != nil {
+		return nil, errors.Wrap(err, "query subscription attributes")
+	}
+	defer rows.Close()
+	var attrs []*SubscriptionAttributes
+	for rows.Next() {
+		var attr SubscriptionAttributes
+		err = rows.Scan(&attr.ID, &attr.CreatedAt, &attr.ArchivedAt)
+		if err != nil {
+			return nil, errors.Wrap(err, "scan subscription attributes")
+		}
+		attrs = append(attrs, &attr)
 	}
 	return attrs, rows.Err()
 }
