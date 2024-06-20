@@ -56,9 +56,6 @@ func TestGetPrompt(t *testing.T) {
 			}
 		}
 	})
-<<<<<<< HEAD
-=======
-
 	t.Run("valid prompt with last empty message from assistnt should be removed", func(t *testing.T) {
 		messages := []types.Message{
 			{Speaker: types.SYSTEM_MESSAGE_SPEAKER, Text: "system"},
@@ -89,5 +86,4 @@ func TestGetPrompt(t *testing.T) {
 			t.Errorf("expected error for last human message to be empty, got nil")
 		}
 	})
->>>>>>> 1a6a7f78bf5 (Adding Anthropic messages API support to the Google provider through Google vertex (#63282))
 }
