@@ -61,7 +61,7 @@ function create_push_command() {
 
   for i in "${!registries[@]}"; do
     registry="${registries[$i]}"
-    etarget="$(echo "$target" | sed 's/\///g')"
+    etarget="$(echo "$target" | sed 's/\//_/g')"
     cmd="$runscriptdir/${etarget}_$i.sh"
 
     bazel \
