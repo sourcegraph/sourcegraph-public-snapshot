@@ -208,7 +208,7 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   trap "rm -rf $log_file" EXIT
   parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
 
-  Pretty print the output from gnu parallel
+  # Pretty print the output from gnu parallel
   while read -r line; do
     # Skip the first line (header)
     if [[ "$line" != Seq* ]]; then
