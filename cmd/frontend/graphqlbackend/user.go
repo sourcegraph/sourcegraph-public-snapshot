@@ -49,9 +49,8 @@ func (r *schemaResolver) User(
 		user, err = r.db.Users().GetByID(ctx, *args.DatabaseID)
 
 	case args.Email != nil:
-		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
-		// Sourcegraph.com, for user privacy reasons.
-		if dotcom.SourcegraphDotComMode() {
+		if dotcom.IsUserAndOrgProfileDataPrivate() {
+			// 🚨 SECURITY: Only site admins are allowed to look up by email address in this mode for user privacy reasons.
 			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			}

@@ -29,7 +29,6 @@ type createAccessTokenInput struct {
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
-
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -51,12 +50,11 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 
-		// 🚨 SECURITY: Creating access tokens for other users by site admins is not allowed on
-		// Sourcegraph.com. This check is mostly the defense for a misconfiguration of the site
-		// configuration.
-		if dotcom.SourcegraphDotComMode() {
+		if !dotcom.SiteAdminCanViewAllUserData() {
+			// 🚨 SECURITY: Creating access tokens for other users by site admins is not allowed in
+			// lockdown mode because it lets them access all of another user's data.
 			if err := auth.CheckSameUser(ctx, userID); err != nil {
-				return nil, errors.New("access token creation for other users is disabled on Sourcegraph.com")
+				return nil, errors.New("access token creation for other users is disabled in lockdown mode")
 			}
 		}
 
@@ -96,11 +94,13 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		case authz.ScopeUserAll:
 			hasUserAllScope = true
 		case authz.ScopeSiteAdminSudo:
+			if !dotcom.SiteAdminCanViewAllUserData() {
+				// 🚨 SECURITY: Sudo tokens are disabled in this mode.
+				return nil, errors.Errorf("creation of access tokens with scope %q is disabled in lockdown mode", authz.ScopeSiteAdminSudo)
+			}
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
 			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
-			} else if dotcom.SourcegraphDotComMode() {
-				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
 			}
 		default:
 			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
