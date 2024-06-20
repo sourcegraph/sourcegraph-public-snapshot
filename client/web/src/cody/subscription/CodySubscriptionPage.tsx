@@ -98,7 +98,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         <Text as="span">Subscription plans</Text>
                     </PageHeader.Heading>
                 </PageHeader>
-                <Link to="/cody/manage">
+                <Link to={CodyProRoutes.Manage}>
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
