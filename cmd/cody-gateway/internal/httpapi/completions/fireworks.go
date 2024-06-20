@@ -148,13 +148,13 @@ func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 
-func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res fireworksResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse fireworks response as JSON", log.Error(err))

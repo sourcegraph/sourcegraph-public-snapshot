@@ -166,7 +166,7 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("anthropic-version", "2023-01-01")
 }
 
-func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader, _ bool) (promptUsage, completionUsage usageStats) {
 	var err error
 
 	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data

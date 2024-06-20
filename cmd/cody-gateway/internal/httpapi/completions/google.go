@@ -64,10 +64,9 @@ func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req google
 	rpc := "generateContent"
 	sseSuffix := ""
 	// If we're streaming, we need to use the stream endpoint.
-	if feature == codygateway.FeatureChatCompletions || req.ShouldStream() {
+	if req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
-		req.Stream = true
 	}
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
 }
@@ -108,12 +107,12 @@ func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("Content-Type", "application/json")
 }
 
-func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.BuildPrompt())
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream && !reqBody.ShouldStream() {
+	if !isStreamRequest {
 		var res googleResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
