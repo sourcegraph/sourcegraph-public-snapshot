@@ -88,7 +88,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    const getTeamInviteButton = useCallback(() => {
+    const getTeamInviteButton = () => {
         const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
         const hasFreeSeats = subscriptionSummaryQueryResult?.data
             ? subscriptionSummaryQueryResult.data.teamMaxMembers >
@@ -96,12 +96,17 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             : false
         const targetUrl = hasFreeSeats ? '/cody/team/manage' : '/cody/manage/subscription/new?addSeats=1'
         const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
+
+        if (!subscriptionSummaryQueryResult?.data) {
+            return null
+        }
+
         return (
             <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
                 <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
             </Button>
         )
-    }, [subscriptionSummaryQueryResult?.data])
+    }
 
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
