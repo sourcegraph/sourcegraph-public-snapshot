@@ -20,7 +20,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_auth//credentials",
         "@com_google_cloud_go_auth//httptransport",
-        "@org_golang_x_oauth2//google",
     ],
 )
 
