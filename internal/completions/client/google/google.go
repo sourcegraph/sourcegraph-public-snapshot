@@ -46,7 +46,7 @@ func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bo
 
 func determineAPIFamilyAndClient(endpoint, accessToken string) (APIFamily, *http.Client, error) {
 	// e.g. https://generativelanguage.googleapis.com/v1/models
-	if endpoint == "" || strings.StartsWith(endpoint, "https://generativelanguage.googleapis.com") {
+	if endpoint == "" || strings.HasPrefix(endpoint, "https://generativelanguage.googleapis.com") {
 		// Default to Gemini API if the endpoint contains "generativelanguage"
 		return Gemini, nil, nil
 	}
