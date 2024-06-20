@@ -33,7 +33,7 @@ export enum SymbolRole {
 }
 
 export class Position implements sourcegraph.Position {
-    constructor(public readonly line: number, public readonly character: number) { }
+    constructor(public readonly line: number, public readonly character: number) {}
 
     /** @returns this position with incremented line/character values */
     public withIncrementedValues(): Position {
@@ -85,7 +85,7 @@ export class Position implements sourcegraph.Position {
 }
 
 export class Range {
-    constructor(public readonly start: Position, public readonly end: Position) { }
+    constructor(public readonly start: Position, public readonly end: Position) {}
     public static fromNumbers(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
         return new Range(new Position(startLine, startCharacter), new Position(endLine, endCharacter))
     }
@@ -145,7 +145,7 @@ export class Occurrence {
         public readonly kind?: SyntaxKind,
         public readonly symbol?: string,
         public readonly symbolRoles?: number
-    ) { }
+    ) {}
 
     public withStartPosition(newStartPosition: Position): Occurrence {
         return this.withRange(this.range.withStart(newStartPosition))
@@ -163,9 +163,9 @@ export class Occurrence {
             // Handle 3 vs 4 length meaning different things
             occ.range.length === 3
                 ? // 3 means same row
-                new Position(occ.range[0], occ.range[2])
+                  new Position(occ.range[0], occ.range[2])
                 : // 4 means could be different rows
-                new Position(occ.range[2], occ.range[3])
+                  new Position(occ.range[2], occ.range[3])
         )
 
         return new Occurrence(range, occ.syntaxKind, occ.symbol, occ.symbolRoles)
