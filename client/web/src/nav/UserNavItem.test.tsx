@@ -9,6 +9,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { CodyProApiProvider } from '../cody/management/api/react-query/CodyProApiProvider'
+
 import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
 vi.mock('../util/license', () => ({
@@ -75,15 +77,18 @@ describe('UserNavItem', () => {
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
+        const isSourcegraphDotCom = true
         const result = renderWithBrandedContext(
             <MockedTestProvider>
-                <UserNavItem
-                    showKeyboardShortcutsHelp={() => undefined}
-                    authenticatedUser={USER}
-                    isSourcegraphDotCom={true}
-                    showFeedbackModal={() => undefined}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <CodyProApiProvider isSourcegraphDotCom={isSourcegraphDotCom}>
+                    <UserNavItem
+                        showKeyboardShortcutsHelp={() => undefined}
+                        authenticatedUser={USER}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        showFeedbackModal={() => undefined}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </CodyProApiProvider>
             </MockedTestProvider>
         )
 
