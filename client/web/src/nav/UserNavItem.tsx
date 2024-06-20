@@ -132,7 +132,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuHeader className={styles.dropdownHeader}>
                                 Signed in as <strong>@{authenticatedUser.username}</strong>
                             </MenuHeader>
-                            {isSourcegraphDotCom && <CodyProAdminSection />}
+                            {isSourcegraphDotCom && <CodyProSection />}
                             <MenuDivider className={styles.dropdownDivider} />
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
@@ -245,10 +245,10 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     )
 }
 
-const CodyProAdminSection: React.FC = () => {
+const CodyProSection: React.FC = () => {
     const { data } = useSubscriptionSummary()
 
-    if (!data || data.userRole !== 'admin') {
+    if (!data) {
         return null
     }
 
@@ -259,9 +259,13 @@ const CodyProAdminSection: React.FC = () => {
             <MenuLink as={Link} to={CodyProRoutes.ManageTeam}>
                 Manage team
             </MenuLink>
-            <MenuLink as={Link} to={CodyProRoutes.SubscriptionManage}>
-                Manage subscription
-            </MenuLink>
+
+            {/* only team admins can manage subscription */}
+            {data.userRole === 'admin' && (
+                <MenuLink as={Link} to={CodyProRoutes.SubscriptionManage}>
+                    Manage subscription
+                </MenuLink>
+            )}
         </>
     )
 }
