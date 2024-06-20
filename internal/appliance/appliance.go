@@ -21,7 +21,7 @@ type Appliance struct {
 	client                 client.Client
 	namespace              string
 	status                 Status
-	sourcegraph            config.Sourcegraph
+	sourcegraph            *config.Sourcegraph
 	releaseRegistryClient  *releaseregistry.Client
 	latestSupportedVersion string
 	logger                 log.Logger
@@ -58,7 +58,7 @@ func NewAppliance(
 		latestSupportedVersion: latestSupportedVersion,
 		namespace:              namespace,
 		status:                 StatusSetup,
-		sourcegraph:            config.Sourcegraph{},
+		sourcegraph:            &config.Sourcegraph{},
 		logger:                 logger,
 	}
 }

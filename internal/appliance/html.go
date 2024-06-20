@@ -16,6 +16,7 @@ import (
 
 const (
 	templateSetup = "web/template/setup.gohtml"
+	formValueOn   = "on"
 )
 
 var (
@@ -84,7 +85,7 @@ func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.sourcegraph.Spec.RequestedVersion = r.FormValue("version")
-	if r.FormValue("external_database") == "yes" {
+	if r.FormValue("external_database") == formValueOn {
 		a.sourcegraph.Spec.PGSQL.DatabaseConnection = &config.DatabaseConnectionSpec{
 			Host:     r.FormValue("pgsqlDBHost"),
 			Port:     r.FormValue("pgsqlDBPort"),
@@ -108,6 +109,10 @@ func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// TODO validate user input
+
+	if r.FormValue("dev_mode") == formValueOn {
+		a.sourcegraph.SetLocalDevMode()
+	}
 
 	_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance")
 	if err != nil {
