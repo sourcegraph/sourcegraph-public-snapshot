@@ -8,12 +8,12 @@ import { LazyQueryInput } from '@sourcegraph/branded'
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Card, Checkbox, Code, H3, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
-import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
-import { defaultPatternTypeFromSettings } from '../../../util/settings'
 import { SearchPatternType } from '../../../graphql-operations'
+import { defaultPatternTypeFromSettings } from '../../../util/settings'
 
 import styles from './FormTriggerArea.module.scss'
 
@@ -32,7 +32,8 @@ interface TriggerAreaProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 
 // Code monitors don't support pattern type "structural"
-const isValidPatternType = (value: string): boolean => value === 'keyword' || value === 'standard' || value === 'literal' || value === 'regexp'
+const isValidPatternType = (value: string): boolean =>
+    value === 'keyword' || value === 'standard' || value === 'literal' || value === 'regexp'
 
 const ValidQueryChecklistItem: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -183,7 +184,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
     }, [queryState.query])
 
-    let defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade()) || SearchPatternType.keyword
+    const defaultPatternType: SearchPatternType =
+        defaultPatternTypeFromSettings(useSettingsCascade()) || SearchPatternType.keyword
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
@@ -269,7 +271,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     hint={`Code monitors support keyword, standard, literal and regex search. The default is ${defaultPatternType}`}
                                     dataTestid="patterntype-checkbox"
                                 >
-                                    Is <Code>patternType:keyword</Code>, <Code>standard</Code>, <Code>literal</Code> or <Code>regexp</Code>
+                                    Is <Code>patternType:keyword</Code>, <Code>standard</Code>, <Code>literal</Code> or{' '}
+                                    <Code>regexp</Code>
                                 </ValidQueryChecklistItem>
                             </li>
                             <li>
