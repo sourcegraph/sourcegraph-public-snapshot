@@ -115,7 +115,8 @@ func newCompletionsHandler(
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		requestParams.User = completionsConfig.User
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			logger.Error("error fetching model", log.Error(err))
+			http.Error(w, "Internal Server Error", http.StatusBadRequest)
 			return
 		}
 
