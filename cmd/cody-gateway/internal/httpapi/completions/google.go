@@ -134,10 +134,10 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	if err != nil {
 		logger.Error("failed to decode Google streaming response", log.Error(err))
 	}
+	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
 		logger.Warn("did not extract token counts from Google streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
-	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	return promptUsage, completionUsage
 }
 

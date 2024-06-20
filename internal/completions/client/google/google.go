@@ -137,7 +137,7 @@ func (c *googleCompletionStreamClient) handleGeminiComplete(
 	ctx context.Context,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
 	requestParams := request.Parameters
-	resp, err := c.makeGeminiRequest(ctx, requestParams, true)
+	resp, err := c.makeGeminiRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
 	}
