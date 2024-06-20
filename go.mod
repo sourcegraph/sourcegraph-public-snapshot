@@ -247,6 +247,7 @@ require (
 	cdr.dev/slog v1.4.2-0.20221206192828-e4803b10ae17
 	chainguard.dev/apko v0.14.0
 	cloud.google.com/go/artifactregistry v1.14.8
+	cloud.google.com/go/auth v0.5.1
 	connectrpc.com/connect v1.16.1
 	connectrpc.com/grpcreflect v1.2.0
 	connectrpc.com/otelconnect v0.7.0
@@ -430,7 +431,9 @@ require (
 	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311132316-a219d84964c2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	k8s.io/apiextensions-apiserver v0.29.2 // indirect
 	k8s.io/component-base v0.29.2 // indirect
