@@ -88,7 +88,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         }
     }, [data, navigate])
 
-    const getTeamInviteButton = () => {
+    const getTeamInviteButton = (): JSX.Element | null => {
         const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
         const hasFreeSeats = subscriptionSummaryQueryResult?.data
             ? subscriptionSummaryQueryResult.data.teamMaxMembers >
