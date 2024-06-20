@@ -2602,6 +2602,14 @@ def go_dependencies():
         name = "com_github_google_cel_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/google/cel-go",
+        patch_args = ["-p1"],
+        patches = [
+            # We need to add aliases to the BUILD files for this repo to support
+            # generated build files that depend on this repo. Our convention
+            # uses package name as the target, but this repo uses 'go_default_library'
+            # for everything instead.
+            "//third_party/com_github_google_cel_go:names.patch",
+        ],
         sum = "h1:nDx9r8S3L4pE61eDdt8igGj8rf5kjYR3ILxWIpWNi84=",
         version = "v0.20.1",
     )
