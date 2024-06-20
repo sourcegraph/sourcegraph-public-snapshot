@@ -42,8 +42,9 @@ type ListEnterpriseSubscriptionsOptions struct {
 	IDs []string
 	// InstanceDomains is a list of instance domains to filter by.
 	InstanceDomains []string
-	// OnlyArchived indicates whether to only list archived subscriptions.
-	OnlyArchived bool
+	// IsArchived indicates whether to only list archived subscriptions, or only
+	// non-archived subscriptions.
+	IsArchived bool
 	// PageSize is the maximum number of subscriptions to return.
 	PageSize int
 }

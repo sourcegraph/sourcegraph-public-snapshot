@@ -32,7 +32,9 @@ type StoreV1 interface {
 	// attributes with the given IDs from dotcom DB. It silently ignores any
 	// non-existent subscription IDs. The caller should check the length of the
 	// returned slice to ensure all requested subscriptions were found.
-	ListDotcomEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*dotcomdb.SubscriptionAttributes, error)
+	//
+	// If no IDs are provided, it returns all subscriptions.
+	ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
 
 	// IntrospectSAMSToken takes a SAMS access token and returns relevant metadata.
 	//
@@ -91,8 +93,8 @@ func (s *storeV1) ListDotcomEnterpriseSubscriptionLicenses(ctx context.Context, 
 	return s.dotcomDB.ListEnterpriseSubscriptionLicenses(ctx, filters, limit)
 }
 
-func (s *storeV1) ListDotcomEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
-	return s.dotcomDB.ListEnterpriseSubscriptions(ctx, subscriptionIDs...)
+func (s *storeV1) ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+	return s.dotcomDB.ListEnterpriseSubscriptions(ctx, opts)
 }
 
 func (s *storeV1) IntrospectSAMSToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error) {

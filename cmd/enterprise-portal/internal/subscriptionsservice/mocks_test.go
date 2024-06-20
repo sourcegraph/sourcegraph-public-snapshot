@@ -91,7 +91,7 @@ func NewMockStoreV1() *MockStoreV1 {
 			},
 		},
 		ListDotcomEnterpriseSubscriptionsFunc: &StoreV1ListDotcomEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, ...string) (r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
+			defaultHook: func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) (r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
 				return
 			},
 		},
@@ -143,7 +143,7 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 			},
 		},
 		ListDotcomEnterpriseSubscriptionsFunc: &StoreV1ListDotcomEnterpriseSubscriptionsFunc{
-			defaultHook: func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
+			defaultHook: func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 				panic("unexpected invocation of MockStoreV1.ListDotcomEnterpriseSubscriptions")
 			},
 		},
@@ -849,16 +849,16 @@ func (c StoreV1ListDotcomEnterpriseSubscriptionLicensesFuncCall) Results() []int
 // the ListDotcomEnterpriseSubscriptions method of the parent MockStoreV1
 // instance is invoked.
 type StoreV1ListDotcomEnterpriseSubscriptionsFunc struct {
-	defaultHook func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error)
-	hooks       []func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error)
+	defaultHook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
+	hooks       []func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
 	history     []StoreV1ListDotcomEnterpriseSubscriptionsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListDotcomEnterpriseSubscriptions delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockStoreV1) ListDotcomEnterpriseSubscriptions(v0 context.Context, v1 ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
-	r0, r1 := m.ListDotcomEnterpriseSubscriptionsFunc.nextHook()(v0, v1...)
+func (m *MockStoreV1) ListDotcomEnterpriseSubscriptions(v0 context.Context, v1 dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+	r0, r1 := m.ListDotcomEnterpriseSubscriptionsFunc.nextHook()(v0, v1)
 	m.ListDotcomEnterpriseSubscriptionsFunc.appendCall(StoreV1ListDotcomEnterpriseSubscriptionsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
@@ -866,7 +866,7 @@ func (m *MockStoreV1) ListDotcomEnterpriseSubscriptions(v0 context.Context, v1 .
 // SetDefaultHook sets function that is called when the
 // ListDotcomEnterpriseSubscriptions method of the parent MockStoreV1
 // instance is invoked and the hook queue is empty.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error)) {
+func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)) {
 	f.defaultHook = hook
 }
 
@@ -875,7 +875,7 @@ func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushHook(hook func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error)) {
+func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushHook(hook func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -884,19 +884,19 @@ func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushHook(hook func(contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) SetDefaultReturn(r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
+	f.SetDefaultHook(func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) PushReturn(r0 []*dotcomdb.SubscriptionAttributes, r1 error) {
-	f.PushHook(func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
+	f.PushHook(func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) nextHook() func(context.Context, ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
+func (f *StoreV1ListDotcomEnterpriseSubscriptionsFunc) nextHook() func(context.Context, dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -934,9 +934,9 @@ type StoreV1ListDotcomEnterpriseSubscriptionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []string
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dotcomdb.ListEnterpriseSubscriptionsOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*dotcomdb.SubscriptionAttributes
@@ -946,16 +946,9 @@ type StoreV1ListDotcomEnterpriseSubscriptionsFuncCall struct {
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c StoreV1ListDotcomEnterpriseSubscriptionsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
