@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "samsflags",
+    srcs = ["clientcredentials.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/sams/samsflags",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
+        "@com_github_urfave_cli_v2//:cli",
+        "@org_golang_x_oauth2//clientcredentials",
+    ],
+)
