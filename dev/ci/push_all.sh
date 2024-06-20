@@ -176,8 +176,7 @@ fi
 
 echo "Dev tag args: $dev_tags_args"
 
-# TODO: Re-enable, disabled to appease linter
-# honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
+honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
 
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
