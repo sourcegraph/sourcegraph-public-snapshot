@@ -14,10 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Anthropic model: https://docs.anthropic.com/en/docs/about-claude/models
 const Claude3Haiku = "claude-3-haiku-20240307"
 const Claude3Sonnet = "claude-3-sonnet-20240229"
 const Claude3Opus = "claude-3-opus-20240229"
-const Claude35Sonnet = "claude-3.5-sonnet-20240620"
+const Claude35Sonnet = "claude-3-5-sonnet-20240620"
 
 func NewClient(cli httpcli.Doer, apiURL, accessToken string, viaGateway bool, tokenManager tokenusage.Manager) types.CompletionsClient {
 

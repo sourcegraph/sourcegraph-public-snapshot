@@ -64,8 +64,8 @@ func getAnthropicModels() []types.Model {
 		// Pro Anthropic models.
 		newModel(
 			modelIdentity{
-				MRef:        mRef(anthropic_06_2023, "claude-3.5-sonnet"),
-				Name:        "claude-3.5-sonnet-20240620",
+				MRef:        mRef(anthropic_06_2023, "claude-3-5-sonnet"),
+				Name:        "claude-3-5-sonnet-20240620",
 				DisplayName: "Claude 3.5 Sonnet",
 			},
 			modelMetadata{
