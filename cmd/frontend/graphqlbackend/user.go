@@ -791,9 +791,9 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 }
 
 func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
-	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, errors.New("unauthorized")
+	// 🚨 SECURITY: Only allow site admins or the user to check the user's roles.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
 	}
 	userID := r.user.ID
 	connectionStore := &roleConnectionStore{
