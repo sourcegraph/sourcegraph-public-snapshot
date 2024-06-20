@@ -375,7 +375,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		name:    "no filters",
 		filters: nil,
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
-			assert.Len(t, licenses, mock.createdLicenses) // return all results
+			// Only unarchived subscriptions
+			assert.Len(t, licenses, mock.createdLicenses-mock.archivedSubscriptions)
 		},
 	}, {
 		name: "filter by subscription ID",
