@@ -141,7 +141,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case PatchReleaseBranch:
 		return &RunTypeMatcher{
-			Branch:       `^will/[0-9]+\.[0-9]+(?:\.[0-9]+)?$`, // TODO: Remove prefix
+			Branch:       `^will/[0-9]+\.[0-9]+(?:\.[0-9]+)?$`, // TODO: Update branch pattern before merging
 			BranchRegexp: true,
 		}
 	case BextReleaseBranch:

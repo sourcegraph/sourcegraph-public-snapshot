@@ -190,7 +190,7 @@ done
 echo "--- :bash: Generated jobfile"
 cat "$job_file"
 
-# TODO: Currently only permit pushing of candidate images
+# TODO: During testing, only permit pushing of candidate images
 if [ -n "$CANDIDATE_ONLY" ]; then
   echo "--- :bazel::docker: Pushing images..."
   log_file=$(mktemp)
