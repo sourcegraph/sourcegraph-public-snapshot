@@ -86,8 +86,8 @@ github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3
 github.com/frankban/quicktest v1.14.3/go.mod h1:mgiwOwqx65TmIk1wJ6Q7wvnVMocbUorkibMOrVTHZps=
 github.com/getsentry/sentry-go v0.25.0 h1:q6Eo+hS+yoJlTO3uu/azhQadsD8V+jQn2D8VvX1eOyI=
 github.com/getsentry/sentry-go v0.25.0/go.mod h1:lc76E2QywIyW8WuBnwl8Lc4bkmQH4+w1gwTf25trprY=
-github.com/go-enry/go-enry/v2 v2.8.4 h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=
-github.com/go-enry/go-enry/v2 v2.8.4/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
+github.com/go-enry/go-enry/v2 v2.8.8 h1:EhfxWpw4DQ3WEFB1Y77X8vKqZL0D0EDUUWYDUAIv9/4=
+github.com/go-enry/go-enry/v2 v2.8.8/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
 github.com/go-enry/go-oniguruma v1.2.1 h1:k8aAMuJfMrqm/56SG2lV9Cfti6tC4x8673aHCcBk+eo=
 github.com/go-enry/go-oniguruma v1.2.1/go.mod h1:bWDhYP+S6xZQgiRL7wlTScFYBe023B6ilRZbCAD5Hf4=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=

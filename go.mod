@@ -72,7 +72,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
-	github.com/RoaringBitmap/roaring v1.3.0
+	github.com/RoaringBitmap/roaring v1.9.4
 	github.com/XSAM/otelsql v0.27.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/amit7itz/goset v1.0.1
@@ -106,7 +106,7 @@ require (
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
-	github.com/go-enry/go-enry/v2 v2.8.4
+	github.com/go-enry/go-enry/v2 v2.8.8
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/gobwas/glob v0.2.3
@@ -126,7 +126,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
+	github.com/grafana/regexp v0.0.0-20240607082908-2cb410fa05da
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/graphql-go/graphql v0.8.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -173,7 +173,7 @@ require (
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20231219031718-233c2f923ac7
-	github.com/sourcegraph/go-ctags v0.0.0-20240325032535-71f1ec6e46e4
+	github.com/sourcegraph/go-ctags v0.0.0-20240424152308-4faeee4849da
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -511,7 +511,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/becheran/wildmatch-go v1.0.0
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.8.0
+	github.com/bits-and-blooms/bitset v1.13.0
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/bufbuild/buf v1.25.0 // indirect
@@ -646,7 +646,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240528215134-640102a4a30e
+	github.com/sourcegraph/zoekt v0.0.0-20240620084526-5ac92b1a7d4a
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

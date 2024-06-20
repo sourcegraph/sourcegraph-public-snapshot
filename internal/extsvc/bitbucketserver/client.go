@@ -1011,12 +1011,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http
 		return resp, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return resp, errors.WithStack(&httpError{
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		return resp, errors.WithStack(errcode.MaybeMakeNonRetryable(resp.StatusCode, &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
-		})
+		}))
 	}
 
 	// handle binary response

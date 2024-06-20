@@ -755,8 +755,8 @@ def go_dependencies():
         name = "com_github_bits_and_blooms_bitset",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bits-and-blooms/bitset",
-        sum = "h1:FD+XqgOZDUxxZ8hzoBFuV9+cGWY9CslN6d5MS5JVb4c=",
-        version = "v1.8.0",
+        sum = "h1:bAQ9OPNFYbGHV6Nez0tmNI0RiEu7/hxlYJRUA0wFAVE=",
+        version = "v1.13.0",
     )
     go_repository(
         name = "com_github_bketelsen_crypt",
@@ -2012,8 +2012,8 @@ def go_dependencies():
         name = "com_github_go_enry_go_enry_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-enry/go-enry/v2",
-        sum = "h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=",
-        version = "v2.8.4",
+        sum = "h1:EhfxWpw4DQ3WEFB1Y77X8vKqZL0D0EDUUWYDUAIv9/4=",
+        version = "v2.8.8",
     )
     go_repository(
         name = "com_github_go_enry_go_oniguruma",
@@ -2926,8 +2926,8 @@ def go_dependencies():
         name = "com_github_grafana_regexp",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grafana/regexp",
-        sum = "h1:7aN5cccjIqCLTzedH7MZzRZt5/lsAHch6Z3L2ZGn5FA=",
-        version = "v0.0.0-20221123153739-15dc172cd2db",
+        sum = "h1:BML5sNe+bw2uO8t8cQSwe5QhvoP04eHPF7bnaQma0Kw=",
+        version = "v0.0.0-20240607082908-2cb410fa05da",
     )
     go_repository(
         name = "com_github_grafana_tools_sdk",
@@ -5300,8 +5300,8 @@ def go_dependencies():
         name = "com_github_roaringbitmap_roaring",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/RoaringBitmap/roaring",
-        sum = "h1:aQmu9zQxDU0uhwR8SXOH/OrqEf+X8A0LQmwW3JX8Lcg=",
-        version = "v1.3.0",
+        sum = "h1:yhEIoH4YezLYT04s1nHehNO64EKFTop/wBhxv2QzDdQ=",
+        version = "v1.9.4",
     )
     go_repository(
         name = "com_github_robert_nix_ansihtml",
@@ -5704,8 +5704,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_go_ctags",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/go-ctags",
-        sum = "h1:jppwnpC+DT9tIiRbw21lD0drA9Jqu4X47iA4gTk4w8M=",
-        version = "v0.0.0-20240325032535-71f1ec6e46e4",
+        sum = "h1:hNVb44yWOr43HqizO4++mgA82tusAvxMjib1arIN0a0=",
+        version = "v0.0.0-20240424152308-4faeee4849da",
     )
     go_repository(
         name = "com_github_sourcegraph_go_diff",
@@ -5894,8 +5894,8 @@ def go_dependencies():
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:x_defs_version.patch",
         ],
-        sum = "h1:p2PMQkXe01gWBLgYqpQKnbg6OzR62/Py1CK2YDbaRCU=",
-        version = "v0.0.0-20240528215134-640102a4a30e",
+        sum = "h1:9g+6UUpAfhShhYCSPvU8YUTOexLPk45TV/dNEU6qZLw=",
+        version = "v0.0.0-20240620084526-5ac92b1a7d4a",
     )
     go_repository(
         name = "com_github_spaolacci_murmur3",

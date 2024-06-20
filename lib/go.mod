@@ -13,7 +13,7 @@ require (
 	github.com/derision-test/go-mockgen/v2 v2.0.1
 	github.com/fatih/color v1.15.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-enry/go-enry/v2 v2.8.4
+	github.com/go-enry/go-enry/v2 v2.8.8
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.6.0
