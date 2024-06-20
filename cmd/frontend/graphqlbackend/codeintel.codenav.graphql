@@ -734,7 +734,7 @@ Categorizes a usage based on its relationship to the symbol of interest.
 
 This enum may be expanded in the future.
 
-EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
+EXPERIMENTAL: This type may change in a backwards-incompatible way in the future.
 """
 enum SymbolUsageKind {
     """
