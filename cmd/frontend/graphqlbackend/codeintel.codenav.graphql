@@ -770,7 +770,7 @@ enum SymbolUsageKind {
        exact definition, so they may return a superset of the full set
        of definitions.
     """
-    DEFINITION,
+    DEFINITION
 
     """
     Denotes a usage as being a reference. References are unified across
@@ -796,7 +796,7 @@ enum SymbolUsageKind {
       because 'dog' value may be up-cast to Animal at some point and the
       and 'sound()' might be called on it after that.
     """
-    REFERENCE,
+    REFERENCE
 
     """
     Denotes a usage as being an 'implementation', generally of a method, interface
@@ -819,7 +819,7 @@ enum SymbolUsageKind {
     Precise indexers. Syntactic and search-based usagesForSymbol will mark all
     such usages as Reference.
     """
-    IMPLEMENTATION,
+    IMPLEMENTATION
 
     """
     Denotes a usage as being a 'super', generally of a method, type or similar.
@@ -863,7 +863,7 @@ enum SymbolUsageKind {
     However, 'prototype' has a specific meaning in C++ different from our usage,
     so we recommend avoiding the term 'prototype' in the UI.
     """
-    SUPER,
+    SUPER
 }
 
 """
