@@ -34,6 +34,9 @@ type Output struct {
 	// OperatorAccessUser is the SQL user corresponding to the operator access
 	// service account.
 	OperatorAccessUser sqluser.SqlUser
+	// Databases created in the Cloud SQL instance, used for resources that
+	// depend on database creation.
+	Databases []cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -209,6 +212,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			instance, config.WorkloadIdentity, databaseResources),
 		OperatorAccessUser: newSqlUserForIdentity(scope, id.TerraformID("operator_access_service_account_user"),
 			instance, config.OperatorAccessIdentity, databaseResources),
+		Databases: databaseResources,
 	}, nil
 }
 
