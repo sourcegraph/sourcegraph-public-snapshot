@@ -409,7 +409,8 @@ message Permission {
   string sams_account_id = 3;
 }
 
-// PermissionType represents the type of permissions.
+// PermissionType defines a class of objects with similar characteristics.
+// https://openfga.dev/docs/concepts#what-is-a-type
 enum PermissionType {
   PERMISSION_TYPE_UNSPECIFIED = 0;
   PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS = 1;
