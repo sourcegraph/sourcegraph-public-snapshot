@@ -864,16 +864,11 @@ func (s *GitHubSource) listInternal(ctx context.Context, results chan *githubRes
 		return
 	}
 
-	var sb strings.Builder
-
 	for _, org := range orgs {
-		sb.WriteString("org:")
-		sb.WriteString(org.Login)
-		sb.WriteString(" ")
+		paginateRepos(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+			return s.v3Client.ListOrgRepositories(ctx, org.Login, page, string(github.VisibilityInternal))
+		})
 	}
-	sb.WriteString("is:internal")
-
-	s.listSearch(ctx, sb.String(), results)
 }
 
 // listSearch handles the `repositoryQuery` config option when a keyword is not present.
