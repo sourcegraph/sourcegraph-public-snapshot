@@ -175,23 +175,6 @@ func (c *googleCompletionStreamClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-<<<<<<< HEAD
-) error {
-	if !isSupportedFeature(feature) {
-		return errors.Newf("feature %q is currently not supported for Google", feature)
-	}
-
-	var resp *http.Response
-	var err error
-
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-
-	resp, err = c.makeRequest(ctx, requestParams, true)
-=======
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent) error {
 	if c.apiFamily == VertexAnthropic {
@@ -207,7 +190,6 @@ func (c *googleCompletionStreamClient) handleGeminiStream(
 	sendEvent types.SendCompletionEvent,
 ) error {
 	resp, err := c.makeGeminiRequest(ctx, requestParams, true)
->>>>>>> 1a6a7f78bf5 (Adding Anthropic messages API support to the Google provider through Google vertex (#63282))
 	if err != nil {
 		return err
 	}
@@ -360,14 +342,10 @@ func (c *googleCompletionStreamClient) handleVertexAnthropicStream(
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-<<<<<<< HEAD
-func (c *googleCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-=======
 func (c *googleCompletionStreamClient) makeGeminiRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	apiURL := c.getAPIURL(requestParams, stream)
 	endpointURL := apiURL.String()
 
->>>>>>> 1a6a7f78bf5 (Adding Anthropic messages API support to the Google provider through Google vertex (#63282))
 	// Ensure TopK and TopP are non-negative
 	requestParams.TopK = max(0, requestParams.TopK)
 	requestParams.TopP = max(0, requestParams.TopP)
