@@ -69,6 +69,14 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
 
     return (
         <Page className="d-flex flex-column">
+            <PageTitle title="Manage subscription" />
+            <PageHeader className="my-4 d-inline-flex align-items-center">
+                <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                    <PageHeaderIcon name="cody-logo" className="mr-3" />
+                    <Text as="span">Manage subscription</Text>
+                </PageHeader.Heading>
+            </PageHeader>
+
             <PageContent />
         </Page>
     )
@@ -92,14 +100,6 @@ const PageContent: React.FC = () => {
 
     return (
         <>
-            <PageTitle title="Manage Subscription" />
-            <PageHeader className="mt-4">
-                <PageHeader.Heading as="h2" styleAs="h1" className="mb-4 d-flex align-items-center">
-                    <PageHeaderIcon name="cody-logo" className="mr-2" />
-                    <Text as="span">Manage subscription</Text>
-                </PageHeader.Heading>
-            </PageHeader>
-
             <Card className={classNames('p-4', styles.card)}>
                 <SubscriptionDetails subscription={subscription} />
 

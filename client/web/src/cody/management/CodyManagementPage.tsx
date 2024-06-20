@@ -18,6 +18,7 @@ import {
     type UserCodyUsageVariables,
     CodySubscriptionPlan,
 } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
@@ -85,7 +86,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/manage')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Manage}`)
         }
     }, [data, navigate])
 
@@ -95,7 +96,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             ? subscriptionSummaryQueryResult.data.teamMaxMembers >
               subscriptionSummaryQueryResult.data.teamCurrentMembers
             : false
-        const targetUrl = hasFreeSeats ? '/cody/team/manage' : '/cody/manage/subscription/new?addSeats=1'
+        const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
         const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
 
         if (!subscriptionSummaryQueryResult?.data) {
@@ -141,13 +142,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                     </CodyAlert>
                 )}
                 <PageHeader
-                    className="mb-4 mt-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={isAdmin && <div className="d-flex">{getTeamInviteButton()}</div>}
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <PageHeaderIcon className="mr-2" name="dashboard" /> Dashboard
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="dashboard" className="mr-3" />
+                        <Text as="span">Dashboard</Text>
                     </PageHeader.Heading>
                 </PageHeader>
 
@@ -170,7 +170,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 ) : (
                                     <span>
                                         You are on the Free tier.{' '}
-                                        <Link to="/cody/subscription">Upgrade to the Pro tier.</Link>
+                                        <Link to={CodyProRoutes.Subscription}>Upgrade to the Pro tier.</Link>
                                     </span>
                                 )}
                             </Text>
@@ -225,7 +225,7 @@ const UpgradeToProBanner: React.FunctionComponent<{
                 </ul>
             </div>
             <div>
-                <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
+                <ButtonLink to={CodyProRoutes.Subscription} variant="primary" size="sm" onClick={onClick}>
                     <ProIcon className="mr-1" />
                     Upgrade now
                 </ButtonLink>
