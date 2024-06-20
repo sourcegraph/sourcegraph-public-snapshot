@@ -93,6 +93,48 @@ func (c *googleCompletionStreamClient) Complete(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	if c.modelFamily == VertexAnthropic {
+		return c.handleAnthropicComplete(ctx, request)
+	} else {
+		return c.handleGeminiComplete(ctx, request)
+	}
+}
+
+func (c *googleCompletionStreamClient) handleAnthropicComplete(
+	ctx context.Context,
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	requestParams := request.Parameters
+	resp, err := c.makeAnthopicRequest(ctx, requestParams, false)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var response anthropicNonStreamingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	if len(response.Content) == 0 {
+		// Empty response.
+		return &types.CompletionResponse{}, nil
+	}
+
+	if len(response.Content[0].Text) == 0 {
+		// Empty response.
+		return &types.CompletionResponse{}, nil
+	}
+
+	// NOTE: Candidates can be used to get multiple completions when CandidateCount is set,
+	// which is not currently supported by Cody. For now, we only return the first completion.
+	return &types.CompletionResponse{
+		Completion: response.Content[0].Text,
+	}, nil
+}
+
+func (c *googleCompletionStreamClient) handleGeminiComplete(
+	ctx context.Context,
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
 	requestParams := request.Parameters
 	resp, err := c.makeGeminiRequest(ctx, requestParams, false)
 	if err != nil {
@@ -363,7 +405,7 @@ func (c *googleCompletionStreamClient) makeAnthopicRequest(ctx context.Context, 
 	payload := anthropicRequest{
 		Messages:         prompt,
 		MaxTokens:        requestParams.MaxTokensToSample,
-		Stream:           true,
+		Stream:           stream,
 		AnthropicVersion: "vertex-2023-10-16",
 		System:           systemPrompt,
 	}
@@ -423,10 +465,10 @@ func (c *googleCompletionStreamClient) getAPIURL(requestParams types.CompletionR
 
 // getgRPCMethod returns the gRPC method name based on the stream flag.
 func getgRPCMethod(stream bool, modelFamily ModelFamily) string {
+	if modelFamily == VertexAnthropic {
+		return "streamRawPredict"
+	}
 	if stream {
-		if modelFamily == VertexAnthropic {
-			return "streamRawPredict"
-		}
 		return "streamGenerateContent"
 	}
 	return "generateContent"

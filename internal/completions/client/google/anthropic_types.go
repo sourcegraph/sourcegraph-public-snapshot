@@ -83,3 +83,19 @@ type anthropicStreamingResponse struct {
 	Usage        *anthropicMessagesResponseUsage       `json:"usage"`
 	Message      *anthropicStreamingResponseMessage    `json:"message"`
 }
+
+type Content struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type anthropicNonStreamingResponse struct {
+	ID           string                         `json:"id"`
+	Type         string                         `json:"type"`
+	Role         string                         `json:"role"`
+	Model        string                         `json:"model"`
+	Content      []Content                      `json:"content"`
+	StopReason   string                         `json:"stop_reason"`
+	StopSequence *string                        `json:"stop_sequence"`
+	Usage        anthropicMessagesResponseUsage `json:"usage"`
+}
