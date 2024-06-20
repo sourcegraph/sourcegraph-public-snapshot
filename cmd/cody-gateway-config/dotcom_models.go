@@ -46,11 +46,40 @@ func getAnthropicModels() []types.Model {
 	)
 
 	return []types.Model{
+		// Free Anthropic model.
 		newModel(
 			modelIdentity{
 				MRef:        mRef(anthropic_06_2023, "claude-3-sonnet"),
 				Name:        "claude-3-sonnet-20240229",
 				DisplayName: "Claude 3 Sonnet",
+			},
+			modelMetadata{
+				Capabilities: chatAndEdit,
+				Category:     types.ModelCategoryBalanced,
+				Status:       types.ModelStatusStable,
+				Tier:         types.ModelTierFree,
+			},
+			expandedCtxWindow),
+
+		// Pro Anthropic models.
+		newModel(
+			modelIdentity{
+				MRef:        mRef(anthropic_06_2023, "claude-3.5-sonnet"),
+				Name:        "claude-3.5-sonnet-20240620",
+				DisplayName: "Claude 3.5 Sonnet",
+			},
+			modelMetadata{
+				Capabilities: chatAndEdit,
+				Category:     types.ModelCategoryAccuracy,
+				Status:       types.ModelStatusStable,
+				Tier:         types.ModelTierPro,
+			},
+			expandedCtxWindow),
+		newModel(
+			modelIdentity{
+				MRef:        mRef(anthropic_06_2023, "claude-3-opus"),
+				Name:        "claude-3-opus-20240229",
+				DisplayName: "Claude 3 Opus",
 			},
 			modelMetadata{
 				Capabilities: chatAndEdit,
@@ -67,7 +96,7 @@ func getAnthropicModels() []types.Model {
 			},
 			modelMetadata{
 				Capabilities: chatAndEdit,
-				Category:     types.ModelCategoryAccuracy,
+				Category:     types.ModelCategorySpeed,
 				Status:       types.ModelStatusStable,
 				Tier:         types.ModelTierPro,
 			},

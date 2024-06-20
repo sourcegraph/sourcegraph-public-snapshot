@@ -1257,7 +1257,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet || model == anthropic.Claude35Sonnet {
 		// TODO: Technically, v2 and v3 also uses a 100k/200k window respectively, but we should
 		// validate that returning 100k here is the right thing to do.
 		return 12_000
