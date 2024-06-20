@@ -38,7 +38,7 @@ interface CodySubscriptionPageProps extends TelemetryV2Props {
     codySubscription: UserCodySubscription
 }
 
-const AuthenticatedCodySubscriptionManagePage: React.FunctionComponent<CodySubscriptionPageProps> = ({
+const AuthenticatedCodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     telemetryRecorder,
     codySubscription,
 }) => {
@@ -437,7 +437,7 @@ const AuthenticatedCodySubscriptionManagePage: React.FunctionComponent<CodySubsc
     )
 }
 
-export const CodySubscriptionPage = withAuthenticatedUser(AuthenticatedCodySubscriptionManagePage)
+export const CodySubscriptionPage = withAuthenticatedUser(AuthenticatedCodySubscriptionPage)
 
 export const ProTierIcon = ({ className }: { className?: string }): ReactElement => (
     <svg
