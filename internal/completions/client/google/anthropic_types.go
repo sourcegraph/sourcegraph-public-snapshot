@@ -32,7 +32,7 @@ type anthropicContentMessagePart struct {
 }
 
 type anthropicResponse struct {
-	Candidates []anthropicCandidate `json:"candidates"`
+	Candidates     []anthropicCandidate      `json:"candidates"`
 	UsageMetadata  anthropicUsage            `json:"usageMetadata"`
 	SafetySettings []anthropicSafetySettings `json:"safetySettings,omitempty"`
 	SafetyRatings  []anthropicSafetyRating   `json:"safetyRatings,omitempty"`
@@ -80,7 +80,7 @@ type anthropicStreamingResponseDelta struct {
 // AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
 type anthropicStreamingResponse struct {
 	Type         string                                `json:"type"`
-	Delta        *anthropicStreamingResponseDelta `json:"delta"`
+	Delta        *anthropicStreamingResponseDelta      `json:"delta"`
 	ContentBlock *anthropicStreamingResponseTextBucket `json:"content_block"`
 	Usage        *anthropicMessagesResponseUsage       `json:"usage"`
 	Message      *anthropicStreamingResponseMessage    `json:"message"`
@@ -96,7 +96,7 @@ type anthropicNonStreamingResponse struct {
 	Type         string                         `json:"type"`
 	Role         string                         `json:"role"`
 	Model        string                         `json:"model"`
-	Content      []anthropicContent                      `json:"content"`
+	Content      []anthropicContent             `json:"content"`
 	StopReason   string                         `json:"stop_reason"`
 	StopSequence *string                        `json:"stop_sequence"`
 	Usage        anthropicMessagesResponseUsage `json:"usage"`

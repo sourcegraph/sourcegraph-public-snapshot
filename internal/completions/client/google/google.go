@@ -39,7 +39,7 @@ func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bo
 		accessToken: accessToken,
 		endpoint:    endpoint,
 		viaGateway:  viaGateway,
-		apiFamily: apiFamily,
+		apiFamily:   apiFamily,
 	}, nil
 
 }

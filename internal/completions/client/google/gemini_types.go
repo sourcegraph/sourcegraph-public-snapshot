@@ -14,7 +14,7 @@ type googleCompletionStreamClient struct {
 	accessToken string
 	endpoint    string
 	viaGateway  bool
-	apiFamily APIFamily
+	apiFamily   APIFamily
 }
 
 // The request body for the completion stream endpoint.
