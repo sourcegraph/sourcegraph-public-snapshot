@@ -239,7 +239,7 @@ ts_project(
         "src/cody/management/UseCodyInEditorSection.tsx",
         "src/cody/management/api/client.ts",
         "src/cody/management/api/components/CodyProApiClient.ts",
-        "src/cody/management/api/react-query/QueryClientProvider.tsx",
+        "src/cody/management/api/react-query/CodyProApiProvider.tsx",
         "src/cody/management/api/react-query/callCodyProApi.ts",
         "src/cody/management/api/react-query/invites.ts",
         "src/cody/management/api/react-query/queryKeys.ts",
