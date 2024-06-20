@@ -176,7 +176,8 @@ fi
 
 echo "Dev tag args: $dev_tags_args"
 
-honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
+# TODO: Re-enable, disabled to appease linter
+# honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
 
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
@@ -200,40 +201,42 @@ done
 echo "--- :bash: Generated jobfile"
 cat "$job_file"
 
-# TODO: Re-enable image pushing
-# echo "--- :bazel::docker: Pushing images..."
-# log_file=$(mktemp)
-# # shellcheck disable=SC2064
-# trap "rm -rf $log_file" EXIT
-# parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
+# TODO: Currently only permit pushing of candidate images
+if [ -n "$CANDIDATE_ONLY" ]; then
+  echo "--- :bazel::docker: Pushing images..."
+  log_file=$(mktemp)
+  # shellcheck disable=SC2064
+  trap "rm -rf $log_file" EXIT
+  parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
 
-# Pretty print the output from gnu parallel
-# while read -r line; do
-#   # Skip the first line (header)
-#   if [[ "$line" != Seq* ]]; then
-#     cmd="$(echo "$line" | cut -f9)"
-#     [[ "$cmd" =~ (\/\/[^ ]+) ]]
-#     target="${BASH_REMATCH[1]}"
-#     exitcode="$(echo "$line" | cut -f7)"
-#     duration="$(echo "$line" | cut -f4 | tr -d "[:blank:]")"
-#     if [ "$exitcode" == "0" ]; then
-#       echo "--- :docker::arrow_heading_up: $target ${duration}s :white_check_mark:"
-#     else
-#       echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
-#     fi
+  Pretty print the output from gnu parallel
+  while read -r line; do
+    # Skip the first line (header)
+    if [[ "$line" != Seq* ]]; then
+      cmd="$(echo "$line" | cut -f9)"
+      [[ "$cmd" =~ (\/\/[^ ]+) ]]
+      target="${BASH_REMATCH[1]}"
+      exitcode="$(echo "$line" | cut -f7)"
+      duration="$(echo "$line" | cut -f4 | tr -d "[:blank:]")"
+      if [ "$exitcode" == "0" ]; then
+        echo "--- :docker::arrow_heading_up: $target ${duration}s :white_check_mark:"
+      else
+        echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
+      fi
 
-#     $honeyvent -k "$CI_HONEYCOMB_API_KEY" -d "buildkite-pushall" \
-#       -n "exit_code" -v "$exitcode" \
-#       -n "duration" -v "$duration" \
-#       -n "target" -v "$target" \
-#       -n "commit" -v "$BUILDKITE_COMMIT" \
-#       -n "build_number" -v "$BUILDKITE_BUILD_NUMBER" \
-#       -n "branch" -v "$BUILDKITE_BRANCH" \
-#       -n "label" -v "$BUILDKITE_LABEL"s
-#   fi
-# done <"$log_file"
+      $honeyvent -k "$CI_HONEYCOMB_API_KEY" -d "buildkite-pushall" \
+        -n "exit_code" -v "$exitcode" \
+        -n "duration" -v "$duration" \
+        -n "target" -v "$target" \
+        -n "commit" -v "$BUILDKITE_COMMIT" \
+        -n "build_number" -v "$BUILDKITE_BUILD_NUMBER" \
+        -n "branch" -v "$BUILDKITE_BRANCH" \
+        -n "label" -v "$BUILDKITE_LABEL"s
+    fi
+  done <"$log_file"
 
-# echo -e "</table></details>" >>./annotations/pushed_images.md
+  echo -e "</table></details>" >>./annotations/pushed_images.md
 
-# echo "--- :bazel::docker: detailed summary"
-# cat "$log_file"
+  echo "--- :bazel::docker: detailed summary"
+  cat "$log_file"
+fi
