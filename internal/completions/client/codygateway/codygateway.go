@@ -46,20 +46,23 @@ type codyGatewayClient struct {
 	tokenizer   tokenusage.Manager
 }
 
-func (c *codyGatewayClient) Stream(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, requestParams types.CompletionRequestParameters, sendEvent types.SendCompletionEvent, logger log.Logger) error {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGatewayClient) Stream(
+	ctx context.Context, logger log.Logger, request types.CompletionRequest, sendEvent types.SendCompletionEvent) error {
+	cc, err := c.clientForParams(request.Feature, &request.Parameters)
 	if err != nil {
 		return err
 	}
-	return overwriteErrSource(cc.Stream(ctx, feature, version, requestParams, sendEvent, logger))
+
+	err = cc.Stream(ctx, logger, request, sendEvent)
+	return overwriteErrSource(err)
 }
 
-func (c *codyGatewayClient) Complete(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, requestParams types.CompletionRequestParameters, logger log.Logger) (*types.CompletionResponse, error) {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGatewayClient) Complete(ctx context.Context, logger log.Logger, request types.CompletionRequest) (*types.CompletionResponse, error) {
+	cc, err := c.clientForParams(request.Feature, &request.Parameters)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cc.Complete(ctx, feature, version, requestParams, logger)
+	resp, err := cc.Complete(ctx, logger, request)
 	return resp, overwriteErrSource(err)
 }
 
