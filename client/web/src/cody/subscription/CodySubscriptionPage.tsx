@@ -26,13 +26,13 @@ import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { ProIcon } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
 import styles from './CodySubscriptionPage.module.scss'
-import { PageHeaderIcon } from '../components/PageHeaderIcon'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser?: AuthenticatedUser | null
