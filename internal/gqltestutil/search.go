@@ -92,6 +92,14 @@ type SearchFileResult struct {
 	RevSpec struct {
 		Expr string `json:"expr"`
 	} `json:"revSpec"`
+	PathMatches []struct {
+		Start struct {
+			Character int `json:"character"`
+		} `json:"start"`
+		End struct {
+			Character int `json:"character"`
+		} `json:"end"`
+	} `json:"pathMatches"`
 }
 
 type QueryDescription struct {
@@ -146,6 +154,14 @@ query Search($query: String!) {
 					revSpec {
 						... on GitRevSpecExpr {
 							expr
+						}
+					}
+					pathMatches {
+						start {
+							character
+						}
+						end {
+							character
 						}
 					}
 				}
