@@ -9,7 +9,7 @@ import (
 type ModelFamily string
 type googleCompletionStreamClient struct {
 	httpCli     httpcli.Doer
-	gcpCli      http.Client
+	gcpCli      *http.Client
 	accessToken string
 	endpoint    string
 	viaGateway  bool

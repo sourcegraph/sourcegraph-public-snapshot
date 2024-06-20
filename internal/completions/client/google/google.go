@@ -33,20 +33,20 @@ func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bo
 	if err != nil {
 		return nil, err
 	}
-
 	return &googleCompletionStreamClient{
 		httpCli:     httpCli,
-		gcpCli:      *client,
+		gcpCli:      client,
 		accessToken: accessToken,
 		endpoint:    endpoint,
 		viaGateway:  viaGateway,
 		modelFamily: modelFamily,
 	}, nil
+
 }
 
 func determineModelFamilyAndClient(endpoint, accessToken string) (ModelFamily, *http.Client, error) {
-	if endpoint == "" {
-		// Default to Gemini API if no endpoint is specified
+	if strings.Contains(endpoint, "generativelanguage") {
+		// Default to Gemini API if the endpoint contains "generativelanguage"
 		return Gemini, nil, nil
 	}
 
