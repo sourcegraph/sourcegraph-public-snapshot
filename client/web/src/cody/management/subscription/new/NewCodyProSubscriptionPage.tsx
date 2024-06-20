@@ -11,7 +11,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { PageHeader, LoadingSpinner, Alert, logger } from '@sourcegraph/wildcard'
+import { PageHeader, Text, LoadingSpinner, Alert, logger } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
@@ -89,19 +89,17 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     const PageWithHeader = ({ children }: { children: React.ReactNode }): React.ReactElement => (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title={addSeats ? 'Add seats' : 'New subscription'} />
-            <PageHeader className="my-4">
-                <PageHeader.Heading as="h1" className={styles.h1}>
-                    <div className="d-inline-flex align-items-center">
-                        <PageHeaderIcon
-                            name={isTeam ? 'mdi-account-multiple-plus-gradient' : 'cody-logo'}
-                            className="mr-3"
-                        />{' '}
-                        {isTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}
-                    </div>
+            <PageHeader className="my-4 d-inline-flex align-items-center">
+                <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                    <PageHeaderIcon
+                        name={isTeam ? 'mdi-account-multiple-plus-gradient' : 'cody-logo'}
+                        className="mr-3"
+                    />{' '}
+                    <Text as="span">{isTeam ? 'Give your team Cody Pro' : 'Upgrade to Cody Pro'}</Text>
                 </PageHeader.Heading>
-
-                {children}
             </PageHeader>
+
+            {children}
         </Page>
     )
 
