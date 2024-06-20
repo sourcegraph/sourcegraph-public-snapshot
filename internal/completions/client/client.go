@@ -42,7 +42,7 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken, *tokenManager)
 	case conftypes.CompletionsProviderNameGoogle:
-		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken), nil
+		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, false), nil
 	case conftypes.CompletionsProviderNameSourcegraph:
 		return codygateway.NewClient(httpcli.CodyGatewayDoer, endpoint, accessToken, *tokenManager)
 	case conftypes.CompletionsProviderNameFireworks:

@@ -225,6 +225,9 @@
         if (editor) {
             setMode(editor, currentMode => (currentMode === 'History' ? null : 'History'))
             editor.focus()
+            // This ensures that history suggestions are shown after the button was pressed,
+            // before the user has interacted with the input in any other way.
+            userHasInteracted = true
         }
     }
 </script>
@@ -373,6 +376,8 @@
     }
 
     button.toggle {
+        --icon-color: currentColor;
+
         width: 1.5rem;
         height: 1.5rem;
         cursor: pointer;
@@ -410,6 +415,8 @@
         --color: var(--text-muted);
 
         button {
+            --icon-color: currentColor;
+
             padding: 0.0625rem 0.125rem;
             color: var(--color);
             border-radius: var(--border-radius);

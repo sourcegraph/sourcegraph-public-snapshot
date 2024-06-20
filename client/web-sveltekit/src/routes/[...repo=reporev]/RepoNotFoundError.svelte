@@ -1,11 +1,15 @@
 <script lang="ts">
+    import { onMount } from 'svelte'
+
     import HeroPage from '$lib/HeroPage.svelte'
-    import { logViewEvent } from '$lib/logger'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     export let repoName: string
     export let viewerCanAdminister: boolean
 
-    logViewEvent('RepositoryError')
+    onMount(() => {
+        TELEMETRY_RECORDER.recordEvent('repo.error.notFound', 'view')
+    })
 </script>
 
 <HeroPage title="Repository not found" icon={ILucideBookX}>

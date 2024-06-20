@@ -129,11 +129,10 @@ type azureCompletionClient struct {
 
 func (c *azureCompletionClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	log log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	feature := request.Feature
+	requestParams := request.Parameters
 
 	switch feature {
 	case types.CompletionsFeatureCode:
@@ -189,12 +188,13 @@ func completeChat(
 
 func (c *azureCompletionClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	log log.Logger,
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent,
 ) error {
+	feature := request.Feature
+	requestParams := request.Parameters
+
 	switch feature {
 	case types.CompletionsFeatureCode:
 		return streamAutocomplete(ctx, c.client, requestParams, sendEvent, log)

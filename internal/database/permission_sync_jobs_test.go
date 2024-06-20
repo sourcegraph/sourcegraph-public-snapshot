@@ -904,6 +904,30 @@ func TestPermissionSyncJobs_CountUsersWithFailingSyncJob(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, int32(2), count, "wrong count")
 	})
+
+	t.Run("Should not count jobs with a deleted user", func(t *testing.T) {
+		cleanupSyncJobs(t, db, ctx)
+		tmpUser, err := usersStore.Create(ctx, NewUser{Username: "test-user-tmp"})
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = usersStore.HardDelete(ctx, tmpUser.ID) // Ensure we clean up after ourselves.
+		})
+
+		createSyncJob(t, store, ctx, tmpUser.ID, 0) // id = 1
+		finishSyncJobWithFailure(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
+
+		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(1), count, "wrong count")
+
+		// Delete tmpUser
+		err = usersStore.Delete(ctx, tmpUser.ID)
+		require.NoError(t, err)
+
+		count, err = store.CountUsersWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(0), count, "wrong count")
+	})
 }
 
 func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
@@ -979,6 +1003,31 @@ func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
 		count, err := store.CountReposWithFailingSyncJob(ctx)
 		require.NoError(t, err)
 		require.Equal(t, int32(2), count, "wrong count")
+	})
+
+	t.Run("Should not count jobs with a deleted repo", func(t *testing.T) {
+		cleanupSyncJobs(t, db, ctx)
+		tempRepo := types.Repo{Name: "test-repo-tmp", ID: 301}
+		err := reposStore.Create(ctx, &tempRepo)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			_ = reposStore.Delete(ctx, tempRepo.ID) // Ensure we clean up after ourselves.
+		})
+
+		createSyncJob(t, store, ctx, 0, tempRepo.ID) // id = 1
+		finishSyncJobWithFailure(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
+
+		count, err := store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+		require.Equal(t, int32(1), count, "wrong count")
+
+		// Delete tempRepo
+		err = reposStore.Delete(ctx, tempRepo.ID)
+		require.NoError(t, err)
+		count, err = store.CountReposWithFailingSyncJob(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, int32(0), count, "wrong count")
 	})
 }
 

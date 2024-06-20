@@ -119,3 +119,12 @@ alias(
     }),
     visibility = ["//visibility:public"],
 )
+
+tool(
+    name = "honeyvent",
+    src = select({
+        "@bazel_tools//src/conditions:linux_x86_64": ["@honeyvent-linux-x86_64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@honeyvent-darwin-x86_64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@honeyvent-darwin-x86_64//file:downloaded"],
+    }),
+)

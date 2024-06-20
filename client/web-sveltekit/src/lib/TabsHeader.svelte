@@ -62,7 +62,7 @@
 
 <style lang="scss">
     .tabs-header {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
 
         display: flex;
         align-items: stretch;
@@ -77,7 +77,7 @@
         align-items: center;
         min-height: 2rem;
         padding: 0.25rem 0.75rem;
-        color: var(--text-body);
+        color: var(--text-muted);
         display: inline-flex;
         flex-flow: row nowrap;
         justify-content: center;
@@ -95,16 +95,16 @@
         }
 
         &:hover {
+            --icon-color: currentColor;
+
             color: var(--text-title);
             background-color: var(--secondary-2);
         }
 
         &[aria-selected='true'] {
-            --icon-fill-color: currentColor;
+            --icon-color: currentColor;
 
-            font-weight: 500;
-            color: var(--text-title);
-            background-color: var(--secondary-2);
+            color: var(--primary);
 
             &::after {
                 border-color: var(--primary);
@@ -119,10 +119,16 @@
             &::before {
                 content: attr(data-tab-title);
                 display: block;
-                font-weight: 500;
                 height: 0;
                 visibility: hidden;
             }
+        }
+
+        &[aria-selected='true'] span,
+        span::before {
+            // Hidden rendering of the bold tab title to prevent
+            // shifting when the tab is selected.
+            font-weight: 500;
         }
     }
 </style>

@@ -19,7 +19,7 @@
     export let externalServiceKind: string | undefined
 </script>
 
-<DropdownMenu triggerButtonClass={getButtonClassName({ variant: 'text' })}>
+<DropdownMenu triggerButtonClass="{getButtonClassName({ variant: 'text' })} triggerButton">
     <svelte:fragment slot="trigger">
         <div class="trigger">
             <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
@@ -62,9 +62,12 @@
                         View on code host
                     {/if}
                 </small>
-                <div>
+                <div class="repo-name">
                     <CodeHostIcon repository={repoName} codeHost={externalServiceKind} />
                     <span>{displayRepoName}</span>
+                </div>
+                <div class="external-link-icon">
+                    <Icon icon={ILucideExternalLink} aria-hidden />
                 </div>
             </div>
         </MenuLink>
@@ -72,7 +75,12 @@
 </DropdownMenu>
 
 <style lang="scss">
+    :global(.triggerButton) {
+        border-radius: 0;
+    }
     .trigger {
+        --icon-color: currentColor;
+
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -93,12 +101,13 @@
     }
 
     .menu-item {
+        --icon-color: currentColor;
+
         display: flex;
         gap: 0.5rem;
         min-width: 20rem;
         align-items: center;
         color: var(--color-text);
-        --icon-color: currentColor;
 
         :global(kbd) {
             margin-left: auto;
@@ -106,18 +115,32 @@
     }
 
     .code-host-item {
-        display: flex;
-        flex-direction: column;
+        --icon-color: currentColor;
+
+        display: grid;
         gap: 0.25rem;
+        align-items: center;
+        grid-template-columns: 1fr min-content;
+        grid-template-rows: min-content min-content;
 
         small {
             color: var(--text-muted);
+            grid-column: 1;
+            grid-row: 1;
         }
 
-        div {
+        div.repo-name {
+            grid-column: 1;
+            grid-row: 2;
             display: flex;
-            gap: 0.5em;
+            gap: 0.5rem;
             align-items: center;
+        }
+
+        div.external-link-icon {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            --icon-size: 1rem;
         }
     }
 </style>

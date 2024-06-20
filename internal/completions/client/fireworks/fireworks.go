@@ -33,19 +33,23 @@ const Llama370bInstruct = "accounts/fireworks/models/llama-v3-70b-instruct"
 const Mistral7bInstruct = "accounts/fireworks/models/mistral-7b-instruct-4k"
 const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
+const DeepseekCoder1p3b = "accounts/sourcegraph/models/custom-deepseek-1p3b-base-hf-version"
+const DeepseekCoder7b = "accounts/sourcegraph/models/deepseek-coder-7b-base"
 
 const FineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
 const FineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"
 const FineTunedFIMVariant3 = "fim-fine-tuned-model-variant-3"
 const FineTunedFIMVariant4 = "fim-fine-tuned-model-variant-4"
+const FineTunedFIMLangSpecificMixtral = "fim-lang-specific-model-mixtral"
 
-const FineTunedMixtralTypescript = "accounts/sourcegraph/models/typescript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
-const FineTunedMixtralJavascript = "accounts/sourcegraph/models/javascript-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
-const FineTunedMixtralPhp = "accounts/sourcegraph/models/php-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
-const FineTunedMixtralPython = "accounts/sourcegraph/models/python-context-aware-fim-mixtral-8x7b-instruct-v0-1-e-1"
+const FineTunedMixtralTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-typescript-model-mixtral-8x7b"
+const FineTunedMixtralJavascript = "accounts/sourcegraph/models/finetuned-fim-lang-javascript-model-mixtral-8x7b"
+const FineTunedMixtralPhp = "accounts/sourcegraph/models/finetuned-fim-lang-php-model-mixtral-8x7b"
+const FineTunedMixtralPython = "accounts/sourcegraph/models/finetuned-fim-lang-python-model-mixtral-8x7b"
+const FineTunedMixtralJsx = "accounts/sourcegraph/models/finetuned-fim-lang-jsx-model-mixtral-8x7b"
 const FineTunedMixtralAll = "accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b"
 
-var FineTunedMixtralModelVariants = []string{FineTunedMixtralTypescript, FineTunedMixtralJavascript, FineTunedMixtralPhp, FineTunedMixtralPython, FineTunedMixtralAll}
+var FineTunedMixtralModelVariants = []string{FineTunedMixtralTypescript, FineTunedMixtralJavascript, FineTunedMixtralPhp, FineTunedMixtralPython, FineTunedMixtralAll, FineTunedMixtralJsx, FineTunedFIMLangSpecificMixtral}
 
 const FineTunedLlamaTypescript = "accounts/sourcegraph/models/lang-typescript-context-fim-meta-llama-3-8b-instruct-e-1"
 const FineTunedLlamaJavascript = "accounts/sourcegraph/models/lang-javascript-context-fim-meta-llama-3-8b-instruct-e-1"
@@ -71,11 +75,11 @@ type fireworksClient struct {
 
 func (c *fireworksClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	feature := request.Feature
+	requestParams := request.Parameters
+
 	resp, err := c.makeRequest(ctx, feature, requestParams, false)
 	if err != nil {
 		return nil, err
@@ -110,12 +114,11 @@ func (c *fireworksClient) Complete(
 
 func (c *fireworksClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+	feature := request.Feature
+	requestParams := request.Parameters
 	logprobsInclude := uint8(0)
 	requestParams.Logprobs = &logprobsInclude
 

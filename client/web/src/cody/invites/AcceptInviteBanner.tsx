@@ -115,7 +115,7 @@ const AcceptInviteBannerContent: React.FC<{
                                     Accept
                                 </Button>
                                 <Button
-                                    variant="secondary"
+                                    variant="link"
                                     disabled={acceptInviteMutation.isPending || cancelInviteMutation.isPending}
                                     onClick={() =>
                                         cancelInviteMutation.mutate(
@@ -141,8 +141,10 @@ const AcceptInviteBannerContent: React.FC<{
                     <H1 as="p" className="mb-2">
                         Issue with invite
                     </H1>
-                    <Text>You've been invited to a Cody Pro team by {inviteState.sentBy}.</Text>
-                    <Text className="mb-0">You cannot accept this invite as as you are already on this team.</Text>
+                    <Text className="mb-0">
+                        You've been invited to a Cody Pro team by {inviteState.sentBy}.<br />
+                        You cannot accept this invite as as you are already on this team.
+                    </Text>
                 </CodyAlert>
             )
         }

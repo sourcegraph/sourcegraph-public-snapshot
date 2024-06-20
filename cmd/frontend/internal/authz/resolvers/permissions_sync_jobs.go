@@ -5,35 +5,41 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const permissionsSyncJobIDKind = "PermissionsSyncJob"
 
-func NewPermissionsSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
+func NewPermissionsSyncJobsResolver(logger log.Logger, db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	store := &permissionsSyncJobConnectionStore{
-		db:   db,
-		args: args,
+		logger: logger.Scoped("permissions_sync_jobs_resolver"),
+		db:     db,
+		args:   args,
 	}
 
 	if args.UserID != nil && args.RepoID != nil {
 		return nil, errors.New("please provide either userID or repoID, but not both.")
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](
+		store, &args.ConnectionResolverArgs, nil)
 }
 
 type permissionsSyncJobConnectionStore struct {
-	db   database.DB
-	args graphqlbackend.ListPermissionsSyncJobsArgs
+	db     database.DB
+	args   graphqlbackend.ListPermissionsSyncJobsArgs
+	logger log.Logger
 }
 
 func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
@@ -52,20 +58,35 @@ func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, ar
 	}
 
 	resolvers := make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(jobs))
+	var errs []error
 	for _, job := range jobs {
 		syncSubject, err := s.resolveSubject(ctx, job)
 		if err != nil {
-			// NOTE(naman): async cleaning of repos might make repo record unavailable.
-			// That will break the api, as subject will not be resolved. In this case
-			// it is better to not bubble up the error but return the remaining nodes.
+			if !errcode.IsNotFound(err) {
+				// We don't surface errors for deleted repositories or users. It's frequently the case that asynchronous
+				// cleanup jobs will delete repositories and users that are referenced by permissions sync jobs.
+				errs = append(errs, errors.Wrapf(err, "resolving permissions sync job subject for job %d", job.ID))
+			}
+
 			continue
 		}
+
 		resolvers = append(resolvers, &permissionsSyncJobResolver{
 			db:          s.db,
 			job:         job,
 			syncSubject: syncSubject,
 		})
 	}
+
+	if len(errs) > 0 {
+		s.logger.Warn("Failed to resolve permissions sync job subjects", log.Error(errors.Append(nil, errs...)))
+
+		tr := trace.FromContext(ctx)
+		for _, e := range errs {
+			tr.RecordError(e)
+		}
+	}
+
 	return resolvers, nil
 }
 

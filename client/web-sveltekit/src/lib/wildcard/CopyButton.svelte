@@ -31,10 +31,10 @@
 <style lang="scss">
     .copy-path-button {
         display: contents;
+        color: var(--text-muted);
 
-        --color: var(--icon-color);
         &:hover {
-            --color: var(--body-color);
+            color: var(--body-color);
         }
     }
 </style>

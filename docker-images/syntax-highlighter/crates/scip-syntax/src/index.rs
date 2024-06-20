@@ -2,10 +2,10 @@ use std::{
     env,
     fs::File,
     io::{self, prelude::*},
-    path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
+use camino::{Utf8Path, Utf8PathBuf};
 use clap::ValueEnum;
 use path_clean;
 use scip::{types::Document, write_message_to_file};
@@ -50,7 +50,7 @@ pub enum TarMode {
     Stdin,
 
     /// Data is read from a .tar file
-    File { location: PathBuf },
+    File { location: Utf8PathBuf },
 }
 
 pub enum IndexMode {
@@ -58,38 +58,42 @@ pub enum IndexMode {
     Files { list: Vec<String> },
     /// Discover all files that can be handled by the chosen language
     /// in the passed location (which has to be a directory)
-    Workspace { location: PathBuf },
+    Workspace { location: Utf8PathBuf },
 
     /// Discover all files that can be handled by the chosen language
     /// in either a .tar file, or from STDIN to which TAR data is streamed
     TarArchive { input: TarMode },
 }
 
-fn make_absolute(cwd: &Path, path: &Path) -> PathBuf {
+fn make_absolute(cwd: &Utf8Path, path: &Utf8Path) -> Utf8PathBuf {
     if path.is_absolute() {
         path.to_owned()
     } else {
-        path_clean::clean(cwd.join(path))
+        Utf8PathBuf::from_path_buf(path_clean::clean(cwd.join(path).as_std_path()))
+            .expect("cleaning a path should not change its utf8ness")
     }
 }
 
 pub fn index_command(
     language: String,
     index_mode: IndexMode,
-    out: PathBuf,
-    project_root: PathBuf,
-    evaluate_against: Option<PathBuf>,
+    out: &Utf8Path,
+    project_root: &Utf8Path,
+    evaluate_against: Option<Utf8PathBuf>,
     options: IndexOptions,
 ) -> Result<()> {
     let parser_id = ParserId::from_name(&language)
         .context(format!("No parser found for language {language}"))?;
 
-    let cwd = env::current_dir().context("Failed to get the current working directory")?;
+    let cwd = Utf8PathBuf::from_path_buf(
+        env::current_dir().context("Failed to get the current working directory")?,
+    )
+    .map_err(|_| anyhow!("Non utf8 current directory"))?;
     let absolute_project_root = make_absolute(
         &cwd,
         match &index_mode {
             IndexMode::Workspace { location } => location,
-            _ => &project_root,
+            _ => project_root,
         },
     );
 
@@ -102,7 +106,7 @@ pub fn index_command(
                 ..Default::default()
             })
             .into(),
-            project_root: format!("file://{}", absolute_project_root.display()),
+            project_root: format!("file://{absolute_project_root}"),
             ..Default::default()
         })
         .into(),
@@ -116,7 +120,7 @@ pub fn index_command(
             let bar = create_progress_bar(list.len() as u64);
             for filename in list {
                 bar.set_message(filename.clone());
-                let filepath = make_absolute(&cwd, &PathBuf::from(filename));
+                let filepath = make_absolute(&cwd, &Utf8PathBuf::from(filename));
                 let document = index_file(&filepath, parser_id, &absolute_project_root, &options)?;
                 index.documents.push(document);
                 bar.inc(1);
@@ -147,17 +151,16 @@ pub fn index_command(
                 if entry.file_type().is_dir() {
                     continue;
                 }
-                let Some(extension) = entry.path().extension().and_then(|p| p.to_str()) else {
+                let Some(filepath) = Utf8Path::from_path(entry.path()) else {
+                    continue;
+                };
+                let Some(extension) = filepath.extension() else {
                     continue;
                 };
                 if extensions.contains(extension) {
                     bar.set_message(entry.path().display().to_string());
-                    let document = index_file(
-                        &entry.into_path(),
-                        parser_id,
-                        &absolute_project_root,
-                        &options,
-                    )?;
+                    let document =
+                        index_file(filepath, parser_id, &absolute_project_root, &options)?;
                     index.documents.push(document);
                     bar.tick();
                 }
@@ -166,13 +169,12 @@ pub fn index_command(
     }
 
     eprintln!(
-        "\nWriting index for {} documents into {}",
+        "\nWriting index for {} documents into {out}",
         index.documents.len(),
-        out.display()
     );
 
     if let Some(file) = evaluate_against {
-        eprintln!("Evaluating built index against {}", file.display());
+        eprintln!("Evaluating built index against {file}");
 
         let ground_truth = read_index_from_file(&file)?;
 
@@ -182,37 +184,35 @@ pub fn index_command(
             .write_summary(&mut std::io::stdout(), Default::default())?
     }
 
-    write_message_to_file(&out, index)
+    write_message_to_file(out, index)
         .map_err(|err| anyhow!("{err:?}"))
-        .with_context(|| format!("When writing index to {}", out.display()))
+        .with_context(|| format!("When writing index to {out}"))
 }
 
 fn index_file(
-    filepath: &Path,
+    filepath: &Utf8Path,
     parser_id: ParserId,
-    absolute_project_root: &Path,
+    absolute_project_root: &Utf8Path,
     options: &IndexOptions,
 ) -> Result<Document> {
     let contents = std::fs::read_to_string(filepath)
-        .with_context(|| format!("Failed to read file at {}", filepath.display()))?;
+        .with_context(|| format!("Failed to read file at {filepath}"))?;
 
     let relative_path = filepath
         .strip_prefix(absolute_project_root)
         .with_context(|| {
             format!(
-                "Failed to strip project root prefix: root={} file={}",
-                absolute_project_root.display(),
-                filepath.display()
+                "Failed to strip project root prefix: root={absolute_project_root} file={filepath}"
             )
         })?;
 
     match index_content(&contents, parser_id, options) {
         Ok(mut document) => {
-            document.relative_path = relative_path.display().to_string();
+            document.relative_path = relative_path.to_string();
             Ok(document)
         }
         Err(error) => {
-            bail!("Failed to index {}: {:?}", filepath.display(), error)
+            bail!("Failed to index {filepath}: {error:?}")
         }
     }
 }
@@ -229,22 +229,24 @@ fn index_tar_entries<R: Read>(
     let spinner = create_spinner();
     for entry in entries {
         let mut e = entry?;
-        let path = PathBuf::from(e.path()?);
+        let Ok(path) = Utf8PathBuf::from_path_buf(e.path()?.to_path_buf()) else {
+            eprintln!("Failed to convert path to utf8: {:?}", e.path()?);
+            continue;
+        };
 
-        if matches!(path.extension().and_then(|e| e.to_str()), Some(ext) if extensions.contains(ext))
-        {
+        if matches!(path.extension(), Some(ext) if extensions.contains(ext)) {
             match e.read_to_string(&mut contents) {
                 Ok(size) => {
                     match index_content(&contents, parser, options) {
                         Ok(mut document) => {
-                            document.relative_path = path.display().to_string();
+                            document.relative_path = path.to_string();
                             documents.push(document);
                         }
                         Err(error) => {
                             if options.fail_fast {
-                                anyhow::bail!("Failed to index {}: {:?}", path.display(), error);
+                                anyhow::bail!("Failed to index {path}: {error:?}");
                             } else {
-                                eprintln!("Failed to index {}: {:?}", path.display(), error);
+                                eprintln!("Failed to index {path}: {error:?}");
                             }
                         }
                     }
@@ -254,23 +256,15 @@ fn index_tar_entries<R: Read>(
                 }
                 Err(error) => {
                     if options.fail_fast {
-                        anyhow::bail!(
-                            "Failed to read contents of path {}: {:?}",
-                            path.display(),
-                            error
-                        )
+                        anyhow::bail!("Failed to read contents of path {path}: {error:?}",)
                     } else {
-                        eprintln!(
-                            "Failed to read contents of path {}: {:?}",
-                            path.display(),
-                            error
-                        );
+                        eprintln!("Failed to read contents of path {path}: {error:?}",);
                     }
                 }
             }
 
             progress += 1;
-            spinner.set_message(format!("[{}]: {}", progress, path.display()));
+            spinner.set_message(format!("[{progress}]: {path}"));
             spinner.tick();
         }
     }

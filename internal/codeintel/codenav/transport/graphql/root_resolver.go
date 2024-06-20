@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -157,6 +160,10 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	// during purely textual means.
 
 	return &[]resolverstubs.CodeGraphDataResolver{}, nil
+}
+
+func (r *rootResolver) CodeGraphDataByID(ctx context.Context, id graphql.ID) (resolverstubs.CodeGraphDataResolver, error) {
+	return newCodeGraphDataResolverFromID(ctx, r.repoStore, r.svc, r.operations, id)
 }
 
 func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.CompletedUpload {
@@ -317,12 +324,32 @@ type codeGraphDataResolver struct {
 
 	// Arguments
 	svc        CodeNavService
-	upload     shared.CompletedUpload
+	upload     UploadData
 	opts       *resolverstubs.CodeGraphDataOpts
 	provenance resolverstubs.CodeGraphDataProvenance
 
 	// O11y
 	operations *operations
+}
+
+// UploadData represents the subset of information of shared.CompletedUpload
+// that we actually care about for the purposes of the GraphQL API.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
+type UploadData struct {
+	UploadID       int
+	Commit         string
+	Indexer        string
+	IndexerVersion string
+}
+
+func NewUploadData(upload shared.CompletedUpload) UploadData {
+	return UploadData{
+		UploadID:       upload.ID,
+		Commit:         upload.Commit,
+		Indexer:        upload.Indexer,
+		IndexerVersion: upload.IndexerVersion,
+	}
 }
 
 func newCodeGraphDataResolver(
@@ -337,11 +364,57 @@ func newCodeGraphDataResolver(
 		/*document*/ nil,
 		/*documentRetrievalError*/ nil,
 		svc,
-		upload,
+		NewUploadData(upload),
 		opts,
 		provenance,
 		operations,
 	}
+}
+
+// CodeGraphDataID represents the serializable state needed to materialize
+// a CodeGraphData value from an opaque GraphQL ID.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
+type CodeGraphDataID struct {
+	UploadData
+	Args *resolverstubs.CodeGraphDataArgs
+	api.RepoID
+	Commit api.CommitID
+	Path   string
+	resolverstubs.CodeGraphDataProvenance
+}
+
+func newCodeGraphDataResolverFromID(
+	ctx context.Context,
+	repoStore database.RepoStore,
+	svc CodeNavService,
+	operations *operations,
+	rawID graphql.ID,
+) (resolverstubs.CodeGraphDataResolver, error) {
+	var id CodeGraphDataID
+	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
+		return nil, errors.Wrap(err, "malformed ID")
+	}
+	repo, err := repoStore.Get(ctx, id.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	opts := resolverstubs.CodeGraphDataOpts{
+		Args:   id.Args,
+		Repo:   repo,
+		Commit: id.Commit,
+		Path:   id.Path,
+	}
+	return &codeGraphDataResolver{
+		sync.Once{},
+		/*document*/ nil,
+		/*documentRetrievalError*/ nil,
+		svc,
+		id.UploadData,
+		&opts,
+		id.CodeGraphDataProvenance,
+		operations,
+	}, nil
 }
 
 func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
@@ -349,9 +422,21 @@ func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.
 	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
 	// and codeintel_scip_documents
 	c.retrievedDocument.Do(func() {
-		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.ID, c.opts.Path)
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.UploadID, c.opts.Path)
 	})
 	return c.document, c.documentRetrievalError
+}
+
+func (c *codeGraphDataResolver) ID() graphql.ID {
+	dataID := CodeGraphDataID{
+		c.upload,
+		c.opts.Args,
+		c.opts.Repo.ID,
+		c.opts.Commit,
+		c.opts.Path,
+		c.provenance,
+	}
+	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)
 }
 
 func (c *codeGraphDataResolver) Provenance(_ context.Context) (resolverstubs.CodeGraphDataProvenance, error) {

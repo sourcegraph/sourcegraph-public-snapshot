@@ -30,16 +30,16 @@ type DotComDB interface {
 func RegisterV1(
 	logger log.Logger,
 	mux *http.ServeMux,
-	samsClient samsm2m.TokenIntrospector,
+	store StoreV1,
 	dotcom DotComDB,
 	opts ...connect.HandlerOption,
 ) {
 	mux.Handle(
 		codyaccessv1connect.NewCodyAccessServiceHandler(
 			&handlerV1{
-				logger:     logger.Scoped("codyaccess.v1"),
-				samsClient: samsClient,
-				dotcom:     dotcom,
+				logger: logger.Scoped("codyaccess.v1"),
+				store:  store,
+				dotcom: dotcom,
 			},
 			opts...,
 		),
@@ -48,10 +48,10 @@ func RegisterV1(
 
 type handlerV1 struct {
 	codyaccessv1connect.UnimplementedCodyAccessServiceHandler
-	logger log.Logger
 
-	samsClient samsm2m.TokenIntrospector
-	dotcom     DotComDB
+	logger log.Logger
+	store  StoreV1
+	dotcom DotComDB
 }
 
 var _ codyaccessv1connect.CodyAccessServiceHandler = (*handlerV1)(nil)
@@ -62,7 +62,7 @@ func (s *handlerV1) GetCodyGatewayAccess(ctx context.Context, req *connect.Reque
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
-	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 
 	// 🚨 SECURITY: Require approrpiate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
-	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.samsClient, requiredScope, req)
+	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
 		return nil, err
 	}

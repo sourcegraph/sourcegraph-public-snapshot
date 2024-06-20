@@ -36,7 +36,8 @@
             height: $iconInlineSize;
             vertical-align: text-bottom;
         }
-        color: var(--icon-fill-color, var(--color, inherit));
+        // Note that --icon-color is defined globally
+        color: var(--icon-color, inherit);
         fill: currentColor;
     }
 </style>

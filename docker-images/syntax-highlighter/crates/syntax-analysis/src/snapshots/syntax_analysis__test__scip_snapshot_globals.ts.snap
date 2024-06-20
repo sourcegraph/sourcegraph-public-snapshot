@@ -2,6 +2,12 @@
 source: crates/syntax-analysis/src/lib.rs
 expression: dumped
 ---
+  // Identifiers in import statements shouldn't be picked
+  // up by scip-ctags
+  import { useState } from 'react';
+  import { useState as uS } from 'react';
+  import * as React from 'react';
+  
   class MyClass {
 //      ^^^^^^^ definition(Class) scip-ctags MyClass#
       public_field: number
@@ -63,5 +69,3 @@ expression: dumped
     myArrow: () => {},
 //  ^^^^^^^ definition(Function) scip-ctags myObject.myArrow().
   };
-  
-
