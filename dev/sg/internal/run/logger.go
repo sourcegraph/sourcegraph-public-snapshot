@@ -3,10 +3,13 @@ package run
 import (
 	"context"
 	"hash/fnv"
+	"io"
 	"strconv"
+	"sync"
+
+	"go.bobheadxi.dev/streamline/pipe"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 func nameToColor(s string) output.Style {
@@ -31,20 +34,29 @@ var (
 	lineFormat    = "%s%s[%+" + strconv.Itoa(maxNameLength) + "s]%s %s"
 )
 
-// newBufferedCmdLogger returns a new process.Logger with a unique color based on the name of the cmd
+// newOutputPipe returns a new output with a unique color based on the name of the cmd
 // that blocks until the given start signal and writes logs to the given output.Output.
-func newBufferedCmdLogger(ctx context.Context, name string, out *output.Output, start <-chan struct{}) *process.Logger {
+func newOutputPipe(ctx context.Context, name string, out *output.Output, start <-chan struct{}) io.Writer {
 	name = compactName(name)
 	color := nameToColor(name)
 
-	sink := func(data string) {
-		go func() {
-			<-start
-			out.Writef(lineFormat, output.StyleBold, color, name, output.StyleReset, data)
-		}()
-	}
+	w, stream := pipe.NewStream()
+	go func() {
+		var mux sync.Mutex
+		<-start
+		err := stream.Stream(func(line string) {
+			mux.Lock()
+			out.Writef(lineFormat, output.StyleBold, color, name, output.StyleReset, line)
+			mux.Unlock()
+		})
+		_ = w.CloseWithError(err)
+	}()
+	go func() {
+		<-ctx.Done()
+		_ = w.CloseWithError(ctx.Err())
+	}()
 
-	return process.NewLogger(ctx, sink)
+	return w
 }
 
 func compactName(name string) string {

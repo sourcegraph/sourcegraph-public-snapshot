@@ -47,6 +47,12 @@ func convertLicenseAttrsToProto(attrs *dotcomdb.LicenseAttributes) *subscription
 }
 
 func convertSubscriptionToProto(subscription *database.Subscription, attrs *dotcomdb.SubscriptionAttributes) *subscriptionsv1.EnterpriseSubscription {
+	// Dotcom equivalent missing is surprising, but let's not panic just yet
+	if attrs == nil {
+		attrs = &dotcomdb.SubscriptionAttributes{
+			ID: subscription.ID,
+		}
+	}
 	conds := []*subscriptionsv1.EnterpriseSubscriptionCondition{
 		{
 			Status:             subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,
