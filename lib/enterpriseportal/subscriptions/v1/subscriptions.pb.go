@@ -123,7 +123,8 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 	return file_subscriptions_proto_rawDescGZIP(), []int{1}
 }
 
-// PermissionType represents the type of permissions.
+// PermissionType defines a class of objects with similar characteristics.
+// https://openfga.dev/docs/concepts#what-is-a-type
 type PermissionType int32
 
 const (
