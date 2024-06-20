@@ -23,10 +23,11 @@ const (
 
 	// Release branches
 
-	TaggedRelease     // semver-tagged release
-	ReleaseBranch     // release branch build
-	BextReleaseBranch // browser extension release build
-	VsceReleaseBranch // vs code extension release build
+	TaggedRelease      // semver-tagged release
+	ReleaseBranch      // release branch build
+	PatchReleaseBranch // patch release branch build
+	BextReleaseBranch  // browser extension release build
+	VsceReleaseBranch  // vs code extension release build
 
 	InternalRelease // Internal release
 	PromoteRelease  // Public release
@@ -136,6 +137,11 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case ReleaseBranch:
 		return &RunTypeMatcher{
 			Branch:       `^[0-9]+\.[0-9]+$`,
+			BranchRegexp: true,
+		}
+	case PatchReleaseBranch:
+		return &RunTypeMatcher{
+			Branch:       `^will/[0-9]+\.[0-9]+(?:\.[0-9]+)?$`, // TODO: Remove prefix
 			BranchRegexp: true,
 		}
 	case BextReleaseBranch:
