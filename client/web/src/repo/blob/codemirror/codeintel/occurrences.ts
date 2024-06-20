@@ -9,10 +9,10 @@ export interface CodeGraphData {
         name: string | null
         version: string | null
     } | null
-    // The raw occurrences as returned by the API
+    // The raw occurrences as returned by the API. Guaranteed to be sorted.
     occurrences: Occurrence[]
     // The same as occurrences, but flattened so there are no overlapping
-    // ranges.
+    // ranges. Guaranteed to be sorted.
     nonOverlappingOccurrences: Occurrence[]
 }
 

@@ -79,16 +79,28 @@ function highlightingOccurrenceAtPosition(state: EditorState, position: Position
     return undefined
 }
 
-// TODO: document
+// Returns the occurrence at this position based on data from the GraphQL occurrences API.
 function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
     for (const datum of data) {
-        sortedIndexBy<Occurrence | Position>(datum.nonOverlappingOccurrences, position, (occOrPosition): Position => {
-            if (occOrPosition instanceof Position) {
-                return occOrPosition
-            } else {
-                return occOrPosition.range.start
+        const idx = sortedIndexBy<Occurrence | Position>(
+            datum.nonOverlappingOccurrences,
+            position,
+            (occOrPosition): Position => {
+                // Note: sortedIndexBy expects the array and the target element
+                // to have the same type, but we have a position and not an
+                // occurrence. The transform func is used for both the array
+                // elements and the target element, so we switch on the type
+                // here.
+                if (occOrPosition instanceof Position) {
+                    return occOrPosition
+                } else {
+                    return occOrPosition.range.start
+                }
             }
-        })
+        )
+        if (datum.nonOverlappingOccurrences[idx].range.contains(position)) {
+            return datum.nonOverlappingOccurrences[idx]
+        }
     }
     return undefined
 }
