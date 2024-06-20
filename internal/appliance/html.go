@@ -69,7 +69,7 @@ func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO validate user input
 
-	_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance", "default") //TODO namespace
+	_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance")
 	if err != nil {
 		a.logger.Error("failed to create configMap sourcegraph-appliance", log.Error(err))
 		// Handle err

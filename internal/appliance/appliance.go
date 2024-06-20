@@ -3,7 +3,6 @@ package appliance
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -18,6 +18,7 @@ import (
 
 type Appliance struct {
 	client      client.Client
+	namespace   string
 	status      Status
 	sourcegraph config.Sourcegraph
 	logger      log.Logger
@@ -41,9 +42,10 @@ func (s Status) String() string {
 	return string(s)
 }
 
-func NewAppliance(client client.Client, logger log.Logger) *Appliance {
+func NewAppliance(client client.Client, namespace string, logger log.Logger) *Appliance {
 	return &Appliance{
 		client:      client,
+		namespace:   namespace,
 		status:      StatusSetup,
 		sourcegraph: config.Sourcegraph{},
 		logger:      logger,
@@ -58,7 +60,7 @@ func (a *Appliance) GetCurrentStatus(ctx context.Context) Status {
 	return a.status
 }
 
-func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error) {
+func (a *Appliance) CreateConfigMap(ctx context.Context, name string) (*corev1.ConfigMap, error) {
 	spec, err := yaml.Marshal(a.sourcegraph)
 	if err != nil {
 		return nil, err
@@ -67,7 +69,7 @@ func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string)
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: a.namespace,
 			Labels: map[string]string{
 				"deploy": "sourcegraph",
 			},
@@ -89,9 +91,9 @@ func (a *Appliance) CreateConfigMap(ctx context.Context, name, namespace string)
 	return configMap, nil
 }
 
-func (a *Appliance) GetConfigMap(ctx context.Context, name, namespace string) (*corev1.ConfigMap, error) {
+func (a *Appliance) GetConfigMap(ctx context.Context, name string) (*corev1.ConfigMap, error) {
 	var applianceSpec corev1.ConfigMap
-	err := a.client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &applianceSpec)
+	err := a.client.Get(ctx, types.NamespacedName{Name: name, Namespace: a.namespace}, &applianceSpec)
 	if apierrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -102,7 +104,7 @@ func (a *Appliance) GetConfigMap(ctx context.Context, name, namespace string) (*
 }
 
 func (a *Appliance) shouldSetupRun(ctx context.Context) (bool, error) {
-	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance", "default") //TODO unhardcode and load namespace properly
+	cfgMap, err := a.GetConfigMap(ctx, "sourcegraph-appliance")
 	switch {
 	case err != nil:
 		return false, err
