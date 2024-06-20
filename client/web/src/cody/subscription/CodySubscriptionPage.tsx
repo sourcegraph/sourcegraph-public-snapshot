@@ -4,7 +4,6 @@ import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutlin
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
@@ -21,27 +20,27 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
-import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
-import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
-import { USER_CODY_PLAN } from './queries'
+import type { UserCodySubscription } from './useUserCodySubscription'
 
 import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
-    authenticatedUser?: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
+    codySubscription: UserCodySubscription
 }
 
-export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
-    authenticatedUser,
+const AuthenticatedCodySubscriptionManagePage: React.FunctionComponent<CodySubscriptionPageProps> = ({
     telemetryRecorder,
+    codySubscription,
 }) => {
     const parameters = useSearchParameters()
 
@@ -50,26 +49,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         telemetryRecorder.recordEvent('cody.planSelection', 'view')
     }, [utm_source, telemetryRecorder])
 
-    const { data, error: dataError } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-
     const navigate = useNavigate()
     const useEmbeddedCodyUI = useMemo(() => isEmbeddedCodyProUIEnabled(), [])
 
-    useEffect(() => {
-        if (!!data && !data?.currentUser) {
-            navigate(`/sign-in?returnTo=${CodyProRoutes.Subscription}`)
-        }
-    }, [data, navigate])
-
-    if (dataError) {
-        throw dataError
-    }
-
-    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
-        return null
-    }
-
-    const isProUser = data.currentUser.codySubscription?.plan === CodySubscriptionPlan.PRO
+    const isProUser = codySubscription.plan === CodySubscriptionPlan.PRO
 
     return (
         <>
@@ -453,6 +436,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         </>
     )
 }
+
+export const CodySubscriptionPage = withAuthenticatedUser(AuthenticatedCodySubscriptionManagePage)
 
 export const ProTierIcon = ({ className }: { className?: string }): ReactElement => (
     <svg

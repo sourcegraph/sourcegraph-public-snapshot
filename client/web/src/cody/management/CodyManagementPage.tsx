@@ -11,13 +11,7 @@ import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import {
-    type UserCodyPlanResult,
-    type UserCodyPlanVariables,
-    type UserCodyUsageResult,
-    type UserCodyUsageVariables,
-    CodySubscriptionPlan,
-} from '../../graphql-operations'
+import { type UserCodyUsageResult, type UserCodyUsageVariables, CodySubscriptionPlan } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { ProIcon } from '../components/CodyIcon'
@@ -26,7 +20,8 @@ import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
-import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { USER_CODY_USAGE } from '../subscription/queries'
+import type { UserCodySubscription } from '../subscription/useUserCodySubscription'
 import { getManageSubscriptionPageURL } from '../util'
 
 import { useSubscriptionSummary } from './api/react-query/subscriptions'
@@ -37,6 +32,7 @@ import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
+    codySubscription: UserCodySubscription
 }
 
 export enum EditorStep {
@@ -47,6 +43,7 @@ export enum EditorStep {
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
+    codySubscription,
 }) => {
     const navigate = useNavigate()
     const parameters = useSearchParameters()
@@ -69,8 +66,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const welcomeToPro = parameters.get('welcome') === '1'
 
-    const { data, error: dataError, refetch } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-
     const { data: usageData, error: usageDateError } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(
         USER_CODY_USAGE,
         {}
@@ -81,14 +76,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
-
-    const subscription = data?.currentUser?.codySubscription
-
-    useEffect(() => {
-        if (!!data && !data?.currentUser) {
-            navigate(`/sign-in?returnTo=${CodyProRoutes.Manage}`)
-        }
-    }, [data, navigate])
 
     const getTeamInviteButton = (): JSX.Element | null => {
         const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
@@ -114,19 +101,15 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
     }, [telemetryRecorder])
 
-    if (accountSwitchRequired) {
+    if (accountSwitchRequired || !isCodyEnabled()) {
         return null
     }
 
-    if (dataError || usageDateError) {
-        throw dataError || usageDateError
+    if (usageDateError) {
+        throw usageDateError
     }
 
-    if (!isCodyEnabled() || !subscription) {
-        return null
-    }
-
-    const isUserOnProTier = subscription.plan === CodySubscriptionPlan.PRO
+    const isUserOnProTier = codySubscription.plan === CodySubscriptionPlan.PRO
 
     return (
         <>
@@ -191,7 +174,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             </div>
                         )}
                     </div>
-                    <SubscriptionStats {...{ subscription, usageData }} />
+                    <SubscriptionStats subscription={codySubscription} usageData={usageData} />
                 </div>
 
                 <UseCodyInEditorSection

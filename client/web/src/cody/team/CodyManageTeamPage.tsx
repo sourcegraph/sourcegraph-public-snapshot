@@ -18,11 +18,13 @@ import { InviteUsers } from '../invites/InviteUsers'
 import { useTeamInvites } from '../management/api/react-query/invites'
 import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
 import { useTeamMembers } from '../management/api/react-query/teams'
+import type { UserCodySubscription } from '../subscription/useUserCodySubscription'
 
 import { TeamMemberList } from './TeamMemberList'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
+    codySubscription: UserCodySubscription
 }
 
 const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPageProps> = ({ telemetryRecorder }) => {
