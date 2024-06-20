@@ -54,8 +54,8 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 		}
 	}
 
-	if dotcom.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
-		return "", "", errors.New("use of access tokens with sudo scope is disabled")
+	if dotcom.IsLockdownModeEnabled() && scheme == SchemeTokenSudo {
+		return "", "", errors.New("use of access tokens with sudo scope is disabled in lockdown mode")
 	}
 
 	token = params["token"]

@@ -344,7 +344,7 @@ func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 	IsForWork     bool
 	IsForPersonal bool
 }) (*EmptyResponse, error) {
-	if !dotcom.SourcegraphDotComMode() {
+	if !dotcom.ProvidesCodySelfServe() {
 		return nil, errors.New("Cody survey is not supported outside sourcegraph.com")
 	}
 
