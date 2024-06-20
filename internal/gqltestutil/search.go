@@ -92,14 +92,17 @@ type SearchFileResult struct {
 	RevSpec struct {
 		Expr string `json:"expr"`
 	} `json:"revSpec"`
-	PathMatches []struct {
-		Start struct {
-			Character int `json:"character"`
-		} `json:"start"`
-		End struct {
-			Character int `json:"character"`
-		} `json:"end"`
-	} `json:"pathMatches"`
+	PathMatches []GraphQLRange `json:"pathMatches"`
+}
+
+type GraphQLRange struct {
+	Start GraphQLPosition `json:"start"`
+	End   GraphQLPosition `json:"end"`
+}
+
+type GraphQLPosition struct {
+	Line      int `json:"line"`
+	Character int `json:"character"`
 }
 
 type QueryDescription struct {
@@ -614,8 +617,19 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 					if len(v.Branches) > 0 {
 						r.RevSpec.Expr = v.Branches[0]
 					}
+					for _, pathMatch := range v.PathMatches {
+						r.PathMatches = append(r.PathMatches, GraphQLRange{
+							Start: GraphQLPosition{
+								Line:      pathMatch.Start.Line,
+								Character: pathMatch.Start.Column,
+							},
+							End: GraphQLPosition{
+								Line:      pathMatch.End.Line,
+								Character: pathMatch.End.Column,
+							},
+						})
+					}
 					results.Results = append(results.Results, &r)
-
 				case *streamhttp.EventSymbolMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
