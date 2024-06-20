@@ -95,6 +95,8 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	// Forth and GLSL commonly use other extensions. Ignore Filterscript
 	// as it is niche.
 	".fs": "F#",
+	// Ignoring other variants of JSON, such as OASv2-json and OASv3-json
+	".json": "JSON",
 	// Not considering "GCC Machine Description".
 	".md": "Markdown",
 	// The other main language using '.rs' is RenderScript, but that's deprecated.
@@ -106,11 +108,9 @@ var overrideAmbiguousExtensionsMap = map[string]string{
 	".ts":  "TypeScript",
 	// Ignoring "Adblock Filter List" and "Vim Help File".
 	".txt": "Text",
-	// Ignoring other variants of YAML.
+	// Ignoring other variants of YAML, such as MiniYAML, OASv2-yaml, OASv3-yaml.
 	".yaml": "YAML",
-	// ".yml" is not included here in parallel to ".yaml"
-	// as it is the first extension for 'YAML' and not the first
-	// for other variants of YAML, hence only 'YAML' is picked by enry.
+	".yml":  "YAML",
 }
 
 var unsupportedByEnryExtensionToNameMap = map[string]string{
