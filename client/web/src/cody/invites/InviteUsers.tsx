@@ -8,15 +8,13 @@ import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { CodyProBadgeDeck } from '../components/CodyProBadgeDeck'
 import { useSendInvite, useTeamInvites } from '../management/api/react-query/invites'
+import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
+import { useTeamMembers } from '../management/api/react-query/teams'
 import { isValidEmailAddress } from '../util'
 
 import styles from './InviteUsers.module.scss'
-import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
-import { useTeamMembers } from '../management/api/react-query/teams'
 
-export const InviteUsers: React.FunctionComponent<TelemetryV2Props> = ({
-    telemetryRecorder,
-}) => {
+export const InviteUsers: React.FunctionComponent<TelemetryV2Props> = ({ telemetryRecorder }) => {
     const subscriptionQueryResult = useCurrentSubscription()
     const subscriptionSummaryQueryResult = useSubscriptionSummary()
     const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
