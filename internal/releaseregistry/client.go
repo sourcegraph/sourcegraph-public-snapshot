@@ -10,7 +10,7 @@ import (
 
 const Endpoint = "https://releaseregistry.sourcegraph.com/v1/"
 
-type Version struct {
+type ReleaseInfo struct {
 	ID            int32      `json:"id"`
 	Name          string     `json:"name"`
 	Public        bool       `json:"public"`
@@ -33,13 +33,13 @@ func NewClient(endpoint string) *Client {
 	}
 }
 
-func (r *Client) newRequest(method, path string) (*http.Request, error) {
+func (r *Client) newRequest(ctx context.Context, method, path string) (*http.Request, error) {
 	urlPath, err := url.JoinPath(r.endpoint, path)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(method, urlPath, nil)
+	req, err := http.NewRequestWithContext(ctx, method, urlPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,8 @@ func (r *Client) newRequest(method, path string) (*http.Request, error) {
 	return req, nil
 }
 
-func (r *Client) ListVersions(ctx context.Context) ([]Version, error) {
-	req, err := r.newRequest(http.MethodGet, "releases")
+func (r *Client) ListVersions(ctx context.Context) ([]ReleaseInfo, error) {
+	req, err := r.newRequest(ctx, http.MethodGet, "releases")
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (r *Client) ListVersions(ctx context.Context) ([]Version, error) {
 	}
 	defer resp.Body.Close()
 
-	results := []Version{}
+	results := []ReleaseInfo{}
 
 	err = json.NewDecoder(resp.Body).Decode(&results)
 	if err != nil {
