@@ -293,6 +293,14 @@ go_repository(
     version = "v1.14.5",
 )
 
+go_repository(
+    name = "com_google_cloud_go_auth",
+    build_file_proto_mode = "disable_global",
+    importpath = "cloud.google.com/go/auth",
+    sum = "h1:0QNO7VThG54LUzKiQxv8C6x1YX7lUrzlAa1nVLF8CIw=",
+    version = "v0.5.1",
+)
+
 # Overrides the default provided protobuf dep from rules_go by a more
 # recent one.
 go_repository(

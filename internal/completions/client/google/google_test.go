@@ -24,14 +24,20 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 }
 
 func TestErrStatusNotOK(t *testing.T) {
-	mockClient := NewClient(&mockDoer{
+	mockClient, _ := NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusTooManyRequests,
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "", "")
+	}, "https://generativelanguage.googleapis.com", "", false)
+
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
 
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
