@@ -8,17 +8,21 @@ import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { CodyProBadgeDeck } from '../components/CodyProBadgeDeck'
 import { useSendInvite, useTeamInvites } from '../management/api/react-query/invites'
-import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
+import { useCurrentSubscription } from '../management/api/react-query/subscriptions'
 import { useTeamMembers } from '../management/api/react-query/teams'
+import type { SubscriptionSummary } from '../management/api/teamSubscriptions'
 import { isValidEmailAddress } from '../util'
 
 import styles from './InviteUsers.module.scss'
 
-export const InviteUsers: React.FunctionComponent<TelemetryV2Props> = ({ telemetryRecorder }) => {
+interface InviteUsersProps extends TelemetryV2Props {
+    subscriptionSummary: SubscriptionSummary
+}
+
+export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemetryRecorder, subscriptionSummary }) => {
     const subscriptionQueryResult = useCurrentSubscription()
-    const subscriptionSummaryQueryResult = useSubscriptionSummary()
-    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
-    const teamId = subscriptionSummaryQueryResult?.data?.teamId
+    const isAdmin = subscriptionSummary.userRole === 'admin'
+    const teamId = subscriptionSummary.teamId
     const teamMembersQueryResult = useTeamMembers()
     const teamMembers = teamMembersQueryResult.data?.members
     const teamInvitesQueryResult = useTeamInvites()
@@ -100,7 +104,7 @@ export const InviteUsers: React.FunctionComponent<TelemetryV2Props> = ({ telemet
         })
     }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
 
-    if (!isAdmin || !remainingInviteCount || !subscriptionSummaryQueryResult?.data) {
+    if (!isAdmin || !remainingInviteCount) {
         return null
     }
 
