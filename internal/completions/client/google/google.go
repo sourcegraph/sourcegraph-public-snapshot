@@ -26,11 +26,9 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string, viaGateway bool) 
 
 func (c *googleCompletionStreamClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	requestParams := request.Parameters
 	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
@@ -62,12 +60,11 @@ func (c *googleCompletionStreamClient) Complete(
 
 func (c *googleCompletionStreamClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+	requestParams := request.Parameters
+
 	resp, err := c.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err

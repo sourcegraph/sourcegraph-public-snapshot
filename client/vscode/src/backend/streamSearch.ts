@@ -8,22 +8,21 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import type { ExtensionCoreAPI } from '../contract'
 import { SearchPatternType } from '../graphql-operations'
+import { getAccessToken } from '../settings/accessTokenSetting'
 import type { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
 
 import { isOlderThan, observeInstanceVersionNumber } from './instanceVersion'
 
-export function createStreamSearch({
+export async function createStreamSearch({
     context,
     stateMachine,
     sourcegraphURL,
-    session,
 }: {
     context: vscode.ExtensionContext
     stateMachine: VSCEStateMachine
     sourcegraphURL: string
-    session: vscode.AuthenticationSession | undefined
-}): ExtensionCoreAPI['streamSearch'] {
+}): Promise<ExtensionCoreAPI['streamSearch']> {
     // Ensure only one search is active at a time
     let previousSearchSubscription: Subscription | null
 
@@ -32,7 +31,7 @@ export function createStreamSearch({
             previousSearchSubscription?.unsubscribe()
         },
     })
-    const token = session?.accessToken === undefined ? '' : session?.accessToken
+    const token = await getAccessToken()
     const instanceVersionNumber = observeInstanceVersionNumber(token, sourcegraphURL)
 
     return function streamSearch(query, options) {

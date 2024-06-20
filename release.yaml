@@ -73,6 +73,9 @@ internal:
             echo "Release created, see:"
             echo $body
           fi
+      - name: 'Trigger Security scan'
+        cmd: |
+          curl --location 'https://incoming.sgdev.org/new-image-scan?tag={{tag}}&scanType=release&dev=true' --header 'X-Special-Header: ${SCANNER_TOKEN}'
       - name: 'notifications'
         cmd: |
           set -eu

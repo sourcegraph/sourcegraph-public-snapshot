@@ -14,5 +14,6 @@ export const queryKeys = {
     invites: {
         all: ['invite'] as const,
         invite: (teamId: string, inviteId: string) => [...queryKeys.invites.all, teamId, inviteId] as const,
+        teamInvites: () => [...queryKeys.invites.all, 'team-invites'] as const,
     },
 }

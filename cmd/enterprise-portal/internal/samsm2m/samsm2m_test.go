@@ -12,6 +12,7 @@ import (
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +21,7 @@ type mockSAMSClient struct {
 	error  error
 }
 
-func (m mockSAMSClient) IntrospectToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
+func (m mockSAMSClient) IntrospectSAMSToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
 	return m.result, m.error
 }
 

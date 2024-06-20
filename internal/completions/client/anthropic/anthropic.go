@@ -43,11 +43,13 @@ type anthropicClient struct {
 
 func (a *anthropicClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := a.makeRequest(ctx, requestParams, version, false)
 	if err != nil {
 		return nil, err
@@ -78,12 +80,14 @@ func (a *anthropicClient) Complete(
 
 func (a *anthropicClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := a.makeRequest(ctx, requestParams, version, true)
 	if err != nil {
 		return err

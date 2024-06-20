@@ -3,41 +3,27 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "redislock",
-    srcs = [
-        "mutex.go",
-        "redislock.go",
-    ],
+    srcs = ["redislock.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/redislock",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/redispool",
-        "//lib/errors",
-        "@com_github_go_redsync_redsync_v4//:redsync",
-        "@com_github_go_redsync_redsync_v4//redis/goredis/v9:goredis",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_uuid//:uuid",
-        "@com_github_redis_go_redis_v9//:go-redis",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "redislock_test",
-    srcs = [
-        "mutex_test.go",
-        "redislock_test.go",
-    ],
+    srcs = ["redislock_test.go"],
     embed = [":redislock"],
     tags = [
         # Test requires localhost database
         "requires-network",
     ],
     deps = [
-        "//internal/rcache",
         "//internal/redispool",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",
-        "@com_github_redis_go_redis_v9//:go-redis",
-        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

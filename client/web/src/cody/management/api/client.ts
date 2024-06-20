@@ -52,10 +52,26 @@ export module Client {
         return { method: 'GET', urlSuffix: '/team/current/members' }
     }
 
+    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<unknown> {
+        return { method: 'PATCH', urlSuffix: '/team/current/members', requestBody }
+    }
+
     // Invites
 
     export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
         return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function getTeamInvites(): Call<types.ListTeamInvitesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/invites' }
+    }
+
+    export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<types.ListTeamInvitesResponse> {
+        return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
+    }
+
+    export function resendInvite(inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/current/invites/${inviteId}/resend` }
     }
 
     export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {
@@ -76,7 +92,7 @@ export module Client {
 }
 
 // Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
+// This is a sort of "meta request" in the same vein as the `gql`
 // template tag, see: https://github.com/apollographql/graphql-tag
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'

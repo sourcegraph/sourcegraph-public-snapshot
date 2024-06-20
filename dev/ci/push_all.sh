@@ -6,7 +6,7 @@ echo "~~~ :aspect: :stethoscope: Agent Health check"
 /etc/aspect/workflows/bin/agent_health_check
 
 aspectRC="/tmp/aspect-generated.bazelrc"
-rosetta bazelrc > "$aspectRC"
+rosetta bazelrc >"$aspectRC"
 bazelrc=(--bazelrc="$aspectRC" --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 function preview_tags() {
@@ -80,7 +80,7 @@ prod_registries=(
 )
 
 if [ -n "${ADDITIONAL_PROD_REGISTRIES}" ]; then
-  IFS=' ' read -r -a registries <<< "$ADDITIONAL_PROD_REGISTRIES"
+  IFS=' ' read -r -a registries <<<"$ADDITIONAL_PROD_REGISTRIES"
   prod_registries+=("${registries[@]}")
 fi
 
@@ -107,7 +107,7 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^main$ ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-im
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
-elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.*  ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^main-dry-run/.* ]]; then
   # We only push on internal registries on a main-dry-run.
   dev_tags+=("insiders")
   prod_tags+=("insiders")
@@ -176,6 +176,8 @@ fi
 
 echo "Dev tag args: $dev_tags_args"
 
+honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
+
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
@@ -205,7 +207,7 @@ cat "$job_file"
 # trap "rm -rf $log_file" EXIT
 # parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
 
-# # Pretty print the output from gnu parallel
+# Pretty print the output from gnu parallel
 # while read -r line; do
 #   # Skip the first line (header)
 #   if [[ "$line" != Seq* ]]; then
@@ -219,6 +221,15 @@ cat "$job_file"
 #     else
 #       echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
 #     fi
+
+#     $honeyvent -k "$CI_HONEYCOMB_API_KEY" -d "buildkite-pushall" \
+#       -n "exit_code" -v "$exitcode" \
+#       -n "duration" -v "$duration" \
+#       -n "target" -v "$target" \
+#       -n "commit" -v "$BUILDKITE_COMMIT" \
+#       -n "build_number" -v "$BUILDKITE_BUILD_NUMBER" \
+#       -n "branch" -v "$BUILDKITE_BRANCH" \
+#       -n "label" -v "$BUILDKITE_LABEL"s
 #   fi
 # done <"$log_file"
 
