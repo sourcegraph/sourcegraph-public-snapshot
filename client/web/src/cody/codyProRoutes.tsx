@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { type LegacyLayoutRouteContext, LegacyRoute } from '../LegacyRouteContext'
@@ -83,10 +84,12 @@ const CodyProPage: React.FC<CodyProPageProps> = props => {
     }
 
     if (!data.currentUser) {
+        // Cody plan is not available if the user is not authenticated. Redirecting to the sign-in page.
         return <Navigate to={`/sign-in?returnTo=${CodyProRoutes.Manage}`} replace={true} />
     }
 
     if (!data.currentUser.codySubscription) {
+        logger.error('Cody subscription data is not available.')
         return null
     }
 
