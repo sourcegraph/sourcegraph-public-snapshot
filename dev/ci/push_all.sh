@@ -13,6 +13,9 @@ function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
   IFS=' ' read -r -a tags <<<"$2"
 
+  echo "Registry preview: ${registries[*]}"
+  echo "Tags preview: ${tags[*]}"
+
   for tag in "${tags[@]}"; do
     for registry in "${registries[@]}"; do
       echo -e "\t ${registry}/\$IMAGE:${tag}"
@@ -124,6 +127,9 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^will/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   # Patch release builds only need to be pushed to internal registries.
   push_prod=false
   dev_tags+=("$BUILDKITE_BRANCH-insiders")
+  echo "Matched will/patch release branch pattern"
+  echo "Dev tags are:"
+  echo "${dev_tags[@]}"
 elif [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
   # ok: v5.1.0
   # ok: v5.1.0-rc.5
@@ -146,12 +152,12 @@ if [ -n "$CANDIDATE_ONLY" ]; then
   push_prod=false
 fi
 
-
 # Posting the preamble for image pushes.
-echo -e "### ${BUILDKITE_LABEL}" > ./annotations/pushed_images.md
+echo -e "### ${BUILDKITE_LABEL}" >./annotations/pushed_images.md
 echo -e "<details><summary>Click to expand table</summary><table>\n" >>./annotations/pushed_images.md
-echo -e "<tr><th>Name</th><th>Registry</th><th>Tags</th></tr>\n" >> ./annotations/pushed_images.md
+echo -e "<tr><th>Name</th><th>Registry</th><th>Tags</th></tr>\n" >>./annotations/pushed_images.md
 
+echo "Previewing dev image tags:"
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
   preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
@@ -168,6 +174,8 @@ if $push_prod; then
   done
 fi
 
+echo "Dev tag args: $dev_tags_args"
+
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
@@ -178,6 +186,7 @@ trap "rm -rf $job_file" EXIT
 for target in ${images[@]}; do
   [[ "$target" =~ ([A-Za-z0-9_.-]+): ]]
   name="${BASH_REMATCH[1]}"
+  echo "Creating push commands for $name"
   # Append push commands for dev registries
   create_push_command "${dev_registries[*]}" "$name" "$target" "$dev_tags_args" >>"$job_file"
   # Append push commands for prod registries
