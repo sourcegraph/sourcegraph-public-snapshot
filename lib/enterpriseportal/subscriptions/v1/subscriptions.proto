@@ -77,9 +77,9 @@ service SubscriptionsService {
 message EnterpriseSubscriptionCondition {
   enum Status {
     STATUS_UNSPECIFIED = 0;
-    // License creation status.
+    // Subscription creation status.
     STATUS_CREATED = 1;
-    // License archival status. i.e. 'is_archived'
+    // Subscription archival status. i.e. 'is_archived'
     STATUS_ARCHIVED = 2;
   }
 
@@ -157,10 +157,8 @@ message EnterpriseSubscriptionLicenseCondition {
     STATUS_UNSPECIFIED = 0;
     // License creation status.
     STATUS_CREATED = 1;
-    // License archival status. i.e. 'is_archived'
-    STATUS_ARCHIVED = 2;
     // License revocation status, i.e. 'is_revoked'
-    STATUS_REVOKED = 3;
+    STATUS_REVOKED = 2;
   }
 
   // The time this subscription transitioned into this status.
@@ -258,8 +256,8 @@ message ListEnterpriseSubscriptionLicensesFilter {
     string subscription_id = 1;
     // Return only licenses of the given type.
     EnterpriseSubscriptionLicenseType type = 2;
-    // Return only licenses with the given archival status.
-    bool is_archived = 3;
+    // Return only licenses that are active.
+    bool is_revoked = 3;
     // Return only product subscriptions whose license key contains this
     // substring.
     string license_key_substring = 4;

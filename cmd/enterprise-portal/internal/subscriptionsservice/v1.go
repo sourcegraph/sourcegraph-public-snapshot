@@ -7,9 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
+
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
-	"golang.org/x/exp/maps"
 
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
@@ -220,11 +221,6 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 
 	// Validate filters
 	filters := req.Msg.GetFilters()
-	if len(filters) == 0 {
-		// TODO: We may want to allow filter-less usage in the future
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			errors.New("at least one filter is required"))
-	}
 	for _, filter := range filters {
 		// TODO: Implement additional filtering as needed
 		switch f := filter.GetFilter().(type) {
@@ -241,8 +237,6 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 					errors.New(`invalid filter: "subscription_id"" provided but is empty`),
 				)
 			}
-		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
-			// Nothing to validate
 		}
 	}
 

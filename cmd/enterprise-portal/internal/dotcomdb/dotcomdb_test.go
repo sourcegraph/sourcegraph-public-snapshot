@@ -409,8 +409,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 				SubscriptionId: mock.targetSubscriptionID,
 			},
 		}, {
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: false,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: false,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
@@ -424,8 +424,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	}, {
 		name: "filter by is archived",
 		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: true,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: true,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
@@ -434,8 +434,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	}, {
 		name: "filter by not archived",
 		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: false,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: false,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
