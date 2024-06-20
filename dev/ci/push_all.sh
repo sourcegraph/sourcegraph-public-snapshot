@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eux
+set -eu
 
 # echo "~~~ :aspect: :stethoscope: Agent Health check"
 # /etc/aspect/workflows/bin/agent_health_check
@@ -74,7 +74,7 @@ function create_push_command() {
       --workspace_status_command=./dev/bazel_stamp_vars.sh
 
     # echo the target here so we can extract it later to show per-target timing from gnu parallel
-    echo "echo $target && $cmd $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
+    echo "$cmd $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}") # $target"
   done
 }
 
