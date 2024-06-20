@@ -58,18 +58,22 @@ describe('UserNavItem', () => {
         emails: [],
     }
 
+    const isSourcegraphDotCom = true
+
     test('simple', () => {
         expect(
             render(
                 <MemoryRouter>
                     <MockedTestProvider>
-                        <UserNavItem
-                            showKeyboardShortcutsHelp={() => undefined}
-                            authenticatedUser={USER}
-                            isSourcegraphDotCom={true}
-                            showFeedbackModal={() => undefined}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
+                        <CodyProApiProvider isSourcegraphDotCom={isSourcegraphDotCom}>
+                            <UserNavItem
+                                showKeyboardShortcutsHelp={() => undefined}
+                                authenticatedUser={USER}
+                                isSourcegraphDotCom={true}
+                                showFeedbackModal={() => undefined}
+                                telemetryService={NOOP_TELEMETRY_SERVICE}
+                            />
+                        </CodyProApiProvider>
                     </MockedTestProvider>
                 </MemoryRouter>
             ).asFragment()
@@ -77,7 +81,6 @@ describe('UserNavItem', () => {
     })
 
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
-        const isSourcegraphDotCom = true
         const result = renderWithBrandedContext(
             <MockedTestProvider>
                 <CodyProApiProvider isSourcegraphDotCom={isSourcegraphDotCom}>
