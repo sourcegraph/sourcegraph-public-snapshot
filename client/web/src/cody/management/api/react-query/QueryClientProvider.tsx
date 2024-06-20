@@ -15,6 +15,18 @@ const queryClient = new QueryClient({
     },
 })
 
-export const QueryClientProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => (
-    <ReactQueryClientProvider client={queryClient}>{children}</ReactQueryClientProvider>
-)
+/**
+ * QueryClientProvider wraps its children with the react-query ClientProvider.
+ * It is used to access the Cody Pro API and is only utilized on dotcom.
+ * In enterprise mode, it simply passes through the children.
+ */
+export const QueryClientProvider: React.FC<React.PropsWithChildren<{ isSourcegraphDotCom: boolean }>> = ({
+    isSourcegraphDotCom,
+    children,
+}) => {
+    if (!isSourcegraphDotCom) {
+        return <>{children}</>
+    }
+
+    return <ReactQueryClientProvider client={queryClient}>{children}</ReactQueryClientProvider>
+}

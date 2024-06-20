@@ -29,6 +29,7 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
+import { QueryClientProvider as CodyProApiProvider } from './cody/management/api/react-query/QueryClientProvider'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -283,6 +284,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...props,
                     }}
                 />,
+                <CodyProApiProvider isSourcegraphDotCom={props.isSourcegraphDotCom} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
