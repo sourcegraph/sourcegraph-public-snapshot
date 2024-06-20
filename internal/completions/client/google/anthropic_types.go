@@ -32,15 +32,17 @@ type anthropicContentMessagePart struct {
 }
 
 type anthropicResponse struct {
-	Candidates []struct {
-		Content    anthropicContentMessage `json:"content,omitempty"`
-		StopReason string                  `json:"finishReason,omitempty"`
-	} `json:"candidates"`
-
+	Candidates []anthropicCandidate `json:"candidates"`
 	UsageMetadata  anthropicUsage            `json:"usageMetadata"`
 	SafetySettings []anthropicSafetySettings `json:"safetySettings,omitempty"`
 	SafetyRatings  []anthropicSafetyRating   `json:"safetyRatings,omitempty"`
 }
+
+type anthropicCandidate struct {
+	Content    anthropicContentMessage `json:"content,omitempty"`
+	StopReason string                  `json:"finishReason,omitempty"`
+}
+
 type anthropicSafetyRating struct {
 	Category         string  `json:"category"`
 	Probability      string  `json:"probability"`
@@ -78,13 +80,13 @@ type anthropicStreamingResponseDelta struct {
 // AnthropicMessagesStreamingResponse captures all relevant-to-us fields from each relevant SSE event from https://docs.anthropic.com/claude/reference/messages_post.
 type anthropicStreamingResponse struct {
 	Type         string                                `json:"type"`
-	Delta        *anthropicStreamingResponseTextBucket `json:"delta"`
+	Delta        *anthropicStreamingResponseDelta `json:"delta"`
 	ContentBlock *anthropicStreamingResponseTextBucket `json:"content_block"`
 	Usage        *anthropicMessagesResponseUsage       `json:"usage"`
 	Message      *anthropicStreamingResponseMessage    `json:"message"`
 }
 
-type Content struct {
+type anthropicContent struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
 }
@@ -94,7 +96,7 @@ type anthropicNonStreamingResponse struct {
 	Type         string                         `json:"type"`
 	Role         string                         `json:"role"`
 	Model        string                         `json:"model"`
-	Content      []Content                      `json:"content"`
+	Content      []anthropicContent                      `json:"content"`
 	StopReason   string                         `json:"stop_reason"`
 	StopSequence *string                        `json:"stop_sequence"`
 	Usage        anthropicMessagesResponseUsage `json:"usage"`

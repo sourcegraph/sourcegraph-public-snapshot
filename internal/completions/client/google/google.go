@@ -45,7 +45,8 @@ func NewClient(httpCli httpcli.Doer, endpoint, accessToken string, viaGateway bo
 }
 
 func determineAPIFamilyAndClient(endpoint, accessToken string) (APIFamily, *http.Client, error) {
-	if strings.Contains(endpoint, "generativelanguage") {
+	// e.g. https://generativelanguage.googleapis.com/v1/models
+	if endpoint == "" || strings.StartsWith(endpoint, "https://generativelanguage.googleapis.com") {
 		// Default to Gemini API if the endpoint contains "generativelanguage"
 		return Gemini, nil, nil
 	}
@@ -59,7 +60,7 @@ func determineAPIFamilyAndClient(endpoint, accessToken string) (APIFamily, *http
 
 	client, err := createHTTPClient(accessToken)
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.Wrap(err, "createHTTPClient")
 	}
 
 	return apiFamily, client, nil
@@ -68,7 +69,7 @@ func determineAPIFamilyAndClient(endpoint, accessToken string) (APIFamily, *http
 func createHTTPClient(accessToken string) (*http.Client, error) {
 	serviceAccountInfo, err := base64.StdEncoding.DecodeString(accessToken)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "DecodeString")
 	}
 
 	creds, err := credentials.DetectDefault(&credentials.DetectOptions{
@@ -76,14 +77,14 @@ func createHTTPClient(accessToken string) (*http.Client, error) {
 		CredentialsJSON: serviceAccountInfo,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "DetectDefault")
 	}
 
 	client, err := httptransport.NewClient(&httptransport.Options{
 		Credentials: creds,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "NewClient")
 	}
 
 	return client, nil
