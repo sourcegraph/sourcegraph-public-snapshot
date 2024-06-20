@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -7,21 +7,31 @@ import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { CodyProBadgeDeck } from '../components/CodyProBadgeDeck'
-import { useSendInvite } from '../management/api/react-query/invites'
+import { useSendInvite, useTeamInvites } from '../management/api/react-query/invites'
 import { isValidEmailAddress } from '../util'
 
 import styles from './InviteUsers.module.scss'
+import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
+import { useTeamMembers } from '../management/api/react-query/teams'
 
-interface InviteUsersProps extends TelemetryV2Props {
-    teamId: string
-    remainingInviteCount: number
-}
-
-export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
-    teamId,
-    remainingInviteCount,
+export const InviteUsers: React.FunctionComponent<TelemetryV2Props> = ({
     telemetryRecorder,
 }) => {
+    const subscriptionQueryResult = useCurrentSubscription()
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
+    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
+    const teamId = subscriptionSummaryQueryResult?.data?.teamId
+    const teamMembersQueryResult = useTeamMembers()
+    const teamMembers = teamMembersQueryResult.data?.members
+    const teamInvitesQueryResult = useTeamInvites()
+    const teamInvites = teamInvitesQueryResult.data
+
+    const remainingInviteCount = useMemo(() => {
+        const memberCount = teamMembers?.length ?? 0
+        const invitesUsed = (teamInvites ?? []).filter(invite => invite.status === 'sent').length
+        return Math.max((subscriptionQueryResult.data?.maxSeats ?? 0) - (memberCount + invitesUsed), 0)
+    }, [subscriptionQueryResult.data?.maxSeats, teamMembers, teamInvites])
+
     const [emailAddressesString, setEmailAddressesString] = useState<string>('')
     const emailAddresses = emailAddressesString.split(',').map(email => email.trim())
     const [emailAddressErrorMessage, setEmailAddressErrorMessage] = useState<string | null>(null)
@@ -91,6 +101,10 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({
             privateMetadata: { teamId, emailAddresses },
         })
     }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
+
+    if (!isAdmin || !remainingInviteCount || !subscriptionSummaryQueryResult?.data) {
+        return null
+    }
 
     return (
         <>

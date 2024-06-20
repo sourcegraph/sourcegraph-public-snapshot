@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
@@ -14,11 +14,11 @@ import { PageTitle } from '../../components/PageTitle'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
+import { InviteUsers } from '../invites/InviteUsers'
 import { useTeamInvites } from '../management/api/react-query/invites'
 import { useCurrentSubscription, useSubscriptionSummary } from '../management/api/react-query/subscriptions'
 import { useTeamMembers } from '../management/api/react-query/teams'
 
-import { InviteUsers } from './InviteUsers'
 import { TeamMemberList } from './TeamMemberList'
 
 interface CodyManageTeamPageProps extends TelemetryV2Props {
@@ -56,12 +56,6 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
             navigate('/cody/subscription')
         }
     }, [navigate, subscriptionQueryResult.data])
-
-    const remainingInviteCount = useMemo(() => {
-        const memberCount = teamMembers?.length ?? 0
-        const invitesUsed = (teamInvites ?? []).filter(invite => invite.status === 'sent').length
-        return Math.max((subscriptionQueryResult.data?.maxSeats ?? 0) - (memberCount + invitesUsed), 0)
-    }, [subscriptionQueryResult.data?.maxSeats, teamMembers, teamInvites])
 
     return (
         <>
@@ -126,13 +120,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </CodyAlert>
                 )}
 
-                {isAdmin && !!remainingInviteCount && !!subscriptionSummaryQueryResult.data && (
-                    <InviteUsers
-                        teamId={subscriptionSummaryQueryResult.data.teamId}
-                        remainingInviteCount={remainingInviteCount}
-                        telemetryRecorder={telemetryRecorder}
-                    />
-                )}
+                <InviteUsers telemetryRecorder={telemetryRecorder} />
                 {!!subscriptionSummaryQueryResult.data && (
                     <TeamMemberList
                         teamId={subscriptionSummaryQueryResult.data.teamId}

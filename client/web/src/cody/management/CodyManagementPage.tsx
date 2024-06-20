@@ -22,6 +22,7 @@ import { CodyAlert } from '../components/CodyAlert'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
+import { InviteUsers } from '../invites/InviteUsers'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
@@ -142,6 +143,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </div>
                     </PageHeader.Heading>
                 </PageHeader>
+
+                <InviteUsers telemetryRecorder={telemetryRecorder} />
 
                 {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
