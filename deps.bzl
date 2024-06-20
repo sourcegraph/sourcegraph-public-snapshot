@@ -8363,8 +8363,8 @@ def go_dependencies():
         name = "org_golang_google_genproto_googleapis_rpc",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/genproto/googleapis/rpc",
-        sum = "h1:LG9vZxsWGOmUKieR8wPAUR3u3MpnYFQZROPIMaXh7/A=",
-        version = "v0.0.0-20240415180920-8c6c420018be",
+        sum = "h1:Zy9XzmMEflZ/MAaA7vNcoebnRAld7FsPW1EeBB7V0m8=",
+        version = "v0.0.0-20240528184218-531527333157",
     )
     go_repository(
         name = "org_golang_google_grpc",
