@@ -52,12 +52,11 @@ A component to display the keyboard shortcuts for the application.
         line-height: 1;
 
         background-color: var(--secondary-4);
-        color: var(--text-muted);
+        color: var(--text-body);
 
         // When inside a selected container, show the selected variant
         :global([aria-selected='true']) & {
-            color: white;
-            background-color: var(--primary);
+            color: var(--primary);
         }
     }
 </style>
