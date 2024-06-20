@@ -20,7 +20,6 @@ local env_steps = {
 
 local dotnet_proj_recognizer = recognizer.new_path_recognizer({
   patterns = {
-    -- Find all project files
     pattern.new_path_extension("csproj"),
     pattern.new_path_extension("vbproj"),
   },
@@ -43,7 +42,6 @@ local dotnet_proj_recognizer = recognizer.new_path_recognizer({
 
 local dotnet_sln_recognizer = recognizer.new_path_recognizer({
   patterns = {
-    -- Find all solution files
     pattern.new_path_extension("sln"),
   },
 
