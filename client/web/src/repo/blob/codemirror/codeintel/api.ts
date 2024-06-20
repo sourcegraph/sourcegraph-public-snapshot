@@ -271,10 +271,7 @@ export class CodeIntelAPIAdapter {
                               .join('\n\n----\n\n')
                               .trimEnd()
                 const precise = isPrecise(result)
-                if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
-                    return null
-                }
-                if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
+                if (markdownContents === '') {
                     markdownContents = 'No hover information available'
                 }
                 return markdownContents

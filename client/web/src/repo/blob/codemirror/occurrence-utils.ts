@@ -1,5 +1,4 @@
 import { EditorSelection, type Text, type EditorState, type SelectionRange } from '@codemirror/state'
-import { sortedIndexBy } from 'lodash'
 
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
@@ -27,7 +26,7 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.IdentifierAttribute,
 ])
 
-export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
+function isInteractiveOccurrence(occurrence: Occurrence): boolean {
     if (!occurrence.kind) {
         return false
     }
@@ -52,12 +51,7 @@ export function interactiveOccurrenceAt(state: EditorState, offset: number): Occ
 
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
-    const fromWords = inferOccurrenceAtOffset(state, offset)
-    if (fromWords && isInteractiveOccurrence(fromWords)) {
-        return fromWords
-    }
-
-    return undefined
+    return inferOccurrenceAtOffset(state, offset)
 }
 
 // Returns the occurrence at this position based on syntax highlighting data.
@@ -84,24 +78,18 @@ function highlightingOccurrenceAtPosition(state: EditorState, position: Position
 // Returns the occurrence at this position based on data from the GraphQL occurrences API.
 function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
     for (const datum of data) {
-        const idx = sortedIndexBy<Occurrence | Position>(
-            datum.nonOverlappingOccurrences,
-            position,
-            (occOrPosition): Position => {
-                // Note: sortedIndexBy expects the array and the target element
-                // to have the same type, but we have a position and not an
-                // occurrence. The transform func is used for both the array
-                // elements and the target element, so we switch on the type
-                // here.
-                if (occOrPosition instanceof Position) {
-                    return occOrPosition
-                } else {
-                    return occOrPosition.range.start
-                }
+        // Binary search over the sorted, non-overlapping ranges.
+        const arr = datum.nonOverlappingOccurrences
+        let [low, high] = [0, arr.length]
+        while (low < high) {
+            const mid = Math.floor((low + high) / 2)
+            if (arr[mid].range.contains(position)) {
+                return arr[mid]
+            } else if (arr[mid].range.end.compare(position) < 0) {
+                low = mid + 1
+            } else {
+                high = mid
             }
-        )
-        if (datum.nonOverlappingOccurrences[idx].range.contains(position)) {
-            return datum.nonOverlappingOccurrences[idx]
         }
     }
     return undefined
