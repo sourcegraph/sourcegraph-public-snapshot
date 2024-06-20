@@ -105,6 +105,17 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
         })
     }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
 
+    if (updateSubscriptionMutation.isSuccess) {
+        return (
+            <CodyAlert variant="greenSuccess">
+                <H1 as="p" className="mb-2">
+                    Remaining invites removed from plan
+                </H1>
+                <Text className="mb-0">You can add more seats at any time with the "Add seats" button.</Text>
+            </CodyAlert>
+        )
+    }
+
     if (!isAdmin || !remainingInviteCount || !subscriptionQueryResult.data) {
         return null
     }
@@ -113,14 +124,6 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
 
     return (
         <>
-            {updateSubscriptionMutation.isSuccess && (
-                <CodyAlert variant="greenSuccess">
-                    <H1 as="p" className="mb-2">
-                        Remaining invites removed from plan
-                    </H1>
-                    <Text className="mb-0">You can add more seats at any time with the "Add seats" button.</Text>
-                </CodyAlert>
-            )}
             {sendInviteMutation.status === 'success' && (
                 <CodyAlert variant="greenSuccess">
                     <H3>
