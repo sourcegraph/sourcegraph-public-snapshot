@@ -2,13 +2,13 @@ import React, { useState, useCallback, useMemo } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H2, Link, Text, H3, TextArea } from '@sourcegraph/wildcard'
+import { H2, Link, Text, H3, TextArea, Button, H1 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { CodyProBadgeDeck } from '../components/CodyProBadgeDeck'
 import { useSendInvite, useTeamInvites } from '../management/api/react-query/invites'
-import { useCurrentSubscription } from '../management/api/react-query/subscriptions'
+import { useCurrentSubscription, useUpdateCurrentSubscription } from '../management/api/react-query/subscriptions'
 import { useTeamMembers } from '../management/api/react-query/teams'
 import type { SubscriptionSummary } from '../management/api/teamSubscriptions'
 import { isValidEmailAddress } from '../util'
@@ -39,6 +39,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
     const [emailAddressErrorMessage, setEmailAddressErrorMessage] = useState<string | null>(null)
 
     const sendInviteMutation = useSendInvite()
+    const updateSubscriptionMutation = useUpdateCurrentSubscription()
 
     const verifyEmailList = useCallback((): Error | void => {
         if (emailAddresses.length === 0) {
@@ -104,12 +105,22 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
         })
     }, [emailAddresses, sendInviteMutation.mutateAsync, teamId, telemetryRecorder, verifyEmailList])
 
-    if (!isAdmin || !remainingInviteCount) {
+    if (!isAdmin || !remainingInviteCount || !subscriptionQueryResult.data) {
         return null
     }
 
+    const { maxSeats } = subscriptionQueryResult.data
+
     return (
         <>
+            {updateSubscriptionMutation.isSuccess && (
+                <CodyAlert variant="greenSuccess">
+                    <H1 as="p" className="mb-2">
+                        Remaining invites removed from plan
+                    </H1>
+                    <Text className="mb-0">You can add more seats at any time with the "Add seats" button.</Text>
+                </CodyAlert>
+            )}
             {sendInviteMutation.status === 'success' && (
                 <CodyAlert variant="greenSuccess">
                     <H3>
@@ -153,15 +164,33 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
                             isValid={emailAddressErrorMessage ? false : undefined}
                         />
                         {emailAddressErrorMessage ? (
-                            <Text className="text-danger mb-2">{emailAddressErrorMessage}</Text>
+                            <Text className="text-danger">{emailAddressErrorMessage}</Text>
                         ) : (
-                            <Text className="text-muted mb-2">Enter email addresses separated by a comma.</Text>
+                            <Text className="text-muted">Enter email addresses separated by a comma.</Text>
                         )}
 
                         <div>
-                            <ButtonLink variant="success" size="sm" onSelect={onSendInvitesClicked}>
+                            <Button
+                                disabled={updateSubscriptionMutation.isPending || sendInviteMutation.isPending}
+                                variant="success"
+                                onClick={onSendInvitesClicked}
+                                className="mr-2"
+                            >
                                 Send
-                            </ButtonLink>
+                            </Button>
+                            <Button
+                                variant="link"
+                                disabled={updateSubscriptionMutation.isPending || sendInviteMutation.isPending}
+                                onClick={() =>
+                                    updateSubscriptionMutation.mutate({
+                                        subscriptionUpdate: {
+                                            newSeatCount: maxSeats - remainingInviteCount,
+                                        },
+                                    })
+                                }
+                            >
+                                Remove invites from plan
+                            </Button>
                         </div>
                     </div>
                 </div>
