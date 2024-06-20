@@ -53,7 +53,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
 
     useEffect(() => {
         if (subscriptionQueryResult.data?.subscriptionStatus === 'canceled') {
-            navigate('/cody/subscription')
+            navigate(CodyProRoutes.Subscription)
         }
     }, [navigate, subscriptionQueryResult.data])
 
@@ -67,7 +67,7 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                         isAdmin && (
                             <div className="d-flex">
                                 <Link
-                                    to="/cody/manage"
+                                    to={CodyProRoutes.Manage}
                                     className="d-inline-flex align-items-center mr-3"
                                     onClick={() =>
                                         telemetryRecorder.recordEvent('cody.team.manage.subscription', 'click', {
@@ -120,7 +120,12 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                     </CodyAlert>
                 )}
 
-                {isAdmin && <InviteUsers telemetryRecorder={telemetryRecorder} />}
+                {isAdmin && !!subscriptionSummaryQueryResult.data && (
+                    <InviteUsers
+                        telemetryRecorder={telemetryRecorder}
+                        subscriptionSummary={subscriptionSummaryQueryResult.data}
+                    />
+                )}
                 {!!subscriptionSummaryQueryResult.data && (
                     <TeamMemberList
                         teamId={subscriptionSummaryQueryResult.data.teamId}
