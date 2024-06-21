@@ -98,7 +98,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
-			for _, table := range tables.AllTables() {
+			for _, table := range tables.All() {
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))

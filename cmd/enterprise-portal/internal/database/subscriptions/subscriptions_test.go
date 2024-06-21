@@ -18,7 +18,7 @@ func TestSubscriptionsStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := databasetest.NewTestDB(t, "enterprise-portal", "SubscriptionsStore", tables.AllTables()...)
+	db := databasetest.NewTestDB(t, "enterprise-portal", "SubscriptionsStore", tables.All()...)
 
 	for _, tc := range []struct {
 		name string
@@ -29,7 +29,7 @@ func TestSubscriptionsStore(t *testing.T) {
 		{"Get", SubscriptionsStoreGet},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			databasetest.ClearTablesAfterTest(t, db, tables.AllTables()...)
+			databasetest.ClearTablesAfterTest(t, db, tables.All()...)
 			tc.test(t, ctx, subscriptions.NewStore(db))
 		})
 		if t.Failed() {

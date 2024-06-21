@@ -6,8 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 )
 
+// All tables provisioned for the Enterprise Portal database are defined here.
+//
 // ⚠️ WARNING: This list is meant to be read-only.
-func AllTables() []schema.Tabler {
+func All() []schema.Tabler {
 	return []schema.Tabler{
 		&subscriptions.Subscription{},
 	}
