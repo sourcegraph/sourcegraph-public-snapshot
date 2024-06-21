@@ -282,6 +282,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jomei/notionapi v1.13.0
+	github.com/life4/genesis v1.10.3
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mroth/weightedrand/v2 v2.0.1
@@ -409,7 +410,6 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/matryer/is v1.2.0 // indirect
 	github.com/mazznoer/csscolorparser v0.1.3 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
