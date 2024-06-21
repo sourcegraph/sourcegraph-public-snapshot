@@ -20,6 +20,7 @@ fragment FuzzyFinderFileMatch on FileMatch {
         kind
         location {
             url
+        }
     }
     repository {
         name

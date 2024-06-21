@@ -24,7 +24,7 @@
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName } from '$lib/shared'
     import TabsHeader, { type Tab } from '$lib/TabsHeader.svelte'
-    import { Input } from '$lib/wildcard'
+    import { Alert, Input } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
     import { allHotkey, filesHotkey, reposHotkey, symbolsHotkey } from './keys'
@@ -272,7 +272,9 @@
             </div>
             <ul role="listbox" bind:this={listbox} aria-label="Search results">
                 {#if $source.pending}
-                    <li class="empty">Waiting for response...</li>
+                    <li class="info">Waiting for response...</li>
+                {:else if $source.error}
+                    <li class="error"><Alert variant="danger">{$source.error.message}</Alert></li>
                 {:else if $source.value?.results}
                     {#each $source.value.results as item, index (item)}
                         {@const repo = item.repository.name}
@@ -311,7 +313,7 @@
                             {/if}
                         </li>
                     {:else}
-                        <li class="empty">No matches</li>
+                        <li class="info">No matches</li>
                     {/each}
                 {/if}
             </ul>
@@ -414,8 +416,11 @@
             }
         }
 
-        .empty {
+        .info, .error {
             padding: 1rem;
+        }
+
+        .info {
             text-align: center;
             color: var(--text-muted);
         }

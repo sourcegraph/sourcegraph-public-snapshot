@@ -4,8 +4,7 @@ import { readable, type Readable } from 'svelte/store'
 
 import type { GraphQLClient } from '$lib/graphql'
 import { mapOrThrow } from '$lib/graphql'
-import { SearchPatternType } from '$lib/graphql-types'
-import { scanSearchQuery } from '$lib/shared'
+import { scanSearchQueryAsPatterns, stringHuman, PatternKind } from '$lib/shared'
 import type { Loadable } from '$lib/utils'
 
 import { FuzzyFinderQuery, type FuzzyFinderFileMatch } from './FuzzyFinder.gql'
@@ -112,28 +111,20 @@ export function createFuzzyFinderSource({ client, queryBuilder }: FuzzyFinderSou
  * @returns The escaped query.
  */
 function escapeQuery(query: string): string {
-    const result = scanSearchQuery(query, false, SearchPatternType.keyword)
+    const result = scanSearchQueryAsPatterns(query)
     if (result.type !== 'success') {
         return query
     }
-    return result.term
-        .map(token => {
-            switch (token.type) {
-                case 'pattern':
-                    if (token.delimited) {
-                        return `${token.delimiter}${token.value}${token.delimiter}`
-                    }
-                    return token.value
-                case 'filter':
-                    return `"${token.negated ? '-' : ''}${token.field.value}:${escapeQuotes(token.value?.value ?? '')}"`
-                case 'keyword':
-                    return `"${token.value}"`
-                default:
-                    return ''
-            }
-        })
-        .join(' ')
+    return stringHuman(
+        result.term.map(token =>
+            token.type === 'pattern' && token.kind === PatternKind.Literal
+                ? { ...token, value: `"${escapeQuotes(token.value)}"` }
+                : token
+        )
+    )
 }
+
+export const escapeQuery_TEST_ONLY = escapeQuery
 
 function escapeQuotes(value: string): string {
     return value.replaceAll(/"/g, '\\"')
