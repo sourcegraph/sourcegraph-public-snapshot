@@ -70,7 +70,7 @@ func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
 
 func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
 	sourceCond := sqlf.Sprintf("source != 'server.web'")
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []strin{"blob.goToDefinition.preloaded.executed", "blob.goToDefinition.executed", "blob.findReferences.executed"}, sourceCond)
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"blob.goToDefinition.preloaded.executed", "blob.goToDefinition.executed", "blob.findReferences.executed"}, sourceCond)
 	if err != nil {
 		return nil, err
 	}
