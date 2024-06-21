@@ -15,7 +15,6 @@ go_library(
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",
         "//lib/redislock",
-        "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@com_github_sourcegraph_log//:log",
