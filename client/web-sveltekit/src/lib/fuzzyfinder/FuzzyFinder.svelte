@@ -49,7 +49,7 @@
             source: createFuzzyFinderSource({
                 client,
                 queryBuilder: value =>
-                    `patterntype:keyword (type:repo OR type:path OR type:symbol) count:50 ${getScope()} ${value}`,
+                    `patterntype:keyword (type:repo OR type:path OR type:symbol) count:50 ${scope} ${value}`,
             }),
         },
         {
@@ -67,7 +67,7 @@
             shortcut: symbolsHotkey,
             source: createFuzzyFinderSource({
                 client,
-                queryBuilder: value => `patterntype:keyword type:symbol count:50 ${getScope()} ${value}`,
+                queryBuilder: value => `patterntype:keyword type:symbol count:50 ${scope} ${value}`,
             }),
         },
         {
@@ -76,7 +76,7 @@
             shortcut: filesHotkey,
             source: createFuzzyFinderSource({
                 client,
-                queryBuilder: value => `patterntype:keyword type:path count:50 ${getScope()} ${value}`,
+                queryBuilder: value => `patterntype:keyword type:path count:50 ${scope} ${value}`,
             }),
         },
     ]
