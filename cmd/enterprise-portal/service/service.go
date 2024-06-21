@@ -166,24 +166,39 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		},
 	)
 	return background.LIFOStopRoutine{
-		background.CallbackRoutine{
-			NameFunc: func() string { return "close IAM client" },
-			StopFunc: func(context.Context) error {
-				closeIAMClient()
-				return nil
+		// Everything else can be stopped in conjunction
+		background.CombinedRoutine{
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close IAM client" },
+				StopFunc: func(context.Context) error {
+					closeIAMClient()
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close database handle" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dbHandle.Close()
+					logger.Info("database handle closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close dotcom database connection pool" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dotcomDB.Close()
+					logger.Info("dotcom database connection pool closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
 			},
 		},
-		background.CallbackRoutine{
-			NameFunc: func() string { return "close dotcom database connection pool" },
-			StopFunc: func(context.Context) error {
-				start := time.Now()
-				// NOTE: If we simply shut down, some in-fly requests may be dropped as the
-				// service exits, so we attempt to gracefully shutdown first.
-				dotcomDB.Close()
-				logger.Info("database connection pool closed", log.Duration("elapsed", time.Since(start)))
-				return nil
-			},
-		},
-		server, // stop server first
+		// Stop server first
+		server,
 	}, nil
 }
