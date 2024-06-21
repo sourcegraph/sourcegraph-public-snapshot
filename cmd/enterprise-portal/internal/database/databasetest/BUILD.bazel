@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "databasetest",
+    srcs = ["databasetest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//internal/database/dbtest",
+        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//schema",
+    ],
+)

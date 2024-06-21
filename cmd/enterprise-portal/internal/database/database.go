@@ -9,10 +9,11 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
-	"gorm.io/gorm/schema"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 )
 
 var databaseTracer = otel.Tracer("enterprise-portal/internal/database")
@@ -22,13 +23,8 @@ type DB struct {
 	db *pgxpool.Pool
 }
 
-func (db *DB) Subscriptions() *SubscriptionsStore {
-	return newSubscriptionsStore(db.db)
-}
-
-// ⚠️ WARNING: This list is meant to be read-only.
-var allTables = []schema.Tabler{
-	&Subscription{},
+func (db *DB) Subscriptions() *subscriptions.Store {
+	return subscriptions.NewStore(db.db)
 }
 
 func databaseName(msp bool) string {

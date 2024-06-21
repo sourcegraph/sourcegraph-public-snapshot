@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 	"github.com/sourcegraph/sourcegraph/lib/redislock"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
 )
 
 // maybeMigrate runs the auto-migration for the database when needed based on
@@ -96,7 +98,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
-			for _, table := range allTables {
+			for _, table := range tables.AllTables() {
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))
