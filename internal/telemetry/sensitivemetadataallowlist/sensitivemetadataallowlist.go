@@ -47,7 +47,7 @@ func AllowedEventTypes() EventTypes {
 				"languageId",
 			},
 		},
-		// The 'languageId' key is included for feature:'cody.hoverCommands/visible' events to provide
+		// The 'languageId' key is included for feature:'cody.hoverCommands' action: 'visible' events to provide
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
@@ -57,7 +57,16 @@ func AllowedEventTypes() EventTypes {
 				"languageId",
 			},
 		},
-
+		// The 'languageId' key is included for feature:'blob.codeintel' events to provide
+		// customers with valuable language-specific insights from the analytics we offer.
+		// This information helps them better understand code completion usage patterns.
+		EventType{
+			Feature: "blob.codeintel",
+			Action:  "%",
+			AllowedPrivateMetadataKeys: []string{
+				"languageId",
+			},
+		},
 		// The 'chatModel' key is included for feature:'cody.chat-question' action:'submitted' events to provide
 		// customers with valuable chat-model specific insights from the analytics we offer.
 		// Access to this information can help customers determine which models best suit their specific use cases
@@ -68,7 +77,6 @@ func AllowedEventTypes() EventTypes {
 				"chatModel",
 			},
 		},
-
 		// The 'chatModel' key is included for feature:'cody.chatResponse' events to provide
 		// customers with valuable chat-model specific insights from the analytics we offer.
 		// Access to this information can help customers determine which models best suit their specific use cases
@@ -109,7 +117,6 @@ func AllowedEventTypes() EventTypes {
 				"model",
 			},
 		},
-
 		// The 'model' key is included for feature:'cody.command.fix' action: 'executed' events to provide
 		// customers with valuable chat-model specific insights from the analytics we offer.
 		// Access to this information can help customers determine which models best suit their specific use cases
@@ -120,7 +127,6 @@ func AllowedEventTypes() EventTypes {
 				"model",
 			},
 		},
-
 		// The 'model' key is included for feature:'cody.command.test' action: 'executed' events to provide
 		// customers with valuable chat-model specific insights from the analytics we offer.
 		// Access to this information can help customers determine which models best suit their specific use cases
