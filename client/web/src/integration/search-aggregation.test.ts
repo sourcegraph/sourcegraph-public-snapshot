@@ -307,7 +307,7 @@ describe('Search aggregation', () => {
             const origQuery = 'context:global insights('
 
             await driver.page.goto(
-                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=keyword`
             )
 
             await driver.page.evaluate(() => {

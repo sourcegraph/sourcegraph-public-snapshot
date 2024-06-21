@@ -7,10 +7,7 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
-import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
@@ -100,24 +97,17 @@ export function parseSearchURL(
     urlSearchQuery: string,
     { appendCaseFilter = false }: { appendCaseFilter?: boolean } = {}
 ): ParsedSearchURL {
-    let queryInput = parseSearchURLQuery(urlSearchQuery) || ''
-    let patternTypeInput = parseSearchURLPatternType(urlSearchQuery)
+    let query = parseSearchURLQuery(urlSearchQuery) || ''
+    let patternType = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
     const searchMode = parseSearchURLSearchMode(urlSearchQuery)
 
-    const globalPatternType = findFilter(queryInput, 'patterntype', FilterKind.Global)
+    const globalPatternType = findFilter(query, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
         // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
-        queryInput = omitFilter(queryInput, globalPatternType)
-        patternTypeInput = globalPatternType.value.value as SearchPatternType
+        query = omitFilter(query, globalPatternType)
+        patternType = globalPatternType.value.value as SearchPatternType
     }
-
-    let query = queryInput
-    const { queryInput: newQuery, patternTypeInput: patternType } = literalSearchCompatibility({
-        queryInput,
-        patternTypeInput,
-    })
-    query = newQuery
 
     const globalCase = findFilter(query, 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -164,45 +154,6 @@ export function quoteIfNeeded(string: string): string {
         return JSON.stringify(string)
     }
     return string
-}
-
-interface QueryCompatibility {
-    queryInput: string
-    patternTypeInput?: SearchPatternType
-}
-
-export function literalSearchCompatibility({ queryInput, patternTypeInput }: QueryCompatibility): QueryCompatibility {
-    if (patternTypeInput === undefined || patternTypeInput !== SearchPatternType.literal) {
-        return { queryInput, patternTypeInput }
-    }
-    const tokens = scanSearchQuery(queryInput, false, SearchPatternType.standard)
-    if (tokens.type === 'error') {
-        return { queryInput, patternTypeInput }
-    }
-
-    if (!tokens.term.find(token => token.type === 'pattern' && token.delimited)) {
-        // If no /.../ pattern exists in this literal search, just return the query as-is.
-        return { queryInput, patternTypeInput: SearchPatternType.standard }
-    }
-
-    const newQueryInput = stringHuman(
-        tokens.term.map(token =>
-            token.type === 'pattern' && token.delimited
-                ? {
-                      type: 'filter',
-                      range: { start: 0, end: 0 },
-                      field: createLiteral('content', { start: 0, end: 0 }, false),
-                      value: createLiteral(`/${token.value}/`, { start: 0, end: 0 }, true),
-                      negated: false /** if `NOT` was used on this pattern, it's already preserved */,
-                  }
-                : token
-        )
-    )
-
-    return {
-        queryInput: newQueryInput,
-        patternTypeInput: SearchPatternType.standard,
-    }
 }
 
 export interface SearchStreamingProps {

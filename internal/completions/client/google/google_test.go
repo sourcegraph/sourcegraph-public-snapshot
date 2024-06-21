@@ -24,18 +24,24 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 }
 
 func TestErrStatusNotOK(t *testing.T) {
-	mockClient := NewClient(&mockDoer{
+	mockClient, _ := NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusTooManyRequests,
 				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
 			}, nil
 		},
-	}, "", "")
+	}, "https://generativelanguage.googleapis.com", "", false)
+
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
 
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, logger)
+		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -46,7 +52,8 @@ func TestErrStatusNotOK(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil }, logger)
+		sendEventFn := func(event types.CompletionResponse) error { return nil }
+		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
 
 		autogold.Expect("Google: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())

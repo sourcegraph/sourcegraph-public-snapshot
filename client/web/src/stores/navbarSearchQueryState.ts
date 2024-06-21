@@ -8,11 +8,12 @@ import create from 'zustand'
 import {
     type BuildSearchQueryURLParameters,
     canSubmitSearch,
-    type SearchQueryState,
-    updateQuery,
     InitialParametersSource,
     SearchMode,
+    type SearchQueryState,
+    updateQuery,
 } from '@sourcegraph/shared/src/search'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -27,6 +28,11 @@ import {
 
 export interface NavbarQueryState extends SearchQueryState {}
 
+const explicitPatternTypes = new Set([
+    SearchPatternType.keyword,
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
+])
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
@@ -68,7 +74,10 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
 }))
 
 export function setSearchPatternType(searchPatternType: SearchPatternType): void {
-    useNavbarQueryState.setState({ searchPatternType })
+    // When changing the patterntype, we also need to reset the query to strip out any potential patterntype: filter
+    const state = useNavbarQueryState.getState()
+    const query = state.searchQueryFromURL ?? state.queryState.query
+    useNavbarQueryState.setState({ searchPatternType, queryState: { query } })
 }
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
@@ -108,8 +117,15 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         // Only update flags if the URL contains a search query.
         newState.parametersSource = InitialParametersSource.URL
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
-        if (parsedSearchURL.patternType !== undefined) {
-            newState.searchPatternType = parsedSearchURL.patternType
+
+        const parsedPatternType = parsedSearchURL.patternType
+        if (parsedPatternType !== undefined) {
+            newState.searchPatternType = parsedPatternType
+            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
+            // sure to surface them in the query input itself.
+            if (!explicitPatternTypes.has(parsedPatternType)) {
+                query = `${query} ${FilterType.patterntype}:${parsedPatternType}`
+            }
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query

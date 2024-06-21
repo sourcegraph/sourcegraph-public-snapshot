@@ -374,3 +374,17 @@ def tool_deps():
         url = "https://playwright.azureedge.net/builds/chromium/1117/chromium-linux.zip",
         build_file_content = CHROMIUM_BUILDFILE.format("chrome-linux/chrome"),
     )
+
+    http_file(
+        name = "honeyvent-linux-x86_64",
+        url = "https://github.com/honeycombio/honeyvent/releases/download/v1.1.3/honeyvent-linux-amd64",
+        sha256 = "3810ad6d70836d5b4f2ef5de27c3c8a3ed4f35bb331635137d44223e285d6fc5",
+        executable = True,
+    )
+
+    http_file(
+        name = "honeyvent-darwin-x86_64",
+        url = "https://github.com/honeycombio/honeyvent/releases/download/v1.1.3/honeyvent-darwin-amd64",
+        sha256 = "c9acaab8a48aa3345fd323c4315c8aaca52b2f6ce4c6f83b6fa162cd4c516725",
+        executable = True,
+    )

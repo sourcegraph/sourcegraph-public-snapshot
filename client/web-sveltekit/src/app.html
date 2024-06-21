@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Template used for local development only -->
 <html lang="en">
     <head>
         <meta charset="utf-8" />
@@ -16,6 +17,9 @@
                 xhrHeaders: {
                     'X-Requested-With': 'Sourcegraph',
                 },
+                // Local standalone dev server for dotcom can be started with
+                // pnpm dev:dotcom
+                sourcegraphDotComMode: '%sveltekit.env.PUBLIC_DOTCOM%' ? true : false,
             }
             window.pageError = undefined
         </script>

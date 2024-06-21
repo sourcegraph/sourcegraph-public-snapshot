@@ -43,6 +43,7 @@ go_library(
         "//lib/errors",
         "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_go_lsp//:go-lsp",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",

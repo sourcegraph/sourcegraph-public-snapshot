@@ -31,8 +31,12 @@ type CodeNavServiceResolver interface {
 	// that it is not what is exactly provided as input from the GraphQL
 	// client.
 	CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error)
+	// CodeGraphDataByID materializes a CodeGraphDataResolver purely from a graphql.ID.
+	CodeGraphDataByID(ctx context.Context, id graphql.ID) (CodeGraphDataResolver, error)
 	UsagesForSymbol(ctx context.Context, args *UsagesForSymbolArgs) (UsageConnectionResolver, error)
 }
+
+const CodeGraphDataIDKind = "CodeGraphData"
 
 type GitBlobLSIFDataArgs struct {
 	Repo      *types.Repo
@@ -161,6 +165,8 @@ type DiagnosticResolver interface {
 }
 
 type CodeGraphDataResolver interface {
+	// ID satisfies the Node interface.
+	ID() graphql.ID
 	Provenance(ctx context.Context) (CodeGraphDataProvenance, error)
 	Commit(ctx context.Context) (string, error)
 	ToolInfo(ctx context.Context) (*CodeGraphToolInfo, error)
@@ -168,6 +174,10 @@ type CodeGraphDataResolver interface {
 	Occurrences(ctx context.Context, args *OccurrencesArgs) (SCIPOccurrenceConnectionResolver, error)
 }
 
+// CodeGraphDataProvenance corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
 type CodeGraphDataProvenance string
 
 const (
@@ -192,6 +202,10 @@ func (f *CodeGraphDataFilter) String() string {
 	return ""
 }
 
+// CodeGraphDataArgs represents the arguments to the codeGraphData(...)
+// field on GitBlob in the GraphQL API.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
 type CodeGraphDataArgs struct {
 	Filter *CodeGraphDataFilter
 }
@@ -601,6 +615,7 @@ type UsageResolver interface {
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
 	}) (*string, error)
+	UsageKind() SymbolUsageKind
 }
 
 type SymbolInformationResolver interface {
@@ -621,3 +636,16 @@ type SurroundingLines struct {
 	LinesBefore *int32 `json:"linesBefore"`
 	LinesAfter  *int32 `json:"linesAfter"`
 }
+
+// SymbolUsageKind corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
+type SymbolUsageKind string
+
+const (
+	UsageKindDefinition     SymbolUsageKind = "DEFINITION"
+	UsageKindReference      SymbolUsageKind = "REFERENCE"
+	UsageKindImplementation SymbolUsageKind = "IMPLEMENTATION"
+	UsageKindSuper          SymbolUsageKind = "SUPER"
+)

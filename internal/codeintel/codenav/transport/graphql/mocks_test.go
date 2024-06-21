@@ -283,7 +283,7 @@ func NewMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, types.Repo, api.CommitID, string, scip.Range) (r0 []struct{}, r1 *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, types.Repo, api.CommitID, string, scip.Range) (r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
 				return
 			},
 		},
@@ -355,7 +355,7 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
 				panic("unexpected invocation of MockCodeNavService.SyntacticUsages")
 			},
 		},
@@ -1695,15 +1695,15 @@ func (c CodeNavServiceSnapshotForDocumentFuncCall) Results() []interface{} {
 // SyntacticUsages method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceSyntacticUsagesFunc struct {
-	defaultHook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)
-	hooks       []func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)
+	defaultHook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
+	hooks       []func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
 	history     []CodeNavServiceSyntacticUsagesFuncCall
 	mutex       sync.Mutex
 }
 
 // SyntacticUsages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 types.Repo, v2 api.CommitID, v3 string, v4 scip.Range) ([]struct{}, *codenav.SyntacticUsagesError) {
+func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 types.Repo, v2 api.CommitID, v3 string, v4 scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
 	r0, r1 := m.SyntacticUsagesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.SyntacticUsagesFunc.appendCall(CodeNavServiceSyntacticUsagesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -1712,7 +1712,7 @@ func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 types.Repo, 
 // SetDefaultHook sets function that is called when the SyntacticUsages
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)) {
 	f.defaultHook = hook
 }
 
@@ -1720,7 +1720,7 @@ func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Con
 // SyntacticUsages method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1728,20 +1728,20 @@ func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 []struct{}, r1 *codenav.SyntacticUsagesError) {
-	f.SetDefaultHook(func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError) {
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
+	f.SetDefaultHook(func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 []struct{}, r1 *codenav.SyntacticUsagesError) {
-	f.PushHook(func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError) {
+func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
+	f.PushHook(func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
 		return r0, r1
 	})
 }
 
-func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]struct{}, *codenav.SyntacticUsagesError) {
+func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, types.Repo, api.CommitID, string, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1792,7 +1792,7 @@ type CodeNavServiceSyntacticUsagesFuncCall struct {
 	Arg4 scip.Range
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []struct{}
+	Result0 []codenav.SyntacticMatch
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 *codenav.SyntacticUsagesError

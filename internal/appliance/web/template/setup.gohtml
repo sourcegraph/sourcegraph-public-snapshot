@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/custom.css">
+    <script src="/static/script/htmx.min.js"></script>
+    <script src="/static/script/bootstrap.bundle.min.js"></script>
+    <title>Sourcegraph Appliance - Setup</title>
+</head>
+
+<body hx-boost="true" class="container">
+<h1>Sourcegraph Appliance Setup</h1>
+
+<form action="/appliance/setup" method="post">
+    <div class="row">
+        <div class="col">
+            <label for="version" class="fw-bold">Sourcegraph Version</label>
+            <p class="fw-light">Choose the Sourcegraph version that you would like to install.</p>
+        </div>
+        <div class="col">
+            <select id="version" name="version" class="row form-select mb-3" aria-label="Sourcegraph version selection">
+                <option selected>Latest</option>
+                <option value="5.4">5.4</option>
+                <option value="5.3">5.3</option>
+            </select>
+        </div>
+    </div>
+
+    <hr/>
+
+    <div class="row">
+       <div class="col">
+           <label for="external_database" class="fw-bold">Database</label>
+           <p>Would you like to use an external database?</p>
+       </div>
+        <div class="col">
+            <div class="form-switch mb-3">
+                <input class="form-check-input" data-bs-toggle="collapse" href="#database" type="checkbox" id="external_database" name="external_database">
+                <label class="form-check-label" for="external_database">Use an external database</label>
+            </div>
+
+
+            <div class="accordion collapse mb-3" id="database">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                            <strong>Sourcegraph Database</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#database">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label for="pgsqlDBHost" class="form-label">Database Host</label>
+                                <input type="text" class="form-control" id="pgsqlDBHost" name="pgsqlDBHost" placeholder="hostname">
+                            </div>
+                            <div class="mb-3">
+                                <label for="pgsqlDBPort" class="form-label">Database Port</label>
+                                <input type="text" class="form-control" id="pgsqlDBPort" name="pgsqlDBPort" placeholder="5432">
+                            </div>
+                            <div class="mb-3">
+                                <label for="pgsqlDBUser" class="form-label">Database User</label>
+                                <input type="text" class="form-control" id="pgsqlDBUser" name="pgsqlDBUser" placeholder="username">
+                            </div>
+                            <div class="mb-3">
+                                <label for="pgsqlDBPassword" class="form-label">Database Password</label>
+                                <input type="password" class="form-control" id="pgsqlDBPassword" name="pgsqlDBPassword" placeholder="password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="pgsqlDBName" class="form-label">Database Name</label>
+                                <input type="text" class="form-control" id="pgsqlDBName" name="pgsqlDBName" placeholder="sg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            <strong>CodeIntel Database</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#database">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label for="codeintelDBHost" class="form-label">Database Host</label>
+                                <input type="text" class="form-control" id="codeintelDBHost" name="codeintelDBHost" placeholder="hostname">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeintelDBPort" class="form-label">Database Port</label>
+                                <input type="text" class="form-control" id="codeintelDBPort" name="codeintelDBPort" placeholder="5432">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeintelDBUser" class="form-label">Database User</label>
+                                <input type="text" class="form-control" id="codeintelDBUser" name="codeintelDBUser" placeholder="username">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeintelDBPassword" class="form-label">Database Password</label>
+                                <input type="password" class="form-control" id="codeintelDBPassword" name="codeintelDBPassword" placeholder="password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeintelDBName" class="form-label">Database Name</label>
+                                <input type="text" class="form-control" id="codeintelDBName" name="codeintelDBName" placeholder="sg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            <strong>CodeInsights Database</strong>
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#database">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <label for="codeinsightsDBHost" class="form-label">Database Host</label>
+                                <input type="text" class="form-control" id="codeinsightsDBHost" name="codeinsightsDBHost" placeholder="hostname">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeinsightsDBPort" class="form-label">Database Port</label>
+                                <input type="text" class="form-control" id="codeinsightsDBPort" name="codeinsightsDBPort" placeholder="5432">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeinsightsDBUser" class="form-label">Database User</label>
+                                <input type="text" class="form-control" id="codeinsightsDBUser" name="codeinsightsDBUser" placeholder="username">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeinsightsDBPassword" class="form-label">Database Password</label>
+                                <input type="password" class="form-control" id="codeinsightsDBPassword" name="codeinsightsDBPassword" placeholder="password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="codeinsightsDBName" class="form-label">Database Name</label>
+                                <input type="text" class="form-control" id="codeinsightsDBName" name="codeinsightsDBName" placeholder="sg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Start Setup</button>
+</form>
+
+</body>
+</html>

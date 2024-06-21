@@ -272,9 +272,10 @@
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={({ detail: range }) => {
                     goto(
-                        SourcegraphURL.from($page.url.searchParams)
+                        SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
                             .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover').search
+                            .deleteSearchParameter('popover')
+                            .toString()
                     )
                 }}
                 {codeIntelAPI}

@@ -438,4 +438,9 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
       interfaces:
         - EnterprisePortalClient
-
+- filename: cmd/enterprise-portal/internal/subscriptionsservice/mocks_test.go
+  package: subscriptionsservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice
+      interfaces:
+        - StoreV1

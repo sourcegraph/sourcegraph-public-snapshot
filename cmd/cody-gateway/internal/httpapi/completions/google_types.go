@@ -11,8 +11,8 @@ type googleRequest struct {
 	SymtemInstruction string                 `json:"systemInstruction,omitempty"`
 
 	// Stream is used for our internal routing of the Google Request, and is not part
-	// of the Google API shape. So we make sure to not include it when marshaling into JSON.
-	Stream bool `json:"-"` // This field will not be marshaled into JSON
+	// of the Google API shape.
+	Stream bool `json:"stream,omitempty"`
 }
 
 type googleContentMessage struct {
@@ -36,12 +36,13 @@ type googleGenerationConfig struct {
 }
 
 type googleResponse struct {
-	Candidates []struct {
-		Content      googleContentMessage `json:"content,omitempty"`
-		FinishReason string               `json:"finishReason,omitempty"`
-	} `json:"candidates"`
+	Candidates    []googleCandidates `json:"candidates,omitempty"`
+	UsageMetadata googleUsage        `json:"usageMetadata,omitempty"`
+}
 
-	UsageMetadata googleUsage           `json:"usageMetadata,omitempty"`
+type googleCandidates struct {
+	Content       googleContentMessage  `json:"content,omitempty"`
+	FinishReason  string                `json:"finishReason,omitempty"`
 	SafetyRatings []googleSafetyRatings `json:"safetyRatings,omitempty"`
 }
 

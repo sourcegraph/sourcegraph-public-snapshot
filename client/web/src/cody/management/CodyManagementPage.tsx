@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiCreditCardOutline } from '@mdi/js'
+import { mdiCreditCardOutline, mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, Button } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
@@ -18,14 +18,18 @@ import {
     type UserCodyUsageVariables,
     CodySubscriptionPlan,
 } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
-import { CodyProIcon, DashboardIcon } from '../components/CodyIcon'
+import { ProIcon } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
+import { InviteUsers } from '../invites/InviteUsers'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL } from '../util'
 
+import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
 import { UseCodyInEditorSection } from './UseCodyInEditorSection'
 
@@ -52,7 +56,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         telemetryRecorder.recordEvent('cody.management', 'view')
     }, [utm_source, telemetryRecorder])
 
-    // The cody_client_user URL query param is added by the VS Code & Jetbrains
+    // The cody_client_user URL query param is added by the VS Code & JetBrains
     // extensions. We redirect them to a "switch account" screen if they are
     // logged into their IDE as a different user account than their browser.
     const codyClientUser = parameters.get('cody_client_user')
@@ -72,6 +76,9 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         {}
     )
 
+    const subscriptionSummaryQueryResult = useSubscriptionSummary()
+    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
+
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
 
@@ -79,9 +86,29 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/manage')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Manage}`)
         }
     }, [data, navigate])
+
+    const getTeamInviteButton = (): JSX.Element | null => {
+        const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
+        const hasFreeSeats = subscriptionSummaryQueryResult?.data
+            ? subscriptionSummaryQueryResult.data.teamMaxMembers >
+              subscriptionSummaryQueryResult.data.teamCurrentMembers
+            : false
+        const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
+        const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
+
+        if (!subscriptionSummaryQueryResult?.data) {
+            return null
+        }
+
+        return (
+            <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
+                <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
+            </Button>
+        )
+    }
 
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
@@ -114,17 +141,26 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         </Text>
                     </CodyAlert>
                 )}
-                <PageHeader className="mb-4 mt-4">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <DashboardIcon className="mr-2" /> Dashboard
-                        </div>
+                <PageHeader
+                    className="my-4 d-inline-flex align-items-center"
+                    actions={isAdmin && <div className="d-flex">{getTeamInviteButton()}</div>}
+                >
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="dashboard" className="mr-3" />
+                        <Text as="span">Dashboard</Text>
                     </PageHeader.Heading>
                 </PageHeader>
 
+                {isAdmin && !!subscriptionSummaryQueryResult.data && (
+                    <InviteUsers
+                        telemetryRecorder={telemetryRecorder}
+                        subscriptionSummary={subscriptionSummaryQueryResult.data}
+                    />
+                )}
+
                 {!isUserOnProTier && <UpgradeToProBanner onClick={onClickUpgradeToProCTA} />}
 
-                <div className={classNames('p-4 border bg-1 mt-4', styles.container)}>
+                <div className={classNames('p-4 border bg-1 mt-3', styles.container)}>
                     <div className="d-flex justify-content-between align-items-center border-bottom pb-3">
                         <div>
                             <H2>My subscription</H2>
@@ -134,12 +170,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                 ) : (
                                     <span>
                                         You are on the Free tier.{' '}
-                                        <Link to="/cody/subscription">Upgrade to the Pro tier.</Link>
+                                        <Link to={CodyProRoutes.Subscription}>Upgrade to the Pro tier.</Link>
                                     </span>
                                 )}
                             </Text>
                         </div>
-                        {isUserOnProTier && (
+                        {isAdmin && (
                             <div>
                                 <ButtonLink
                                     variant="primary"
@@ -177,21 +213,23 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 const UpgradeToProBanner: React.FunctionComponent<{
     onClick: () => void
 }> = ({ onClick }) => (
-    <div className={classNames('d-flex justify-content-between align-items-center p-4', styles.upgradeToProBanner)}>
-        <div>
-            <H1>
-                Become limitless with
-                <CodyProIcon className="ml-1" />
-            </H1>
-            <ul className="pl-4 mb-0">
-                <li>Unlimited autocompletions</li>
-                <li>Unlimited chat messages</li>
-            </ul>
+    <CodyAlert variant="purpleCodyPro">
+        <div className="d-flex justify-content-between align-items-center p-4">
+            <div>
+                <H1>
+                    Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span>
+                </H1>
+                <ul className="pl-4 mb-0">
+                    <li>Unlimited autocompletions</li>
+                    <li>Unlimited chat messages</li>
+                </ul>
+            </div>
+            <div>
+                <ButtonLink to={CodyProRoutes.Subscription} variant="primary" size="sm" onClick={onClick}>
+                    <ProIcon className="mr-1" />
+                    Upgrade now
+                </ButtonLink>
+            </div>
         </div>
-        <div>
-            <ButtonLink to="/cody/subscription" variant="primary" size="sm" onClick={onClick}>
-                Upgrade
-            </ButtonLink>
-        </div>
-    </div>
+    </CodyAlert>
 )
