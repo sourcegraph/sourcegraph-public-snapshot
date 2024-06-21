@@ -35,9 +35,13 @@ func TestNormalizeInstanceDomain(t *testing.T) {
 		domain:     "https://souregraph.com/search",
 		wantDomain: autogold.Expect(nil),
 	}, {
-		name:      "clearly not a url",
+		name:      "clearly not a domain",
 		domain:    "foo-bar",
-		wantError: autogold.Expect(nil),
+		wantError: autogold.Expect("domain does contain a '.'"),
+	}, {
+		name:      "empty value",
+		domain:    "",
+		wantError: autogold.Expect("domain is empty"),
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			gotDomain, err := NormalizeInstanceDomain(tc.domain)
