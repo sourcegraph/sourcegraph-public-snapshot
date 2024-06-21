@@ -335,6 +335,14 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		}
 	}
 
+	// Validate and normalize the domain
+	if opts.InstanceDomain != "" {
+		opts.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
+		}
+	}
+
 	subscription, err := s.store.UpsertEnterpriseSubscription(ctx, subscriptionID, opts)
 	if err != nil {
 		return nil, connectutil.InternalError(ctx, logger, err, "upsert subscription")
@@ -396,6 +404,11 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
 		}
 	} else if instanceDomain != "" {
+		// Validate and normalize the domain
+		instanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(instanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
+		}
 		subscriptions, err := s.store.ListEnterpriseSubscriptions(
 			ctx,
 			database.ListEnterpriseSubscriptionsOptions{
