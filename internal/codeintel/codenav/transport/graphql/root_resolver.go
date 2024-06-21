@@ -229,6 +229,18 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 			}
 		}
+
+		usageResolvers := []resolverstubs.UsageResolver{}
+		for _, result := range results {
+			usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+		}
+		if len(usageResolvers) != 0 {
+			return &usageConnectionResolver{
+				nodes:    usageResolvers,
+				pageInfo: resolverstubs.NewSimplePageInfo(false),
+			}, nil
+		}
+
 		numSyntacticResults = len(results)
 		remainingCount = remainingCount - numSyntacticResults
 	}
