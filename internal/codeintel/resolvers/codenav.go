@@ -615,6 +615,7 @@ type UsageResolver interface {
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
 	}) (*string, error)
+	UsageKind() SymbolUsageKind
 }
 
 type SymbolInformationResolver interface {
