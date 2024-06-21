@@ -27,6 +27,7 @@ func TestIsAllowed(t *testing.T) {
 			name: "allowed event",
 			event: &v1.Event{
 				Feature: string(telemetry.FeatureExample),
+				Action:  string(telemetry.ActionExample),
 			},
 			expectAllowed:   true,
 			expectAllowlist: []string{"testField"},
@@ -35,13 +36,26 @@ func TestIsAllowed(t *testing.T) {
 			name: "disallowed event",
 			event: &v1.Event{
 				Feature: "disallowedFeature",
+				Action:  "disallowedAction",
 			},
 			expectAllowed: false,
 		},
 		{
-			name: "disallowed event with additional allowed event type",
+			name: "disallowed event with additional allowed event type (feature only)",
 			event: &v1.Event{
 				Feature: "cody.completion",
+				Action:  "%",
+			},
+			expectAllowed: true,
+			expectAllowlist: []string{
+				"languageId",
+			},
+		},
+		{
+			name: "disallowed event with additional allowed event type",
+			event: &v1.Event{
+				Feature: "cody.hoverCommands",
+				Action:  "visible",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
@@ -68,27 +82,29 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 		{
 			name:        "invalid",
 			config:      "asdf,foobar",
-			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "asdf", missing allowlisted fields`),
+			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "asdf"`),
 		},
 		{
 			name:        "invalid, no fields",
-			config:      "foo",
-			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "foo", missing allowlisted fields`),
+			config:      "foo::bar",
+			expectError: autogold.Expect(`cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value "foo::bar", missing allowlisted fields`),
 		},
 		{
 			name:   "1 type",
-			config: "foo::field",
+			config: "foo::bar::field",
 			expect: autogold.Expect([]EventType{{
 				Feature:                    "foo",
+				Action:                     "bar",
 				AllowedPrivateMetadataKeys: []string{"field"},
 			}}),
 		},
 		{
 			name:   "multiple types",
-			config: "foo::field::field2,baz.bar::field",
+			config: "foo::bar::field::field2,baz.bar::%::field",
 			expect: autogold.Expect([]EventType{
 				{
 					Feature: "foo",
+					Action:  "bar",
 					AllowedPrivateMetadataKeys: []string{
 						"field",
 						"field2",
