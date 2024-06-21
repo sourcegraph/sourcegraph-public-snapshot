@@ -22,10 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// gitHubAppAuthenticator is used to authenticate requests to the GitHub API
+// GitHubAppAuthenticator is used to authenticate requests to the GitHub API
 // using a GitHub App. It contains the ID and private key associated with
 // the GitHub App.
-type gitHubAppAuthenticator struct {
+type GitHubAppAuthenticator struct {
 	appID  int
 	key    *rsa.PrivateKey
 	rawKey []byte
@@ -37,12 +37,12 @@ type gitHubAppAuthenticator struct {
 // The returned Authenticator can be used to sign requests to the GitHub API on behalf of the GitHub App.
 // The requests will contain a JSON Web Token (JWT) in the Authorization header with claims identifying
 // the GitHub App.
-func NewGitHubAppAuthenticator(appID int, privateKey []byte) (*gitHubAppAuthenticator, error) {
+func NewGitHubAppAuthenticator(appID int, privateKey []byte) (*GitHubAppAuthenticator, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse private key")
 	}
-	return &gitHubAppAuthenticator{
+	return &GitHubAppAuthenticator{
 		appID:  appID,
 		key:    key,
 		rawKey: privateKey,
@@ -52,7 +52,7 @@ func NewGitHubAppAuthenticator(appID int, privateKey []byte) (*gitHubAppAuthenti
 // Authenticate adds an Authorization header to the request containing
 // a JSON Web Token (JWT) signed with the GitHub App's private key.
 // The JWT contains claims identifying the GitHub App.
-func (a *gitHubAppAuthenticator) Authenticate(r *http.Request) error {
+func (a *GitHubAppAuthenticator) Authenticate(r *http.Request) error {
 	token, err := a.generateJWT()
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (a *gitHubAppAuthenticator) Authenticate(r *http.Request) error {
 // before passing to jwt-go.
 //
 // The returned JWT can be used to authenticate requests to the GitHub API as the GitHub App.
-func (a *gitHubAppAuthenticator) generateJWT() (string, error) {
+func (a *GitHubAppAuthenticator) generateJWT() (string, error) {
 	iss := time.Now().Add(-time.Minute).Truncate(time.Second)
 	exp := iss.Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
@@ -85,7 +85,7 @@ func (a *gitHubAppAuthenticator) generateJWT() (string, error) {
 	return token.SignedString(a.key)
 }
 
-func (a *gitHubAppAuthenticator) Hash() string {
+func (a *GitHubAppAuthenticator) Hash() string {
 	shaSum := sha256.Sum256(a.rawKey)
 	return hex.EncodeToString(shaSum[:])
 }

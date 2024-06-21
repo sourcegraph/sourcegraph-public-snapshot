@@ -302,6 +302,7 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 	}
 
 	extSvcType := repo.ExternalRepo.ServiceType
+	// fmt.Println(repo.ur)
 	switch av := au.(type) {
 	case *auth.OAuthBearerTokenWithSSH:
 		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
@@ -320,6 +321,15 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
 		}
+	// case *ghaauth.GitHubAppAuthenticator:
+	// 	// // av.
+	// 	baseURL, err := url.Parse(repo.ExternalRepo.ServiceID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ghaauth.NewInstallationAccessToken(baseURL, av.AppID, av.InstallationID, av.PrivateKey)
+	// fmt.Println("ghaauth.GitHubAppAuthenticator")
+
 	default:
 		return nil, ErrNoPushCredentials{CredentialsType: fmt.Sprintf("%T", au)}
 	}
@@ -384,13 +394,11 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	fmt.Println(baseURL.String())
 	app, err := tx.GitHubAppsStore().GetByDomainAndKind(ctx, types.BatchesGitHubAppDomain, baseURL.String(), *kind)
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
 
-	fmt.Println("app: ", app.AppID, "account: ", account)
 	installID, err := tx.GitHubAppsStore().GetInstallID(ctx, app.AppID, account)
 	if err != nil || installID == 0 {
 		return nil, ErrNoGitHubAppInstallation

@@ -2,7 +2,9 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +27,7 @@ import (
 )
 
 type GitHubSource struct {
+	db     database.DB
 	client *github.V4Client
 	au     auth.Authenticator
 }
@@ -73,6 +76,7 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 	}
 
 	return &GitHubSource{
+		db:     db,
 		au:     auther,
 		client: github.NewV4Client(urn, apiURL, auther, cli),
 	}, nil
@@ -86,6 +90,8 @@ func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 	sc := s
 	sc.au = a
 	sc.client = sc.client.WithAuthenticator(a)
+
+	fmt.Println("authenticator type: ", reflect.TypeOf(a), a)
 
 	return &sc, nil
 }
