@@ -105,7 +105,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 				externalServiceID:   cred.ExternalServiceID,
 				externalServiceType: cred.ExternalServiceType,
 			}
-			c.credsByIDType[t] = &batchChangesUserCredentialResolver{credential: cred}
+			c.credsByIDType[t] = &batchChangesUserCredentialResolver{credential: cred, ghastore: c.db.GitHubApps()}
 		}
 		for _, cred := range siteCreds {
 			t := idType{

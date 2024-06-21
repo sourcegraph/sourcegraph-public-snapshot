@@ -17,7 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 
-	// ghappAuth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghappAuth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,16 +62,18 @@ func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *Encryptab
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
-type CredentialGetter interface {
-	UserCredentials() UserCredentialsStore
+type gitHubAppsGetter interface {
+	GitHubAppsStore() ghastore.GitHubAppsStore
 }
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context, tx CredentialGetter) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context, ghas ghastore.GitHubAppsStore) (auth.Authenticator, error) {
 	if uc.GitHubAppID != 0 {
-		// uc.
-		// return ghappAuth.NewGitHubAppAuthenticator(0, nil)
-		return nil, nil
+		ghApp, err := ghas.GetByID(ctx, uc.GitHubAppID)
+		if err != nil {
+			return nil, err
+		}
+		return ghappAuth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
 	}
 
 	decrypted, err := uc.Credential.Decrypt(ctx)

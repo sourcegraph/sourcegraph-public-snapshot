@@ -339,7 +339,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
+	return &batchChangesUserCredentialResolver{credential: cred, ghastore: r.db.GitHubApps()}, nil
 }
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
@@ -1135,7 +1135,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		if err != nil {
 			return nil, err
 		}
-		return &batchChangesUserCredentialResolver{credential: cred}, nil
+		return &batchChangesUserCredentialResolver{credential: cred, ghastore: r.db.GitHubApps()}, nil
 	}
 
 	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
@@ -1974,8 +1974,6 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("cred auth", a == nil)
 
 	svc := service.New(r.store)
 	if err := svc.ValidateAuthenticator(ctx, a, as, validateArgs); err != nil {

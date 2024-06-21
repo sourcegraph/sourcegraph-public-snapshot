@@ -50,7 +50,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, err := credential.Authenticator(ctx); err == nil {
+				if _, err := credential.Authenticator(ctx, nil); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -71,7 +71,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 					Credential: NewEncryptedCredential(string(enc), keyID, et.TestKey{}),
 				}
 
-				have, err := uc.Authenticator(ctx)
+				have, err := uc.Authenticator(ctx, nil)
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				} else if diff := cmp.Diff(have, a); diff != "" {
@@ -93,7 +93,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			Credential: NewEncryptedCredential(string(enc), kid, key),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		have, err := uc.Authenticator(ctx, nil)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -112,7 +112,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			Credential: NewEncryptedCredential(string(enc), "", nil),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		have, err := uc.Authenticator(ctx, nil)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -227,7 +227,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			assert.NotZero(t, cred.CreatedAt)
 			assert.NotZero(t, cred.UpdatedAt)
 
-			have, err := cred.Authenticator(fx.userCtx)
+			have, err := cred.Authenticator(fx.userCtx, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, authenticator.Hash(), have.Hash())
 
@@ -576,7 +576,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				cred, err := fx.db.GetByID(ctx, id)
 				require.NoError(t, err)
 
-				_, err = cred.Authenticator(ctx)
+				_, err = cred.Authenticator(ctx, nil)
 				assert.Error(t, err)
 			})
 		}

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -69,6 +70,7 @@ func commentSSHKey(ssh auth.AuthenticatorWithSSH) string {
 }
 
 type batchChangesUserCredentialResolver struct {
+	ghastore   ghastore.GitHubAppsStore
 	credential *database.UserCredential
 }
 
@@ -88,7 +90,7 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx, nil)
+	a, err := c.credential.Authenticator(ctx, c.ghastore)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving authenticator")
 	}
@@ -109,7 +111,7 @@ func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
 }
 
 func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx, nil)
+	return c.credential.Authenticator(ctx, c.ghastore)
 }
 
 func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool {
@@ -117,6 +119,7 @@ func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool {
 }
 
 type batchChangesSiteCredentialResolver struct {
+	ghastore   ghastore.GitHubAppsStore
 	credential *btypes.SiteCredential
 }
 

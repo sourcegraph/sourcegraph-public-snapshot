@@ -518,7 +518,7 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx, s)
+		return cred.Authenticator(ctx, s.GitHubAppsStore())
 	}
 	return nil, nil
 }
