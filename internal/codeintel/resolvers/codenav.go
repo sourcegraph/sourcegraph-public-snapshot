@@ -615,6 +615,7 @@ type UsageResolver interface {
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
 	}) (*string, error)
+	UsageKind() SymbolUsageKind
 }
 
 type SymbolInformationResolver interface {
@@ -635,3 +636,16 @@ type SurroundingLines struct {
 	LinesBefore *int32 `json:"linesBefore"`
 	LinesAfter  *int32 `json:"linesAfter"`
 }
+
+// SymbolUsageKind corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
+type SymbolUsageKind string
+
+const (
+	UsageKindDefinition     SymbolUsageKind = "DEFINITION"
+	UsageKindReference      SymbolUsageKind = "REFERENCE"
+	UsageKindImplementation SymbolUsageKind = "IMPLEMENTATION"
+	UsageKindSuper          SymbolUsageKind = "SUPER"
+)

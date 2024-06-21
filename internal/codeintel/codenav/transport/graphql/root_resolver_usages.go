@@ -42,6 +42,10 @@ func (u *usageResolver) SurroundingContent(_ context.Context, args *struct {
 	panic("implement me")
 }
 
+func (u *usageResolver) UsageKind() resolverstubs.SymbolUsageKind {
+	panic("implement me")
+}
+
 type symbolInformationResolver struct {
 }
 
