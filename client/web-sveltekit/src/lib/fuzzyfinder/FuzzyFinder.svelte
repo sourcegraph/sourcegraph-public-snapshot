@@ -112,10 +112,6 @@
         }
     })()
 
-    function getScope(): string {
-        return scope
-    }
-
     function selectNext() {
         let next: HTMLElement | null = null
         const current = listbox?.querySelector('[aria-selected="true"]')
@@ -272,7 +268,7 @@
             </div>
             <ul role="listbox" bind:this={listbox} aria-label="Search results">
                 {#if $source.pending}
-                    <li class="info">Waiting for response...</li>
+                    <li class="message">Waiting for response...</li>
                 {:else if $source.error}
                     <li class="error"><Alert variant="danger">{$source.error.message}</Alert></li>
                 {:else if $source.value?.results}
@@ -313,7 +309,7 @@
                             {/if}
                         </li>
                     {:else}
-                        <li class="info">No matches</li>
+                        <li class="message">No matches</li>
                     {/each}
                 {/if}
             </ul>
@@ -416,11 +412,11 @@
             }
         }
 
-        .info, .error {
+        .message, .error {
             padding: 1rem;
         }
 
-        .info {
+        .message {
             text-align: center;
             color: var(--text-muted);
         }

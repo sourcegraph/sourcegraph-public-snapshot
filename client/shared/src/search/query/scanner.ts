@@ -619,7 +619,7 @@ const patternScanner = zeroOrMore(
         whitespace,
         toPatternResult(quoted('/'), PatternKind.Regexp),
         // We don't use scanPattern or literal here because we want to treat parenthesis as regular characters
-        toPatternResult(scanToken(/[^\s]+/), PatternKind.Literal)
+        toPatternResult(scanToken(/\S+/), PatternKind.Literal)
     )
 )
 
