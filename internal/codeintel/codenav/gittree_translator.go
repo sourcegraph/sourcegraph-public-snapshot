@@ -27,17 +27,31 @@ import (
 // Additionally, it's not clear if reusing the Document at path P1 in an older commit,
 // at a different path P2 in a newer commit is even reliably useful, since symbol names
 // may change based on the file name or directory name depending on the language.
+//
+// TODO(id: GitTreeTranslator-cleanup): Instead of storing the translationBase, we should
+// take that as an argument. Specifically, use a struct with two fields, AncestorCommit
+// and DescendantCommit, and avoid Source/Target terminology (which becomes confusing to
+// understand with the reverse parameter). Instead, we can use an enum MappingDirection
+// FromDescendantToAncestor | FromAncestorToDescendant if really needed (to avoid
+// inconsistency when modifying the APIs below, as they take different values for 'reverse'
+// in production).
 type GitTreeTranslator interface {
 	// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-	// target commit. The target commit's path and position are returned, along with a boolean flag
+	// target commit. The target commit's position is returned, along with a boolean flag
 	// indicating that the translation was successful. If reverse is true, then the source and
 	// target commits are swapped.
+	//
+	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always false in production,
+	// let's remove the extra parameter.
 	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error)
 
 	// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
 	// commit. The target commit's range is returned, along with a boolean flag indicating
 	// that the translation was successful. If reverse is true, then the source and target commits
 	// are swapped.
+	//
+	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always true in production,
+	// let's remove the extra parameter.
 	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error)
 }
 
@@ -47,6 +61,9 @@ type gitTreeTranslator struct {
 	hunkCache HunkCache
 }
 
+// TODO(id: GitTreeTranslator-cleanup): Strictly speaking, calling this translationBase is not
+// quite correct as things can flip around based on the reverse parameter. So get rid
+// of the commit field and pass that as a parameter for increased clarity at call-sites.
 type translationBase struct {
 	repo   *sgtypes.Repo
 	commit string
