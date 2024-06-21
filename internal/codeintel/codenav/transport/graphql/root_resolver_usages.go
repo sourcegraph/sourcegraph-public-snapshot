@@ -3,6 +3,8 @@ package graphql
 import (
 	"context"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -42,9 +44,7 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 			repository: repository,
 			revision:   revision,
 			path:       usage.Path,
-			rx: &rangeResolver{
-				lspRange: convertRange(shared.TranslateRange(usage.Range())),
-			},
+			range_:     usage.Range(),
 		},
 	}
 }
@@ -97,7 +97,7 @@ type usageRangeResolver struct {
 	repository types.Repo
 	revision   api.CommitID
 	path       string
-	rx         *rangeResolver
+	range_     scip.Range
 }
 
 var _ resolverstubs.UsageRangeResolver = &usageRangeResolver{}
@@ -115,5 +115,7 @@ func (u *usageRangeResolver) Path() string {
 }
 
 func (u *usageRangeResolver) Range() resolverstubs.RangeResolver {
-	return u.rx
+	return &rangeResolver{
+		lspRange: convertRange(shared.TranslateRange(u.range_)),
+	}
 }
