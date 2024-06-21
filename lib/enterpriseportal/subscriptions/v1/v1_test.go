@@ -17,23 +17,23 @@ func TestNormalizeInstanceDomain(t *testing.T) {
 	}{{
 		name:       "normal URL",
 		domain:     "https://souregraph.com/",
-		wantDomain: autogold.Expect(nil),
+		wantDomain: autogold.Expect("souregraph.com"),
 	}, {
 		name:       "already a host",
 		domain:     "sourcegraph.com",
-		wantDomain: autogold.Expect(nil),
+		wantDomain: autogold.Expect("sourcegraph.com"),
 	}, {
 		name:       "subdomain",
 		domain:     "foo.sourcegraph.com",
-		wantDomain: autogold.Expect(nil),
+		wantDomain: autogold.Expect("foo.sourcegraph.com"),
 	}, {
 		name:       "host with trailing slash",
 		domain:     "sourcegraph.com/",
-		wantDomain: autogold.Expect(nil),
+		wantDomain: autogold.Expect("sourcegraph.com"),
 	}, {
 		name:       "normal URL with path",
 		domain:     "https://souregraph.com/search",
-		wantDomain: autogold.Expect(nil),
+		wantDomain: autogold.Expect("souregraph.com"),
 	}, {
 		name:      "clearly not a domain",
 		domain:    "foo-bar",
