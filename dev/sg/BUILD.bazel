@@ -54,6 +54,7 @@ go_library(
         "//dev/sg/buf",
         "//dev/sg/ci",
         "//dev/sg/dependencies",
+        "//dev/sg/enterprise",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
         "//dev/sg/internal/backport",
