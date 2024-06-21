@@ -81,9 +81,14 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	})
 }
 
-// GetCodyIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
-// Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
+// GetCodyIntent is deprecated: use ChatIntent instead.
 func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetIntentArgs) (graphqlbackend.IntentResolver, error) {
+	return r.ChatIntent(ctx, graphqlbackend.ChatIntentArgs{Query: args.Query})
+}
+
+// ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
+// Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
+func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatIntentArgs) (graphqlbackend.IntentResolver, error) {
 	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
@@ -118,7 +123,7 @@ func (r *Resolver) GetCodyIntent(ctx context.Context, args graphqlbackend.GetInt
 	if err != nil {
 		return nil, err
 	}
-	return &getIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
+	return &chatIntentResponse{intent: intentResponse.Intent, score: intentResponse.Score}, nil
 }
 
 type intentApiRequest struct {
@@ -130,15 +135,15 @@ type intentApiResponse struct {
 	Score  float64 `json:"score"`
 }
 
-type getIntentResponse struct {
+type chatIntentResponse struct {
 	intent string
 	score  float64
 }
 
-func (r *getIntentResponse) Intent() string {
+func (r *chatIntentResponse) Intent() string {
 	return r.intent
 }
-func (r *getIntentResponse) Score() float64 {
+func (r *chatIntentResponse) Score() float64 {
 	return r.score
 }
 
