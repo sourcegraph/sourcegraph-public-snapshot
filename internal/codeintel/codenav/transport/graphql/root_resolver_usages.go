@@ -29,17 +29,25 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 
 type usageResolver struct {
 	symbol     resolverstubs.SymbolInformationResolver
+	kind       resolverstubs.SymbolUsageKind
 	usageRange resolverstubs.UsageRangeResolver
 }
 
 var _ resolverstubs.UsageResolver = &usageResolver{}
 
 func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+	var kind resolverstubs.SymbolUsageKind
+	if scip.SymbolRole_Definition.Matches(usage.Occurrence) {
+		kind = resolverstubs.UsageKindDefinition
+	} else {
+		kind = resolverstubs.UsageKindReference
+	}
 	return &usageResolver{
 		symbol: &symbolInformationResolver{
 			name:       usage.Occurrence.Symbol,
 			provenance: resolverstubs.ProvenanceSyntactic,
 		},
+		kind: kind,
 		usageRange: &usageRangeResolver{
 			repository: repository,
 			revision:   revision,
@@ -65,7 +73,7 @@ func (u *usageResolver) SurroundingContent(_ context.Context, args *struct {
 }
 
 func (u *usageResolver) UsageKind() resolverstubs.SymbolUsageKind {
-	panic("implement me")
+	return u.kind
 }
 
 type symbolInformationResolver struct {
