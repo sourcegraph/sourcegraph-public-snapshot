@@ -5,6 +5,7 @@ go_library(
     name = "subscriptions",
     srcs = ["subscriptions.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -16,6 +17,10 @@ go_library(
 go_test(
     name = "subscriptions_test",
     srcs = ["subscriptions_test.go"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
     deps = [
         ":subscriptions",
         "//cmd/enterprise-portal/internal/database/databasetest",
