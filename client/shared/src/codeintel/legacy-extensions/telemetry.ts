@@ -77,7 +77,7 @@ export class TelemetryEmitter {
                 },
                 privateMetadata: {
                     languageId: this.languageID,
-                }
+                },
             })
         } catch {
             // Older version of Sourcegraph may have not registered this
