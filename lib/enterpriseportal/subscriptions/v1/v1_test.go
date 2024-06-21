@@ -1,0 +1,57 @@
+package v1
+
+import (
+	"testing"
+
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNormalizeInstanceDomain(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		domain     string
+		wantDomain autogold.Value
+		wantError  autogold.Value
+	}{{
+		name:       "normal URL",
+		domain:     "https://souregraph.com/",
+		wantDomain: autogold.Expect(nil),
+	}, {
+		name:       "already a host",
+		domain:     "sourcegraph.com",
+		wantDomain: autogold.Expect(nil),
+	}, {
+		name:       "subdomain",
+		domain:     "foo.sourcegraph.com",
+		wantDomain: autogold.Expect(nil),
+	}, {
+		name:       "host with trailing slash",
+		domain:     "sourcegraph.com/",
+		wantDomain: autogold.Expect(nil),
+	}, {
+		name:       "normal URL with path",
+		domain:     "https://souregraph.com/search",
+		wantDomain: autogold.Expect(nil),
+	}, {
+		name:      "clearly not a url",
+		domain:    "foo-bar",
+		wantError: autogold.Expect(nil),
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			gotDomain, err := NormalizeInstanceDomain(tc.domain)
+			if tc.wantError != nil {
+				require.Error(t, err)
+				tc.wantError.Equal(t, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			if tc.wantDomain != nil {
+				tc.wantDomain.Equal(t, gotDomain)
+			} else {
+				assert.Empty(t, gotDomain)
+			}
+		})
+	}
+}
