@@ -143,10 +143,8 @@ type EventTypes struct {
 func eventTypes(types ...EventType) EventTypes {
 	index := make(map[string][]string, len(types))
 	for _, t := range types {
-		key := t.Feature
-		if t.Action != "%" {
-			key = fmt.Sprintf("%s.%s", t.Feature, t.Action)
-		} else {
+		key := fmt.Sprintf("%s.%s", t.Feature, t.Action)
+		if t.Action == "%" {
 			key = t.Feature
 		}
 		index[key] = t.AllowedPrivateMetadataKeys
