@@ -243,8 +243,6 @@ type JSContext struct {
 	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
 	OwnEnabled               bool `json:"ownEnabled"`
 
-	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
-
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -452,8 +450,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		SearchAggregationEnabled: true,
 		OwnEnabled:               true,
 
-		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
-
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
@@ -500,11 +496,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Cody features
-	// we force disable related features (embeddings etc).
+	// we force disable related features.
 	if !context.LicenseInfo.Features.Cody {
 		context.CodyEnabled = false
 		context.CodyEnabledForCurrentUser = false
-		context.EmbeddingsEnabled = false
 	}
 
 	return context
