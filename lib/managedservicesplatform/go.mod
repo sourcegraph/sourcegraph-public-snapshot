@@ -39,8 +39,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.26.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.169.0
-	gorm.io/driver/postgres v1.5.9
-	gorm.io/gorm v1.25.10
+	gorm.io/driver/postgres v1.5.4
+	gorm.io/gorm v1.25.6
 )
 
 require (
