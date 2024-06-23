@@ -1055,12 +1055,25 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=dev" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
+      CONFIGURATION_MODE: server
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
       SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       WEB_BUILDER_DEV_SERVER: 1
+      INDEXED_SEARCH_SERVERS:
+      GITSERVER_ADDR: 127.0.0.1:3178
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3178
+      SRC_GIT_SERVERS: 127.0.0.1:3178
+      SEARCHER_URL: 127.0.0.1:3181
+      SRC_REPOS_DIR: /tmp/sg-repos
+      SRC_APP_DIR: /tmp/sg-app
+      SRC_DISABLE_OOBMIGRATION_VALIDATION: 1
+      SRC_HTTP_ADDR: 0.0.0.0:3080
+      SRC_FRONTEND_INTERNAL: localhost:3090
+      REDIS_CACHE_ENDPOINT: localhost:6379
+      REDIS_STORE_ENDPOINT: localhost:6379
     watch:
       - cmd
       - internal
@@ -1810,17 +1823,14 @@ commandsets:
 
   single-program:
     checks:
-      - git
-      - dev-private
+      #- git
+      #- dev-private
     commands:
       - sourcegraph
       - web
       - caddy
     env:
-      DISABLE_CODE_INSIGHTS: false
-      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      USE_EMBEDDED_POSTGRESQL: false
+      DISABLE_CODE_INSIGHTS: true
 
   cody-gateway:
     checks:

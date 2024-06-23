@@ -7,14 +7,10 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//client/web/dist",
-        "//cmd/blobstore/shared",
-        "//cmd/embeddings/shared",
         "//cmd/frontend/shared",
         "//cmd/gitserver/shared",
-        "//cmd/precise-code-intel-worker/shared",
         "//cmd/repo-updater/shared",
         "//cmd/searcher/shared",
-        "//cmd/symbols/shared",
         "//cmd/worker/shared",
         "//internal/sanitycheck",
         "//internal/service",
@@ -40,7 +36,7 @@ go_binary(
     ],
     visibility = ["//visibility:public"],
     x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+        "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "dev",
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
