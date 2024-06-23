@@ -31,7 +31,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
     executorsEnabled: true,
-    codyEnabled: true,
+    codyEnabledOnInstance: true,
     codeIntelligenceEnabled: true,
     codeMonitoringEnabled: true,
     notebooksEnabled: true,

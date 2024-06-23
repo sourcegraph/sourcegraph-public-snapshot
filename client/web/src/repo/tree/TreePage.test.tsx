@@ -9,9 +9,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import type { AuthenticatedUser } from '../../auth'
-import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
+import { RepositoryType, type RepositoryFields } from '../../graphql-operations'
 
-import { type Props, TreePage } from './TreePage'
+import { TreePage, type Props } from './TreePage'
 
 // TreePage has a dependency on the `perforceChangelistMapping` experimental feature
 // in order to build an appropriately-worded Commits button.
@@ -161,7 +161,7 @@ describe('TreePage', () => {
             const repo = repoDefaults()
             const props = treePagePropsDefaults(repo)
             window.context = window.context || {}
-            window.context.codyEnabled = true
+            window.context.codyEnabledOnInstance = true
             window.context.codyEnabledForCurrentUser = true
 
             const mockUser = {

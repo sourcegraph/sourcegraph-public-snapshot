@@ -55,5 +55,5 @@ export function currentUserRequiresEmailVerificationForCody(): boolean {
  * Whether Cody is enabled for the current user on this instance.
  */
 export function isCodyEnabledForCurrentUser(): boolean {
-    return window.context?.codyEnabled && window.context?.codyEnabledForCurrentUser
+    return window.context?.codyEnabledOnInstance && window.context?.codyEnabledForCurrentUser
 }

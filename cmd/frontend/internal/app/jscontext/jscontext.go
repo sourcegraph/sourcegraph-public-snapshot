@@ -221,11 +221,14 @@ type JSContext struct {
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	// CodyEnabled is true `cody.enabled` is not false in site-config
-	CodyEnabled bool `json:"codyEnabled"`
-	// CodyEnabledForCurrentUser is true if CodyEnabled is true and current
+	// CodyEnabledOnInstance is true `cody.enabled` is not false in site config. Check
+	// CodyEnabledForCurrentUser to see if the current user has access to Cody.
+	CodyEnabledOnInstance bool `json:"codyEnabledOnInstance"`
+
+	// CodyEnabledForCurrentUser is true if CodyEnabled is true and the current
 	// user has access to Cody.
 	CodyEnabledForCurrentUser bool `json:"codyEnabledForCurrentUser"`
+
 	// CodyRequiresVerifiedEmail is true if usage of Cody requires the current
 	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
@@ -430,7 +433,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               conf.CodyEnabled(),
+		CodyEnabledOnInstance:     conf.CodyEnabled(),
 		CodyEnabledForCurrentUser: codyEnabled,
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
@@ -498,7 +501,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// If the license a Sourcegraph instance is running under does not support Cody features,
 	// we force disable related features.
 	if !context.LicenseInfo.Features.Cody {
-		context.CodyEnabled = false
+		context.CodyEnabledOnInstance = false
 		context.CodyEnabledForCurrentUser = false
 	}
 

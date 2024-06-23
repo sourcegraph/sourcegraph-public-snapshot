@@ -197,13 +197,17 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
-    /** Whether cody is enabled site-wide. */
-    codyEnabled: boolean
+    /**
+     * Whether Cody is enabled on this instance. Check
+     * {@link SourcegraphContext.codyEnabledForCurrentUser} to see whether Cody is enabled for the
+     * current user.
+     */
+    codyEnabledOnInstance: boolean
 
-    /** Whether cody is enabled for the user. */
+    /** Whether Cody is enabled for the user. */
     codyEnabledForCurrentUser: boolean
 
-    /** Whether the site requires a verified email for cody. */
+    /** Whether the instance requires a verified email for Cody. */
     codyRequiresVerifiedEmail: boolean
 
     /** Whether executors are enabled on the site. */
