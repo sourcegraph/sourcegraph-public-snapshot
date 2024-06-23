@@ -3,19 +3,39 @@ package shared
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 )
+
+// FrontendMain is called from the `main` function of a command that includes the frontend.
+func FrontendMain(otherServices []service.Service) {
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
+		assets.UseDevAssetsProvider()
+	}
+	oobConfig := svcmain.OutOfBandConfiguration{
+		// Use a switchable config here so we can switch it out for a proper conf client
+		// once we can use it after autoupgrading.
+		Logging: conf.NewLogsSinksSource(switchableSiteConfig()),
+		Tracing: tracer.ConfConfigurationSource{WatchableSiteConfig: switchableSiteConfig()},
+	}
+	svcmain.SingleServiceMainWithoutConf(Service, otherServices, oobConfig)
+}
 
 type svc struct {
 	ready                chan struct{}
