@@ -1,7 +1,8 @@
 import React from 'react'
 
-import { describe, expect, test, vi, afterAll } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
@@ -16,7 +17,7 @@ vi.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: () => 'Se
 vi.mock('../components/branding/BrandLogo', () => ({ BrandLogo: () => 'BrandLogo' }))
 
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
-    authenticatedUser: null,
+    authenticatedUser: { username: 'alice', organizations: { nodes: [] } } as Partial<AuthenticatedUser> as any,
     isSourcegraphDotCom: false,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
@@ -38,55 +39,146 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
+    __testing__isOpen: true,
 }
 
 describe('GlobalNavbar', () => {
-    afterAll(() => {
-        vi.restoreAllMocks()
-    })
+    if (!window.context) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        window.context = {} as any
+    }
+    const origCodeSearchEnabledOnInstance = window.context?.codeSearchEnabledOnInstance ?? true
+    const origCodyEnabledOnInstance = window.context?.codyEnabledOnInstance ?? true
+    const origCodyEnabledForCurrentUser = window.context?.codyEnabledForCurrentUser ?? true
+    const reset = () => {
+        window.context.codeSearchEnabledOnInstance = origCodeSearchEnabledOnInstance
+        window.context.codyEnabledOnInstance = origCodyEnabledOnInstance
+        window.context.codyEnabledForCurrentUser = origCodyEnabledForCurrentUser
+    }
+    beforeEach(reset)
+    afterEach(reset)
 
     test('default', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => false,
-            isCodeSearchPlusCodyLicense: () => true,
-            isCodyOnlyLicense: () => false,
-        }))
+        window.context.codeSearchEnabledOnInstance = true
+        window.context.codyEnabledOnInstance = true
+        window.context.codyEnabledForCurrentUser = true
 
-        const { asFragment } = renderWithBrandedContext(
+        const { baseElement } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
-        expect(asFragment()).toMatchSnapshot()
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'dropdown',
+            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+        })
     })
 
-    test('cody only license', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => false,
-            isCodeSearchPlusCodyLicense: () => false,
-            isCodyOnlyLicense: () => true,
-        }))
-
-        const { asFragment } = renderWithBrandedContext(
+    test('dotcom unauthed', () => {
+        window.context.codyEnabledForCurrentUser = false
+        const { baseElement } = renderWithBrandedContext(
             <MockedTestProvider>
-                <GlobalNavbar {...PROPS} />
+                <GlobalNavbar {...PROPS} isSourcegraphDotCom={true} authenticatedUser={null} />
             </MockedTestProvider>
         )
-        expect(asFragment()).toMatchSnapshot()
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'link',
+            codyItemLink: '/cody',
+        })
     })
 
-    test('code search only license', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => true,
-            isCodeSearchPlusCodyLicense: () => false,
-            isCodyOnlyLicense: () => false,
-        }))
+    test('dotcom authed', () => {
+        const { baseElement } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} isSourcegraphDotCom={true} />
+            </MockedTestProvider>
+        )
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'dropdown',
+            codyDropdownItems: ['Dashboard /cody/manage', 'Web Chat /cody/chat'],
+        })
+    })
 
-        const { asFragment } = renderWithBrandedContext(
+    test('enterprise cody enabled for user', () => {
+        window.context.codyEnabledForCurrentUser = true
+        const { baseElement } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
-        expect(asFragment()).toMatchSnapshot()
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'dropdown',
+            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+        })
+    })
+
+    test('enterprise cody disabled for user', () => {
+        window.context.codyEnabledForCurrentUser = false
+        const { baseElement } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'link',
+            codyItemLink: '/cody/dashboard',
+        })
+    })
+
+    test('code search disabled on instance', () => {
+        window.context.codeSearchEnabledOnInstance = false
+        window.context.codyEnabledOnInstance = true
+        window.context.codyEnabledForCurrentUser = true
+
+        const { baseElement } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
+            codyItemType: 'dropdown',
+            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+        })
+    })
+
+    test('cody disabled on instance', () => {
+        window.context.codeSearchEnabledOnInstance = true
+        window.context.codyEnabledOnInstance = false
+        window.context.codyEnabledForCurrentUser = false
+
+        const { baseElement } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...PROPS} />
+            </MockedTestProvider>
+        )
+        expect(baseElement.querySelector('a[href^="/cody"]')).toBeNull()
+        expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({ codyItemType: 'none' })
     })
 })
+
+interface NavBarTestDescription {
+    codyItemType: 'none' | 'link' | 'dropdown'
+    codyItemLink?: string
+    codyDropdownItems?: string[]
+}
+
+function describeNavBar(baseElement: HTMLElement): NavBarTestDescription {
+    const dropdownButton = baseElement.querySelector('button[aria-label="Show cody menu"]')
+    if (dropdownButton) {
+        const popover = baseElement.querySelector('[data-reach-menu-popover]')!
+        return {
+            codyItemType: 'dropdown',
+            codyDropdownItems: [...popover.querySelectorAll('a')].map(
+                item => `${item.textContent ?? ''} ${item.getAttribute('href') ?? ''}`
+            ),
+        }
+    }
+
+    const item = baseElement.querySelector<HTMLAnchorElement>('a[href^="/cody"]')
+    return item
+        ? {
+              codyItemType: 'link',
+              codyItemLink: item?.getAttribute('href') ?? '',
+          }
+        : { codyItemType: 'none' }
+}

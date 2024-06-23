@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
+import { EMPTY_RECTANGLE, Icon, Link, Menu, MenuButton, MenuLink, MenuList } from '@sourcegraph/wildcard'
 
 import { MobileNavGroupContext, NavItem, NavLink, type NavLinkProps } from '.'
 
@@ -37,6 +37,8 @@ interface NavDropdownProps {
     routeMatch?: string
     /** The name of the dropdown to use for accessible labels */
     name: string
+
+    __testing__isOpen?: boolean
 }
 
 export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
@@ -45,6 +47,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
     items,
     routeMatch,
     name,
+    __testing__isOpen,
 }) => {
     const location = useLocation()
     const isItemSelected = useMemo(
@@ -101,7 +104,11 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                     </MenuButton>
                                 </div>
 
-                                <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
+                                <MenuList
+                                    className={styles.menuList}
+                                    targetPadding={EMPTY_RECTANGLE}
+                                    isOpen={__testing__isOpen}
+                                >
                                     {homeItem && (
                                         <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
                                             {homeItem.content}

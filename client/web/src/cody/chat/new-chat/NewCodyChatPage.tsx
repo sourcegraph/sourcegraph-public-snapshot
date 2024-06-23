@@ -1,11 +1,14 @@
 import type { FC } from 'react'
 
-import { CodyWebChatProvider, ChatHistory } from 'cody-web-experimental'
+import { ChatHistory, CodyWebChatProvider } from 'cody-web-experimental'
+import { Navigate } from 'react-router-dom'
 
-import { Badge, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
+import { PageRoutes } from '../../../routes.constants'
+import { CodyProRoutes } from '../../codyProRoutes'
 import { CodyColorIcon } from '../CodyPageIcon'
 
 import { ChatHistoryList } from './components/chat-history-list/ChatHistoryList'
@@ -72,12 +75,25 @@ interface CodyPageHeaderProps {
 const CodyPageHeader: FC<CodyPageHeaderProps> = props => {
     const { isSourcegraphDotCom, className } = props
 
-    const codyDashboardLink = isSourcegraphDotCom ? '/cody/manage' : '/cody'
+    const codyDashboardLink = isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.CodyDashboard
+
+    if (!window.context?.codyEnabledForCurrentUser) {
+        return <Navigate to={PageRoutes.CodyDashboard} />
+    }
 
     return (
         <PageHeader
             className={className}
-            description="Cody answers code questions and writes code for you using your entire codebase and the code graph."
+            actions={
+                <div className="d-flex flex-gap-1">
+                    <ButtonLink variant="link" to={codyDashboardLink}>
+                        Editor extensions
+                    </ButtonLink>
+                    <ButtonLink variant="secondary" to={codyDashboardLink}>
+                        Dashboard
+                    </ButtonLink>
+                </div>
+            }
         >
             <PageHeader.Heading as="h2" styleAs="h1">
                 <PageHeader.Breadcrumb icon={CodyColorIcon}>
@@ -86,11 +102,6 @@ const CodyPageHeader: FC<CodyPageHeaderProps> = props => {
                         <Badge variant="info" className="ml-2">
                             Experimental
                         </Badge>
-                        <Link to={codyDashboardLink}>
-                            <Text className="mb-0 ml-2" size="small">
-                                Manage
-                            </Text>
-                        </Link>
                     </div>
                 </PageHeader.Breadcrumb>
             </PageHeader.Heading>

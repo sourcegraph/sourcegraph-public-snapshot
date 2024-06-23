@@ -41,5 +41,5 @@
         selectedFilters={data.queryFilters}
     />
 {:else}
-    <SearchHome {queryState} codyHref={data.codyHref} showDotcomFooterLinks={data.showDotcomFooterLinks} />
+    <SearchHome {queryState} codyHref={data.codyHref} showDotcomStuff={data.showDotcomFooterLinks} />
 {/if}
