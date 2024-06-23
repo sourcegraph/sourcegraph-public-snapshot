@@ -3,10 +3,15 @@ package svcmain
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/output"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -20,6 +25,75 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
+
+// Main is called from the `main` function of `cmd/sourcegraph`.
+//
+// args is the commandline arguments (usually os.Args).
+func Main(services []sgservice.Service, args []string) {
+	// Unlike other sourcegraph binaries we expect to be run
+	// by a user instead of deployed to a cloud. So adjust the default output
+	// format before initializing log.
+	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok {
+		os.Setenv(log.EnvLogFormat, string(output.FormatConsole))
+	}
+
+	liblog := log.Init(log.Resource{
+		Name:       env.MyName,
+		Version:    version.Version(),
+		InstanceID: hostname.Get(),
+	},
+		// Experimental: DevX is observing how sampling affects the errors signal.
+		log.NewSentrySinkWith(
+			log.SentrySink{
+				ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+			},
+		),
+	)
+
+	app := cli.NewApp()
+	app.Name = filepath.Base(args[0])
+	app.Usage = "The Cody app"
+	app.Version = version.Version()
+	app.Flags = []cli.Flag{
+		&cli.PathFlag{
+			Name:        "cacheDir",
+			DefaultText: "OS default cache",
+			Usage:       "Which directory should be used to cache data",
+			EnvVars:     []string{"SRC_APP_CACHE"},
+			TakesFile:   false,
+			Action: func(ctx *cli.Context, p cli.Path) error {
+				return os.Setenv("SRC_APP_CACHE", p)
+			},
+		},
+		&cli.PathFlag{
+			Name:        "configDir",
+			DefaultText: "OS default config",
+			Usage:       "Directory where the configuration should be saved",
+			EnvVars:     []string{"SRC_APP_CONFIG"},
+			TakesFile:   false,
+			Action: func(ctx *cli.Context, p cli.Path) error {
+				return os.Setenv("SRC_APP_CONFIG", p)
+			},
+		},
+	}
+	app.Action = func(_ *cli.Context) error {
+		logger := log.Scoped("sourcegraph")
+		// cleanup := singleprogram.Init(logger)
+		// defer func() {
+		// 	err := cleanup()
+		// 	if err != nil {
+		// 		logger.Error("cleaning up", log.Error(err))
+		// 	}
+		// }()
+		run(liblog, logger, services, nil)
+		return nil
+	}
+
+	if err := app.Run(args); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+}
 
 // SingleServiceMain is called from the `main` function of a command to start a single
 // service (such as frontend or gitserver). It assumes the service can access site
@@ -42,7 +116,7 @@ func SingleServiceMain(svc sgservice.Service) {
 		),
 	)
 	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, svc, nil)
+	run(liblog, logger, []sgservice.Service{svc}, nil)
 }
 
 // OutOfBandConfiguration declares additional configuration that happens continuously,
@@ -74,13 +148,13 @@ func SingleServiceMainWithoutConf(svc sgservice.Service, oobConfig OutOfBandConf
 		),
 	)
 	logger := log.Scoped("sourcegraph")
-	run(liblog, logger, svc, &oobConfig)
+	run(liblog, logger, []sgservice.Service{svc}, &oobConfig)
 }
 
 func run(
 	liblog *log.PostInitCallbacks,
 	logger log.Logger,
-	service sgservice.Service,
+	services []sgservice.Service,
 	// If nil, will use site config
 	oobConfig *OutOfBandConfiguration,
 ) {

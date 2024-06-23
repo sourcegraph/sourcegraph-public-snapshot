@@ -1040,6 +1040,33 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
+  sourcegraph: &sourcegraph_command
+    description: Single-program distribution (dev only)
+    cmd: |
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
+
+      # TODO: This should be fixed
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+
+      .bin/sourcegraph
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+    checkBinary: .bin/sourcegraph
+    env:
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      WEB_BUILDER_DEV_SERVER: 1
+    watch:
+      - cmd
+      - internal
+      - lib
+      - schema
+
 bazelCommands:
   blobstore:
     target: //cmd/blobstore
