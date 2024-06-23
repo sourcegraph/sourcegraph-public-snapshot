@@ -16,7 +16,6 @@ import {
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
-import { isCodyEnabledForCurrentUser } from 'src/cody/util'
 
 import { asError, basename, encodeURIPathComponent, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -350,7 +349,7 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
-            {(isSourcegraphDotCom || isCodyEnabledForCurrentUser()) && (
+            {(isSourcegraphDotCom || window.context?.codyEnabledForCurrentUser) && (
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}

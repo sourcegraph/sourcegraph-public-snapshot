@@ -28,12 +28,7 @@ import { CodySubscriptionPlan } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
-import {
-    getManageSubscriptionPageURL,
-    isCodyEnabledForCurrentUser,
-    isEmbeddedCodyProUIEnabled,
-    manageSubscriptionRedirectURL,
-} from '../util'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
 
@@ -69,7 +64,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabledForCurrentUser() || !data?.currentUser || !authenticatedUser) {
+    if (!window.context?.codyEnabledForCurrentUser || !data?.currentUser || !authenticatedUser) {
         return null
     }
 

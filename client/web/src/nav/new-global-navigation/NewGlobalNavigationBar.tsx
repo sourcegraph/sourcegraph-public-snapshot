@@ -1,19 +1,19 @@
-import { type FC, useCallback, useState, type ComponentType, type PropsWithChildren } from 'react'
+import { useCallback, useState, type ComponentType, type FC, type PropsWithChildren } from 'react'
 
 import { mdiClose, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { NavLink, type RouteObject, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate, useSearchParams, type RouteObject } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
 import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Text, Icon, Button, Modal, Link, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
@@ -377,9 +377,11 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
-                        Cody
-                    </NavItemLink>
+                    {window.context?.codyEnabledOnInstance && (
+                        <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
+                            Cody
+                        </NavItemLink>
+                    )}
 
                     {authenticatedUser && (
                         <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>

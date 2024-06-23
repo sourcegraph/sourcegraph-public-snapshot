@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { describe, expect, test, vi, afterAll } from 'vitest'
+import { afterAll, describe, expect, test, vi } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -41,16 +41,24 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    if (!window.context) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        window.context = {} as any
+    }
+    const origCodeSearchEnabledOnInstance = window.context?.codeSearchEnabledOnInstance
+    const origCodyEnabledOnInstance = window.context?.codyEnabledOnInstance
+    const origCodyEnabledForCurrentUser = window.context?.codyEnabledForCurrentUser
     afterAll(() => {
         vi.restoreAllMocks()
+        window.context.codeSearchEnabledOnInstance = origCodeSearchEnabledOnInstance
+        window.context.codyEnabledOnInstance = origCodyEnabledOnInstance
+        window.context.codyEnabledForCurrentUser = origCodyEnabledForCurrentUser
     })
 
     test('default', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => false,
-            isCodeSearchPlusCodyLicense: () => true,
-            isCodyOnlyLicense: () => false,
-        }))
+        window.context.codeSearchEnabledOnInstance = true
+        window.context.codyEnabledOnInstance = true
+        window.context.codyEnabledForCurrentUser = true
 
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
@@ -61,11 +69,9 @@ describe('GlobalNavbar', () => {
     })
 
     test('cody only license', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => false,
-            isCodeSearchPlusCodyLicense: () => false,
-            isCodyOnlyLicense: () => true,
-        }))
+        window.context.codeSearchEnabledOnInstance = false
+        window.context.codyEnabledOnInstance = true
+        window.context.codyEnabledForCurrentUser = true
 
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
@@ -76,10 +82,11 @@ describe('GlobalNavbar', () => {
     })
 
     test('code search only license', () => {
-        vi.mock('../util/license', () => ({
-            isCodeSearchOnlyLicense: () => true,
-            isCodeSearchPlusCodyLicense: () => false,
-            isCodyOnlyLicense: () => false,
+        window.context.codeSearchEnabledOnInstance = true
+        window.context.codyEnabledOnInstance = false
+        window.context.codyEnabledForCurrentUser = false
+        vi.mock('../util/features', () => ({
+            isOnlyCodyEnabledOnInstance: () => false,
         }))
 
         const { asFragment } = renderWithBrandedContext(

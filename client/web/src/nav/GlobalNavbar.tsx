@@ -1,21 +1,21 @@
 import {
-    type FC,
-    type MutableRefObject,
-    type SetStateAction,
     useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
     useState,
+    type FC,
+    type MutableRefObject,
+    type SetStateAction,
 } from 'react'
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { type RouteObject, useLocation } from 'react-router-dom'
+import { useLocation, type RouteObject } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
-import { isMacPlatform } from '@sourcegraph/common'
+import { isDefined, isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -46,7 +46,6 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
 import { SvelteKitNavItem } from '../sveltekit/SvelteKitNavItem'
-import { isCodyOnlyLicense, isCodeSearchOnlyLicense } from '../util/license'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -141,7 +140,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const isLicensed = !!window.context?.licenseInfo
-    const disableCodeSearchFeatures = isCodyOnlyLicense()
+    const disableCodeSearchFeatures = !window.context?.codeSearchEnabledOnInstance
     // Search context management is still enabled on .com
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
@@ -308,8 +307,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
-    const disableCodyFeatures = isCodeSearchOnlyLicense()
-    const disableCodeSearchFeatures = isCodyOnlyLicense()
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -363,10 +360,10 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         )
 
     const CodyLogoWrapper = (): JSX.Element => <CodyLogo withColor={routeMatch === `${PageRoutes.Cody}/*`} />
-    const hideCodyDropdown = disableCodyFeatures || !props.authenticatedUser
-    const codyNavigation = hideCodyDropdown ? (
+    const codyNavigation = !window.context?.codyEnabledOnInstance ? null : !window.context
+          ?.codyEnabledForCurrentUser ? (
         <NavItem icon={() => <CodyLogoWrapper />} key="cody">
-            <NavLink variant={navLinkVariant} to={disableCodyFeatures ? PageRoutes.Cody : PageRoutes.CodyChat}>
+            <NavLink variant={navLinkVariant} to={PageRoutes.Cody}>
                 Cody
             </NavLink>
         </NavItem>
@@ -394,9 +391,9 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         />
     )
 
-    let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation]
+    let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation].filter(isDefined)
 
-    if (disableCodeSearchFeatures) {
+    if (!window.context?.codeSearchEnabledOnInstance) {
         // This should be cheap considering there will only be two items in the array.
         prioritizedLinks = prioritizedLinks.reverse()
     }

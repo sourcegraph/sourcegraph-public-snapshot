@@ -1,24 +1,23 @@
-import { type FC, useState, useEffect } from 'react'
+import { useEffect, useState, type FC } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Text,
-    H1,
     ButtonLink,
+    H1,
+    Icon,
     Link,
     Menu,
     MenuButton,
-    MenuList,
     MenuItem,
-    Icon,
-    Position,
     MenuLink,
+    MenuList,
+    Position,
+    Text,
 } from '@sourcegraph/wildcard'
 
-import { getLicenseFeatures } from '../../util/license'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { IntelliJIcon } from '../upsell/IntelliJ'
 import { VSCodeIcon } from '../upsell/vs-code'
@@ -38,7 +37,7 @@ const setupOptions: SetupOption[] = [
     {
         icon: <VSCodeIcon className={styles.linkSelectorIcon} />,
         maker: 'Microsoft',
-        name: 'VSCode',
+        name: 'VS Code',
         setupLink: 'https://sourcegraph.com/docs/cody/clients/install-vscode',
     },
     {
@@ -58,7 +57,6 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = ({ telemetryRecorde
 
     const isLightTheme = useIsLightTheme()
     const codySetupLink = 'https://sourcegraph.com/docs/cody'
-    const features = getLicenseFeatures()
     return (
         <section className={styles.dashboardContainer}>
             <section className={styles.dashboardHero}>
@@ -76,9 +74,8 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = ({ telemetryRecorde
                     <Text className={styles.dashboardText}>Download Cody for your favorite IDE</Text>
                     <LinkSelector options={setupOptions} />
                     <Text className="text-muted">
-                        Struggling with setup?{' '}
                         <Link to={codySetupLink} className={styles.dashboardOnboardingIdeInstallationLink}>
-                            Explore installation docs
+                            Documentation
                         </Link>
                         .
                     </Text>
@@ -87,12 +84,12 @@ export const CodyDashboardPage: FC<CodyDashboardPageProps> = ({ telemetryRecorde
                     <Text className={styles.dashboardText}>... or try it on the web</Text>
                     <ButtonLink to="/cody/chat" outline={true} className={styles.dashboardOnboardingWebLink}>
                         <CodyColorIcon className={styles.dashboardOnboardingCodyIcon} />
-                        <span>Cody for web</span>
+                        <span>Cody Web</span>
                     </ButtonLink>
                 </section>
             </section>
 
-            {!features.isCodeSearchEnabled && (
+            {!window.context?.codeSearchEnabledOnInstance && (
                 <section className={styles.dashboardUpsell}>
                     <section className={styles.dashboardUpsellMeta}>
                         <SearchIcon />

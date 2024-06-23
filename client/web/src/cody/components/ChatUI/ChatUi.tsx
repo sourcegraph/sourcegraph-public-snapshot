@@ -12,7 +12,7 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { currentUserRequiresEmailVerificationForCody, isCodyEnabledForCurrentUser } from 'src/cody/util'
+import { currentUserRequiresEmailVerificationForCody } from 'src/cody/util'
 import useResizeObserver from 'use-resize-observer'
 
 import {
@@ -29,7 +29,6 @@ import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { Alert, Button, H2, Icon, Link, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import type { CodyChatStore } from '../../useCodyChat'
 import { GettingStarted } from '../GettingStarted'
@@ -183,7 +182,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
                 gettingStartedComponentProps={gettingStartedComponentProps}
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
-                isCodyEnabled={isCodyEnabledForCurrentUser()}
+                isCodyEnabled={window.context?.codyEnabledForCurrentUser}
             />
         </>
     )
@@ -418,7 +417,7 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
             <div className="d-flex align-items-start">
                 <CodyNotEnabledIcon className="flex-shrink-0" />
                 <Text className="ml-2">
-                    {isSignInRequiredForCody() ? (
+                    {!window.context?.isAuthenticatedUser ? (
                         <>
                             <Link to={`/sign-in?returnTo=${location.pathname}`}>Sign in</Link> to get access to Cody.
                             You can learn more about Cody{' '}

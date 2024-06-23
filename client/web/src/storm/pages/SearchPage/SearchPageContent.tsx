@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from 'react'
+import { useEffect, useState, type FC } from 'react'
 
 import classNames from 'classnames'
 
@@ -158,7 +158,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     )}
                 </div>
             )}
-            <CodyUpsell isSourcegraphDotCom={isSourcegraphDotCom} />
+            {isSourcegraphDotCom && <CodyUpsell isSourcegraphDotCom={isSourcegraphDotCom} />}
             <SearchPageFooter />
         </div>
     )

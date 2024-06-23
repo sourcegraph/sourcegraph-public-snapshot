@@ -1,25 +1,25 @@
 import React, {
     createContext,
-    type FC,
-    type PropsWithChildren,
-    type RefObject,
     Suspense,
     useContext,
     useEffect,
     useMemo,
     useRef,
     useState,
+    type FC,
+    type PropsWithChildren,
+    type RefObject,
 } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { createPortal } from 'react-dom'
-import { type Location, useLocation, Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation, type Location } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { asError, type ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
+import { asError, isErrorLike, repeatUntil, type ErrorLike } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -42,7 +42,7 @@ import type { BatchChangesProps } from '../batches'
 import type { CodeIntelligenceProps } from '../codeintel'
 import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
-import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
+import { CODY_SIDEBAR_SIZES, useCodySidebar, useSidebarSize } from '../cody/sidebar/Provider'
 import { useCodyIgnore } from '../cody/useCodyIgnore'
 import type { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
@@ -56,11 +56,10 @@ import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
-import { getLicenseFeatures } from '../util/license'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, type ResolvedRevision, resolveRepoRevision, type Repo } from './backend'
+import { fetchFileExternalLinks, resolveRepoRevision, type Repo, type ResolvedRevision } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -436,8 +435,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     // must exactly match how the revision was encoded in the URL
     const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
-    const licenseFeatures = getLicenseFeatures()
-    const showAskCodyBtn = licenseFeatures.isCodyEnabled && !isRepoIgnored(repoName) && !isCodySidebarOpen
+    const showAskCodyBtn = window.context?.codyEnabledForCurrentUser && !isRepoIgnored(repoName) && !isCodySidebarOpen
 
     return (
         <>

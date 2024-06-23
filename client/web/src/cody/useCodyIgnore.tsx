@@ -11,8 +11,6 @@ import type {
     ContextFiltersVariables,
 } from '../graphql-operations'
 
-import { isCodyEnabledForCurrentUser } from './util'
-
 interface CodyIgnoreFns {
     isRepoIgnored(repoName: string): boolean
     isFileIgnored(repoName: string, filePath: string): boolean
@@ -49,7 +47,7 @@ export const CodyIgnoreProvider: React.FC<React.PropsWithChildren<{ isSourcegrap
     children,
 }) => {
     // Cody is not enabled, return default ignore fns.
-    if (!isCodyEnabledForCurrentUser()) {
+    if (!window.context?.codyEnabledForCurrentUser) {
         return <CodyIgnoreContext.Provider value={defaultCodyIgnoreFns}>{children}</CodyIgnoreContext.Provider>
     }
 

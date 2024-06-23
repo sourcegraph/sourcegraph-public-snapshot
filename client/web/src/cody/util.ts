@@ -50,10 +50,3 @@ const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
 export function currentUserRequiresEmailVerificationForCody(): boolean {
     return window.context?.codyRequiresVerifiedEmail && !window.context?.currentUser?.hasVerifiedEmail
 }
-
-/**
- * Whether Cody is enabled for the current user on this instance.
- */
-export function isCodyEnabledForCurrentUser(): boolean {
-    return window.context?.codyEnabledOnInstance && window.context?.codyEnabledForCurrentUser
-}

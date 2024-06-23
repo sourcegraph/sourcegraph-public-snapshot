@@ -47,7 +47,6 @@ import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { useCodyChat, type CodyChatStore } from '../useCodyChat'
-import { isCodyEnabledForCurrentUser } from '../util'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -128,7 +127,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const transcriptId = transcript?.id
 
     useEffect(() => {
-        if (!loaded || !transcriptId || !authenticatedUser || !isCodyEnabledForCurrentUser()) {
+        if (!loaded || !transcriptId || !authenticatedUser || !window.context?.codyEnabledForCurrentUser) {
             return
         }
         const idFromUrl = transcriptIdFromUrl(pathname)
@@ -150,7 +149,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         return null
     }
 
-    if (!authenticatedUser || !isCodyEnabledForCurrentUser()) {
+    if (!authenticatedUser || !window.context?.codyEnabledForCurrentUser) {
         return (
             <CodyMarketingPage
                 isSourcegraphDotCom={isSourcegraphDotCom}

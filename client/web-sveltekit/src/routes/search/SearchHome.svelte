@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { setContext, onMount } from 'svelte'
+    import { onMount, setContext } from 'svelte'
 
-    import { logoLight, logoDark } from '$lib/images'
+    import { logoDark, logoLight } from '$lib/images'
     import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
@@ -15,7 +15,7 @@
 
     export let queryState: QueryStateStore
     export let codyHref: string = '/cody'
-    export let showDotcomFooterLinks: boolean = false
+    export let showDotcomStuff: boolean = false
 
     setContext<SearchPageContext>('search-context', {
         setQuery(newQuery) {
@@ -41,8 +41,8 @@
             <SearchInput {queryState} autoFocus onSubmit={handleSubmit} />
             <SearchHomeNotifications />
         </div>
-        <CodyUpsellBanner {codyHref} />
-        {#if showDotcomFooterLinks}
+        {#if showDotcomStuff}
+            <CodyUpsellBanner {codyHref} />
             <DotcomFooterLinks />
         {/if}
     </div>

@@ -17,20 +17,20 @@ export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
         path: 'searches',
         render: props => <SavedSearchListPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: 'searches/add',
         render: props => (
             <SavedSearchCreateForm {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
         ),
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: 'searches/:id',
         render: props => (
             <SavedSearchUpdateForm {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
         ),
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
 ]

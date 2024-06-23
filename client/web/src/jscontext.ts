@@ -210,6 +210,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the instance requires a verified email for Cody. */
     codyRequiresVerifiedEmail: boolean
 
+    /** Whether the code search feature is enabled on the instance. */
+    codeSearchEnabledOnInstance: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
@@ -290,7 +293,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Contains information about the product license. */
     licenseInfo?: {
         batchChanges?: BatchChangesLicenseInfo
-        features: LicenseFeatures
     }
 
     /** sha256 hashed license key */
@@ -323,12 +325,4 @@ export interface BrandAssets {
     logo?: string
     /** The URL to the symbol used as the search icon */
     symbol?: string
-}
-
-/**
- * Defines the license features available.
- */
-export interface LicenseFeatures {
-    codeSearch: boolean
-    cody: boolean
 }

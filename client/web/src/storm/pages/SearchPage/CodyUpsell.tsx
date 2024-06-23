@@ -15,9 +15,7 @@ interface CodyUpsellProps {
 
 export const CodyUpsell: FC<CodyUpsellProps> = ({ isSourcegraphDotCom }) => {
     const isLightTheme = useIsLightTheme()
-    // On DotCom, we want to redirect to the PLG page. On Enterprise instances, we redirect to their Cody dashboard page.
-    const exploreCodyLink = isSourcegraphDotCom ? 'https://sourcegraph.com/cody' : '/cody'
-    return (
+    return isSourcegraphDotCom ? (
         <section className={styles.upsell}>
             <section className={styles.upsellMeta}>
                 <CodyLogo withColor={true} className={styles.upsellLogo} />
@@ -26,9 +24,9 @@ export const CodyUpsell: FC<CodyUpsellProps> = ({ isSourcegraphDotCom }) => {
                     Cody autocompletes single lines, or entire code blocks, in any programming language, keeping all of
                     your company’s codebase in mind.
                 </Text>
-                <Link to={exploreCodyLink}>Explore Cody</Link>
+                <Link to="https://sourcegraph.com/cody">Explore Cody</Link>
             </section>
             <MultiLineCompletion isLightTheme={isLightTheme} className={styles.upsellImage} />
         </section>
-    )
+    ) : null
 }

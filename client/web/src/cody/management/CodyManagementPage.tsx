@@ -26,7 +26,7 @@ import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { getManageSubscriptionPageURL, isCodyEnabledForCurrentUser } from '../util'
+import { getManageSubscriptionPageURL } from '../util'
 
 import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
@@ -121,7 +121,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabledForCurrentUser() || !subscription) {
+    if (!window.context?.codyEnabledForCurrentUser || !subscription) {
         return null
     }
 

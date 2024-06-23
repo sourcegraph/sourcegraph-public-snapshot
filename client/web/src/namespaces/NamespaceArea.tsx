@@ -1,8 +1,8 @@
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { type PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
-import type { UserAreaUserFields, OrgAreaOrganizationFields } from '../graphql-operations'
+import type { OrgAreaOrganizationFields, UserAreaUserFields } from '../graphql-operations'
 import type { NavItemWithIconDescriptor, RouteV6Descriptor } from '../util/contributions'
 
 /**
@@ -13,10 +13,6 @@ export interface NamespaceAreaContext extends PlatformContextProps {
 
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    license: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
 }
 
 export interface NamespaceAreaRoute extends RouteV6Descriptor<NamespaceAreaContext> {}

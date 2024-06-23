@@ -24,6 +24,7 @@ export const windowContextConfig = {
     codeMonitoringEnabled: true,
     searchAggregationEnabled: true,
     ownEnabled: true,
+    codyEnabled: true,
 } satisfies StaticWindowContextComputedAppConfig
 
 export const injectedAppConfig = {} as unknown as StaticInjectedAppConfig
@@ -72,8 +73,4 @@ export const legacyLayoutRouteContextMock = {
     ...dynamicWebAppConfig,
     ...legacyRouteComputedContext,
     ...legacyRouteInjectedContext,
-    licenseFeatures: {
-        isCodeSearchEnabled: true,
-        isCodyEnabled: true,
-    },
 } satisfies LegacyLayoutRouteContext

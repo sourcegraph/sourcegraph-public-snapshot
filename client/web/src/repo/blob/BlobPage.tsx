@@ -9,7 +9,6 @@ import ReactDOM, { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { Observable } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import { isCodyEnabledForCurrentUser } from 'src/cody/util'
 import type { Optional } from 'utility-types'
 
 import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
@@ -371,7 +370,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {(props.isSourcegraphDotCom || isCodyEnabledForCurrentUser()) && (
+            {(props.isSourcegraphDotCom || window.context?.codyEnabledForCurrentUser) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
                     telemetryRecorder={props.telemetryRecorder}

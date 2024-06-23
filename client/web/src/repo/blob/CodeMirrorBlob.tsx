@@ -13,7 +13,6 @@ import { useOpenCodeGraphExtension } from '@opencodegraph/codemirror-extension'
 import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { createPath, useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
-import { isCodyEnabledForCurrentUser } from 'src/cody/util'
 
 import { NoopEditor } from '@sourcegraph/cody-shared'
 import { SourcegraphURL } from '@sourcegraph/common'
@@ -23,7 +22,7 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
@@ -340,7 +339,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const { isFileIgnored } = useCodyIgnore()
-    const isCodyEnabledForFile = isCodyEnabledForCurrentUser() && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
+    const isCodyEnabledForFile =
+        window.context?.codyEnabledForCurrentUser && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
 
     const extensions = useMemo(
         () => [
