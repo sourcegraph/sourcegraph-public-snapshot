@@ -58,7 +58,11 @@ go_test(
         "handler_test.go",
     ],
     embed = [":completions"],
-    tags = [TAG_CODY_CORE],
+    tags = [
+        TAG_CODY_CORE,
+        # Test indirectly localhost Redis.
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/completions/types",
