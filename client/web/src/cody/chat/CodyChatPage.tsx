@@ -149,6 +149,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         return null
     }
 
+    // TODO!(sqs): for dotcom, just link to marketing page. for ent users who are not licensed for cody, show a page saying that.
     if (!authenticatedUser || !window.context?.codyEnabledForCurrentUser) {
         return (
             <CodyMarketingPage
