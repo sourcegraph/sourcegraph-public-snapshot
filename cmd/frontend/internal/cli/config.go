@@ -741,6 +741,8 @@ func zoektAddr(environ []string) (string, error) {
 		baseName = "zoekt-webserver"
 	}
 
+	a, b := getEnv(environ, "INDEXED_SEARCH_SERVERS")
+	fmt.Println("XXXXX!!!", a, b)
 	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
 		addrs, err := replicaAddrs(deployType, addr, baseName, port)
 		return addrs, err
