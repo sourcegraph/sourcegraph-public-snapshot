@@ -51,15 +51,31 @@ go_library(
 
 go_test(
     name = "completions_test",
-    srcs = ["handler_test.go"],
+    srcs = [
+        "entconfig_anthropic_test.go",
+        "entconfig_base_test.go",
+        "get_model_test.go",
+        "handler_test.go",
+    ],
     embed = [":completions"],
     tags = [TAG_CODY_CORE],
     deps = [
+        "//internal/actor",
         "//internal/completions/types",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/database/dbmocks",
         "//internal/featureflag",
+        "//internal/httpcli",
+        "//internal/licensing",
+        "//internal/rcache",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetrytest",
+        "//lib/errors",
+        "//lib/pointers",
         "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )
