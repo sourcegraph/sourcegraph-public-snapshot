@@ -16,6 +16,7 @@ import {
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
+import { isCodyEnabledForCurrentUser } from 'src/cody/util'
 
 import { asError, basename, encodeURIPathComponent, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -46,7 +47,6 @@ import type { AuthenticatedUser } from '../../auth'
 import type { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import type { CodeIntelligenceProps } from '../../codeintel'
-import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import type { FileCommitsResult, FileCommitsVariables, RepositoryFields } from '../../graphql-operations'
@@ -350,7 +350,7 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
-            {(isSourcegraphDotCom || isCodyEnabled()) && (
+            {(isSourcegraphDotCom || isCodyEnabledForCurrentUser()) && (
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}

@@ -10,14 +10,14 @@ import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemet
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorage } from '@sourcegraph/wildcard'
+import { Alert, Badge, Form, Input, Link, LoadingSpinner, Text, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { DOTCOM_URL } from '../../tracking/util'
 import { CodyIcon } from '../components/CodyIcon'
-import { isEmailVerificationNeededForCody } from '../isCodyEnabled'
+import { currentUserRequiresEmailVerificationForCody } from '../util'
 
 import { translateToQuery } from './translateToQuery'
 
@@ -178,7 +178,7 @@ const SearchInput: React.FunctionComponent<{
 
     return codySearchEnabled ? (
         <Form onSubmit={onSubmit} className={className}>
-            {isEmailVerificationNeededForCody() && (
+            {currentUserRequiresEmailVerificationForCody() && (
                 <Alert variant="warning">
                     <Text className="mb-0">Verify email</Text>
                     <Text className="mb-0">
@@ -194,7 +194,7 @@ const SearchInput: React.FunctionComponent<{
                 inputClassName={styles.input}
                 value={value}
                 onInput={onInput}
-                disabled={loading || isEmailVerificationNeededForCody()}
+                disabled={loading || currentUserRequiresEmailVerificationForCody()}
                 autoFocus={true}
                 placeholder="Search for code or files in natural language..."
             />

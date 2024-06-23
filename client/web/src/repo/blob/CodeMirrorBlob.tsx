@@ -13,6 +13,7 @@ import { useOpenCodeGraphExtension } from '@opencodegraph/codemirror-extension'
 import { isEqual } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { createPath, useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
+import { isCodyEnabledForCurrentUser } from 'src/cody/util'
 
 import { NoopEditor } from '@sourcegraph/cody-shared'
 import { SourcegraphURL } from '@sourcegraph/common'
@@ -35,7 +36,6 @@ import {
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
-import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useCodyIgnore } from '../../cody/useCodyIgnore'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -340,7 +340,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const { isFileIgnored } = useCodyIgnore()
-    const isCodyEnabledForFile = isCodyEnabled() && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
+    const isCodyEnabledForFile = isCodyEnabledForCurrentUser() && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
 
     const extensions = useMemo(
         () => [

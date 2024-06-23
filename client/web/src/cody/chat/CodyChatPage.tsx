@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 
 import {
+    mdiChevronRight,
     mdiClose,
     mdiCogOutline,
     mdiDelete,
     mdiDotsVertical,
+    mdiFormatListBulleted,
     mdiOpenInNew,
     mdiPlus,
-    mdiChevronRight,
-    mdiFormatListBulleted,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -20,19 +20,19 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
     Button,
+    ButtonLink,
+    H3,
+    H4,
     Icon,
+    Link,
     Menu,
     MenuButton,
-    MenuList,
     MenuDivider,
     MenuItem,
     MenuLink,
+    MenuList,
     PageHeader,
-    Link,
-    H4,
-    H3,
     Text,
-    ButtonLink,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -46,8 +46,8 @@ import { CodyProRoutes } from '../codyProRoutes'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
-import { isCodyEnabled } from '../isCodyEnabled'
-import { type CodyChatStore, useCodyChat } from '../useCodyChat'
+import { useCodyChat, type CodyChatStore } from '../useCodyChat'
+import { isCodyEnabledForCurrentUser } from '../util'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -128,7 +128,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const transcriptId = transcript?.id
 
     useEffect(() => {
-        if (!loaded || !transcriptId || !authenticatedUser || !isCodyEnabled()) {
+        if (!loaded || !transcriptId || !authenticatedUser || !isCodyEnabledForCurrentUser()) {
             return
         }
         const idFromUrl = transcriptIdFromUrl(pathname)
@@ -150,7 +150,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         return null
     }
 
-    if (!authenticatedUser || !isCodyEnabled()) {
+    if (!authenticatedUser || !isCodyEnabledForCurrentUser()) {
         return (
             <CodyMarketingPage
                 isSourcegraphDotCom={isSourcegraphDotCom}

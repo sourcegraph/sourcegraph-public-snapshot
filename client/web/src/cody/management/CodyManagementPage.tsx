@@ -6,17 +6,17 @@ import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, Button } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    CodySubscriptionPlan,
     type UserCodyPlanResult,
     type UserCodyPlanVariables,
     type UserCodyUsageResult,
     type UserCodyUsageVariables,
-    CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
@@ -24,10 +24,9 @@ import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
-import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { getManageSubscriptionPageURL } from '../util'
+import { getManageSubscriptionPageURL, isCodyEnabledForCurrentUser } from '../util'
 
 import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
@@ -122,7 +121,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !subscription) {
+    if (!isCodyEnabledForCurrentUser() || !subscription) {
         return null
     }
 
