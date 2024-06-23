@@ -157,6 +157,7 @@ func InitRouter(db database.DB) {
 		{path: "/cody/{chatID}", name: "cody-chat", title: "Cody", index: false},
 		{path: "/get-cody", name: "get-cody", title: "Cody", index: false},
 		{path: "/post-sign-up", name: "post-sign-up", title: "Cody", index: false},
+		{path: "/post-sign-up-subscription", name: "post-sign-up-subscription", title: "Subscription", index: false},
 		{path: "/unlock-account/{token}", name: uirouter.RouteUnlockAccount, title: "Unlock Your Account", index: false},
 		{path: "/password-reset", name: uirouter.RoutePasswordReset, title: "Reset password", index: false},
 		{path: "/survey", name: "survey", title: "Survey", index: false},

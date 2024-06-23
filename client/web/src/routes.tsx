@@ -7,6 +7,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { codyProRoutes } from './cody/codyProRoutes'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
+import { PostSignInSubscription } from './post-sign-in-subscription/PistSignInSubscription'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 
@@ -91,6 +92,11 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.GetCody,
         element: <LegacyRoute render={props => <GetCodyPage {...props} />} />,
+    },
+    {
+        path: PageRoutes.PostSignUpEmailSubscription,
+        element: <LegacyRoute render={() => <PostSignInSubscription />} />,
+        handle: { isFullPage: true },
     },
     {
         path: PageRoutes.PostSignUp,

@@ -1247,6 +1247,7 @@ ts_project(
         "src/own/OwnConfigProps.ts",
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
+        "src/post-sign-in-subscription/PistSignInSubscription.tsx",
         "src/productSubscription/helpers.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",

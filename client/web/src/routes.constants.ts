@@ -5,6 +5,7 @@ export enum PageRoutes {
     SignIn = '/sign-in',
     SignUp = '/sign-up',
     PostSignUp = '/post-sign-up',
+    PostSignUpEmailSubscription = '/post-sign-up-subscription',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
