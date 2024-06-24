@@ -30,8 +30,6 @@ const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoC
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 const CodyIgnoreProvider = lazyComponent(() => import('./cody/useCodyIgnore'), 'CodyIgnoreProvider')
-const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
-const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
 const GlobalNotebooksArea = lazyComponent(() => import('./notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
@@ -87,14 +85,6 @@ const PassThroughToServer: React.FC = () => {
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
 export const routes: RouteObject[] = [
-    {
-        path: PageRoutes.GetCody,
-        element: <LegacyRoute render={props => <GetCodyPage {...props} />} />,
-    },
-    {
-        path: PageRoutes.PostSignUp,
-        element: <LegacyRoute render={() => <PostSignUpPage />} />,
-    },
     {
         path: PageRoutes.Index,
         element: <Index />,
@@ -240,11 +230,6 @@ export const routes: RouteObject[] = [
                 condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
-    },
-    {
-        path: PageRoutes.Welcome,
-        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
     },
     {
         path: PageRoutes.Settings,

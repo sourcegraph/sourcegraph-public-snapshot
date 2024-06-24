@@ -47,9 +47,8 @@ function useIsSignInOrSignUpPage(): boolean {
     const isSignInPage = useMatch(PageRoutes.SignIn)
     const isSignUpPage = useMatch(PageRoutes.SignUp)
     const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
-    const isWelcomePage = useMatch(PageRoutes.Welcome)
     const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
-    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isRequestAccessPage)
 }
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
@@ -94,7 +93,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
-    const isGetCodyPage = location.pathname === PageRoutes.GetCody
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -200,7 +198,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
+            {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     routes={[]}

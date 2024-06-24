@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 
 import {
+    mdiChevronRight,
     mdiClose,
     mdiCogOutline,
     mdiDelete,
     mdiDotsVertical,
+    mdiFormatListBulleted,
     mdiOpenInNew,
     mdiPlus,
-    mdiChevronRight,
-    mdiFormatListBulleted,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -20,19 +20,19 @@ import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     Badge,
     Button,
+    ButtonLink,
+    H3,
+    H4,
     Icon,
+    Link,
     Menu,
     MenuButton,
-    MenuList,
     MenuDivider,
     MenuItem,
     MenuLink,
+    MenuList,
     PageHeader,
-    Link,
-    H4,
-    H3,
     Text,
-    ButtonLink,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -47,7 +47,7 @@ import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { type CodyChatStore, useCodyChat } from '../useCodyChat'
+import { useCodyChat, type CodyChatStore } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -180,7 +180,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 powerful recipes to help you understand codebases and generate and fix code more
                                 accurately.
                             </Text>
-                            <ButtonLink variant="primary" to="/help/cody#get-cody">
+                            <ButtonLink variant="primary" to="/help/cody">
                                 View editor extensions &rarr;
                             </ButtonLink>
                         </div>
@@ -209,7 +209,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         {!isSourcegraphDotCom && isCTADismissed && (
                             <>
                                 {' '}
-                                <Link to="/help/cody#get-cody">Get Cody in your editor.</Link>
+                                <Link to="/help/cody">Get Cody in your editor.</Link>
                             </>
                         )}
                     </>

@@ -11,13 +11,12 @@ import { Container, Link, Text } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import type { SourcegraphContext } from '../jscontext'
-import { PageRoutes } from '../routes.constants'
 import { EventName } from '../util/constants'
 
 import { AuthPageWrapper } from './AuthPageWrapper'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { getReturnTo } from './SignInSignUpCommon'
-import { type SignUpArguments, SignUpForm } from './SignUpForm'
+import { SignUpForm, type SignUpArguments } from './SignUpForm'
 import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import styles from './SignUpPage.module.scss'
@@ -92,8 +91,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
             const v2Source = query.get('editor') === 'vscode' ? 0 : 1
             telemetryRecorder.recordEvent('auth.signUp', 'complete', { metadata: { source: v2Source } })
 
-            // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
-            window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
+            window.location.replace(returnTo)
 
             return Promise.resolve()
         })
