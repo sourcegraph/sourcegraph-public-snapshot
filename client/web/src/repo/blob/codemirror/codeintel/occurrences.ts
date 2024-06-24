@@ -55,6 +55,8 @@ export class OccurrenceIndex {
         this.lineIndex = lineIndex
     }
 
+    // atPosition returns the occurrence whose range contains position,
+    // or undefined if no such occurrence exists.
     public atPosition(position: Position): Occurrence | undefined {
         // Binary search over the sorted, non-overlapping ranges.
         const arr = this.occurrences

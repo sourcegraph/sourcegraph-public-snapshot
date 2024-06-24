@@ -20,6 +20,7 @@ interface HighlightData {
 }
 
 interface HighlightIndex {
+    // All occurrences is an index including all occurrences in the syntax highlighting data.
     allOccurrences: OccurrenceIndex
     interactiveOccurrences: OccurrenceIndex
 }

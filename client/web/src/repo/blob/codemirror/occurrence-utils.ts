@@ -3,7 +3,7 @@ import { EditorSelection, type Text, type EditorState, type SelectionRange } fro
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
-import { IndexedCodeGraphData, codeGraphData } from './codeintel/occurrences'
+import { codeGraphData } from './codeintel/occurrences'
 import { syntaxHighlight } from './highlight'
 
 export function interactiveOccurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
@@ -12,7 +12,12 @@ export function interactiveOccurrenceAt(state: EditorState, offset: number): Occ
     // First we try to get an occurrence from the occurrences API
     const data = state.facet(codeGraphData)
     if (data.length > 0) {
-        return scipOccurrenceAtPosition(data, position)
+        // Arbitrarily choose the first set of code graph data
+        // because we have no good heuristics for selecting between
+        // multiple.
+        const occ = data[0].occurrenceIndex.atPosition(position)
+        console.log({ occ })
+        return occ
     }
 
     // Next we try to get an occurrence from syntax highlighting data.
@@ -41,17 +46,6 @@ function highlightingOccurrenceAtPosition(state: EditorState, position: Position
     ) {
         const occurrence = table.occurrences[index]
         if (occurrence.range.contains(position)) {
-            return occurrence
-        }
-    }
-    return undefined
-}
-
-// Returns the occurrence at this position based on data from the GraphQL occurrences API.
-function scipOccurrenceAtPosition(data: IndexedCodeGraphData[], position: Position): Occurrence | undefined {
-    for (const datum of data) {
-        const occurrence = datum.occurrenceIndex.atPosition(position)
-        if (occurrence !== undefined) {
             return occurrence
         }
     }
