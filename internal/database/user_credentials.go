@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -15,7 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	ghappAuth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
@@ -62,18 +66,49 @@ func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *Encryptab
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
-type gitHubAppsGetter interface {
-	GitHubAppsStore() ghastore.GitHubAppsStore
+type CredentialAuthenticatorOpts struct {
+	Repo           *types.Repo
+	GitHubAppStore ghastore.GitHubAppsStore
 }
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context, ghas ghastore.GitHubAppsStore) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context, opts CredentialAuthenticatorOpts) (auth.Authenticator, error) {
+	fmt.Println("Authenticator is here", uc.GitHubAppID)
 	if uc.GitHubAppID != 0 {
-		ghApp, err := ghas.GetByID(ctx, uc.GitHubAppID)
+		var authenticator auth.Authenticator
+		ghApp, err := opts.GitHubAppStore.GetByID(ctx, uc.GitHubAppID)
 		if err != nil {
 			return nil, err
 		}
-		return ghappAuth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+
+		authenticator, err = ghappAuth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+		if err != nil {
+			return nil, err
+		}
+
+		if opts.Repo != nil {
+			baseURL, err := url.Parse(opts.Repo.ExternalRepo.ServiceID)
+			if err != nil {
+				return nil, err
+			}
+
+			md, ok := opts.Repo.Metadata.(*github.Repository)
+			if !ok {
+				return nil, errors.Newf("expected repo metadata to be a github.Repository, but got %T", opts.Repo.Metadata)
+			}
+
+			owner, _, err := github.SplitRepositoryNameWithOwner(md.NameWithOwner)
+			if err != nil {
+				return nil, err
+			}
+			installID, err := opts.GitHubAppStore.GetInstallID(ctx, ghApp.AppID, owner)
+			fmt.Println("install id is", installID)
+			if err != nil {
+				return nil, err
+			}
+			authenticator = ghappAuth.NewInstallationAccessToken(baseURL, installID, authenticator, keyring.Default().GitHubAppKey)
+		}
+		return authenticator, nil
 	}
 
 	decrypted, err := uc.Credential.Decrypt(ctx)

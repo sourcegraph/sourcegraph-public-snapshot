@@ -83,8 +83,9 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 
-	pushConfig, err := s.GitserverPushConfig(repo)
+	pushConfig, err := s.GitserverPushConfig(ctx, repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@bitbucket.org/clone/link", pushConfig.RemoteURL)

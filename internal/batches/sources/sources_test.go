@@ -323,7 +323,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(context.Background(), repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

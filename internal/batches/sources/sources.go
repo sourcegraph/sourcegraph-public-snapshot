@@ -276,7 +276,7 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -312,7 +312,6 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
 			return nil, err
 		}
-
 	case *auth.BasicAuthWithSSH:
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
@@ -321,15 +320,15 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
 		}
-	// case *ghaauth.GitHubAppAuthenticator:
-	// 	// // av.
-	// 	baseURL, err := url.Parse(repo.ExternalRepo.ServiceID)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	ghaauth.NewInstallationAccessToken(baseURL, av.AppID, av.InstallationID, av.PrivateKey)
-	// fmt.Println("ghaauth.GitHubAppAuthenticator")
-
+	case *ghaauth.InstallationAuthenticator:
+		if av.NeedsRefresh() {
+			if err := av.Refresh(ctx, httpcli.ExternalClient); err != nil {
+				return nil, err
+			}
+		}
+		if err := setGitHubAppInstallationToken(cloneURL, extSvcType, av.GetToken().Token); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, ErrNoPushCredentials{CredentialsType: fmt.Sprintf("%T", au)}
 	}
@@ -526,7 +525,10 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx, s.GitHubAppsStore())
+		return cred.Authenticator(ctx, database.CredentialAuthenticatorOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }
@@ -544,6 +546,16 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 	return nil, nil
 }
 
+func setGitHubAppInstallationToken(u *vcs.URL, extSvcType, token string) error {
+	switch extSvcType {
+	case extsvc.TypeGitHub:
+		u.User = url.UserPassword("x-access-token", token)
+	default:
+		return errors.Newf("setOAuthTokenAuth: invalid external service type %q", extSvcType)
+	}
+	return nil
+}
+
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
@@ -558,7 +570,7 @@ func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
 		return errors.New("require username/token to push commits to BitbucketServer")
 
 	default:
-		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
+		return errors.Newf("setOAuthTokenAuth: invalid external service type %q", extSvcType)
 	}
 	return nil
 }

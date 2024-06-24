@@ -282,8 +282,8 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Chan
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return sources.GitserverPushConfig(repo, s.CurrentAuthenticator)
+func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return sources.GitserverPushConfig(ctx, repo, s.CurrentAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {

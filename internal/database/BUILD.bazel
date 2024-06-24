@@ -123,6 +123,7 @@ go_library(
         "//internal/extsvc/perforce",
         "//internal/extsvc/phabricator",
         "//internal/featureflag",
+        "//internal/github_apps/auth",
         "//internal/github_apps/store",
         "//internal/hashutil",
         "//internal/jsonc",
