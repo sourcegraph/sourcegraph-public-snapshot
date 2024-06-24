@@ -11,8 +11,8 @@ import (
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -23,7 +23,7 @@ func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, ok, err := adjuster.GetTargetCommitPathFromSourcePath(context.Background(), "deadbeef2", "/foo/bar.go", false)
@@ -54,7 +54,7 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
@@ -85,7 +85,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
@@ -119,7 +119,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, true)
@@ -158,7 +158,7 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
@@ -195,7 +195,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
@@ -232,7 +232,7 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	args := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
 		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		path:   core.NewRepoRelPathUnchecked("/foo/bar.go"),
 	}
 	adjuster := NewGitTreeTranslator(client, args, nil)
 	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
