@@ -14,15 +14,16 @@ import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { OccurrenceIndex } from './codeintel/occurrences'
 import { positionToOffset } from './utils'
 
+interface HighlightIndex {
+    // allOccurrences is an index including all occurrences in the syntax highlighting data.
+    allOccurrences: OccurrenceIndex
+    // interactiveOccurrences is the interactive subset of allOccurrences in the syntax highlighting data.
+    interactiveOccurrences: OccurrenceIndex
+}
+
 interface HighlightData {
     content: string
     lsif?: string
-}
-
-interface HighlightIndex {
-    // All occurrences is an index including all occurrences in the syntax highlighting data.
-    allOccurrences: OccurrenceIndex
-    interactiveOccurrences: OccurrenceIndex
 }
 
 /**
@@ -32,12 +33,12 @@ interface HighlightIndex {
  */
 export function createHighlightTable(info: HighlightData): HighlightIndex {
     let occurrences: Occurrence[] = []
-    try {
-        if (info.lsif) {
+    if (info.lsif) {
+        try {
             occurrences = Occurrence.fromInfo(info)
+        } catch (error) {
+            logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         }
-    } catch (error) {
-        logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
     }
     return {
         allOccurrences: new OccurrenceIndex(occurrences),
@@ -96,17 +97,15 @@ class SyntaxHighlightManager implements PluginValue {
             const fromLine = view.state.doc.lineAt(from)
             const toLine = view.state.doc.lineAt(to)
 
-            const {
-                allOccurrences: { occurrences, lineIndex },
-            } = view.state.facet(syntaxHighlight)
+            const occurrences = view.state.facet(syntaxHighlight).allOccurrences
 
             // Find index of first relevant token
             let startIndex: number | undefined
             {
                 let line = fromLine.number - 1
                 do {
-                    startIndex = lineIndex[line++]
-                } while (startIndex === undefined && line < lineIndex.length)
+                    startIndex = occurrences.lineIndex[line++]
+                } while (startIndex === undefined && line < occurrences.lineIndex.length)
             }
 
             // Cache current line object

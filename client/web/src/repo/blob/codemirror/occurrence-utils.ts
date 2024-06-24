@@ -15,41 +15,18 @@ export function interactiveOccurrenceAt(state: EditorState, offset: number): Occ
         // Arbitrarily choose the first set of code graph data
         // because we have no good heuristics for selecting between
         // multiple.
-        const occ = data[0].occurrenceIndex.atPosition(position)
-        console.log({ occ })
-        return occ
+        return data[0].occurrenceIndex.atPosition(position)
     }
 
     // Next we try to get an occurrence from syntax highlighting data.
-    const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
-    if (fromHighlighting) {
-        return fromHighlighting
+    const highlightingOccurrences = state.facet(syntaxHighlight).interactiveOccurrences
+    if (highlightingOccurrences.length > 0) {
+        return highlightingOccurrences.atPosition(position)
     }
 
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
     return inferOccurrenceAtOffset(state, offset)
-}
-
-// Returns the occurrence at this position based on syntax highlighting data.
-// The highlighting data can come from Syntect (low-ish quality) or tree-sitter
-// (better quality). When we implement semantic highlighting in the future, the
-// highlighting data may come from precise indexers.
-function highlightingOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
-    const table = state.facet(syntaxHighlight)?.interactiveOccurrences
-    for (
-        let index = table.lineIndex[position.line];
-        index !== undefined &&
-        index < table.occurrences.length &&
-        table.occurrences[index].range.start.line === position.line;
-        index++
-    ) {
-        const occurrence = table.occurrences[index]
-        if (occurrence.range.contains(position)) {
-            return occurrence
-        }
-    }
-    return undefined
 }
 
 // Returns the occurrence at this position based on CodeMirror's built-in

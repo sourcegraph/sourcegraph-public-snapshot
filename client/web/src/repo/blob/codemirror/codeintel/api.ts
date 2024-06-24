@@ -143,7 +143,11 @@ export class CodeIntelAPIAdapter {
     }
 
     public getDefinition(state: EditorState, occurrence: Occurrence): Promise<Definition> {
-        const { occurrences } = state.facet(syntaxHighlight).allOccurrences
+        // Prefer precise occurrences, but fall back to syntax highlighting for locals
+        let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+        if (occurrences === undefined) {
+            occurrences = state.facet(syntaxHighlight).interactiveOccurrences
+        }
         const fromCache = this.definitionCache.get(occurrence)
         if (fromCache) {
             return fromCache
@@ -532,13 +536,12 @@ export function nextOccurrencePosition(
 
     // Use code graph data from the backend if it exists, otherwise
     // fall back to syntax highlighting data
-    let index = state.facet(codeGraphData)[0]?.occurrenceIndex
-    if (index === undefined) {
-        index = state.facet(syntaxHighlight).interactiveOccurrences
+    let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+    if (occurrences === undefined) {
+        occurrences = state.facet(syntaxHighlight).interactiveOccurrences
     }
 
-    const occurrence = index.next(position, step, direction)
-
+    const occurrence = occurrences.next(position, step, direction)
     return occurrence ? positionToOffset(state.doc, occurrence.range.start) : null
 }
 
