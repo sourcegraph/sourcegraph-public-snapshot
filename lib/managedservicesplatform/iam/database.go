@@ -70,6 +70,7 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 		fmt.Sprintf("%s:auto-migrate", databaseName),
 		15*time.Second,
 		func() error {
+			ctx := context.WithoutCancel(ctx) // do not interrupt once we start
 			span.AddEvent("lock.acquired")
 
 			// Create a session that ignore debug logging.

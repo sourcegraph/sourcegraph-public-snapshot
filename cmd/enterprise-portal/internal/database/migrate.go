@@ -79,7 +79,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		fmt.Sprintf("%s:auto-migrate", dbName),
 		15*time.Second,
 		func() error {
-			ctx := context.WithoutCancel(ctx)
+			ctx := context.WithoutCancel(ctx) // do not interrupt once we start
 			span.AddEvent("lock.acquired")
 
 			versionKey := fmt.Sprintf("%s:db_version", dbName)
