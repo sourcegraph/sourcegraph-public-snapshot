@@ -13,6 +13,7 @@ use scip::types::Index;
 use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 use syntax_analysis::range::Range;
+use crate::scip_strict;
 
 use crate::{io::read_index_from_file, progress::*};
 
@@ -731,16 +732,11 @@ impl SymbolFormatter {
 
     fn try_strip_package_details<T: Copy>(&mut self, sym: SymbolId<T>) -> SymbolId<T> {
         let s = self.display_symbol(sym);
-        if s.as_bytes().iter().filter(|&c| *c == b' ').count() != 5 {
-            return sym;
-        }
-        let parts: Vec<&str> = s.splitn(5, ' ').collect();
-        let scheme = parts[0];
-        let _manager = parts[1];
-        let _package_name = parts[2];
-        let _version = parts[3];
-        let descriptor = parts[4];
-        self.make_symbol_id(&format!("{scheme} . . . {descriptor}"))
+        let Result::Ok(scip_strict::Symbol::NonLocal(mut symbol)) = scip_strict::Symbol::parse(s) else {
+            return sym
+        };
+        symbol.package = scip_strict::Package::default();
+        return self.make_symbol_id(&symbol.to_string())
     }
 }
 

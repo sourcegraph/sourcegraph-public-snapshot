@@ -26,6 +26,7 @@ walkdir = { workspace = true }
 path-clean = { workspace = true }
 camino = { workspace = true }
 tree-sitter = { workspace = true }
+nom = { workspace = true }
 
 syntax-analysis = { path = "../syntax-analysis" }
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
