@@ -36,7 +36,6 @@ export enum PageRoutes {
     Notebook = '/notebooks/:id',
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
-    CodySearch = '/search/cody',
     Cody = '/cody',
     CodyChat = '/cody/chat',
     CodySwitchAccount = '/cody/switch-account/:username',
