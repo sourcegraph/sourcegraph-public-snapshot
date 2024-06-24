@@ -27,7 +27,7 @@ type Subscription struct {
 	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
 	//
 	// It must be unique across all currently un-archived subscriptions.
-	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL;default:'Unnamed subscription'"`
+	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription';default:'Unnamed subscription'"`
 
 	// Timestamps representing the latest timestamps of key conditions related
 	// to this subscription.
