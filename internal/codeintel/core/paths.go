@@ -47,8 +47,8 @@ func NewRepoRelPathUnchecked(s string) RepoRelPath {
 	return RepoRelPath{rawValue: s}
 }
 
-// This function takes a string as the first argument instead of a *shared.CompletedUpload
-// to avoid a dependency on a higher-level package
+// NewRepoRelPath takes an UploadLike as the first argument instead of a
+// *shared.CompletedUpload to avoid a dependency on a higher-level package.
 func NewRepoRelPath(uploadLike UploadLike, p UploadRelPath) RepoRelPath {
 	// TODO: We should use filepath.Join here but that breaks some tests
 	return RepoRelPath{rawValue: uploadLike.GetRoot() + p.rawValue}
@@ -58,8 +58,8 @@ func (p RepoRelPath) RawValue() string {
 	return p.rawValue
 }
 
-// This function takes a string as the first argument instead of a *shared.CompletedUpload
-// to avoid a dependency on a higher-level package
+// NewUploadRelPath takes an UploadLike as the first argument instead of a
+// *shared.CompletedUpload to avoid a dependency on a higher-level package.
 func NewUploadRelPath(uploadLike UploadLike, p RepoRelPath) UploadRelPath {
 	// TODO: Introduce a panic here when u.Root is not a prefix of p.rawValue
 	// It seems like filepath.Rel can do the error-checking for us, but currently
