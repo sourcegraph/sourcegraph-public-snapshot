@@ -50,19 +50,9 @@ function highlightingOccurrenceAtPosition(state: EditorState, position: Position
 // Returns the occurrence at this position based on data from the GraphQL occurrences API.
 function scipOccurrenceAtPosition(data: IndexedCodeGraphData[], position: Position): Occurrence | undefined {
     for (const datum of data) {
-        // Binary search over the sorted, non-overlapping ranges.
-        const arr = datum.occurrenceIndex.occurrences
-        let [low, high] = [0, arr.length]
-        while (low < high) {
-            const mid = Math.floor((low + high) / 2)
-            if (arr[mid].range.contains(position)) {
-                return arr[mid]
-            }
-            if (arr[mid].range.end.compare(position) < 0) {
-                low = mid + 1
-            } else {
-                high = mid
-            }
+        const occurrence = datum.occurrenceIndex.atPosition(position)
+        if (occurrence !== undefined) {
+            return occurrence
         }
     }
     return undefined

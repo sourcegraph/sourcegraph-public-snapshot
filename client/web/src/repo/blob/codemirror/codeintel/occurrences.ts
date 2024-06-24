@@ -55,6 +55,24 @@ export class OccurrenceIndex {
         this.lineIndex = lineIndex
     }
 
+    public atPosition(position: Position): Occurrence | undefined {
+        // Binary search over the sorted, non-overlapping ranges.
+        const arr = this.occurrences
+        let [low, high] = [0, arr.length]
+        while (low < high) {
+            const mid = Math.floor((low + high) / 2)
+            if (arr[mid].range.contains(position)) {
+                return arr[mid]
+            }
+            if (arr[mid].range.end.compare(position) < 0) {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return undefined
+    }
+
     public next(
         from: Position,
         step: 'line' | 'character',
@@ -87,7 +105,7 @@ export class OccurrenceIndex {
     // Returns the occurrence in the provided line number that is closest to the
     // provided position, compared by the character (not line). Returns undefined
     // when the line has no occurrences (for example, an empty string).
-    closestByCharacter(
+    private closestByCharacter(
         line: number,
         position: Position,
         includeOccurrence?: (occurrence: Occurrence) => boolean
@@ -121,7 +139,8 @@ export class OccurrenceIndex {
 // It just retains the most recent contribution. At some point, we should
 // probably extend this to be able to accept contributions from multiple
 // sources.
-export const codeGraphData = Facet.define<CodeGraphData[], CodeGraphData[]>({
-    combine: values => values[0] ?? [],
-    values[0].map(data => ({ ...data, occurrenceIndex: new OccurrenceIndex(data.occurrences) })) ?? [],
+export const codeGraphData = Facet.define<CodeGraphData[], IndexedCodeGraphData[]>({
+    static: true,
+    combine: values =>
+        values[0]?.map(data => ({ ...data, occurrenceIndex: new OccurrenceIndex(data.occurrences) })) ?? [],
 })

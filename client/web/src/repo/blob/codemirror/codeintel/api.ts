@@ -530,7 +530,9 @@ export function nextOccurrencePosition(
 ): number | null {
     const position = positionAtCmPosition(state.doc, from)
 
-    let index = state.facet(codeGraphData)?.[0]?.occurrenceIndex
+    // Use code graph data from the backend if it exists, otherwise
+    // fall back to syntax highlighting data
+    let index = state.facet(codeGraphData)[0]?.occurrenceIndex
     if (index === undefined) {
         index = state.facet(syntaxHighlight).interactiveOccurrences
     }
