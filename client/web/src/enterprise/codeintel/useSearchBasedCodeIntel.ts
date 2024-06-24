@@ -124,7 +124,7 @@ function searchBasedReferencesViaSCIPLocals(options: UseSearchBasedCodeIntelOpti
     if (view === null) {
         return
     }
-    const occurrences = view.state.facet(syntaxHighlight).occurrences
+    const { occurrences } = view.state.facet(syntaxHighlight).interactiveOccurrences
     const { path, repo, position, fileContent: content, commit: commitID } = options
     const lines = split(content)
     const scipPosition = new ScipPosition(position.line, position.character)

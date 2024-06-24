@@ -19,14 +19,10 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { syntaxHighlight } from '../highlight'
-import {
-    contains,
-    interactiveOccurrenceAt,
-    positionAtCmPosition,
-    rangeToCmSelection,
-    closestOccurrenceByCharacter,
-} from '../occurrence-utils'
+import { contains, interactiveOccurrenceAt, positionAtCmPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isRegularEvent, locationToURL, positionToOffset } from '../utils'
+
+import { codeGraphData } from './occurrences'
 
 /**
  * Hover information received from a hover source.
@@ -147,7 +143,7 @@ export class CodeIntelAPIAdapter {
     }
 
     public getDefinition(state: EditorState, occurrence: Occurrence): Promise<Definition> {
-        const occurrences = state.facet(syntaxHighlight).occurrences
+        const { occurrences } = state.facet(syntaxHighlight).allOccurrences
         const fromCache = this.definitionCache.get(occurrence)
         if (fromCache) {
             return fromCache
@@ -533,29 +529,14 @@ export function nextOccurrencePosition(
     direction: 'next' | 'previous' = 'next'
 ): number | null {
     const position = positionAtCmPosition(state.doc, from)
-    const table = state.facet(syntaxHighlight)
-    let occurrence = null
-    if (step === 'character') {
-        occurrence = closestOccurrenceByCharacter(
-            position.line,
-            table,
-            position,
-            direction === 'next'
-                ? occurrence => occurrence.range.start.isGreater(position)
-                : occurrence => occurrence.range.start.isSmaller(position)
-        )
-    } else {
-        const next = direction === 'next'
-        const start = position.line + (next ? 1 : -1)
-        const increment = next ? 1 : -1
 
-        for (let line = start; line >= 0 && line < table.lineIndex.length; line += increment) {
-            occurrence = closestOccurrenceByCharacter(line, table, position)
-            if (occurrence) {
-                break
-            }
-        }
+    let index = state.facet(codeGraphData)?.[0]?.occurrenceIndex
+    if (index === undefined) {
+        index = state.facet(syntaxHighlight).interactiveOccurrences
     }
+
+    const occurrence = index.next(position, step, direction)
+
     return occurrence ? positionToOffset(state.doc, occurrence.range.start) : null
 }
 

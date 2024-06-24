@@ -57,7 +57,7 @@ class LinkBuilder implements PluginValue {
             const fromLine = view.state.doc.lineAt(from)
             const toLine = view.state.doc.lineAt(to)
 
-            const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
+            const { occurrences, lineIndex } = view.state.facet(syntaxHighlight).allOccurrences
 
             // Find index of first relevant token
             let startIndex: number | undefined
