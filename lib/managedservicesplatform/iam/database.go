@@ -78,6 +78,7 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 			})
 			// Auto-migrate database table definitions.
 			for _, table := range []any{&metadata{}} {
+				span.AddEvent(fmt.Sprintf("automigrate.%s", fmt.Sprintf("%T", table)))
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))
@@ -91,7 +92,7 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 				assets.PostgresMigrationDir,
 			)
 			if err != nil {
-				return errors.Wrap(err, "run migrations")
+				return errors.Wrap(err, "run OpenFGA migrations")
 			}
 			return nil
 		},
