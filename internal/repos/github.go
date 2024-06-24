@@ -712,33 +712,23 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	}
 }
 
+func batchRepos(repos []*github.Repository, batchSize int) (batches [][]*github.Repository) {
+	for i := 0; i < len(repos); i += batchSize {
+		end := i + batchSize
+		if end > len(repos) {
+			end = len(repos)
+		}
+		batches = append(batches, repos[i:end])
+	}
+	return batches
+}
+
 // listPublic handles the `public` keyword of the `repositoryQuery` config option.
 // It returns the public repositories listed on the /repositories endpoint.
 func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResult) {
 	if s.githubDotCom {
 		results <- &githubResult{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
 		return
-	}
-
-	// The regular Github API endpoint for listing public repos doesn't return whether the repo is archived, so we have to list
-	// all of the public archived repos first so we know if a repo is archived or not.
-	// TODO: Remove querying for archived repos first when https://github.com/orgs/community/discussions/12554 gets resolved
-	archivedReposChan := make(chan *githubResult)
-	archivedRepos := make(map[string]struct{})
-	archivedReposCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	go func() {
-		s.listPublicArchivedRepos(archivedReposCtx, archivedReposChan)
-		close(archivedReposChan)
-	}()
-
-	for res := range archivedReposChan {
-		if res.err != nil {
-			results <- &githubResult{err: errors.Wrap(res.err, "failed to list public archived Github repositories")}
-			return
-		}
-		archivedRepos[res.repo.ID] = struct{}{}
 	}
 
 	var sinceRepoID int64
@@ -759,19 +749,31 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			return
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
-		for _, r := range repos {
-			_, isArchived := archivedRepos[r.ID]
-			r.IsArchived = isArchived
-			if err := ctx.Err(); err != nil {
-				results <- &githubResult{err: err}
+
+		// The ListPublicRepositories endpoint returns incomplete information,
+		// so we make additional calls to get the full information of each repo.
+
+		batchedRepos := batchRepos(repos, 30)
+		for _, batch := range batchedRepos {
+			namesWithOwners := make([]string, len(batch))
+
+			for _, r := range batch {
+				namesWithOwners = append(namesWithOwners, r.NameWithOwner)
+			}
+
+			repos, err := s.v4Client.GetReposByNameWithOwner(ctx, namesWithOwners...)
+			if err != nil {
+				results <- &githubResult{err: errors.Wrapf(err, "failed to get full information for public repositories: sinceRepoID=%d", sinceRepoID)}
 				return
 			}
 
-			results <- &githubResult{repo: r}
-			if sinceRepoID < r.DatabaseID {
-				sinceRepoID = r.DatabaseID
+			for _, r := range repos {
+				results <- &githubResult{repo: r}
 			}
 		}
+
+		sinceRepoID = repos[len(repos)-1].DatabaseID
+
 		if !hasNextPage {
 			return
 		}
