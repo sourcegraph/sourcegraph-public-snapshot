@@ -1,12 +1,12 @@
 import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { Outlet, useLocation, Navigate, useMatches, useMatch } from 'react-router-dom'
+import { Navigate, Outlet, useLocation, useMatch, useMatches } from 'react-router-dom'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
+import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
@@ -21,7 +21,7 @@ import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
 import type { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
-import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
+import { SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
@@ -47,9 +47,8 @@ function useIsSignInOrSignUpPage(): boolean {
     const isSignInPage = useMatch(PageRoutes.SignIn)
     const isSignUpPage = useMatch(PageRoutes.SignUp)
     const isPasswordResetPage = useMatch(PageRoutes.PasswordReset)
-    const isWelcomePage = useMatch(PageRoutes.Welcome)
     const isRequestAccessPage = useMatch(PageRoutes.RequestAccess)
-    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isWelcomePage || isRequestAccessPage)
+    return !!(isSignInPage || isSignUpPage || isPasswordResetPage || isRequestAccessPage)
 }
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
@@ -94,7 +93,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
-    const isGetCodyPage = location.pathname === PageRoutes.GetCody
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -200,14 +198,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
-            {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
-                <CodySurveyToast
-                    telemetryService={props.telemetryService}
-                    telemetryRecorder={props.platformContext.telemetryRecorder}
-                    authenticatedUser={props.authenticatedUser}
-                />
-            )}
-            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
+            {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     routes={[]}
