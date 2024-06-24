@@ -314,6 +314,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     frontendCodyProConfig?: {
         stripePublishableKey: string
         sscBaseUrl: string
+        useEmbeddedUI: boolean
     }
 }
 
