@@ -142,7 +142,7 @@ func AllowedEventTypes() EventTypes {
 
 type EventTypes struct {
 	types []EventType
-	// index of '{feature}:{action}:{allowedfields}' for checking
+	// index of '{feature}/{action}:{allowedfields}' for checking
 	index map[string][]string
 }
 
@@ -242,13 +242,6 @@ func parseAdditionalAllowedEventTypes(config string) ([]EventType, error) {
 			return nil, errors.Newf(
 				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q, missing allowlisted fields",
 				rawType)
-		}
-		// add condition that if Action is "*"
-		if parts[1] == "*" {
-			types = append(types, EventType{
-				Feature:                    parts[0],
-				AllowedPrivateMetadataKeys: parts[2:],
-			})
 		} else {
 			types = append(types, EventType{
 				Feature:                    parts[0],
