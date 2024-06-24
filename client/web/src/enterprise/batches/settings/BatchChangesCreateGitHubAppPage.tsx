@@ -72,10 +72,16 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
           } Batch Changes credential`
         : 'Create GitHub app for commit signing'
     const defaultAppName = computeAppName(authenticatedUser.username, kind)
+    // COMMIT SIGNING apps do not need permissions to create pull request, we duplicate the
+    // commit using the GraphQL request and the changeset is created with the PAT.
+    const permissions = {
+        ...DEFAULT_PERMISSIONS,
+        ...(isKindCredential ? { pull_requests: 'write' } : {}),
+    }
     return (
         <CreateGitHubAppPage
             defaultEvents={DEFAULT_EVENTS}
-            defaultPermissions={DEFAULT_PERMISSIONS}
+            defaultPermissions={permissions}
             pageTitle={pageTitle}
             minimizedMode={minimizedMode}
             headerDescription={

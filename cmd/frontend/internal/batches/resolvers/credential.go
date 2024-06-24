@@ -90,7 +90,9 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx, database.CredentialAuthenticatorOpts{})
+	a, err := c.credential.Authenticator(ctx, database.CredentialAuthenticatorOpts{
+		GitHubAppStore: c.ghastore,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving authenticator")
 	}

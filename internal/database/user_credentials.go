@@ -73,7 +73,6 @@ type CredentialAuthenticatorOpts struct {
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
 func (uc *UserCredential) Authenticator(ctx context.Context, opts CredentialAuthenticatorOpts) (auth.Authenticator, error) {
-	fmt.Println("Authenticator is here", uc.GitHubAppID)
 	if uc.GitHubAppID != 0 {
 		var authenticator auth.Authenticator
 		ghApp, err := opts.GitHubAppStore.GetByID(ctx, uc.GitHubAppID)
