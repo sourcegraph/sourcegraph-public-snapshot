@@ -74,7 +74,8 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 
 			// Create a session that ignore debug logging.
 			sess := conn.Session(&gorm.Session{
-				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+				Context: ctx,
+				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
 			for _, table := range []any{&metadata{}} {

@@ -98,7 +98,8 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 
 			// Create a session that ignore debug logging.
 			sess := conn.Session(&gorm.Session{
-				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+				Context: ctx,
+				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
 			for _, table := range tables.All() {
