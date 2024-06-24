@@ -66,7 +66,7 @@ func ExecuteJob[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	ctr := contract.New(log.Scoped("msp.contract"), job, env)
+	ctr := contract.Job(log.Scoped("msp.contract"), job, env)
 
 	// Fast-exit with configuration facts if requested
 	if *showHelp {

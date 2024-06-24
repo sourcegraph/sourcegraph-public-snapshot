@@ -57,7 +57,7 @@ import (
 //
 // For help with the Contract type, and the contract package in general, please
 // refer to the package docs or reach out to #discuss-core-services directly.
-type Contract struct {
+type Contract[KindContract any] struct {
 	// MSP indicates if we are running in a live Managed Services Platform
 	// environment. In local development, this should generally be false.
 	MSP bool
@@ -65,10 +65,12 @@ type Contract struct {
 	// in. In local development, this should be 'unknown' if ENVIRONMENT_ID is
 	// not set.
 	EnvironmentID string
-	// Port is the port the service must listen on.
-	Port int
-	// ExternalDNSName is the DNS name the service uses, if one is configured.
-	ExternalDNSName *string
+
+	// Kind contains the kind-specific configuration values for this service,
+	// e.g. those specific to services or specific to jobs.
+	//
+	// Ideally we can embed this but currently there is no way to do so in Go.
+	Kind KindContract
 
 	// RedisEndpoint is the full connection string of a MSP Redis instance if
 	// provisioned, including any prerequisite authentication.
@@ -89,6 +91,15 @@ type Contract struct {
 	// developers.
 	internal internalContract
 }
+
+type ServiceContract struct {
+	// Port is the port the service must listen on.
+	Port int
+	// ExternalDNSName is the DNS name the service uses, if one is configured.
+	ExternalDNSName *string
+}
+
+type JobContract struct{}
 
 type ServiceMetadataProvider interface {
 	// Name is the service name, typically the all-lowercase, dash-delimited,
@@ -112,9 +123,22 @@ type internalContract struct {
 	environmentID string
 }
 
-// New returns a new Contract instance from configuration parsed from the Env
-// instance. Values are expected per the 'MSP contract'.
-func New(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract {
+// Service returns a new Contract instance from configuration parsed from the Env
+// instance for MSP services. Values are expected per the 'MSP contract'.
+func Service(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract[ServiceContract] {
+	return newContract(logger, service, env, ServiceContract{
+		Port:            env.GetInt("PORT", "", "service port"),
+		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
+	})
+}
+
+// Service returns a new Contract instance from configuration parsed from the Env
+// instance for MSP jobs. Values are expected per the 'MSP contract'.
+func Job(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract[JobContract] {
+	return newContract(logger, service, env, JobContract{})
+}
+
+func newContract[KindContract any](logger log.Logger, service ServiceMetadataProvider, env *Env, kind KindContract) Contract[KindContract] {
 	defaultGCPProjectID := pointers.Deref(env.GetOptional("GOOGLE_CLOUD_PROJECT", "GCP project ID"), "")
 	internal := internalContract{
 		logger:        logger,
@@ -123,12 +147,13 @@ func New(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract 
 	}
 	isMSP := env.GetBool("MSP", "false", "indicates if we are running in a MSP environment")
 
-	return Contract{
-		MSP:             isMSP,
-		EnvironmentID:   internal.environmentID,
-		Port:            env.GetInt("PORT", "", "service port"),
-		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
-		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
+	return Contract[KindContract]{
+		MSP:           isMSP,
+		EnvironmentID: internal.environmentID,
+
+		Kind: kind,
+
+		RedisEndpoint: env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
 
 		PostgreSQL: loadPostgreSQLContract(env, isMSP),
 		BigQuery:   loadBigQueryContract(env),

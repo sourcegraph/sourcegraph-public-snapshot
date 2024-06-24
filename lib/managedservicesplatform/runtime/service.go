@@ -69,7 +69,7 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	ctr := contract.New(log.Scoped("msp.contract"), service, env)
+	ctr := contract.Service(log.Scoped("msp.contract"), service, env)
 
 	// Fast-exit with configuration facts if requested
 	if *showHelp {

@@ -21,7 +21,7 @@ func TestNewContract(t *testing.T) {
 		e, err := contract.ParseEnv([]string{"MSP=true"})
 		require.NoError(t, err)
 
-		c := contract.New(logtest.Scoped(t), mockServiceMetadata{}, e)
+		c := contract.Service(logtest.Scoped(t), mockServiceMetadata{}, e)
 		assert.NotZero(t, c)
 		assert.True(t, c.MSP)
 
