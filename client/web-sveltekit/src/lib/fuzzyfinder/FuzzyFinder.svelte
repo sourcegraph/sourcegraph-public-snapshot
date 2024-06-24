@@ -412,7 +412,8 @@
             }
         }
 
-        .message, .error {
+        .message,
+        .error {
             padding: 1rem;
         }
 

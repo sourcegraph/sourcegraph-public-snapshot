@@ -15,6 +15,7 @@ export const load: PageLoad = ({ params }) => {
                 repoName,
                 withBehindAhead: true,
             })
+            .toPromise()
             .then(
                 mapOrThrow(result => {
                     if (!result.data?.repository) {
