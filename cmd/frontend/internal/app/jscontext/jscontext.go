@@ -153,6 +153,7 @@ type LicenseInfo struct {
 type FrontendCodyProConfig struct {
 	StripePublishableKey string `json:"stripePublishableKey"`
 	SscBaseUrl           string `json:"sscBaseUrl"`
+	UseEmbeddedUI        bool   `json:"useEmbeddedUI"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -710,5 +711,6 @@ func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProCon
 	return &FrontendCodyProConfig{
 		StripePublishableKey: config.StripePublishableKey,
 		SscBaseUrl:           config.SscBaseUrl,
+		UseEmbeddedUI:        config.UseEmbeddedUI,
 	}
 }
