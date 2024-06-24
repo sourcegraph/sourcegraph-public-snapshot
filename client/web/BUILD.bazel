@@ -228,7 +228,6 @@ ts_project(
         "src/cody/components/ScopeSelector/index.tsx",
         "src/cody/components/ScopeSelector/useRepoSuggestions.ts",
         "src/cody/dashboard/CodyDashboardPage.tsx",
-        "src/cody/dashboard/UpsellImage.tsx",
         "src/cody/editorGroups.ts",
         "src/cody/invites/AcceptInviteBanner.tsx",
         "src/cody/invites/InviteUsers.tsx",
