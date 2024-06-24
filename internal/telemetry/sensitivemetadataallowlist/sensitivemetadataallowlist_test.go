@@ -41,7 +41,7 @@ func TestIsAllowed(t *testing.T) {
 			expectAllowed: false,
 		},
 		{
-			name: "disallowed event with additional allowed event type (feature only)",
+			name: "event with private metadata, that has fields it is allowed to export (feature only)",
 			event: &v1.Event{
 				Feature: "cody.completion",
 				Action:  "*",
@@ -52,7 +52,7 @@ func TestIsAllowed(t *testing.T) {
 			},
 		},
 		{
-			name: "disallowed event with additional allowed event type",
+			name: "event with private metadata, that has fields it is allowed to export (feature and action)",
 			event: &v1.Event{
 				Feature: "cody.hoverCommands",
 				Action:  "visible",
@@ -133,6 +133,7 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 func TestEventTypesRedact(t *testing.T) {
 	allowedTypes := eventTypes(EventType{
 		Feature:                    "example",
+		Action:                     "exampleAction",
 		AllowedPrivateMetadataKeys: []string{"foo"},
 	})
 
@@ -140,6 +141,7 @@ func TestEventTypesRedact(t *testing.T) {
 		dotcom.MockSourcegraphDotComMode(t, true)
 		mode := allowedTypes.Redact(&v1.Event{
 			Feature: "example",
+			Action:  "exampleAction",
 		})
 		assert.Equal(t, redactNothing, mode)
 
@@ -167,12 +169,14 @@ func TestEventTypesRedact(t *testing.T) {
 		t.Run("allowlisted", func(t *testing.T) {
 			mode := allowedTypes.Redact(&v1.Event{
 				Feature: "example",
+				Action:  "exampleAction",
 			})
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 		})
 		t.Run("not allowlisted", func(t *testing.T) {
 			ev := &v1.Event{
 				Feature: "foobar",
+				Action:  "exampleAction",
 				Parameters: &v1.EventParameters{
 					PrivateMetadata: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -188,6 +192,29 @@ func TestEventTypesRedact(t *testing.T) {
 			mode := allowedTypes.Redact(ev)
 			assert.Equal(t, redactAllSensitive, mode)
 			assert.Nil(t, ev.Parameters.PrivateMetadata)
+		})
+		t.Run("allowlisted, with wildcard(*) action match", func(t *testing.T) {
+			allowedTypes := eventTypes(EventType{
+				Feature:                    "example",
+				Action:                     "*",
+				AllowedPrivateMetadataKeys: []string{"foo"},
+			})
+			mode := allowedTypes.Redact(&v1.Event{
+				Feature: "example",
+				Action:  "randomExampleAction",
+				Parameters: &v1.EventParameters{
+					PrivateMetadata: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"foo": {
+								Kind: &structpb.Value_NumberValue{
+									NumberValue: 1,
+								},
+							},
+						},
+					},
+				},
+			})
+			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 		})
 	})
 }
