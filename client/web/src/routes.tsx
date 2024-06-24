@@ -6,7 +6,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { codyProRoutes } from './cody/codyProRoutes'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
+import { LegacyRoute, type LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 
@@ -61,7 +61,6 @@ const SearchContextPage = lazyComponent(
 )
 const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsellPage'), 'SearchUpsellPage')
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
-const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
@@ -331,17 +330,6 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.Debug,
         element: <PassThroughToServer />,
-    },
-    {
-        path: PageRoutes.CodySearch,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodySearchPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
-                )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
-            />
-        ),
     },
     // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
     {

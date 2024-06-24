@@ -8,6 +8,7 @@ func (suite *ApplianceTestSuite) TestStandardFeatures() {
 		name string
 	}{
 		{name: "standard/blobstore-with-named-storage-class"},
+		{name: "standard/frontend-with-no-cpu-memory-resources"},
 		{name: "standard/precise-code-intel-with-env-vars"},
 		{name: "standard/redis-with-multiple-custom-images"},
 		{name: "standard/redis-with-storage"},

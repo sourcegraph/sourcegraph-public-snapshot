@@ -13,6 +13,7 @@ import (
 	scip "github.com/sourcegraph/scip/bindings/go/scip"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	core "github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -101,12 +102,12 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []shared.Diagnostic, r1 int, r2 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) (r0 []shared.Diagnostic[core.UploadRelPath], r1 int, r2 error) {
 				return
 			},
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) (r0 string, r1 shared.Range, r2 bool, r3 error) {
 				return
 			},
 		},
@@ -116,32 +117,32 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetMonikersByPositionFunc: &LsifStoreGetMonikersByPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 [][]precise.MonikerData, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) (r0 [][]precise.MonikerData, r1 error) {
 				return
 			},
 		},
 		GetPackageInformationFunc: &LsifStoreGetPackageInformationFunc{
-			defaultHook: func(context.Context, int, string, string) (r0 precise.PackageInformationData, r1 bool, r2 error) {
+			defaultHook: func(context.Context, int, string) (r0 precise.PackageInformationData, r1 bool, r2 error) {
 				return
 			},
 		},
 		GetPathExistsFunc: &LsifStoreGetPathExistsFunc{
-			defaultHook: func(context.Context, int, string) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 bool, r1 error) {
 				return
 			},
 		},
 		GetRangesFunc: &LsifStoreGetRangesFunc{
-			defaultHook: func(context.Context, int, string, int, int) (r0 []shared.CodeIntelligenceRange, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) (r0 []shared.CodeIntelligenceRange, r1 error) {
 				return
 			},
 		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
-			defaultHook: func(context.Context, int, string) (r0 []shared.Range, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 []shared.Range, r1 error) {
 				return
 			},
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
-			defaultHook: func(context.Context, int, string) (r0 *scip.Document, r1 error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (r0 *scip.Document, r1 error) {
 				return
 			},
 		},
@@ -178,12 +179,12 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error) {
 				panic("unexpected invocation of MockLsifStore.GetDiagnostics")
 			},
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
-			defaultHook: func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error) {
 				panic("unexpected invocation of MockLsifStore.GetHover")
 			},
 		},
@@ -193,32 +194,32 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetMonikersByPositionFunc: &LsifStoreGetMonikersByPositionFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error) {
 				panic("unexpected invocation of MockLsifStore.GetMonikersByPosition")
 			},
 		},
 		GetPackageInformationFunc: &LsifStoreGetPackageInformationFunc{
-			defaultHook: func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+			defaultHook: func(context.Context, int, string) (precise.PackageInformationData, bool, error) {
 				panic("unexpected invocation of MockLsifStore.GetPackageInformation")
 			},
 		},
 		GetPathExistsFunc: &LsifStoreGetPathExistsFunc{
-			defaultHook: func(context.Context, int, string) (bool, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (bool, error) {
 				panic("unexpected invocation of MockLsifStore.GetPathExists")
 			},
 		},
 		GetRangesFunc: &LsifStoreGetRangesFunc{
-			defaultHook: func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error) {
 				panic("unexpected invocation of MockLsifStore.GetRanges")
 			},
 		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
-			defaultHook: func(context.Context, int, string) ([]shared.Range, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) ([]shared.Range, error) {
 				panic("unexpected invocation of MockLsifStore.GetStencil")
 			},
 		},
 		SCIPDocumentFunc: &LsifStoreSCIPDocumentFunc{
-			defaultHook: func(context.Context, int, string) (*scip.Document, error) {
+			defaultHook: func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
 				panic("unexpected invocation of MockLsifStore.SCIPDocument")
 			},
 		},
@@ -868,15 +869,15 @@ func (c LsifStoreGetBulkMonikerLocationsFuncCall) Results() []interface{} {
 // LsifStoreGetDiagnosticsFunc describes the behavior when the
 // GetDiagnostics method of the parent MockLsifStore instance is invoked.
 type LsifStoreGetDiagnosticsFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error)
-	hooks       []func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error)
+	defaultHook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error)
+	hooks       []func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error)
 	history     []LsifStoreGetDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDiagnostics delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetDiagnostics(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]shared.Diagnostic, int, error) {
+func (m *MockLsifStore) GetDiagnostics(v0 context.Context, v1 int, v2 core.UploadRelPath, v3 int, v4 int) ([]shared.Diagnostic[core.UploadRelPath], int, error) {
 	r0, r1, r2 := m.GetDiagnosticsFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetDiagnosticsFunc.appendCall(LsifStoreGetDiagnosticsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
@@ -885,7 +886,7 @@ func (m *MockLsifStore) GetDiagnostics(v0 context.Context, v1 int, v2 string, v3
 // SetDefaultHook sets function that is called when the GetDiagnostics
 // method of the parent MockLsifStore instance is invoked and the hook queue
 // is empty.
-func (f *LsifStoreGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error)) {
+func (f *LsifStoreGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error)) {
 	f.defaultHook = hook
 }
 
@@ -893,7 +894,7 @@ func (f *LsifStoreGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, 
 // GetDiagnostics method of the parent MockLsifStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LsifStoreGetDiagnosticsFunc) PushHook(hook func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error)) {
+func (f *LsifStoreGetDiagnosticsFunc) PushHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -901,20 +902,20 @@ func (f *LsifStoreGetDiagnosticsFunc) PushHook(hook func(context.Context, int, s
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetDiagnosticsFunc) SetDefaultReturn(r0 []shared.Diagnostic, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error) {
+func (f *LsifStoreGetDiagnosticsFunc) SetDefaultReturn(r0 []shared.Diagnostic[core.UploadRelPath], r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetDiagnosticsFunc) PushReturn(r0 []shared.Diagnostic, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error) {
+func (f *LsifStoreGetDiagnosticsFunc) PushReturn(r0 []shared.Diagnostic[core.UploadRelPath], r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreGetDiagnosticsFunc) nextHook() func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error) {
+func (f *LsifStoreGetDiagnosticsFunc) nextHook() func(context.Context, int, core.UploadRelPath, int, int) ([]shared.Diagnostic[core.UploadRelPath], int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -955,7 +956,7 @@ type LsifStoreGetDiagnosticsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int
@@ -964,7 +965,7 @@ type LsifStoreGetDiagnosticsFuncCall struct {
 	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Diagnostic
+	Result0 []shared.Diagnostic[core.UploadRelPath]
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
@@ -988,15 +989,15 @@ func (c LsifStoreGetDiagnosticsFuncCall) Results() []interface{} {
 // LsifStoreGetHoverFunc describes the behavior when the GetHover method of
 // the parent MockLsifStore instance is invoked.
 type LsifStoreGetHoverFunc struct {
-	defaultHook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)
-	hooks       []func(context.Context, int, string, int, int) (string, shared.Range, bool, error)
+	defaultHook func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error)
+	hooks       []func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error)
 	history     []LsifStoreGetHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // GetHover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 string, v3 int, v4 int) (string, shared.Range, bool, error) {
+func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 core.UploadRelPath, v3 int, v4 int) (string, shared.Range, bool, error) {
 	r0, r1, r2, r3 := m.GetHoverFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetHoverFunc.appendCall(LsifStoreGetHoverFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
 	return r0, r1, r2, r3
@@ -1004,7 +1005,7 @@ func (m *MockLsifStore) GetHover(v0 context.Context, v1 int, v2 string, v3 int, 
 
 // SetDefaultHook sets function that is called when the GetHover method of
 // the parent MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)) {
+func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1012,7 +1013,7 @@ func (f *LsifStoreGetHoverFunc) SetDefaultHook(hook func(context.Context, int, s
 // GetHover method of the parent MockLsifStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, string, int, int) (string, shared.Range, bool, error)) {
+func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1021,19 +1022,19 @@ func (f *LsifStoreGetHoverFunc) PushHook(hook func(context.Context, int, string,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetHoverFunc) SetDefaultReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetHoverFunc) PushReturn(r0 string, r1 shared.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *LsifStoreGetHoverFunc) nextHook() func(context.Context, int, string, int, int) (string, shared.Range, bool, error) {
+func (f *LsifStoreGetHoverFunc) nextHook() func(context.Context, int, core.UploadRelPath, int, int) (string, shared.Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1074,7 +1075,7 @@ type LsifStoreGetHoverFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int
@@ -1241,15 +1242,15 @@ func (c LsifStoreGetMinimalBulkMonikerLocationsFuncCall) Results() []interface{}
 // GetMonikersByPosition method of the parent MockLsifStore instance is
 // invoked.
 type LsifStoreGetMonikersByPositionFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)
-	hooks       []func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)
+	defaultHook func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error)
+	hooks       []func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error)
 	history     []LsifStoreGetMonikersByPositionFuncCall
 	mutex       sync.Mutex
 }
 
 // GetMonikersByPosition delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetMonikersByPosition(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([][]precise.MonikerData, error) {
+func (m *MockLsifStore) GetMonikersByPosition(v0 context.Context, v1 int, v2 core.UploadRelPath, v3 int, v4 int) ([][]precise.MonikerData, error) {
 	r0, r1 := m.GetMonikersByPositionFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetMonikersByPositionFunc.appendCall(LsifStoreGetMonikersByPositionFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -1258,7 +1259,7 @@ func (m *MockLsifStore) GetMonikersByPosition(v0 context.Context, v1 int, v2 str
 // SetDefaultHook sets function that is called when the
 // GetMonikersByPosition method of the parent MockLsifStore instance is
 // invoked and the hook queue is empty.
-func (f *LsifStoreGetMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)) {
+func (f *LsifStoreGetMonikersByPositionFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error)) {
 	f.defaultHook = hook
 }
 
@@ -1266,7 +1267,7 @@ func (f *LsifStoreGetMonikersByPositionFunc) SetDefaultHook(hook func(context.Co
 // GetMonikersByPosition method of the parent MockLsifStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *LsifStoreGetMonikersByPositionFunc) PushHook(hook func(context.Context, int, string, int, int) ([][]precise.MonikerData, error)) {
+func (f *LsifStoreGetMonikersByPositionFunc) PushHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1275,19 +1276,19 @@ func (f *LsifStoreGetMonikersByPositionFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetMonikersByPositionFunc) SetDefaultReturn(r0 [][]precise.MonikerData, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetMonikersByPositionFunc) PushReturn(r0 [][]precise.MonikerData, r1 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetMonikersByPositionFunc) nextHook() func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+func (f *LsifStoreGetMonikersByPositionFunc) nextHook() func(context.Context, int, core.UploadRelPath, int, int) ([][]precise.MonikerData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1329,7 +1330,7 @@ type LsifStoreGetMonikersByPositionFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int
@@ -1360,24 +1361,24 @@ func (c LsifStoreGetMonikersByPositionFuncCall) Results() []interface{} {
 // GetPackageInformation method of the parent MockLsifStore instance is
 // invoked.
 type LsifStoreGetPackageInformationFunc struct {
-	defaultHook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)
-	hooks       []func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)
+	defaultHook func(context.Context, int, string) (precise.PackageInformationData, bool, error)
+	hooks       []func(context.Context, int, string) (precise.PackageInformationData, bool, error)
 	history     []LsifStoreGetPackageInformationFuncCall
 	mutex       sync.Mutex
 }
 
 // GetPackageInformation delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetPackageInformation(v0 context.Context, v1 int, v2 string, v3 string) (precise.PackageInformationData, bool, error) {
-	r0, r1, r2 := m.GetPackageInformationFunc.nextHook()(v0, v1, v2, v3)
-	m.GetPackageInformationFunc.appendCall(LsifStoreGetPackageInformationFuncCall{v0, v1, v2, v3, r0, r1, r2})
+func (m *MockLsifStore) GetPackageInformation(v0 context.Context, v1 int, v2 string) (precise.PackageInformationData, bool, error) {
+	r0, r1, r2 := m.GetPackageInformationFunc.nextHook()(v0, v1, v2)
+	m.GetPackageInformationFunc.appendCall(LsifStoreGetPackageInformationFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GetPackageInformation method of the parent MockLsifStore instance is
 // invoked and the hook queue is empty.
-func (f *LsifStoreGetPackageInformationFunc) SetDefaultHook(hook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)) {
+func (f *LsifStoreGetPackageInformationFunc) SetDefaultHook(hook func(context.Context, int, string) (precise.PackageInformationData, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1385,7 +1386,7 @@ func (f *LsifStoreGetPackageInformationFunc) SetDefaultHook(hook func(context.Co
 // GetPackageInformation method of the parent MockLsifStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *LsifStoreGetPackageInformationFunc) PushHook(hook func(context.Context, int, string, string) (precise.PackageInformationData, bool, error)) {
+func (f *LsifStoreGetPackageInformationFunc) PushHook(hook func(context.Context, int, string) (precise.PackageInformationData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1394,19 +1395,19 @@ func (f *LsifStoreGetPackageInformationFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetPackageInformationFunc) SetDefaultReturn(r0 precise.PackageInformationData, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+	f.SetDefaultHook(func(context.Context, int, string) (precise.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetPackageInformationFunc) PushReturn(r0 precise.PackageInformationData, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+	f.PushHook(func(context.Context, int, string) (precise.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LsifStoreGetPackageInformationFunc) nextHook() func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+func (f *LsifStoreGetPackageInformationFunc) nextHook() func(context.Context, int, string) (precise.PackageInformationData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1449,9 +1450,6 @@ type LsifStoreGetPackageInformationFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 precise.PackageInformationData
@@ -1466,7 +1464,7 @@ type LsifStoreGetPackageInformationFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LsifStoreGetPackageInformationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1478,15 +1476,15 @@ func (c LsifStoreGetPackageInformationFuncCall) Results() []interface{} {
 // LsifStoreGetPathExistsFunc describes the behavior when the GetPathExists
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreGetPathExistsFunc struct {
-	defaultHook func(context.Context, int, string) (bool, error)
-	hooks       []func(context.Context, int, string) (bool, error)
+	defaultHook func(context.Context, int, core.UploadRelPath) (bool, error)
+	hooks       []func(context.Context, int, core.UploadRelPath) (bool, error)
 	history     []LsifStoreGetPathExistsFuncCall
 	mutex       sync.Mutex
 }
 
 // GetPathExists delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) GetPathExists(v0 context.Context, v1 int, v2 string) (bool, error) {
+func (m *MockLsifStore) GetPathExists(v0 context.Context, v1 int, v2 core.UploadRelPath) (bool, error) {
 	r0, r1 := m.GetPathExistsFunc.nextHook()(v0, v1, v2)
 	m.GetPathExistsFunc.appendCall(LsifStoreGetPathExistsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1495,7 +1493,7 @@ func (m *MockLsifStore) GetPathExists(v0 context.Context, v1 int, v2 string) (bo
 // SetDefaultHook sets function that is called when the GetPathExists method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreGetPathExistsFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *LsifStoreGetPathExistsFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1503,7 +1501,7 @@ func (f *LsifStoreGetPathExistsFunc) SetDefaultHook(hook func(context.Context, i
 // GetPathExists method of the parent MockLsifStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LsifStoreGetPathExistsFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *LsifStoreGetPathExistsFunc) PushHook(hook func(context.Context, int, core.UploadRelPath) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1512,19 +1510,19 @@ func (f *LsifStoreGetPathExistsFunc) PushHook(hook func(context.Context, int, st
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetPathExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetPathExistsFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int, string) (bool, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetPathExistsFunc) nextHook() func(context.Context, int, string) (bool, error) {
+func (f *LsifStoreGetPathExistsFunc) nextHook() func(context.Context, int, core.UploadRelPath) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1565,7 +1563,7 @@ type LsifStoreGetPathExistsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -1589,15 +1587,15 @@ func (c LsifStoreGetPathExistsFuncCall) Results() []interface{} {
 // LsifStoreGetRangesFunc describes the behavior when the GetRanges method
 // of the parent MockLsifStore instance is invoked.
 type LsifStoreGetRangesFunc struct {
-	defaultHook func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error)
-	hooks       []func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error)
+	defaultHook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error)
+	hooks       []func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error)
 	history     []LsifStoreGetRangesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetRanges delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLsifStore) GetRanges(v0 context.Context, v1 int, v2 string, v3 int, v4 int) ([]shared.CodeIntelligenceRange, error) {
+func (m *MockLsifStore) GetRanges(v0 context.Context, v1 int, v2 core.UploadRelPath, v3 int, v4 int) ([]shared.CodeIntelligenceRange, error) {
 	r0, r1 := m.GetRangesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.GetRangesFunc.appendCall(LsifStoreGetRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -1605,7 +1603,7 @@ func (m *MockLsifStore) GetRanges(v0 context.Context, v1 int, v2 string, v3 int,
 
 // SetDefaultHook sets function that is called when the GetRanges method of
 // the parent MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetRangesFunc) SetDefaultHook(hook func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error)) {
+func (f *LsifStoreGetRangesFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
@@ -1613,7 +1611,7 @@ func (f *LsifStoreGetRangesFunc) SetDefaultHook(hook func(context.Context, int, 
 // GetRanges method of the parent MockLsifStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreGetRangesFunc) PushHook(hook func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error)) {
+func (f *LsifStoreGetRangesFunc) PushHook(hook func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1622,19 +1620,19 @@ func (f *LsifStoreGetRangesFunc) PushHook(hook func(context.Context, int, string
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetRangesFunc) SetDefaultReturn(r0 []shared.CodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetRangesFunc) PushReturn(r0 []shared.CodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetRangesFunc) nextHook() func(context.Context, int, string, int, int) ([]shared.CodeIntelligenceRange, error) {
+func (f *LsifStoreGetRangesFunc) nextHook() func(context.Context, int, core.UploadRelPath, int, int) ([]shared.CodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1675,7 +1673,7 @@ type LsifStoreGetRangesFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int
@@ -1705,15 +1703,15 @@ func (c LsifStoreGetRangesFuncCall) Results() []interface{} {
 // LsifStoreGetStencilFunc describes the behavior when the GetStencil method
 // of the parent MockLsifStore instance is invoked.
 type LsifStoreGetStencilFunc struct {
-	defaultHook func(context.Context, int, string) ([]shared.Range, error)
-	hooks       []func(context.Context, int, string) ([]shared.Range, error)
+	defaultHook func(context.Context, int, core.UploadRelPath) ([]shared.Range, error)
+	hooks       []func(context.Context, int, core.UploadRelPath) ([]shared.Range, error)
 	history     []LsifStoreGetStencilFuncCall
 	mutex       sync.Mutex
 }
 
 // GetStencil delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 string) ([]shared.Range, error) {
+func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 core.UploadRelPath) ([]shared.Range, error) {
 	r0, r1 := m.GetStencilFunc.nextHook()(v0, v1, v2)
 	m.GetStencilFunc.appendCall(LsifStoreGetStencilFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1721,7 +1719,7 @@ func (m *MockLsifStore) GetStencil(v0 context.Context, v1 int, v2 string) ([]sha
 
 // SetDefaultHook sets function that is called when the GetStencil method of
 // the parent MockLsifStore instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int, string) ([]shared.Range, error)) {
+func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath) ([]shared.Range, error)) {
 	f.defaultHook = hook
 }
 
@@ -1729,7 +1727,7 @@ func (f *LsifStoreGetStencilFunc) SetDefaultHook(hook func(context.Context, int,
 // GetStencil method of the parent MockLsifStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, string) ([]shared.Range, error)) {
+func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, core.UploadRelPath) ([]shared.Range, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1738,19 +1736,19 @@ func (f *LsifStoreGetStencilFunc) PushHook(hook func(context.Context, int, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreGetStencilFunc) SetDefaultReturn(r0 []shared.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) ([]shared.Range, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath) ([]shared.Range, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreGetStencilFunc) PushReturn(r0 []shared.Range, r1 error) {
-	f.PushHook(func(context.Context, int, string) ([]shared.Range, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath) ([]shared.Range, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetStencilFunc) nextHook() func(context.Context, int, string) ([]shared.Range, error) {
+func (f *LsifStoreGetStencilFunc) nextHook() func(context.Context, int, core.UploadRelPath) ([]shared.Range, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1791,7 +1789,7 @@ type LsifStoreGetStencilFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared.Range
@@ -1815,15 +1813,15 @@ func (c LsifStoreGetStencilFuncCall) Results() []interface{} {
 // LsifStoreSCIPDocumentFunc describes the behavior when the SCIPDocument
 // method of the parent MockLsifStore instance is invoked.
 type LsifStoreSCIPDocumentFunc struct {
-	defaultHook func(context.Context, int, string) (*scip.Document, error)
-	hooks       []func(context.Context, int, string) (*scip.Document, error)
+	defaultHook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)
+	hooks       []func(context.Context, int, core.UploadRelPath) (*scip.Document, error)
 	history     []LsifStoreSCIPDocumentFuncCall
 	mutex       sync.Mutex
 }
 
 // SCIPDocument delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLsifStore) SCIPDocument(v0 context.Context, v1 int, v2 string) (*scip.Document, error) {
+func (m *MockLsifStore) SCIPDocument(v0 context.Context, v1 int, v2 core.UploadRelPath) (*scip.Document, error) {
 	r0, r1 := m.SCIPDocumentFunc.nextHook()(v0, v1, v2)
 	m.SCIPDocumentFunc.appendCall(LsifStoreSCIPDocumentFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1832,7 +1830,7 @@ func (m *MockLsifStore) SCIPDocument(v0 context.Context, v1 int, v2 string) (*sc
 // SetDefaultHook sets function that is called when the SCIPDocument method
 // of the parent MockLsifStore instance is invoked and the hook queue is
 // empty.
-func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, string) (*scip.Document, error)) {
+func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)) {
 	f.defaultHook = hook
 }
 
@@ -1840,7 +1838,7 @@ func (f *LsifStoreSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, in
 // SCIPDocument method of the parent MockLsifStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, string) (*scip.Document, error)) {
+func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, core.UploadRelPath) (*scip.Document, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1849,19 +1847,19 @@ func (f *LsifStoreSCIPDocumentFunc) PushHook(hook func(context.Context, int, str
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreSCIPDocumentFunc) SetDefaultReturn(r0 *scip.Document, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (*scip.Document, error) {
+	f.SetDefaultHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreSCIPDocumentFunc) PushReturn(r0 *scip.Document, r1 error) {
-	f.PushHook(func(context.Context, int, string) (*scip.Document, error) {
+	f.PushHook(func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreSCIPDocumentFunc) nextHook() func(context.Context, int, string) (*scip.Document, error) {
+func (f *LsifStoreSCIPDocumentFunc) nextHook() func(context.Context, int, core.UploadRelPath) (*scip.Document, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1902,7 +1900,7 @@ type LsifStoreSCIPDocumentFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 core.UploadRelPath
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *scip.Document

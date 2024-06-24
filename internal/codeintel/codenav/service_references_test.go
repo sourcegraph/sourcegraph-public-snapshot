@@ -12,6 +12,6 @@ var (
 	testRange5 = shared.Range{Start: shared.Position{Line: 15, Character: 25}, End: shared.Position{Line: 35, Character: 45}}
 	testRange6 = shared.Range{Start: shared.Position{Line: 16, Character: 26}, End: shared.Position{Line: 36, Character: 46}}
 
-	mockPath   = "s1/main.go"
+	mockPath   = repoRelPath("s1/main.go")
 	mockCommit = "deadbeef"
 )

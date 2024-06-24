@@ -3,10 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "process",
-    srcs = [
-        "logger.go",
-        "pipe.go",
-    ],
+    srcs = ["pipe.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/process",
     tags = [TAG_PLATFORM_SOURCE],
     visibility = ["//visibility:public"],

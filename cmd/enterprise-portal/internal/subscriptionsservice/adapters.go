@@ -3,7 +3,7 @@ package subscriptionsservice
 import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
@@ -46,7 +46,13 @@ func convertLicenseAttrsToProto(attrs *dotcomdb.LicenseAttributes) *subscription
 	}
 }
 
-func convertSubscriptionToProto(subscription *database.Subscription, attrs *dotcomdb.SubscriptionAttributes) *subscriptionsv1.EnterpriseSubscription {
+func convertSubscriptionToProto(subscription *subscriptions.Subscription, attrs *dotcomdb.SubscriptionAttributes) *subscriptionsv1.EnterpriseSubscription {
+	// Dotcom equivalent missing is surprising, but let's not panic just yet
+	if attrs == nil {
+		attrs = &dotcomdb.SubscriptionAttributes{
+			ID: subscription.ID,
+		}
+	}
 	conds := []*subscriptionsv1.EnterpriseSubscriptionCondition{
 		{
 			Status:             subscriptionsv1.EnterpriseSubscriptionCondition_STATUS_CREATED,

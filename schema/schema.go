@@ -656,6 +656,8 @@ type CodyProConfig struct {
 	SscBaseUrl string `json:"sscBaseUrl,omitempty"`
 	// StripePublishableKey description: Stripe Publishable Key for use in Stripe Checkout, Stripe Elements. This is not considered a secret.
 	StripePublishableKey string `json:"stripePublishableKey,omitempty"`
+	// UseEmbeddedUI description: Whether Cody Pro UI is served from sourcegraph.com. If false, users are directed to https://accounts.sourcegraph.com/cody to manage their Cody Pro subscription.
+	UseEmbeddedUI bool `json:"useEmbeddedUI,omitempty"`
 }
 
 // Completions description: Configuration for the completions service.

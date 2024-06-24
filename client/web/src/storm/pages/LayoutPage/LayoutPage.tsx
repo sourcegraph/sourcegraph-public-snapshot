@@ -69,7 +69,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         (isRepositoryRelatedPage || routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search'))) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchNotebooksPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.Notebooks))
-    const isCodySearchPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.CodySearch))
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -216,8 +215,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
-                        !isSearchNotebooksPage &&
-                        !isCodySearchPage
+                        !isSearchNotebooksPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}

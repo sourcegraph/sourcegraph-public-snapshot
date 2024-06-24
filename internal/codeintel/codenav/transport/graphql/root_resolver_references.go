@@ -64,7 +64,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 	if args.Filter != nil && *args.Filter != "" {
 		filtered := refs[:0]
 		for _, loc := range refs {
-			if strings.Contains(loc.Path, *args.Filter) {
+			if strings.Contains(loc.Path.RawValue(), *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}

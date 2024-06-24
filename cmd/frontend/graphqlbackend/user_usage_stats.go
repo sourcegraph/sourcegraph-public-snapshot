@@ -26,10 +26,8 @@ import (
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-			return nil, err
-		}
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
 	}
 
 	stats, err := usagestats.GetByUserID(ctx, r.db, r.user.ID)
@@ -185,11 +183,6 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 					Ide:           ide,
 					EmailsEnabled: strconv.FormatBool(emailsEnabled),
 				})
-		}
-
-		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
-		if dotcom.SourcegraphDotComMode() && args.Event == "DownloadApp" && userID != 0 && userPrimaryEmail != "" {
-			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.AppDownloadButtonClickedEventID, &hubspot.ContactProperties{})
 		}
 
 		argumentPayload, err := decode(args.Argument)

@@ -74,6 +74,7 @@ type mockedData struct {
 	targetSubscriptionID  string
 	accessTokens          []string
 	createdLicenses       int
+	createdSubscriptions  int
 	archivedSubscriptions int
 }
 
@@ -92,6 +93,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
+		result.createdSubscriptions += 1
 		_, err = licensesdb.Create(ctx, sub, t.Name()+"-barbaz", 2, license.Info{
 			CreatedAt: info.CreatedAt,
 			ExpiresAt: info.ExpiresAt,
@@ -108,6 +110,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
+		result.createdSubscriptions += 1
 		_, err = licensesdb.Create(ctx, sub, t.Name()+"-archived", 2, license.Info{
 			CreatedAt: info.CreatedAt,
 			ExpiresAt: info.ExpiresAt,
@@ -127,6 +130,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
+		result.createdSubscriptions += 1
 		_, err = licensesdb.Create(ctx, sub, t.Name()+"-not-dev", 2, license.Info{
 			CreatedAt: info.CreatedAt,
 			ExpiresAt: info.ExpiresAt,
@@ -140,6 +144,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 	require.NoError(t, err)
 	subid, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 	require.NoError(t, err)
+	result.createdSubscriptions += 1
 	result.targetSubscriptionID = subid
 	// Insert a rubbish license first, CreatedAt is not used (creation time is
 	// inferred from insert time) so we need to do this first
@@ -171,6 +176,7 @@ func setupDBAndInsertMockLicense(t *testing.T, dotcomdb database.DB, info licens
 		require.NoError(t, err)
 		sub, err := subscriptionsdb.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
+		result.createdSubscriptions += 1
 		_, err = licensesdb.Create(ctx, sub, t.Name()+"-foobar", 2, license.Info{
 			CreatedAt: info.CreatedAt,
 			ExpiresAt: info.ExpiresAt,
@@ -375,7 +381,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 		name:    "no filters",
 		filters: nil,
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
-			assert.Len(t, licenses, mock.createdLicenses) // return all results
+			// Only unarchived subscriptions
+			assert.Len(t, licenses, mock.createdLicenses-mock.archivedSubscriptions)
 		},
 	}, {
 		name: "filter by subscription ID",
@@ -409,8 +416,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 				SubscriptionId: mock.targetSubscriptionID,
 			},
 		}, {
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: false,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: false,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
@@ -424,8 +431,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	}, {
 		name: "filter by is archived",
 		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: true,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: true,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
@@ -434,8 +441,8 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 	}, {
 		name: "filter by not archived",
 		filters: []*v1.ListEnterpriseSubscriptionLicensesFilter{{
-			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsArchived{
-				IsArchived: false,
+			Filter: &v1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked{
+				IsRevoked: false,
 			},
 		}},
 		expect: func(t *testing.T, licenses []*dotcomdb.LicenseAttributes) {
@@ -457,4 +464,29 @@ func TestListEnterpriseSubscriptionLicenses(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestListEnterpriseSubscriptions(t *testing.T) {
+	db, dotcomreader := newTestDotcomReader(t)
+	info := license.Info{
+		ExpiresAt: time.Now().Add(30 * time.Minute),
+		UserCount: 321,
+		Tags:      []string{licensing.PlanEnterprise1.Tag(), licensing.DevTag},
+	}
+	mock := setupDBAndInsertMockLicense(t, db, info, nil)
+
+	// Just a simple sanity test
+	ss, err := dotcomreader.ListEnterpriseSubscriptions(
+		context.Background(),
+		dotcomdb.ListEnterpriseSubscriptionsOptions{})
+	require.NoError(t, err)
+	assert.Len(t, ss, mock.createdSubscriptions-mock.archivedSubscriptions)
+	var found bool
+	for _, s := range ss {
+		if s.ID == mock.targetSubscriptionID {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found)
 }

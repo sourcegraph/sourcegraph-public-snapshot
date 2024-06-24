@@ -153,6 +153,7 @@ type LicenseInfo struct {
 type FrontendCodyProConfig struct {
 	StripePublishableKey string `json:"stripePublishableKey"`
 	SscBaseUrl           string `json:"sscBaseUrl"`
+	UseEmbeddedUI        bool   `json:"useEmbeddedUI"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -242,8 +243,6 @@ type JSContext struct {
 	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
 	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
 	OwnEnabled               bool `json:"ownEnabled"`
-
-	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
@@ -452,8 +451,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		SearchAggregationEnabled: true,
 		OwnEnabled:               true,
 
-		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
-
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
@@ -499,12 +496,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
 	}
 
-	// If the license a Sourcegraph instance is running under does not support Cody features
-	// we force disable related features (embeddings etc).
+	// If the license a Sourcegraph instance is running under does not support Cody features,
+	// we force disable related features.
 	if !context.LicenseInfo.Features.Cody {
 		context.CodyEnabled = false
 		context.CodyEnabledForCurrentUser = false
-		context.EmbeddingsEnabled = false
 	}
 
 	return context
@@ -710,5 +706,6 @@ func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProCon
 	return &FrontendCodyProConfig{
 		StripePublishableKey: config.StripePublishableKey,
 		SscBaseUrl:           config.SscBaseUrl,
+		UseEmbeddedUI:        config.UseEmbeddedUI,
 	}
 }

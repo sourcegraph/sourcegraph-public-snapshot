@@ -5,10 +5,10 @@ import type * as esbuild from 'esbuild'
 
 import { ROOT_PATH, STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import {
-    stylePlugin,
-    packageResolutionPlugin,
-    monacoPlugin,
     buildTimerPlugin,
+    monacoPlugin,
+    packageResolutionPlugin,
+    stylePlugin,
     workerPlugin,
 } from '@sourcegraph/build-config/src/esbuild/plugins'
 import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config/src/monaco-editor'
@@ -23,12 +23,10 @@ import { WEB_BUILD_MANIFEST_FILENAME, webManifestBuilder } from './webmanifest'
  */
 export function esbuildBuildOptions(ENVIRONMENT_CONFIG: EnvironmentConfig): esbuild.BuildOptions {
     return {
-        entryPoints: ENVIRONMENT_CONFIG.CODY_APP
-            ? [path.join(ROOT_PATH, 'client/web/src/enterprise/app/main.tsx')]
-            : [
-                  path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
-                  path.join(ROOT_PATH, 'client/web/src/enterprise/embed/embedMain.tsx'),
-              ],
+        entryPoints: [
+            path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx'),
+            path.join(ROOT_PATH, 'client/web/src/enterprise/embed/embedMain.tsx'),
+        ],
         bundle: true,
         minify: ENVIRONMENT_CONFIG.NODE_ENV === 'production',
         treeShaking: true,

@@ -166,7 +166,7 @@ func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
 	r.Header.Set("anthropic-version", "2023-01-01")
 }
 
-func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	var err error
 
 	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
@@ -183,7 +183,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res anthropicResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
