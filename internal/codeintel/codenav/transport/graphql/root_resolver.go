@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
@@ -94,7 +95,8 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.gitserverClient,
 		args.Repo,
 		string(args.Commit),
-		args.Path,
+		// OK to use Unchecked function based on contract of GraphQL API
+		core.NewRepoRelPathUnchecked(args.Path),
 		r.maximumIndexesPerMonikerSearch,
 		r.hunkCache,
 	)
@@ -415,7 +417,7 @@ func newCodeGraphDataResolverFromID(
 		Args:   id.Args,
 		Repo:   repo,
 		Commit: id.Commit,
-		Path:   id.Path,
+		Path:   core.NewRepoRelPathUnchecked(id.Path),
 	}
 	return &codeGraphDataResolver{
 		sync.Once{},
@@ -445,7 +447,7 @@ func (c *codeGraphDataResolver) ID() graphql.ID {
 		c.opts.Args,
 		c.opts.Repo.ID,
 		c.opts.Commit,
-		c.opts.Path,
+		c.opts.Path.RawValue(),
 		c.provenance,
 	}
 	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)

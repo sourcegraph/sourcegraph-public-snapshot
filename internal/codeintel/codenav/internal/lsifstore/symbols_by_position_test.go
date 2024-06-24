@@ -78,7 +78,7 @@ func TestGetPackageInformation(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if actual, exists, err := store.GetPackageInformation(context.Background(), testCase.uploadID, testCase.path, testCase.packageInformationID); err != nil {
+			if actual, exists, err := store.GetPackageInformation(context.Background(), testCase.uploadID, testCase.packageInformationID); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else if !exists {
 				t.Errorf("no package information")

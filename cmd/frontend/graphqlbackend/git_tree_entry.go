@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -506,7 +507,7 @@ func (r *GitTreeEntryResolver) CodeGraphData(ctx context.Context, args *resolver
 		Args:   args,
 		Repo:   repo,
 		Commit: api.CommitID(r.Commit().OID()),
-		Path:   r.Path(),
+		Path:   core.NewRepoRelPathUnchecked(r.Path()),
 	})
 }
 

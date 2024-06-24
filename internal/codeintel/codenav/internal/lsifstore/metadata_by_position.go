@@ -10,15 +10,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // GetHover returns the hover text of the symbol at the given position.
-func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ shared.Range, _ bool, err error) {
+func (s *store) GetHover(ctx context.Context, bundleID int, path core.UploadRelPath, line, character int) (_ string, _ shared.Range, _ bool, err error) {
 	ctx, trace, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 		attribute.Int("line", line),
 		attribute.Int("character", character),
 	}})
@@ -27,7 +28,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		hoverDocumentQuery,
 		bundleID,
-		path,
+		path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return "", shared.Range{}, false, err
@@ -192,10 +193,10 @@ WHERE EXISTS (
 
 // GetDiagnostics returns the diagnostics for the documents that have the given path prefix. This method
 // also returns the size of the complete result set to aid in pagination.
-func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error) {
+func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix core.UploadRelPath, limit, offset int) (_ []shared.Diagnostic[core.UploadRelPath], _ int, err error) {
 	ctx, trace, endObservation := s.operations.getDiagnostics.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("prefix", prefix),
+		attribute.String("prefix", prefix.RawValue()),
 		attribute.Int("limit", limit),
 		attribute.Int("offset", offset),
 	}})
@@ -204,7 +205,7 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 	documentData, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		diagnosticsQuery,
 		bundleID,
-		prefix+"%",
+		prefix.RawValue()+"%",
 	)))
 	if err != nil {
 		return nil, 0, err
@@ -219,7 +220,7 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 	}
 	trace.AddEvent("found", attribute.Int("totalCount", totalCount))
 
-	diagnostics := make([]shared.Diagnostic, 0, limit)
+	diagnostics := make([]shared.Diagnostic[core.UploadRelPath], 0, limit)
 	for _, documentData := range documentData {
 	occurrenceLoop:
 		for _, occurrence := range documentData.SCIPData.Occurrences {
@@ -233,9 +234,9 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 				offset--
 
 				if offset < 0 && len(diagnostics) < limit {
-					diagnostics = append(diagnostics, shared.Diagnostic{
+					diagnostics = append(diagnostics, shared.Diagnostic[core.UploadRelPath]{
 						UploadID: bundleID,
-						Path:     documentData.Path,
+						Path:     core.NewUploadRelPathUnchecked(documentData.Path),
 						DiagnosticData: precise.DiagnosticData{
 							Severity:       int(diagnostic.Severity),
 							Code:           diagnostic.Code,
