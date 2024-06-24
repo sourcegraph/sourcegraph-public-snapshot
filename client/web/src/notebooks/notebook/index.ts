@@ -17,7 +17,7 @@ import {
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
-import { type NotebookFields, SearchPatternType } from '../../graphql-operations'
+import { type NotebookFields } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -98,11 +98,13 @@ export class NotebookHeadingMarkdownRenderer extends Renderer {
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
+    private version = LATEST_VERSION
 
-    constructor(initializerBlocks: BlockInit[], private dependencies: BlockDependencies) {
+    constructor(initializerBlocks: BlockInit[], queryVersion: string, private dependencies: BlockDependencies) {
         const blocks = initializerBlocks.map(block => ({ ...block, output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
+        this.version = queryVersion
         this.blockOrder = blocks.map(block => block.id)
 
         // Pre-run certain blocks, for a better user experience.
@@ -161,8 +163,7 @@ export class Notebook {
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
-                        version: LATEST_VERSION,
-                        patternType: SearchPatternType.standard,
+                        version: this.version,
                         caseSensitive: false,
                         trace: undefined,
                         chunkMatches: true,

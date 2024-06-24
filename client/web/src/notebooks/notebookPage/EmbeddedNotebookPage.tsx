@@ -85,6 +85,7 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     // Copying is not supported in embedded notebooks
                     onCopyNotebook={() => NEVER}
                     isEmbedded={true}
+                    queryVersion={notebookOrError.queryVersion}
                 />
             )}
         </div>

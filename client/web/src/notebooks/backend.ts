@@ -49,6 +49,7 @@ const notebooksFragment = gql`
         stars {
             totalCount
         }
+        queryVersion
         blocks {
             ... on MarkdownBlock {
                 __typename
