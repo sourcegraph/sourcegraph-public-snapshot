@@ -171,9 +171,9 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.GetExternalService,
 		sm.SetClonedRepos,
 	} {
-		r.MustRegister(om.Count)
-		r.MustRegister(om.Duration)
-		r.MustRegister(om.Errors)
+		metrics.MustRegisterIgnoreDuplicate(r, om.Count)
+		metrics.MustRegisterIgnoreDuplicate(r, om.Duration)
+		metrics.MustRegisterIgnoreDuplicate(r, om.Errors)
 	}
 }
 
