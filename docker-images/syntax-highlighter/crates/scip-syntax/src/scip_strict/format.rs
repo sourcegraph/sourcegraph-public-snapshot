@@ -27,7 +27,7 @@ pub fn format_symbol_with(symbol: &Symbol, options: SymbolFormatOptions) -> Stri
     let mut buf = String::new();
     match symbol {
         Symbol::Local { local_id } => write!(&mut buf, "local {local_id}").unwrap(),
-        Symbol::NonLocal (NonLocalSymbol {
+        Symbol::NonLocal(NonLocalSymbol {
             scheme,
             package,
             descriptors,
@@ -70,11 +70,11 @@ impl fmt::Display for Symbol<'_> {
 
 impl fmt::Display for NonLocalSymbol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{} {} ", self.scheme, self.package)?;
-                for descriptor in &self.descriptors {
-                    write!(f, "{}", descriptor)?;
-                }
-                Ok(())
+        write!(f, "{} {} ", self.scheme, self.package)?;
+        for descriptor in &self.descriptors {
+            write!(f, "{}", descriptor)?;
+        }
+        Ok(())
     }
 }
 

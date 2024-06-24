@@ -109,7 +109,7 @@ fn parse_name(input: &str) -> PResult<'_, Cow<'_, str>> {
 }
 
 pub fn is_simple_identifier_char(c: char) -> bool {
-    c.is_alphanumeric() || c == '_' || c == '+' || c == '-' || c == '$'
+    c.is_ascii_alphanumeric() || c == '_' || c == '+' || c == '-' || c == '$'
 }
 
 fn parse_simple_identifier_str(input: &str) -> PResult<'_, &str> {
