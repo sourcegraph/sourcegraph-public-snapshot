@@ -75,6 +75,9 @@ export class TelemetryEmitter {
                     durationMs: this.elapsed(),
                     repositoryId: this.repoID,
                 },
+                privateMetadata: {
+                    languageId: this.languageID,
+                },
             })
         } catch {
             // Older version of Sourcegraph may have not registered this
