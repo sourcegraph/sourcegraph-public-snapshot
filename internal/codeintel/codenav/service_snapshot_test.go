@@ -52,7 +52,7 @@ func TestSnapshotForDocument(t *testing.T) {
 		}},
 	}, nil)
 
-	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", "burger.go", 0)
+	data, err := svc.SnapshotForDocument(context.Background(), 0, "deadbeef", repoRelPath("burger.go"), 0)
 	if err != nil {
 		t.Fatal(err)
 	}

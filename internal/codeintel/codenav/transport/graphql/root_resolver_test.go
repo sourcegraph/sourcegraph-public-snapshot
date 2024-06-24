@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -29,13 +30,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+// Only exposed for tests, production code should use Unchecked function
+// directly for clarity.
+var repoRelPath = core.NewRepoRelPathUnchecked
+
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
 
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -70,7 +75,7 @@ func TestDefinitions(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -105,7 +110,7 @@ func TestReferences(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -158,7 +163,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -197,7 +202,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -230,7 +235,7 @@ func TestHover(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -266,7 +271,7 @@ func TestDiagnostics(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -302,7 +307,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -335,7 +340,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Path:         repoRelPath("/src/main"),
 	}
 	mockOperations := newOperations(observation.TestContextTB(t))
 
@@ -382,10 +387,10 @@ func TestResolveLocations(t *testing.T) {
 	r4 := shared.Range{Start: shared.Position{Line: 41, Character: 42}, End: shared.Position{Line: 43, Character: 44}}
 
 	locations, err := resolveLocations(context.Background(), locationResolver, []shared.UploadLocation{
-		{Upload: uploadsshared.CompletedUpload{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: "p1"},
-		{Upload: uploadsshared.CompletedUpload{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: "p2"},
-		{Upload: uploadsshared.CompletedUpload{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: "p3"},
-		{Upload: uploadsshared.CompletedUpload{RepositoryID: 53}, TargetCommit: "deadbeef4", TargetRange: r4, Path: "p4"},
+		{Upload: uploadsshared.CompletedUpload{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: repoRelPath("p1")},
+		{Upload: uploadsshared.CompletedUpload{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: repoRelPath("p2")},
+		{Upload: uploadsshared.CompletedUpload{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: repoRelPath("p3")},
+		{Upload: uploadsshared.CompletedUpload{RepositoryID: 53}, TargetCommit: "deadbeef4", TargetRange: r4, Path: repoRelPath("p4")},
 	})
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
@@ -444,12 +449,12 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 	errUploadNotFound := errors.New("upload not found")
 	errDocumentNotFound := errors.New("document not found")
 	testUpload := uploadsshared.CompletedUpload{ID: 82}
-	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, uploadID int, path string) (*scip.Document, error) {
+	codeNavSvc.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, uploadID int, path core.RepoRelPath) (*scip.Document, error) {
 		if uploadID != testUpload.ID {
 			return nil, errUploadNotFound
 		}
 		for _, d := range index.Documents {
-			if path == d.RelativePath {
+			if path.RawValue() == d.RelativePath {
 				return d, nil
 			}
 		}
@@ -458,7 +463,7 @@ func makeTestResolver(t *testing.T) resolverstubs.CodeGraphDataResolver {
 
 	return newCodeGraphDataResolver(
 		codeNavSvc, testUpload,
-		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: "locals.repro"},
+		&resolverstubs.CodeGraphDataOpts{Repo: &sgtypes.Repo{}, Path: repoRelPath("locals.repro")},
 		resolverstubs.ProvenancePrecise, newOperations(&observation.TestContext))
 }
 

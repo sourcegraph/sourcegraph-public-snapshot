@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -25,9 +26,9 @@ type CodeNavService interface {
 	// see NOTE(id: closest-uploads-postcondition).
 	GetClosestCompletedUploadsForBlob(context.Context, uploadsshared.UploadMatchingOptions) (_ []uploadsshared.CompletedUpload, err error)
 	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.CompletedUpload, error)
-	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
-	SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error)
-	SyntacticUsages(ctx context.Context, repo types.Repo, commit api.CommitID, path string, symbolRange scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
+	SnapshotForDocument(ctx context.Context, repositoryID int, commit string, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error)
+	SCIPDocument(ctx context.Context, uploadID int, path core.RepoRelPath) (*scip.Document, error)
+	SyntacticUsages(ctx context.Context, repo types.Repo, commit api.CommitID, path core.RepoRelPath, symbolRange scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
 }
 
 type AutoIndexingService interface {

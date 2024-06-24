@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -104,7 +105,7 @@ func (s *symbolInformationResolver) DataSource() *string {
 type usageRangeResolver struct {
 	repository types.Repo
 	revision   api.CommitID
-	path       string
+	path       core.RepoRelPath
 	range_     scip.Range
 }
 
@@ -119,7 +120,7 @@ func (u *usageRangeResolver) Revision() string {
 }
 
 func (u *usageRangeResolver) Path() string {
-	return u.path
+	return u.path.RawValue()
 }
 
 func (u *usageRangeResolver) Range() resolverstubs.RangeResolver {

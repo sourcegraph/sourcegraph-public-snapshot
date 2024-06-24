@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1294,7 +1295,7 @@ func (t *FindClosestCompletedUploadsTestCase) uploadMatchingOptions() shared.Upl
 	if !t.rootMustEnclosePath {
 		matching = shared.RootEnclosesPathOrPathEnclosesRoot
 	}
-	return shared.UploadMatchingOptions{50, t.commit, t.file, matching, t.indexer}
+	return shared.UploadMatchingOptions{50, t.commit, core.NewRepoRelPathUnchecked(t.file), matching, t.indexer}
 }
 
 func testFindClosestCompletedUploads(t *testing.T, store Store, testCases []FindClosestCompletedUploadsTestCase) {

@@ -8,6 +8,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -100,6 +101,16 @@ type CompletedUpload struct {
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
+}
+
+var _ core.UploadLike = &CompletedUpload{}
+
+func (u *CompletedUpload) GetID() int {
+	return u.ID
+}
+
+func (u *CompletedUpload) GetRoot() string {
+	return u.Root
 }
 
 func (u *CompletedUpload) ConvertToUpload() Upload {
@@ -345,7 +356,7 @@ type UploadsWithRepositoryNamespace struct {
 type UploadMatchingOptions struct {
 	RepositoryID int
 	Commit       string
-	Path         string
+	Path         core.RepoRelPath
 	// RootToPathMatching describes how the root for which a SCIP index was uploaded
 	// should be matched to the provided Path for a file or directory
 	//
@@ -366,7 +377,7 @@ func (u *UploadMatchingOptions) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.Int("repositoryID", u.RepositoryID),
 		attribute.String("commit", u.Commit),
-		attribute.String("path", u.Path),
+		attribute.String("path", u.Path.RawValue()),
 		attribute.String("rootToPathMatching", string(u.RootToPathMatching)),
 		attribute.String("indexer", u.Indexer),
 	}

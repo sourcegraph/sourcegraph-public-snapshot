@@ -227,6 +227,6 @@ func (r *Reconciler) reconcileCodeIntelService(ctx context.Context, sg *config.S
 
 func (r *Reconciler) reconcileCodeIntelServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.CodeIntel
-	sa := serviceaccount.NewServiceAccount("codeintel", sg.Namespace, cfg)
+	sa := serviceaccount.NewServiceAccount("codeintel-db", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &sa, &corev1.ServiceAccount{}, sg, owner)
 }
