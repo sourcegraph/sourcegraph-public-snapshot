@@ -1,4 +1,4 @@
-package database
+package databasetest
 
 import (
 	"context"
@@ -17,12 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-// newTestDB creates a new test database and initializes the given list of
+// NewTestDB creates a new test database and initializes the given list of
 // tables for the suite. The test database is dropped after testing is completed
 // unless failed.
 //
 // Future: Move to a shared package when more than Enterprise Portal uses it.
-func newTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgxpool.Pool {
+func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgxpool.Pool {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
@@ -92,20 +92,25 @@ func newTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 	return testDB
 }
 
-// clearTables removes all rows from the list of tables in the original order.
-// It uses soft-deletion when available and skips deletion when the test suite
-// failed.
+// ClearTablesAfterTest removes all rows from the list of tables in the original
+// order as a t.Cleanup hook. It uses soft-deletion when available and skips
+// deletion when the test suite failed.
 //
 // Future: Move to a shared package when more than Enterprise Portal uses it.
-func clearTables(t *testing.T, db *pgxpool.Pool, tables ...schema.Tabler) error {
-	if t.Failed() {
-		return nil
-	}
+func ClearTablesAfterTest(t *testing.T, db *pgxpool.Pool, tables ...schema.Tabler) {
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Log("Leaving table data intact after test failure")
+			return
+		}
 
-	tableNames := make([]string, 0, len(tables))
-	for _, t := range tables {
-		tableNames = append(tableNames, t.TableName())
-	}
-	_, err := db.Exec(context.Background(), "TRUNCATE TABLE "+strings.Join(tableNames, ", ")+" RESTART IDENTITY")
-	return err
+		tableNames := make([]string, 0, len(tables))
+		for _, t := range tables {
+			tableNames = append(tableNames, t.TableName())
+		}
+		_, err := db.Exec(context.Background(), "TRUNCATE TABLE "+strings.Join(tableNames, ", ")+" RESTART IDENTITY")
+		if err != nil {
+			t.Errorf("Failed to clear table data: %v", err)
+		}
+	})
 }

@@ -5,6 +5,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { type LegacyLayoutRouteContext, LegacyRoute } from '../LegacyRouteContext'
 
+import { QueryClientProvider } from './management/api/react-query/QueryClientProvider'
 import { useUserCodySubscription } from './subscription/useUserCodySubscription'
 import { isEmbeddedCodyProUIEnabled } from './util'
 
@@ -95,10 +96,12 @@ const CodyProPage: React.FC<CodyProPageProps> = props => {
 
     const Component = routeComponents[props.path]
     return (
-        <Component
-            authenticatedUser={props.authenticatedUser}
-            telemetryRecorder={props.telemetryRecorder}
-            codySubscription={data.currentUser.codySubscription}
-        />
+        <QueryClientProvider>
+            <Component
+                authenticatedUser={props.authenticatedUser}
+                telemetryRecorder={props.telemetryRecorder}
+                codySubscription={data.currentUser.codySubscription}
+            />
+        </QueryClientProvider>
     )
 }

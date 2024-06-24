@@ -14,7 +14,7 @@ import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
@@ -87,10 +87,10 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
 			require.Len(t, opts.IDs, 1)
 			assert.Equal(t, "80ca12e2-54b4-448c-a61a-390b1a9c1224", opts.IDs[0])
-			return []*database.Subscription{}, nil
+			return []*subscriptions.Subscription{}, nil
 		})
 		_, err := h.ListEnterpriseSubscriptions(ctx, req)
 		require.NoError(t, err)
@@ -113,10 +113,10 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224"}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
 			require.Len(t, opts.IDs, 1)
 			assert.Equal(t, "80ca12e2-54b4-448c-a61a-390b1a9c1224", opts.IDs[0])
-			return []*database.Subscription{}, nil
+			return []*subscriptions.Subscription{}, nil
 		})
 		_, err := h.ListEnterpriseSubscriptions(ctx, req)
 		require.NoError(t, err)
@@ -142,10 +142,10 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:a-different-subscription-id"}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
 			require.Len(t, opts.IDs, 1)
 			assert.Equal(t, "a-different-subscription-id", opts.IDs[0])
-			return []*database.Subscription{}, nil
+			return []*subscriptions.Subscription{}, nil
 		})
 		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
 		require.NoError(t, err)
@@ -172,10 +172,10 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.IAMListObjectsFunc.SetDefaultReturn([]string{"subscription_cody_analytics:" + subscriptionID}, nil)
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
 			require.Len(t, opts.IDs, 1)
 			assert.Equal(t, subscriptionID, opts.IDs[0])
-			return []*database.Subscription{{ID: opts.IDs[0]}}, nil
+			return []*subscriptions.Subscription{{ID: opts.IDs[0]}}, nil
 		})
 		resp, err := h.ListEnterpriseSubscriptions(ctx, req)
 		require.NoError(t, err)
@@ -214,8 +214,8 @@ func TestHandlerV1_ListEnterpriseSubscriptions(t *testing.T) {
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
-			return []*database.Subscription{}, nil
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+			return []*subscriptions.Subscription{}, nil
 		})
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultHook(func(_ context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
 			assert.Empty(t, opts.SubscriptionIDs)
@@ -248,10 +248,10 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error) {
+		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.NotEmpty(t, opts.InstanceDomain)
 			assert.False(t, opts.ForceUpdate)
-			return &database.Subscription{}, nil
+			return &subscriptions.Subscription{}, nil
 		})
 		_, err := h.UpdateEnterpriseSubscription(ctx, req)
 		require.NoError(t, err)
@@ -270,10 +270,10 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error) {
+		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.NotEmpty(t, opts.InstanceDomain)
 			assert.False(t, opts.ForceUpdate)
-			return &database.Subscription{}, nil
+			return &subscriptions.Subscription{}, nil
 		})
 		_, err := h.UpdateEnterpriseSubscription(ctx, req)
 		require.NoError(t, err)
@@ -292,10 +292,10 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error) {
+		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.Empty(t, opts.InstanceDomain)
 			assert.True(t, opts.ForceUpdate)
-			return &database.Subscription{}, nil
+			return &subscriptions.Subscription{}, nil
 		})
 		_, err := h.UpdateEnterpriseSubscription(ctx, req)
 		require.NoError(t, err)
@@ -313,10 +313,10 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 
 		h := newTestHandlerV1()
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error) {
+		h.mockStore.UpsertEnterpriseSubscriptionFunc.SetDefaultHook(func(_ context.Context, _ string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 			assert.Empty(t, opts.InstanceDomain)
 			assert.False(t, opts.ForceUpdate)
-			return &database.Subscription{}, nil
+			return &subscriptions.Subscription{}, nil
 		})
 		_, err := h.UpdateEnterpriseSubscription(ctx, req)
 		require.NoError(t, err)
@@ -358,7 +358,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
 		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*database.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*subscriptions.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
 		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
 			assert.Len(t, opts.Writes, 2)
 			return nil

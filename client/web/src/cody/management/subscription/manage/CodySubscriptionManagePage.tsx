@@ -58,10 +58,6 @@ const AuthenticatedCodySubscriptionManagePage: React.FC<Props> = ({ telemetryRec
         return <Navigate to={CodyProRoutes.NewProSubscription} replace={true} />
     }
 
-    if (subscriptionSummaryQuery.data.userRole !== 'admin') {
-        return <Navigate to={CodyProRoutes.Manage} replace={true} />
-    }
-
     return (
         <Page className="d-flex flex-column">
             <PageTitle title="Manage subscription" />

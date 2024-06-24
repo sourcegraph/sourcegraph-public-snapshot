@@ -1,4 +1,4 @@
-package database
+package subscriptions
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Subscription is a product subscription record.
+// Subscription is an Enterprise subscription record.
 type Subscription struct {
 	// ID is the prefixed UUID-format identifier for the subscription.
 	ID string `gorm:"primaryKey"`
@@ -24,13 +24,13 @@ func (s *Subscription) TableName() string {
 	return "enterprise_portal_subscriptions"
 }
 
-// SubscriptionsStore is the storage layer for product subscriptions.
-type SubscriptionsStore struct {
+// Store is the storage layer for product subscriptions.
+type Store struct {
 	db *pgxpool.Pool
 }
 
-func newSubscriptionsStore(db *pgxpool.Pool) *SubscriptionsStore {
-	return &SubscriptionsStore{
+func NewStore(db *pgxpool.Pool) *Store {
+	return &Store{
 		db: db,
 	}
 }
@@ -74,7 +74,7 @@ func (opts ListEnterpriseSubscriptionsOptions) toQueryConditions() (where, limit
 }
 
 // List returns a list of subscriptions based on the given options.
-func (s *SubscriptionsStore) List(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*Subscription, error) {
+func (s *Store) List(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*Subscription, error) {
 	where, limit, namedArgs := opts.toQueryConditions()
 	query := fmt.Sprintf(`
 SELECT
@@ -138,7 +138,7 @@ DO UPDATE SET
 }
 
 // Upsert upserts a subscription record based on the given options.
-func (s *SubscriptionsStore) Upsert(ctx context.Context, subscriptionID string, opts UpsertSubscriptionOptions) (*Subscription, error) {
+func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSubscriptionOptions) (*Subscription, error) {
 	query, namedArgs := opts.toQuery(subscriptionID)
 	if query != "" {
 		_, err := s.db.Exec(ctx, query, namedArgs)
@@ -151,7 +151,7 @@ func (s *SubscriptionsStore) Upsert(ctx context.Context, subscriptionID string, 
 
 // Get returns a subscription record with the given subscription ID. It returns
 // pgx.ErrNoRows if no such subscription exists.
-func (s *SubscriptionsStore) Get(ctx context.Context, subscriptionID string) (*Subscription, error) {
+func (s *Store) Get(ctx context.Context, subscriptionID string) (*Subscription, error) {
 	var subscription Subscription
 	query := `SELECT id, instance_domain FROM enterprise_portal_subscriptions WHERE id = @id`
 	namedArgs := pgx.NamedArgs{"id": subscriptionID}

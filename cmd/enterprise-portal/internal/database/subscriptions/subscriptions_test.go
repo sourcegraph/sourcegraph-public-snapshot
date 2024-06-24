@@ -1,4 +1,4 @@
-package database
+package subscriptions_test
 
 import (
 	"context"
@@ -8,28 +8,29 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/databasetest"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 )
 
 func TestSubscriptionsStore(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := newSubscriptionsStore(newTestDB(t, "enterprise-portal", "SubscriptionsStore", allTables...))
+	db := databasetest.NewTestDB(t, "enterprise-portal", "SubscriptionsStore", tables.All()...)
 
 	for _, tc := range []struct {
 		name string
-		test func(t *testing.T, ctx context.Context, s *SubscriptionsStore)
+		test func(t *testing.T, ctx context.Context, s *subscriptions.Store)
 	}{
 		{"List", SubscriptionsStoreList},
 		{"Upsert", SubscriptionsStoreUpsert},
 		{"Get", SubscriptionsStoreGet},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				err := clearTables(t, db.db, allTables...)
-				require.NoError(t, err)
-			})
-			tc.test(t, ctx, db)
+			databasetest.ClearTablesAfterTest(t, db, tables.All()...)
+			tc.test(t, ctx, subscriptions.NewStore(db))
 		})
 		if t.Failed() {
 			break
@@ -37,76 +38,76 @@ func TestSubscriptionsStore(t *testing.T) {
 	}
 }
 
-func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *SubscriptionsStore) {
+func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.Store) {
 	// Create test records.
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
 	)
 	require.NoError(t, err)
 	s2, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		UpsertSubscriptionOptions{InstanceDomain: "s2.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s2.sourcegraph.com"},
 	)
 	require.NoError(t, err)
 	_, err = s.Upsert(
 		ctx,
 		uuid.New().String(),
-		UpsertSubscriptionOptions{InstanceDomain: "s3.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s3.sourcegraph.com"},
 	)
 	require.NoError(t, err)
 
 	t.Run("list by IDs", func(t *testing.T) {
-		subscriptions, err := s.List(ctx, ListEnterpriseSubscriptionsOptions{IDs: []string{s1.ID, s2.ID}})
+		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{s1.ID, s2.ID}})
 		require.NoError(t, err)
-		require.Len(t, subscriptions, 2)
-		assert.Equal(t, s1.ID, subscriptions[0].ID)
-		assert.Equal(t, s2.ID, subscriptions[1].ID)
+		require.Len(t, ss, 2)
+		assert.Equal(t, s1.ID, ss[0].ID)
+		assert.Equal(t, s2.ID, ss[1].ID)
 
 		t.Run("no match", func(t *testing.T) {
-			subscriptions, err = s.List(ctx, ListEnterpriseSubscriptionsOptions{IDs: []string{"1234"}})
+			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{"1234"}})
 			require.NoError(t, err)
-			require.Len(t, subscriptions, 0)
+			require.Len(t, ss, 0)
 		})
 	})
 
 	t.Run("list by instance domains", func(t *testing.T) {
-		subscriptions, err := s.List(ctx, ListEnterpriseSubscriptionsOptions{
+		ss, err := s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
 			InstanceDomains: []string{s1.InstanceDomain, s2.InstanceDomain}},
 		)
 		require.NoError(t, err)
-		require.Len(t, subscriptions, 2)
-		assert.Equal(t, s1.ID, subscriptions[0].ID)
-		assert.Equal(t, s2.ID, subscriptions[1].ID)
+		require.Len(t, ss, 2)
+		assert.Equal(t, s1.ID, ss[0].ID)
+		assert.Equal(t, s2.ID, ss[1].ID)
 
 		t.Run("no match", func(t *testing.T) {
-			subscriptions, err = s.List(ctx, ListEnterpriseSubscriptionsOptions{InstanceDomains: []string{"1234"}})
+			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{InstanceDomains: []string{"1234"}})
 			require.NoError(t, err)
-			require.Len(t, subscriptions, 0)
+			require.Len(t, ss, 0)
 		})
 	})
 
 	t.Run("list with page size", func(t *testing.T) {
-		subscriptions, err := s.List(
+		ss, err := s.List(
 			ctx,
-			ListEnterpriseSubscriptionsOptions{
+			subscriptions.ListEnterpriseSubscriptionsOptions{
 				IDs:      []string{s1.ID, s2.ID}, // Two matching but only of them will be returned.
 				PageSize: 1,
 			},
 		)
 		require.NoError(t, err)
-		assert.Len(t, subscriptions, 1)
+		assert.Len(t, ss, 1)
 	})
 }
 
-func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *SubscriptionsStore) {
+func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *subscriptions.Store) {
 	// Create initial test record.
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
 	)
 	require.NoError(t, err)
 
@@ -116,30 +117,30 @@ func SubscriptionsStoreUpsert(t *testing.T, ctx context.Context, s *Subscription
 	assert.Equal(t, s1.InstanceDomain, got.InstanceDomain)
 
 	t.Run("noop", func(t *testing.T) {
-		got, err = s.Upsert(ctx, s1.ID, UpsertSubscriptionOptions{})
+		got, err = s.Upsert(ctx, s1.ID, subscriptions.UpsertSubscriptionOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, s1.InstanceDomain, got.InstanceDomain)
 	})
 
 	t.Run("update", func(t *testing.T) {
-		got, err = s.Upsert(ctx, s1.ID, UpsertSubscriptionOptions{InstanceDomain: "s1-new.sourcegraph.com"})
+		got, err = s.Upsert(ctx, s1.ID, subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1-new.sourcegraph.com"})
 		require.NoError(t, err)
 		assert.Equal(t, "s1-new.sourcegraph.com", got.InstanceDomain)
 	})
 
 	t.Run("force update", func(t *testing.T) {
-		got, err = s.Upsert(ctx, s1.ID, UpsertSubscriptionOptions{ForceUpdate: true})
+		got, err = s.Upsert(ctx, s1.ID, subscriptions.UpsertSubscriptionOptions{ForceUpdate: true})
 		require.NoError(t, err)
 		assert.Empty(t, got.InstanceDomain)
 	})
 }
 
-func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *SubscriptionsStore) {
+func SubscriptionsStoreGet(t *testing.T, ctx context.Context, s *subscriptions.Store) {
 	// Create initial test record.
 	s1, err := s.Upsert(
 		ctx,
 		uuid.New().String(),
-		UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
+		subscriptions.UpsertSubscriptionOptions{InstanceDomain: "s1.sourcegraph.com"},
 	)
 	require.NoError(t, err)
 

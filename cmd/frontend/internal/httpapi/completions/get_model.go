@@ -31,6 +31,11 @@ func getCodeCompletionModelFn() getModelFn {
 			}
 			return "", errors.Newf("unsupported code completion model %q", requestParams.Model)
 		}
+		// The caller will probably return a 4xx if Cody isn't available on the Sourcegraph
+		// instance before calling getModel.
+		if c == nil {
+			return "", errors.New("no completions config available")
+		}
 		return c.CompletionModel, nil
 	}
 }
@@ -58,6 +63,7 @@ func getChatModelFn(db database.DB) getModelFn {
 
 		// For any other Sourcegraph instance, i.e. using Cody Enterprise,
 		// we just use the configured "chat" or "fastChat" model.
+		// TODO(PRIME-283): Enable LLM model selection Cody Enterprise users.
 		if requestParams.Fast {
 			return c.FastChatModel, nil
 		}

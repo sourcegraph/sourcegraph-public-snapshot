@@ -67,8 +67,9 @@ export {
     type RelevantTokenResult,
     EMPTY_RELEVANT_TOKEN_RESULT,
 } from '@sourcegraph/shared/src/search/query/analyze'
-export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-export { KeywordKind, type Token } from '@sourcegraph/shared/src/search/query/token'
+export { scanSearchQuery, scanSearchQueryAsPatterns } from '@sourcegraph/shared/src/search/query/scanner'
+export { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
+export { KeywordKind, PatternKind, type Token } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { isFilterOfType } from '@sourcegraph/shared/src/search/query/utils'

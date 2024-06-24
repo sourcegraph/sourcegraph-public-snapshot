@@ -378,7 +378,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                     </li>
 
                     <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
-                        Cody AI
+                        Cody
                     </NavItemLink>
 
                     {authenticatedUser && (

@@ -20,7 +20,7 @@ import (
 
 func (r *Reconciler) reconcileCadvisor(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileCadvisorDaemonset(ctx, sg, owner); err != nil {
-		return errors.Wrap(err, "reconciling ClusterRole")
+		return errors.Wrap(err, "reconciling Daemonset")
 	}
 	if err := r.reconcileCadvisorServiceAccount(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling ServiceAccount")

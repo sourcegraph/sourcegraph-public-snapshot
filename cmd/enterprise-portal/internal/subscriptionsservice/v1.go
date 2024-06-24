@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -155,9 +155,9 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 		}
 	}
 
-	subscriptions, err := s.store.ListEnterpriseSubscriptions(
+	subs, err := s.store.ListEnterpriseSubscriptions(
 		ctx,
-		database.ListEnterpriseSubscriptionsOptions{
+		subscriptions.ListEnterpriseSubscriptionsOptions{
 			IDs:        subscriptionIDs.Values(),
 			IsArchived: isArchived,
 			PageSize:   int(req.Msg.GetPageSize()),
@@ -181,8 +181,8 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	}
 
 	// Add the "real" subscriptions we already track to the results
-	respSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, 0, len(subscriptions))
-	for _, s := range subscriptions {
+	respSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, 0, len(subs))
+	for _, s := range subs {
 		respSubscriptions = append(
 			respSubscriptions,
 			convertSubscriptionToProto(s, dotcomSubscriptionsSet[s.ID]),
@@ -194,7 +194,7 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	for _, s := range dotcomSubscriptionsSet {
 		respSubscriptions = append(
 			respSubscriptions,
-			convertSubscriptionToProto(&database.Subscription{
+			convertSubscriptionToProto(&subscriptions.Subscription{
 				ID: subscriptionsv1.EnterpriseSubscriptionIDPrefix + s.ID,
 			}, s),
 		)
@@ -315,7 +315,7 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
 	}
 
-	var opts database.UpsertSubscriptionOptions
+	var opts subscriptions.UpsertSubscriptionOptions
 
 	fieldPaths := req.Msg.GetUpdateMask().GetPaths()
 	// Empty field paths means update all non-empty fields.
@@ -332,6 +332,14 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 				opts.ForceUpdate = true
 				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
 			}
+		}
+	}
+
+	// Validate and normalize the domain
+	if opts.InstanceDomain != "" {
+		opts.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
 		}
 	}
 
@@ -396,9 +404,14 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
 		}
 	} else if instanceDomain != "" {
+		// Validate and normalize the domain
+		instanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(instanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
+		}
 		subscriptions, err := s.store.ListEnterpriseSubscriptions(
 			ctx,
-			database.ListEnterpriseSubscriptionsOptions{
+			subscriptions.ListEnterpriseSubscriptionsOptions{
 				InstanceDomains: []string{instanceDomain},
 				PageSize:        1,
 			},

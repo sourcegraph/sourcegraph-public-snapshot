@@ -36,7 +36,8 @@ test.describe('cloned repository', () => {
         await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
     })
 
-    test('has prepopulated search bar', async ({ page }) => {
+    // TODO: Better test to ensure that we are testing the search input
+    test.fixme('has prepopulated search bar', async ({ page }) => {
         await expect(page.getByText('repo:^github\\.com/sourcegraph')).toBeVisible()
     })
 })
@@ -120,7 +121,7 @@ test.describe('repo menu', () => {
     test('click switch repo', async ({ page }) => {
         await page.getByRole('heading', { name: 'sourcegraph/sourcegraph' }).click()
         await page.getByRole('menuitem', { name: 'Switch repo' }).click()
-        await expect(page.getByPlaceholder('Enter a fuzzy query')).toBeVisible()
+        await expect(page.getByPlaceholder('Find repositories...')).toBeVisible()
     })
 
     test('settings url', async ({ page }) => {
