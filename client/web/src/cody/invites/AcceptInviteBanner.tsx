@@ -3,11 +3,12 @@ import { Button, ButtonLink, H1, Text } from '@sourcegraph/wildcard'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
 import { useAcceptInvite, useCancelInvite } from '../management/api/react-query/invites'
+import { useUserCodySubscription } from '../subscription/useUserCodySubscription'
 
 import { useInviteParams } from './useInviteParams'
 import { UserInviteStatus, useInviteState } from './useInviteState'
 
-export const AcceptInviteBanner: React.FC<{ onSuccess: () => unknown }> = ({ onSuccess }) => {
+export const AcceptInviteBanner: React.FC = () => {
     const { inviteParams, clearInviteParams } = useInviteParams()
     if (!inviteParams) {
         return null
@@ -16,18 +17,17 @@ export const AcceptInviteBanner: React.FC<{ onSuccess: () => unknown }> = ({ onS
         <AcceptInviteBannerContent
             teamId={inviteParams.teamId}
             inviteId={inviteParams.inviteId}
-            onSuccess={onSuccess}
             clearInviteParams={clearInviteParams}
         />
     )
 }
 
-const AcceptInviteBannerContent: React.FC<{
-    teamId: string
-    inviteId: string
-    onSuccess: () => unknown
-    clearInviteParams: () => void
-}> = ({ teamId, inviteId, onSuccess, clearInviteParams }) => {
+const AcceptInviteBannerContent: React.FC<{ teamId: string; inviteId: string; clearInviteParams: () => void }> = ({
+    teamId,
+    inviteId,
+    clearInviteParams,
+}) => {
+    const { refetch } = useUserCodySubscription()
     const inviteState = useInviteState(teamId, inviteId)
     const acceptInviteMutation = useAcceptInvite()
     const cancelInviteMutation = useCancelInvite()
@@ -108,7 +108,7 @@ const AcceptInviteBannerContent: React.FC<{
                                     onClick={() =>
                                         acceptInviteMutation.mutate(
                                             { teamId, inviteId },
-                                            { onSuccess, onSettled: clearInviteParams }
+                                            { onSuccess: () => refetch(), onSettled: clearInviteParams }
                                         )
                                     }
                                 >

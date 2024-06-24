@@ -1,10 +1,12 @@
-import type { RouteObject } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { type LegacyLayoutRouteContext, LegacyRoute } from '../LegacyRouteContext'
 
 import { QueryClientProvider } from './management/api/react-query/QueryClientProvider'
+import { useUserCodySubscription } from './subscription/useUserCodySubscription'
 import { isEmbeddedCodyProUIEnabled } from './util'
 
 export enum CodyProRoutes {
@@ -77,10 +79,29 @@ interface CodyProPageProps extends Pick<LegacyLayoutRouteContext, 'authenticated
  * only applies to non-Enterprise users) from the rest of the Sourcegraph UI.
  */
 const CodyProPage: React.FC<CodyProPageProps> = props => {
+    const { data } = useUserCodySubscription()
+    if (!data) {
+        return null
+    }
+
+    if (!data.currentUser) {
+        // Cody plan is not available if the user is not authenticated. Redirecting to the sign-in page.
+        return <Navigate to={`/sign-in?returnTo=${CodyProRoutes.Manage}`} replace={true} />
+    }
+
+    if (!data.currentUser.codySubscription) {
+        logger.error('Cody subscription data is not available.')
+        return null
+    }
+
     const Component = routeComponents[props.path]
     return (
         <QueryClientProvider>
-            <Component authenticatedUser={props.authenticatedUser} telemetryRecorder={props.telemetryRecorder} />
+            <Component
+                authenticatedUser={props.authenticatedUser}
+                telemetryRecorder={props.telemetryRecorder}
+                codySubscription={data.currentUser.codySubscription}
+            />
         </QueryClientProvider>
     )
 }

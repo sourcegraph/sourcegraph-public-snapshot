@@ -9,7 +9,6 @@ import { loadStripe } from '@stripe/stripe-js'
 import classNames from 'classnames'
 import { Navigate, useSearchParams } from 'react-router-dom'
 
-import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { PageHeader, Text, LoadingSpinner, Alert, logger } from '@sourcegraph/wildcard'
 
@@ -17,14 +16,10 @@ import type { AuthenticatedUser } from '../../../../auth'
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
-import {
-    type UserCodyPlanResult,
-    type UserCodyPlanVariables,
-    CodySubscriptionPlan,
-} from '../../../../graphql-operations'
+import { CodySubscriptionPlan } from '../../../../graphql-operations'
 import { CodyProRoutes } from '../../../codyProRoutes'
 import { PageHeaderIcon } from '../../../components/PageHeaderIcon'
-import { USER_CODY_PLAN } from '../../../subscription/queries'
+import type { UserCodySubscription } from '../../../subscription/useUserCodySubscription'
 import { defaultCodyProApiClientContext, CodyProApiClientContext } from '../../api/components/CodyProApiClient'
 import { useCurrentSubscription } from '../../api/react-query/subscriptions'
 import { useBillingAddressStripeElementsOptions } from '../manage/BillingAddress'
@@ -41,11 +36,13 @@ const stripe = await loadStripe(publishableKey || '')
 
 interface NewCodyProSubscriptionPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
+    codySubscription: UserCodySubscription
 }
 
 const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubscriptionPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
+    codySubscription,
 }) => {
     const [urlSearchParams] = useSearchParams()
     const addSeats = !!urlSearchParams.get('addSeats')
@@ -53,12 +50,6 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
 
     const stripeElementsOptions = useBillingAddressStripeElementsOptions()
 
-    // Load data
-    const {
-        loading: userCodyPlanLoading,
-        data: userCodyPlanData,
-        error: userCodyPlanError,
-    } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
     const subscriptionQueryResult = useCurrentSubscription()
     const subscription = subscriptionQueryResult?.data
 
@@ -67,23 +58,18 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
     }, [telemetryRecorder])
 
     useEffect(() => {
-        if (userCodyPlanError) {
-            logger.error('Failed to fetch subscription data', userCodyPlanError)
-        }
-    }, [userCodyPlanError])
-    useEffect(() => {
-        if (subscriptionQueryResult.isError) {
+        if (subscriptionQueryResult.error) {
             logger.error('Failed to fetch subscription data', subscriptionQueryResult.error)
         }
-    }, [subscriptionQueryResult.isError, subscriptionQueryResult.error])
-
-    if (userCodyPlanLoading || subscriptionQueryResult.isLoading) {
-        return <LoadingSpinner className="mx-auto" />
-    }
+    }, [subscriptionQueryResult.error])
 
     // If the user already has a Cody Pro subscription, direct them back to the Cody Management page.
-    if (!addSeats && userCodyPlanData?.currentUser?.codySubscription?.plan === CodySubscriptionPlan.PRO) {
+    if (!addSeats && codySubscription.plan === CodySubscriptionPlan.PRO) {
         return <Navigate to={CodyProRoutes.Manage} replace={true} />
+    }
+
+    if (subscriptionQueryResult.isLoading) {
+        return <LoadingSpinner className="mx-auto" />
     }
 
     const PageWithHeader = ({ children }: { children: React.ReactNode }): React.ReactElement => (
@@ -103,18 +89,10 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         </Page>
     )
 
-    if (userCodyPlanLoading || subscriptionQueryResult.isLoading) {
+    if (subscriptionQueryResult.isLoading) {
         return (
             <PageWithHeader>
                 <LoadingSpinner className="mx-auto" />
-            </PageWithHeader>
-        )
-    }
-
-    if (userCodyPlanError) {
-        return (
-            <PageWithHeader>
-                <Alert variant="danger">Failed to fetch user Cody plan data</Alert>
             </PageWithHeader>
         )
     }
