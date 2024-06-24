@@ -144,13 +144,17 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 	fileSize := fi.Size()
 
 	uploadID, err := uploadhandler.SingleUpload(ctx, i.uploadDBStore, i.uploadstoreStore, uploads.UploadMetadata{
-		RepositoryID:   record.RecordID(),
+		RepositoryID:   int(record.RepositoryID),
 		Commit:         string(record.Commit),
 		Root:           "",
 		Indexer:        "scip-syntax",
 		IndexerVersion: "1.0.0",
 		ContentType:    "application/x-protobuf+scip",
 	}, &fileSize, gzipReader(bufio.NewReader(f)))
+
+	if err != nil {
+		return err
+	}
 
 	logger.Info("Successfully queued upload",
 		log.Int("uploadID", uploadID),
