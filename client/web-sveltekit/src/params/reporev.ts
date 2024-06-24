@@ -33,6 +33,7 @@ const topLevelPaths = [
     'search/cody',
     'app',
     'cody',
+    'post-sign-up',
     'unlock-account',
     'password-reset',
     'survey',

@@ -160,6 +160,7 @@ ts_project(
         "src/auth/AuthPageWrapper.tsx",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
+        "src/auth/PostSignUpPage.tsx",
         "src/auth/RequestAccessPage.tsx",
         "src/auth/ResetPasswordPage.tsx",
         "src/auth/SignInPage.tsx",
