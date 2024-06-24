@@ -42,7 +42,7 @@ func AllowedEventTypes() EventTypes {
 		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "cody.completion",
-			Action:  "%",
+			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
 			},
@@ -62,7 +62,7 @@ func AllowedEventTypes() EventTypes {
 		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "blob.codeintel",
-			Action:  "%",
+			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
 			},
@@ -82,7 +82,7 @@ func AllowedEventTypes() EventTypes {
 		// Access to this information can help customers determine which models best suit their specific use cases
 		EventType{
 			Feature: "cody.chatResponse",
-			Action:  "%",
+			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"chatModel",
 			},
@@ -92,7 +92,7 @@ func AllowedEventTypes() EventTypes {
 		// Access to this information can help customers determine which models best suit their specific use cases
 		EventType{
 			Feature: "cody.chatResponseNew",
-			Action:  "%",
+			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"chatModel",
 			},
@@ -149,8 +149,8 @@ type EventTypes struct {
 func eventTypes(types ...EventType) EventTypes {
 	index := make(map[string][]string, len(types))
 	for _, t := range types {
-		key := fmt.Sprintf("%s.%s", t.Feature, t.Action)
-		if t.Action == "%" {
+		key := fmt.Sprintf("%s/%s", t.Feature, t.Action)
+		if t.Action == "*" {
 			key = t.Feature
 		}
 		index[key] = t.AllowedPrivateMetadataKeys
@@ -174,21 +174,18 @@ func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that
 // are allowed.
 func (e EventTypes) IsAllowed(event *telemetrygatewayv1.Event) ([]string, bool) {
-	var key string
-	if event.GetAction() == "%" {
-		key = event.GetFeature()
-		allowedKeys, allowed := e.index[key]
-		if allowed {
-			return allowedKeys, allowed
-		}
-	} else {
-		key = fmt.Sprintf("%s.%s", event.GetFeature(), event.GetAction())
-		allowedKeys, allowed := e.index[key]
-		if allowed {
-			return allowedKeys, allowed
-		}
+	// Check for the specific feature/action combination
+	key := fmt.Sprintf("%s/%s", event.GetFeature(), event.GetAction())
+	if allowedKeys, allowed := e.index[key]; allowed {
+		return allowedKeys, true
 	}
 
+	// Check for the feature-wide entry
+	if allowedKeys, allowed := e.index[event.GetFeature()]; allowed {
+		return allowedKeys, true
+	}
+
+	// If neither specific nor feature-wide entry is found, return false
 	return nil, false
 }
 
@@ -246,8 +243,8 @@ func parseAdditionalAllowedEventTypes(config string) ([]EventType, error) {
 				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q, missing allowlisted fields",
 				rawType)
 		}
-		// add condition that if Action is "%"
-		if parts[1] == "%" {
+		// add condition that if Action is "*"
+		if parts[1] == "*" {
 			types = append(types, EventType{
 				Feature:                    parts[0],
 				AllowedPrivateMetadataKeys: parts[2:],

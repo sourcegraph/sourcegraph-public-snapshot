@@ -44,7 +44,7 @@ func TestIsAllowed(t *testing.T) {
 			name: "disallowed event with additional allowed event type (feature only)",
 			event: &v1.Event{
 				Feature: "cody.completion",
-				Action:  "%",
+				Action:  "*",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
@@ -100,7 +100,7 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 		},
 		{
 			name:   "multiple types",
-			config: "foo::bar::field::field2,baz.bar::%::field",
+			config: "foo::bar::field::field2,baz.bar::*::field",
 			expect: autogold.Expect([]EventType{
 				{
 					Feature: "foo",
