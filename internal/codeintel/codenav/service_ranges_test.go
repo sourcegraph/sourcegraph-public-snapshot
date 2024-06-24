@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -65,15 +66,15 @@ func TestRanges(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	testLocation1 := shared.Location{UploadID: 50, Path: "a.go", Range: testRange1}
-	testLocation2 := shared.Location{UploadID: 51, Path: "b.go", Range: testRange2}
-	testLocation3 := shared.Location{UploadID: 51, Path: "c.go", Range: testRange1}
-	testLocation4 := shared.Location{UploadID: 51, Path: "d.go", Range: testRange2}
-	testLocation5 := shared.Location{UploadID: 51, Path: "e.go", Range: testRange1}
-	testLocation6 := shared.Location{UploadID: 51, Path: "a.go", Range: testRange2}
-	testLocation7 := shared.Location{UploadID: 51, Path: "a.go", Range: testRange3}
-	testLocation8 := shared.Location{UploadID: 52, Path: "a.go", Range: testRange4}
-	testLocation9 := shared.Location{UploadID: 52, Path: "changed.go", Range: testRange6}
+	testLocation1 := shared.Location{UploadID: 50, Path: uploadRelPath("a.go"), Range: testRange1}
+	testLocation2 := shared.Location{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2}
+	testLocation3 := shared.Location{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange1}
+	testLocation4 := shared.Location{UploadID: 51, Path: uploadRelPath("d.go"), Range: testRange2}
+	testLocation5 := shared.Location{UploadID: 51, Path: uploadRelPath("e.go"), Range: testRange1}
+	testLocation6 := shared.Location{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange2}
+	testLocation7 := shared.Location{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3}
+	testLocation8 := shared.Location{UploadID: 52, Path: uploadRelPath("a.go"), Range: testRange4}
+	testLocation9 := shared.Location{UploadID: 52, Path: uploadRelPath("changed.go"), Range: testRange6}
 
 	ranges := []shared.CodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []shared.Location{testLocation1}, Implementations: []shared.Location{}},
@@ -103,14 +104,14 @@ func TestRanges(t *testing.T) {
 		t.Fatalf("unexpected error querying ranges: %s", err)
 	}
 
-	adjustedLocation1 := shared.UploadLocation{Upload: uploads[0], Path: "sub1/a.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation2 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation3 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation4 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/d.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation5 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/e.go", TargetCommit: "deadbeef", TargetRange: testRange1}
-	adjustedLocation6 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange2}
-	adjustedLocation7 := shared.UploadLocation{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3}
-	adjustedLocation8 := shared.UploadLocation{Upload: uploads[2], Path: "sub3/a.go", TargetCommit: "deadbeef", TargetRange: testRange4}
+	adjustedLocation1 := shared.UploadLocation{Upload: uploads[0], Path: repoRelPath("sub1/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation2 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation3 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation4 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/d.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation5 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/e.go"), TargetCommit: "deadbeef", TargetRange: testRange1}
+	adjustedLocation6 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange2}
+	adjustedLocation7 := shared.UploadLocation{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3}
+	adjustedLocation8 := shared.UploadLocation{Upload: uploads[2], Path: repoRelPath("sub3/a.go"), TargetCommit: "deadbeef", TargetRange: testRange4}
 
 	expectedRanges := []AdjustedCodeIntelligenceRange{
 		{Range: testRange1, HoverText: "text1", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{adjustedLocation1}, Implementations: []shared.UploadLocation{}},
@@ -121,7 +122,7 @@ func TestRanges(t *testing.T) {
 		// no definition expected, as the line has been changed and we filter those out from range requests
 		{Range: testRange6, HoverText: "text6", Definitions: []shared.UploadLocation{}, References: []shared.UploadLocation{}, Implementations: []shared.UploadLocation{}},
 	}
-	if diff := cmp.Diff(expectedRanges, adjustedRanges); diff != "" {
+	if diff := cmp.Diff(expectedRanges, adjustedRanges, cmp.Comparer(core.RepoRelPath.Equal)); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
 
 func TestDatabaseExists(t *testing.T) {
@@ -26,7 +27,8 @@ func TestDatabaseExists(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if exists, err := store.GetPathExists(context.Background(), testCase.uploadID, testCase.path); err != nil {
+		if exists, err := store.GetPathExists(context.Background(), testCase.uploadID,
+			core.NewUploadRelPathUnchecked(testCase.path)); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if exists != testCase.expected {
 			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
@@ -113,7 +115,7 @@ func TestStencil(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			ranges, err := store.GetStencil(context.Background(), testCase.uploadID, testCase.path)
+			ranges, err := store.GetStencil(context.Background(), testCase.uploadID, core.NewUploadRelPathUnchecked(testCase.path))
 			if err != nil {
 				t.Fatalf("unexpected error %s", err)
 			}
@@ -133,7 +135,7 @@ func TestStencil(t *testing.T) {
 
 func TestGetRanges(t *testing.T) {
 	store := populateTestStore(t)
-	path := "template/src/util/helpers.ts"
+	path := core.NewUploadRelPathUnchecked("template/src/util/helpers.ts")
 
 	// (comments above)
 	// `export function nonEmpty<T>(value: T | T[] | null | undefined): value is T | T[] {`
@@ -245,7 +247,7 @@ func TestGetRanges(t *testing.T) {
 			HoverText:       tHoverText,
 		},
 	}
-	if diff := cmp.Diff(expectedRanges, ranges); diff != "" {
+	if diff := cmp.Diff(expectedRanges, ranges, cmp.Comparer(core.UploadRelPath.Equal)); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }

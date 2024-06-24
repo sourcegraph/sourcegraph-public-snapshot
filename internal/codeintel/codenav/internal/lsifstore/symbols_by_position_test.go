@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -42,7 +43,8 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if actual, err := store.GetMonikersByPosition(context.Background(), testCase.uploadID, testCase.path, testCase.line, testCase.character); err != nil {
+			path := core.NewUploadRelPathUnchecked(testCase.path)
+			if actual, err := store.GetMonikersByPosition(context.Background(), testCase.uploadID, path, testCase.line, testCase.character); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else {
 				if diff := cmp.Diff(testCase.expected, actual); diff != "" {
@@ -78,7 +80,7 @@ func TestGetPackageInformation(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if actual, exists, err := store.GetPackageInformation(context.Background(), testCase.uploadID, testCase.path, testCase.packageInformationID); err != nil {
+			if actual, exists, err := store.GetPackageInformation(context.Background(), testCase.uploadID, testCase.packageInformationID); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else if !exists {
 				t.Errorf("no package information")

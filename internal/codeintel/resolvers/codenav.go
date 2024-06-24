@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -52,9 +53,12 @@ func (a *GitBlobLSIFDataArgs) Options() shared.UploadMatchingOptions {
 		matching = shared.RootEnclosesPathOrPathEnclosesRoot
 	}
 	return shared.UploadMatchingOptions{
-		RepositoryID:       int(a.Repo.ID),
-		Commit:             string(a.Commit),
-		Path:               a.Path,
+		RepositoryID: int(a.Repo.ID),
+		Commit:       string(a.Commit),
+		// OK to use Unchecked method since we expect a repo-root relative
+		// path from the GraphQL API arguments; upload root relative paths
+		// are largely an implementation detail.
+		Path:               core.NewRepoRelPathUnchecked(a.Path),
 		RootToPathMatching: matching,
 		Indexer:            a.ToolName,
 	}
@@ -245,13 +249,13 @@ type CodeGraphDataOpts struct {
 	Args   *CodeGraphDataArgs
 	Repo   *types.Repo
 	Commit api.CommitID
-	Path   string
+	Path   core.RepoRelPath
 }
 
 func (opts *CodeGraphDataOpts) Attrs() []attribute.KeyValue {
 	return append([]attribute.KeyValue{attribute.String("repo", opts.Repo.String()),
 		opts.Commit.Attr(),
-		attribute.String("path", opts.Path)}, opts.Args.Attrs()...)
+		attribute.String("path", opts.Path.RawValue())}, opts.Args.Attrs()...)
 }
 
 type CodeGraphToolInfo struct {
@@ -381,7 +385,9 @@ func (args *UsagesForSymbolArgs) Resolve(
 		resolvedSymbol,
 		*repo,
 		commitID,
-		args.Range.Path,
+		// OK to use Unchecked function as input path is expected to be relative
+		// to repo root
+		core.NewRepoRelPathUnchecked(args.Range.Path),
 		scipRange,
 		resolvedFilter,
 		remainingCount,
@@ -394,7 +400,7 @@ type UsagesForSymbolResolvedArgs struct {
 	Symbol   *ResolvedSymbolComparator
 	Repo     types.Repo
 	CommitID api.CommitID
-	Path     string
+	Path     core.RepoRelPath
 	Range    scip.Range
 	Filter   *ResolvedUsagesFilter
 

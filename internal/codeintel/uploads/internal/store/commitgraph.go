@@ -1079,10 +1079,10 @@ func makeFindClosestProcessUploadsConditions(opts shared.UploadMatchingOptions) 
 	switch opts.RootToPathMatching {
 	case shared.RootMustEnclosePath:
 		// Ensure that the root is a prefix of the path
-		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, opts.Path))
+		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, opts.Path.RawValue()))
 	case shared.RootEnclosesPathOrPathEnclosesRoot:
 		// Ensure that the root is a prefix of the path or vice versa
-		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, opts.Path, opts.Path))
+		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, opts.Path.RawValue(), opts.Path.RawValue()))
 	}
 	if opts.Indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", opts.Indexer))
