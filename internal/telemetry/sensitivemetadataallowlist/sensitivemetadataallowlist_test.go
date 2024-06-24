@@ -112,6 +112,7 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 				},
 				{
 					Feature:                    "baz.bar",
+					Action:                     "*",
 					AllowedPrivateMetadataKeys: []string{"field"},
 				},
 			}),
@@ -202,6 +203,8 @@ func TestEventTypesRedact(t *testing.T) {
 			mode := allowedTypes.Redact(&v1.Event{
 				Feature: "example",
 				Action:  "randomExampleAction",
+			})
+			ev := &v1.Event{
 				Parameters: &v1.EventParameters{
 					PrivateMetadata: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -212,9 +215,11 @@ func TestEventTypesRedact(t *testing.T) {
 							},
 						},
 					},
-				},
-			})
+				}}
+
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
+			// assert the values are still there for privateMetadata
+			assert.Equal(t, float64(1), ev.Parameters.PrivateMetadata.Fields["foo"].GetNumberValue())
 		})
 	})
 }
