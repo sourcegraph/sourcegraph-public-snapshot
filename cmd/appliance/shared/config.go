@@ -8,17 +8,21 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config struct {
 	env.BaseConfig
 
-	k8sConfig *rest.Config
-	metrics   metricsConfig
-	grpc      grpcConfig
-	http      httpConfig
-	namespace string
+	k8sConfig        *rest.Config
+	metrics          metricsConfig
+	grpc             grpcConfig
+	http             httpConfig
+	namespace        string
+	relregEndpoint   string
+	applianceVersion string
 }
 
 func (c *Config) Load() {
@@ -41,6 +45,8 @@ func (c *Config) Load() {
 	c.grpc.addr = c.Get("APPLIANCE_GRPC_ADDR", ":9000", "Appliance gRPC address.")
 	c.http.addr = c.Get("APPLIANCE_HTTP_ADDR", ":8080", "Appliance http address.")
 	c.namespace = c.Get("APPLIANCE_NAMESPACE", "default", "Namespace to monitor.")
+	c.applianceVersion = c.Get("APPLIANCE_VERSION", version.Version(), "Version tag for the running appliance.")
+	c.relregEndpoint = c.Get("RELEASE_REGISTRY_ENDPOINT", releaseregistry.Endpoint, "Release registry endpoint.")
 }
 
 func (c *Config) Validate() error {

@@ -22,9 +22,9 @@
         </div>
         <div class="col">
             <select id="version" name="version" class="row form-select mb-3" aria-label="Sourcegraph version selection">
-                <option selected>Latest</option>
-                <option value="5.4">5.4</option>
-                <option value="5.3">5.3</option>
+                {{- range $idx, $version := .Versions }}
+                <option{{ if eq $idx 0 }} selected{{ end }}>{{ $version }}</option>
+                {{- end }}
             </select>
         </div>
     </div>

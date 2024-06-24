@@ -2,12 +2,16 @@ package appliance
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/life4/genesis/slices"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
+	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 )
 
 const (
@@ -29,11 +33,47 @@ func (a *Appliance) applianceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
-	err := setupTmpl.Execute(w, "")
+	versions, err := a.getVersions(r.Context())
 	if err != nil {
-		a.logger.Error("failed to execute templating", log.Error(err))
-		// Handle err
+		a.handleError(w, err, "getting versions")
+		return
 	}
+	versions, err = NMinorVersions(versions, a.latestSupportedVersion, 2)
+	if err != nil {
+		a.handleError(w, err, "filtering versions to 2 minor points")
+		return
+	}
+
+	err = setupTmpl.Execute(w, struct {
+		Versions []string
+	}{
+		Versions: versions,
+	})
+	if err != nil {
+		a.handleError(w, err, "executing template")
+		return
+	}
+}
+
+func (a *Appliance) handleError(w http.ResponseWriter, err error, msg string) {
+	a.logger.Error(msg, log.Error(err))
+
+	// TODO we should probably look twice at this and decide whether it's in
+	// line with existing standards.
+	// Don't leak details of internal errors to users - that's why we have
+	// logging above.
+	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintln(w, "Something went wrong - please contact support.")
+}
+
+func (a *Appliance) getVersions(ctx context.Context) ([]string, error) {
+	versions, err := a.releaseRegistryClient.ListVersions(ctx, "sourcegraph")
+	if err != nil {
+		return nil, err
+	}
+	return slices.MapFilter(versions, func(version releaseregistry.ReleaseInfo) (string, bool) {
+		return version.Version, version.Public
+	}), nil
 }
 
 func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
