@@ -32,6 +32,7 @@ fragment FileViewCommit on GitCommit {
 }
 
 fragment FileViewCodeGraphData on CodeGraphData {
+    id
     provenance
     commit
     toolInfo {
@@ -39,23 +40,28 @@ fragment FileViewCodeGraphData on CodeGraphData {
         version
     }
 
-    # TODO: I do not think it is possible to use this pagination correctly.
-    # We would need a GraphQL ID on the CodeGraphData node to request followup pages
-    # for that element of the codeGraphData list
-    occurrences(first: 50000) {
+    occurrences(first: 10000) {
         nodes {
-            symbol
-            range {
-                start {
-                    line
-                    character
-                }
-                end {
-                    line
-                    character
-                }
-            }
-            roles
+            ...FileViewOccurrence
+        }
+        pageInfo {
+            endCursor
+            hasNextPage
         }
     }
+}
+
+fragment FileViewOccurrence on SCIPOccurrence {
+    symbol
+        range {
+            start {
+                line
+                    character
+            }
+            end {
+                line
+                    character
+            }
+        }
+    roles
 }

@@ -18,12 +18,14 @@ import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
 
 import type { PageLoad, PageLoadEvent } from './$types'
+import type { FileViewCodeGraphData } from './FileView.gql'
 import {
     BlobDiffViewCommitQuery,
     BlobFileViewBlobQuery,
     BlobFileViewCodeGraphDataQuery,
     BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewHighlightedFileQuery,
+    BlobViewCodeGraphDataNextPage,
 } from './page.gql'
 
 function loadDiffView({ params, url }: PageLoadEvent) {
@@ -55,15 +57,28 @@ async function fetchCodeGraphData(
     resolvedRevision: string,
     path: string
 ): Promise<CodeGraphData[]> {
-    const response = await client.query(BlobFileViewCodeGraphDataQuery, {
-        repoName,
-        revspec: resolvedRevision,
-        path,
-    })
-
-    const rawCodeGraphData = response.data?.repository?.commit?.blob?.codeGraphData
-    if (!rawCodeGraphData) {
-        return []
+    async function fetchAllOccurrences(codeGraphDatum: FileViewCodeGraphData): Promise<FileViewCodeGraphData> {
+        while (codeGraphDatum.occurrences?.pageInfo?.hasNextPage) {
+            const response = await client.query(BlobViewCodeGraphDataNextPage, {
+                codeGraphDataID: codeGraphDatum.id,
+                after: codeGraphDatum.occurrences?.pageInfo?.endCursor ?? '',
+            })
+            if (response.error) {
+                throw new Error('failed to hydrate paginated occurrences', { cause: response.error })
+            }
+            if (response.data?.node?.__typename !== 'CodeGraphData') {
+                throw new Error('unexpected node')
+            }
+            codeGraphDatum.occurrences = {
+                nodes: [...codeGraphDatum.occurrences.nodes, ...(response.data.node.occurrences?.nodes ?? [])],
+                pageInfo: response.data.node.occurrences?.pageInfo ?? {
+                    __typename: 'PageInfo',
+                    hasNextPage: false,
+                    endCursor: null,
+                },
+            }
+        }
+        return codeGraphDatum
     }
 
     function translateRole(graphQLRole: GraphQLSymbolRole): SymbolRole {
@@ -81,7 +96,23 @@ async function fetchCodeGraphData(
         }
     }
 
-    return rawCodeGraphData.map(({ provenance, toolInfo, commit, occurrences }) => {
+    const response = await client.query(BlobFileViewCodeGraphDataQuery, {
+        repoName,
+        revspec: resolvedRevision,
+        path,
+    })
+    if (response.error) {
+        throw new Error('failed fetching code graph data', { cause: response.error })
+    }
+
+    const rawCodeGraphData = response.data?.repository?.commit?.blob?.codeGraphData
+    if (!rawCodeGraphData) {
+        return []
+    }
+    // Fetch any additional pages of occurrences
+    const hydratedCodeGraphData = await Promise.all([...rawCodeGraphData.map(fetchAllOccurrences)])
+
+    return hydratedCodeGraphData.map(({ provenance, toolInfo, commit, occurrences }) => {
         const overlapping =
             occurrences?.nodes?.map(
                 occ =>

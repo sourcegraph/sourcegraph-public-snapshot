@@ -62,6 +62,22 @@ query BlobFileViewCodeGraphDataQuery($repoName: String!, $revspec: String!, $pat
     }
 }
 
+query BlobViewCodeGraphDataNextPage($codeGraphDataID: ID!, $after: String!) {
+    node(id: $codeGraphDataID) {
+        ...on CodeGraphData {
+            occurrences(first: 10000, after: $after){
+                nodes {
+                    ...FileViewOccurrence
+                }
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+            }
+        }
+    }
+}
+
 query BlobFileViewCommitQuery_revisionOverride($repoName: String!, $revspec: String!) {
     repository(name: $repoName) {
         commit(rev: $revspec) {
