@@ -13,15 +13,18 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
+	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Appliance struct {
-	client      client.Client
-	namespace   string
-	status      Status
-	sourcegraph config.Sourcegraph
-	logger      log.Logger
+	client                 client.Client
+	namespace              string
+	status                 Status
+	sourcegraph            config.Sourcegraph
+	releaseRegistryClient  *releaseregistry.Client
+	latestSupportedVersion string
+	logger                 log.Logger
 
 	// Embed the UnimplementedApplianceServiceServer structs to ensure forwards compatibility (if the service is
 	// compiled against a newer version of the proto file, the server will still have default implementations of any new
@@ -42,13 +45,21 @@ func (s Status) String() string {
 	return string(s)
 }
 
-func NewAppliance(client client.Client, namespace string, logger log.Logger) *Appliance {
+func NewAppliance(
+	client client.Client,
+	relregClient *releaseregistry.Client,
+	latestSupportedVersion string,
+	namespace string,
+	logger log.Logger,
+) *Appliance {
 	return &Appliance{
-		client:      client,
-		namespace:   namespace,
-		status:      StatusSetup,
-		sourcegraph: config.Sourcegraph{},
-		logger:      logger,
+		client:                 client,
+		releaseRegistryClient:  relregClient,
+		latestSupportedVersion: latestSupportedVersion,
+		namespace:              namespace,
+		status:                 StatusSetup,
+		sourcegraph:            config.Sourcegraph{},
+		logger:                 logger,
 	}
 }
 
