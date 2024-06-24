@@ -1126,7 +1126,6 @@ ts_project(
         "src/marketing/components/TweetFeedback.tsx",
         "src/marketing/page/SurveyForm.tsx",
         "src/marketing/page/SurveyPage.tsx",
-        "src/marketing/toast/CodySurveyToast.tsx",
         "src/marketing/toast/SurveySuccessToast.tsx",
         "src/marketing/toast/SurveyToastContent.tsx",
         "src/marketing/toast/SurveyToastTrigger.tsx",
