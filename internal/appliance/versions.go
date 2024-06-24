@@ -51,7 +51,7 @@ func NMinorVersions(allVersions []string, latestSupportedVersion string, n uint6
 	if len(nminor) == 0 {
 		return nil, errors.Newf("found no versions within %d minor revisions of %s", n, latestSupportedVersion)
 	}
-	if latestSupported.Minor()-nminor[0].Minor() < 2 {
+	if latestSupported.Minor()-nminor[0].Minor() < n {
 		for _, version := range versions {
 			if latestSupported.Major()-version.Major() == 1 {
 				highestMinor := highestMinorInMajorSeries(versions, version.Major())
