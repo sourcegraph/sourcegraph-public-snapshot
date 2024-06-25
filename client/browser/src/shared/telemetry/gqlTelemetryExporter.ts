@@ -3,7 +3,7 @@ import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
 // todo(dan) update with new recordeventresult type?
-import { logEventResult } from '../../graphql-operations'
+import type { logEventResult } from '../../graphql-operations'
 
 /**
  * GraphQLTelemetryExporter exports events via the new Sourcegraph telemetry
@@ -12,8 +12,8 @@ import { logEventResult } from '../../graphql-operations'
 export class GraphQLTelemetryExporter implements TelemetryExporter {
     constructor(private requestGraphQL: PlatformContext['requestGraphQL']) {}
 
-    public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
-        await this.requestGraphQL<logEventResult>({
+    public exportEvents(events: TelemetryEventInput[]): Promise<void> {
+        const req = this.requestGraphQL<logEventResult>({
             request: gql`
                 mutation ExportTelemetryEventsFromBrowserExtension($events: [TelemetryEventInput!]!) {
                     telemetry {
@@ -25,7 +25,9 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
             `,
             variables: { events },
             mightContainPrivateInfo: false,
-        }).subscribe({
+        })
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        req.subscribe({
             error: _ => {
                 // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail.
                 // However, end users shouldn't experience this failure, as their admin is
@@ -33,5 +35,6 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                 // that an upgrade is available via site-admin messaging.
             },
         })
+        return Promise.resolve()
     }
 }

@@ -10,7 +10,7 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
 import type { CodeHost } from '../code-hosts/shared/codeHost'
-import { NoOpTelemetryRecorder } from '../telemetry'
+import { noOpTelemetryRecorder } from '../telemetry'
 
 import { createExtensionHost } from './extensionHost'
 import { getInlineExtensions } from './inlineExtensionsService'
@@ -132,7 +132,7 @@ export function createPlatformContext(
         /**
          * This will be replaced by a real telemetry recorder in codeHost.tsx.
          */
-        telemetryRecorder: NoOpTelemetryRecorder,
+        telemetryRecorder: noOpTelemetryRecorder,
     }
     return context
 }

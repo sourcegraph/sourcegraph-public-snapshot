@@ -5,7 +5,7 @@ import '../../config/background.entry'
 import '../../shared/polyfills'
 
 import type { Endpoint } from 'comlink'
-import { combineLatest, merge, Observable, of, Subject, Subscription, timer, lastValueFrom } from 'rxjs'
+import { combineLatest, merge, type Observable, of, Subject, Subscription, timer, lastValueFrom } from 'rxjs'
 import {
     bufferCount,
     filter,
