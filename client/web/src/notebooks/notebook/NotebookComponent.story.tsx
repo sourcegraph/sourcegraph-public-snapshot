@@ -10,6 +10,7 @@ import type { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
 
 import { NotebookComponent } from './NotebookComponent'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
@@ -58,6 +59,7 @@ export const Default: StoryFn = () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>
@@ -83,6 +85,7 @@ export const DefaultReadOnly: StoryFn = () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>

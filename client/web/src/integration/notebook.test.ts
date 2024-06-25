@@ -29,6 +29,7 @@ import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { percySnapshotWithVariants } from './utils'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
@@ -89,6 +90,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    queryVersion: LATEST_VERSION,
 })
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
