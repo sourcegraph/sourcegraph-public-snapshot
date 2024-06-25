@@ -3,6 +3,7 @@ package inventory
 import (
 	"bytes"
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"io"
 	"io/fs"
 	"os"
@@ -57,13 +58,13 @@ func TestContext_Entries(t *testing.T) {
 			}
 			return io.NopCloser(bytes.NewReader(data)), nil
 		},
-		CacheGet: func(ctx context.Context, cacheKey string) (Inventory, bool) {
+		CacheGet: func(ctx context.Context, cacheKey string, commitID api.CommitID) (Inventory, bool) {
 			mu.Lock()
 			defer mu.Unlock()
 			cacheGetCalls = append(cacheGetCalls, cacheKey)
 			return Inventory{}, false
 		},
-		CacheSet: func(ctx context.Context, cacheKey string, inv Inventory) {
+		CacheSet: func(ctx context.Context, cacheKey string, commitID api.CommitID, inv Inventory) {
 			mu.Lock()
 			defer mu.Unlock()
 			if _, ok := cacheSetCalls[cacheKey]; ok {
@@ -77,6 +78,7 @@ func TestContext_Entries(t *testing.T) {
 	}
 
 	inv, err := c.Entries(context.Background(),
+		"HEAD",
 		&fileutil.FileInfo{Name_: "d", Mode_: os.ModeDir},
 		&fileutil.FileInfo{Name_: "f.go", Mode_: 0, Size_: 1 /* HACK to force read */},
 	)
