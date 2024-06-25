@@ -23,11 +23,13 @@
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
-    import { isLightTheme, settings } from '$lib/stores'
+    import { isLightTheme, settings, user } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
+    import MenuRadioGroup from '$lib/wildcard/menu/MenuRadioGroup.svelte'
+    import MenuSeparator from '$lib/wildcard/menu/MenuSeparator.svelte'
 
     import type { PageData } from './$types'
     import { FileViewGitBlob, FileViewHighlightedFile } from './FileView.gql'
@@ -105,6 +107,13 @@
                   telemetryRecorder: noOpTelemetryRecorder,
               })
             : null
+
+    $: codeGraphDataCommitHashes = $user?.siteAdmin ? codeGraphData?.map(datum => datum.commit.slice(0, 7)) : undefined
+    $: codeGraphDataDebugOptions = codeGraphDataCommitHashes ? ['None', ...codeGraphDataCommitHashes] : undefined
+    const selectedCodeGraphDataDebugOption = writable<string>('None')
+    $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>
+        datum.commit.startsWith($selectedCodeGraphDataDebugOption)
+    )?.occurrences // TODO: we should probably use the nonoverlapping occurrences here
 
     function viewModeURL(viewMode: CodeViewMode) {
         switch (viewMode) {
@@ -184,6 +193,19 @@
                 <Icon icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
             </MenuButton>
+            {#if codeGraphDataDebugOptions !== undefined}
+                <MenuSeparator />
+                <h6>Code intelligence preview</h6>
+                <MenuRadioGroup values={codeGraphDataDebugOptions} value={selectedCodeGraphDataDebugOption}>
+                    <svelte:fragment let:value>
+                        {#if value === 'None'}
+                            None
+                        {:else}
+                            Index at <code>{value}</code>
+                        {/if}
+                    </svelte:fragment>
+                </MenuRadioGroup>
+            {/if}
         </svelte:fragment>
     </FileHeader>
 {/if}
@@ -274,6 +296,7 @@
                 }}
                 highlights={highlights?.lsif ?? ''}
                 codeGraphData={codeGraphData ?? undefined}
+                debugOccurrences={selectedCodeGraphDataOccurrences}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
@@ -354,5 +377,12 @@
 
     .actions {
         margin-left: auto;
+    }
+
+    h6 {
+        padding: var(--dropdown-item-padding);
+        margin: 0;
+        font-size: 0.75rem;
+        color: var(--dropdown-header-color);
     }
 </style>

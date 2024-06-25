@@ -9,6 +9,13 @@ export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highl
 export { linkify } from '@sourcegraph/web/src/repo/blob/codemirror/links'
 export { createCodeIntelExtension } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/extension'
 export type { TooltipViewOptions } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/api'
+export { debugOccurrences } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/debugOccurrences'
+export {
+    codeGraphData,
+    type CodeGraphData,
+    type IndexedCodeGraphData,
+} from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
+
 export { positionToOffset, locationToURL } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { lockFirstVisibleLine } from '@sourcegraph/web/src/repo/blob/codemirror/lock-line'
 export { syncSelection } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/token-selection'
