@@ -88,6 +88,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 mermaid.mermaidAPI.initialize({ startOnLoad: false })
 
@@ -594,6 +595,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         onCopyNotebook={onCopyNotebook}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
+                        queryVersion={LATEST_VERSION}
                     />
                 </React.Suspense>
             )}
