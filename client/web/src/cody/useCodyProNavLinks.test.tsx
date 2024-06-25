@@ -13,10 +13,14 @@ describe('useCodyProNavLinks', () => {
         useSubscriptionSummaryMock.mockReset()
     })
 
-    test('returns empty array if subscription summary is undefined', () => {
-        useSubscriptionSummaryMock.mockReturnValue({ data: undefined } as ReturnType<
+    const mockSubscriptionSummary = (summary?: SubscriptionSummary): void => {
+        useSubscriptionSummaryMock.mockReturnValue({ data: summary } as ReturnType<
             typeof subscriptionQueries.useSubscriptionSummary
         >)
+    }
+
+    test('returns empty array if subscription summary is undefined', () => {
+        mockSubscriptionSummary()
         const { result } = renderHook(() => useCodyProNavLinks())
         expect(result.current).toHaveLength(0)
     })
@@ -30,9 +34,7 @@ describe('useCodyProNavLinks', () => {
             subscriptionStatus: 'active',
             cancelAtPeriodEnd: false,
         }
-        useSubscriptionSummaryMock.mockReturnValue({ data: summary } as ReturnType<
-            typeof subscriptionQueries.useSubscriptionSummary
-        >)
+        mockSubscriptionSummary(summary)
         const { result } = renderHook(() => useCodyProNavLinks())
         expect(result.current).toHaveLength(0)
     })
@@ -59,9 +61,7 @@ describe('useCodyProNavLinks', () => {
 
         beforeEach(() => {
             vi.stubGlobal('context', {})
-            useSubscriptionSummaryMock.mockReturnValue({ data: summary } as ReturnType<
-                typeof subscriptionQueries.useSubscriptionSummary
-            >)
+            mockSubscriptionSummary(summary)
         })
 
         test.skip('returns links to subscription and team management pages if embedded UI is enabled', () => {
