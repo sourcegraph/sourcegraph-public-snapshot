@@ -103,13 +103,13 @@ type CompletedUpload struct {
 	AssociatedIndexID *int       `json:"associatedIndex"`
 }
 
-var _ core.UploadLike = &CompletedUpload{}
+var _ core.UploadLike = CompletedUpload{}
 
-func (u *CompletedUpload) GetID() int {
+func (u CompletedUpload) GetID() int {
 	return u.ID
 }
 
-func (u *CompletedUpload) GetRoot() string {
+func (u CompletedUpload) GetRoot() string {
 	return u.Root
 }
 

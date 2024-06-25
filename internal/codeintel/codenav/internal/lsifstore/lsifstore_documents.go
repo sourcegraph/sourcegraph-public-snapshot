@@ -52,3 +52,44 @@ WHERE
 	sid.upload_id = %s AND
 	sid.document_path = %s
 `
+
+func (s *store) FindDocumentIDs(ctx context.Context, uploadIDToLookupPath map[int]core.UploadRelPath) (uploadIDToDocumentID map[int]int, err error) {
+	ctx, _, endObservation := s.operations.findDocumentIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numUploadIDs", len(uploadIDToLookupPath)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDToLookupPath) == 0 {
+		return nil, nil
+	}
+
+	queries := []*sqlf.Query{}
+	for uploadID, path := range uploadIDToLookupPath {
+		queries = append(queries, sqlf.Sprintf("(%d, %s)", uploadID, path.RawValue()))
+	}
+
+	finalQuery := sqlf.Sprintf(findDocumentIDsQuery, sqlf.Join(queries, ","))
+	type idPair struct {
+		uploadID   int32
+		documentID int64
+	}
+	scanner := basestore.NewSliceScanner(func(dbs dbutil.Scanner) (idPair idPair, err error) {
+		err = dbs.Scan(&idPair.uploadID, &idPair.documentID)
+		return idPair, err
+	})
+	idPairs, err := scanner(s.db.Query(ctx, finalQuery))
+	if err != nil {
+		return nil, err
+	}
+	uploadIDToDocumentID = make(map[int]int, len(idPairs))
+	for _, idPair := range idPairs {
+		uploadIDToDocumentID[int(idPair.uploadID)] = int(idPair.documentID)
+	}
+	return uploadIDToDocumentID, nil
+}
+
+const findDocumentIDsQuery = `
+SELECT sid.upload_id, sid.document_id
+FROM codeintel_scip_document_lookup sid
+WHERE (sid.upload_id, sid.document_path) IN (%s)
+`
