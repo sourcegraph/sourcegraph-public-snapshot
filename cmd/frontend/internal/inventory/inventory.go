@@ -49,24 +49,23 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 		return Lang{}, nil
 	}
 
+	var lang Lang
+	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
+	// filename. If not, we pass a subset of the file contents for analysis.
+	matchedLang, safe := GetLanguageByFilename(file.Name())
+
+	if skipEnhancedLanguageDetection {
+		lang.Name = matchedLang
+		lang.TotalBytes = uint64(file.Size())
+		return lang, nil
+	}
+
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
 		return Lang{}, errors.Wrap(err, "getting file reader")
 	}
 	if rc != nil {
 		defer rc.Close()
-	}
-
-	var lang Lang
-	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
-	// filename. If not, we pass a subset of the file contents for analysis.
-	matchedLang, safe := GetLanguageByFilename(file.Name())
-
-	// No content
-	if rc == nil || skipEnhancedLanguageDetection {
-		lang.Name = matchedLang
-		lang.TotalBytes = uint64(file.Size())
-		return lang, nil
 	}
 
 	buf := make([]byte, fileReadBufferSize)
