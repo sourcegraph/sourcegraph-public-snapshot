@@ -20,8 +20,6 @@ import (
 // NewTestDB creates a new test database and initializes the given list of
 // tables for the suite. The test database is dropped after testing is completed
 // unless failed.
-//
-// Future: Move to a shared package when more than Enterprise Portal uses it.
 func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgxpool.Pool {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
@@ -39,7 +37,7 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 	_, err = sqlDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %q", dbName))
 	require.NoError(t, err)
 
-	_, err = sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %q", dbName))
+	_, err = sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %q WITH ENCODING=UTF8", dbName))
 	require.NoError(t, err)
 
 	// Swap out the database name to be the test suite database in the DSN.
@@ -95,8 +93,6 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 // ClearTablesAfterTest removes all rows from the list of tables in the original
 // order as a t.Cleanup hook. It uses soft-deletion when available and skips
 // deletion when the test suite failed.
-//
-// Future: Move to a shared package when more than Enterprise Portal uses it.
 func ClearTablesAfterTest(t *testing.T, db *pgxpool.Pool, tables ...schema.Tabler) {
 	t.Cleanup(func() {
 		if t.Failed() {
