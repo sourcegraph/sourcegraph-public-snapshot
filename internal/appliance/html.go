@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"path/filepath"
 
 	"github.com/life4/genesis/slices"
 
@@ -12,25 +14,29 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
-	templateSetup = "web/template/setup.gohtml"
-	formValueOn   = "on"
+	formValueOn = "on"
 )
 
-var (
-	setupTmpl *template.Template
-)
-
-func init() {
-	setupTmpl = template.Must(template.ParseFS(templateFS, templateSetup))
+func templatePath(name string) string {
+	return filepath.Join("web", "template", name+".gohtml")
 }
 
 func (a *Appliance) applianceHandler(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := a.shouldSetupRun(context.Background()); ok {
 		http.Redirect(w, r, "/appliance/setup", http.StatusSeeOther)
 	}
+}
+
+func renderTemplate(name string, w io.Writer, data any) error {
+	tmpl, err := template.ParseFS(templateFS, templatePath("layout"), templatePath(name))
+	if err != nil {
+		return errors.Wrapf(err, "rendering template: %s", name)
+	}
+	return tmpl.Execute(w, data)
 }
 
 func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +51,7 @@ func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = setupTmpl.Execute(w, struct {
+	err = renderTemplate("setup", w, struct {
 		Versions []string
 	}{
 		Versions: versions,
