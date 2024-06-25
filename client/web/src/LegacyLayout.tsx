@@ -62,6 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
+    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchJobsPage = routeMatch?.startsWith(PageRoutes.SearchJobs)
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
@@ -181,6 +182,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         isSearchRelatedPage &&
         !isSearchHomepage &&
         !isCommunitySearchContextPage &&
+        !isSearchConsolePage &&
         !isSearchNotebooksPage &&
         !isSearchJobsPage
 

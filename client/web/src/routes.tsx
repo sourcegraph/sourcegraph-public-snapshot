@@ -12,6 +12,7 @@ import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
+const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
@@ -230,6 +231,17 @@ export const routes: RouteObject[] = [
                     <GlobalNotebooksArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={() => window.context?.codeSearchEnabledOnInstance}
+            />
+        ),
+    },
+    {
+        path: PageRoutes.SearchConsole,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <SearchConsolePage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                )}
+                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
             />
         ),
     },
