@@ -28,14 +28,19 @@ export const LATEST_VERSION = 'V3'
 
 export const defaultPatternTypeFromVersion = (version: string): SearchPatternType | undefined => {
     switch (version) {
-        case 'V1':
+        case 'V1': {
             return SearchPatternType.regexp
-        case 'V2':
+        }
+        case 'V2': {
             return SearchPatternType.literal
-        case 'V3':
+        }
+        case 'V3': {
             return SearchPatternType.standard
+        }
+        default: {
+            return undefined
+        }
     }
-    return
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
