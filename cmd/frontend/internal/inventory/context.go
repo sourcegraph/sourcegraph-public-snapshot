@@ -23,12 +23,12 @@ type Context struct {
 	CacheKey func(e fs.FileInfo) string
 
 	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
-	CacheGet func(context.Context, string) (Inventory, bool)
+	CacheGet func(context.Context, string, api.CommitID) (Inventory, bool)
 
 	NewTarReader func(io.ReadCloser) *tar.Reader
 
 	ShouldSkipEnhancedLanguageDetection bool
 
 	// CacheSet, if set, stores the inventory in the cache for the given tree.
-	CacheSet func(context.Context, string, Inventory)
+	CacheSet func(context.Context, string, api.CommitID, Inventory)
 }
