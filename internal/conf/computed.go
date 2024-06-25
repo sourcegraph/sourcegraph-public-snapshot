@@ -932,13 +932,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
-		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
-		AccessToken:                      completionsConfig.AccessToken,
-		ChatModel:                        completionsConfig.ChatModel,
-		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		SmartContextWindow:               completionsConfig.SmartContextWindow,
-		FastChatModel:                    completionsConfig.FastChatModel,
-		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
+		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
+		AccessToken:            completionsConfig.AccessToken,
+		ChatModel:              completionsConfig.ChatModel,
+		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
+		SmartContextWindow:     completionsConfig.SmartContextWindow,
+		FastChatModel:          completionsConfig.FastChatModel,
+		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
+		AzureUseDeprecatedCompletionsAPIForOldModels: completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
 		CompletionModel:                  completionsConfig.CompletionModel,
 		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
