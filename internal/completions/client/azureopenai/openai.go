@@ -190,16 +190,16 @@ func (c *azureCompletionClient) Stream(
 	ctx context.Context,
 	log log.Logger,
 	request types.CompletionRequest,
-	sendEvent types.SendCompletionEvent,
+	responseMetadataCapture *types.ResponseMetadataCapture,
 ) error {
 	feature := request.Feature
 	requestParams := request.Parameters
 
 	switch feature {
 	case types.CompletionsFeatureCode:
-		return streamAutocomplete(ctx, c.client, requestParams, sendEvent, log)
+		return streamAutocomplete(ctx, c.client, requestParams, responseMetadataCapture, log)
 	case types.CompletionsFeatureChat:
-		return streamChat(ctx, c.client, requestParams, sendEvent, log)
+		return streamChat(ctx, c.client, requestParams, responseMetadataCapture, log)
 	default:
 		return errors.New("invalid completions feature")
 	}
@@ -209,7 +209,7 @@ func streamAutocomplete(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
+	responseMetadataCapture *types.ResponseMetadataCapture,
 	logger log.Logger,
 ) error {
 	options, err := getCompletionsOptions(requestParams)
@@ -252,7 +252,7 @@ func streamAutocomplete(
 				Completion: content,
 				StopReason: finish,
 			}
-			err := sendEvent(ev)
+			err := responseMetadataCapture.SendEvent(ev)
 			if err != nil {
 				return err
 			}
@@ -264,7 +264,7 @@ func streamChat(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
+	responseMetadataCapture *types.ResponseMetadataCapture,
 	logger log.Logger,
 ) error {
 
@@ -308,7 +308,7 @@ func streamChat(
 				Completion: content,
 				StopReason: finish,
 			}
-			err := sendEvent(ev)
+			err := responseMetadataCapture.SendEvent(ev)
 			if err != nil {
 				return err
 			}
