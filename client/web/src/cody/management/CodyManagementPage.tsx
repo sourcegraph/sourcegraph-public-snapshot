@@ -25,7 +25,7 @@ import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { getManageSubscriptionPageURL } from '../util'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled } from '../util'
 
 import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
@@ -70,7 +70,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     )
 
     const subscriptionSummaryQueryResult = useSubscriptionSummary()
-    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
 
     const subscription = data?.currentUser?.codySubscription
 
@@ -79,26 +78,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate(`/sign-in?returnTo=${CodyProRoutes.Manage}`)
         }
     }, [data, navigate])
-
-    const getTeamInviteButton = (): JSX.Element | null => {
-        const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
-        const hasFreeSeats = subscriptionSummaryQueryResult?.data
-            ? subscriptionSummaryQueryResult.data.teamMaxMembers >
-              subscriptionSummaryQueryResult.data.teamCurrentMembers
-            : false
-        const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
-        const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
-
-        if (!subscriptionSummaryQueryResult?.data) {
-            return null
-        }
-
-        return (
-            <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
-                <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
-            </Button>
-        )
-    }
 
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
@@ -116,12 +95,74 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         return null
     }
 
-    const isUserOnProTier = subscription.plan === CodySubscriptionPlan.PRO
+    const inviteNodes: Record<'banner' | 'link' | 'form', React.ReactNode> = ((): typeof inviteNodes => {
+        const nodes: typeof inviteNodes = { banner: null, link: null, form: null }
+
+        // Invites flow is supported only for embedded Cody UI.
+        if (!isEmbeddedCodyProUIEnabled()) {
+            return nodes
+        }
+
+        // User with any role can get an invite.
+        nodes.banner = <AcceptInviteBanner onSuccess={refetch} />
+
+        // Only admins can invite users and manage team.
+        const subscriptionSummary = subscriptionSummaryQueryResult.data
+        if (!subscriptionSummary || subscriptionSummary.userRole !== 'admin') {
+            return nodes
+        }
+
+        nodes.form = <InviteUsers telemetryRecorder={telemetryRecorder} subscriptionSummary={subscriptionSummary} />
+
+        const isSoloUser = subscriptionSummary.teamMaxMembers === 1
+        const hasFreeSeats = subscriptionSummary.teamMaxMembers > subscriptionSummary.teamCurrentMembers
+        const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
+        const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
+        nodes.link = (
+            <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
+                <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
+            </Button>
+        )
+
+        return nodes
+    })()
+
+    const pageHeaderLink: React.ReactNode = (() => {
+        // User is admin and can manage team and subscription - render corresponding link.
+        if (inviteNodes.link) {
+            return inviteNodes.link
+        }
+
+        // User already has a Pro subscription - render a link to the manage subscription page.
+        if (subscription.plan === CodySubscriptionPlan.PRO) {
+            return (
+                <ButtonLink
+                    variant="primary"
+                    to={getManageSubscriptionPageURL()}
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
+                    }}
+                >
+                    <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
+                    Manage subscription
+                </ButtonLink>
+            )
+        }
+
+        // User is on a free plan. Render a link to the subscriptions page.
+        return (
+            <ButtonLink to={CodyProRoutes.Subscription} variant="primary" onClick={onClickUpgradeToProCTA}>
+                Upgrade plan
+            </ButtonLink>
+        )
+    })()
 
     return (
         <Page className={classNames('d-flex flex-column')}>
             <PageTitle title="Dashboard" />
-            <AcceptInviteBanner onSuccess={refetch} />
+
+            {inviteNodes.banner}
+
             {welcomeToPro && (
                 <CodyAlert variant="greenCodyPro">
                     <H2 className="mt-4">Welcome to Cody Pro</H2>
@@ -134,29 +175,12 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 className="my-4 d-inline-flex align-items-center"
                 actions={
                     <div className="d-flex flex-column flex-gap-2">
-                        {isAdmin ? (
-                            getTeamInviteButton()
-                        ) : isUserOnProTier ? (
-                            <ButtonLink
-                                variant="primary"
-                                to={getManageSubscriptionPageURL()}
-                                onClick={() => {
-                                    telemetryRecorder.recordEvent('cody.manageSubscription', 'click')
-                                }}
-                            >
-                                <Icon svgPath={mdiCreditCardOutline} className="mr-1" aria-hidden={true} />
-                                Manage subscription
-                            </ButtonLink>
-                        ) : (
-                            <ButtonLink to="/cody/subscription" variant="primary" onClick={onClickUpgradeToProCTA}>
-                                Upgrade plan
-                            </ButtonLink>
-                        )}
+                        {pageHeaderLink}
                         <Link
                             to="https://help.sourcegraph.com"
                             target="_blank"
                             rel="noreferrer"
-                            className="text-muted text-sm"
+                            className="text-muted text-center text-sm"
                         >
                             <Icon svgPath={mdiHelpCircleOutline} className="mr-1" aria-hidden={true} />
                             Help &amp; community
@@ -170,12 +194,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 </PageHeader.Heading>
             </PageHeader>
 
-            {isAdmin && !!subscriptionSummaryQueryResult.data && (
-                <InviteUsers
-                    telemetryRecorder={telemetryRecorder}
-                    subscriptionSummary={subscriptionSummaryQueryResult.data}
-                />
-            )}
+            {inviteNodes.form}
 
             <div className={classNames('border bg-1 mb-2', styles.container)}>
                 <SubscriptionStats
