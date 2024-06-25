@@ -19,7 +19,10 @@
                 },
                 // Local standalone dev server for dotcom can be started with
                 // pnpm dev:dotcom
-                sourcegraphDotComMode: '%sveltekit.env.PUBLIC_DOTCOM%' ? true : false,
+                sourcegraphDotComMode: !!'%sveltekit.env.PUBLIC_DOTCOM%',
+                codyEnabled: !!'%sveltekit.env.PUBLIC_CODY_ENABLED%',
+                batchChangesEnabled: !!'%sveltekit.env.PUBLIC_BATCH_CHANGES_ENABLED%',
+                codeInsightsEnabled: !!'%sveltekit.env.PUBLIC_CODE_INSIGHTS_ENABLED%',
             }
             window.pageError = undefined
         </script>

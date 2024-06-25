@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit'
 
+import { browser } from '$app/environment'
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
 import { getGraphQLClient } from '$lib/graphql'
 import type { SettingsEdit } from '$lib/graphql-types'
@@ -14,11 +15,20 @@ import {
     EditSettings,
     LatestSettingsQuery,
 } from './layout.gql'
-import { dotcomMainNavigation, mainNavigation } from './navigation'
+import { getMainNavigation, Mode } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false
 export const prerender = false
+
+const mainNavigation = browser
+    ? getMainNavigation(
+          (window.context.sourcegraphDotComMode ? Mode.DOTCOM : Mode.ENTERPRISE) |
+              (window.context.codyEnabled ? Mode.CODY_ENABLED : 0) |
+              (window.context.batchChangesEnabled ? Mode.BATCH_CHANGES_ENABLED : 0) |
+              (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0)
+      )
+    : []
 
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
@@ -47,11 +57,16 @@ export const load: LayoutLoad = async ({ fetch }) => {
     }
 
     return {
+        navigationEntries: mainNavigation,
+
+        // Other deployment specific settings
+        isCodyEnabled: window.context.codyEnabled,
+
+        // User data
         user: result.data.currentUser,
-        navigationEntries: window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation,
-        // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,
+
         globalSiteAlerts: globalSiteAlerts.then(result => result.data?.site),
         fetchEvaluatedFeatureFlags: async () => {
             const result = await client.query(EvaluatedFeatureFlagsQuery, {}, { requestPolicy: 'network-only', fetch })

@@ -1,10 +1,27 @@
 import { isRepoRoute } from '$lib/navigation'
 import { Status, isCurrent, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
 
-/**
- * The main navigation of the application.
- */
-export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
+export const enum Mode {
+    ENTERPRISE = 1 << 0,
+    DOTCOM = 1 << 1,
+    CODY_ENABLED = 1 << 2,
+    BATCH_CHANGES_ENABLED = 1 << 3,
+    CODE_INSIGHTS_ENABLED = 1 << 4,
+}
+
+interface NavigationEntryWithMode extends NavigationEntry {
+    mode: Mode
+}
+
+interface NavigationMenuWithMode extends NavigationMenu {
+    mode: Mode
+}
+
+export function getMainNavigation(mode: Mode): (NavigationMenuWithMode | NavigationEntryWithMode)[] {
+    return navigation.filter(entry => (entry.mode & mode) !== 0)
+}
+
+const navigation: (NavigationMenuWithMode | NavigationEntryWithMode)[] = [
     {
         label: 'Code Search',
         icon: ILucideSearch,
@@ -41,6 +58,13 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
             // current page is a repository route.
             return isRepoRoute(page.route?.id) || this.children.some(entry => isCurrent(entry, page))
         },
+        mode: Mode.ENTERPRISE,
+    },
+    {
+        label: 'Code Search',
+        icon: ILucideSearch,
+        href: '/search',
+        mode: Mode.DOTCOM,
     },
     {
         label: 'Cody',
@@ -59,48 +83,23 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
                 href: '/cody/chat',
             },
         ],
+        mode: Mode.CODY_ENABLED,
     },
     {
         label: 'Batch Changes',
         icon: ISgBatchChanges,
         href: '/batch-changes',
+        mode: Mode.BATCH_CHANGES_ENABLED,
     },
     {
         label: 'Insights',
         icon: ILucideBarChartBig,
         href: '/insights',
-    },
-]
-
-/**
- * The main navigation for sourcegraph.com
- */
-export const dotcomMainNavigation: (NavigationMenu | NavigationEntry)[] = [
-    {
-        label: 'Code Search',
-        icon: ILucideSearch,
-        href: '/search',
-    },
-    {
-        label: 'Cody',
-        icon: ISgCody,
-        href: '/cody',
-        children: [
-            {
-                label: 'Dashboard',
-                href: '/cody',
-            },
-            {
-                label: 'Web Chat',
-                href: '/cody/chat',
-            },
-        ],
-        isCurrent(this: NavigationMenu, page) {
-            return this.children.some(entry => isCurrent(entry, page))
-        },
+        mode: Mode.CODE_INSIGHTS_ENABLED,
     },
     {
         label: 'About Sourcegraph',
         href: '/',
+        mode: Mode.DOTCOM,
     },
 ]
