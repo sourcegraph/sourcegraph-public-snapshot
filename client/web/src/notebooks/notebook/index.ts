@@ -163,9 +163,9 @@ export class Notebook {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
                         /**
-                         * TODO(stefan) It's redundant to pass the version here, because we already infer
-                         * "patternType" from the version. Remove patternType once it has been changed to
-                         * be an optional parameter.
+                         * TODO(stefan) It's redundant to set "version" here, because we already infer
+                         * "patternType" from "version". Remove "patternType" once it has been changed
+                         * to be an optional parameter.
                          */
                         version: this.version,
                         patternType: defaultPatternTypeFromVersion(this.version) || SearchPatternType.standard,
