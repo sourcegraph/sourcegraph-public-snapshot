@@ -3,6 +3,7 @@ import { noop } from 'lodash'
 import { of } from 'rxjs'
 
 import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -68,6 +69,7 @@ export const Default: StoryFn = () => (
                 fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>
@@ -94,6 +96,7 @@ export const Selected: StoryFn = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>
@@ -120,6 +123,7 @@ export const ReadOnlySelected: StoryFn = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>

@@ -1,6 +1,8 @@
 import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
 
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -30,6 +32,7 @@ const defaultProps = {
     editor: undefined,
     onEditorCreated: noop,
     isSourcegraphDotCom: false,
+    queryVersion: LATEST_VERSION,
 }
 
 export const Default: StoryFn = () => (

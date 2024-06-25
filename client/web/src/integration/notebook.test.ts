@@ -11,6 +11,7 @@ import {
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -89,6 +90,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    queryVersion: LATEST_VERSION,
 })
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {

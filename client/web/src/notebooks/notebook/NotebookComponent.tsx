@@ -47,6 +47,7 @@ export interface NotebookComponentProps
     outlineContainerElement?: HTMLElement | null
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
+    queryVersion: string
 }
 
 const LOADING = 'LOADING' as const
@@ -94,13 +95,14 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         ownEnabled,
         settingsCascade,
         outlineContainerElement,
+        queryVersion,
     }) => {
         const notebook = useMemo(
             () =>
-                new Notebook(initialBlocks, {
+                new Notebook(initialBlocks, queryVersion, {
                     fetchHighlightedFileLineRanges,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges]
+            [initialBlocks, fetchHighlightedFileLineRanges, queryVersion]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
@@ -421,6 +423,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryService={telemetryService}
                                 telemetryRecorder={telemetryRecorder}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                queryVersion={queryVersion}
                             />
                         )
                     }
@@ -438,6 +441,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
+                                queryVersion={queryVersion}
                             />
                         )
                     }
@@ -450,6 +454,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryService={telemetryService}
                                 telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
+                                queryVersion={queryVersion}
                             />
                         )
                     }
@@ -476,6 +481,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
+                queryVersion,
             ]
         )
 

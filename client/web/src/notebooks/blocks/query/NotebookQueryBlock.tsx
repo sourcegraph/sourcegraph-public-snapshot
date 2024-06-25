@@ -10,6 +10,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { defaultPatternTypeFromVersion } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -40,6 +41,7 @@ interface NotebookQueryBlockProps
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
+    queryVersion: string
 }
 
 // Defines the max height for the CodeMirror editor
@@ -68,6 +70,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         isSourcegraphDotCom,
         searchContextsEnabled,
         ownEnabled,
+        queryVersion,
         ...props
     }) => {
         const [editor, setEditor] = useState<EditorView | null>(null)
@@ -107,10 +110,14 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     type: 'link',
                     label: 'Open in new tab',
                     icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
-                    url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.standard, false)}`,
+                    url: `/search?${buildSearchURLQuery(
+                        input.query,
+                        defaultPatternTypeFromVersion(queryVersion) || SearchPatternType.standard,
+                        false
+                    )}`,
                 },
             ],
-            [input]
+            [input, queryVersion]
         )
 
         const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))
@@ -161,7 +168,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                             <CodeMirrorQueryInput
                                 ref={setEditor}
                                 value={input.query}
-                                patternType={SearchPatternType.standard}
+                                patternType={defaultPatternTypeFromVersion(queryVersion) || SearchPatternType.standard}
                                 interpretComments={true}
                                 onChange={onInputChange}
                                 multiLine={true}

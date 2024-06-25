@@ -18,6 +18,7 @@ import styles from './NotebookSymbolBlockInput.module.scss'
 interface NotebookSymbolBlockInputProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
+    queryVersion: string
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
     onSymbolSelected: (symbol: SymbolBlockInput) => void
@@ -39,15 +40,16 @@ const editorAttributes = [
 
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
-> = ({ onSymbolSelected, isSourcegraphDotCom, ...inputProps }) => {
+> = ({ onSymbolSelected, isSourcegraphDotCom, queryVersion, ...inputProps }) => {
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>
             fetchSuggestions(
                 getSymbolSuggestionsQuery(query),
+                queryVersion,
                 (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
                 symbol => symbol
             ),
-        []
+        [queryVersion]
     )
 
     const countSuggestions = useCallback(

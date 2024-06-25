@@ -5,6 +5,7 @@ import { describe, test, before, afterEach, beforeEach, after } from 'mocha'
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -66,6 +67,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    queryVersion: LATEST_VERSION,
 })
 
 describe('GlobalNavbar', () => {

@@ -31,6 +31,7 @@ export interface NotebookContentProps
     outlineContainerElement?: HTMLElement | null
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
+    queryVersion: string
 }
 
 export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<NotebookContentProps>> = React.memo(
@@ -52,6 +53,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         platformContext,
         outlineContainerElement,
         isEmbedded,
+        queryVersion,
     }) => {
         const initializerBlocks: BlockInit[] = useMemo(
             () =>
@@ -101,6 +103,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                 onCopyNotebook={onCopyNotebook}
                 outlineContainerElement={outlineContainerElement}
                 isEmbedded={isEmbedded}
+                queryVersion={queryVersion}
             />
         )
     }

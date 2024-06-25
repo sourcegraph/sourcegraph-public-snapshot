@@ -25,6 +25,7 @@ import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -594,6 +595,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         onCopyNotebook={onCopyNotebook}
                         exportedFileName={basename(blobInfoOrError.filePath)}
                         className={styles.border}
+                        queryVersion={LATEST_VERSION}
                     />
                 </React.Suspense>
             )}

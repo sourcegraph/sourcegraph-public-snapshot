@@ -1,22 +1,21 @@
 import { escapeRegExp } from 'lodash'
 // We're using marked import here to access the `marked` package type definitions.
-
 // eslint-disable-next-line no-restricted-imports
 import { type marked, Renderer } from 'marked'
-import { type Observable, forkJoin, of } from 'rxjs'
-import { startWith, catchError, map, switchMap } from 'rxjs/operators'
+import { forkJoin, type Observable, of } from 'rxjs'
+import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import {
     aggregateStreamingSearch,
+    defaultPatternTypeFromVersion,
     emptyAggregateResults,
-    LATEST_VERSION,
     type SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import type { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
+import type { Block, BlockDependencies, BlockDirection, BlockInit, BlockInput, SymbolBlockInput } from '..'
 import { type NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
@@ -46,6 +45,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
 
 function findSymbolAtRevision(
     input: Omit<SymbolBlockInput, 'revision'>,
+    queryVersion: string,
     revision: string
 ): Observable<{ range: UIRangeSpec['range']; revision: string } | Error> {
     const { repositoryName, filePath, symbolName, symbolContainerName, symbolKind } = input
@@ -53,6 +53,7 @@ function findSymbolAtRevision(
         `repo:${escapeRegExp(repositoryName)} file:${escapeRegExp(
             filePath
         )} rev:${revision} ${symbolName} type:symbol count:50`,
+        queryVersion,
         (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
         symbol => symbol
     ).pipe(
@@ -98,11 +99,13 @@ export class NotebookHeadingMarkdownRenderer extends Renderer {
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
+    private queryVersion = ''
 
-    constructor(initializerBlocks: BlockInit[], private dependencies: BlockDependencies) {
+    constructor(initializerBlocks: BlockInit[], queryVersion: string, private dependencies: BlockDependencies) {
         const blocks = initializerBlocks.map(block => ({ ...block, output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
+        this.queryVersion = queryVersion
         this.blockOrder = blocks.map(block => block.id)
 
         // Pre-run certain blocks, for a better user experience.
@@ -161,8 +164,13 @@ export class Notebook {
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
-                        version: LATEST_VERSION,
-                        patternType: SearchPatternType.standard,
+                        /**
+                         * TODO(stefan) It's redundant to set "version" here, because we already infer
+                         * "patternType" from "version". Remove "patternType" once it has been changed
+                         * to be an optional parameter.
+                         */
+                        version: this.queryVersion,
+                        patternType: defaultPatternTypeFromVersion(this.queryVersion) || SearchPatternType.standard,
                         caseSensitive: false,
                         trace: undefined,
                         chunkMatches: true,
@@ -192,13 +200,13 @@ export class Notebook {
             }
             case 'symbol': {
                 // Start by searching for the symbol at the latest HEAD (main) revision.
-                const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
+                const output = findSymbolAtRevision(block.input, this.queryVersion, 'HEAD').pipe(
                     switchMap(symbolSearchResult => {
                         if (!isErrorLike(symbolSearchResult)) {
                             return of({ ...symbolSearchResult, symbolFoundAtLatestRevision: true })
                         }
                         // If not found, look at the revision stored in the block input (should always be found).
-                        return findSymbolAtRevision(block.input, block.input.revision).pipe(
+                        return findSymbolAtRevision(block.input, this.queryVersion, block.input.revision).pipe(
                             map(symbolSearchResult =>
                                 !isErrorLike(symbolSearchResult)
                                     ? { ...symbolSearchResult, symbolFoundAtLatestRevision: false }

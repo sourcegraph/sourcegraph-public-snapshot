@@ -108,6 +108,7 @@ export interface BlockProps<T extends Block = Block> {
     id: T['id']
     input: T['input']
     output: T['output']
+    queryVersion: string
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, blockInput: BlockInput): void

@@ -21,6 +21,7 @@ import styles from './NotebookFileBlockInputs.module.scss'
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
+    queryVersion: string
     lineRange: HighlightLineRange | null
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
@@ -44,7 +45,7 @@ const editorAttributes = [
 
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, ...inputProps }) => {
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, queryVersion, ...inputProps }) => {
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -65,10 +66,11 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         (query: string) =>
             fetchSuggestions(
                 getFileSuggestionsQuery(query),
+                queryVersion,
                 (suggestion): suggestion is PathMatch => suggestion.type === 'path',
                 file => file
             ),
-        []
+        [queryVersion]
     )
 
     const countSuggestions = useCallback((suggestions: PathMatch[]) => suggestions.length, [])
