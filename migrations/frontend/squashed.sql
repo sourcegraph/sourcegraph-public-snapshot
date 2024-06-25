@@ -81,6 +81,13 @@ CREATE TYPE persistmode AS ENUM (
     'snapshot'
 );
 
+CREATE TYPE query_version_enum AS ENUM (
+    'V1',
+    'V2',
+    'V3',
+    'V4'
+);
+
 CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -3553,6 +3560,7 @@ CREATE TABLE notebooks (
     namespace_user_id integer,
     namespace_org_id integer,
     updater_user_id integer,
+    query_version query_version_enum DEFAULT 'V3'::query_version_enum NOT NULL,
     CONSTRAINT blocks_is_array CHECK ((jsonb_typeof(blocks) = 'array'::text)),
     CONSTRAINT notebooks_has_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
