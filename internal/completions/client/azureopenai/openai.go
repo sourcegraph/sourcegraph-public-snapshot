@@ -35,7 +35,6 @@ var authProxyURL = os.Getenv("CODY_AZURE_OPENAI_IDENTITY_HTTP_PROXY")
 // it will acquire a short lived token and reusing the client
 // prevents acquiring a new token on every request.
 // The client will refresh the token as needed.
-
 var apiClient completionsClient
 
 type completionsClient struct {
@@ -149,6 +148,35 @@ func completeAutocomplete(
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
+	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
+		return tryCompletionsAPIAutocomplete(ctx, client, requestParams)
+	}
+	return tryChatCompletionsAPIAutocomplete(ctx, client, requestParams)
+}
+
+func tryChatCompletionsAPIAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
+	response, err := client.GetChatCompletions(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return nil, toStatusCodeError(err)
+	}
+	if !hasValidFirstChatChoice(response.Choices) {
+		return &types.CompletionResponse{}, nil
+	}
+	return &types.CompletionResponse{
+		Completion: *response.Choices[0].Delta.Content,
+		StopReason: string(*response.Choices[0].FinishReason),
+	}, nil
+}
+
+func tryCompletionsAPIAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
 	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
 		return nil, err
@@ -212,6 +240,67 @@ func streamAutocomplete(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
+	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
+		return tryStreamCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
+	}
+	return tryStreamChatCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
+}
+
+// Streaming with ChatCompletions API
+func tryStreamChatCompletionsAPI(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
+) error {
+	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return err
+	}
+	defer resp.ChatCompletionsStream.Close()
+
+	var content string
+	for {
+		entry, err := resp.ChatCompletionsStream.Read()
+		if errors.Is(err, io.EOF) {
+			tokenManager := tokenusage.NewManager()
+			err = tokenManager.TokenizeAndCalculateUsage(requestParams.Messages, content, tokenizer.AzureModel+"/"+requestParams.Model, "chat_completions", tokenusage.AzureOpenAI)
+			if err != nil {
+				logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
+			}
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if hasValidFirstChatChoice(entry.Choices) {
+			content += *entry.Choices[0].Delta.Content
+			finish := ""
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
+			}
+			ev := types.CompletionResponse{
+				Completion: content,
+				StopReason: finish,
+			}
+			err := sendEvent(ev)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// Streaming with Completions API
+func tryStreamCompletionsAPI(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+	logger log.Logger,
+) error {
 	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
 		return err
@@ -240,7 +329,6 @@ func streamAutocomplete(
 		if err != nil {
 			return err
 		}
-
 		// hasValidFirstCompletionsChoice checks for a valid 1st choice which has text
 		if hasValidFirstCompletionsChoice(entry.Choices) {
 			content += *entry.Choices[0].Text
@@ -258,6 +346,17 @@ func streamAutocomplete(
 			}
 		}
 	}
+}
+
+// isOperationNotSupportedError checks if the error is due to using the wrong API for a model.
+// Detecting this error helps in choosing the correct API.
+func isOperationNotSupportedError(err error) bool {
+	var responseError *azcore.ResponseError
+	if errors.As(err, &responseError) {
+		return responseError.StatusCode == http.StatusBadRequest &&
+			responseError.ErrorCode == "OperationNotSupported"
+	}
+	return false
 }
 
 func streamChat(
