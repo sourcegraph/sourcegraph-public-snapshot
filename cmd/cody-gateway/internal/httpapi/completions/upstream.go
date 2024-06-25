@@ -91,8 +91,9 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// provided to assist in abuse detection.
 	transformBody(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
-	// upstream. To manipulate the body, use transformBody.
-	transformRequest(*http.Request)
+	// upstream. The downstreamRequest parameter is the request sent from the Gateway client.
+	// To manipulate the body, use transformBody.
+	transformRequest(downstreamRequest, upstreamRequest *http.Request)
 	// getRequestMetadata should extract details about the request we are sending
 	// upstream for validation and tracking purposes. Usage data does not need
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
@@ -302,7 +303,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}
 
 		// Run the request transformer.
-		methods.transformRequest(req)
+		methods.transformRequest(r, req)
 
 		// Retrieve metadata from the initial request.
 		model, requestMetadata := methods.getRequestMetadata(body)

@@ -145,11 +145,11 @@ func (*OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model strin
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
+func (o *OpenAIHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
 	if o.config.OrgID != "" {
-		r.Header.Set("OpenAI-Organization", o.config.OrgID)
+		upstreamRequest.Header.Set("OpenAI-Organization", o.config.OrgID)
 	}
 }
 
