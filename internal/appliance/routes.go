@@ -13,17 +13,14 @@ func (a *Appliance) Routes() *mux.Router {
 		http.Redirect(w, r, "/appliance", http.StatusFound)
 	})
 
+	r.Handle("/appliance/login", a.getLoginHandler()).Methods(http.MethodGet)
+	r.Handle("/appliance/login", a.postLoginHandler()).Methods(http.MethodPost)
+	r.Handle("/appliance/error", a.errorHandler()).Methods(http.MethodGet)
+
 	// Auth-gated endpoints
-	r.Handle("/appliance", a.checkAuthorization(a.applianceHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.checkAuthorization(a.getSetupHandler())).Methods(http.MethodGet)
-	r.Handle("/appliance/setup", a.checkAuthorization(a.postSetupHandler())).Methods(http.MethodPost)
+	r.Handle("/appliance", a.CheckAuthorization(a.applianceHandler())).Methods(http.MethodGet)
+	r.Handle("/appliance/setup", a.CheckAuthorization(a.getSetupHandler())).Methods(http.MethodGet)
+	r.Handle("/appliance/setup", a.CheckAuthorization(a.postSetupHandler())).Methods(http.MethodPost)
 
 	return r
-}
-
-// TODO actually implement!
-func (a *Appliance) checkAuthorization(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		next.ServeHTTP(w, req)
-	})
 }

@@ -40,5 +40,25 @@ If you have some kubernetes running (e.g. minikube, docker desktop), and your
 default context is set in ~/.kube/config, the appliance will build a k8s client
 using that kubeconfig, and everything should "just work".
 
+You must set an admin password, e.g:
+
+```
+pwgen -s 40 1
+# Copy the result
+
+kubectl -n test create secret generic appliance-password --from-literal password=<password>
+```
+
+On first boot the appliance will hash that password, transpose it to another
+backing secret, and delete the secret you just created.
+
+To reset the appliance password:
+
+```
+kubectl -n test delete secret appliance-data
+```
+
+And then create the password again as per the above instructions.
+
 See [`development.md`](../..internal/appliance/development.md) for more
 information, including about automated testing.

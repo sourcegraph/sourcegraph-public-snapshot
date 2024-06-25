@@ -7,11 +7,14 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/life4/genesis/slices"
+	passwordvalidator "github.com/wagslane/go-password-validator"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,6 +69,72 @@ func (a *Appliance) getSetupHandler() http.Handler {
 	})
 }
 
+func (a *Appliance) getLoginHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(a.adminPasswordBcrypt) == 0 {
+			msg := fmt.Sprintf(
+				"You must set a password: please create a secret named '%s' with key '%s'.",
+				initialPasswordSecretName,
+				initialPasswordSecretPasswordKey,
+			)
+			a.redirectToErrorPage(w, r, msg, errors.New("no admin password set"), true)
+			return
+		}
+
+		if err := renderTemplate("landing", w, struct {
+			Flash string
+		}{
+			Flash: r.URL.Query().Get(queryKeyUserMessage),
+		}); err != nil {
+			a.handleError(w, err, "executing template")
+			return
+		}
+	})
+}
+
+func (a *Appliance) postLoginHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userSuppliedPassword := r.FormValue("password")
+		if err := bcrypt.CompareHashAndPassword(a.adminPasswordBcrypt, []byte(userSuppliedPassword)); err != nil {
+			if err == bcrypt.ErrMismatchedHashAndPassword {
+				a.redirectWithError(w, r, r.URL.Path, "Supplied password is incorrect.", err, true)
+				return
+			}
+
+			a.redirectToErrorPage(w, r, errMsgSomethingWentWrong, err, false)
+			return
+		}
+
+		if err := passwordvalidator.Validate(userSuppliedPassword, 60); err != nil {
+			msg := fmt.Sprintf(
+				"Please set a stronger password: delete the '%s' secret, and create a new secret named '%s' with key '%s'.",
+				dataSecretName,
+				initialPasswordSecretName,
+				initialPasswordSecretPasswordKey,
+			)
+			a.redirectToErrorPage(w, r, msg, err, true)
+			return
+		}
+
+		validUntil := time.Now().Add(time.Hour).UTC()
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			jwtClaimsValidUntilKey: validUntil.Format(time.RFC3339),
+		})
+		tokenStr, err := token.SignedString(a.jwtSecret)
+		if err != nil {
+			a.handleError(w, err, errMsgSomethingWentWrong)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:    authCookieName,
+			Value:   tokenStr,
+			Expires: validUntil,
+		})
+		http.Redirect(w, r, "/appliance", http.StatusFound)
+	})
+}
+
 func (a *Appliance) handleError(w http.ResponseWriter, err error, msg string) {
 	a.logger.Error(msg, log.Error(err))
 
@@ -74,7 +143,7 @@ func (a *Appliance) handleError(w http.ResponseWriter, err error, msg string) {
 	// Don't leak details of internal errors to users - that's why we have
 	// logging above.
 	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintln(w, "Something went wrong - please contact support.")
+	fmt.Fprintln(w, errMsgSomethingWentWrong)
 }
 
 func (a *Appliance) getVersions(ctx context.Context) ([]string, error) {
