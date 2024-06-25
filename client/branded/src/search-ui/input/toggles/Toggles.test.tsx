@@ -15,7 +15,8 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(case:yes foo) or (case:no bar)"
-                    patternType={SearchPatternType.standard}
+                    patternType={SearchPatternType.keyword}
+                    defaultPatternType={SearchPatternType.keyword}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
@@ -33,7 +34,8 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                    patternType={SearchPatternType.standard}
+                    patternType={SearchPatternType.keyword}
+                    defaultPatternType={SearchPatternType.keyword}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
@@ -50,7 +52,26 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                    patternType={SearchPatternType.standard}
+                    patternType={SearchPatternType.keyword}
+                    defaultPatternType={SearchPatternType.keyword}
+                    setPatternType={() => undefined}
+                    caseSensitive={false}
+                    setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
+            )
+            expect(screen.getAllByRole('checkbox', { name: 'Regular expression toggle' })).toMatchSnapshot()
+        })
+
+        test('regexp toggle with default patterntype', () => {
+            renderWithBrandedContext(
+                <Toggles
+                    navbarSearchQuery="foo.*bar"
+                    patternType={SearchPatternType.keyword}
+                    defaultPatternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
