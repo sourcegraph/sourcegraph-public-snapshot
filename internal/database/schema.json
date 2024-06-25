@@ -51,6 +51,15 @@
         "record",
         "snapshot"
       ]
+    },
+    {
+      "Name": "query_version_enum",
+      "Labels": [
+        "V1",
+        "V2",
+        "V3",
+        "V4"
+      ]
     }
   ],
   "Functions": [
@@ -19083,6 +19092,19 @@
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "query_version",
+          "Index": 12,
+          "TypeName": "query_version_enum",
+          "IsNullable": false,
+          "Default": "'V3'::query_version_enum",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
