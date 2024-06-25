@@ -13,6 +13,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/env",
         "//internal/gitserver",
         "//lib/codeintel/languages",
         "//lib/errors",

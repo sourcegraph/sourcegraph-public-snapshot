@@ -5,13 +5,17 @@ import (
 	"context"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"io"
 	"io/fs"
 	"sort"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var maxInvsLength, _ = strconv.Atoi(env.Get("GET_INVENTORY_MAX_INV_IN_MEMORY", "1000", "When computing the language stats, every nth iteration we compute the sum of all loaded files to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory."))
 
 func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.CommitID) (inv Inventory, err error) {
 	if c.CacheGet != nil {
@@ -32,7 +36,7 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.Com
 		return Inventory{}, err
 	}
 
-	invs := make([]Inventory, 0)
+	invs := make([]Inventory, maxInvsLength)
 	tr := c.NewTarReader(r)
 	for {
 		th, err := tr.Next()
@@ -58,6 +62,12 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.Com
 		default:
 			// Skip symlinks, submodules, etc.
 			continue
+		}
+
+		if len(invs) > maxInvsLength {
+			sum := Sum(invs)
+			invs = make([]Inventory, maxInvsLength)
+			invs = append(invs, sum)
 		}
 	}
 }
