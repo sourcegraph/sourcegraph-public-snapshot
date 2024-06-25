@@ -212,21 +212,17 @@ func streamAutocomplete(
 	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
 ) error {
-	options, err := getCompletionsOptions(requestParams)
-	if err != nil {
-		return err
-	}
-	resp, err := client.GetCompletionsStream(ctx, options, nil)
+	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
 	if err != nil {
 		return toStatusCodeError(err)
 	}
-	defer resp.CompletionsStream.Close()
+	defer resp.ChatCompletionsStream.Close()
 
 	// Azure sends incremental deltas for each message in a chat stream
 	// build up the full message content over multiple responses
 	var content string
 	for {
-		entry, err := resp.CompletionsStream.Read()
+		entry, err := resp.ChatCompletionsStream.Read()
 		// stream is done
 		if errors.Is(err, io.EOF) {
 			tokenManager := tokenusage.NewManager()
@@ -242,9 +238,14 @@ func streamAutocomplete(
 		}
 
 		// hasValidFirstCompletionsChoice checks for a valid 1st choice which has text
-		if hasValidFirstCompletionsChoice(entry.Choices) {
-			content += *entry.Choices[0].Text
+
+		if hasValidFirstChatChoice(entry.Choices) {
+			// hasValidFirstChatChoice checks that Delta.Content isn't null
+			// it is marked as REQUIRED in docs despite being a pointer
+			content += *entry.Choices[0].Delta.Content
+
 			finish := ""
+			// FinishReason is marked as REQUIRED but it's nil until the end
 			if entry.Choices[0].FinishReason != nil {
 				finish = string(*entry.Choices[0].FinishReason)
 			}
