@@ -26,5 +26,5 @@ type CodyGatewayAccess struct {
 }
 
 func (s *CodyGatewayAccess) TableName() string {
-	return "codyaccess_cody_gateway_access"
+	return "enterprise_portal_cody_gateway_access"
 }
