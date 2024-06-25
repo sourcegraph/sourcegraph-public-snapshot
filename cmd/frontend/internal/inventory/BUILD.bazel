@@ -32,6 +32,7 @@ go_test(
     embed = [":inventory"],
     tags = [TAG_SEARCHSUITE],
     deps = [
+        "//internal/api",
         "//internal/fileutil",
         "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
