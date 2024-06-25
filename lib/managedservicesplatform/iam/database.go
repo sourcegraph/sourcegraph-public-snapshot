@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/openfga/openfga/assets"
+	openfga_assets "github.com/openfga/openfga/assets"
 	"github.com/pressly/goose/v3"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -31,7 +32,10 @@ type metadata struct {
 // migrateAndReconcile migrates the "msp-iam" database schema (when needed) and
 // reconciles the framework metadata.
 func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, redisClient *redis.Client) (_ *metadata, err error) {
-	ctx, span := iamTracer.Start(ctx, "iam.migrateAndReconcile")
+	ctx, span := iamTracer.Start(ctx, "iam.migrateAndReconcile",
+		trace.WithAttributes(
+			attribute.String("database", databaseName),
+		))
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
@@ -53,10 +57,9 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 		return nil, errors.Wrap(err, "open connection")
 	}
 
-	goose.SetBaseFS(assets.EmbedMigrations)
+	goose.SetBaseFS(openfga_assets.EmbedMigrations)
 	goose.SetLogger(&gooseLoggerShim{Logger: logger})
-
-	currentVersion, err := goose.GetDBVersion(sqlDB)
+	currentVersion, err := goose.GetDBVersionContext(ctx, sqlDB)
 	if err != nil {
 		return nil, errors.Wrap(err, "get DB version")
 	}
@@ -70,14 +73,17 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 		fmt.Sprintf("%s:auto-migrate", databaseName),
 		15*time.Second,
 		func() error {
+			ctx := context.WithoutCancel(ctx) // do not interrupt once we start
 			span.AddEvent("lock.acquired")
 
 			// Create a session that ignore debug logging.
 			sess := conn.Session(&gorm.Session{
-				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+				Context: ctx,
+				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
 			for _, table := range []any{&metadata{}} {
+				span.AddEvent(fmt.Sprintf("automigrate.%s", fmt.Sprintf("%T", table)))
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))
@@ -85,13 +91,14 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 			}
 
 			// Migrate OpenFGA's database schema.
+			span.AddEvent("automigrate.openfga")
 			err = goose.UpContext(
 				ctx,
 				sqlDB,
-				assets.PostgresMigrationDir,
+				openfga_assets.PostgresMigrationDir,
 			)
 			if err != nil {
-				return errors.Wrap(err, "run migrations")
+				return errors.Wrap(err, "run OpenFGA migrations")
 			}
 			return nil
 		},

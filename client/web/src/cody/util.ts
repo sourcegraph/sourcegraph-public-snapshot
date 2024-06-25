@@ -13,8 +13,7 @@ export const manageSubscriptionRedirectURL = `${
  * for managing their Cody Pro subscription information.
  */
 export function isEmbeddedCodyProUIEnabled(): boolean {
-    return !!(window.context?.frontendCodyProConfig as { stripePublishableKey: string } | undefined)
-        ?.stripePublishableKey
+    return !!window.context.frontendCodyProConfig?.useEmbeddedUI
 }
 
 /**

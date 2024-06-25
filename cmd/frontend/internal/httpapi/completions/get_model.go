@@ -151,6 +151,16 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		case
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"fireworks/" + fireworks.Mixtral8x22Instruct,
+			"openai/gpt-3.5-turbo",
+			"google/" + google.Gemini15FlashLatest,
+			"google/" + google.Gemini15ProLatest,
+			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash,
+			"google/" + google.Gemini15Pro,
+			"google/" + google.GeminiPro,
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",

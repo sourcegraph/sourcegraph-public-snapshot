@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,7 +48,7 @@ type gitTreeTranslator struct {
 type requestArgs struct {
 	repo   *sgtypes.Repo
 	commit string
-	path   string
+	path   core.RepoRelPath
 }
 
 func (r *requestArgs) GetRepoID() int {
@@ -95,13 +96,13 @@ func (g *gitTreeTranslator) GetTargetCommitPathFromSourcePath(ctx context.Contex
 // target commits are swapped.
 // TODO: No todo just letting me know that I updated path just on this one. Need to do it like that.
 func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, g.localRequestArgs.path, reverse)
+	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, g.localRequestArgs.path.RawValue(), reverse)
 	if err != nil {
 		return "", shared.Position{}, false, err
 	}
 
 	commitPosition, ok := translatePosition(hunks, px)
-	return g.localRequestArgs.path, commitPosition, ok, nil
+	return g.localRequestArgs.path.RawValue(), commitPosition, ok, nil
 }
 
 // GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target

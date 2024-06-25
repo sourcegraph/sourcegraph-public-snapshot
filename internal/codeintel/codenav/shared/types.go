@@ -3,6 +3,7 @@ package shared
 import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -10,16 +11,24 @@ import (
 // Location is an LSP-like location scoped to a dump.
 type Location struct {
 	UploadID int
-	Path     string
+	Path     core.UploadRelPath
 	Range    Range
 }
 
 // Diagnostic describes diagnostic information attached to a location within a
 // particular dump.
-type Diagnostic struct {
+type Diagnostic[PathType any] struct {
 	UploadID int
-	Path     string
+	Path     PathType
 	precise.DiagnosticData
+}
+
+func AdjustDiagnostic(d Diagnostic[core.UploadRelPath], upload shared.CompletedUpload) Diagnostic[core.RepoRelPath] {
+	return Diagnostic[core.RepoRelPath]{
+		UploadID:       d.UploadID,
+		Path:           core.NewRepoRelPath(&upload, d.Path),
+		DiagnosticData: d.DiagnosticData,
+	}
 }
 
 // CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
@@ -35,7 +44,7 @@ type CodeIntelligenceRange struct {
 // denotes the target commit for which the location was set (the originally requested commit).
 type UploadLocation struct {
 	Upload       shared.CompletedUpload
-	Path         string
+	Path         core.RepoRelPath
 	TargetCommit string
 	TargetRange  Range
 }

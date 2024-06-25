@@ -6,7 +6,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { codyProRoutes } from './cody/codyProRoutes'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
+import { LegacyRoute, type LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { isSearchJobsEnabled } from './search-jobs/utility'
 
@@ -30,7 +30,6 @@ const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoC
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 const CodyIgnoreProvider = lazyComponent(() => import('./cody/useCodyIgnore'), 'CodyIgnoreProvider')
-const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
 const GlobalNotebooksArea = lazyComponent(() => import('./notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
@@ -61,7 +60,6 @@ const SearchContextPage = lazyComponent(
 )
 const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsellPage'), 'SearchUpsellPage')
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
-const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
 const CodySwitchAccountPage = lazyComponent(
     () => import('./cody/switch-account/CodySwitchAccountPage'),
@@ -88,10 +86,6 @@ const PassThroughToServer: React.FC = () => {
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
 export const routes: RouteObject[] = [
-    {
-        path: PageRoutes.GetCody,
-        element: <LegacyRoute render={props => <GetCodyPage {...props} />} />,
-    },
     {
         path: PageRoutes.PostSignUp,
         element: <LegacyRoute render={() => <PostSignUpPage />} />,
@@ -243,11 +237,6 @@ export const routes: RouteObject[] = [
         ),
     },
     {
-        path: PageRoutes.Welcome,
-        // This route is deprecated after we removed the post-sign-up page experimental feature, but we keep it for now to not break links.
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
-    },
-    {
         path: PageRoutes.Settings,
         element: <LegacyRoute render={props => <RedirectToUserSettings {...props} />} />,
     },
@@ -331,17 +320,6 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.Debug,
         element: <PassThroughToServer />,
-    },
-    {
-        path: PageRoutes.CodySearch,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodySearchPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
-                )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
-            />
-        ),
     },
     // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
     {

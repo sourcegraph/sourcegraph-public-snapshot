@@ -18,6 +18,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/core",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/uploads/shared",
@@ -54,6 +55,7 @@ go_test(
     ],
     deps = [
         "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/core",
         "//internal/codeintel/shared",
         "//internal/database/dbtest",
         "//internal/observation",

@@ -572,9 +572,6 @@ func TestUsers_Update(t *testing.T) {
 	if want := "a1"; user.AvatarURL != want {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
 	}
-	if want := false; user.CompletedPostSignup != want {
-		t.Errorf("got wrong CompletedPostSignUp %t, want %t", user.CompletedPostSignup, want)
-	}
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
 		DisplayName: pointers.Ptr(""),
@@ -593,20 +590,6 @@ func TestUsers_Update(t *testing.T) {
 	}
 	if want := "a1"; user.AvatarURL != want {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
-	}
-
-	// Update CompletedPostSignUp
-	if err := db.Users().Update(ctx, user.ID, UserUpdate{
-		CompletedPostSignup: pointers.Ptr(true),
-	}); err != nil {
-		t.Fatal(err)
-	}
-	user, err = db.Users().GetByID(ctx, user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := true; user.CompletedPostSignup != want {
-		t.Errorf("got wrong CompletedPostSignUp %t, want %t", user.CompletedPostSignup, want)
 	}
 
 	// Can't update to duplicate username.

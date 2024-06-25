@@ -38,7 +38,7 @@ func newModel(identity modelIdentity, metadata modelMetadata, ctxWindow types.Co
 	// before writing it out.
 	modelID := types.ModelID("unknown")
 	parts := strings.Split(string(identity.MRef), "::")
-	if len(parts) != 3 {
+	if len(parts) == 3 {
 		modelID = types.ModelID(parts[2])
 	}
 

@@ -143,9 +143,13 @@ func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (mod
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
+	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
+		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
+	}
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 
 func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {

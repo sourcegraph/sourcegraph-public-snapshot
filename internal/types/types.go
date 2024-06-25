@@ -852,7 +852,6 @@ type User struct {
 	BuiltinAuth           bool
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
-	CompletedPostSignup   bool
 	SCIMControlled        bool
 }
 

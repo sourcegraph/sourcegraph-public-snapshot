@@ -103,8 +103,8 @@ func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model strin
 	return body.Model, map[string]any{"stream": body.ShouldStream()}
 }
 
-func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
+func (o *GoogleHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
 }
 
 func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
