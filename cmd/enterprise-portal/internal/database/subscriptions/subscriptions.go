@@ -13,8 +13,8 @@ import (
 
 // Subscription is an Enterprise subscription record.
 type Subscription struct {
-	// ID is the prefixed UUID-format identifier for the subscription.
-	ID string `gorm:"primaryKey"`
+	// ID is the internal (unprefixed) UUID-format identifier for the subscription.
+	ID string `gorm:"type:uuid;primaryKey"`
 	// InstanceDomain is the instance domain associated with the subscription, e.g.
 	// "acme.sourcegraphcloud.com".
 	InstanceDomain string `gorm:"unique"`
