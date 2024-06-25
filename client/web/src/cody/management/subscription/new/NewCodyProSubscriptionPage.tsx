@@ -68,6 +68,7 @@ const AuthenticatedNewCodyProSubscriptionPage: FunctionComponent<NewCodyProSubsc
         return <Navigate to={CodyProRoutes.Manage} replace={true} />
     }
 
+    // Display spinner without page header because without the subscription, we don't know which header to show
     if (subscriptionQueryResult.isLoading) {
         return <LoadingSpinner className="mx-auto" />
     }
