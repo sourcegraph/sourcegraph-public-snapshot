@@ -43,8 +43,8 @@
         height: calc(1rem + 0.5rem * 2 + 1px * 2); /* 1rem for text, 0.5rem vertical padding, 1px border */
         display: flex;
         align-items: center;
-        flex-grow: 1;
-        overflow: hidden;
+        flex-grow: 0;
+        min-width: 0;
 
         &:focus-within {
             border: 1px solid var(--input-focus-border-color);
