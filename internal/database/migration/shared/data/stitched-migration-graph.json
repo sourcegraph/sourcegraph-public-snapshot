@@ -11238,7 +11238,7 @@
 			{
 				"ID": 1719214941,
 				"Name": "add_field_query_version_to_notebooks",
-				"UpQuery": "CREATE TYPE query_version_enum AS ENUM ('V1', 'V2', 'V3', 'V4');\nALTER TABLE notebooks ADD COLUMN IF NOT EXISTS query_version query_version_enum NOT NULL DEFAULT 'V3';",
+				"UpQuery": "-- CREATE TYPE IF NOT EXISTS is not a thing, so we must drop it here,\nDROP TYPE IF EXISTS query_version_enum;\nCREATE TYPE query_version_enum AS ENUM ('V1', 'V2', 'V3', 'V4');\n\nALTER TABLE notebooks ADD COLUMN IF NOT EXISTS query_version query_version_enum NOT NULL DEFAULT 'V3';",
 				"DownQuery": "ALTER TABLE notebooks DROP COLUMN IF EXISTS query_version;\nDROP TYPE IF EXISTS query_version_enum;",
 				"Privileged": false,
 				"NonIdempotent": false,
