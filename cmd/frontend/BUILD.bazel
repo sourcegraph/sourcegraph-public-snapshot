@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/frontend/shared",
         "//internal/sanitycheck",
     ],
