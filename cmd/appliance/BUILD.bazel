@@ -29,7 +29,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "//wolfi-images/sourcegraph-base:base_image",
+    base = ":base_image",
     entrypoint = [
         "/sbin/tini",
         "--",
@@ -44,6 +44,12 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["appliance:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("appliance"),
 )
 
 wolfi_base()
