@@ -94,11 +94,11 @@ func NewHunkCache(size int) (HunkCache, error) {
 }
 
 // NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client gitserver.Client, args *translationBase, hunkCache HunkCache) GitTreeTranslator {
+func NewGitTreeTranslator(client gitserver.Client, base *translationBase, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
 		client:    client,
 		hunkCache: hunkCache,
-		base:      args,
+		base:      base,
 	}
 }
 
