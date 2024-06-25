@@ -13,7 +13,7 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { SymbolKind } from '../graphql-operations'
-import  { SearchPatternType} from '../graphql-operations'
+import { SearchPatternType } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
 
@@ -514,7 +514,13 @@ export const messageHandlers: MessageHandlers = {
 
 export interface StreamSearchOptions {
     version: string
-    patternType?: SearchPatternType
+    /**
+     * TODO(stefan): "patternType" should be an optional parameter. Both Stream API and the GQL API don't require it.
+     * In the UI, we sometimes prefer to remove the "patternType:" filter from the query for better readability.
+     * "patternType" should be used to set the patternType of a query for those cases. Use "version" to
+     * define the default patternType instead.
+    */
+    patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
     featureOverrides?: string[]
@@ -566,7 +572,7 @@ function initiateSearchStream(
         const parameters = [
             ['q', queryParam],
             ['v', version],
-            ['t', patternType ? (patternType as string) : ''],
+            ['t', patternType as string],
             ['sm', searchMode.toString()],
             ['display', displayLimit.toString()],
             ['cm', chunkMatches ? 't' : 'f'],
