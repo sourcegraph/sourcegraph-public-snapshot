@@ -79,7 +79,7 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		fmt.Sprintf("%s:auto-migrate", dbName),
 		15*time.Second,
 		func() error {
-			ctx := context.WithoutCancel(ctx)
+			ctx := context.WithoutCancel(ctx) // do not interrupt once we start
 			span.AddEvent("lock.acquired")
 
 			versionKey := fmt.Sprintf("%s:db_version", dbName)
@@ -98,7 +98,8 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 
 			// Create a session that ignore debug logging.
 			sess := conn.Session(&gorm.Session{
-				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+				Context: ctx,
+				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
 			for _, table := range tables.All() {
