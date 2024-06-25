@@ -78,7 +78,7 @@ export class OccurrenceIndex extends Array<Occurrence> {
         step: 'line' | 'character',
         direction: 'next' | 'previous' = 'next'
     ): Occurrence | undefined {
-        let occurrence = undefined
+        let occurrence
         if (step === 'character') {
             occurrence = this.closestByCharacter(
                 from.line,
