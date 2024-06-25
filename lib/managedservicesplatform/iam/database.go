@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	openfga_migrations "github.com/openfga/openfga/assets"
+	openfga_assets "github.com/openfga/openfga/assets"
 	"github.com/pressly/goose/v3"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
@@ -57,7 +57,7 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 		return nil, errors.Wrap(err, "open connection")
 	}
 
-	goose.SetBaseFS(openfga_migrations.EmbedMigrations)
+	goose.SetBaseFS(openfga_assets.EmbedMigrations)
 	goose.SetLogger(&gooseLoggerShim{Logger: logger})
 	currentVersion, err := goose.GetDBVersionContext(ctx, sqlDB)
 	if err != nil {
@@ -95,7 +95,7 @@ func migrateAndReconcile(ctx context.Context, logger log.Logger, sqlDB *sql.DB, 
 			err = goose.UpContext(
 				ctx,
 				sqlDB,
-				openfga_migrations.PostgresMigrationDir,
+				openfga_assets.PostgresMigrationDir,
 			)
 			if err != nil {
 				return errors.Wrap(err, "run OpenFGA migrations")
