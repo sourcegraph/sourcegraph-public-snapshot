@@ -15,6 +15,7 @@ import {
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookQueryBlock } from './NotebookQueryBlock'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
@@ -68,6 +69,7 @@ export const Default: StoryFn = () => (
                 fetchHighlightedFileLineRanges={() => of([HIGHLIGHTED_FILE_LINES_LONG])}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>
@@ -94,6 +96,7 @@ export const Selected: StoryFn = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>
@@ -120,6 +123,7 @@ export const ReadOnlySelected: StoryFn = () => (
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 authenticatedUser={null}
                 platformContext={NOOP_PLATFORM_CONTEXT}
+                queryVersion={LATEST_VERSION}
             />
         )}
     </WebStory>

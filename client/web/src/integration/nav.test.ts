@@ -20,6 +20,7 @@ import {
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, removeContextFromQuery } from './utils'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -66,6 +67,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    queryVersion: LATEST_VERSION
 })
 
 describe('GlobalNavbar', () => {

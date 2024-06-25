@@ -9,6 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import type { ListNotebooksResult } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 const now = new Date()
 
@@ -45,6 +46,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                     { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
                 ],
+                queryVersion: LATEST_VERSION,
             },
             {
                 __typename: 'Notebook',
@@ -60,6 +62,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 updater: { __typename: 'User', username: 'user2' },
                 namespace: { __typename: 'User', namespaceName: 'user2', id: '2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
+                queryVersion: LATEST_VERSION,
             },
         ],
         pageInfo: { hasNextPage: false, endCursor: null },
