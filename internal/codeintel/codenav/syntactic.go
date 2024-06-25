@@ -3,6 +3,7 @@ package codenav
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type candidateFile struct {
@@ -34,19 +34,16 @@ func findCandidateOccurrencesViaSearch(
 	trace observation.TraceLogger,
 	repo types.Repo,
 	commit api.CommitID,
-	symbol *scip.Symbol,
+	identifier string,
 	language string,
 ) (orderedmap.OrderedMap[core.RepoRelPath, candidateFile], error) {
+	if identifier == "" {
+		return *orderedmap.New[core.RepoRelPath, candidateFile](), nil
+	}
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
-	var identifier string
 	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
-	if name, ok := nameFromSymbol(symbol); ok {
-		identifier = name
-	} else {
-		return resultMap, errors.Errorf("can't find occurrences for locals via search")
-	}
 	// TODO: This should be dependent on the number of requested usages, with a configured global limit
 	countLimit := 1000
 	searchQuery := fmt.Sprintf("type:file repo:%s rev:%s language:%s count:%d case:yes /\\b%s\\b/", repoName, string(commit), language, countLimit, identifier)
@@ -127,4 +124,25 @@ func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
 		return "", false
 	}
 	return symbol.Descriptors[len(symbol.Descriptors)-1].Name, true
+}
+
+// sliceRange returns the substring corresponding to the given single-line range.
+// It returns false if the range spans multiple lines or it is not contained in the string.
+func sliceRange(s string, range_ scip.Range) (substr string, ok bool) {
+	if range_.Start.Line != range_.End.Line {
+		return "", false
+	}
+
+	lines := strings.Split(s, "\n")
+	if len(lines) <= int(range_.Start.Line) {
+		return "", false
+	}
+
+	line := lines[range_.Start.Line]
+	if len(line) < int(range_.End.Character) {
+		return "", false
+	}
+
+	// TODO: wrong (less wrong would be to use rune offsets, actually correct needs encoding of the string _and_ the scip.Range)
+	return line[range_.Start.Character:range_.End.Character], true
 }

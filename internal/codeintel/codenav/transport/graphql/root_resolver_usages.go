@@ -58,6 +58,21 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		},
 	}
 }
+func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+	// TODO: We can figure out if something is a definition via symbol search
+	kind := resolverstubs.UsageKindReference
+	return &usageResolver{
+		symbol:     nil,
+		provenance: resolverstubs.ProvenanceSearchBased,
+		kind:       kind,
+		usageRange: &usageRangeResolver{
+			repository: repository,
+			revision:   revision,
+			path:       usage.Path,
+			range_:     usage.Range(),
+		},
+	}
+}
 
 func (u *usageResolver) Symbol(ctx context.Context) (resolverstubs.SymbolInformationResolver, error) {
 	if u.symbol == nil {
