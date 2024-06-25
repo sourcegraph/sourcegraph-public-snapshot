@@ -755,7 +755,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 
 		batchedRepos := batchRepos(repos, 30)
 		for _, batch := range batchedRepos {
-			namesWithOwners := make([]string, len(batch))
+			namesWithOwners := make([]string, 0, len(batch))
 
 			for _, r := range batch {
 				namesWithOwners = append(namesWithOwners, r.NameWithOwner)
