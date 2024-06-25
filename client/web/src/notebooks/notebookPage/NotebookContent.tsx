@@ -81,7 +81,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                         }
                     }
                 }),
-            [blocks, queryVersion]
+            [blocks]
         )
 
         return (

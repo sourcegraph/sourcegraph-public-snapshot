@@ -117,7 +117,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                     )}`,
                 },
             ],
-            [input]
+            [input, queryVersion]
         )
 
         const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))

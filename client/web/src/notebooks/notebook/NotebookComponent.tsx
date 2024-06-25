@@ -479,6 +479,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
+                queryVersion,
             ]
         )
 
