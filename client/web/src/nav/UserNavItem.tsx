@@ -26,8 +26,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { CodyProRoutes } from '../cody/codyProRoutes'
-import { useSubscriptionSummary } from '../cody/management/api/react-query/subscriptions'
+import { useCodyProNavLinks } from '../cody/useCodyProNavLinks'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
 import { useNewSearchNavigation } from './new-global-navigation'
@@ -246,9 +245,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 }
 
 const CodyProSection: React.FC = () => {
-    const { data } = useSubscriptionSummary()
+    const links = useCodyProNavLinks()
 
-    if (!data) {
+    if (!links.length) {
         return null
     }
 
@@ -256,16 +255,12 @@ const CodyProSection: React.FC = () => {
         <>
             <MenuDivider className={styles.dropdownDivider} />
             <MenuHeader className={styles.dropdownHeader}>Cody PRO</MenuHeader>
-            <MenuLink as={Link} to={CodyProRoutes.ManageTeam}>
-                Manage team
-            </MenuLink>
 
-            {/* only team admins can manage subscription */}
-            {data.userRole === 'admin' && (
-                <MenuLink as={Link} to={CodyProRoutes.SubscriptionManage}>
-                    Manage subscription
+            {links.map(({ to, label }) => (
+                <MenuLink as={Link} key={to} to={to}>
+                    {label}
                 </MenuLink>
-            )}
+            ))}
         </>
     )
 }
