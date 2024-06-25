@@ -11,6 +11,7 @@ export const useCodyProNavLinks = (): { to: string; label: string }[] => {
         if (!data || data.userRole !== 'admin') {
             return []
         }
+
         const items = [{ to: getManageSubscriptionPageURL(), label: 'Manage subscription' }]
 
         if (isEmbeddedCodyProUIEnabled()) {
