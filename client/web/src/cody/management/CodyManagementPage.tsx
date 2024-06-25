@@ -37,6 +37,8 @@ interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
+type InviteNodes = Record<'banner' | 'link' | 'form', React.ReactNode>
+
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
@@ -95,8 +97,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         return null
     }
 
-    const inviteNodes: Record<'banner' | 'link' | 'form', React.ReactNode> = ((): typeof inviteNodes => {
-        const nodes: typeof inviteNodes = { banner: null, link: null, form: null }
+    const inviteNodes: InviteNodes = ((): InviteNodes => {
+        const nodes: InviteNodes = { banner: null, link: null, form: null }
 
         // Invites flow is supported only for embedded Cody UI.
         if (!isEmbeddedCodyProUIEnabled()) {
