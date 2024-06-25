@@ -18,6 +18,7 @@ go_library(
         "web/static/css/bootstrap.min.css",
         "web/static/css/custom.css",
         "web/static/script/bootstrap.bundle.min.js",
+        "web/template/layout.gohtml",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
