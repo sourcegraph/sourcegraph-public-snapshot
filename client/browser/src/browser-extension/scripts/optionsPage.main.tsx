@@ -161,7 +161,14 @@ function useTelemetryRecorder(
         return telemetryRecorderProvider.getRecorder()
     }, [sourcegraphUrl])
 
-    useEffect(() => () => telemetryRecorder.unsubscribe(), [telemetryRecorder])
+    useEffect(
+        () => () => {
+            if (telemetryRecorder !== noOpTelemetryRecorder) {
+                telemetryRecorder.unsubscribe()
+            }
+        },
+        [telemetryRecorder]
+    )
     return telemetryRecorder
 }
 
