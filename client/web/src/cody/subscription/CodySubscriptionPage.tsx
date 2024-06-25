@@ -117,13 +117,13 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    500
+                                    Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    20
+                                    200
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">messages and commands per month</Text>
                             </div>
