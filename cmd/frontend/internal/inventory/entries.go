@@ -3,7 +3,9 @@ package inventory
 import (
 	"archive/tar"
 	"context"
+	"fmt"
 	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"io"
 	"io/fs"
 	"sort"
@@ -12,16 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (c *Context) All(ctx context.Context, gs gitserver.Client) (inv Inventory, err error) {
+func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.CommitID) (inv Inventory, err error) {
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, string(c.Repo)); ok {
+		if inv, ok := c.CacheGet(ctx, fmt.Sprintf("%s@%s", c.Repo, commitID)); ok {
 			return inv, nil
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, string(c.Repo), inv)
+				c.CacheSet(ctx, fmt.Sprintf("%s@%s", c.Repo, commitID), inv)
 			}
 		}()
 	}
@@ -45,7 +47,7 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client) (inv Inventory, 
 
 		switch {
 		case entry.Mode().IsRegular():
-			inv, err := c.fileTar(ctx, th, tr)
+			inv, err := c.fileTar(ctx, th, tr, commitID)
 			if err != nil {
 				return Inventory{}, err
 			}
@@ -161,17 +163,17 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, er
 	return Inventory{Languages: []Lang{lang}}, nil
 }
 
-func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader) (inv Inventory, err error) {
+func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader, commitID api.CommitID) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file.FileInfo())); ok {
+		if inv, ok := c.CacheGet(ctx, fmt.Sprintf("%s@%s", c.CacheKey(file.FileInfo()), commitID)); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file.FileInfo()), inv) // store in cache
+				c.CacheSet(ctx, fmt.Sprintf("%s@%s", c.CacheKey(file.FileInfo()), commitID), inv) // store in cache
 			}
 		}()
 	}
