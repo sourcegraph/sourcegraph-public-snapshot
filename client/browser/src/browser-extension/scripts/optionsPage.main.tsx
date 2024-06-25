@@ -14,7 +14,7 @@ import type { Optional } from 'utility-types'
 
 import { asError, isDefined } from '@sourcegraph/common'
 import { gql, type GraphQLResult } from '@sourcegraph/http-client'
-import { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
+import type { BillingCategory, BillingProduct } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
@@ -23,7 +23,7 @@ import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
 import {
-    ConditionalTelemetryRecorder,
+    type ConditionalTelemetryRecorder,
     ConditionalTelemetryRecorderProvider,
     noOpTelemetryRecorder,
 } from '../../shared/telemetry'
@@ -271,9 +271,10 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
     const handleToggleActivated = useCallback(
         (isActivated: boolean): void => {
             telemetryService.log(isActivated ? 'BrowserExtensionEnabled' : 'BrowserExtensionDisabled')
+            telemetryRecorder.recordEvent('browserExtension', isActivated ? 'enabled' : 'disabled')
             storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
         },
-        [telemetryService]
+        [telemetryService, telemetryRecorder]
     )
 
     const handleRemovePreviousSourcegraphUrl = useCallback(
