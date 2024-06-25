@@ -37,8 +37,6 @@ interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
 }
 
-type InviteNodes = Record<'banner' | 'link' | 'form', React.ReactNode>
-
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
     authenticatedUser,
     telemetryRecorder,
@@ -97,42 +95,48 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         return null
     }
 
-    const inviteNodes: InviteNodes = ((): InviteNodes => {
-        const nodes: InviteNodes = { banner: null, link: null, form: null }
-
+    // Generate invite-related widgets for the page.
+    // The returned widgets depend on the user's role and subscription status.
+    // Only applicable when embedded Cody Pro UI is enabled.
+    const inviteWidgets = ((): {
+        banner?: React.ReactElement
+        link?: React.ReactElement
+        form?: React.ReactElement
+    } => {
         // Invites flow is supported only for embedded Cody UI.
         if (!isEmbeddedCodyProUIEnabled()) {
-            return nodes
+            return {}
         }
 
-        // User with any role can get an invite.
-        nodes.banner = <AcceptInviteBanner onSuccess={refetch} />
+        const banner = <AcceptInviteBanner onSuccess={refetch} />
 
-        // Only admins can invite users and manage team.
         const subscriptionSummary = subscriptionSummaryQueryResult.data
+        // User is not admin: only banner widget is available from the invite flow (user with any role may get an invite).
         if (!subscriptionSummary || subscriptionSummary.userRole !== 'admin') {
-            return nodes
+            return { banner }
         }
 
-        nodes.form = <InviteUsers telemetryRecorder={telemetryRecorder} subscriptionSummary={subscriptionSummary} />
+        // User is admin: define link and form widgets.
+
+        const form = <InviteUsers telemetryRecorder={telemetryRecorder} subscriptionSummary={subscriptionSummary} />
 
         const isSoloUser = subscriptionSummary.teamMaxMembers === 1
         const hasFreeSeats = subscriptionSummary.teamMaxMembers > subscriptionSummary.teamCurrentMembers
         const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
         const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
-        nodes.link = (
+        const link = (
             <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
                 <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
             </Button>
         )
 
-        return nodes
+        return { banner, link, form }
     })()
 
     const pageHeaderLink: React.ReactNode = (() => {
-        // User is admin and can manage team and subscription - render corresponding link.
-        if (inviteNodes.link) {
-            return inviteNodes.link
+        // If invites link widget is defined, render it.
+        if (inviteWidgets.link) {
+            return inviteWidgets.link
         }
 
         // User already has a Pro subscription - render a link to the manage subscription page.
@@ -163,7 +167,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         <Page className={classNames('d-flex flex-column')}>
             <PageTitle title="Dashboard" />
 
-            {inviteNodes.banner}
+            {inviteWidgets.banner}
 
             {welcomeToPro && (
                 <CodyAlert variant="greenCodyPro">
@@ -196,7 +200,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 </PageHeader.Heading>
             </PageHeader>
 
-            {inviteNodes.form}
+            {inviteWidgets.form}
 
             <div className={classNames('border bg-1 mb-2', styles.container)}>
                 <SubscriptionStats
