@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/life4/genesis/slices"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +14,6 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 
 	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
-	"github.com/sourcegraph/sourcegraph/internal/slices"
 )
 
 // Test helpers
@@ -207,6 +207,15 @@ func (suite *ApplianceTestSuite) gatherResources(namespace string) []client.Obje
 		obj.Spec.ClusterIP = normalizedString
 		obj.Spec.ClusterIPs = []string{normalizedString}
 		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Service"})
+		normalizeObj(&obj)
+		objs = append(objs, &obj)
+	}
+
+	ingresses, err := suite.k8sClient.NetworkingV1().Ingresses(namespace).List(suite.ctx, metav1.ListOptions{})
+	suite.Require().NoError(err)
+	for _, obj := range ingresses.Items {
+		obj := obj
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: "networking.k8s.io", Version: "v1", Kind: "Ingress"})
 		normalizeObj(&obj)
 		objs = append(objs, &obj)
 	}

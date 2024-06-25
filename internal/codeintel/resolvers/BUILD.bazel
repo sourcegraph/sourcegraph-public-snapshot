@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -18,7 +19,11 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/api",
+        "//internal/codeintel/codenav",
+        "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
+        "//internal/database",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gqlutil",
         "//internal/markdown",
@@ -27,6 +32,27 @@ go_library(
         "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["codenav_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":resolvers"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/pbt",
+        "//internal/types",
+        "//lib/pointers",
+        "@com_github_stretchr_testify//require",
+        "@net_pgregory_rapid//:rapid",
+        "@org_golang_x_exp//rand",
     ],
 )

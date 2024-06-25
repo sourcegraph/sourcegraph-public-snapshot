@@ -42,7 +42,7 @@ go_library(
         "//internal/session",
         "//internal/suspiciousnames",
         "//internal/telemetry",
-        "//internal/telemetry/teestore",
+        "//internal/telemetry/telemetrystore/teestore",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",

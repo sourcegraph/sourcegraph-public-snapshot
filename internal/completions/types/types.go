@@ -188,13 +188,19 @@ const (
 	CodyClientJetbrains CodyClientName = "jetbrains"
 )
 
+type CompletionRequest struct {
+	Feature    CompletionsFeature
+	Version    CompletionsVersion
+	Parameters CompletionRequestParameters
+}
+
 type CompletionsClient interface {
 	// Stream executions a completions request, streaming results to the callback.
 	// Callers should check for ErrStatusNotOK and handle the error appropriately.
-	Stream(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, SendCompletionEvent, log.Logger) error
+	Stream(context.Context, log.Logger, CompletionRequest, SendCompletionEvent) error
 	// Complete executions a completions request until done. Callers should check
 	// for ErrStatusNotOK and handle the error appropriately.
-	Complete(context.Context, CompletionsFeature, CompletionsVersion, CompletionRequestParameters, log.Logger) (*CompletionResponse, error)
+	Complete(context.Context, log.Logger, CompletionRequest) (*CompletionResponse, error)
 }
 
 func ConvertFromLegacyMessages(messages []Message) []Message {

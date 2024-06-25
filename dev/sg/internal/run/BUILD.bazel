@@ -34,6 +34,7 @@ go_library(
         "@com_github_nxadm_tail//:tail",
         "@com_github_rjeczalik_notify//:notify",
         "@com_github_sourcegraph_conc//pool",
+        "@dev_bobheadxi_go_streamline//pipe",
     ],
 )
 

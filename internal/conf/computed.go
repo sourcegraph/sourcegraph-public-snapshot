@@ -10,9 +10,11 @@ import (
 	"github.com/hashicorp/cronexpr"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -163,6 +165,10 @@ func UpdateChannel() string {
 }
 
 func BatchChangesEnabled() bool {
+	if dotcom.SourcegraphDotComMode() {
+		// Batch Changes is always disabled on dotcom.
+		return false
+	}
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
@@ -618,7 +624,7 @@ func AuthLockout() *schema.AuthLockout {
 	return val
 }
 
-const defaultGitLongCommandTimeout = time.Hour
+const defaultGitLongCommandTimeout = 2 * time.Hour
 
 // GitLongCommandTimeout returns the maximum amount of time in seconds that a
 // long Git command (e.g. clone or remote update) is allowed to execute. If not
@@ -867,6 +873,32 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsModelRef := conftypes.NewBedrockModelRefFromModelID(completionsConfig.CompletionModel)
 		completionsConfig.CompletionModel = completionsModelRef.CanonicalizedModelID()
 		canonicalized = true
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameGoogle) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://generativelanguage.googleapis.com/v1beta/models"
+		}
+
+		// If not access token is set, we cannot talk to Google. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = google.Gemini15Pro
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = google.Gemini15Flash
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			// Code completion is not supported by Google
+			completionsConfig.CompletionModel = google.Gemini15Flash
+		}
 	}
 
 	// only apply canonicalization if not already applied. Not all model IDs can simply be lowercased
@@ -1230,7 +1262,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet || model == anthropic.Claude35Sonnet {
 		// TODO: Technically, v2 and v3 also uses a 100k/200k window respectively, but we should
 		// validate that returning 100k here is the right thing to do.
 		return 12_000

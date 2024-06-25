@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -23,10 +25,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -42,11 +45,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockRequestState.SetUploadsDataLoader(uploads)
 
 		locations := []shared.Location{
-			{UploadID: 51, Path: "a.go", Range: testRange1},
-			{UploadID: 51, Path: "b.go", Range: testRange2},
-			{UploadID: 51, Path: "a.go", Range: testRange3},
-			{UploadID: 51, Path: "b.go", Range: testRange4},
-			{UploadID: 51, Path: "c.go", Range: testRange5},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
@@ -60,16 +63,16 @@ func TestGetDefinitions(t *testing.T) {
 			Line:      10,
 			Character: 20,
 		}
-		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
 		expectedLocations := []shared.UploadLocation{
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange4},
-			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: mockCommit, TargetRange: testRange5},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: mockCommit, TargetRange: testRange1},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: mockCommit, TargetRange: testRange2},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: mockCommit, TargetRange: testRange3},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: mockCommit, TargetRange: testRange4},
+			{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: mockCommit, TargetRange: testRange5},
 		}
 
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
@@ -83,10 +86,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -126,11 +130,11 @@ func TestGetDefinitions(t *testing.T) {
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(nil, symbolNames, nil)
 
 		locations := []shared.Location{
-			{UploadID: 151, Path: "a.go", Range: testRange1},
-			{UploadID: 151, Path: "b.go", Range: testRange2},
-			{UploadID: 151, Path: "a.go", Range: testRange3},
-			{UploadID: 151, Path: "b.go", Range: testRange4},
-			{UploadID: 151, Path: "c.go", Range: testRange5},
+			{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
@@ -145,17 +149,17 @@ func TestGetDefinitions(t *testing.T) {
 			Character: 20,
 		}
 		remoteUploads := uploads2
-		adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
+		adjustedLocations, _, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState, Cursor{})
 		if err != nil {
 			t.Fatalf("unexpected error querying definitions: %s", err)
 		}
 
 		xLocations := []shared.UploadLocation{
-			{Upload: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
-			{Upload: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-			{Upload: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
-			{Upload: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
-			{Upload: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
+			{Upload: remoteUploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef2", TargetRange: testRange1},
+			{Upload: remoteUploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef2", TargetRange: testRange2},
+			{Upload: remoteUploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef2", TargetRange: testRange3},
+			{Upload: remoteUploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef2", TargetRange: testRange4},
+			{Upload: remoteUploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef2", TargetRange: testRange5},
 		}
 
 		if diff := cmp.Diff(xLocations, adjustedLocations); diff != "" {
@@ -205,10 +209,11 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -226,11 +231,11 @@ func TestGetReferences(t *testing.T) {
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
 		locations := []shared.Location{
-			{UploadID: 51, Path: "a.go", Range: testRange1},
-			{UploadID: 51, Path: "b.go", Range: testRange2},
-			{UploadID: 51, Path: "a.go", Range: testRange3},
-			{UploadID: 51, Path: "b.go", Range: testRange4},
-			{UploadID: 51, Path: "c.go", Range: testRange5},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[:1], nil, nil)
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[1:4], nil, nil)
@@ -253,11 +258,11 @@ func TestGetReferences(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -270,10 +275,11 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -334,11 +340,11 @@ func TestGetReferences(t *testing.T) {
 		// mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation3, true, nil)
 
 		locations := []shared.Location{
-			{UploadID: 51, Path: "a.go", Range: testRange1},
-			{UploadID: 51, Path: "b.go", Range: testRange2},
-			{UploadID: 51, Path: "a.go", Range: testRange3},
-			{UploadID: 51, Path: "b.go", Range: testRange4},
-			{UploadID: 51, Path: "c.go", Range: testRange5},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		symbolNames := []string{
 			"tsc npm leftpad 0.1.0 padLeft.",
@@ -348,11 +354,11 @@ func TestGetReferences(t *testing.T) {
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations, symbolNames, nil)
 
 		monikerLocations := []shared.Location{
-			{UploadID: 53, Path: "a.go", Range: testRange1},
-			{UploadID: 53, Path: "b.go", Range: testRange2},
-			{UploadID: 53, Path: "a.go", Range: testRange3},
-			{UploadID: 53, Path: "b.go", Range: testRange4},
-			{UploadID: 53, Path: "c.go", Range: testRange5},
+			{UploadID: 53, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 53, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 53, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 53, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 53, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[0:1], 1, nil) // defs
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
@@ -383,16 +389,16 @@ func TestGetReferences(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
-			{Upload: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Upload: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Upload: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Upload: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Upload: uploads[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[3], Path: repoRelPath("sub4/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[3], Path: repoRelPath("sub4/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[3], Path: repoRelPath("sub4/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[3], Path: repoRelPath("sub4/b.go"), TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[3], Path: repoRelPath("sub4/c.go"), TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)
@@ -451,10 +457,11 @@ func TestGetImplementations(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 		hunkCache, _ := NewHunkCache(50)
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		// Set up request state
 		mockRequestState := RequestState{}
@@ -465,11 +472,11 @@ func TestGetImplementations(t *testing.T) {
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)
 
 		locations := []shared.Location{
-			{UploadID: 51, Path: "a.go", Range: testRange1},
-			{UploadID: 51, Path: "b.go", Range: testRange2},
-			{UploadID: 51, Path: "a.go", Range: testRange3},
-			{UploadID: 51, Path: "b.go", Range: testRange4},
-			{UploadID: 51, Path: "c.go", Range: testRange5},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange1},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange2},
+			{UploadID: 51, Path: uploadRelPath("a.go"), Range: testRange3},
+			{UploadID: 51, Path: uploadRelPath("b.go"), Range: testRange4},
+			{UploadID: 51, Path: uploadRelPath("c.go"), Range: testRange5},
 		}
 		mockLsifStore.ExtractImplementationLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
@@ -487,7 +494,7 @@ func TestGetImplementations(t *testing.T) {
 				Commit:       "deadbeef",
 				Limit:        50,
 			},
-			Path:      "s1/main.go",
+			Path:      mockPath,
 			Line:      10,
 			Character: 20,
 		}
@@ -497,11 +504,11 @@ func TestGetImplementations(t *testing.T) {
 		}
 
 		expectedLocations := []shared.UploadLocation{
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-			{Upload: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-			{Upload: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-			{Upload: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange1},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange2},
+			{Upload: uploads[1], Path: repoRelPath("sub2/a.go"), TargetCommit: "deadbeef", TargetRange: testRange3},
+			{Upload: uploads[1], Path: repoRelPath("sub2/b.go"), TargetCommit: "deadbeef", TargetRange: testRange4},
+			{Upload: uploads[1], Path: repoRelPath("sub2/c.go"), TargetCommit: "deadbeef", TargetRange: testRange5},
 		}
 		if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 			t.Errorf("unexpected locations (-want +got):\n%s", diff)

@@ -1,4 +1,5 @@
 <script context="module" lang="ts">
+    import type { Keys } from '$lib/Hotkey'
     import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
@@ -9,11 +10,21 @@
 
     export type RepositoryCommits = { nodes: RevPickerGitCommit[] }
     export type RepositoryGitCommit = RevPickerGitCommit
+
+    const branchesHotkey: Keys = {
+        key: 'shift+b',
+    }
+
+    const tagsHotkey: Keys = {
+        key: 'shift+t',
+    }
+
+    const commitsHotkey: Keys = {
+        key: 'shift+c',
+    }
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiSourceBranch, mdiTagOutline, mdiSourceCommit } from '@mdi/js'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -83,7 +94,7 @@
                         variant="secondary"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon svgPath={mdiClose} --icon-size="16px" />
+                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="16px" />
                     </Button>
                 </Tooltip>
             </span>
@@ -92,7 +103,7 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            <TabPanel title="Branches">
+            <TabPanel title="Branches" shortcut={branchesHotkey}>
                 <Picker
                     name="branches"
                     seeAllItemsURL={`${repoURL}/-/branches`}
@@ -105,12 +116,12 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiSourceBranch}
+                        icon={ILucideGitBranch}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     >
                         <svelte:fragment slot="title">
-                            <Icon svgPath={mdiSourceBranch} inline />
+                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
                             <Badge variant="link">{value.displayName}</Badge>
                             {#if value.displayName === resolvedRevision.defaultBranch}
                                 <Badge variant="secondary" small>DEFAULT</Badge>
@@ -119,7 +130,7 @@
                     </RepositoryRevPickerItem>
                 </Picker>
             </TabPanel>
-            <TabPanel title="Tags">
+            <TabPanel title="Tags" shortcut={tagsHotkey}>
                 <Picker
                     name="tags"
                     seeAllItemsURL={`${repoURL}/-/tags`}
@@ -132,13 +143,13 @@
                     let:value
                 >
                     <RepositoryRevPickerItem
-                        iconPath={mdiTagOutline}
+                        icon={ILucideTag}
                         label={value.displayName}
                         author={value.target.commit?.author}
                     />
                 </Picker>
             </TabPanel>
-            <TabPanel title="Commits">
+            <TabPanel title="Commits" shortcut={commitsHotkey}>
                 <Picker
                     name="commits"
                     seeAllItemsURL={`${repoURL}/-/commits`}
@@ -150,9 +161,9 @@
                     }}
                     let:value
                 >
-                    <RepositoryRevPickerItem label="" iconPath="" author={value.author}>
+                    <RepositoryRevPickerItem label="" author={value.author}>
                         <svelte:fragment slot="title">
-                            <Icon svgPath={mdiSourceCommit} inline />
+                            <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
                             <Badge variant="link">{value.abbreviatedOID}</Badge>
                             <span class="commit-subject">{value.subject}</span>
                         </svelte:fragment>
@@ -206,7 +217,6 @@
         max-width: 40rem;
         width: 640px;
 
-        --tabs-gap: 0.25rem;
         --align-tabs: flex-start;
 
         :global([data-tab-header]) {

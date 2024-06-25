@@ -1,14 +1,12 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -18,8 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -29,13 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
-	v1 "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -44,213 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type Test struct {
-	Name            string
-	Request         *v1.ExecRequest
-	ExpectedCode    codes.Code
-	ExpectedBody    string
-	ExpectedError   string
-	ExpectedDetails []any
-}
-
-func TestExecRequest(t *testing.T) {
-	conf.Mock(&conf.Unified{})
-	t.Cleanup(func() { conf.Mock(nil) })
-
-	tests := []Test{
-		{
-			Name: "Command",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("diff-tree")},
-			},
-			ExpectedCode:  codes.Unknown,
-			ExpectedBody:  "teststdout",
-			ExpectedError: "teststderr",
-			ExpectedDetails: []any{&v1.ExecStatusPayload{
-				StatusCode: 42,
-				Stderr:     "teststderr",
-			}},
-		},
-		{
-			Name: "Error",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("merge-base")},
-			},
-			ExpectedCode:  codes.Unknown,
-			ExpectedError: "testerror",
-			ExpectedDetails: []any{&v1.ExecStatusPayload{
-				StatusCode: 1,
-				Stderr:     "teststderr",
-			}},
-		},
-		{
-			Name: "EmptyInput",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-			},
-			ExpectedCode:  codes.InvalidArgument,
-			ExpectedError: "invalid command",
-		},
-		{
-			Name: "BadCommand",
-			Request: &v1.ExecRequest{
-				Repo: "github.com/gorilla/mux",
-				Args: [][]byte{[]byte("invalid-command")},
-			},
-			ExpectedCode:  codes.InvalidArgument,
-			ExpectedError: "invalid command",
-		},
-	}
-
-	getRemoteURLFunc := func(ctx context.Context, name api.RepoName) (string, error) {
-		return "https://" + string(name) + ".git", nil
-	}
-
-	db := dbmocks.NewMockDB()
-	gr := dbmocks.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
-	fs := gitserverfs.NewMockFSFrom(gitserverfs.New(&observation.TestContext, t.TempDir()))
-	require.NoError(t, fs.Initialize())
-	s := NewServer(&ServerOpts{
-		Logger: logtest.Scoped(t),
-		FS:     fs,
-		GitBackendSource: func(dir common.GitDir, repoName api.RepoName) git.GitBackend {
-			backend := git.NewMockGitBackend()
-			backend.ExecFunc.SetDefaultHook(func(ctx context.Context, args ...string) (io.ReadCloser, error) {
-				if !gitcli.IsAllowedGitCmd(logtest.Scoped(t), args) {
-					return nil, gitcli.ErrBadGitCommand
-				}
-
-				switch args[0] {
-				case "diff-tree":
-					var stdout bytes.Buffer
-					stdout.Write([]byte("teststdout"))
-					return &errorReader{
-						ReadCloser: io.NopCloser(&stdout),
-						err: &gitcli.CommandFailedError{
-							Stderr:     []byte("teststderr"),
-							ExitStatus: 42,
-							Inner:      errors.New("teststderr"),
-						},
-					}, nil
-				case "merge-base":
-					return &errorReader{
-						ReadCloser: io.NopCloser(&bytes.Buffer{}),
-						err: &gitcli.CommandFailedError{
-							Stderr:     []byte("teststderr"),
-							ExitStatus: 1,
-							Inner:      errors.New("testerror"),
-						},
-					}, nil
-				}
-				return io.NopCloser(&bytes.Buffer{}), nil
-			})
-			return backend
-		},
-		GetRemoteURLFunc: getRemoteURLFunc,
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-
-			getRemoteURLSource := func(ctx context.Context, name api.RepoName) (vcssyncer.RemoteURLSource, error) {
-				return vcssyncer.RemoteURLSourceFunc(func(ctx context.Context) (*vcs.URL, error) {
-					raw := "https://" + string(name) + ".git"
-					u, err := vcs.ParseURL(raw)
-					if err != nil {
-						return nil, errors.Wrapf(err, "failed to parse URL %q", raw)
-					}
-
-					return u, nil
-				}), nil
-			}
-
-			return vcssyncer.NewGitRepoSyncer(logtest.Scoped(t), wrexec.NewNoOpRecordingCommandFactory(), getRemoteURLSource), nil
-		},
-		DB:                      db,
-		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-		Locker:                  NewRepositoryLocker(),
-		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
-	})
-
-	gs := NewGRPCServer(s, &GRPCServerConfig{
-		ExhaustiveRequestLoggingEnabled: true,
-	})
-	fs.RepoClonedFunc.SetDefaultHook(func(repo api.RepoName) (bool, error) {
-		if repo == "github.com/gorilla/mux" || repo == "my-mux" {
-			return true, nil
-		}
-		err := s.cloneRepo(context.Background(), repo, NewMockRepositoryLock())
-		require.NoError(t, err)
-		return false, nil
-	})
-
-	vcssyncer.TestGitRepoExists = func(ctx context.Context, repoName api.RepoName) error {
-		if strings.Contains(string(repoName), "nicksnyder/go-i18n") {
-			return nil
-		}
-
-		return errors.New("not cloneable")
-	}
-	t.Cleanup(func() { vcssyncer.TestGitRepoExists = nil })
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			ss := gitserver.NewMockGitserverService_ExecServer()
-			ss.ContextFunc.SetDefaultReturn(context.Background())
-			var receivedData []byte
-			ss.SendFunc.SetDefaultHook(func(er *v1.ExecResponse) error {
-				receivedData = append(receivedData, er.GetData()...)
-				return nil
-			})
-			err := gs.Exec(test.Request, ss)
-
-			if test.ExpectedCode == codes.OK && err != nil {
-				t.Fatal(err)
-			}
-
-			if test.ExpectedCode != codes.OK {
-				if err == nil {
-					t.Fatal("expected error to be returned")
-				}
-				s, ok := status.FromError(err)
-				require.True(t, ok)
-				require.Equal(t, test.ExpectedCode, s.Code(), "wrong error code: expected %v, got %v %v", test.ExpectedCode, s.Code(), err)
-
-				if len(test.ExpectedDetails) > 0 {
-					if diff := cmp.Diff(test.ExpectedDetails, s.Details(), cmpopts.IgnoreUnexported(v1.ExecStatusPayload{}, v1.RepoNotFoundPayload{})); diff != "" {
-						t.Fatalf("unexpected error details (-want +got):\n%s", diff)
-					}
-				}
-
-				if strings.TrimSpace(s.Message()) != test.ExpectedError {
-					t.Errorf("wrong error body: expected %q, got %q", test.ExpectedError, s.Message())
-				}
-			}
-
-			if strings.TrimSpace(string(receivedData)) != test.ExpectedBody {
-				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(receivedData))
-			}
-		})
-	}
-}
-
-type errorReader struct {
-	io.ReadCloser
-
-	err error
-}
-
-func (ec *errorReader) Read(p []byte) (int, error) {
-	n, err := ec.ReadCloser.Read(p)
-	if err == nil {
-		return n, nil
-	}
-	if err == io.EOF {
-		return n, ec.err
-	}
-	return n, err
-}
 
 // makeSingleCommitRepo make create a new repo with a single commit and returns
 // the HEAD SHA
@@ -447,17 +233,6 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		getVCSSyncer func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error)
 		wantErr      string
 	}{
-		{
-			name: "Not cloneable",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {
-				m := vcssyncer.NewMockVCSSyncer()
-				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName) error {
-					return errors.New("not_cloneable")
-				})
-				return m, nil
-			},
-			wantErr: "failed to clone example.com/foo/bar: error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable",
-		},
 		{
 			name: "Failing clone",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (vcssyncer.VCSSyncer, error) {

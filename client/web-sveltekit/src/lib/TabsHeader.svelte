@@ -1,15 +1,24 @@
 <script lang="ts" context="module">
+    import type { Keys } from '$lib/Hotkey'
+
     export interface Tab {
         id: string
         title: string
-        icon?: string
+        // An icon for the tab. Shown to the left of the title.
+        icon?: ComponentProps<Icon>['icon']
+        // A shortcut to activate the tab. Shown to the right of the title.
+        shortcut?: Keys
+        // If provided, will cause the tab to be rendered as a link
+        href?: string
     }
 </script>
 
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte'
+    import { createEventDispatcher, type ComponentProps } from 'svelte'
 
-    import Icon from '$lib/Icon.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
+
+    import Icon from './Icon.svelte'
 
     export let id: string
     export let tabs: Tab[]
@@ -27,7 +36,8 @@
 
 <div class="tabs-header" role="tablist" data-tab-header>
     {#each tabs as tab, index (tab.id)}
-        <button
+        <svelte:element
+            this={tab.href ? 'a' : 'button'}
             id="{id}--tab--{index}"
             aria-controls={tab.id}
             aria-selected={selected === index}
@@ -35,22 +45,29 @@
             role="tab"
             on:click={selectTab}
             data-tab
-            >{#if tab.icon}<Icon svgPath={tab.icon} aria-hidden inline /> {/if}<span data-tab-title={tab.title}
-                >{tab.title}</span
-            ><slot name="after-title" {tab} /></button
+            href={tab.href}
         >
+            {#if tab.icon}
+                <Icon icon={tab.icon} aria-hidden inline />
+            {/if}
+            <span data-tab-title={tab.title}>
+                {tab.title}
+            </span>
+            {#if tab.shortcut}
+                <KeyboardShortcut shortcut={tab.shortcut} />
+            {/if}
+        </svelte:element>
     {/each}
 </div>
 
 <style lang="scss">
     .tabs-header {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
 
         display: flex;
         align-items: stretch;
         justify-content: var(--align-tabs, center);
         gap: var(--tabs-gap, 0);
-        border-bottom: 1px solid var(--border-color);
     }
 
     [role='tab'] {
@@ -60,7 +77,7 @@
         align-items: center;
         min-height: 2rem;
         padding: 0.25rem 0.75rem;
-        color: var(--text-body);
+        color: var(--text-muted);
         display: inline-flex;
         flex-flow: row nowrap;
         justify-content: center;
@@ -73,22 +90,24 @@
             display: block;
             position: absolute;
             bottom: 0;
-            transform: translateY(50%);
             width: 100%;
             border-bottom: 2px solid transparent;
         }
 
         &:hover {
+            --icon-color: currentColor;
+
             color: var(--text-title);
-            background-color: var(--color-bg-2);
+            background-color: var(--secondary-2);
         }
 
         &[aria-selected='true'] {
-            font-weight: 500;
-            color: var(--text-title);
+            --icon-color: currentColor;
+
+            color: var(--primary);
 
             &::after {
-                border-color: var(--brand-secondary);
+                border-color: var(--primary);
             }
         }
 
@@ -100,10 +119,16 @@
             &::before {
                 content: attr(data-tab-title);
                 display: block;
-                font-weight: 500;
                 height: 0;
                 visibility: hidden;
             }
+        }
+
+        &[aria-selected='true'] span,
+        span::before {
+            // Hidden rendering of the bold tab title to prevent
+            // shifting when the tab is selected.
+            font-weight: 500;
         }
     }
 </style>

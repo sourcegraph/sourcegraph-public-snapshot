@@ -7,22 +7,6 @@
         const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
         return filters.some(filter => filter.field.value === 'type')
     }
-
-    function inferOperatingSystem(userAgent: string): 'Windows' | 'MacOS' | 'Linux' | undefined {
-        if (userAgent.includes('Win')) {
-            return 'Windows'
-        }
-
-        if (userAgent.includes('Mac')) {
-            return 'MacOS'
-        }
-
-        if (userAgent.includes('Linux')) {
-            return 'Linux'
-        }
-
-        return undefined
-    }
 </script>
 
 <script lang="ts">
@@ -34,14 +18,14 @@
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
     import Icon from '$lib/Icon.svelte'
-    import ArrowBendIcon from '$lib/icons/ArrowBend.svelte'
+    import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
     import RepoPopover, { fetchRepoPopoverData } from '$lib/repo/RepoPopover/RepoPopover.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
-    import { displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
@@ -78,7 +62,6 @@
         }
     })
 
-    $: resetModifier = inferOperatingSystem(navigator.userAgent) === 'MacOS' ? '⌥' : 'Alt'
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
 
@@ -89,7 +72,9 @@
     }
 
     function handleFilterSelect(kind: SectionItemData['kind']): void {
-        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.SelectSearchFilter, { kind }, { kind })
+        TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
+        })
     }
 
     onMount(() => {
@@ -103,18 +88,18 @@
         <div class="header">
             <h3>Filter results</h3>
             {#if enableReset}
-                <a href={resetURL}>
-                    <small>Reset all <kbd>{resetModifier} ⌫</kbd></small>
-                </a>
+                <div class="reset">
+                    <a href={resetURL}>Reset all</a>&nbsp;
+                    <KeyboardShortcut shortcut={{ key: 'alt+⌫' }} />
+                </div>
             {/if}
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
-                <svelte:fragment slot="label" let:label>
-                    <Icon svgPath={typeFilterIcons[label]} inline aria-hidden="true" />&nbsp;
-                    {label}
-                </svelte:fragment>
+                <SectionItem slot="item" let:item {item}>
+                    <Icon slot="icon" icon={typeFilterIcons[item.label]} inline />
+                </SectionItem>
             </Section>
         {/if}
 
@@ -128,10 +113,8 @@
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {item}>
-                            <svelte:fragment slot="label" let:label>
-                                <CodeHostIcon disableTooltip repository={label} />
-                                <span>{displayRepoName(label)}</span>
-                            </svelte:fragment>
+                            <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
+                            <span slot="label" let:label>{displayRepoName(label)}</span>
                         </SectionItem>
                     </div>
                     <svelte:fragment slot="content">
@@ -150,10 +133,9 @@
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="label" let:label>
-                <LanguageIcon class="icon" language={label} inline />&nbsp;
-                {label}
-            </svelte:fragment>
+            <SectionItem slot="item" let:item {item}>
+                <LanguageIcon slot="icon" language={item.label} inline />
+            </SectionItem>
         </Section>
         <Section
             items={groupedFilters['symbol type']}
@@ -161,12 +143,9 @@
             filterPlaceholder="Filter symbol types"
             onFilterSelect={handleFilterSelect}
         >
-            <svelte:fragment slot="label" let:label>
-                <div class="symbol-label">
-                    <SymbolKindIcon symbolKind={label.toUpperCase()} />
-                    {label}
-                </div>
-            </svelte:fragment>
+            <SectionItem slot="item" let:item {item}>
+                <SymbolKindIcon slot="icon" symbolKind={item.label.toUpperCase()} />
+            </SectionItem>
         </Section>
         <Section
             items={groupedFilters.author}
@@ -175,10 +154,12 @@
             onFilterSelect={handleFilterSelect}
         />
         <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
-            <span class="commit-date-label" slot="label" let:label let:value>
-                {label}
-                <small><pre>{value}</pre></small>
-            </span>
+            <SectionItem slot="item" let:item {item}>
+                <span class="commit-date-label" slot="label">
+                    {item.label}
+                    <small><pre>{item.value}</pre></small>
+                </span>
+            </SectionItem>
         </Section>
         <Section items={groupedFilters.file} title="By file" showAll onFilterSelect={handleFilterSelect} />
         <Section items={groupedFilters.utility} title="Utility" showAll onFilterSelect={handleFilterSelect} />
@@ -196,7 +177,7 @@
             <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
                 <svelte:fragment>
                     Move filters to query&nbsp;
-                    <ArrowBendIcon aria-hidden class="arrow-icon" />
+                    <Icon icon={ILucideCornerRightDown} aria-hidden inline />
                 </svelte:fragment>
             </Button>
         </div>
@@ -211,15 +192,13 @@
     }
 
     .scroll-container {
-        padding-top: 1.25rem;
-        height: 100%;
-        background-color: var(--color-bg-1);
-        overflow-y: auto;
-        box-shadow: var(--sidebar-shadow);
-
         display: flex;
         flex-direction: column;
+        height: 100%;
         gap: 1.5rem;
+        overflow-y: auto;
+        padding-top: 1.25rem;
+        background-color: var(--color-bg-1);
 
         .header {
             display: flex;
@@ -227,17 +206,9 @@
             h3 {
                 margin: 0;
             }
-            a {
+            .reset {
+                font-size: var(--font-size-tiny);
                 margin-left: auto;
-                line-height: 1;
-                kbd {
-                    // TODO: use this style globally
-                    font-family: var(--font-family-base);
-                    color: var(--text-muted);
-                    background: var(--color-bg-1);
-                    box-shadow: inset 0 -2px 0 var(--border-color-2);
-                    border: 1px solid var(--border-color-2);
-                }
             }
         }
 
@@ -255,12 +226,6 @@
             fill: none !important;
             --icon-color: var(--body-color);
         }
-    }
-
-    .symbol-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
     }
 
     pre {

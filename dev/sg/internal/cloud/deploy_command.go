@@ -21,6 +21,8 @@ import (
 )
 
 var ErrDeploymentExists error = errors.New("deployment already exists")
+var ErrVersionNotFoundRegistry error = errors.New("tag/version not in Cloud Ephemeral registry")
+var ErrMainBranchBuild error = errors.New("cannot trigger a Cloud Ephemeral build for main branch")
 
 var deployEphemeralCommand = cli.Command{
 	Name:        "deploy",
@@ -43,9 +45,9 @@ var deployEphemeralCommand = cli.Command{
 func deployUpgradeSuggestion(name, version string) string {
 	var text = "You might want to try one of the following:\n" +
 		"- Create a new deployment with a different name by running\n" +
-		"\n```sg cloud deploy --name <new-name>```\n\n" +
+		"\n```sg cloud ephemeral deploy --name <new-name>```\n\n" +
 		"- Upgrade the existing deployment with the new version once the build completes by running\n" +
-		"\n```sg cloud upgrade --name \"%s\" --version \"%s\"```\n"
+		"\n```sg cloud ephemeral upgrade --name \"%s\" --version \"%s\"```\n"
 	return fmt.Sprintf(text, name, version)
 }
 
@@ -95,15 +97,14 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 
 	// Check if the deployment already exists
 	pending.Updatef("Checking if deployment %q already exists", name)
-	_, err = cloudClient.GetInstance(ctx, name)
-	if err != nil {
-		if !errors.Is(err, ErrInstanceNotFound) {
-			return errors.Wrapf(err, "failed to check if instance %q already exists", name)
-		} else {
-			pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
-			// Deployment exists
-			return ErrDeploymentExists
-		}
+	inst, err := cloudClient.GetInstance(ctx, name)
+	if err != nil && !errors.Is(err, ErrInstanceNotFound) {
+		return errors.Wrapf(err, "failed to check if instance %q already exists", name)
+	}
+	if inst != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", name))
+		// Deployment exists
+		return ErrDeploymentExists
 	}
 
 	pending.Updatef("Fetching license key...")
@@ -113,13 +114,13 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 		return err
 	}
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		license,
 	)
 
 	pending.Updatef("Creating deployment %q for version %q", spec.Name, spec.Version)
-	inst, err := cloudClient.CreateInstance(ctx, spec)
+	inst, err = cloudClient.CreateInstance(ctx, spec)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Deployment of %q failed", spec.Name))
 		return errors.Wrapf(err, "failed to deploy %q of version %s", spec.Name, spec.Version)
@@ -131,9 +132,12 @@ func createDeploymentForVersion(ctx context.Context, email, name, version string
 }
 
 func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildkite.Build, error) {
+	if currRepo.Branch == "main" {
+		return nil, ErrMainBranchBuild
+	}
 	pending := std.Out.Pending(output.Linef("🔨", output.StylePending, "Checking if branch %q is up to date with remote branch", currRepo.Branch))
 	if isOutOfSync, err := currRepo.IsOutOfSync(ctx); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if branch is out of sync with remote branch"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if branch is out of sync with remote branch"))
 		return nil, err
 	} else if isOutOfSync {
 		return nil, ErrBranchOutOfSync
@@ -147,7 +151,7 @@ func triggerEphemeralBuild(ctx context.Context, currRepo *repo.GitRepo) (*buildk
 	pending.Updatef("Starting cloud ephemeral build for %q on commit %q", currRepo.Branch, currRepo.Ref)
 	build, err := client.TriggerBuild(ctx, "sourcegraph", currRepo.Branch, currRepo.Ref, bk.WithEnvVar("CLOUD_EPHEMERAL", "true"))
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to trigger build"))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to trigger build"))
 		return nil, err
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Build %d created. Build progress can be viewed at %s", pointers.DerefZero(build.Number), pointers.DerefZero(build.WebURL)))
@@ -163,11 +167,11 @@ func checkVersionExistsInRegistry(ctx context.Context, version string) error {
 	}
 	pending := std.Out.Pending(output.Linef(CloudEmoji, output.StylePending, "Checking if version %q exists in Cloud ephemeral registry", version))
 	if images, err := ar.FindDockerImageExact(ctx, "gitserver", version); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "failed to check if version %q exists in Cloud ephemeral registry", version))
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to check if version %q exists in Cloud ephemeral registry", version))
 		return err
 	} else if len(images) == 0 {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "no version %q found in Cloud ephemeral registry!", version))
-		return errors.Newf("no image with tag %q found", version)
+		pending.Complete(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Whoops! Version %q seems to be missing from the Cloud ephemeral registry. Please ask in #discuss-dev-infra to get the it added to the registry", version))
+		return ErrVersionNotFoundRegistry
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Version %q found in Cloud ephemeral registry", version))
 	return nil
@@ -186,8 +190,9 @@ func determineDeploymentName(originalName, version, email, branch string) string
 		deploymentName = branch
 	}
 
-	return deploymentName
-
+	deploymentName = sanitizeInstanceName(deploymentName)
+	// names can only be max 30 chars
+	return deploymentName[:min(30, len(deploymentName))]
 }
 
 func deployCloudEphemeral(ctx *cli.Context) error {
@@ -211,12 +216,16 @@ func deployCloudEphemeral(ctx *cli.Context) error {
 	if version == "" {
 		b, err := triggerEphemeralBuild(ctx.Context, currRepo)
 		if err != nil {
-			if err == ErrBranchOutOfSync {
+			if errors.Is(err, ErrBranchOutOfSync) {
 				std.Out.WriteWarningf(`Your branch %q is out of sync with remote.
 
 Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
-			} else {
-				std.Out.WriteFailuref("Cannot start deployment as there was problem with the ephemeral build")
+			} else if errors.Is(err, ErrMainBranchBuild) {
+				std.Out.WriteWarningf(`Triggering Cloud Ephemeral builds from "main" is not supported.`)
+				steps := "1. create a new branch off main by running `git switch <branch-name>`\n"
+				steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
+				steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
+				std.Out.WriteMarkdown(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps))
 			}
 			return errors.Wrapf(err, "cloud ephemeral deployment failure")
 		}
@@ -237,6 +246,9 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 
 	// note we do not use the version here, we use ORIGINAL version, since it if it is given we create a different deployment name
 	deploymentName := determineDeploymentName(ctx.String("name"), ctx.String("version"), email, currRepo.Branch)
+	if ctx.String("name") != "" && ctx.String("name") != deploymentName {
+		std.Out.WriteNoticef("Your deployment name has been truncated to be %q", deploymentName)
+	}
 	err = createDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrDeploymentExists) {

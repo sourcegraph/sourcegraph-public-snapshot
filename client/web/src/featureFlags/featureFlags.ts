@@ -9,7 +9,6 @@ export const FEATURE_FLAGS = [
     'auditlog-expansion',
     'blob-page-switch-areas-shortcuts',
     'cody-chat-mock-test',
-    'cody-web-search',
     'contrast-compliant-syntax-highlighting',
     'enable-ownership-panels',
     'enable-simple-search',
@@ -28,7 +27,6 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'signup-survey-enabled',
     'sourcegraph-operator-site-admin-hide-maintenance',
-    'external-accounts-modal',
     'ab-shortened-install-first-signup-flow-cody-2024-04',
 ] as const
 

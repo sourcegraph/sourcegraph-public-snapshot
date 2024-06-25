@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -45,20 +46,23 @@ type codyGatewayClient struct {
 	tokenizer   tokenusage.Manager
 }
 
-func (c *codyGatewayClient) Stream(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, requestParams types.CompletionRequestParameters, sendEvent types.SendCompletionEvent, logger log.Logger) error {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGatewayClient) Stream(
+	ctx context.Context, logger log.Logger, request types.CompletionRequest, sendEvent types.SendCompletionEvent) error {
+	cc, err := c.clientForParams(request.Feature, &request.Parameters)
 	if err != nil {
 		return err
 	}
-	return overwriteErrSource(cc.Stream(ctx, feature, version, requestParams, sendEvent, logger))
+
+	err = cc.Stream(ctx, logger, request, sendEvent)
+	return overwriteErrSource(err)
 }
 
-func (c *codyGatewayClient) Complete(ctx context.Context, feature types.CompletionsFeature, version types.CompletionsVersion, requestParams types.CompletionRequestParameters, logger log.Logger) (*types.CompletionResponse, error) {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGatewayClient) Complete(ctx context.Context, logger log.Logger, request types.CompletionRequest) (*types.CompletionResponse, error) {
+	cc, err := c.clientForParams(request.Feature, &request.Parameters)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cc.Complete(ctx, feature, version, requestParams, logger)
+	resp, err := cc.Complete(ctx, logger, request)
 	return resp, overwriteErrSource(err)
 }
 
@@ -89,6 +93,8 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", "", c.tokenizer), nil
 	case string(conftypes.CompletionsProviderNameFireworks):
 		return fireworks.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/fireworks"), "", ""), nil
+	case string(conftypes.CompletionsProviderNameGoogle):
+		return google.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/google"), "", "", true)
 	case "":
 		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)
 	default:

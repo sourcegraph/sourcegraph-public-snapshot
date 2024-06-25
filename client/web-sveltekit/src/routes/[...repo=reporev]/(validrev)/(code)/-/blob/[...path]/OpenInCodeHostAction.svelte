@@ -1,14 +1,15 @@
 <script lang="ts">
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
-    import Tooltip from '$lib/Tooltip.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
+    import Tooltip from '$lib/Tooltip.svelte'
+
     import type { OpenInCodeHostAction } from './OpenInCodeHostAction.gql'
 
     export let data: OpenInCodeHostAction
 
     function handleOpenCodeHostClick(): void {
-        SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GoToCodeHost)
+        TELEMETRY_RECORDER.recordEvent('repo.goToCodeHost', 'click')
     }
 </script>
 

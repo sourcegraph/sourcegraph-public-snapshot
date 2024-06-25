@@ -38,23 +38,12 @@ func NewGoogleHandler(baseLogger log.Logger, eventLogger events.Logger, rs limit
 	)
 }
 
-type googleContentMessage struct {
-	Role  string `json:"role"`
-	Parts []struct {
-		Text string `json:"text"`
-	} `json:"parts"`
-}
-
-type googleRequest struct {
-	Model            string                 `json:"model"`
-	Contents         []googleContentMessage `json:"contents"`
-	GenerationConfig struct {
-		MaxOutputTokens int `json:"maxOutputTokens,omitempty"`
-	} `json:"generationConfig,omitempty"`
+type GoogleHandlerMethods struct {
+	config config.GoogleConfig
 }
 
 func (r googleRequest) ShouldStream() bool {
-	return true
+	return r.Stream
 }
 
 func (r googleRequest) GetModel() string {
@@ -71,27 +60,10 @@ func (r googleRequest) BuildPrompt() string {
 	return sb.String()
 }
 
-type googleUsage struct {
-	PromptTokenCount int `json:"promptTokenCount"`
-	// Use the same name we use elsewhere (completion instead of candidates)
-	CompletionTokenCount int `json:"candidatesTokenCount"`
-	TotalTokenCount      int `json:"totalTokenCount"`
-}
-
-type googleResponse struct {
-	// Usage is only available for non-streaming requests.
-	UsageMetadata googleUsage                              `json:"usageMetadata"`
-	Model         string                                   `json:"model"`
-	Candidates    []struct{ Content googleContentMessage } `json:"candidates"`
-}
-
-type GoogleHandlerMethods struct {
-	config config.GoogleConfig
-}
-
-func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleRequest) string {
+func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req googleRequest) string {
 	rpc := "generateContent"
 	sseSuffix := ""
+	// If we're streaming, we need to use the stream endpoint.
 	if req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
@@ -100,43 +72,48 @@ func (g *GoogleHandlerMethods) getAPIURL(_ codygateway.Feature, req googleReques
 }
 
 func (*GoogleHandlerMethods) validateRequest(_ context.Context, _ log.Logger, feature codygateway.Feature, _ googleRequest) error {
-	if feature == codygateway.FeatureCodeCompletions {
+	if feature == codygateway.FeatureEmbeddings {
 		return errors.Newf("feature %q is currently not supported for Google", feature)
 	}
 	return nil
 }
 
-func (g *GoogleHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger, req googleRequest) (*flaggingResult, error) {
+func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, req googleRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(
-		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
+		nil, // tokenizer, meaning token counts aren't considered when for flagging consideration.
 		flaggingRequest{
+			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
-			MaxTokens:       int(req.GenerationConfig.MaxOutputTokens),
+			MaxTokens:       req.GenerationConfig.MaxOutputTokens,
 		},
 		makeFlaggingConfig(g.config.FlaggingConfig))
-	return result, err
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-func (*GoogleHandlerMethods) transformBody(_ *googleRequest, _ string) {
+// Used to modify the request body before it is sent to upstream.
+func (*GoogleHandlerMethods) transformBody(gr *googleRequest, _ string) {
+	// Remove Stream from the request body before sending it to Google.
+	gr.Stream = false
 }
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.ShouldStream()}
 }
 
-func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
+func (o *GoogleHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
 }
 
-func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.BuildPrompt())
-
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.ShouldStream() {
+	if !isStreamRequest {
 		var res googleResponse
-
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
 			return promptUsage, completionUsage
@@ -151,19 +128,16 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	}
 
 	// Otherwise, we have to parse the event stream.
-	promptUsage.tokens = -1
-	promptUsage.tokenizerTokens = -1
-	completionUsage.tokens = -1
-	completionUsage.tokenizerTokens = -1
-
+	promptUsage.tokens, completionUsage.tokens = -1, -1
+	promptUsage.tokenizerTokens, completionUsage.tokenizerTokens = -1, -1
 	promptTokens, completionTokens, err := parseGoogleTokenUsage(r, logger)
 	if err != nil {
 		logger.Error("failed to decode Google streaming response", log.Error(err))
 	}
+	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
 		logger.Warn("did not extract token counts from Google streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
-	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	return promptUsage, completionUsage
 }
 
@@ -172,35 +146,27 @@ const maxPayloadSize = 10 * 1024 * 1024 // 10mb
 func parseGoogleTokenUsage(r io.Reader, logger log.Logger) (promptTokens int, completionTokens int, err error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 4096), maxPayloadSize)
-	// bufio.ScanLines, except we look for \r\n\r\n which separate events.
-	split := func(data []byte, atEOF bool) (int, []byte, error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-		if i := bytes.Index(data, []byte("\r\n\r\n")); i >= 0 {
-			return i + 4, data[:i], nil
-		}
-		if i := bytes.Index(data, []byte("\n\n")); i >= 0 {
-			return i + 2, data[:i], nil
-		}
-		// If we're at EOF, we have a final, non-terminated event. This should
-		// be empty.
-		if atEOF {
-			return len(data), data, nil
-		}
-		// Request more data.
-		return 0, nil, nil
-	}
-	scanner.Split(split)
-	// skip to the last event
-	var lastEvent []byte
+	scanner.Split(bufio.ScanLines)
+
+	var lastNonEmptyLine []byte
+
+	// Find the last non-empty line in the stream.
 	for scanner.Scan() {
-		lastEvent = scanner.Bytes()
+		line := scanner.Bytes()
+		if len(bytes.TrimSpace(line)) > 0 {
+			lastNonEmptyLine = line
+		}
 	}
-	var res googleResponse
-	if err := json.NewDecoder(bytes.NewReader(lastEvent[5:])).Decode(&res); err != nil {
-		logger.Error("failed to parse Google response as JSON", log.Error(err))
-		return -1, -1, err
+
+	if bytes.HasPrefix(bytes.TrimSpace(lastNonEmptyLine), []byte("data: ")) {
+		event := lastNonEmptyLine[5:]
+		var res googleResponse
+		if err := json.NewDecoder(bytes.NewReader(event)).Decode(&res); err != nil {
+			logger.Error("failed to parse Google response as JSON", log.Error(err))
+			return -1, -1, err
+		}
+		return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
 	}
-	return res.UsageMetadata.PromptTokenCount, res.UsageMetadata.CompletionTokenCount, nil
+
+	return -1, -1, errors.New("no Google response found")
 }

@@ -47,10 +47,7 @@ func (r *Reconciler) reconcileCodeIntelStatefulSet(ctx context.Context, sg *conf
 	cfg := sg.Spec.CodeIntel
 	name := "codeintel-db"
 
-	ctrImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	ctrImage := config.GetDefaultImage(sg, name)
 
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: ctrImage,
@@ -105,11 +102,7 @@ func (r *Reconciler) reconcileCodeIntelStatefulSet(ctx context.Context, sg *conf
 		{Name: "lockdir", MountPath: "/var/run/postgresql"},
 	}
 
-	initCtrImage, err := config.GetDefaultImage(sg, "alpine")
-	if err != nil {
-		return err
-	}
-
+	initCtrImage := config.GetDefaultImage(sg, "alpine-3.14")
 	initCtr := container.NewContainer("correct-data-dir-permissions", cfg, config.ContainerConfig{
 		Image: initCtrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -132,11 +125,7 @@ func (r *Reconciler) reconcileCodeIntelStatefulSet(ctx context.Context, sg *conf
 	initCtr.VolumeMounts = []corev1.VolumeMount{{Name: "disk", MountPath: "/data"}}
 	initCtr.Command = []string{"sh", "-c", "if [ -d /data/pgdata-12 ]; then chmod 750 /data/pgdata-12; fi"}
 
-	pgExpCtrImage, err := config.GetDefaultImage(sg, "pgsql-exporter")
-	if err != nil {
-		return err
-	}
-
+	pgExpCtrImage := config.GetDefaultImage(sg, "postgres_exporter")
 	pgExpCtr := container.NewContainer("pgsql-exporter", cfg, config.ContainerConfig{
 		Image: pgExpCtrImage,
 		Resources: &corev1.ResourceRequirements{
@@ -238,6 +227,6 @@ func (r *Reconciler) reconcileCodeIntelService(ctx context.Context, sg *config.S
 
 func (r *Reconciler) reconcileCodeIntelServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	cfg := sg.Spec.CodeIntel
-	sa := serviceaccount.NewServiceAccount("codeintel", sg.Namespace, cfg)
+	sa := serviceaccount.NewServiceAccount("codeintel-db", sg.Namespace, cfg)
 	return reconcileObject(ctx, r, sg.Spec.CodeIntel, &sa, &corev1.ServiceAccount{}, sg, owner)
 }

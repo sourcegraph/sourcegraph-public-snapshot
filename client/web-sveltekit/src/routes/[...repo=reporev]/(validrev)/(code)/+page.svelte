@@ -2,9 +2,9 @@
     // @sg RepoRoot EnableRollout
     import { onMount } from 'svelte'
 
-    import { createPromiseStore } from '$lib/utils'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
     import Readme from '$lib/repo/Readme.svelte'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
     import type { RepoPage_Readme } from './page.gql'
@@ -15,7 +15,7 @@
     $: readme.set(data.readme)
 
     onMount(() => {
-        SVELTE_LOGGER.logViewEvent(SVELTE_TELEMETRY_EVENTS.ViewRepositoryPage)
+        TELEMETRY_RECORDER.recordEvent('repo', 'view')
     })
 </script>
 

@@ -1,6 +1,6 @@
-load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_files_to_bin_actions")
-load("//dev:js_lib.bzl", "gather_files_from_js_providers", "gather_runfiles")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "COPY_FILE_TO_BIN_TOOLCHAINS", "copy_files_to_bin_actions")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_js//js:libs.bzl", "js_lib_helpers")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
 
 def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_js_deps = []):
@@ -56,19 +56,28 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
 
-    inputs_depset = depset(
-        copied_srcs + [ctx.executable.binary],
-        transitive = [gather_files_from_js_providers(
-            targets = [ctx.attr.config] + ctx.attr.deps,
-            include_sources = False,
-            include_transitive_sources = False,
-            # We have to include declarations because we need to lint the types.
-            include_declarations = True,
-            include_npm_linked_packages = True,
-        )],
-    )
+    input_targets = [ctx.attr.config] + ctx.attr.deps
 
-    runfiles = gather_runfiles(
+    input_depsets = [depset(
+        copied_srcs + [ctx.executable.binary],
+        transitive = [js_lib_helpers.gather_files_from_js_infos(
+            targets = input_targets,
+            include_sources = True,  # include sources & transitives sources so the eslint config .js files are picked up
+            include_types = True,  # we have to include types because we need to lint the types.
+            include_transitive_sources = True,  # include sources & transitives sources so the eslint config .js files are picked up
+            include_transitive_types = True,  # we have to include types because we need to lint the types.
+            include_npm_sources = True,
+        )],
+    )]
+
+    # include runfiles in inputs as well so they can be resolved from the execroot
+    input_depsets.extend([
+        target[DefaultInfo].default_runfiles.files
+        for target in input_targets
+        if DefaultInfo in target and hasattr(target[DefaultInfo], "default_runfiles")
+    ])
+
+    runfiles = js_lib_helpers.gather_runfiles(
         ctx = ctx,
         sources = [],
         data = [ctx.attr.config],
@@ -118,7 +127,7 @@ def _custom_eslint_impl(ctx):
     # Generate and run a bash script to wrap the binary
     ctx.actions.run_shell(
         env = env,
-        inputs = inputs_depset,
+        inputs = depset([], transitive = input_depsets),
         outputs = [report, exit_code_out],
         command = command,
         arguments = [args],
@@ -147,6 +156,7 @@ _eslint_test_with_types = rule(
         "binary": attr.label(executable = True, cfg = "exec", allow_files = True),
         "report": attr.string(),
     },
+    toolchains = COPY_FILE_TO_BIN_TOOLCHAINS,
 )
 
 def eslint_test_with_types(name, **kwargs):

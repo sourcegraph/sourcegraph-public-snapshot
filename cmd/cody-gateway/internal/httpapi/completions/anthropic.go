@@ -128,6 +128,7 @@ func (a *AnthropicHandlerMethods) validateRequest(ctx context.Context, logger lo
 func (a *AnthropicHandlerMethods) shouldFlagRequest(ctx context.Context, logger log.Logger, ar anthropicRequest) (*flaggingResult, error) {
 	result, err := isFlaggedRequest(a.anthropicTokenizer,
 		flaggingRequest{
+			ModelName:       ar.Model,
 			FlattenedPrompt: ar.Prompt,
 			MaxTokens:       int(ar.MaxTokensToSample),
 		},
@@ -154,18 +155,18 @@ func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (mod
 	}
 }
 
-func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
+func (a *AnthropicHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-	r.Header.Set("Cache-Control", "no-cache")
-	r.Header.Set("Accept", "application/json")
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-	r.Header.Set("X-API-Key", a.config.AccessToken)
-	r.Header.Set("anthropic-version", "2023-01-01")
+	upstreamRequest.Header.Set("Cache-Control", "no-cache")
+	upstreamRequest.Header.Set("Accept", "application/json")
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
+	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
+	upstreamRequest.Header.Set("anthropic-version", "2023-01-01")
 }
 
-func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	var err error
 
 	// Setting a default -1 value so that in case of errors the tokenizer computed tokens don't impact the data
@@ -182,7 +183,7 @@ func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBo
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res anthropicResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))

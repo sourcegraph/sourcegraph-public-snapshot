@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -92,8 +91,9 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	// provided to assist in abuse detection.
 	transformBody(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
-	// upstream. To manipulate the body, use transformBody.
-	transformRequest(*http.Request)
+	// upstream. The downstreamRequest parameter is the request sent from the Gateway client.
+	// To manipulate the body, use transformBody.
+	transformRequest(downstreamRequest, upstreamRequest *http.Request)
 	// getRequestMetadata should extract details about the request we are sending
 	// upstream for validation and tracking purposes. Usage data does not need
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
@@ -105,7 +105,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] interface {
 	//
 	// If data is unavailable, implementations should set relevant usage fields
 	// to -1 as a sentinel value.
-	parseResponseAndUsage(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
+	parseResponseAndUsage(log.Logger, ReqT, io.Reader, bool) (promptUsage, completionUsage usageStats)
 }
 
 type UpstreamRequest interface {
@@ -137,7 +137,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
 	upstreamName string,
-
+	// unprefixed upstream model names
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
@@ -150,24 +150,24 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
 	// for rate limits from actor sources.
-	clonedAllowedModels := make([]string, len(allowedModels))
-	copy(clonedAllowedModels, allowedModels)
-	for i := range clonedAllowedModels {
-		clonedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, clonedAllowedModels[i])
+	prefixedAllowedModels := make([]string, len(allowedModels))
+	copy(prefixedAllowedModels, allowedModels)
+	for i := range prefixedAllowedModels {
+		prefixedAllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, prefixedAllowedModels[i])
 	}
 
 	// upstreamHandler is the actual HTTP handle that will perform "all of the things"
 	// in order to call the upstream API. e.g. calling the upstreamHandlerMethods in
 	// the correct order, enforcing rate limits and anti-abuse mechanisms, etc.
-	upstreamHandler := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+	upstreamHandler := func(w http.ResponseWriter, downstreamRequest *http.Request) {
+		ctx := downstreamRequest.Context()
 		act := actor.FromContext(ctx)
 
 		// TODO: Investigate using actor propagation handler for extracting
 		// this. We had some issues before getting that to work, so for now
 		// just stick with what we've seen working so far.
-		sgActorID := r.Header.Get("X-Sourcegraph-Actor-UID")
-		sgActorAnonymousUID := r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")
+		sgActorID := downstreamRequest.Header.Get("X-Sourcegraph-Actor-UID")
+		sgActorAnonymousUID := downstreamRequest.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")
 
 		// Build logger for lifecycle of this request with lots of details.
 		logger := act.Logger(sgtrace.Logger(ctx, baseLogger)).With(
@@ -200,6 +200,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// This isn't very robust, but should tide us through a brief transition
 		// period until everything deploys and our caches refresh.
 		for i := range rateLimit.AllowedModels {
+			if rateLimit.AllowedModels[i] == "*" {
+				continue // special wildcard value
+			}
 			if !strings.Contains(rateLimit.AllowedModels[i], "/") {
 				rateLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, rateLimit.AllowedModels[i])
 			}
@@ -207,7 +210,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		// Parse the request body.
 		var body ReqT
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := json.NewDecoder(downstreamRequest.Body).Decode(&body); err != nil {
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 			return
 		}
@@ -271,6 +274,13 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 		}
 
+		// Get the URL to call for the upstream provider before we transform the request.
+		upstreamURL := methods.getAPIURL(feature, body)
+
+		// Store the shouldStream value in case it changes during the transformation.
+		// Example: We remove it for Google requests.
+		shouldStream := body.ShouldStream()
+
 		// identifier that can be provided to upstream for abuse detection
 		// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
 		// (specific per-instance)
@@ -286,15 +296,14 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}
 
 		// Create a new request to send upstream, making sure we retain the same context.
-		upstreamURL := methods.getAPIURL(feature, body)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
+		upstreamRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 			return
 		}
 
 		// Run the request transformer.
-		methods.transformRequest(req)
+		methods.transformRequest(downstreamRequest, upstreamRequest)
 
 		// Retrieve metadata from the initial request.
 		model, requestMetadata := methods.getRequestMetadata(body)
@@ -305,7 +314,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// the prefix yet when extracted - we need to add it back here. This
 		// full gatewayModel is also used in events tracking.
 		gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-		if allowed := intersection(clonedAllowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+		if allowed := rateLimit.EvaluateAllowedModels(prefixedAllowedModels); !isAllowedModel(allowed, gatewayModel) {
 			response.JSONError(logger, w, http.StatusBadRequest,
 				errors.Newf("model %q is not allowed, allowed: [%s]",
 					gatewayModel, strings.Join(allowed, ", ")))
@@ -357,7 +366,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			o.Feature = feature
 			o.UpstreamLatency = upstreamLatency
 			o.Provider = upstreamName
-			o.Stream = body.ShouldStream()
+			o.Stream = shouldStream
 
 			err := eventLogger.LogEvent(
 				ctx,
@@ -385,11 +394,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				logger.Error("failed to log event", log.Error(err))
 			}
 		}()
-		resp, err := httpClient.Do(req)
+		resp, err := httpClient.Do(upstreamRequest)
 		if err != nil {
 			// Ignore reporting errors where client disconnected
-			if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
-				oteltrace.SpanFromContext(req.Context()).
+			if upstreamRequest.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+				oteltrace.SpanFromContext(upstreamRequest.Context()).
 					SetStatus(codes.Error, err.Error())
 				logger.Info("request canceled", log.Error(err))
 				return
@@ -459,7 +468,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		// if this is a streaming request, we want to flush ourselves instead of leaving that to the http.Server
 		// (so events are sent to the client as soon as possible)
 		var responseWriter io.Writer = w
-		if config.AutoFlushStreamingResponses && body.ShouldStream() {
+		if config.AutoFlushStreamingResponses && shouldStream {
 			if fw, err := response.NewAutoFlushingWriter(w); err == nil {
 				responseWriter = fw
 			} else {
@@ -473,7 +482,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 		if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 			// Pass reader to response transformer to capture token counts.
-			promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
+			promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf, shouldStream)
 		} else if upstreamStatusCode >= 500 {
 			logger.Error("error from upstream",
 				log.Int("status_code", upstreamStatusCode))
@@ -534,13 +543,4 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 	}
 	return false
-}
-
-func intersection(a, b []string) (c []string) {
-	for _, val := range a {
-		if slices.Contains(b, val) {
-			c = append(c, val)
-		}
-	}
-	return c
 }

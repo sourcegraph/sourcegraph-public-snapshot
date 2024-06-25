@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
+	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,7 +31,6 @@ type Config struct {
 	Dotcom struct {
 		URL                          string
 		AccessToken                  string
-		InternalMode                 bool
 		ActorRefreshCoolDownInterval time.Duration
 
 		// Prompts that get flagged are stored in Redis for a short-time, for
@@ -39,12 +40,17 @@ type Config struct {
 		ClientID string
 	}
 
+	EnterprisePortal struct {
+		URL *url.URL
+	}
+
 	Anthropic AnthropicConfig
 
 	OpenAI OpenAIConfig
 
 	Fireworks FireworksConfig
 
+	// Prefixed model names
 	AllowedEmbeddingsModels []string
 
 	AllowAnonymous bool
@@ -88,12 +94,14 @@ type OpenTelemetryConfig struct {
 }
 
 type AnthropicConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	FlaggingConfig FlaggingConfig
 }
 
 type FireworksConfig struct {
+	// Non-prefixed model names
 	AllowedModels                          []string
 	AccessToken                            string
 	StarcoderCommunitySingleTenantPercent  int
@@ -102,6 +110,7 @@ type FireworksConfig struct {
 }
 
 type OpenAIConfig struct {
+	// Non-prefixed model names
 	AllowedModels  []string
 	AccessToken    string
 	OrgID          string
@@ -146,6 +155,10 @@ type FlaggingConfig struct {
 	// So MaxTokensToSampleFlaggingLimit should be <= MaxTokensToSample.
 	MaxTokensToSampleFlaggingLimit int
 
+	// FlaggedModelNames is a list of provider-specific model names (e.g. "gtp-3.5")
+	// that if used will lead to the request being flagged.
+	FlaggedModelNames []string
+
 	// ResponseTokenBlockingLimit is the maximum number of tokens we allow before outright blocking
 	// a response. e.g. the client sends a request desiring a response with 100 max tokens, we will
 	// block it IFF the ResponseTokenBlockingLimit is less than 100.
@@ -153,13 +166,19 @@ type FlaggingConfig struct {
 }
 
 type SAMSClientConfig struct {
-	URL          string
+	ConnConfig   sams.ConnConfig
 	ClientID     string
 	ClientSecret string
 }
 
-func (scc SAMSClientConfig) Valid() bool {
-	return !(scc.URL == "" || scc.ClientID == "" || scc.ClientSecret == "")
+func (sams SAMSClientConfig) Validate() error {
+	if err := sams.ConnConfig.Validate(); err != nil {
+		return errors.Wrap(err, "invalid ConnConfig")
+	}
+	if sams.ClientID == "" || sams.ClientSecret == "" {
+		return errors.New("ClientID and ClientSecret must be set")
+	}
+	return nil
 }
 
 func (c *Config) Load() {
@@ -170,19 +189,27 @@ func (c *Config) Load() {
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
 	c.Dotcom.AccessToken = c.GetOptional("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN",
-		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
+		"The Sourcegraph.com access token to be used. If not provided, the dotcom-user actor source will be disabled.")
 	c.Dotcom.ClientID = c.GetOptional("CODY_GATEWAY_DOTCOM_CLIENT_ID",
 		"Value of X-Sourcegraph-Client-Id header to be passed to sourcegraph.com.")
 	c.Dotcom.URL = c.Get("CODY_GATEWAY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
 	if _, err := url.Parse(c.Dotcom.URL); err != nil {
 		c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_DOTCOM_API_URL"))
 	}
-	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
-		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
 	c.Dotcom.ActorRefreshCoolDownInterval = c.GetInterval("CODY_GATEWAY_DOTCOM_ACTOR_COOLDOWN_INTERVAL", "300s",
 		"Cooldown period for refreshing the actor info from dotcom.")
 	c.Dotcom.FlaggedPromptRecorderTTL = c.GetInterval("CODY_GATEWAY_DOTCOM_FLAGGED_PROMPT_RECORDER_TTL", "1h",
 		"Period to retain prompts in Redis.")
+
+	enterprisePortalURL := c.GetOptional("CODY_GATEWAY_ENTERPRISE_PORTAL_URL",
+		"The Enterprise Portal instance to target. If not provided, the product subscriptions actor source will be disabled.")
+	if enterprisePortalURL != "" {
+		var err error
+		c.EnterprisePortal.URL, err = url.Parse(enterprisePortalURL)
+		if err != nil {
+			c.AddError(errors.Wrap(err, "invalid CODY_GATEWAY_ENTERPRISE_PORTAL_URL"))
+		}
+	}
 
 	c.Anthropic.AccessToken = c.Get("CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
@@ -208,6 +235,7 @@ func (c *Config) Load() {
 			"claude-instant-1.2-cyan",
 			anthropic.Claude3Haiku,
 			anthropic.Claude3Sonnet,
+			anthropic.Claude35Sonnet,
 			anthropic.Claude3Opus,
 		}, ","),
 		"Anthropic models that can be used."))
@@ -266,6 +294,8 @@ func (c *Config) Load() {
 			// Deprecated model strings
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			fireworks.DeepseekCoder1p3b,
+			fireworks.DeepseekCoder7b,
 		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
@@ -274,7 +304,36 @@ func (c *Config) Load() {
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
 
-	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{string(embeddings.ModelNameOpenAIAda), string(embeddings.ModelNameSourcegraphSTMultiQA)}, ","), "The models allowed for embeddings generation."))
+	// Configurations for Google Gemini models.
+	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
+	c.Google.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_GOOGLE_ALLOWED_MODELS",
+		strings.Join([]string{
+			google.Gemini15FlashLatest,
+			google.Gemini15ProLatest,
+			google.GeminiProLatest,
+			google.Gemini15Flash,
+			google.Gemini15Pro,
+			google.GeminiPro,
+		}, ","),
+		"Google models that can to be used."),
+	)
+	if c.Google.AccessToken != "" && len(c.Google.AllowedModels) == 0 {
+		c.AddError(errors.New("must provide allowed models for Google"))
+	}
+
+	// Load configuration settings specific to how we flag Google-routed requests.
+	// HACK: Same as the comment on OpenAI or Fireworks, re: only using one env var prefix.
+	c.loadFlaggingConfig(&c.Google.FlaggingConfig, "CODY_GATEWAY_ANTHROPIC")
+
+	defaultEmbeddingModels := strings.Join([]string{
+		string(embeddings.ModelNameOpenAIAda),
+		string(embeddings.ModelNameSourcegraphSTMultiQA),
+		string(embeddings.ModelNameSourcegraphMetadataGen),
+	}, ",")
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get(
+		"CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS",
+		defaultEmbeddingModels,
+		"The models allowed for embeddings generation."))
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
@@ -312,21 +371,16 @@ func (c *Config) Load() {
 	c.Sourcegraph.EmbeddingsAPIURL = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_URL", "https://embeddings.sourcegraph.com/v2/models/st-multi-qa-mpnet-base-dot-v1/infer", "URL of the SMEGA API.")
 	c.Sourcegraph.EmbeddingsAPIToken = c.Get("CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN", "", "Token to use for the SMEGA API.")
 
-	c.SAMSClientConfig.URL = c.GetOptional("SAMS_URL", "SAMS service endpoint")
+	// SAMS_URL, SAMS_API_URL are same keys used for sams.NewConnConfigFromEnv
+	c.SAMSClientConfig.ConnConfig.ExternalURL = c.Get("SAMS_URL", "https://accounts.sourcegraph.com",
+		"SAMS external service endpoint")
+	if apiurl := c.GetOptional("SAMS_API_URL", "SAMS API endpoint"); apiurl != "" {
+		c.SAMSClientConfig.ConnConfig.APIURL = &apiurl
+	}
 	c.SAMSClientConfig.ClientID = c.GetOptional("SAMS_CLIENT_ID", "SAMS OAuth client ID")
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
-
-	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
-	c.Google.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_GOOGLE_ALLOWED_MODELS",
-		strings.Join([]string{
-			"gemini-1.5-pro-latest",
-			"gemini-1.5-flash-latest",
-		}, ","),
-		"Google models that can to be used."),
-	)
-
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
@@ -359,6 +413,8 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.PromptTokenBlockingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_BLOCKING_LIMIT", "20000", "Maximum number of prompt tokens to allow without blocking.")
 	cfg.PromptTokenFlaggingLimit = c.GetInt(envVarPrefix+"PROMPT_TOKEN_FLAGGING_LIMIT", "18000", "Maximum number of prompt tokens to allow without flagging.")
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "4000", "Maximum number of completion tokens to allow without blocking.")
+
+	cfg.FlaggedModelNames = maybeLoadLowercaseSlice("FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
 }
 
 // splitMaybe splits the provided string on commas, but returns nil if given the empty string.

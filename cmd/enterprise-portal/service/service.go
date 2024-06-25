@@ -6,18 +6,20 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"connectrpc.com/otelconnect"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
-
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -39,9 +41,19 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	// We use Sourcegraph tracing code, so explicitly configure a trace policy
 	policy.SetTracePolicy(policy.TraceAll)
 
+	redisClient, err := newRedisClient(contract.MSP, contract.RedisEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize Redis client")
+	}
+
+	dbHandle, err := database.NewHandle(ctx, logger, contract, redisClient, version.Version())
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize database handle")
+	}
+
 	dotcomDB, err := newDotComDBConn(ctx, config)
 	if err != nil {
-		return nil, errors.Wrap(err, "newDotComDBConn")
+		return nil, errors.Wrap(err, "initialize dotcom database handle")
 	}
 
 	// Prepare SAMS client, so that we can enforce SAMS-based M2M authz/authn
@@ -64,6 +76,11 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
 	}
 
+	iamClient, closeIAMClient, err := newIAMClient(ctx, logger, contract, redisClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize IAM client")
+	}
+
 	httpServer := http.NewServeMux()
 
 	// Register MSP endpoints
@@ -71,10 +88,42 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		dotcomDB: dotcomDB,
 	})
 
-	// Register connect endpoints
-	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
-	subscriptionsservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB)
+	// Prepare instrumentation middleware for ConnectRPC handlers
+	otelConnctInterceptor, err := otelconnect.NewInterceptor(
+		// Keep data low-cardinality
+		otelconnect.WithoutServerPeerAttributes(),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "create OTEL interceptor")
+	}
 
+	// Register connect endpoints
+	codyaccessservice.RegisterV1(
+		logger,
+		httpServer,
+		codyaccessservice.NewStoreV1(
+			codyaccessservice.StoreV1Options{
+				SAMSClient: samsClient,
+			},
+		),
+		dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor),
+	)
+	subscriptionsservice.RegisterV1(
+		logger,
+		httpServer,
+		subscriptionsservice.NewStoreV1(
+			subscriptionsservice.NewStoreV1Options{
+				DB:         dbHandle,
+				DotcomDB:   dotcomDB,
+				SAMSClient: samsClient,
+				IAMClient:  iamClient,
+			},
+		),
+		connect.WithInterceptors(otelConnctInterceptor),
+	)
+
+	// Optionally enable reflection handlers and a debug UI
 	listenAddr := fmt.Sprintf(":%d", contract.Port)
 	if !contract.MSP && debugserver.GRPCWebUIEnabled {
 		// Enable reflection for the web UI
@@ -117,16 +166,39 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		},
 	)
 	return background.LIFOStopRoutine{
-		background.CallbackRoutine{
-			StopFunc: func(ctx context.Context) error {
-				start := time.Now()
-				if err := dotcomDB.Close(ctx); err != nil {
-					return errors.Wrap(err, "dotcomDB.Close")
-				}
-				logger.Info("database stopped", log.Duration("elapsed", time.Since(start)))
-				return nil
+		// Everything else can be stopped in conjunction
+		background.CombinedRoutine{
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close IAM client" },
+				StopFunc: func(context.Context) error {
+					closeIAMClient()
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close database handle" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dbHandle.Close()
+					logger.Info("database handle closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close dotcom database connection pool" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dotcomDB.Close()
+					logger.Info("dotcom database connection pool closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
 			},
 		},
-		server, // stop server first
+		// Stop server first
+		server,
 	}, nil
 }

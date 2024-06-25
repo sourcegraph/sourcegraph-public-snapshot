@@ -1,12 +1,12 @@
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
+load("//dev:esbuild.bzl", "esbuild")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_custom_files stories src/**/*.story.tsx
@@ -78,6 +78,7 @@ copy_to_bin(
         [
             "src/**/*.ts",
             "src/**/*.tsx",
+            "!src/**/*.spec.ts",
         ],
         # TODO: Ignore legacy build generated file as it conflicts with the Bazel
         # build. This can be removed after the migration.

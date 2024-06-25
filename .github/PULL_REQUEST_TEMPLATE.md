@@ -25,7 +25,7 @@ Learn how to write good pull request description: https://www.notion.so/sourcegr
 
 Audience: TS/CSE > Customers > Teammates (in that order).
 
-Cheat sheet: $type = chore|fix|feature $domain: source|search|ci|release|plg|cody|local|...
+Cheat sheet: $type = chore|fix|feat $domain: source|search|ci|release|plg|cody|local|...
 -->
 
 <!--

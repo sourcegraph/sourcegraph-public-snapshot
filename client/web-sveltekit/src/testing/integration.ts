@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import path from 'path'
+import path from 'node:path'
 
 import { faker } from '@faker-js/faker'
 import { test as base, type Page, type Locator } from '@playwright/test'
 import glob from 'glob'
 import { buildSchema } from 'graphql'
+import * as mime from 'mime-types'
 
-import { type SearchEvent } from '../lib/shared'
+import type { SearchEvent } from '../lib/shared'
 
 import { GraphQLMockServer } from './graphql-mocking'
 import type { TypeMocks, ObjectMock, UserMock, OperationMocks } from './graphql-type-mocks'
@@ -72,9 +72,12 @@ interface MockSearchStream {
     close(): Promise<void>
 }
 
-const SCHEMA_DIR = path.resolve(
-    path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../../cmd/frontend/graphqlbackend')
-)
+const IS_BAZEL = process.env.BAZEL === '1'
+
+const SCHEMA_DIR = `${IS_BAZEL ? '' : '../../'}cmd/frontend/graphqlbackend`
+
+const ASSETS_DIR = process.env.ASSETS_DIR || './build/_sk/'
+
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
     .map(file => readFileSync(path.join(SCHEMA_DIR, file), 'utf8'))
@@ -85,6 +88,37 @@ class Sourcegraph {
     constructor(private readonly page: Page, private readonly graphqlMock: GraphQLMockServer) {}
 
     async setup(): Promise<void> {
+        // All assets are mocked and served from the filesystem. If you do want to use
+        // a local preview server or even backend, you can set this env var
+        if (!parseBool(process.env.DISABLE_APP_ASSETS_MOCKING)) {
+            // routes in playwright are tested in reverse registration order
+            // so in order to make this the fallback we register it first
+            // all unmatched routes are treated as routes within the application
+            // and so only route to the manifest
+            await this.page.route('/**/*', route => {
+                route.fulfill({
+                    status: 200,
+                    contentType: 'text/html',
+                    body: readFileSync(path.join(ASSETS_DIR, 'index.html')),
+                })
+            })
+
+            // Intercept any asset calls and replace them with static files
+            await this.page.route(/.assets|_app/, route => {
+                const assetPath = new URL(route.request().url()).pathname.replace('/.assets/', '')
+                const asset = joinDistinct(ASSETS_DIR, assetPath)
+                const contentType = mime.contentType(path.basename(asset)) || undefined
+                route.fulfill({
+                    status: 200,
+                    contentType,
+                    body: readFileSync(asset),
+                    headers: {
+                        'cache-control': 'public, max-age=31536000, immutable',
+                    },
+                })
+            })
+        }
+        // mock graphql calls
         await this.page.route(/\.api\/graphql/, route => {
             const { query, variables, operationName } = JSON.parse(route.request().postData() ?? '')
             const result = this.graphqlMock.query(
@@ -120,7 +154,7 @@ class Sourcegraph {
      * page to be "ready" by waiting for the "Filter results" heading to be visible.
      */
     public async mockSearchStream(): Promise<MockSearchStream> {
-        await this.page.addInitScript(function () {
+        await this.page.addInitScript(() => {
             window.$$sources = []
             window.EventSource = class MockEventSource {
                 static readonly CONNECTING = 0
@@ -221,6 +255,21 @@ class Sourcegraph {
     }
 }
 
+// joins two URLs which may have overlapping paths, ensuring that the result is a valid URL
+function joinDistinct(baseURL: string, suffix: string): string {
+    const suffixSet = new Set(suffix.split('/'))
+
+    let url = ''
+    for (const part of baseURL.split('/')) {
+        if (suffixSet.has(part)) {
+            break
+        }
+        url = path.join(url, part)
+    }
+
+    return path.join(url, suffix)
+}
+
 interface Utils {
     scrollYAt(locator: Locator, distance: number): Promise<void>
 }
@@ -267,3 +316,10 @@ export const test = base.extend<{ sg: Sourcegraph; utils: Utils }, { graphqlMock
         { scope: 'worker' },
     ],
 })
+
+function parseBool(s: string | undefined): boolean {
+    if (s === undefined) {
+        return false
+    }
+    return s.toLowerCase() === 'true'
+}

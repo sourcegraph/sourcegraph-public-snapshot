@@ -20,7 +20,7 @@ spec:
   indexedSearch:
     disabled: true
 
-  indexedSearchIndexer:
+  openTelemetry:
     disabled: true
 
   pgsql:
@@ -56,7 +56,4 @@ spec:
     disabled: true
 
   prometheus:
-    disabled: true
-
-  embeddings:
     disabled: true

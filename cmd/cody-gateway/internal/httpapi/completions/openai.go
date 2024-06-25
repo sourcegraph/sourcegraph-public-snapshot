@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,6 +123,7 @@ func (o *OpenAIHandlerMethods) shouldFlagRequest(_ context.Context, _ log.Logger
 	result, err := isFlaggedRequest(
 		nil, /* tokenizer, meaning token counts aren't considered when for flagging consideration. */
 		flaggingRequest{
+			ModelName:       req.Model,
 			FlattenedPrompt: req.BuildPrompt(),
 			MaxTokens:       int(req.MaxTokens),
 		},
@@ -143,15 +145,15 @@ func (*OpenAIHandlerMethods) getRequestMetadata(body openaiRequest) (model strin
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (o *OpenAIHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
+func (o *OpenAIHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+o.config.AccessToken)
 	if o.config.OrgID != "" {
-		r.Header.Set("OpenAI-Organization", o.config.OrgID)
+		upstreamRequest.Header.Set("OpenAI-Organization", o.config.OrgID)
 	}
 }
 
-func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body openaiRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
@@ -162,7 +164,7 @@ func (*OpenAIHandlerMethods) parseResponseAndUsage(logger log.Logger, body opena
 	completionUsage.tokenizerTokens = -1
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !body.Stream {
+	if !isStreamRequest {
 		var res openaiResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse OpenAI response as JSON", log.Error(err))

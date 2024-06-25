@@ -9,7 +9,7 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/telemetry",
-        "//internal/telemetry/teestore",
+        "//internal/telemetry/telemetrystore",
         "@com_github_sourcegraph_log//:log",
     ],
 )

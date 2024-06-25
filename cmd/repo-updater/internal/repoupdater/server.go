@@ -146,7 +146,7 @@ func (s *Server) RecloneRepository(ctx context.Context, req *proto.RecloneReposi
 
 	repo := rs[0]
 
-	svc := gitserver.NewRepositoryServiceClient()
+	svc := gitserver.NewRepositoryServiceClient("repoupdater.reclone")
 
 	if err := svc.DeleteRepository(ctx, repoName); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete repository %q: %s", repoName, err))

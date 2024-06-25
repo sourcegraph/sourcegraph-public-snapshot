@@ -3,10 +3,11 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose, mdiFileEyeOutline, mdiMapSearch, mdiWrap, mdiWrapDisabled } from '@mdi/js'
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
+
+    import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
@@ -22,7 +23,7 @@
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
-    import { codeCopiedEvent, SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
     import markdownStyles from '$lib/wildcard/Markdown.module.scss'
@@ -92,6 +93,7 @@
                   requestGraphQL(options) {
                       return from(graphQLClient.query(options.request, options.variables).then(toGraphQLResult))
                   },
+                  telemetryRecorder: noOpTelemetryRecorder,
               })
             : null
 
@@ -116,13 +118,13 @@
     }
 
     function handleCopy(): void {
-        SVELTE_LOGGER.log(...codeCopiedEvent('blob-view'))
+        TELEMETRY_RECORDER.recordEvent('repo.blob', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {
         // TODO: track other blob mode
         if (event.detail === CodeViewMode.Blame) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.GitBlameEnabled)
+            TELEMETRY_RECORDER.recordEvent('repo.gitBlame', 'enable')
         }
 
         goto(viewModeURL(event.detail), { replaceState: true, keepFocus: true })
@@ -166,13 +168,13 @@
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
             <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
-                <Icon svgPath={mdiFileEyeOutline} inline /> View raw
+                <Icon icon={ILucideEye} inline aria-hidden /> View raw
             </MenuLink>
             <MenuButton
                 on:click={() => lineWrap.update(wrap => !wrap)}
                 disabled={fileViewModeFromURL === CodeViewMode.Default && isRichFile}
             >
-                <Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline />
+                <Icon icon={$lineWrap ? ILucideText : ILucideWrapText} inline aria-hidden />
                 {$lineWrap ? 'Disable' : 'Enable'} wrapping long lines
             </MenuButton>
         </svelte:fragment>
@@ -185,7 +187,7 @@
             <a href={revisionOverride.canonicalURL}>{revisionOverride.abbreviatedOID}</a>
         </Badge>
         <a href={SourcegraphURL.from($page.url).deleteSearchParameter('rev').toString()}>
-            <Icon svgPath={mdiClose} inline />
+            <Icon icon={ILucideX} inline aria-hidden />
             <span>Close commit</span>
         </a>
     </div>
@@ -224,7 +226,7 @@
         </Alert>
     {:else if fileNotFound}
         <div class="circle">
-            <Icon svgPath={mdiMapSearch} --icon-size="80px" />
+            <Icon icon={ILucideSearchX} --icon-size="80px" />
         </div>
         <h2>File not found</h2>
     {:else if isBinaryFile}
@@ -270,9 +272,10 @@
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={({ detail: range }) => {
                     goto(
-                        SourcegraphURL.from($page.url.searchParams)
+                        SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
                             .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover').search
+                            .deleteSearchParameter('popover')
+                            .toString()
                     )
                 }}
                 {codeIntelAPI}

@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "chat.go",
         "codecompletion.go",
+        "get_model.go",
         "handler.go",
         "limiter.go",
         "observability.go",
@@ -22,6 +23,7 @@ go_library(
         "//internal/completions/client",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",
+        "//internal/completions/client/google",
         "//internal/completions/types",
         "//internal/conf",
         "//internal/conf/conftypes",
@@ -49,14 +51,35 @@ go_library(
 
 go_test(
     name = "completions_test",
-    srcs = ["handler_test.go"],
+    srcs = [
+        "entconfig_anthropic_test.go",
+        "entconfig_base_test.go",
+        "get_model_test.go",
+        "handler_test.go",
+    ],
     embed = [":completions"],
+    tags = [
+        TAG_CODY_CORE,
+        # Test indirectly localhost Redis.
+        "requires-network",
+    ],
     deps = [
+        "//internal/actor",
         "//internal/completions/types",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/database/dbmocks",
         "//internal/featureflag",
+        "//internal/httpcli",
+        "//internal/licensing",
+        "//internal/rcache",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetrytest",
+        "//lib/errors",
+        "//lib/pointers",
         "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -12,6 +12,7 @@ import (
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +21,7 @@ type mockSAMSClient struct {
 	error  error
 }
 
-func (m mockSAMSClient) IntrospectToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
+func (m mockSAMSClient) IntrospectSAMSToken(context.Context, string) (*sams.IntrospectTokenResponse, error) {
 	return m.result, m.error
 }
 
@@ -96,7 +97,7 @@ func TestRequireScope(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			err := RequireScope(ctx, logtest.Scoped(t), tc.samsClient, requiredScope, request(tc.metadata))
+			_, err := RequireScope(ctx, logtest.Scoped(t), tc.samsClient, requiredScope, request(tc.metadata))
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
 			} else {

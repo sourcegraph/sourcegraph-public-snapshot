@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -40,6 +41,8 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 		return openai.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, *tokenManager), nil
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		return azureopenai.NewClient(azureopenai.GetAPIClient, endpoint, accessToken, *tokenManager)
+	case conftypes.CompletionsProviderNameGoogle:
+		return google.NewClient(httpcli.UncachedExternalDoer, endpoint, accessToken, false)
 	case conftypes.CompletionsProviderNameSourcegraph:
 		return codygateway.NewClient(httpcli.CodyGatewayDoer, endpoint, accessToken, *tokenManager)
 	case conftypes.CompletionsProviderNameFireworks:

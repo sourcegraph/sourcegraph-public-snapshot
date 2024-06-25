@@ -37,7 +37,7 @@ func upgradeDeploymentForVersion(ctx context.Context, email, name, version strin
 	}
 
 	spec := NewDeploymentSpec(
-		sanitizeInstanceName(name),
+		name,
 		version,
 		"", // we don't need a license during upgrade
 	)
@@ -90,18 +90,20 @@ func upgradeCloudEphemeral(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to determine current branch")
 	}
-	// if a version is specified we do not build anything and just trigger the cloud deployment
 	email, err := GetGCloudAccount(ctx.Context)
 	if err != nil {
 		return err
 	}
 	deploymentName := determineDeploymentName(ctx.String("name"), version, email, currentBranch)
+	if ctx.String("name") != "" && ctx.String("name") != deploymentName {
+		std.Out.WriteNoticef("Your deployment name has been truncated to be %q", deploymentName)
+	}
 
 	err = upgradeDeploymentForVersion(ctx.Context, email, deploymentName, version)
 	if err != nil {
 		if errors.Is(err, ErrInstanceNotFound) {
 			std.Out.WriteWarningf("Unable to upgrade %q since no deployment like that exists", deploymentName)
-			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud list`, or you can see all deployments with `sg cloud list --all`")
+			std.Out.WriteMarkdown("You can check what deployments exist under your GCP account with `sg cloud ephemeral list`, or you can see all deployments with `sg cloud ephemeral list --all`")
 		}
 		return err
 	}

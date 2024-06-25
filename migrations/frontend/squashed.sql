@@ -6377,7 +6377,7 @@ CREATE UNIQUE INDEX user_external_accounts_account ON user_external_accounts USI
 
 CREATE INDEX user_external_accounts_user_id ON user_external_accounts USING btree (user_id) WHERE (deleted_at IS NULL);
 
-CREATE UNIQUE INDEX user_external_accounts_user_id_scim_service_type ON user_external_accounts USING btree (user_id, service_type) WHERE (service_type = 'scim'::text);
+CREATE UNIQUE INDEX user_external_accounts_user_id_scim_service_type ON user_external_accounts USING btree (user_id, service_type) WHERE ((service_type = 'scim'::text) AND (deleted_at IS NULL));
 
 CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id);
 

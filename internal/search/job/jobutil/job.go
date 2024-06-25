@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -722,7 +722,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, feat *search.Fea
 func toLangFilters(aliases []string) []string {
 	var filters []string
 	for _, alias := range aliases {
-		lang, _ := enry.GetLanguageByAlias(alias) // Invariant: lang is valid.
+		lang, _ := languages.GetLanguageByNameOrAlias(alias) // Invariant: lang is valid.
 		if !slices.Contains(filters, lang) {
 			filters = append(filters, lang)
 		}

@@ -1,22 +1,33 @@
 package jobstore
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type SyntacticIndexingJobStore interface {
 	DBWorkerStore() dbworkerstore.Store[*SyntacticIndexingJob]
+	InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) ([]SyntacticIndexingJob, error)
+	IsQueued(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID) (bool, error)
 }
 
 type syntacticIndexingJobStoreImpl struct {
-	store dbworkerstore.Store[*SyntacticIndexingJob]
-	db    *basestore.Store
+	store      dbworkerstore.Store[*SyntacticIndexingJob]
+	db         *basestore.Store
+	operations *operations
+	logger     log.Logger
 }
 
 var _ SyntacticIndexingJobStore = &syntacticIndexingJobStoreImpl{}
@@ -57,7 +68,132 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 
 	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return &syntacticIndexingJobStoreImpl{
-		store: dbworkerstore.New(observationCtx, handle, storeOptions),
-		db:    basestore.NewWithHandle(handle),
+		store:      dbworkerstore.New(observationCtx, handle, storeOptions),
+		db:         basestore.NewWithHandle(handle),
+		operations: newOperations(observationCtx),
+		logger:     observationCtx.Logger.Scoped("syntactic_indexing.store"),
 	}, nil
 }
+
+func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, indexingJobs []SyntacticIndexingJob) (_ []SyntacticIndexingJob, err error) {
+	ctx, _, endObservation := s.operations.insertIndexingJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIndexingJobs", len(indexingJobs)),
+	}})
+	endObservation(1, observation.Args{})
+
+	if len(indexingJobs) == 0 {
+		return nil, nil
+	}
+
+	indexingJobsValues := make([]*sqlf.Query, 0, len(indexingJobs))
+	for _, index := range indexingJobs {
+		indexingJobsValues = append(indexingJobsValues, sqlf.Sprintf(
+			"(%s, %s, %s, %s)",
+			index.State,
+			index.Commit,
+			index.RepositoryID,
+			actor.FromContext(ctx).UID,
+		))
+	}
+
+	indexingJobs = []SyntacticIndexingJob{}
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		insertedJobIds, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(indexingJobsValues, ","))))
+		if err != nil {
+			return err
+		}
+		s.operations.indexingJobsInserted.Add(float64(len(insertedJobIds)))
+
+		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+		if err != nil {
+			return err
+		}
+
+		jobLookupQueries := make([]*sqlf.Query, 0, len(insertedJobIds))
+		for _, id := range insertedJobIds {
+			jobLookupQueries = append(jobLookupQueries, sqlf.Sprintf("%d", id))
+		}
+		indexingJobs, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
+		return err
+	})
+
+	return indexingJobs, err
+}
+
+func (s *syntacticIndexingJobStoreImpl) IsQueued(ctx context.Context, repositoryID api.RepoID, commitID api.CommitID) (bool, error) {
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
+		isQueuedQuery,
+		repositoryID,
+		commitID,
+	)))
+	return isQueued, err
+}
+
+const insertIndexQuery = `
+INSERT INTO syntactic_scip_indexing_jobs (
+	state,
+	commit,
+	repository_id,
+	enqueuer_user_id
+)
+VALUES %s
+RETURNING id
+`
+
+const isQueuedQuery = `
+SELECT EXISTS(
+	SELECT queued_at
+	FROM syntactic_scip_indexing_jobs
+	WHERE
+		repository_id  = %s AND
+		commit = %s
+	ORDER BY queued_at DESC
+	LIMIT 1
+)
+`
+
+const getIndexesByIDsQuery = `
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.should_reindex,
+	u.enqueuer_user_id
+FROM syntactic_scip_indexing_jobs_with_repository_name u
+WHERE u.id IN (%s) and %s
+ORDER BY u.id
+`
+
+func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
+	if err := s.Scan(
+		&index.ID,
+		&index.Commit,
+		&index.QueuedAt,
+		&index.State,
+		&index.FailureMessage,
+		&index.StartedAt,
+		&index.FinishedAt,
+		&index.ProcessAfter,
+		&index.NumResets,
+		&index.NumFailures,
+		&index.RepositoryID,
+		&index.RepositoryName,
+		&index.ShouldReindex,
+		&index.EnqueuerUserID,
+	); err != nil {
+		return index, err
+	}
+
+	return index, nil
+}
+
+var scanIndexes = basestore.NewSliceScanner(scanIndex)

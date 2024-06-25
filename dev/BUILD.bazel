@@ -123,5 +123,8 @@ write_source_files(
         "//cmd/gitserver/internal/gitserverfs:generate_mocks",
         "//cmd/repo-updater/internal/gitserver:generate_mocks",
         "//dev/build-tracker:generate_mocks",
+        "//cmd/worker/internal/sourcegraphaccounts:generate_mocks",
+        "//cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest:generate_mocks",
+        "//cmd/enterprise-portal/internal/subscriptionsservice:generate_mocks",
     ],
 )

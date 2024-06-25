@@ -1,5 +1,7 @@
 <script context="module" lang="ts">
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import type { Keys } from '$lib/Hotkey'
+    import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -15,19 +17,26 @@
     // to expose more info about nature of switch tab / close tab actions
     function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
         if (nextSelectedTab === 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'show')
             return
         }
 
         if (nextSelectedTab === null && selectedTab == 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'hide')
             return
         }
+    }
+
+    const historyHotkey: Keys = {
+        key: 'alt+h',
+    }
+
+    const referenceHotkey: Keys = {
+        key: 'alt+r',
     }
 </script>
 
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiHistory, mdiListBoxOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { afterNavigate, goto } from '$app/navigation'
@@ -39,10 +48,11 @@
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
-    import HistoryPanel, { type Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
+    import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
@@ -110,7 +120,6 @@
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
-    $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -128,13 +137,11 @@
         }
     })
 
-    async function selectTab(event: { detail: number | null }) {
+    function selectTab(event: { detail: number | null }) {
         trackHistoryPanelTabAction(selectedTab, event.detail)
 
         if (event.detail === null) {
-            const url = new URL($page.url)
-            url.searchParams.delete('rev')
-            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+            handleBottomPanelCollapse().catch(() => {})
         }
         selectedTab = event.detail
     }
@@ -145,7 +152,13 @@
         }
     }
 
-    function handleBottomPanelCollapse() {
+    async function handleBottomPanelCollapse() {
+        // Removing the URL parameter causes the diff view to close
+        if ($page.url.searchParams.has('rev')) {
+            const url = new URL($page.url)
+            url.searchParams.delete('rev')
+            await goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+        }
         selectedTab = null
     }
 
@@ -181,16 +194,21 @@
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
                 <div class="sidebar-action-row">
-                    <Button
-                        variant="secondary"
-                        outline
-                        size="sm"
-                        on:click={toggleFileSidePanel}
-                        aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
-                    >
-                        <Icon svgPath={!isCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight} inline />
-                    </Button>
-
+                    <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
+                        <Button
+                            variant="secondary"
+                            outline
+                            size="sm"
+                            on:click={toggleFileSidePanel}
+                            aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
+                        >
+                            <Icon
+                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
+                                inline
+                                aria-hidden
+                            />
+                        </Button>
+                    </Tooltip>
                     <RepositoryRevPicker
                         repoURL={data.repoURL}
                         revision={data.revision}
@@ -204,13 +222,19 @@
                 <div class="sidebar-action-row">
                     <Button variant="secondary" outline size="sm">
                         <svelte:fragment slot="custom" let:buttonClass>
-                            <button
-                                class={`${buttonClass} search-files-button`}
-                                on:click={() => openFuzzyFinder('files')}
-                            >
-                                <span>Search files</span>
-                                <KeyboardShortcut shorcut={filesHotkey} />
-                            </button>
+                            <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
+                                <button
+                                    class={`${buttonClass} search-files-button`}
+                                    on:click={() => openFuzzyFinder('files')}
+                                >
+                                    {#if isCollapsed}
+                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
+                                    {:else}
+                                        <span>Search files</span>
+                                        <KeyboardShortcut shortcut={filesHotkey} />
+                                    {/if}
+                                </button>
+                            </Tooltip>
                         </svelte:fragment>
                     </Button>
                 </div>
@@ -229,7 +253,7 @@
                                 {repoName}
                                 {revision}
                                 treeProvider={$fileTreeStore}
-                                selectedPath={$page.params.path ?? ''}
+                                selectedPath={data.filePath ?? ''}
                             />
                         {/if}
                     {:else}
@@ -261,10 +285,22 @@
                 onCollapse={handleBottomPanelCollapse}
                 let:isCollapsed
             >
-                <div class="bottom-panel">
+                <div class="bottom-panel" class:collapsed={isCollapsed}>
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
-                        <TabPanel title="History" icon={mdiHistory}>
-                            {#key $page.params.path}
+                        <svelte:fragment slot="header-actions">
+                            {#if !isCollapsed}
+                                <Button
+                                    variant="text"
+                                    size="sm"
+                                    aria-label="Hide bottom panel"
+                                    on:click={handleBottomPanelCollapse}
+                                >
+                                    <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                                </Button>
+                            {/if}
+                        </svelte:fragment>
+                        <TabPanel title="History" shortcut={historyHotkey}>
+                            {#key data.filePath}
                                 <HistoryPanel
                                     bind:this={historyPanel}
                                     history={commitHistory}
@@ -275,12 +311,25 @@
                                 />
                             {/key}
                         </TabPanel>
-                        <TabPanel title="References" icon={mdiListBoxOutline}>
-                            <ReferencePanel
-                                connection={references}
-                                loading={referencesLoading}
-                                on:more={referenceQuery?.fetchMore}
-                            />
+                        <TabPanel title="References" shortcut={referenceHotkey}>
+                            {#if !referenceQuery}
+                                <div class="info">
+                                    <Alert variant="info"
+                                        >Hover over a symbol and click "Find references" to find references to the
+                                        symbol.</Alert
+                                    >
+                                </div>
+                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
+                                <div class="info">
+                                    <Alert variant="info">No references found.</Alert>
+                                </div>
+                            {:else}
+                                <ReferencePanel
+                                    connection={references}
+                                    loading={$referenceQuery?.fetching ?? false}
+                                    on:more={referenceQuery?.fetchMore}
+                                />
+                            {/if}
                         </TabPanel>
                     </Tabs>
                     {#if lastCommit && isCollapsed}
@@ -330,28 +379,36 @@
         flex-direction: column;
         overflow: hidden;
         background-color: var(--color-bg-1);
-    }
 
-    .collapsed {
-        flex-direction: column;
-        align-items: center;
-
-        header {
-            flex-wrap: nowrap;
-        }
-
-        header,
-        .sidebar-action-row {
+        &.collapsed {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-            width: 100%;
-        }
+            align-items: center;
 
-        .search-files-button,
-        :global([data-repo-rev-picker-trigger]),
-        .sidebar-file-tree {
-            display: none;
+            header {
+                flex-wrap: nowrap;
+            }
+
+            header,
+            .sidebar-action-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            // Hide action text and leave just icon for collapsed version
+            .search-files-button {
+                display: block;
+
+                span {
+                    display: none;
+                }
+            }
+
+            :global([data-repo-rev-picker-trigger]),
+            .sidebar-file-tree {
+                display: none;
+            }
         }
     }
 
@@ -391,12 +448,6 @@
                 flex-shrink: 1;
                 text-align: left;
             }
-
-            kbd {
-                display: flex;
-                margin: -0.1rem 0;
-                letter-spacing: 0.15rem;
-            }
         }
     }
 
@@ -434,11 +485,23 @@
 
         :global([data-tabs]) {
             flex: 1;
+            min-width: 0;
         }
+
+        &.collapsed :global([data-tabs]) {
+            // Reset min-width otherwise very long commit messages will overflow
+            // the tabs.
+            min-width: initial;
+        }
+
         .last-commit {
             min-width: 0;
-            max-width: content;
+            max-width: min-content;
             margin-right: 0.5rem;
         }
+    }
+
+    .info {
+        padding: 1rem;
     }
 </style>

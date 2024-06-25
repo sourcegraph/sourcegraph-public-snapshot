@@ -64,7 +64,7 @@ resources:
                       fieldPath: status.hostIP
                 - name: OTEL_EXPORTER_OTLP_ENDPOINT
                   value: http://$(OTEL_AGENT_HOST):4317
-              image: index.docker.io/sourcegraph/repo-updater:5.3.2@sha256:5a414aa030c7e0922700664a43b449ee5f3fafa68834abef93988c5992c747c6
+              image: index.docker.io/sourcegraph/repo-updater:5.3.9104
               imagePullPolicy: IfNotPresent
               livenessProbe:
                 failureThreshold: 3
@@ -136,7 +136,7 @@ resources:
           indexedSearch:
             disabled: true
 
-          indexedSearchIndexer:
+          openTelemetry:
             disabled: true
 
           pgsql:
@@ -172,9 +172,6 @@ resources:
             disabled: true
 
           prometheus:
-            disabled: true
-
-          embeddings:
             disabled: true
     kind: ConfigMap
     metadata:

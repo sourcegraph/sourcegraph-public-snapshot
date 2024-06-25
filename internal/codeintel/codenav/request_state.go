@@ -3,7 +3,10 @@ package codenav
 import (
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -27,7 +30,20 @@ type RequestState struct {
 
 	RepositoryID int
 	Commit       string
-	Path         string
+	Path         core.RepoRelPath
+}
+
+func (r *RequestState) Attrs() []attribute.KeyValue {
+	out := []attribute.KeyValue{
+		attribute.Int("repositoryID", r.RepositoryID),
+		attribute.String("commit", r.Commit),
+		attribute.String("path", r.Path.RawValue()),
+	}
+	if r.dataLoader != nil {
+		uploads := r.dataLoader.uploads
+		out = append(out, attribute.Int("numUploads", len(uploads)), attribute.String("uploads", uploadIDsToString(uploads)))
+	}
+	return out
 }
 
 func NewRequestState(
@@ -37,7 +53,7 @@ func NewRequestState(
 	gitserverClient gitserver.Client,
 	repo *sgTypes.Repo,
 	commit string,
-	path string,
+	path core.RepoRelPath,
 	maxIndexes int,
 	hunkCache HunkCache,
 ) RequestState {
@@ -79,7 +95,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.CompletedUpload) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) {
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit string, path core.RepoRelPath, hunkCache HunkCache) {
 	args := &requestArgs{
 		repo:   repo,
 		commit: commit,

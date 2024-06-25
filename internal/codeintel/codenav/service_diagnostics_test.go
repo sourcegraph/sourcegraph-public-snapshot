@@ -5,16 +5,22 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+var repoRelPath = core.NewRepoRelPathUnchecked
+var uploadRelPath = core.NewUploadRelPathUnchecked
 
 func TestDiagnostics(t *testing.T) {
 	// Set up mocks
@@ -22,10 +28,11 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
+	mockSearchClient := client.NewMockSearchClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -39,7 +46,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []shared.Diagnostic[core.UploadRelPath]{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -70,11 +77,11 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	expectedDiagnostics := []DiagnosticAtUpload{
-		{Upload: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
-		{Upload: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
+		{Upload: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub1/"), DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Upload: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub3/"), DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
@@ -95,10 +102,11 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
+	mockSearchClient := client.NewMockSearchClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -125,7 +133,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []shared.Diagnostic[core.UploadRelPath]{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -157,9 +165,9 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	}
 
 	expectedDiagnostics := []DiagnosticAtUpload{
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)

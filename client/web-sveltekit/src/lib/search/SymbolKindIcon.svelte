@@ -1,64 +1,38 @@
 <script lang="ts" context="module">
-    import { SvelteComponent } from 'svelte'
+    import type { ComponentProps } from 'svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import { SymbolKind } from '$lib/graphql-types'
-    import Array from '$lib/icons/symbols/Array.svelte'
-    import Boolean from '$lib/icons/symbols/Boolean.svelte'
-    import Class from '$lib/icons/symbols/Class.svelte'
-    import Constant from '$lib/icons/symbols/Constant.svelte'
-    import Constructor from '$lib/icons/symbols/Constructor.svelte'
-    import Enum from '$lib/icons/symbols/Enum.svelte'
-    import EnumMember from '$lib/icons/symbols/EnumMember.svelte'
-    import Event from '$lib/icons/symbols/Event.svelte'
-    import Field from '$lib/icons/symbols/Field.svelte'
-    import File from '$lib/icons/symbols/File.svelte'
-    import Function from '$lib/icons/symbols/Function.svelte'
-    import Interface from '$lib/icons/symbols/Interface.svelte'
-    import Key from '$lib/icons/symbols/Key.svelte'
-    import Method from '$lib/icons/symbols/Method.svelte'
-    import Module from '$lib/icons/symbols/Module.svelte'
-    import Namespace from '$lib/icons/symbols/Namespace.svelte'
-    import Null from '$lib/icons/symbols/Null.svelte'
-    import Number from '$lib/icons/symbols/Number.svelte'
-    import Object from '$lib/icons/symbols/Object.svelte'
-    import Operator from '$lib/icons/symbols/Operator.svelte'
-    import Package from '$lib/icons/symbols/Package.svelte'
-    import Property from '$lib/icons/symbols/Property.svelte'
-    import String from '$lib/icons/symbols/String.svelte'
-    import Struct from '$lib/icons/symbols/Struct.svelte'
-    import TypeParameter from '$lib/icons/symbols/TypeParameter.svelte'
-    import Unknown from '$lib/icons/symbols/Unknown.svelte'
-    import Variable from '$lib/icons/symbols/Variable.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
 
-    const icons: Map<string, typeof SvelteComponent<{}>> = new Map([
-        [SymbolKind.ARRAY, Array],
-        [SymbolKind.BOOLEAN, Boolean],
-        [SymbolKind.CLASS, Class],
-        [SymbolKind.CONSTANT, Constant],
-        [SymbolKind.CONSTRUCTOR, Constructor],
-        [SymbolKind.ENUM, Enum],
-        [SymbolKind.ENUMMEMBER, EnumMember],
-        [SymbolKind.EVENT, Event],
-        [SymbolKind.FIELD, Field],
-        [SymbolKind.FILE, File],
-        [SymbolKind.FUNCTION, Function],
-        [SymbolKind.INTERFACE, Interface],
-        [SymbolKind.KEY, Key],
-        [SymbolKind.METHOD, Method],
-        [SymbolKind.MODULE, Module],
-        [SymbolKind.NAMESPACE, Namespace],
-        [SymbolKind.NULL, Null],
-        [SymbolKind.NUMBER, Number],
-        [SymbolKind.OBJECT, Object],
-        [SymbolKind.OPERATOR, Operator],
-        [SymbolKind.PACKAGE, Package],
-        [SymbolKind.PROPERTY, Property],
-        [SymbolKind.STRING, String],
-        [SymbolKind.STRUCT, Struct],
-        [SymbolKind.TYPEPARAMETER, TypeParameter],
-        [SymbolKind.UNKNOWN, Unknown],
-        [SymbolKind.VARIABLE, Variable],
+    const icons: Map<string, ComponentProps<Icon>['icon']> = new Map([
+        [SymbolKind.ARRAY, ISymbolArray],
+        [SymbolKind.BOOLEAN, ISymbolBoolean],
+        [SymbolKind.CLASS, ISymbolClass],
+        [SymbolKind.CONSTANT, ISymbolConstant],
+        [SymbolKind.CONSTRUCTOR, ISymbolConstructor],
+        [SymbolKind.ENUM, ISymbolEnum],
+        [SymbolKind.ENUMMEMBER, ISymbolEnumMember],
+        [SymbolKind.EVENT, ISymbolEvent],
+        [SymbolKind.FIELD, ISymbolField],
+        [SymbolKind.FILE, ISymbolFile],
+        [SymbolKind.FUNCTION, ISymbolFunction],
+        [SymbolKind.INTERFACE, ISymbolInterface],
+        [SymbolKind.KEY, ISymbolKey],
+        [SymbolKind.METHOD, ISymbolMethod],
+        [SymbolKind.MODULE, ISymbolModule],
+        [SymbolKind.NAMESPACE, ISymbolNamespace],
+        [SymbolKind.NULL, ISymbolNull],
+        [SymbolKind.NUMBER, ISymbolNumber],
+        [SymbolKind.OBJECT, ISymbolObject],
+        [SymbolKind.OPERATOR, ISymbolOperator],
+        [SymbolKind.PACKAGE, ISymbolPackage],
+        [SymbolKind.PROPERTY, ISymbolProperty],
+        [SymbolKind.STRING, ISymbolString],
+        [SymbolKind.STRUCT, ISymbolStruct],
+        [SymbolKind.TYPEPARAMETER, ISymbolTypeParameter],
+        [SymbolKind.UNKNOWN, ISymbolUnknown],
+        [SymbolKind.VARIABLE, ISymbolVariable],
     ])
 
     const moduleFamily: Set<string> = new Set([
@@ -97,13 +71,12 @@
 
 <Tooltip tooltip={humanReadableSymbolKind(symbolKind)}>
     <div
-        aria-label="Symbol kind {symbolKind.toLowerCase()}"
         class:module={moduleFamily.has(symbolKind)}
         class:class={classFamily.has(symbolKind)}
         class:function={functionFamily.has(symbolKind)}
         class:variable={variableFamily.has(symbolKind)}
     >
-        <svelte:component this={icons.get(symbolKind) ?? Unknown} />
+        <Icon icon={icons.get(symbolKind) ?? ISymbolUnknown} aria-label="Symbol kind {symbolKind.toLowerCase()}" />
     </div>
 </Tooltip>
 
@@ -113,35 +86,35 @@
 
         // TODO(@taiyab): incorporate these colors into the semantic colors
 
-        --icon-color: var(--text-muted);
+        --icon-color: currentColor;
 
         :global(.theme-light) & {
             &.module {
-                --icon-color: var(--oc-teal-8);
+                color: var(--oc-teal-8);
             }
             &.class {
-                --icon-color: var(--oc-orange-8);
+                color: var(--oc-orange-8);
             }
             &.function {
-                --icon-color: var(--oc-violet-8);
+                color: var(--oc-violet-8);
             }
             &.variable {
-                --icon-color: var(--oc-blue-8);
+                color: var(--oc-blue-8);
             }
         }
 
         :global(.theme-dark) & {
             &.module {
-                --icon-color: var(--oc-teal-6);
+                color: var(--oc-teal-6);
             }
             &.class {
-                --icon-color: var(--oc-orange-6);
+                color: var(--oc-orange-6);
             }
             &.function {
-                --icon-color: var(--oc-violet-6);
+                color: var(--oc-violet-6);
             }
             &.variable {
-                --icon-color: var(--oc-blue-6);
+                color: var(--oc-blue-6);
             }
         }
 

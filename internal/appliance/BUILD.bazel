@@ -1,20 +1,40 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "appliance",
     srcs = [
         "appliance.go",
+        "embed.go",
         "grpc.go",
+        "html.go",
+        "routes.go",
+        "versions.go",
+    ],
+    embedsrcs = [
+        "web/static/img/favicon.png",
+        "web/static/script/htmx.min.js",
+        "web/template/setup.gohtml",
+        "web/static/css/bootstrap.min.css",
+        "web/static/css/custom.css",
+        "web/static/script/bootstrap.bundle.min.js",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance/config",
         "//internal/appliance/v1:appliance",
+        "//internal/releaseregistry",
+        "//lib/errors",
         "//lib/pointers",
-        "@com_github_masterminds_semver//:semver",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_life4_genesis//slices",
+        "@com_github_masterminds_semver_v3//:semver",
+        "@com_github_sourcegraph_log//:log",
         "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/errors",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_yaml//:yaml",
     ],
@@ -23,4 +43,13 @@ go_library(
 filegroup(
     name = "testdata",
     srcs = glob(["testdata/**"]),
+)
+
+go_test(
+    name = "appliance_test",
+    srcs = ["versions_test.go"],
+    deps = [
+        ":appliance",
+        "@com_github_stretchr_testify//require",
+    ],
 )

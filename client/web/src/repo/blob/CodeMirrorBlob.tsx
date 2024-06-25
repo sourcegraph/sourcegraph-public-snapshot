@@ -22,7 +22,7 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-import { type TelemetryV2Props, noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
@@ -60,6 +60,7 @@ import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-
 import { CodeMirrorContainer } from './codemirror/react-interop'
 import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search, type SearchPanelConfig } from './codemirror/search'
+import { SearchPanel } from './codemirror/search/SearchPanel'
 import { staticHighlights, type Range } from './codemirror/static-highlights'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
@@ -312,6 +313,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
     const codeIntelExtension = useCodeIntelExtension(
         telemetryService,
+        telemetryRecorder,
         {
             repoName: blobInfo.repoName,
             filePath: blobInfo.filePath,
@@ -354,8 +356,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             codeFoldingExtension(),
             isCodyEnabledForFile
                 ? codyWidgetExtension(
-                      // TODO: replace with real telemetryRecorder
-                      noOpTelemetryRecorder,
+                      telemetryRecorder,
                       editorRef.current
                           ? new CodeMirrorEditor({
                                 view: editorRef.current,
@@ -380,8 +381,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
                 initialState: searchPanelConfig,
-                graphQLClient: apolloClient,
-                navigate,
+                createPanel: config => new SearchPanel(config, apolloClient, navigate),
             }),
             themeExtension,
         ],
@@ -538,6 +538,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
 function useCodeIntelExtension(
     telemetryService: TelemetryProps['telemetryService'],
+    telemetryRecorder: TelemetryV2Props['telemetryRecorder'],
     {
         repoName,
         filePath,
@@ -559,9 +560,10 @@ function useCodeIntelExtension(
                       settings: name => settings[name],
                       requestGraphQL: requestGraphQLAdapter(apolloClient),
                       telemetryService,
+                      telemetryRecorder,
                   })
                 : null,
-        [settings, apolloClient, telemetryService]
+        [settings, apolloClient, telemetryService, telemetryRecorder]
     )
 
     useEffect(() => {

@@ -47,7 +47,8 @@
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
     "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
-    "_chromatic": "chromatic"
+    "_chromatic": "chromatic",
+    "install:browsers": "pnpm -r install:browsers"
   },
   "jscpd": {
     "gitignore": true,
@@ -313,6 +314,7 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@stripe/react-stripe-js": "^2.7.0",
     "@stripe/stripe-js": "^3.3.0",
+    "@tanstack/react-query": "^5.39.0",
     "@testing-library/react": "^13.4.0",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.11.1",
@@ -449,6 +451,21 @@
       "@percy/sdk-utils": {
         "dependencies": {
           "ws": "*"
+        }
+      },
+      "mz": {
+        "dependencies": {
+          "graceful-fs": "*"
+        }
+      },
+      "follow-redirects": {
+        "dependencies": {
+          "debug": "*"
+        }
+      },
+      "debug": {
+        "dependencies": {
+          "supports-color": "*"
         }
       },
       "@graphql-codegen/cli@5": {

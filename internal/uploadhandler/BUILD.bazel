@@ -18,6 +18,7 @@ go_library(
     deps = [
         "//internal/metrics",
         "//internal/observation",
+        "//internal/trace/policy",
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_aws_aws_sdk_go_v2_feature_s3_manager//:manager",

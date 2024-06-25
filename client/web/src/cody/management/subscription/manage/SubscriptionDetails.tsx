@@ -1,13 +1,11 @@
-import { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiCancel, mdiCheck, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
 
-import { logger } from '@sourcegraph/common'
 import { Button, H1, H3, Icon, Modal, Text } from '@sourcegraph/wildcard'
 
-import { Client } from '../../api/client'
-import { CodyProApiClientContext } from '../../api/components/CodyProApiClient'
+import { useUpdateCurrentSubscription } from '../../api/react-query/subscriptions'
 import type { Subscription } from '../../api/teamSubscriptions'
 
 import { LoadingIconButton } from './LoadingIconButton'
@@ -30,20 +28,24 @@ const formatBillingInterval = (interval: string): string =>
 
 interface SubscriptionDetailsProps {
     subscription: Subscription
-    refetchSubscription: () => Promise<void>
 }
 
 export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => {
-    const { caller } = useContext(CodyProApiClientContext)
+    const updateCurrentSubscriptionMutation = useUpdateCurrentSubscription()
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorMessage, setErrorMessage] = useState('')
+    const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false)
+    const [isErrorVisible, setIsErrorVisible] = useState(false)
+
+    const errorMessage = updateCurrentSubscriptionMutation.isError
+        ? 'An error occurred while updating your subscription status. Please try again. If the problem persists, contact support at support@sourcegraph.com.'
+        : ''
 
     useEffect(
         function clearErrorMessageAfterTimeout() {
             let timeout: NodeJS.Timeout
             if (errorMessage) {
-                timeout = setTimeout(() => setErrorMessage(''), 5000)
+                setIsErrorVisible(true)
+                timeout = setTimeout(() => setIsErrorVisible(false), 5000)
             }
             return () => {
                 if (timeout) {
@@ -53,30 +55,6 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
         },
         [errorMessage]
     )
-
-    const updateSubscription = async (type: 'cancel' | 'renew'): Promise<void> => {
-        setIsLoading(true)
-        setErrorMessage('')
-        const serverErrorText = `An error occurred while ${type}ing the subscription. Please try again. If the problem persists, contact support at support@sourcegraph.com.`
-        try {
-            const { response } = await caller.call(
-                Client.updateCurrentSubscription({
-                    subscriptionUpdate: { newCancelAtPeriodEnd: type === 'cancel' },
-                })
-            )
-
-            if (response.ok) {
-                await props.refetchSubscription()
-            } else {
-                setErrorMessage(serverErrorText)
-            }
-        } catch (error) {
-            logger.error(error)
-            setErrorMessage(serverErrorText)
-        } finally {
-            setIsLoading(false)
-        }
-    }
 
     return (
         <>
@@ -95,7 +73,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                         {props.subscription.cancelAtPeriodEnd
                             ? 'Subscription canceled. Access to Cody Pro will end on'
                             : 'Subscription renews on'}{' '}
-                        <Text as="span" className={styles.bold}>
+                        <Text as="span" className="font-bold">
                             {humanizeDate(props.subscription.currentPeriodEnd)}
                         </Text>
                         .
@@ -104,67 +82,70 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                 {props.subscription.cancelAtPeriodEnd ? (
                     <LoadingIconButton
                         variant="primary"
-                        disabled={isLoading}
-                        isLoading={isLoading}
-                        onClick={() => updateSubscription('renew')}
+                        disabled={updateCurrentSubscriptionMutation.isPending}
+                        isLoading={updateCurrentSubscriptionMutation.isPending}
+                        onClick={() =>
+                            updateCurrentSubscriptionMutation.mutate({
+                                subscriptionUpdate: { newCancelAtPeriodEnd: false },
+                            })
+                        }
                         iconSvgPath={mdiRefresh}
                     >
                         Renew subscription
                     </LoadingIconButton>
                 ) : (
-                    <CancelSubscriptionButton
-                        isLoading={isLoading}
-                        currentPeriodEnd={props.subscription.currentPeriodEnd}
-                        onClick={() => updateSubscription('cancel')}
-                    />
+                    <>
+                        <Button variant="secondary" outline={true} onClick={() => setIsConfirmationModalVisible(true)}>
+                            <Icon aria-hidden={true} svgPath={mdiCancel} className="mr-1" />
+                            Cancel subscription
+                        </Button>
+
+                        {isConfirmationModalVisible && (
+                            <Modal
+                                aria-label="Confirmation modal"
+                                onDismiss={() => setIsConfirmationModalVisible(false)}
+                            >
+                                <div className="pb-3">
+                                    <H3>Are you sure?</H3>
+                                    <Text className="mt-4">
+                                        Canceling your subscription now means that you won't be able to use Cody with
+                                        Pro features after {humanizeDate(props.subscription.currentPeriodEnd)}.
+                                    </Text>
+                                    <Text className="mt-4 mb-0 font-bold">Do you want to proceed?</Text>
+                                </div>
+                                <div className="d-flex mt-4 justify-content-end">
+                                    <Button
+                                        variant="secondary"
+                                        outline={true}
+                                        onClick={() => setIsConfirmationModalVisible(false)}
+                                        className="mr-3"
+                                    >
+                                        No, I've changed my mind
+                                    </Button>
+                                    <LoadingIconButton
+                                        variant="primary"
+                                        disabled={updateCurrentSubscriptionMutation.isPending}
+                                        isLoading={updateCurrentSubscriptionMutation.isPending}
+                                        onClick={() =>
+                                            updateCurrentSubscriptionMutation.mutate(
+                                                { subscriptionUpdate: { newCancelAtPeriodEnd: true } },
+                                                { onSettled: () => setIsConfirmationModalVisible(false) }
+                                            )
+                                        }
+                                        iconSvgPath={mdiCheck}
+                                    >
+                                        Yes, cancel
+                                    </LoadingIconButton>
+                                </div>
+                            </Modal>
+                        )}
+                    </>
                 )}
             </div>
 
-            {errorMessage && <Text className="mt-3 text-danger">{errorMessage}</Text>}
-        </>
-    )
-}
-
-const CancelSubscriptionButton: React.FC<{
-    isLoading: boolean
-    currentPeriodEnd: Subscription['currentPeriodEnd']
-    onClick: () => Promise<void>
-}> = props => {
-    const [isConfirmationModalVisible, setIsConfirmationModalVisible] = useState(false)
-
-    return (
-        <>
-            <Button variant="secondary" onClick={() => setIsConfirmationModalVisible(true)}>
-                <Icon aria-hidden={true} svgPath={mdiCancel} className="mr-1" />
-                Cancel subscription
-            </Button>
-
-            {isConfirmationModalVisible && (
-                <Modal aria-label="Confirmation modal" onDismiss={() => setIsConfirmationModalVisible(false)}>
-                    <div className="pb-3">
-                        <H3>Are you sure?</H3>
-                        <Text className="mt-4">
-                            Canceling your subscription now means that you won't be able to use Cody with Pro features
-                            after {humanizeDate(props.currentPeriodEnd)}.
-                        </Text>
-                        <Text className={classNames('mt-4 mb-0', styles.bold)}>Do you want to procceed?</Text>
-                    </div>
-                    <div className={classNames('d-flex mt-4', styles.buttonContainer)}>
-                        <Button variant="secondary" outline={true} onClick={() => setIsConfirmationModalVisible(false)}>
-                            No, I've changed my mind
-                        </Button>
-                        <LoadingIconButton
-                            variant="primary"
-                            disabled={props.isLoading}
-                            isLoading={props.isLoading}
-                            onClick={() => props.onClick().finally(() => setIsConfirmationModalVisible(false))}
-                            iconSvgPath={mdiCheck}
-                        >
-                            Yes, cancel
-                        </LoadingIconButton>
-                    </div>
-                </Modal>
-            )}
+            {updateCurrentSubscriptionMutation.isError && isErrorVisible ? (
+                <Text className="mt-3 text-danger">{errorMessage}</Text>
+            ) : null}
         </>
     )
 }

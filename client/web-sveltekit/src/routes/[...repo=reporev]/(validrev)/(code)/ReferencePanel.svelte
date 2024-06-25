@@ -1,15 +1,15 @@
 <script lang="ts">
-    import type { ReferencePanel_LocationConnection, ReferencePanel_Location } from './ReferencePanel.gql'
-    import Scroller from '$lib/Scroller.svelte'
-    import ReferencePanelCodeExcerpt from './ReferencePanelCodeExcerpt.svelte'
-    import Tooltip from '$lib/Tooltip.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
-    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
-    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
     import { SourcegraphURL } from '$lib/common'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import Scroller from '$lib/Scroller.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+    import Panel from '$lib/wildcard/resizable-panel/Panel.svelte'
+    import PanelGroup from '$lib/wildcard/resizable-panel/PanelGroup.svelte'
+    import PanelResizeHandle from '$lib/wildcard/resizable-panel/PanelResizeHandle.svelte'
+
     import FilePreview from './FilePreview.svelte'
-    import { Alert } from '$lib/wildcard'
+    import type { ReferencePanel_LocationConnection, ReferencePanel_Location } from './ReferencePanel.gql'
+    import ReferencePanelCodeExcerpt from './ReferencePanelCodeExcerpt.svelte'
 
     export let connection: ReferencePanel_LocationConnection | null
     export let loading: boolean
@@ -42,67 +42,59 @@
 
     $: previewURL = selectedLocation ? getPreviewURL(selectedLocation) : null
     $: locations = connection ? unique(connection.nodes) : []
-    $: showUsageInfo = !connection && !loading
-    $: showNoReferencesInfo = !loading && locations.length === 0
 </script>
 
-<div class="root" class:show-info={showUsageInfo || showNoReferencesInfo}>
-    {#if showUsageInfo}
-        <Alert variant="info">Hover over a symbol and click "Find references" to find references to the symbol.</Alert>
-    {:else if showNoReferencesInfo}
-        <Alert variant="info">No references found.</Alert>
-    {:else}
-        <PanelGroup id="references">
-            <Panel id="references-list">
-                <Scroller margin={600} on:more>
-                    <ul>
-                        {#each locations as location (location.canonicalURL)}
-                            {@const selected = selectedLocation?.canonicalURL === location.canonicalURL}
-                            <!-- todo(fkling): Implement a11y concepts. What to do exactly depends on whether
-                                 we'll keep the preview panel or not. -->
-                            <li
-                                class="location"
-                                class:selected
-                                on:click={() => (selectedLocation = selected ? null : location)}
-                            >
-                                <span class="code-file">
-                                    <span class="code">
-                                        <ReferencePanelCodeExcerpt {location} />
-                                    </span>
-                                    <span class="file">
-                                        <Tooltip tooltip={location.resource.path}>
-                                            <span>{location.resource.name}</span>
-                                        </Tooltip>
-                                    </span>
+<div class="root" class:loading>
+    <PanelGroup id="references">
+        <Panel id="references-list">
+            <Scroller margin={600} on:more>
+                <ul>
+                    {#each locations as location (location.canonicalURL)}
+                        {@const selected = selectedLocation?.canonicalURL === location.canonicalURL}
+                        <!-- todo(fkling): Implement a11y concepts. What to do exactly depends on whether
+                             we'll keep the preview panel or not. -->
+                        <li
+                            class="location"
+                            class:selected
+                            on:click={() => (selectedLocation = selected ? null : location)}
+                        >
+                            <span class="code-file">
+                                <span class="code">
+                                    <ReferencePanelCodeExcerpt {location} />
                                 </span>
-                                {#if location.range}
-                                    <span class="range"
-                                        >:{location.range.start.line + 1}:{location.range.start.character + 1}</span
-                                    >
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                    {#if loading}
-                        <LoadingSpinner center />
-                    {/if}
-                </Scroller>
+                                <span class="file">
+                                    <Tooltip tooltip={location.resource.path}>
+                                        <span>{location.resource.name}</span>
+                                    </Tooltip>
+                                </span>
+                            </span>
+                            {#if location.range}
+                                <span class="range"
+                                    >:{location.range.start.line + 1}:{location.range.start.character + 1}</span
+                                >
+                            {/if}
+                        </li>
+                    {/each}
+                </ul>
+                {#if loading}
+                    <LoadingSpinner center />
+                {/if}
+            </Scroller>
+        </Panel>
+        {#if previewURL}
+            <PanelResizeHandle />
+            <Panel defaultSize={50} id="reference-panel-preview">
+                <FilePreview href={previewURL} on:close={() => (selectedLocation = null)} />
             </Panel>
-            {#if previewURL}
-                <PanelResizeHandle />
-                <Panel defaultSize={50} id="reference-panel-preview">
-                    <FilePreview href={previewURL} on:close={() => (selectedLocation = null)} />
-                </Panel>
-            {/if}
-        </PanelGroup>
-    {/if}
+        {/if}
+    </PanelGroup>
 </div>
 
 <style lang="scss">
     .root {
         height: 100%;
 
-        &.show-info {
+        &.loading {
             padding: 1rem;
         }
 

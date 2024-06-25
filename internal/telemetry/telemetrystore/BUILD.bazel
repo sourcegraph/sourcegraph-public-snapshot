@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetrystore",
+    srcs = ["store.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/telemetry",
+        "//internal/telemetry/telemetrystore/teestore",
+    ],
+)

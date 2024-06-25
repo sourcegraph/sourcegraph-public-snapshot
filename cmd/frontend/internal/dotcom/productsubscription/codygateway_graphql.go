@@ -63,15 +63,11 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.ChatRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.ChatRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.ChatRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -107,15 +103,11 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.CodeRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.CodeRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.CodeRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -151,14 +143,10 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.IntervalSeconds = *rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds
 	}
-	if rateLimitOverrides.EmbeddingsRateLimit.AllowedModels != nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
-		rateLimit.AllowedModels = rateLimitOverrides.EmbeddingsRateLimit.AllowedModels
-	}
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceProductSubscription,
+		actorSource: codygateway.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil

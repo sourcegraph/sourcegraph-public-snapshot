@@ -91,6 +91,19 @@ export interface SubmitSearchParameters
     searchMode?: SearchMode
 }
 
+export const TELEMETRY_SEARCH_SOURCE_TYPE: { [key in SubmitSearchParameters['source']]: number } = {
+    home: 1,
+    nav: 2,
+    repo: 3,
+    tree: 4,
+    filter: 5,
+    type: 6,
+    scopePage: 7,
+    communitySearchContextPage: 8,
+    excludedResults: 9,
+    smartSearchDisabled: 10,
+}
+
 export interface SubmitSearchProps {
     submitSearch: (parameters: Partial<Omit<SubmitSearchParameters, 'query'>>) => void
 }

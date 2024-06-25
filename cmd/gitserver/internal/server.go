@@ -392,27 +392,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, lock Reposito
 
 	logger := s.logger.Scoped("cloneRepo").With(log.String("repo", string(repo)))
 
-	syncer, err := func() (_ vcssyncer.VCSSyncer, err error) {
-		syncer, err := s.getVCSSyncer(ctx, repo)
-		if err != nil {
-			return nil, errors.Wrap(err, "get VCS syncer")
-		}
-
-		if err = s.rpsLimiter.Wait(ctx); err != nil {
-			return nil, err
-		}
-
-		if err := syncer.IsCloneable(ctx, repo); err != nil {
-			return nil, errors.Wrapf(err, "error cloning repo: repo %s not cloneable", repo)
-		}
-
-		return syncer, nil
-	}()
+	syncer, err := s.getVCSSyncer(ctx, repo)
 	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-		return err
+		return errors.Wrap(err, "get VCS syncer")
 	}
 
 	dir := s.fs.RepoDir(repo)

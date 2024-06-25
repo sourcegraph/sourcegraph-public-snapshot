@@ -215,6 +215,23 @@ func (e *Env) GetBool(name, defaultValue, description string) bool {
 	return v
 }
 
+// GetFloat returns the value with the given name interpreted as a float64. If no
+// value was supplied in the environment, the given default is used in its place.
+// If no value is available, or if the given value or default cannot be converted
+// to a float64, an error is added to the validation errors list.
+//
+// The name, defaultValue, and description are reported when running a service
+// using the MSP runtime with the '-help' flag.
+func (e *Env) GetFloat(name, defaultValue, description string) float64 {
+	rawValue := e.get(name, defaultValue, description)
+	v, err := strconv.ParseFloat(rawValue, 64)
+	if err != nil {
+		e.AddError(errors.Errorf("invalid float %q for %s: %s", rawValue, name, err))
+		return 0
+	}
+	return v
+}
+
 // AddError adds a validation error to the configuration object. This should be
 // called from within the Load method of a decorated configuration object to have
 // any effect. The error is silently collected and can be retrieved using

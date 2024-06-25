@@ -1,5 +1,10 @@
 import type { Keys } from '$lib/Hotkey'
 
+export const allHotkey: Keys = {
+    key: 'ctrl+k',
+    mac: 'cmd+k',
+}
+
 export const reposHotkey: Keys = {
     key: 'ctrl+i',
     mac: 'cmd+i',

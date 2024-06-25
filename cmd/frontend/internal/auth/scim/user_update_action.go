@@ -66,7 +66,7 @@ func (u *updateUserProfileData) Update(ctx context.Context, before, after *scim.
 		return nil
 	}
 
-	usernameUpdate, err := getUniqueUsername(ctx, u.tx.Users(), extractStringAttribute(after.Attributes, AttrUserName))
+	usernameUpdate, err := getUniqueUsername(ctx, u.tx.Users(), u.userID, requestedUsername)
 	if err != nil {
 		return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
 	}

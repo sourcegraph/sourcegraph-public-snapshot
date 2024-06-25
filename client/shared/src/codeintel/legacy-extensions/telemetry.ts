@@ -1,5 +1,16 @@
 import * as sourcegraph from './api'
 
+export type CodeIntelActions =
+    | 'lsifHover'
+    | 'searchHover'
+    | 'lsifDocumentHighlight'
+    | 'searchDocumentHighlight'
+    | 'lsifDefinitions'
+    | 'searchDefinitions'
+    | 'lsifReferences'
+    | 'searchReferences'
+    | 'lsifImplementations'
+
 /**
  * A wrapper around telemetry events. A new instance of this class
  * should be instantiated at the start of each action as it handles
@@ -33,30 +44,40 @@ export class TelemetryEmitter {
      * same action has not yet emitted for this instance. This method
      * returns true if an event was emitted and false otherwise.
      */
-    public emitOnce(action: string, args: object = {}): boolean {
+    public emitOnce(xrepo: boolean, action: CodeIntelActions, args: object = {}): boolean {
         if (this.emitted.has(action)) {
             return false
         }
 
         this.emitted.add(action)
-        this.emit(action, args)
+        this.emit(xrepo, action, args)
         return true
     }
 
     /**
      * Emit a telemetry event with durationMs and languageId attributes.
      */
-    public emit(action: string, args: object = {}): void {
+    public emit(xrepo: boolean, action: CodeIntelActions, args: object = {}): void {
         if (!this.enabled) {
             return
         }
 
         try {
-            sourcegraph.logTelemetryEvent(`codeintel.${action}`, {
+            sourcegraph.logTelemetryEvent(`codeintel.${action + (xrepo ? '.xrepo' : '')}`, {
                 ...args,
                 durationMs: this.elapsed(),
                 languageId: this.languageID,
                 repositoryId: this.repoID,
+            })
+            const telemetryRecorder = sourcegraph.getTelemetryRecorder()
+            telemetryRecorder?.recordEvent(`blob.codeintel${xrepo ? '.xrepo' : ''}`, action, {
+                metadata: {
+                    durationMs: this.elapsed(),
+                    repositoryId: this.repoID,
+                },
+                privateMetadata: {
+                    languageId: this.languageID,
+                },
             })
         } catch {
             // Older version of Sourcegraph may have not registered this

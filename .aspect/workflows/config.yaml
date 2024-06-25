@@ -26,6 +26,7 @@ tasks:
         - -//testing/...
       artifact_paths:
         - build_event_log.bin
+        - execution_log.zstd
   - test:
       name: Integration/E2E
       targets:
@@ -36,6 +37,7 @@ tasks:
         - //testing:codeintel_integration_test
       artifact_paths:
         - build_event_log.bin
+        - execution_log.zstd
   - delivery:
       auto_deliver: true
       icon: 'ship'

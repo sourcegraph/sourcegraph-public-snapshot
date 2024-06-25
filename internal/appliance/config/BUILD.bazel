@@ -15,11 +15,12 @@ go_library(
         "postgres/codeintel.conf",
         "postgres/pgsql.conf",
         "prometheus/default.yml.gotmpl",
+        "postgres/codeinsights.conf",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/config",
+    tags = [TAG_INFRA_RELEASE],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
         "//lib/pointers",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
@@ -30,5 +31,10 @@ go_test(
     name = "config_test",
     srcs = ["dev_mode_test.go"],
     embed = [":config"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    tags = [TAG_INFRA_RELEASE],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+    ],
 )

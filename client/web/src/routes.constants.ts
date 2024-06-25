@@ -6,7 +6,6 @@ export enum PageRoutes {
     SignUp = '/sign-up',
     PostSignUp = '/post-sign-up',
     UnlockAccount = '/unlock-account/:token',
-    Welcome = '/welcome',
     Settings = '/settings',
     User = '/user/*',
     Organizations = '/organizations/*',
@@ -23,7 +22,6 @@ export enum PageRoutes {
     SetupWizard = '/setup',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
-    GetCody = '/get-cody',
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
@@ -36,22 +34,8 @@ export enum PageRoutes {
     Notebook = '/notebooks/:id',
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
-    CodySearch = '/search/cody',
     Cody = '/cody',
     CodyChat = '/cody/chat',
-
-    // The checkout form for a new Cody Pro subscription.
-    CodyNewProSubscription = '/cody/manage/subscription/new',
-    // The CodyManagement page is labeled as the "Dashboard" page.
-    CodyManagement = '/cody/manage',
-    // The CodySubscriptions page is a comparison of different Cody product tiers.
-    CodySubscription = '/cody/subscription',
-    CodySubscriptionManage = '/cody/subscription/manage',
-
-    CodyManageTeam = '/cody/team/manage',
-    // Accepts an invite to join a Cody team, then redirects to the Cody team page.
-    CodyAcceptInvite = '/cody/invites/accept',
-
     CodySwitchAccount = '/cody/switch-account/:username',
     Own = '/own',
 }

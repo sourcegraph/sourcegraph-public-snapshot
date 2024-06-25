@@ -25,7 +25,9 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
+import { CodyProRoutes } from '../codyProRoutes'
+import { ProIcon } from '../components/CodyIcon'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
@@ -34,12 +36,10 @@ import { USER_CODY_PLAN } from './queries'
 import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps extends TelemetryV2Props {
-    isSourcegraphDotCom: boolean
     authenticatedUser?: AuthenticatedUser | null
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({
-    isSourcegraphDotCom,
     authenticatedUser,
     telemetryRecorder,
 }) => {
@@ -57,7 +57,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/subscription')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Subscription}`)
         }
     }, [data, navigate])
 
@@ -65,7 +65,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !isSourcegraphDotCom || !data?.currentUser || !authenticatedUser) {
+    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
         return null
     }
 
@@ -74,9 +74,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Cody Subscription" />
+                <PageTitle title="Cody subscription" />
                 <PageHeader
-                    className="mb-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={
                         isProUser && (
                             <ButtonLink
@@ -94,13 +94,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         )
                     }
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription plans
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="cody-logo" className="mr-3" />
+                        <Text as="span">Subscription plans</Text>
                     </PageHeader.Heading>
                 </PageHeader>
-                <Link to="/cody/manage" className="my-4">
+                <Link to={CodyProRoutes.Manage}>
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
@@ -226,20 +225,21 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 1 },
                                                 })
-                                                // We add ?team=1 to the URL to indicate that the user is creating a team.
-                                                // We can use this info to initialize the UI differently,
-                                                // or even display an entirely different UI.
-                                                const url = new URL(manageSubscriptionRedirectURL)
-                                                url.searchParams.append('team', '1')
+                                                // We add ?seats=2 to the URL to initiate creating a team.
+                                                const url = new URL(
+                                                    CodyProRoutes.NewProSubscription,
+                                                    window.location.origin
+                                                )
+                                                url.searchParams.append('seats', '2')
                                                 window.location.href = url.toString()
                                             }}
                                         >
-                                            <span className={classNames(styles.proBadge, 'mr-1')} />
+                                            <ProIcon className="mr-1" />
                                             <span>Create a Cody Pro team</span>
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to={manageSubscriptionRedirectURL}
+                                            to={CodyProRoutes.NewProSubscription}
                                             target="_blank"
                                             rel="noreferrer noopener"
                                             onClick={event => {
@@ -247,7 +247,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
-                                                window.location.href = manageSubscriptionRedirectURL
+                                                navigate(CodyProRoutes.NewProSubscription)
                                             }}
                                         >
                                             Upgrade yourself to Pro

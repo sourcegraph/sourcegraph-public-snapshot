@@ -43,7 +43,7 @@ resources:
           name: prometheus
         spec:
           containers:
-            - image: index.docker.io/sourcegraph/prometheus:5.3.2@sha256:1b5c003fb39628f79e7655ba33f9ca119ddc4be021602ede3cc1674ef99fcdad
+            - image: index.docker.io/sourcegraph/prometheus:5.3.9104
               imagePullPolicy: IfNotPresent
               name: prometheus
               ports:
@@ -366,7 +366,7 @@ resources:
           indexedSearch:
             disabled: true
 
-          indexedSearchIndexer:
+          openTelemetry:
             disabled: true
 
           pgsql:
@@ -400,9 +400,6 @@ resources:
             disabled: true
 
           prometheus: {}
-
-          embeddings:
-            disabled: true
     kind: ConfigMap
     metadata:
       annotations:

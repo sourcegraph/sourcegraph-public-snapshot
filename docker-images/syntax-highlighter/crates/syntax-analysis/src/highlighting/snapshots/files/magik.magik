@@ -1,0 +1,235 @@
+# Some examples based on test cases here https://github.com/krn-robin/tree-sitter-magik/tree/main/test/corpus
+
+# Package
+_package pp
+
+# Literals
+_true
+_True
+_false
+_maybe
+0
+65535
+4294967295
+18446744073709551617
+0.0
+655.35
+-65535
+-655.35
+2e+2
+2.2e10
+:symbol
+:boolean?
+:kleenean??
+:int!internal
+:|piped|
+{1,2,3}
+"string"
+'string'
+
+; Character
+%x
+
+_primitive 512
+
+# Assignments
+a << 1.234
+b << b + a
+c << "foo" + "bar" # Concat strings
+b +<< a
+b ^<< 1
+c +<< 1
+d _orif<< a
+d _andif<< a
+d _xorif<< a
+(first, _gather rest) << roots(1, -6, -7, 60)
+rootsvec << _allresults roots(1, -6, -7, 60)
+_global !current_view! << _unset
+_global _constant !current_view! << _unset
+
+write(a)
+
+# Symbols
+a << :hello
+b << :|hello world|
+
+# Function calls
+:sym_func()
+some_func(1, 2)
+
+# Objects
+def_slotted_exemplar(:my_object,
+ {
+    {:slot_a, 34},
+    {:slot_b, "hello"}
+ }, {:parent_object_a, :parent_object_b})
+
+# Class directive
+def_slotted_exemplar(:exemplar,
+                     {},
+                     {},
+                     {_class |com.gesmallworld.magik.language.MagikFinalisable|})
+
+# Mixin
+def_mixin(:my_mixin)
+def_mixin(:my_variant_of_their_mixin,{their_mixin})
+
+my_mixin.define_shared_variable(:a_var,:test,:public)
+
+my_mixin.method(:a_var).value << :changed
+
+# Operators
+x << a ** b
+x << a = b
+x << a <> b
+x << a ~= b
+y << a _is b
+y << a _isnt b
+x << a >= b
+x << a _and b
+x << a _or b
+x << a _mod b
+x << a _xor b
+x << a _div b
+x << _not a
+
+# Handling
+_handling error _with _default
+
+# Block
+_block
+  _dynamic !terminal!
+  _dynamic !output!, !terminal!
+_endblock
+
+_block
+  _if _true _then >> _unset _endif
+_endblock
+
+_block @ label1?
+    _lock _self
+        _return
+    _endlock
+_endblock
+
+_block
+    _protect
+		stream.write("something")
+	_protection
+		stream.close()
+	_endprotect
+_endblock
+
+# Catch
+_catch :error
+  >> _true
+_endcatch
+
+_catch "error"
+  >> _true
+_endcatch
+
+_catch @error
+  >> _true
+_endcatch
+
+# Methods
+_pragma(classify_level=restricted)
+_method my_object.my_method(a, b)
+	## multi
+	## line
+	## documentation
+    _return a + b
+_endmethod
+
+# Abstract Method
+_abstract _method my_class.my_method
+    ## whatever this method should do...
+_endmethod
+
+# New method
+_method person.new(name, age)
+  _return _clone.init(name, age)
+_endmethod
+
+# Initialise method.
+_private _method person.init(name, age)
+    # Call the parent implementation.
+    _super.init(name, age)
+    # Initialise the slots.
+    .name << name
+    .age << age
+    _throw :error _with a, b
+_return _self
+_endmethod
+
+# Method calls
+object.getName
+object.method()
+object.method<< _unset
+object.method1.method2
+
+_thisthread.sleep(10)
+
+# Iteration
+_loop @outer_loop
+  _leave@outer_loop
+  _continue@outer_loop
+_endloop
+
+_block
+    _import x
+    _constant a1 << 0
+    _constant _local a2 << 0
+    _local _constant a3 << 0
+	_local s << 0
+	_local i << 0
+	_while i <= 100
+	_loop
+        _leave _with (_unset, _unset)
+		s +<< i
+		i +<< 1
+	_endloop
+>> s
+_endblock
+
+_method my_object.my_method(_gather values)
+  total << 0.0
+  _for a _over values.elements()
+  _loop
+     total +<< a
+     _continue _with _unset
+  _endloop
+  _try _with cond
+  _when e
+  _endtry
+  _return total
+_endmethod
+m << my_object.new()
+x << m.my_method(1.0, 2, 3.0, 4)
+
+_iter _method my_object.even_elements()
+  _for a _over _self.elements()
+  _loop
+    _if a.even? _is _true
+    _then
+       _loopbody(a)
+    _endif
+  _endloop
+_endmethod
+
+_for _gather vals _over {:a,:b,:c}.fast_keys_and_elements()
+_loop
+  show(_scatter vals)
+_endloop
+
+# Procedures
+my_procedure << _proc @my_procedure(a, b, _optional c)
+  _return a + b + c
+_endproc
+x << my_procedure(1, 2, 3)
+
+# Regex
+_if /Hello\,\s(\w)+!/.matches?("Hello, Magik!") _then
+    write("Got a match!")
+_endif

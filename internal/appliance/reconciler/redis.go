@@ -49,10 +49,7 @@ func (r *Reconciler) reconcileRedisInstance(ctx context.Context, sg *config.Sour
 func (r *Reconciler) reconcileRedisDeployment(ctx context.Context, sg *config.Sourcegraph, owner client.Object, kind string, cfg config.RedisSpec) error {
 	name := "redis-" + kind
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -109,10 +106,7 @@ fi
 	ctr.SecurityContext.RunAsUser = pointers.Ptr(int64(999))
 	ctr.SecurityContext.RunAsGroup = pointers.Ptr(int64(1000))
 
-	exporterImage, err := config.GetDefaultImage(sg, "redis-exporter")
-	if err != nil {
-		return err
-	}
+	exporterImage := config.GetDefaultImage(sg, "redis_exporter")
 	exporterCtr := container.NewContainer("redis-exporter", cfg, config.ContainerConfig{
 		Image: exporterImage,
 		Resources: &corev1.ResourceRequirements{

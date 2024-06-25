@@ -46,7 +46,7 @@ func (g *gitCLIBackend) getObjectType(ctx context.Context, objectID string) (git
 
 	stdout, err := io.ReadAll(r)
 	if err != nil {
-		var e *CommandFailedError
+		var e *commandFailedError
 		if errors.As(err, &e) && e.ExitStatus == 128 && (bytes.Contains(e.Stderr, []byte("Not a valid object name")) ||
 			bytes.Contains(e.Stderr, []byte("git cat-file: could not get object info"))) {
 			return "", &gitdomain.RevisionNotFoundError{Repo: g.repoName, Spec: objectID}

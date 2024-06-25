@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
 
@@ -16,6 +14,7 @@
     class:selected={item.selected}
     on:click={() => onFilterSelect(item.kind)}
 >
+    <slot name="icon" />
     <span class="label">
         <slot name="label" label={item.label} value={item.value}>
             {item.label}
@@ -24,13 +23,15 @@
     <CountBadge count={item.count} exhaustive={item.exhaustive} />
     {#if item.selected}
         <span class="close">
-            <Icon svgPath={mdiClose} inline />
+            <Icon icon={ILucideX} inline aria-hidden />
         </span>
     {/if}
 </a>
 
 <style lang="scss">
     a {
+        --icon-color: currentColor;
+
         display: flex;
         width: 100%;
         align-items: center;
@@ -40,7 +41,7 @@
         border-radius: var(--border-radius);
         color: inherit;
         white-space: nowrap;
-        gap: 0.25rem;
+        gap: 0.5rem;
 
         padding: 0.25rem 0.5rem;
         margin: 0;
@@ -62,9 +63,12 @@
         }
 
         &.selected {
+            // Explicitly override icon color to ensure that icons with custom colors
+            // are visible on the primary background
+            --file-icon-color: currentColor;
+
             background-color: var(--primary);
             color: var(--light-text);
-            --color: var(--light-text);
 
             .label {
                 color: var(--light-text);

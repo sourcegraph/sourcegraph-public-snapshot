@@ -298,7 +298,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 		if policy.Type == shared.GitObjectTypeCommit {
 			commit, err := m.gitserverClient.GetCommit(ctx, context.repo, api.CommitID(policy.Pattern))
 			if err != nil {
-				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 					continue
 				}
 				return err

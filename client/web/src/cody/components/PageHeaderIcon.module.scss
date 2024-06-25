@@ -1,0 +1,21 @@
+.box {
+    display: flex;
+    position: relative;
+    align-items: center;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 60px;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    height: 60px;
+}
+
+.box-background {
+    position: absolute;
+    left: -16px;
+    top: -9px;
+    z-index: 10;
+}
+
+.box-content {
+    z-index: 20;
+    margin: 0 auto;
+}

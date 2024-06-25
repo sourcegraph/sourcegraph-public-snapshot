@@ -1,8 +1,6 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -25,9 +23,9 @@
      */
     function getDirectoryIconPath(entry: TreeEntry, open: boolean) {
         if (entry === treeRoot) {
-            return mdiFolderArrowUpOutline
+            return ILucideFolderUp
         }
-        return open ? mdiFolderOpenOutline : mdiFolderOutline
+        return open ? ILucideFolderOpen : ILucideFolderClosed
     }
 
     /**
@@ -114,7 +112,7 @@
         on:select={event => handleSelect(event.detail)}
         on:scope-change={event => handleScopeChange(event.detail.provider)}
     >
-        <svelte:fragment let:entry let:expanded>
+        <svelte:fragment let:entry let:expanded let:label>
             {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
                 <!-- todo: create alert component -->
@@ -124,18 +122,17 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <Popover let:registerTrigger placement="right-end" showOnHover>
+                <Popover trigger={label} placement="right-start" showOnHover offset={{ mainAxis: 8, crossAxis: -32 }}>
                     <a
                         href={replaceRevisionInURL(entry.canonicalURL, revision)}
                         on:click|preventDefault={() => {}}
                         tabindex={-1}
                         data-go-up={isRoot ? true : undefined}
-                        use:registerTrigger
                         on:mouseover={/* Preload */ () =>
                             fetchPopoverData({ repoName, revision, filePath: entry.path })}
                     >
                         {#if entry.isDirectory}
-                            <Icon svgPath={getDirectoryIconPath(entry, expanded)} inline />
+                            <Icon icon={getDirectoryIconPath(entry, expanded)} inline aria-hidden="true" />
                         {:else}
                             <FileIcon inline file={entry.__typename === 'GitBlob' ? entry : null} />
                         {/if}
@@ -178,13 +175,12 @@
     }
 
     a {
-        flex: 1;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-        padding: 0.2rem 0.25rem 0.2rem 0;
         color: inherit;
         text-decoration: none;
+        width: 100%;
 
         &:hover {
             color: inherit;

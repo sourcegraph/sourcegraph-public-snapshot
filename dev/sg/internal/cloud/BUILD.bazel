@@ -51,5 +51,6 @@ go_test(
     name = "cloud_test",
     srcs = ["instance_test.go"],
     embed = [":cloud"],
+    tags = [TAG_INFRA_DEVINFRA],
     deps = ["@com_github_sourcegraph_cloud_api//go/cloudapi/v1:cloudapi"],
 )

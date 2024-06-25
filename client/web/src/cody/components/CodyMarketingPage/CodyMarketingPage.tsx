@@ -27,8 +27,6 @@ interface CodyPlatformCardProps {
     illustration: string
 }
 
-/* eslint-disable  @sourcegraph/sourcegraph/check-help-links */
-
 const onSpeakToAnEngineer = (): void => EVENT_LOGGER.log(EventName.SPEAK_TO_AN_ENGINEER_CTA)
 
 const IDEIcon: React.FunctionComponent<{}> = () => (
@@ -64,7 +62,7 @@ const codyPlatformCardItems = (
         description: (
             <>
                 The extensions combine an LLM with the context of your code to help you generate and fix code more
-                accurately. <Link to="/help/cody#get-cody">View supported editors.</Link>
+                accurately. <Link to="/help/cody">View supported editors.</Link>
             </>
         ),
         icon: <IDEIcon />,

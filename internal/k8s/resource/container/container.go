@@ -34,7 +34,11 @@ func NewContainer(name string, cfg config.StandardComponent, defaults config.Con
 			ctr.Env = append(ctr.Env, newSortedEnvVars(ctrConfig.EnvVars)...)
 
 			if ctrConfig.BestEffortQOS {
-				ctr.Resources = corev1.ResourceRequirements{}
+				// Preserve ephemeral-storage
+				delete(ctr.Resources.Requests, corev1.ResourceCPU)
+				delete(ctr.Resources.Requests, corev1.ResourceMemory)
+				delete(ctr.Resources.Limits, corev1.ResourceCPU)
+				delete(ctr.Resources.Limits, corev1.ResourceMemory)
 			} else if ctrConfig.Resources != nil {
 				ctr.Resources = *ctrConfig.Resources
 			}

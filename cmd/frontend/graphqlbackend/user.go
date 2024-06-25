@@ -413,16 +413,6 @@ func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to state of
-	// post-signup flow completion.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return false, err
-	}
-
-	return r.user.CompletedPostSignup, nil
-}
-
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -460,27 +450,44 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 
 	update := database.UserUpdate{
-		DisplayName: args.DisplayName,
-		AvatarURL:   args.AvatarURL,
+		AvatarURL: args.AvatarURL,
 	}
+
 	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user from the database")
 	}
 
+	usernameChanged := args.Username != nil && user.Username != *args.Username
+
+	// Check if the user account is SCIM controlled
+	if user.SCIMControlled {
+		errUserScimManaged := errors.Errorf("cannot update externally managed user")
+
+		if usernameChanged {
+			return nil, errUserScimManaged
+		}
+
+		if args.DisplayName != nil && user.DisplayName != *args.DisplayName {
+			return nil, errUserScimManaged
+		}
+	}
+
+	update.DisplayName = args.DisplayName
+
 	// If user is changing their username, we need to verify if this action can be
 	// done.
-	if args.Username != nil && user.Username != *args.Username {
+	if usernameChanged {
 		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
 	}
+
 	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
 		// Log an event when a user account is modified/updated
 		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameAccountModified, "", uint32(userID), "", "BACKEND", args); err != nil {
 			r.logger.Error("Error logging security event", log.Error(err))
@@ -497,10 +504,6 @@ type changeCodyPlanArgs struct {
 func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPlanArgs) (*UserResolver, error) {
 	if !dotcom.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
-
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		return nil, errors.New("this user is not allowed to change their plan")
 	}
 
 	userID, err := UnmarshalUserID(args.User)
@@ -692,24 +695,6 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationA
 	return r.updateAffectedUser(ctx, affectedUserID, update)
 }
 
-func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	affectedUserID, err := r.affectedUserID(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-
-	has, err := backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, affectedUserID)
-	if err != nil {
-		return nil, err
-	} else if !has {
-		return nil, errors.New("must have a verified email to complete post-signup flow")
-	}
-
-	completedPostSignup := true
-	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
-	return r.updateAffectedUser(ctx, affectedUserID, update)
-}
-
 func (r *schemaResolver) updateAffectedUser(ctx context.Context, affectedUserID int32, update database.UserUpdate) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
@@ -821,6 +806,7 @@ func viewerCanChangeUsername(a *actor.Actor, db database.DB, userID int32) bool 
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
+
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
 	return auth.CheckCurrentActorIsSiteAdmin(a, db) == nil
 }

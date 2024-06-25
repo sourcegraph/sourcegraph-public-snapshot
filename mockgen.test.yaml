@@ -347,6 +347,10 @@
   path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
+- filename: cmd/worker/internal/sourcegraphaccounts/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts
+  interfaces:
+    - notificationsSubscriberStore
 - filename: internal/codeintel/ranking/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store
@@ -428,3 +432,15 @@
   package: main
   interfaces:
     - BigQueryWriter
+- filename: cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest/mocks.go
+  package: productsubscriptiontest
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
+      interfaces:
+        - EnterprisePortalClient
+- filename: cmd/enterprise-portal/internal/subscriptionsservice/mocks_test.go
+  package: subscriptionsservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice
+      interfaces:
+        - StoreV1

@@ -17,6 +17,7 @@ import type { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
 import type { RequiredExtensionsControllerProps } from '../extensions/controller'
 import type { PlatformContextProps } from '../platform/context'
+import type { TelemetryV2Props } from '../telemetry'
 import type { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, type ActionItemProps } from './ActionItem'
@@ -55,6 +56,7 @@ export interface ActionsNavItemsProps
     extends ActionsProps,
         ActionNavItemsClassProps,
         TelemetryProps,
+        TelemetryV2Props,
         Pick<ActionItemProps, 'showLoadingSpinnerDuringExecution' | 'actionItemStyleProps'> {
     /**
      * If true, it renders a `<ul className="nav">...</ul>` around the items. If there are no items, it renders `null`.

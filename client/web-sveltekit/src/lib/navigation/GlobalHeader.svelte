@@ -13,8 +13,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiMenu } from '@mdi/js'
-
     import { browser } from '$app/environment'
     import Icon from '$lib/Icon.svelte'
     import { mark } from '$lib/images'
@@ -48,7 +46,7 @@
     <div class="logo" class:with-custom-content={withCustomContent}>
         {#if withCustomContent}
             <button class="menu-button" on:click={() => (isSidebarNavigationOpen = true)}>
-                <Icon svgPath={mdiMenu} aria-label="Navigation menu" />
+                <Icon icon={ILucideMenu} aria-label="Navigation menu" />
             </button>
         {/if}
 
@@ -67,7 +65,7 @@
         {/if}
     </nav>
 
-    <Popover let:registerTrigger showOnHover>
+    <Popover let:registerTrigger showOnHover hoverDelay={100} hoverCloseDelay={50}>
         <span class="web-next-badge" use:registerTrigger>
             <Badge variant="warning">Experimental</Badge>
         </span>
@@ -199,6 +197,5 @@
         }
 
         --icon-size: 1rem;
-        --icon-fill-color: var(--icon-color);
     }
 </style>

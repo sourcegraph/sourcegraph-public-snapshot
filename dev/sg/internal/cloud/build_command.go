@@ -41,10 +41,16 @@ func buildCloudEphemeral(ctx *cli.Context) error {
 	currRepo := repo.NewGitRepo(currentBranch, head)
 	build, err := triggerEphemeralBuild(ctx.Context, currRepo)
 	if err != nil {
-		if err == ErrBranchOutOfSync {
+		if errors.Is(err, ErrBranchOutOfSync) {
 			std.Out.WriteWarningf(`Your branch %q is out of sync with the remote branch.
 
 Please make sure you have either pushed or pulled the latest changes before trying again`, currRepo.Branch)
+		} else if errors.Is(err, ErrMainBranchBuild) {
+			std.Out.WriteWarningf(`Triggering Cloud Ephemeral builds from "main" is not supported.`)
+			steps := "1. create a new branch off main by running `git switch <branch-name>`\n"
+			steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
+			steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
+			std.Out.WriteMarkdown(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps))
 		}
 		return errors.Wrapf(err, "failed to trigger epehemeral build for branch")
 	}

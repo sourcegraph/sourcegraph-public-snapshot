@@ -2,6 +2,7 @@ package completions
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
@@ -24,6 +25,10 @@ type flaggingConfig struct {
 	MaxTokensToSampleFlaggingLimit int
 	ResponseTokenBlockingLimit     int
 
+	// FlaggedModelNames is a slice of LLM model names, e.g. "gpt-3.5-turbo",
+	// that will lead to the request getting flagged.
+	FlaggedModelNames []string
+
 	// If false, flaggingResult.shouldBlock will always be false when returned by isFlaggedRequest.
 	RequestBlockingEnabled bool
 }
@@ -39,11 +44,15 @@ func makeFlaggingConfig(cfg config.FlaggingConfig) flaggingConfig {
 		PromptTokenBlockingLimit:       cfg.PromptTokenBlockingLimit,
 		MaxTokensToSampleFlaggingLimit: cfg.MaxTokensToSampleFlaggingLimit,
 		ResponseTokenBlockingLimit:     cfg.ResponseTokenBlockingLimit,
+		FlaggedModelNames:              cfg.FlaggedModelNames,
 		RequestBlockingEnabled:         cfg.RequestBlockingEnabled,
 	}
 }
 
 type flaggingRequest struct {
+	// ModelName is the slug for the specific LLM model.
+	// e.g. "llama-v2-13b-code"
+	ModelName       string
 	FlattenedPrompt string
 	MaxTokens       int
 }
@@ -61,8 +70,19 @@ type flaggingResult struct {
 // as the goal isn't for 100% accuracy - isFlaggedRequest should catch obvious abuse patterns, and let other backend
 // systems do a more thorough review async.
 func isFlaggedRequest(tk tokenizer.Tokenizer, r flaggingRequest, cfg flaggingConfig) (*flaggingResult, error) {
+	// Verify that we were given a legitimate flaggingConfig. Blocking all requests is
+	// kinda lame. But failing loudly is preferable to banning users because 100% of their
+	// requests get flagged.
+	if cfg.MaxTokensToSampleFlaggingLimit == 0 || cfg.ResponseTokenBlockingLimit == 0 {
+		return nil, errors.New("flaggingConfig object is invalid")
+	}
+
 	var reasons []string
 	prompt := strings.ToLower(r.FlattenedPrompt)
+
+	if r.ModelName != "" && slices.Contains(cfg.FlaggedModelNames, r.ModelName) {
+		reasons = append(reasons, "model_used")
+	}
 
 	if hasValidPattern, _ := containsAny(prompt, cfg.AllowedPromptPatterns); len(cfg.AllowedPromptPatterns) > 0 && !hasValidPattern {
 		reasons = append(reasons, "unknown_prompt")

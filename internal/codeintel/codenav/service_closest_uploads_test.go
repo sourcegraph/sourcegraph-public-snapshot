@@ -2,24 +2,27 @@ package codenav
 
 import (
 	"context"
-	"github.com/google/go-cmp/cmp"
 	"slices"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type idPathPair struct {
 	uploadID int
-	path     string
+	path     core.UploadRelPath
 }
 
 type TestCase struct {
@@ -33,14 +36,17 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 	const repoID = 37
 	const missingCommitSHA = "C1"
 	const presentCommitSHA = "C2"
+	repoRootPath := core.NewRepoRelPathUnchecked
+	uploadRootPath := core.NewUploadRelPathUnchecked
+
 	testCases := []TestCase{
 		{
 			closestUploads: []shared.CompletedUpload{
 				{ID: 22, Commit: missingCommitSHA, Root: ""},
 				{ID: 23, Commit: presentCommitSHA, Root: "subdir/"},
 			},
-			lsifStoreAllowedPaths: []idPathPair{{22, "a.c"}},
-			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
+			lsifStoreAllowedPaths: []idPathPair{{22, uploadRootPath("a.c")}},
+			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: repoRootPath("a.c")},
 			// bug fix: doesn't have upload for which path check fails
 			expectUploadIDs: []int{},
 		},
@@ -49,8 +55,8 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 				{ID: 22, Commit: missingCommitSHA, Root: "subdir/"},
 				{ID: 23, Commit: presentCommitSHA, Root: ""},
 			},
-			lsifStoreAllowedPaths: []idPathPair{{23, "a.c"}},
-			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
+			lsifStoreAllowedPaths: []idPathPair{{23, uploadRootPath("a.c")}},
+			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: repoRootPath("a.c")},
 			// bug fix: has upload for which path check succeeds
 			expectUploadIDs: []int{23},
 		},
@@ -61,9 +67,10 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 		mockLsifStore := NewMockLsifStore()
 		mockUploadSvc := NewMockUploadService()
 		mockGitserverClient := gitserver.NewMockClient()
+		mockSearchClient := client.NewMockSearchClient()
 
 		// Init service
-		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+		svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 		closestUploads := slices.Clone(testCase.closestUploads)
 		for i := range closestUploads {
@@ -84,7 +91,7 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			return nil, &gitdomain.RevisionNotFoundError{}
 		})
 
-		mockLsifStore.GetPathExistsFunc.SetDefaultHook(func(_ context.Context, uploadID int, path string) (bool, error) {
+		mockLsifStore.GetPathExistsFunc.SetDefaultHook(func(_ context.Context, uploadID int, path core.UploadRelPath) (bool, error) {
 			return collections.NewSet(testCase.lsifStoreAllowedPaths...).Has(
 				idPathPair{uploadID: uploadID, path: path}), nil
 		})

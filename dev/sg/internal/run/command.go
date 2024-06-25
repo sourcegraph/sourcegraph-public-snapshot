@@ -14,6 +14,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
+	"go.bobheadxi.dev/streamline/pipe"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -347,7 +348,7 @@ func startCmd(ctx context.Context, opts commandOptions) (*startedCmd, error) {
 		cancel()
 	}
 	// Register an interrupt handler
-	interrupt.Register(sc.cancel)
+	interrupt.RegisterConcurrent(sc.cancel)
 
 	sc.Cmd = opts.exec
 	sc.Cmd.Dir = opts.dir
@@ -405,14 +406,22 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 			close(opts.start)
 		}
 
-		writers = append(writers, newBufferedCmdLogger(ctx, sc.opts.name, std.Out.Output, opts.start))
+		writers = append(writers, newOutputPipe(ctx, sc.opts.name, std.Out.Output, opts.start))
 	}
 
 	if sgConn != nil {
-		sink := func(data string) {
-			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, data)))
-		}
-		writers = append(writers, process.NewLogger(ctx, sink))
+		w, stream := pipe.NewStream()
+		go func() {
+			err := stream.Stream(func(line string) {
+				_, _ = sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", sc.opts.name, line)))
+			})
+			_ = w.CloseWithError(err)
+		}()
+		go func() {
+			<-ctx.Done()
+			_ = w.CloseWithError(ctx.Err())
+		}()
+		writers = append(writers, w)
 	}
 
 	return io.MultiWriter(writers...)

@@ -114,7 +114,6 @@ type CurrentUser struct {
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
-	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -153,6 +152,7 @@ type LicenseInfo struct {
 type FrontendCodyProConfig struct {
 	StripePublishableKey string `json:"stripePublishableKey"`
 	SscBaseUrl           string `json:"sscBaseUrl"`
+	UseEmbeddedUI        bool   `json:"useEmbeddedUI"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -243,8 +243,6 @@ type JSContext struct {
 	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
 	OwnEnabled               bool `json:"ownEnabled"`
 
-	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
-
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -297,7 +295,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
-	var authProviders []authProviderInfo
+	authProviders := []authProviderInfo{} // Explicitly initialise array, otherwise it gets marshalled to null instead of []
 	_, authzProviders := authz.GetProviders()
 	for _, p := range providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
@@ -452,8 +450,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		SearchAggregationEnabled: true,
 		OwnEnabled:               true,
 
-		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
-
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
@@ -499,12 +495,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
 	}
 
-	// If the license a Sourcegraph instance is running under does not support Cody features
-	// we force disable related features (embeddings etc).
+	// If the license a Sourcegraph instance is running under does not support Cody features,
+	// we force disable related features.
 	if !context.LicenseInfo.Features.Cody {
 		context.CodyEnabled = false
 		context.CodyEnabledForCurrentUser = false
-		context.EmbeddingsEnabled = false
 	}
 
 	return context
@@ -541,11 +536,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	completedPostSignup, err := userResolver.CompletedPostSignup(ctx)
-	if err != nil {
-		return nil
-	}
-
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -564,7 +554,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
 		HasVerifiedEmail:    hasVerifiedEmail,
-		CompletedPostSignUp: completedPostSignup,
 	}
 }
 
@@ -710,5 +699,6 @@ func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProCon
 	return &FrontendCodyProConfig{
 		StripePublishableKey: config.StripePublishableKey,
 		SscBaseUrl:           config.SscBaseUrl,
+		UseEmbeddedUI:        config.UseEmbeddedUI,
 	}
 }

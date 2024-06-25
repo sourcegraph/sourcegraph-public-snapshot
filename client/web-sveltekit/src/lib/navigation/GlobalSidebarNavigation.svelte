@@ -7,8 +7,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiClose } from '@mdi/js'
-
     import { page } from '$app/stores'
     import { onClickOutside, portal } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
@@ -25,7 +23,7 @@
     <div class="content" use:onClickOutside on:click-outside={onClose}>
         <header>
             <button class="close-button" on:click={onClose}>
-                <Icon svgPath={mdiClose} aria-label="Close sidebar navigation" />
+                <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
             </button>
 
             <a href="/search" class="logo-link">
@@ -89,7 +87,6 @@
             }
 
             --icon-size: 1rem;
-            --icon-fill-color: var(--icon-color);
         }
 
         header {
@@ -136,8 +133,6 @@
                 gap: 0.25rem;
                 padding: 0.375rem 0.75rem;
                 font-size: 1rem;
-
-                --icon-fill-color: var(--icon-color);
 
                 &:hover {
                     background-color: var(--secondary-2);

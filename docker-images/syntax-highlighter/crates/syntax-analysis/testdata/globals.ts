@@ -1,3 +1,9 @@
+// Identifiers in import statements shouldn't be picked
+// up by scip-ctags
+import { useState } from 'react';
+import { useState as uS } from 'react';
+import * as React from 'react';
+
 class MyClass {
     public_field: number
     #private_field: number

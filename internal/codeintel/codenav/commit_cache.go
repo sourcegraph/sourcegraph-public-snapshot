@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -88,14 +89,11 @@ func (c *commitCache) ExistsBatch(ctx context.Context, commits []RepositoryCommi
 // commitsExist determines if the given commits exists in the given repositories. This method returns a
 // slice of the same size as the input slice, true indicating that the commit at the symmetric index exists.
 func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryCommit) (_ []bool, err error) {
-	repositoryIDMap := map[int]struct{}{}
+	repositoryIDSet := collections.NewSet[api.RepoID]()
 	for _, rc := range commits {
-		repositoryIDMap[rc.RepositoryID] = struct{}{}
+		repositoryIDSet.Add(api.RepoID(rc.RepositoryID))
 	}
-	repositoryIDs := make([]api.RepoID, 0, len(repositoryIDMap))
-	for repositoryID := range repositoryIDMap {
-		repositoryIDs = append(repositoryIDs, api.RepoID(repositoryID))
-	}
+	repositoryIDs := repositoryIDSet.Values()
 	repos, err := c.repoStore.GetReposSetByIDs(ctx, repositoryIDs...)
 	if err != nil {
 		return nil, err
@@ -149,7 +147,7 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	for i, rc := range repoCommits {
 		_, err := c.gitserverClient.GetCommit(ctx, rc.repoName, rc.commitID)
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				exists[i] = false
 				continue
 			}

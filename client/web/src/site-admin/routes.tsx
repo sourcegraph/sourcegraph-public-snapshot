@@ -4,7 +4,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
 import type { BatchSpecsPageProps } from '../enterprise/batches/BatchSpecsPage'
-import { CodeIntelConfigurationPolicyPage } from '../enterprise/codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { OwnAnalyticsPage } from '../enterprise/own/admin-ui/OwnAnalyticsPage'
 import type { SiteAdminRolesPageProps } from '../enterprise/rbac/SiteAdminRolesPage'
@@ -183,17 +182,6 @@ const CodeInsightsJobsPage = lazyComponent(
     'CodeInsightsJobs'
 )
 const OwnStatusPage = lazyComponent(() => import('../enterprise/own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
-
-const SiteAdminCodyPage = lazyComponent(
-    () => import('../enterprise/site-admin/cody/SiteAdminCodyPage'),
-    'SiteAdminCodyPage'
-)
-const CodyConfigurationPage = lazyComponent(
-    () => import('../enterprise/cody/configuration/pages/CodyConfigurationPage'),
-    'CodyConfigurationPage'
-)
-
-const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -487,31 +475,6 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/executors/*',
         render: props => <ExecutorsSiteAdminArea telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
-    },
-
-    // Cody configuration
-    {
-        exact: true,
-        path: '/cody',
-        render: () => <Navigate to="/site-admin/embeddings" />,
-        condition: codyIsEnabled,
-    },
-    {
-        exact: true,
-        path: '/embeddings',
-        render: props => <SiteAdminCodyPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
-        condition: codyIsEnabled,
-    },
-    {
-        exact: true,
-        path: '/embeddings/configuration',
-        render: props => <CodyConfigurationPage {...props} />,
-        condition: codyIsEnabled,
-    },
-    {
-        path: '/embeddings/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
-        condition: codyIsEnabled,
     },
 
     // rbac-related routes

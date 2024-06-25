@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -37,9 +38,9 @@ type SyntacticIndexingJob struct {
 	// The fields below are not part of the standard dbworker fields
 
 	// Which commit to index
-	Commit string `json:"commit"`
+	Commit api.CommitID `json:"commit"`
 	// Which repository id to index
-	RepositoryID int `json:"repositoryId"`
+	RepositoryID api.RepoID `json:"repositoryId"`
 	// Name of repository being indexed
 	RepositoryName string `json:"repositoryName"`
 	// Which user scheduled this job

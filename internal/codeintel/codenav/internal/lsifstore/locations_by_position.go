@@ -11,29 +11,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
-
-// GetDefinitionLocations returns the set of locations defining the symbol at the given position.
-func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitionLocations, bundleID, path, line, character, limit, offset)
-}
-
-// GetReferenceLocations returns the set of locations referencing the symbol at the given position.
-func (s *store) GetReferenceLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, s.operations.getReferenceLocations, bundleID, path, line, character, limit, offset)
-}
-
-// GetImplementationLocations returns the set of locations implementing the symbol at the given position.
-func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
-}
-
-// GetPrototypeLocations returns the set of locations that are the prototypes of the symbol at the given position.
-func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, s.operations.getPrototypesLocations, bundleID, path, line, character, limit, offset)
-}
 
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
@@ -95,8 +77,8 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {
@@ -124,86 +106,6 @@ JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
 ORDER BY ss.upload_id, msn.symbol_name
 `
 
-func (s *store) getLocations(
-	ctx context.Context,
-	scipFieldName string,
-	scipExtractor func(*scip.Document, *scip.Occurrence) []*scip.Range,
-	operation *observation.Operation,
-	bundleID int,
-	path string,
-	line, character, limit, offset int,
-) (_ []shared.Location, _ int, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
-		attribute.Int("line", line),
-		attribute.Int("character", character),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
-		locationsDocumentQuery,
-		bundleID,
-		path,
-	)))
-	if err != nil || !exists {
-		return nil, 0, err
-	}
-
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
-
-	for _, occurrence := range occurrences {
-		var locations []shared.Location
-		if ranges := scipExtractor(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path)...)
-		}
-
-		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
-				locationsSymbolSearchQuery,
-				pq.Array([]string{occurrence.Symbol}),
-				pq.Array([]int{bundleID}),
-				sqlf.Sprintf(scipFieldName),
-				bundleID,
-				path,
-				sqlf.Sprintf(scipFieldName),
-			)))
-			if err != nil {
-				return nil, 0, err
-			}
-			for _, monikerLocation := range monikerLocations {
-				for _, row := range monikerLocation.Locations {
-					locations = append(locations, shared.Location{
-						UploadID: monikerLocation.UploadID,
-						Path:     row.URI,
-						Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
-					})
-				}
-			}
-		}
-
-		if len(locations) > 0 {
-			totalCount := len(locations)
-
-			if offset < len(locations) {
-				locations = locations[offset:]
-			} else {
-				locations = []shared.Location{}
-			}
-
-			if len(locations) > limit {
-				locations = locations[:limit]
-			}
-
-			return locations, totalCount, nil
-		}
-	}
-
-	return nil, 0, nil
-}
-
 const locationsDocumentQuery = `
 SELECT
 	sd.id,
@@ -217,45 +119,27 @@ WHERE
 LIMIT 1
 `
 
-const locationsSymbolSearchQuery = `
-WITH RECURSIVE
-` + symbolIDsCTEs + `
-SELECT
-	ss.upload_id,
-	'' AS scheme,
-	'' AS identifier,
-	ss.%s,
-	sid.document_path
-FROM codeintel_scip_symbols ss
-JOIN codeintel_scip_document_lookup sid ON sid.id = ss.document_lookup_id
-JOIN matching_symbol_names msn ON msn.id = ss.symbol_id
-WHERE
-	ss.upload_id = %s AND
-	sid.document_path != %s AND
-	ss.%s IS NOT NULL
-`
-
 type extractedOccurrenceData struct {
-	definitions     []*scip.Range
-	references      []*scip.Range
-	implementations []*scip.Range
-	prototypes      []*scip.Range
+	definitions     []scip.Range
+	references      []scip.Range
+	implementations []scip.Range
+	prototypes      []scip.Range
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
 	return extractOccurrenceData(document, occurrence).prototypes
 }
 
@@ -273,9 +157,9 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	var (
 		hoverText               []string
 		definitionSymbol        = occurrence.Symbol
-		referencesBySymbol      = map[string]struct{}{}
-		implementationsBySymbol = map[string]struct{}{}
-		prototypeBySymbol       = map[string]struct{}{}
+		referencesBySymbol      = collections.NewSet[string]()
+		implementationsBySymbol = collections.NewSet[string]()
+		prototypeBySymbol       = collections.NewSet[string]()
 	)
 
 	// Extract hover text and relationship data from the symbol information that
@@ -290,10 +174,10 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 				definitionSymbol = rel.Symbol
 			}
 			if rel.IsReference {
-				referencesBySymbol[rel.Symbol] = struct{}{}
+				referencesBySymbol.Add(rel.Symbol)
 			}
 			if rel.IsImplementation {
-				prototypeBySymbol[rel.Symbol] = struct{}{}
+				prototypeBySymbol.Add(rel.Symbol)
 			}
 		}
 	}
@@ -302,19 +186,19 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
 				if rel.Symbol == occurrence.Symbol {
-					implementationsBySymbol[sym.Symbol] = struct{}{}
+					implementationsBySymbol.Add(sym.Symbol)
 				}
 			}
 		}
 	}
 
-	definitions := []*scip.Range{}
-	references := []*scip.Range{}
-	implementations := []*scip.Range{}
-	prototypes := []*scip.Range{}
+	definitions := []scip.Range{}
+	references := []scip.Range{}
+	implementations := []scip.Range{}
+	prototypes := []scip.Range{}
 
 	// Include original symbol names for reference search below
-	referencesBySymbol[occurrence.Symbol] = struct{}{}
+	referencesBySymbol.Add(occurrence.Symbol)
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -324,22 +208,22 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRange(occ.Range))
+			definitions = append(definitions, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
-		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
-			references = append(references, scip.NewRange(occ.Range))
+		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
+			references = append(references, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRange(occ.Range))
+		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
+			implementations = append(implementations, scip.NewRangeUnchecked(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
-		if _, ok := prototypeBySymbol[occ.Symbol]; ok && isDefinition {
-			prototypes = append(prototypes, scip.NewRange(occ.Range))
+		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
+			prototypes = append(prototypes, scip.NewRangeUnchecked(occ.Range))
 		}
 	}
 
@@ -433,14 +317,14 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 
 func (s *store) extractLocationsFromPosition(
 	ctx context.Context,
-	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range,
+	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []scip.Range,
 	extractSymbolNames func(document *scip.Document, symbolName string) []string,
 	operation *observation.Operation,
 	locationKey LocationKey,
 ) (_ []shared.Location, _ []string, err error) {
 	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", locationKey.UploadID),
-		attribute.String("path", locationKey.Path),
+		attribute.String("path", locationKey.Path.RawValue()),
 		attribute.Int("line", locationKey.Line),
 		attribute.Int("character", locationKey.Character),
 	}})
@@ -449,7 +333,7 @@ func (s *store) extractLocationsFromPosition(
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		locationsDocumentQuery,
 		locationKey.UploadID,
-		locationKey.Path,
+		locationKey.Path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, nil, err
@@ -471,39 +355,12 @@ func (s *store) extractLocationsFromPosition(
 		}
 	}
 
-	return deduplicateLocations(locations), deduplicate(symbols, func(s string) string { return s }), nil
+	// We only need to deduplicate by the range, since all location objects share the same path and uploadID.
+	return collections.DeduplicateBy(locations, uniqueByRange), collections.Deduplicate(symbols), nil
 }
 
-func deduplicate[T any](locations []T, keyFn func(T) string) []T {
-	seen := map[string]struct{}{}
-
-	filtered := locations[:0]
-	for _, l := range locations {
-		k := keyFn(l)
-		if _, ok := seen[k]; ok {
-			continue
-		}
-
-		seen[k] = struct{}{}
-		filtered = append(filtered, l)
-	}
-
-	return filtered
-}
-
-func deduplicateLocations(locations []shared.Location) []shared.Location {
-	return deduplicate(locations, locationKey)
-}
-
-func locationKey(l shared.Location) string {
-	return fmt.Sprintf("%d:%s:%d:%d:%d:%d",
-		l.UploadID,
-		l.Path,
-		l.Range.Start.Line,
-		l.Range.Start.Character,
-		l.Range.End.Line,
-		l.Range.End.Character,
-	)
+func uniqueByRange(l shared.Location) [4]int {
+	return [4]int{l.Range.Start.Line, l.Range.Start.Character, l.Range.End.Character}
 }
 
 //
@@ -579,8 +436,8 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     row.URI,
-				Range:    newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {

@@ -241,7 +241,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		lErr *ErrLuckyQueries
 	)
 
-	if errors.HasType(err, authz.ErrStalePermissions{}) {
+	if errors.HasType[authz.ErrStalePermissions](err) {
 		return search.AlertForStalePermissions(), nil
 	}
 

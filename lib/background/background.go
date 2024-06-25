@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"slices"
 	"sync"
 	"syscall"
 
@@ -71,7 +72,8 @@ func stopAll(ctx context.Context, wg *sync.WaitGroup, routines ...Routine) error
 			defer wg.Done()
 			if err := r.Stop(ctx); err != nil {
 				stopErrsLock.Lock()
-				stopErrs = errors.Append(stopErrs, errors.Wrapf(err, "stop routine %q", r.Name()))
+				stopErrs = errors.Append(stopErrs,
+					errors.Wrapf(err, "stop routine %q", errors.Safe(r.Name())))
 				stopErrsLock.Unlock()
 			}
 		})
@@ -151,7 +153,25 @@ func (rs CombinedRoutine) Stop(ctx context.Context) error {
 }
 
 // LIFOStopRoutine is a list of routines which are started in unison, but stopped
-// sequentially last-in-first-out (the last Routine is stopped, and once it
+// sequentially first-in-first-out order (the first Routine is stopped, and once
+// it successfully stops, the next routine is stopped).
+//
+// This is useful for services where subprocessors should be stopped before the
+// primary service stops for a graceful shutdown.
+type FIFOSTopRoutine []Routine
+
+func (r FIFOSTopRoutine) Name() string { return "fifo" }
+
+func (r FIFOSTopRoutine) Start() { CombinedRoutine(r).Start() }
+
+func (r FIFOSTopRoutine) Stop(ctx context.Context) error {
+	// Pass self inverted into LIFOStopRoutine
+	slices.Reverse(r)
+	return LIFOStopRoutine(r).Stop(ctx)
+}
+
+// LIFOStopRoutine is a list of routines which are started in unison, but stopped
+// sequentially last-in-first-out order (the last Routine is stopped, and once it
 // successfully stops, the next routine is stopped).
 //
 // This is useful for services where subprocessors should be stopped before the
@@ -167,7 +187,8 @@ func (r LIFOStopRoutine) Stop(ctx context.Context) error {
 	for i := len(r) - 1; i >= 0; i -= 1 {
 		err := r[i].Stop(ctx)
 		if err != nil {
-			stopErr = errors.Append(stopErr, errors.Wrapf(err, "stop routine %q", r[i].Name()))
+			stopErr = errors.Append(stopErr,
+				errors.Wrapf(err, "stop routine %q", errors.Safe(r[i].Name())))
 		}
 	}
 	return stopErr

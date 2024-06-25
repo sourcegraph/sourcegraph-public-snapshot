@@ -1,15 +1,15 @@
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//client/web-sveltekit:vite/package_json.bzl", vite_bin = "bin")
-load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
-load("@npm//client/web-sveltekit:svelte-check/package_json.bzl", svelte_check = "bin")
-load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//client/web-sveltekit:@playwright/test/package_json.bzl", playwright_test_bin = "bin")
+load("@npm//client/web-sveltekit:@sveltejs/kit/package_json.bzl", sveltekit = "bin")
+load("@npm//client/web-sveltekit:svelte-check/package_json.bzl", svelte_check = "bin")
+load("@npm//client/web-sveltekit:vitest/package_json.bzl", vitest_bin = "bin")
 load("//dev:defs.bzl", "ts_binary", "vitest_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load(":utils.bzl", "compile_app")
 
 # gazelle:ignore
-
 SRCS = [
     "package.json",
     "vite.config.ts",
@@ -24,18 +24,23 @@ SRCS = [
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
 ] + glob(
-    ["src/" + d for d in [
-        "**/*.scss",
-        "**/*.svg",
-        "**/*.ts",
-        "**/*.svelte",
-        "**/*.html",
-        "**/*.tsx",
-        "**/*.gql",
-    ]],
+    [
+        "assets/**/*.svg",
+        "src/**/*.scss",
+        "src/**/*.svg",
+        "src/**/*.ts",
+        "src/**/*.svelte",
+        "src/**/*.html",
+        "src/**/*.gql",
+    ],
     [
         "src/lib/graphql-operations.ts",
         "src/lib/graphql-types.ts",
+        "src/lib/graphql-type-mocks.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts",
+        "src/testing/**/*.ts",
+        "src/playwright/*.ts",
         "src/testing/graphql-type-mocks.ts",
         "src/**/*.gql.ts",
         "src/**/*.gql.d.ts",
@@ -51,6 +56,7 @@ BUILD_DEPS = [
     "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/autocomplete",
     "//:node_modules/@codemirror/commands",
+    "//:node_modules/@codemirror/search",
     "//:node_modules/@codemirror/state",
     "//:node_modules/@codemirror/view",
     "//:node_modules/@mdi/js",
@@ -76,15 +82,23 @@ BUILD_DEPS = [
     ":node_modules/@graphql-codegen/typescript",
     ":node_modules/@graphql-codegen/typescript-operations",
     ":node_modules/@graphql-tools/utils",
+    ":node_modules/@iconify-json/devicon-plain",
+    ":node_modules/@iconify-json/file-icons",
     ":node_modules/@iconify-json/lucide",
+    ":node_modules/@iconify-json/ph",
+    ":node_modules/@iconify-json/simple-icons",
     ":node_modules/@melt-ui/svelte",
+    ":node_modules/@sentry/sveltekit",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/client-api",
     ":node_modules/@sourcegraph/common",
+    ":node_modules/@fontsource-variable/inter",
+    ":node_modules/@fontsource-variable/roboto-mono",
     ":node_modules/@sourcegraph/http-client",
     ":node_modules/@sourcegraph/shared",
     ":node_modules/@sourcegraph/web",
     ":node_modules/@sourcegraph/wildcard",
+    ":node_modules/@sourcegraph/telemetry",
     ":node_modules/@storybook/svelte",
     ":node_modules/@sveltejs/adapter-static",
     ":node_modules/@sveltejs/kit",
@@ -123,7 +137,7 @@ CONFIGS = [
 
 npm_link_all_packages(name = "node_modules")
 
-vite_bin.vite(
+compile_app(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
     args = [
@@ -135,14 +149,70 @@ vite_bin.vite(
         "BAZEL": "1",
     },
     out_dirs = ["build"],
+    test_overrides = {
+        "out_dirs": ["test_build"],
+        "name": "web-sveltekit-test",
+        "env": {
+            "BUILD_DIR": "test_build",
+        },
+    },
     visibility = ["//client/web/dist:__pkg__"],
-    # silent_on_success = False,
 )
 
-# TODO: remove this once we have some tests.
-build_test(
-    name = "vite_build_test",
-    targets = [":web-sveltekit"],
+playwright_test_bin.playwright_test(
+    name = "playwright_install",
+    args = [
+        "install",
+    ],
+    local = True,
+    tags = [
+        "requires-network",
+    ],
+)
+
+PLAYWRIGHT_DEPS = [
+    "//client/web-sveltekit:node_modules/@playwright/test",
+    "//client/web-sveltekit:node_modules/playwright",
+    ":node_modules/@faker-js/faker",
+    ":node_modules/graphql",
+    "//:node_modules/glob",
+    "//:node_modules/lodash",
+    "//:node_modules/mime-types",
+]
+
+copy_to_directory(
+    name = "test_app_assets",
+    srcs = [
+        ":web-sveltekit-test",
+    ],
+)
+
+playwright_test_bin.playwright_test(
+    name = "e2e_test",
+    timeout = "short",
+    args = [
+        "test",
+        "--config $(location playwright.config.ts)",
+    ],
+    data = glob(
+        [
+            "src/**/*.spec.ts",
+            "src/testing/*.ts",
+        ],
+    ) + [
+        "playwright.config.ts",
+        ":generate-graphql-types",
+        ":test_app_assets",
+        "//cmd/frontend/graphqlbackend:graphql_schema",
+        "//dev/tools:chromium",
+    ] + PLAYWRIGHT_DEPS,
+    env = {
+        "CHROMIUM_BIN": "$(rootpath //dev/tools:chromium)",
+        "BAZEL": "1",
+        "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
+        "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
+    },
+    flaky = True,
 )
 
 TESTS = glob([
@@ -206,8 +276,9 @@ OTHER_GRAPHQL_INPUT_FILES = glob(
         "src/**/*.ts",
     ],
     [
+        "src/**/*.spec.ts",
         "src/lib/graphql-*.ts",
-        "src/testing/graphql-type-mocks.ts",
+        "src/testing/**/*.ts",
         "src/**/*.gql.ts",
     ],
 )

@@ -109,3 +109,22 @@ alias(
     }),
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "chromium",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": "@chromium-darwin-x86_64//:chromium",
+        "@bazel_tools//src/conditions:darwin_arm64": "@chromium-darwin-arm64//:chromium",
+        "@bazel_tools//src/conditions:linux_x86_64": "@chromium-linux-x86_64//:chromium",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+tool(
+    name = "honeyvent",
+    src = select({
+        "@bazel_tools//src/conditions:linux_x86_64": ["@honeyvent-linux-x86_64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@honeyvent-darwin-x86_64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@honeyvent-darwin-x86_64//file:downloaded"],
+    }),
+)

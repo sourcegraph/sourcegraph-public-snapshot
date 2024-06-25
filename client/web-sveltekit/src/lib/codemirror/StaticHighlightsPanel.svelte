@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
-
     import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { Button } from '$lib/wildcard'
@@ -27,7 +25,7 @@
                     data-testid="blob-view-static-previous"
                     aria-label="previous result"
                 >
-                    <Icon inline svgPath={mdiChevronLeft} aria-hidden={true} />
+                    <Icon inline icon={ILucideChevronLeft} aria-hidden={true} />
                 </Button>
             </div>
             <div class="right">
@@ -39,7 +37,7 @@
                     data-testid="blob-view-static-next"
                     aria-label="next result"
                 >
-                    <Icon inline svgPath={mdiChevronRight} aria-hidden={true} />
+                    <Icon inline icon={ILucideChevronRight} aria-hidden={true} />
                 </Button>
             </div>
         </div>

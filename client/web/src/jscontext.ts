@@ -5,7 +5,14 @@ import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/ba
 
 import type { TemporarySettingsResult } from './graphql-operations'
 
-export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
+export type DeployType =
+    | 'kubernetes'
+    | 'docker-container'
+    | 'docker-compose'
+    | 'pure-docker'
+    | 'dev'
+    | 'helm'
+    | 'appliance'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
@@ -60,7 +67,6 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'latestSettings'
     | 'permissions'
     | 'hasVerifiedEmail'
-    | 'completedPostSignup'
 >
 
 /**
@@ -232,9 +238,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the own API is enabled on the Sourcegraph instance */
     ownEnabled: boolean
 
-    /** Whether embeddings are enabled on this site. */
-    embeddingsEnabled: boolean
-
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
 
@@ -307,6 +310,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     frontendCodyProConfig?: {
         stripePublishableKey: string
         sscBaseUrl: string
+        useEmbeddedUI: boolean
     }
 }
 

@@ -258,11 +258,6 @@ const config = {
           'Prefer using the <Tooltip> component with an <Input> directly, when possible. Please only use <InputTooltip> when the legacy styling it provides is needed. We will be working to fix style issues with <Input> (especially for checkboxes) in the future.',
       },
       {
-        selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
-        message:
-          "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
-      },
-      {
         selector: 'ImportDeclaration[source.value="react-router"]',
         message:
           'Use `react-router-dom-v5-compat` instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',

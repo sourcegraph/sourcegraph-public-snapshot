@@ -21,10 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
@@ -53,6 +53,26 @@ type GitTreeEntryResolver struct {
 	stat fs.FileInfo
 }
 
+// GitBlobResolver is a thin wrapper around GitTreeEntryResolver for readability.
+//
+// We embed GitTreeEntryResolver to avoid needing to forward method implementations.
+//
+// Since most of the logic is shared between GitBlobResolver and GitTreeResolver,
+// prefer adding new functionality on GitTreeEntryResolver directly.
+type GitBlobResolver struct {
+	*GitTreeEntryResolver
+}
+
+// GitTreeResolver is a thin wrapper around GitTreeEntryResolver for readability.
+//
+// We embed GitTreeEntryResolver to avoid needing to forward method implementations.
+//
+// Since most of the logic is shared between GitBlobResolver and GitTreeResolver,
+// prefer adding new functionality on GitTreeEntryResolver directly.
+type GitTreeResolver struct {
+	*GitTreeEntryResolver
+}
+
 type GitTreeEntryResolverOpts struct {
 	Commit *GitCommitResolver
 	Stat   fs.FileInfo
@@ -75,8 +95,13 @@ func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, o
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeResolver, bool) {
+	return &GitTreeResolver{r}, r.IsDirectory()
+}
+
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitBlobResolver, bool) {
+	return &GitBlobResolver{r}, !r.IsDirectory()
+}
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
 func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
@@ -256,13 +281,11 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 	}
 
 	// special handling in dotcom to prevent syntax highlighting large lock files
-	if dotcom.SourcegraphDotComMode() {
-		for _, f := range syntaxHighlightFileBlocklist {
-			if strings.HasSuffix(r.Path(), f) {
-				// this will force the content to be returned as plaintext
-				// without hitting the syntax highlighter
-				args.Format = string(gosyntect.FormatHTMLPlaintext)
-			}
+	for _, f := range syntaxHighlightFileBlocklist {
+		if strings.HasSuffix(r.Path(), f) {
+			// this will force the content to be returned as plaintext
+			// without hitting the syntax highlighter
+			args.Format = string(gosyntect.FormatHTMLPlaintext)
 		}
 	}
 
@@ -481,7 +504,7 @@ func (r *GitTreeEntryResolver) CodeGraphData(ctx context.Context, args *resolver
 		Args:   args,
 		Repo:   repo,
 		Commit: api.CommitID(r.Commit().OID()),
-		Path:   r.Path(),
+		Path:   core.NewRepoRelPathUnchecked(r.Path()),
 	})
 }
 

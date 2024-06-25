@@ -20,7 +20,7 @@ import (
 
 func (r *Reconciler) reconcileCadvisor(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
 	if err := r.reconcileCadvisorDaemonset(ctx, sg, owner); err != nil {
-		return errors.Wrap(err, "reconciling ClusterRole")
+		return errors.Wrap(err, "reconciling Daemonset")
 	}
 	if err := r.reconcileCadvisorServiceAccount(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling ServiceAccount")
@@ -32,10 +32,7 @@ func (r *Reconciler) reconcileCadvisorDaemonset(ctx context.Context, sg *config.
 	name := "cadvisor"
 	cfg := sg.Spec.Cadvisor
 
-	defaultImage, err := config.GetDefaultImage(sg, name)
-	if err != nil {
-		return err
-	}
+	defaultImage := config.GetDefaultImage(sg, name)
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{

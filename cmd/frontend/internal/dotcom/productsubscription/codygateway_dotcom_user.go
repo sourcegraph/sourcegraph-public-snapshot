@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -225,13 +225,8 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 		}
 	}
 
-	// Apply override for testing if set
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		limit = 1
-	}
-
 	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1"},
+		AllowedModels:   []string{"openai/text-embedding-ada-002", "sourcegraph/st-multi-qa-mpnet-base-dot-v1", "sourcegraph/st-multi-qa-mpnet-metadata"},
 		Limit:           limit,
 		IntervalSeconds: intervalSeconds,
 	}, nil
@@ -241,16 +236,6 @@ func getEmbeddingsRateLimit(ctx context.Context, db database.DB, userID int32) (
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
-
-	// Apply override for testing if set.
-	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
-		return licensing.CodyGatewayRateLimit{
-			// For this special tester user, just allow all models a Pro user can get.
-			AllowedModels:   allowedModels(scope, true, false),
-			Limit:           1,
-			IntervalSeconds: math.MaxInt32,
-		}, graphqlbackend.CodyGatewayRateLimitSourceOverride, nil
-	}
 
 	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
@@ -279,7 +264,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Wrap(err, "error fetching user's cody subscription")
 	}
-	models := allowedModels(scope, true, featureflag.FromContext(ctx).GetBoolOr("cody-pro-gemini-enabled", false))
+	models := allowedModels(scope, true)
 	if limit == nil && cfg != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Update the allowed models based on the user's plan.
@@ -348,14 +333,20 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"anthropic/claude-instant-1",
 	"anthropic/claude-instant-1.2-cyan",
 	"anthropic/claude-instant-1.2",
+	"google/" + google.Gemini15Flash,
+	"google/" + google.Gemini15FlashLatest,
+	"google/" + google.GeminiPro,
+	"google/" + google.GeminiProLatest,
 	"fireworks/starcoder",
 	"fireworks/" + fireworks.Llama213bCode,
 	"fireworks/" + fireworks.StarcoderTwo15b,
-	"fireworks/" + fireworks.StarcoderTwo7b},
+	"fireworks/" + fireworks.StarcoderTwo7b,
+	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoder7b},
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
 	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
 
-func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiEnabled bool) []string {
+func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
 		// When updating the below lists, make sure you also update `isAllowedCustomChatModel` in `chat.go`
@@ -375,6 +366,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiE
 		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
@@ -382,6 +374,12 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiE
 			"openai/gpt-4o",
 			"openai/gpt-4-turbo",
 			"openai/gpt-4-turbo-preview",
+			"google/" + google.Gemini15FlashLatest,
+			"google/" + google.Gemini15ProLatest,
+			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash,
+			"google/" + google.Gemini15Pro,
+			"google/" + google.GeminiPro,
 
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
@@ -391,9 +389,6 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool, googleGeminiE
 			"anthropic/claude-instant-1.2",
 			"anthropic/claude-instant-v1",
 			"anthropic/claude-instant-1",
-		}
-		if googleGeminiEnabled {
-			chatModels = append(chatModels, "google/gemini-1.5-pro-latest", "google/gemini-1.5-flash-latest")
 		}
 		return chatModels
 

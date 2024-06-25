@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/gitserver",
+        "//lib/codeintel/languages",
         "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_go_enry_go_enry_v2//data",

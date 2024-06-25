@@ -92,6 +92,8 @@
         },
         '.cm-tooltip': {
             border: 'none',
+            // For nice rounded corners in hover cards
+            borderRadius: 'var(--border-radius)',
         },
     })
 
@@ -122,6 +124,7 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
+    import { openSearchPanel } from '@codemirror/search'
     import { EditorState, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
@@ -145,9 +148,11 @@
         lockFirstVisibleLine,
         temporaryTooltip,
         hideEmptyLastLine,
+        search,
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { SearchPanel, keyboardShortcut } from './codemirror/inline-search'
     import { type Range, staticHighlights } from './codemirror/static-highlights'
     import {
         createCompartments,
@@ -156,7 +161,9 @@
         type ScrollSnapshot,
         getScrollSnapshot as getScrollSnapshot_internal,
     } from './codemirror/utils'
+    import { registerHotkey } from './Hotkey'
     import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+    import { createLocalWritable } from './stores'
 
     export let blobInfo: BlobInfo
     export let highlights: string
@@ -189,6 +196,19 @@
         staticHighlightExtension: null,
         blameDataExtension: null,
         blameColumnExtension: null,
+        searchExtension: null,
+    })
+    const useFileSearch = createLocalWritable('blob.overrideBrowserFindOnPage', true)
+    registerHotkey({
+        keys: keyboardShortcut,
+        handler(event) {
+            if ($useFileSearch && view) {
+                event.preventDefault()
+                openSearchPanel(view)
+            }
+            // fall back to browser's find in page
+        },
+        allowDefault: true,
     })
 
     let container: HTMLDivElement | null = null
@@ -230,6 +250,15 @@
     $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
     $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
+    $: searchExtension = search({
+        overrideBrowserFindInPageShortcut: $useFileSearch,
+        onOverrideBrowserFindInPageToggle(enabled) {
+            useFileSearch.set(enabled)
+        },
+        createPanel(options) {
+            return new SearchPanel(options)
+        },
+    })
 
     $: blameColumnExtension = showBlame
         ? showBlameColumn({
@@ -255,6 +284,7 @@
             syntaxHighlighting,
             staticHighlightExtension,
             blameDataExtension,
+            searchExtension,
         }
         if (view.state.sliceDoc() !== blobInfo.content) {
             view.setState(createEditorState(blobInfo, extensions))
@@ -293,6 +323,7 @@
                     staticHighlightExtension,
                     blameDataExtension,
                     blameColumnExtension,
+                    searchExtension,
                 }),
                 parent: container,
             })

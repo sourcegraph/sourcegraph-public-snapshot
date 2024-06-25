@@ -1,16 +1,18 @@
 <script lang="ts">
-    import { mdiMapSearch } from '@mdi/js'
+    import { onMount } from 'svelte'
 
     import HeroPage from '$lib/HeroPage.svelte'
-    import { logViewEvent } from '$lib/logger'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     export let repoName: string
     export let viewerCanAdminister: boolean
 
-    logViewEvent('RepositoryError')
+    onMount(() => {
+        TELEMETRY_RECORDER.recordEvent('repo.error.notFound', 'view')
+    })
 </script>
 
-<HeroPage title="Repository not found" svgIconPath={mdiMapSearch}>
+<HeroPage title="Repository not found" icon={ILucideBookX}>
     {#if viewerCanAdminister}
         <p>
             As a site admin, you can add <code>{repoName}</code> to Sourcegraph to allow users to search and view it by

@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
 
 func TestDatabaseHover(t *testing.T) {
@@ -27,7 +28,7 @@ func TestDatabaseHover(t *testing.T) {
 			path:     "template/src/lsif/api.ts",
 			line:     14, character: 25,
 			expectedText:  "```ts\nfunction queryLSIF<P extends { query: string; uri: string; }, R>({ query, uri, ...rest }: P, queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<R>>): Promise<R | null>\n```\nPerform an LSIF request to the GraphQL API.",
-			expectedRange: newRange(14, 22, 14, 31),
+			expectedRange: shared.NewRange(14, 22, 14, 31),
 		},
 		{
 			// `    const { repo, commit, path } = parseGitURI(new URL(uri))`
@@ -38,7 +39,7 @@ func TestDatabaseHover(t *testing.T) {
 			path:     "template/src/lsif/api.ts",
 			line:     25, character: 40,
 			expectedText:  "```ts\nfunction parseGitURI({ hostname, pathname, search, hash }: URL): { repo: string; commit: string; path: string; }\n```\nExtracts the components of a text document URI.",
-			expectedRange: newRange(25, 35, 25, 46),
+			expectedRange: shared.NewRange(25, 35, 25, 46),
 		},
 	}
 
@@ -46,7 +47,8 @@ func TestDatabaseHover(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if actualText, actualRange, exists, err := store.GetHover(context.Background(), testCase.uploadID, testCase.path, testCase.line, testCase.character); err != nil {
+			path := core.NewUploadRelPathUnchecked(testCase.path)
+			if actualText, actualRange, exists, err := store.GetHover(context.Background(), testCase.uploadID, path, testCase.line, testCase.character); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else if !exists {
 				t.Errorf("no hover found")

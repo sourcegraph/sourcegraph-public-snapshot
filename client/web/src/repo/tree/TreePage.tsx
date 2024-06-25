@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, type FC } from 'react'
 
 import {
     mdiAccount,
@@ -12,13 +12,12 @@ import {
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
-    mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, type ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
+import { asError, basename, encodeURIPathComponent, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -26,7 +25,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import {
@@ -299,20 +298,6 @@ export const TreePage: FC<Props> = ({
                             >
                                 <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
                                 <span className={styles.text}>Code graph data</span>
-                            </Button>
-                        </Tooltip>
-                    )}
-                    {window.context?.codyEnabled && window.context?.embeddingsEnabled && (
-                        <Tooltip content="Embeddings">
-                            <Button
-                                className="flex-shrink-0"
-                                to={`/${encodeURIPathComponent(repoName)}/-/embeddings`}
-                                variant="secondary"
-                                outline={true}
-                                as={Link}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiVectorPolyline} />{' '}
-                                <span className={styles.text}>Embeddings</span>
                             </Button>
                         </Tooltip>
                     )}

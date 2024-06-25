@@ -178,14 +178,12 @@ type InstanceFeatures struct {
 	features map[string]string
 }
 
-func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
-	reason, err := newStatusReason(src.GetReason())
+func newInstanceStatus(src *cloudapiv1.InstanceState) *InstanceStatus {
+	status := InstanceStatus{}
+	var err error
+	status.Reason, err = newStatusReason(src.GetReason())
 	if err != nil {
-		return nil, err
-	}
-
-	status := InstanceStatus{
-		Reason: reason,
+		status.Error = err.Error()
 	}
 	switch src.GetInstanceStatus() {
 	case cloudapiv1.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:
@@ -201,16 +199,13 @@ func newInstanceStatus(src *cloudapiv1.InstanceState) (*InstanceStatus, error) {
 		status.Status = InstanceStatusUnknown
 	}
 
-	return &status, nil
+	return &status
 }
 
 func newInstance(src *cloudapiv1.Instance) (*Instance, error) {
 	details := src.GetInstanceDetails()
 	platform := src.GetPlatformDetails()
-	status, err := newInstanceStatus(src.GetInstanceState())
-	if err != nil {
-		return nil, err
-	}
+	status := newInstanceStatus(src.GetInstanceState())
 	features := newInstanceFeaturesFrom(details.GetInstanceFeatures())
 	expiresAt, err := features.GetEphemeralLeaseTime()
 	if err != nil && !errors.Is(err, ErrLeaseTimeNotSet) {

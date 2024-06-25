@@ -233,7 +233,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 	// log_statement='mod'.
 	r, err := s.GetByName(ctx, op.Name)
 	if err != nil {
-		if !errors.HasType(err, &RepoNotFoundErr{}) {
+		if !errors.HasType[*RepoNotFoundErr](err) {
 			return err
 		}
 		insert = true // missing
@@ -2940,6 +2940,15 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRepoNotFoundFulfillsNotFound(t *testing.T) {
+	err := &RepoNotFoundErr{
+		ID:         api.RepoID(1),
+		Name:       api.RepoName("github.com/foo/bar"),
+		HashedName: api.RepoHashedName("github.com/foo/bar"),
+	}
+	require.True(t, errcode.IsNotFound(err))
 }
 
 func TestRepoStore_Metadata(t *testing.T) {
