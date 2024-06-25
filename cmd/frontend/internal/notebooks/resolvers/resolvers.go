@@ -367,6 +367,10 @@ type notebookResolver struct {
 	db       database.DB
 }
 
+func (r *notebookResolver) QueryVersion(_ context.Context) string {
+	return r.notebook.QueryVersion
+}
+
 func (r *notebookResolver) ID() graphql.ID {
 	return marshalNotebookID(r.notebook.ID)
 }
