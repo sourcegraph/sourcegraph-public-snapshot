@@ -209,8 +209,13 @@ func TestEventTypesRedact(t *testing.T) {
 					PrivateMetadata: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"foo": {
-								Kind: &structpb.Value_NumberValue{
-									NumberValue: 1,
+								Kind: &structpb.Value_StringValue{
+									StringValue: "allowed",
+								},
+							},
+							"bar": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "redacted",
 								},
 							},
 						},
@@ -219,7 +224,8 @@ func TestEventTypesRedact(t *testing.T) {
 
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 			// assert the values are still there for privateMetadata
-			assert.Equal(t, float64(1), ev.Parameters.PrivateMetadata.Fields["foo"].GetNumberValue())
+			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
+			assert.Equal(t, "redacted", ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
 		})
 	})
 }
