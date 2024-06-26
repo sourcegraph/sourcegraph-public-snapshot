@@ -46,6 +46,7 @@ client/storybook/storybook-static
 client/plugin-backstage/node_modules
 client/app-shell/node_modules
 client/backstage-backend/node_modules
+client/backstage-frontend/node_modules
 client/cody/node_modules
 client/cody-agent/node_modules
 client/cody-cli/node_modules

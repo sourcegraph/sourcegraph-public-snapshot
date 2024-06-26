@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
     export enum FuzzyFinderTabType {
+        All = 'all',
         Repos = 'repos',
         Symbols = 'symbols',
         Files = 'files',
@@ -23,17 +24,11 @@
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { displayRepoName } from '$lib/shared'
     import TabsHeader, { type Tab } from '$lib/TabsHeader.svelte'
-    import { Input } from '$lib/wildcard'
+    import { Alert, Input } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
-    import { filesHotkey, reposHotkey, symbolsHotkey } from './keys'
-    import {
-        createRepositorySource,
-        type CompletionSource,
-        createFileSource,
-        type FuzzyFinderResult,
-        createSymbolSource,
-    } from './sources'
+    import { allHotkey, filesHotkey, reposHotkey, symbolsHotkey } from './keys'
+    import { type CompletionSource, createFuzzyFinderSource } from './sources'
 
     export let open = false
     export let scope = ''
@@ -45,17 +40,77 @@
         }
     }
 
+    const client = getGraphQLClient()
+    const tabs: (Tab & { source: CompletionSource })[] = [
+        {
+            id: 'all',
+            title: 'All',
+            shortcut: allHotkey,
+            source: createFuzzyFinderSource({
+                client,
+                queryBuilder: value =>
+                    `patterntype:keyword (type:repo OR type:path OR type:symbol) count:50 ${scope} ${value}`,
+            }),
+        },
+        {
+            id: 'repos',
+            title: 'Repos',
+            shortcut: reposHotkey,
+            source: createFuzzyFinderSource({
+                client,
+                queryBuilder: value => `patterntype:keyword type:repo count:50 ${value}`,
+            }),
+        },
+        {
+            id: 'symbols',
+            title: 'Symbols',
+            shortcut: symbolsHotkey,
+            source: createFuzzyFinderSource({
+                client,
+                queryBuilder: value => `patterntype:keyword type:symbol count:50 ${scope} ${value}`,
+            }),
+        },
+        {
+            id: 'files',
+            title: 'Files',
+            shortcut: filesHotkey,
+            source: createFuzzyFinderSource({
+                client,
+                queryBuilder: value => `patterntype:keyword type:path count:50 ${scope} ${value}`,
+            }),
+        },
+    ]
+
     let dialog: HTMLDialogElement | undefined
     let listbox: HTMLElement | undefined
     let input: HTMLInputElement | undefined
     let query = ''
+    let selectedTab = tabs[0]
+    let selectedOption: number = 0
 
-    const client = getGraphQLClient()
-    const tabs: (Tab & { source: CompletionSource<FuzzyFinderResult> })[] = [
-        { id: 'repos', title: 'Repos', shortcut: reposHotkey, source: createRepositorySource(client) },
-        { id: 'symbols', title: 'Symbols', shortcut: symbolsHotkey, source: createSymbolSource(client, () => scope) },
-        { id: 'files', title: 'Files', shortcut: filesHotkey, source: createFileSource(client, () => scope) },
-    ]
+    $: useScope = scope && selectedTab.id !== 'repos'
+    $: source = selectedTab.source
+    $: if (open) {
+        source.next(query)
+    }
+    $: if (open) {
+        dialog?.showModal()
+        input?.select()
+    } else {
+        dialog?.close()
+    }
+    $: placeholder = (function () {
+        switch (selectedTab.id) {
+            case 'repos':
+                return 'Find repositories...'
+            case 'symbols':
+                return 'Find symbols...'
+            case 'files':
+                return 'Find files...'
+            default:
+                return 'Find anything...'
+        }
+    })()
 
     function selectNext() {
         let next: HTMLElement | null = null
@@ -165,21 +220,6 @@
             dialog?.close()
         }
     }
-
-    let selectedTab = tabs[0]
-    let selectedOption: number = 0
-
-    $: useScope = scope && selectedTab.id !== 'repos'
-    $: source = selectedTab.source
-    $: if (open) {
-        source.next(query)
-    }
-    $: if (open) {
-        dialog?.showModal()
-        input?.select()
-    } else {
-        dialog?.close()
-    }
 </script>
 
 <dialog bind:this={dialog} on:close>
@@ -208,7 +248,7 @@
                 <Input
                     type="text"
                     bind:input
-                    placeholder="Enter a fuzzy query"
+                    {placeholder}
                     autofocus
                     value={query}
                     onInput={event => {
@@ -227,58 +267,49 @@
                 {/if}
             </div>
             <ul role="listbox" bind:this={listbox} aria-label="Search results">
-                {#if $source.value}
-                    {#each $source.value as item, index (item.item)}
-                        {@const repo = item.item.repository.name}
+                {#if $source.pending}
+                    <li class="message">Waiting for response...</li>
+                {:else if $source.error}
+                    <li class="error"><Alert variant="danger">{$source.error.message}</Alert></li>
+                {:else if $source.value?.results}
+                    {#each $source.value.results as item, index (item)}
+                        {@const repo = item.repository.name}
                         {@const displayRepo = displayRepoName(repo)}
                         <li role="option" aria-selected={selectedOption === index} data-index={index}>
-                            {#if item.item.type === 'repo'}
+                            {#if item.type === 'repo'}
                                 {@const matchOffset = repo.length - displayRepo.length}
-                                <a href="/{item.item.repository.name}" on:click={handleClick}>
-                                    <span class="icon"><CodeHostIcon repository={item.item.repository.name} /></span>
+                                <a href="/{item.repository.name}" on:click={handleClick}>
+                                    <span class="icon"><CodeHostIcon repository={item.repository.name} /></span>
                                     <span class="label"
-                                        ><EmphasizedLabel
-                                            label={displayRepo}
-                                            matches={item.positions}
-                                            offset={matchOffset}
-                                        /></span
+                                        ><EmphasizedLabel label={displayRepo} offset={matchOffset} /></span
                                     >
                                     <span class="info">{repo}</span>
                                 </a>
-                            {:else if item.item.type == 'symbol'}
-                                <a href={item.item.symbol.location.url} on:click={handleClick}>
-                                    <span class="icon"><SymbolKindIcon symbolKind={item.item.symbol.kind} /></span>
-                                    <span class="label"
-                                        ><EmphasizedLabel
-                                            label={item.item.symbol.name}
-                                            matches={item.positions}
-                                        /></span
-                                    >
+                            {:else if item.type == 'symbol'}
+                                <a href={item.symbol.location.url} on:click={handleClick}>
+                                    <span class="icon"><SymbolKindIcon symbolKind={item.symbol.kind} /></span>
+                                    <span class="label"><EmphasizedLabel label={item.symbol.name} /></span>
                                     <span class="info mono"
-                                        >{#if !useScope}{displayRepo} &middot; {/if}{item.item.file.path}</span
+                                        >{#if !useScope}{displayRepo} &middot; {/if}{item.file.path}</span
                                     >
                                 </a>
-                            {:else if item.item.type == 'file'}
-                                {@const fileName = item.item.file.name}
-                                {@const folderName = dirname(item.item.file.path)}
-                                <a href={item.item.file.url} on:click={handleClick}>
-                                    <span class="icon"><FileIcon file={item.item.file} inline /></span>
+                            {:else if item.type == 'file'}
+                                {@const fileName = item.file.name}
+                                {@const folderName = dirname(item.file.path)}
+                                <a href={item.file.url} on:click={handleClick}>
+                                    <span class="icon"><FileIcon file={item.file} inline /></span>
                                     <span class="label"
-                                        ><EmphasizedLabel
-                                            label={fileName}
-                                            matches={item.positions}
-                                            offset={folderName.length + 1}
-                                        /></span
+                                        ><EmphasizedLabel label={fileName} offset={folderName.length + 1} /></span
                                     >
                                     <span class="info mono">
                                         {#if !useScope}{displayRepo} &middot; {/if}
-                                        <EmphasizedLabel label={folderName} matches={item.positions} />
+                                        <EmphasizedLabel label={folderName} />
                                     </span>
                                 </a>
                             {/if}
                         </li>
                     {:else}
-                        <li class="empty">No matches</li>
+                        <li class="message">No matches</li>
                     {/each}
                 {/if}
             </ul>
@@ -381,8 +412,12 @@
             }
         }
 
-        .empty {
+        .message,
+        .error {
             padding: 1rem;
+        }
+
+        .message {
             text-align: center;
             color: var(--text-muted);
         }

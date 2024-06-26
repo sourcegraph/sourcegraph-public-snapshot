@@ -152,7 +152,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showBatchChanges =
         props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom && !disableCodeSearchFeatures
 
-    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
 
     useEffect(() => {
@@ -190,7 +189,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 <InlineNavigationPanel
                     authenticatedUser={props.authenticatedUser}
                     showSearchContext={showSearchContext}
-                    showCodySearch={codySearchEnabled}
                     showSearchJobs={showSearchJobs}
                     showSearchNotebook={showSearchNotebook}
                     showCodeMonitoring={showCodeMonitoring}
@@ -278,7 +276,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
 export interface InlineNavigationPanelProps {
     showSearchContext: boolean
-    showCodySearch: boolean
     showSearchJobs: boolean
     showSearchNotebook: boolean
     showCodeMonitoring: boolean
@@ -295,7 +292,6 @@ export interface InlineNavigationPanelProps {
 export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const {
         showSearchContext,
-        showCodySearch,
         showSearchJobs,
         showSearchNotebook,
         showBatchChanges,
@@ -318,14 +314,6 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             // We hardcode the code monitoring path here because PageRoutes.CodeMonitoring is a catch-all
             // path for all code monitoring sub links.
             showCodeMonitoring && { path: '/code-monitoring', content: 'Monitoring' },
-            showCodySearch && {
-                path: PageRoutes.CodySearch,
-                content: (
-                    <>
-                        Natural language search <ProductStatusBadge status="experimental" />
-                    </>
-                ),
-            },
             showSearchJobs && {
                 path: PageRoutes.SearchJobs,
                 content: (
@@ -336,7 +324,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext, showCodySearch, showSearchJobs, showCodeMonitoring, showSearchNotebook])
+    }, [showSearchContext, showSearchJobs, showCodeMonitoring, showSearchNotebook])
 
     const searchNavigation =
         searchNavBarItems.length > 0 ? (
@@ -367,7 +355,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const codyNavigation = hideCodyDropdown ? (
         <NavItem icon={() => <CodyLogoWrapper />} key="cody">
             <NavLink variant={navLinkVariant} to={disableCodyFeatures ? PageRoutes.Cody : PageRoutes.CodyChat}>
-                Cody AI
+                Cody
             </NavLink>
         </NavItem>
     ) : (
@@ -376,7 +364,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             toggleItem={{
                 path: isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.Cody,
                 icon: () => <CodyLogoWrapper />,
-                content: 'Cody AI',
+                content: 'Cody',
                 variant: navLinkVariant,
             }}
             routeMatch={routeMatch}

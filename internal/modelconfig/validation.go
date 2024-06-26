@@ -16,7 +16,7 @@ import (
 
 // resourceIDRE is a regular expression for verifying resource IDs are
 // of a simple format.
-var resourceIDRE = regexp.MustCompile(`[a-z][a-z-]*[a-z]`)
+var resourceIDRE = regexp.MustCompile(`^[a-z0-9][a-z0-9_\-\.]*[a-z0-9]$`)
 
 func validateProvider(p types.Provider) error {
 	if l := len(p.DisplayName); l < 5 || l > 40 {
@@ -36,17 +36,23 @@ func validateProvider(p types.Provider) error {
 func validateModelRef(ref types.ModelRef) error {
 	parts := strings.Split(string(ref), "::")
 	if len(parts) != 3 {
-		return errors.New("invalid number of parts")
+		return errors.New("modelRef syntax error")
 	}
 	if !resourceIDRE.MatchString(parts[0]) {
 		return errors.New("invalid ProviderID")
+	}
+	if !resourceIDRE.MatchString(parts[2]) {
+		return errors.New("invalid ModelID")
 	}
 	// We don't impose any constraints on the API Version ID, because
 	// while it's something Sourcegraph manages, there are lots of exotic
 	// but reasonable forms it could take. e.g. "2024-06-01" or
 	// "v1+beta2/with-git-lfs-context-support".
-	if !resourceIDRE.MatchString(parts[2]) {
-		return errors.New("invalid ModelID")
+	//
+	// But we still want to impose some basic standards, defined here.
+	apiVersion := parts[1]
+	if strings.ContainsAny(apiVersion, `:;*% $#\"',!@`) {
+		return errors.New("invalid APIVersionID")
 	}
 
 	return nil

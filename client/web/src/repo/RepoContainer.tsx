@@ -560,10 +560,9 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 </Routes>
             </Suspense>
 
-            {!isRepoIgnored(repoName) && isCodySidebarOpen && (
+            {!isRepoIgnored(repoName) && isCodySidebarOpen && repo && (
                 <RepoContainerRootPortal>
                     <Panel
-                        className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
@@ -571,8 +570,11 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                         defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
                         onResize={setCodySidebarSize}
+                        className={classNames('cody-sidebar-panel', styles.codySidebarPanel)}
                     >
                         <CodySidebar
+                            repository={repo}
+                            filePath={filePath}
                             onClose={() => setIsCodySidebarOpen(false)}
                             authenticatedUser={props.authenticatedUser}
                             telemetryRecorder={props.platformContext.telemetryRecorder}

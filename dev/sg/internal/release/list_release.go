@@ -33,7 +33,7 @@ func listRegistryVersions(cmd *cli.Context) error {
 
 	out := std.NewOutput(os.Stderr, false)
 	pending := out.Pending(output.Line("", output.StylePending, "Fetching versions from the release registry..."))
-	versions, err := client.ListVersions(cmd.Context)
+	versions, err := client.ListVersions(cmd.Context, "")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to fetch versions from release registry"))
 		return err

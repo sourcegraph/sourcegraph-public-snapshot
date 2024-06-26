@@ -43,7 +43,7 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
         },
     },
     {
-        label: 'Cody AI',
+        label: 'Cody',
         icon: ISgCody,
         href: '/cody',
         isCurrent(this: NavigationMenu, page) {
@@ -82,7 +82,7 @@ export const dotcomMainNavigation: (NavigationMenu | NavigationEntry)[] = [
         href: '/search',
     },
     {
-        label: 'Cody AI',
+        label: 'Cody',
         icon: ISgCody,
         href: '/cody',
         children: [

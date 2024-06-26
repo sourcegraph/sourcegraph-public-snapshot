@@ -19,16 +19,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 	"github.com/sourcegraph/sourcegraph/lib/redislock"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/internal/tables"
 )
 
 // maybeMigrate runs the auto-migration for the database when needed based on
 // the given version.
 func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contract, redisClient *redis.Client, currentVersion string) (err error) {
+	dbName := databaseName(contract.MSP)
 	ctx, span := databaseTracer.Start(
 		ctx,
 		"database.maybeMigrate",
 		trace.WithAttributes(
 			attribute.String("currentVersion", currentVersion),
+			attribute.String("database", dbName),
 		),
 	)
 	defer func() {
@@ -39,7 +43,6 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		span.End()
 	}()
 
-	dbName := databaseName(contract.MSP)
 	sqlDB, err := contract.PostgreSQL.OpenDatabase(ctx, dbName)
 	if err != nil {
 		return errors.Wrap(err, "open database")
@@ -76,11 +79,12 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 		fmt.Sprintf("%s:auto-migrate", dbName),
 		15*time.Second,
 		func() error {
+			ctx := context.WithoutCancel(ctx) // do not interrupt once we start
 			span.AddEvent("lock.acquired")
 
 			versionKey := fmt.Sprintf("%s:db_version", dbName)
 			if shouldSkipMigration(
-				redisClient.Get(context.Background(), versionKey).Val(),
+				redisClient.Get(ctx, versionKey).Val(),
 				currentVersion,
 			) {
 				logger.Info("skipped auto-migration",
@@ -90,20 +94,23 @@ func maybeMigrate(ctx context.Context, logger log.Logger, contract runtime.Contr
 				span.SetAttributes(attribute.Bool("skipped", true))
 				return nil
 			}
+			span.SetAttributes(attribute.Bool("skipped", false))
 
 			// Create a session that ignore debug logging.
 			sess := conn.Session(&gorm.Session{
-				Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+				Context: ctx,
+				Logger:  gormlogger.Default.LogMode(gormlogger.Warn),
 			})
 			// Auto-migrate database table definitions.
-			for _, table := range allTables {
+			for _, table := range tables.All() {
+				span.AddEvent(fmt.Sprintf("automigrate.%s", table.TableName()))
 				err := sess.AutoMigrate(table)
 				if err != nil {
 					return errors.Wrapf(err, "auto migrating table for %s", errors.Safe(fmt.Sprintf("%T", table)))
 				}
 			}
 
-			return redisClient.Set(context.Background(), versionKey, currentVersion, 0).Err()
+			return redisClient.Set(ctx, versionKey, currentVersion, 0).Err()
 		},
 	)
 }
