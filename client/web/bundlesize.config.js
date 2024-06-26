@@ -21,6 +21,10 @@ const config = {
       maxSize: '155kb',
     },
     {
+      path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-chunk-2IGNA2NH.js'),
+      maxSize: '6.45MB', // Cody web chunk is very big
+    },
+    {
       path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.js'),
       maxSize: '600kb', // 2 monaco chunks are very big
     },
