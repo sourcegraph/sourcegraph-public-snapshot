@@ -42,11 +42,11 @@ go_test(
     tags = [TAG_INFRA_CORESERVICES],
     deps = [
         "//lib/errors",
+        "//lib/managedservicesplatform/runtime/contract/contractest:mock",
         "//lib/pointers",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
         "@io_opentelemetry_go_otel_sdk//trace",
     ],
 )

@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mock",
+    srcs = ["contract_mock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract/mock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/managedservicesplatform/runtime/contract",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)
+
+go_library(
+    name = "contractest",
+    srcs = ["contract_mock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/contract/contractest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/managedservicesplatform/runtime/contract",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)
