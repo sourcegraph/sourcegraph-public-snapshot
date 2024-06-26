@@ -14,7 +14,7 @@ receivers:
 exporters:
   otlp/jaeger:
     # Default Jaeger GRPC server
-    endpoint: '$JAEGER_HOST:$JAEGER_OTLP_GRPC_PORT'
+    endpoint: '${JAEGER_HOST}:${JAEGER_OTLP_GRPC_PORT}'
     tls:
       insecure: true
 

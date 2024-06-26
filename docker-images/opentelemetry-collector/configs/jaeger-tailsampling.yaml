@@ -13,7 +13,7 @@ receivers:
 
 exporters:
   otlp/jaeger:
-    endpoint: "$JAEGER_HOST:$JAEGER_OTLP_GRPC_PORT"
+    endpoint: "${JAEGER_HOST}:${JAEGER_OTLP_GRPC_PORT}"
     tls:
       insecure: true
 
