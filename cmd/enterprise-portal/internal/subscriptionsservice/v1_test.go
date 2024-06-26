@@ -331,7 +331,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
 				SubscriptionId:      "80ca12e2-54b4-448c-a61a-390b1a9c1224",
 				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN},
+				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
 			},
 		})
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
@@ -352,7 +352,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
 				InstanceDomain:      "s1.sourcegraph.com",
 				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN},
+				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
 			},
 		})
 		req.Header().Add("Authorization", "Bearer foolmeifyoucan")

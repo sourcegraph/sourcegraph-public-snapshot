@@ -394,7 +394,8 @@ message UpdateEnterpriseSubscriptionMembershipResponse {}
 // Role represents a role that can be granted to a user.
 enum Role {
   ROLE_UNSPECIFIED = 0;
-  ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN = 1;
+  ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN = 1 [deprecated = true];
+  ROLE_SUBSCRIPTION_CUSTOMER_ADMIN = 2;
 }
 
 // Permission represents a permission that can be performed by a user.
