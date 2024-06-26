@@ -6220,6 +6220,10 @@ type FileMatch {
     """
     chunkMatches: [ChunkMatch!]!
     """
+    The ranges of the file path that match the query.
+    """
+    pathMatches: [Range!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
