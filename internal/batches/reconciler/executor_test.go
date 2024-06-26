@@ -94,7 +94,6 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		Name: repo.Name,
 		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
-	defer state.Unmock()
 
 	mockExternalURL(t, "https://sourcegraph.test")
 

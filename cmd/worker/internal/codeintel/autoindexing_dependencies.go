@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
 type autoindexingDependencyScheduler struct{}
@@ -46,6 +45,5 @@ func (j *autoindexingDependencyScheduler) Routines(_ context.Context, observatio
 		services.UploadsService,
 		services.DependenciesService,
 		services.AutoIndexingService,
-		repoupdater.DefaultClient,
 	), nil
 }

@@ -147,11 +147,6 @@ func IsTemporary(err error) bool {
 	return errors.AsInterface(err, &e) && e.Temporary()
 }
 
-func IsRepoDenied(err error) bool {
-	var e interface{ IsRepoDenied() bool }
-	return errors.AsInterface(err, &e) && e.IsRepoDenied()
-}
-
 // IsArchived will check if err or one of its causes is an archived error.
 // (This is generally going to be in the context of repositories being
 // archived.)
