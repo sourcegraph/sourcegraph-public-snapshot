@@ -3,6 +3,7 @@
 .root {
     display: flex;
     flex-direction: column;
+    // stylelint-disable-next-line property-no-unknown
     container-type: inline-size;
     padding-bottom: 0 !important;
 
