@@ -125,6 +125,8 @@ type internalContract struct {
 	environmentID string
 }
 
+// NewService returns a new Contract instance from configuration parsed from the Env
+// instance. Values are expected per the 'MSP contract'.
 func NewService(logger log.Logger, service ServiceMetadataProvider, env *Env) ServiceContract {
 	return ServiceContract{
 		Port:            env.GetInt("PORT", "", "service port"),
@@ -133,14 +135,14 @@ func NewService(logger log.Logger, service ServiceMetadataProvider, env *Env) Se
 	}
 }
 
+// NewJob returns a new Contract instance from configuration parsed from the Env
+// instance. Values are expected per the 'MSP contract'.
 func NewJob(logger log.Logger, service ServiceMetadataProvider, env *Env) JobContract {
 	return JobContract{
 		Contract: newBase(logger, service, env),
 	}
 }
 
-// New returns a new Contract instance from configuration parsed from the Env
-// instance. Values are expected per the 'MSP contract'.
 func newBase(logger log.Logger, service ServiceMetadataProvider, env *Env) Contract {
 	defaultGCPProjectID := pointers.Deref(env.GetOptional("GOOGLE_CLOUD_PROJECT", "GCP project ID"), "")
 	internal := internalContract{
