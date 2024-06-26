@@ -35,7 +35,7 @@ export const NewCodySidebarWebChat: FC<NewCodySidebarWebChatProps> = memo(functi
     const contextInfo = useMemo(
         () => ({
             repositories: [repository],
-            fileURL: `/${filePath}`,
+            fileURL: filePath ? `/${filePath}` : undefined,
         }),
         [repository, filePath]
     )
