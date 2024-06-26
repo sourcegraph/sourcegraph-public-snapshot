@@ -31,7 +31,7 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.Com
 		}()
 	}
 
-	r, err := gs.ArchiveReader(ctx, c.Repo, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatTar})
+	r, err := gs.ArchiveReader(ctx, c.Repo, gitserver.ArchiveOptions{Treeish: string(commitID), Format: gitserver.ArchiveFormatTar})
 	if err != nil {
 		return Inventory{}, err
 	}
