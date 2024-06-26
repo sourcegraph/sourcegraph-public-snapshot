@@ -1,4 +1,4 @@
-import { TeamRole } from './teamMembers'
+import type { TeamRole } from './teamMembers'
 
 // BillingInterval is the subscription's billing cycle. 'daily' is only
 // available in the dev environment.
@@ -31,12 +31,12 @@ export interface PaymentMethod {
 export interface PreviewResult {
     dueNow: UsdCents
     newPrice: UsdCents
-    dueDate: Date
+    dueDate: string
 }
 
 export interface DiscountInfo {
     description: string
-    expiresAt?: Date
+    expiresAt?: string
 }
 
 export interface Invoice {
@@ -112,7 +112,29 @@ export interface UpdateSubscriptionRequest {
     subscriptionUpdate?: SubscriptionUpdateOptions
 }
 
+export interface PreviewUpdateSubscriptionRequest {
+    newSeatCount?: number
+    newBillingInterval?: BillingInterval
+    newCancelAtPeriodEnd?: boolean
+}
+
 export interface GetSubscriptionInvoicesResponse {
     invoices: Invoice[]
     continuationToken?: string
+}
+
+export interface CreateTeamRequest {
+    name: string
+    slug: string
+    seats: number
+    address: Address
+    billingInterval: BillingInterval
+    couponCode?: string
+    creditCardToken: string
+}
+
+export interface PreviewCreateTeamRequest {
+    seats: number
+    billingInterval: BillingInterval
+    couponCode?: string
 }

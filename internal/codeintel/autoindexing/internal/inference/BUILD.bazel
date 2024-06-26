@@ -50,6 +50,7 @@ go_test(
     timeout = "short",
     srcs = [
         "infer_test.go",
+        "lang_dotnet_test.go",
         "lang_go_test.go",
         "lang_java_test.go",
         "lang_python_test.go",

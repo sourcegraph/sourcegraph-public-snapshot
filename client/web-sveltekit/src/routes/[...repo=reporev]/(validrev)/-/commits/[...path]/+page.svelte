@@ -63,9 +63,15 @@
     <title>{pageTitle}</title>
 </svelte:head>
 
-{#if data.path}
-    <h2>Commits in <code>{data.path}</code></h2>
-{/if}
+<h2>
+    Commits
+    {#if data.path}
+        in <code>{data.path}</code>
+    {/if}
+    at <Badge variant="link">
+        <a href={data.repoURL}>{data.displayRevision || data.resolvedRevision.defaultBranch}</a></Badge
+    >
+</h2>
 <section>
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if !$commitsQuery.restoring && commits}
@@ -128,6 +134,13 @@
         padding: 0;
     }
 
+    h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
     h2,
     ul.commits,
     .footer {
@@ -176,6 +189,8 @@
             }
 
             .actions {
+                --icon-color: currentColor;
+
                 flex-shrink: 0;
             }
 

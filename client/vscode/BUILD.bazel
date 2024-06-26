@@ -142,8 +142,6 @@ ts_project(
         "src/settings/accessTokenSetting.ts",
         "src/settings/displayWarnings.ts",
         "src/settings/endpointSetting.ts",
-        "src/settings/invalidation.ts",
-        "src/settings/readConfiguration.ts",
         "src/settings/recommendations.ts",
         "src/settings/uninstall.ts",
         "src/state.ts",

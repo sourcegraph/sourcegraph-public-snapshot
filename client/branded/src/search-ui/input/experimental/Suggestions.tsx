@@ -4,6 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isSafari } from '@sourcegraph/common'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
@@ -224,7 +225,7 @@ const FilterOption: FC<{ option: Option }> = ({ option }) => {
  */
 const QueryOption: FC<{ option: Option }> = ({ option: { label, matches } }) => {
     const tokens = useMemo(() => {
-        const decorations = decorateQuery(label)
+        const decorations = decorateQuery(label, SearchPatternType.standard)
 
         return decorations
             ? decorations.map(({ value, key, className, token }) => (

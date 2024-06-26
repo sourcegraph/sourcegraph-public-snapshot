@@ -1,0 +1,35 @@
+// stylelint-disable custom-property-pattern
+
+.chat {
+    --vscode-editor-background: var(--body-bg);
+    --vscode-editor-foreground: var(--body-color);
+    --vscode-input-background: var(--search-box-color);
+    --vscode-input-foreground: var(--body-color);
+    --vscode-textLink-foreground: var(--primary);
+    --vscode-input-border: var(--border-color-2);
+    --vscode-inputOption-activeBackground: var(--search-input-token-filter);
+    --vscode-inputOption-activeForeground: var(--body-color);
+    --vscode-loading-dot-color: var(--body-color);
+    --mention-color-opacity: 100%;
+
+    h3 {
+        font-size: inherit;
+        margin: 0;
+    }
+
+    ul {
+        margin: 0;
+    }
+
+    a {
+        color: var(--link-color) !important;
+    }
+}
+
+[data-floating-ui-portal] {
+    --vscode-quickInput-background: var(--secondary-2);
+    --vscode-widget-border: var(--border-color);
+    --vscode-list-activeSelectionBackground: var(--primary);
+    --vscode-foreground: var(--body-color);
+    --vscode-widget-shadow: rgba(36, 41, 54, 0.2);
+}

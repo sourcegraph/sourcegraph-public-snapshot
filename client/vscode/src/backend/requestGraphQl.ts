@@ -1,21 +1,10 @@
-import { authentication } from 'vscode'
-
 import { asError } from '@sourcegraph/common'
 import { checkOk, GRAPHQL_URI, type GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
 
-import { handleAccessTokenError } from '../settings/accessTokenSetting'
+import { handleAccessTokenError, getAccessToken } from '../settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
 import { fetch, getProxyAgent, Headers, type HeadersInit } from './fetch'
-
-let invalidated = false
-
-/**
- * To be called when Sourcegraph URL changes.
- */
-export function invalidateClient(): void {
-    invalidated = true
-}
 
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
@@ -23,14 +12,8 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     overrideAccessToken?: string,
     overrideSourcegraphURL?: string
 ): Promise<GraphQLResult<R>> => {
-    if (invalidated) {
-        throw new Error(
-            'Sourcegraph GraphQL Client has been invalidated due to instance URL change. Restart VS Code to fix.'
-        )
-    }
-    const session = await authentication.getSession(endpointSetting(), [], { createIfNone: false })
     const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
-    const accessToken = overrideAccessToken || session?.accessToken
+    const accessToken = overrideAccessToken || (await getAccessToken())
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     const customHeaders = endpointRequestHeadersSetting()

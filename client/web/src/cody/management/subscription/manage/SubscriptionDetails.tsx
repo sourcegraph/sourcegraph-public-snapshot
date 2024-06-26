@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiCancel, mdiCheck, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
@@ -73,7 +73,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                         {props.subscription.cancelAtPeriodEnd
                             ? 'Subscription canceled. Access to Cody Pro will end on'
                             : 'Subscription renews on'}{' '}
-                        <Text as="span" className={styles.bold}>
+                        <Text as="span" className="font-bold">
                             {humanizeDate(props.subscription.currentPeriodEnd)}
                         </Text>
                         .
@@ -95,7 +95,7 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                     </LoadingIconButton>
                 ) : (
                     <>
-                        <Button variant="secondary" onClick={() => setIsConfirmationModalVisible(true)}>
+                        <Button variant="secondary" outline={true} onClick={() => setIsConfirmationModalVisible(true)}>
                             <Icon aria-hidden={true} svgPath={mdiCancel} className="mr-1" />
                             Cancel subscription
                         </Button>
@@ -111,15 +111,14 @@ export const SubscriptionDetails: React.FC<SubscriptionDetailsProps> = props => 
                                         Canceling your subscription now means that you won't be able to use Cody with
                                         Pro features after {humanizeDate(props.subscription.currentPeriodEnd)}.
                                     </Text>
-                                    <Text className={classNames('mt-4 mb-0', styles.bold)}>
-                                        Do you want to procceed?
-                                    </Text>
+                                    <Text className="mt-4 mb-0 font-bold">Do you want to proceed?</Text>
                                 </div>
-                                <div className={classNames('d-flex mt-4', styles.buttonContainer)}>
+                                <div className="d-flex mt-4 justify-content-end">
                                     <Button
                                         variant="secondary"
                                         outline={true}
                                         onClick={() => setIsConfirmationModalVisible(false)}
+                                        className="mr-3"
                                     >
                                         No, I've changed my mind
                                     </Button>

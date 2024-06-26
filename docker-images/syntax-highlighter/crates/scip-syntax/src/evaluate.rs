@@ -4,10 +4,10 @@
 use std::{
     collections::{HashMap, HashSet},
     marker::PhantomData,
-    path::PathBuf,
 };
 
 use anyhow::*;
+use camino::Utf8Path;
 use colored::{ColoredString, Colorize};
 use scip::types::Index;
 use serde::Serializer;
@@ -17,8 +17,8 @@ use syntax_analysis::range::Range;
 use crate::{io::read_index_from_file, progress::*};
 
 pub fn evaluate_command(
-    candidate: PathBuf,
-    ground_truth: PathBuf,
+    candidate: &Utf8Path,
+    ground_truth: &Utf8Path,
     evaluation_output_options: EvaluationOutputOptions,
 ) -> Result<()> {
     Evaluator::default()
@@ -416,12 +416,12 @@ pub struct Evaluator {
 impl Evaluator {
     pub fn evaluate_files<'e>(
         &'e mut self,
-        candidate: PathBuf,
-        ground_truth: PathBuf,
+        candidate: &Utf8Path,
+        ground_truth: &Utf8Path,
     ) -> Result<EvaluationResult<'e>> {
         self.evaluate_indexes(
-            &read_index_from_file(&candidate)?,
-            &read_index_from_file(&ground_truth)?,
+            &read_index_from_file(candidate)?,
+            &read_index_from_file(ground_truth)?,
         )
     }
 

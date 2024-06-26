@@ -92,6 +92,8 @@
         },
         '.cm-tooltip': {
             border: 'none',
+            // For nice rounded corners in hover cards
+            borderRadius: 'var(--border-radius)',
         },
     })
 

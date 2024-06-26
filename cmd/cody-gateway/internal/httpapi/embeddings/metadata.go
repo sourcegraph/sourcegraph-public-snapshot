@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -35,8 +36,10 @@ Return your response in text format. Each entry name should be followed by a new
 Respond with nothing else, only the entry names and the documentation. Code: ` +
 		"```\n" + *input + "\n```"
 
-	resp, err := c.completionsClient.Complete(c.ctx, types.CompletionsFeatureChat, types.CompletionsVersionLegacy,
-		types.CompletionRequestParameters{
+	compRequest := types.CompletionRequest{
+		Feature: types.CompletionsFeatureChat,
+		Version: types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{
 			Messages: []types.Message{{
 				Speaker: "user",
 				Text:    promptText,
@@ -44,8 +47,10 @@ Respond with nothing else, only the entry names and the documentation. Code: ` +
 			MaxTokensToSample: 2000,
 			Temperature:       0,
 			TopP:              1,
-			Model:             fireworks.Llama370bInstruct,
-		}, c.logger)
+			Model:             fireworks.Llama38bInstruct,
+		},
+	}
+	resp, err := c.completionsClient.Complete(c.ctx, c.logger, compRequest)
 
 	if err != nil {
 		return "", err

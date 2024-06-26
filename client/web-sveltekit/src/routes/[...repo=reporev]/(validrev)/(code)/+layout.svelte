@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
     import type { Capture as HistoryCapture } from '$lib/repo/HistoryPanel.svelte'
-    import { SVELTE_LOGGER, SVELTE_TELEMETRY_EVENTS } from '$lib/telemetry'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
 
     enum TabPanels {
         History,
@@ -17,12 +17,12 @@
     // to expose more info about nature of switch tab / close tab actions
     function trackHistoryPanelTabAction(selectedTab: number | null, nextSelectedTab: number | null) {
         if (nextSelectedTab === 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.ShowHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'show')
             return
         }
 
         if (nextSelectedTab === null && selectedTab == 0) {
-            SVELTE_LOGGER.log(SVELTE_TELEMETRY_EVENTS.HideHistoryPanel)
+            TELEMETRY_RECORDER.recordEvent('repo.historyPanel', 'hide')
             return
         }
     }
@@ -44,7 +44,7 @@
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
-    import Icon2 from '$lib/Icon2.svelte'
+    import Icon from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -120,7 +120,6 @@
     $: referenceQuery =
         sgURL.viewState === 'references' && selectedLine?.line ? data.getReferenceStore(selectedLine) : null
     $: references = $referenceQuery?.data?.repository?.commit?.blob?.lsif?.references ?? null
-    $: referencesLoading = ((referenceQuery && !references) || $referenceQuery?.fetching) ?? false
 
     afterNavigate(async () => {
         // We need to wait for referenceQuery to be updated before checking its state
@@ -203,7 +202,11 @@
                             on:click={toggleFileSidePanel}
                             aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
                         >
-                            <Icon2 icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                            <Icon
+                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
+                                inline
+                                aria-hidden
+                            />
                         </Button>
                     </Tooltip>
                     <RepositoryRevPicker
@@ -225,10 +228,10 @@
                                     on:click={() => openFuzzyFinder('files')}
                                 >
                                     {#if isCollapsed}
-                                        <Icon2 icon={ILucideSquareSlash} inline aria-hidden />
+                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
                                     {:else}
                                         <span>Search files</span>
-                                        <KeyboardShortcut shorcut={filesHotkey} inline={isCollapsed} />
+                                        <KeyboardShortcut shortcut={filesHotkey} />
                                     {/if}
                                 </button>
                             </Tooltip>
@@ -282,7 +285,7 @@
                 onCollapse={handleBottomPanelCollapse}
                 let:isCollapsed
             >
-                <div class="bottom-panel">
+                <div class="bottom-panel" class:collapsed={isCollapsed}>
                     <Tabs selected={selectedTab} toggable on:select={selectTab}>
                         <svelte:fragment slot="header-actions">
                             {#if !isCollapsed}
@@ -292,7 +295,7 @@
                                     aria-label="Hide bottom panel"
                                     on:click={handleBottomPanelCollapse}
                                 >
-                                    <Icon2 icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
+                                    <Icon icon={ILucideArrowDownFromLine} inline aria-hidden /> Hide
                                 </Button>
                             {/if}
                         </svelte:fragment>
@@ -309,11 +312,24 @@
                             {/key}
                         </TabPanel>
                         <TabPanel title="References" shortcut={referenceHotkey}>
-                            <ReferencePanel
-                                connection={references}
-                                loading={referencesLoading}
-                                on:more={referenceQuery?.fetchMore}
-                            />
+                            {#if !referenceQuery}
+                                <div class="info">
+                                    <Alert variant="info"
+                                        >Hover over a symbol and click "Find references" to find references to the
+                                        symbol.</Alert
+                                    >
+                                </div>
+                            {:else if $referenceQuery && !$referenceQuery.fetching && (!references || references.nodes.length === 0)}
+                                <div class="info">
+                                    <Alert variant="info">No references found.</Alert>
+                                </div>
+                            {:else}
+                                <ReferencePanel
+                                    connection={references}
+                                    loading={$referenceQuery?.fetching ?? false}
+                                    on:more={referenceQuery?.fetchMore}
+                                />
+                            {/if}
                         </TabPanel>
                     </Tabs>
                     {#if lastCommit && isCollapsed}
@@ -363,36 +379,36 @@
         flex-direction: column;
         overflow: hidden;
         background-color: var(--color-bg-1);
-    }
 
-    .collapsed {
-        flex-direction: column;
-        align-items: center;
-
-        header {
-            flex-wrap: nowrap;
-        }
-
-        header,
-        .sidebar-action-row {
+        &.collapsed {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-            width: 100%;
-        }
+            align-items: center;
 
-        // Hide action text and leave just icon for collapsed version
-        .search-files-button {
-            display: block;
+            header {
+                flex-wrap: nowrap;
+            }
 
-            span {
+            header,
+            .sidebar-action-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            // Hide action text and leave just icon for collapsed version
+            .search-files-button {
+                display: block;
+
+                span {
+                    display: none;
+                }
+            }
+
+            :global([data-repo-rev-picker-trigger]),
+            .sidebar-file-tree {
                 display: none;
             }
-        }
-
-        :global([data-repo-rev-picker-trigger]),
-        .sidebar-file-tree {
-            display: none;
         }
     }
 
@@ -469,6 +485,13 @@
 
         :global([data-tabs]) {
             flex: 1;
+            min-width: 0;
+        }
+
+        &.collapsed :global([data-tabs]) {
+            // Reset min-width otherwise very long commit messages will overflow
+            // the tabs.
+            min-width: initial;
         }
 
         .last-commit {
@@ -476,5 +499,9 @@
             max-width: min-content;
             margin-right: 0.5rem;
         }
+    }
+
+    .info {
+        padding: 1rem;
     }
 </style>

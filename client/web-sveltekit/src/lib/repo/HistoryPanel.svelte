@@ -5,7 +5,6 @@
 </script>
 
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiNotebookOutline } from '@mdi/js'
     import { tick } from 'svelte'
 
     import { page } from '$app/stores'
@@ -64,6 +63,7 @@
     }
 
     $: selectedRev = $page.url?.searchParams.get('rev')
+    $: diffEnabled = $page.url?.searchParams.has('diff')
     $: closeURL = SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()
 </script>
 
@@ -90,9 +90,9 @@
                     <td><Timestamp date={new Date(commit.author.date)} strict /></td>
                     {#if enableViewAtCommit}
                         <td>
-                            <Tooltip tooltip={selected ? 'Close commit' : 'View at commit'}>
-                                <a href={selected ? closeURL : `?rev=${commit.oid}`}
-                                    ><Icon svgPath={mdiFileDocumentOutline} inline /></a
+                            <Tooltip tooltip={selected && !diffEnabled ? 'Close commit' : 'View at commit'}>
+                                <a href={selected && !diffEnabled ? closeURL : `?rev=${commit.oid}`}
+                                    ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                 >
                             </Tooltip>
                         </td>
@@ -103,7 +103,7 @@
                                 href={replaceRevisionInURL(
                                     SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
                                     commit.oid
-                                )}><Icon svgPath={mdiNotebookOutline} inline /></a
+                                )}><Icon icon={ILucideFolderGit} inline aria-hidden /></a
                             >
                         </Tooltip>
                     </td>
@@ -136,11 +136,11 @@
     }
 
     tr {
-        --icon-fill-color: var(--header-icon-color);
+        --icon-color: var(--header-icon-color);
         border-bottom: 1px solid var(--border-color);
 
         &.selected {
-            --icon-fill-color: inherit;
+            --icon-color: currentColor;
 
             color: var(--light-text);
             background-color: var(--primary);

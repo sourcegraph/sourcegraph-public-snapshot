@@ -79,9 +79,16 @@ func TestErrStatusNotOK(t *testing.T) {
 	})
 	tokenManager := tokenusage.NewManager()
 	mockClient, _ := NewClient(getAzureAPIClient, "", "", *tokenManager)
+
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
+
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, logger)
+		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -92,7 +99,8 @@ func TestErrStatusNotOK(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil }, logger)
+		sendEventFn := func(event types.CompletionResponse) error { return nil }
+		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
 
 		autogold.Expect("AzureOpenAI: unexpected status code 429: too many requests").Equal(t, err.Error())
@@ -118,9 +126,16 @@ func TestGenericErr(t *testing.T) {
 	})
 	tokenManager := tokenusage.NewManager()
 	mockClient, _ := NewClient(getAzureAPIClient, "", "", *tokenManager)
+
+	compRequest := types.CompletionRequest{
+		Feature:    types.CompletionsFeatureChat,
+		Version:    types.CompletionsVersionLegacy,
+		Parameters: types.CompletionRequestParameters{},
+	}
+
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, logger)
+		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
@@ -131,7 +146,8 @@ func TestGenericErr(t *testing.T) {
 
 	t.Run("Stream", func(t *testing.T) {
 		logger := log.Scoped("completions")
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionsVersionLegacy, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil }, logger)
+		sendEventFn := func(event types.CompletionResponse) error { return nil }
+		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
 
 		autogold.Expect("error").Equal(t, err.Error())

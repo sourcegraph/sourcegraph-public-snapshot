@@ -20,6 +20,12 @@ export module Client {
         return { method: 'PATCH', urlSuffix: '/team/current/subscription', requestBody }
     }
 
+    export function previewUpdateCurrentSubscription(
+        requestBody: types.PreviewUpdateSubscriptionRequest
+    ): Call<types.PreviewResult> {
+        return { method: 'PATCH', urlSuffix: '/team/current/subscription/preview', requestBody }
+    }
+
     export function getCurrentSubscriptionInvoices(): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'GET', urlSuffix: '/team/current/subscription/invoices' }
     }
@@ -28,6 +34,52 @@ export module Client {
         requestBody: types.ReactivateSubscriptionRequest
     ): Call<types.GetSubscriptionInvoicesResponse> {
         return { method: 'POST', urlSuffix: '/team/current/subscription/reactivate', requestBody }
+    }
+
+    // Teams
+
+    export function createTeam(requestBody: types.CreateTeamRequest): Call<string> {
+        return { method: 'POST', urlSuffix: '/team', requestBody }
+    }
+
+    export function previewCreateTeam(requestBody: types.PreviewCreateTeamRequest): Call<types.PreviewResult> {
+        return { method: 'POST', urlSuffix: '/team/preview', requestBody }
+    }
+
+    // Team members
+
+    export function getCurrentTeamMembers(): Call<types.ListTeamMembersResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/members' }
+    }
+
+    export function updateTeamMember(requestBody: types.UpdateTeamMembersRequest): Call<unknown> {
+        return { method: 'PATCH', urlSuffix: '/team/current/members', requestBody }
+    }
+
+    // Invites
+
+    export function getInvite(teamId: string, inviteId: string): Call<types.TeamInvite> {
+        return { method: 'GET', urlSuffix: `/team/${teamId}/invites/${inviteId}` }
+    }
+
+    export function getTeamInvites(): Call<types.ListTeamInvitesResponse> {
+        return { method: 'GET', urlSuffix: '/team/current/invites' }
+    }
+
+    export function sendInvite(requestBody: types.CreateTeamInviteRequest): Call<types.ListTeamInvitesResponse> {
+        return { method: 'POST', urlSuffix: '/team/current/invites', requestBody }
+    }
+
+    export function resendInvite(inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/current/invites/${inviteId}/resend` }
+    }
+
+    export function acceptInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/accept` }
+    }
+
+    export function cancelInvite(teamId: string, inviteId: string): Call<unknown> {
+        return { method: 'POST', urlSuffix: `/team/${teamId}/invites/${inviteId}/cancel` }
     }
 
     // Stripe Checkout
@@ -40,7 +92,7 @@ export module Client {
 }
 
 // Call is the bundle of data necessary for making an API request.
-// This is a sort of "meta request" in the same veign as the `gql`
+// This is a sort of "meta request" in the same vein as the `gql`
 // template tag, see: https://github.com/apollographql/graphql-tag
 export interface Call<Resp> {
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE'

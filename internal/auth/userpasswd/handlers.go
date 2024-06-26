@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"

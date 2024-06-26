@@ -1,11 +1,13 @@
 <script lang="ts">
     import { decorateQuery } from '$lib/branded'
+    import type { SearchPatternType } from '@sourcegraph/web/src/graphql-operations'
     import EmphasizedLabel from './EmphasizedLabel.svelte'
 
     export let query: string
+    export let patternType: SearchPatternType | undefined = undefined
     export let matches: Set<number> | null = null
 
-    $: decorations = decorateQuery(query)
+    $: decorations = decorateQuery(query, patternType)
 </script>
 
 <code class="search-query-link">

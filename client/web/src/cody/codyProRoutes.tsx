@@ -17,8 +17,6 @@ export enum CodyProRoutes {
     SubscriptionManage = '/cody/subscription/manage',
 
     ManageTeam = '/cody/team/manage',
-    // Accepts an invite to join a Cody team, then redirects to the Cody team page.
-    AcceptInvite = '/cody/invites/accept',
 }
 
 /**
@@ -66,7 +64,6 @@ const routeComponents = {
         'CodySubscriptionManagePage'
     ),
     [CodyProRoutes.ManageTeam]: lazyComponent(() => import('./team/CodyManageTeamPage'), 'CodyManageTeamPage'),
-    [CodyProRoutes.AcceptInvite]: lazyComponent(() => import('./invites/AcceptInvitePage'), 'CodyAcceptInvitePage'),
 }
 
 interface CodyProPageProps extends Pick<LegacyLayoutRouteContext, 'authenticatedUser' | 'telemetryRecorder'> {

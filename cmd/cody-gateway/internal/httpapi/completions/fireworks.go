@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -142,18 +143,22 @@ func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (mod
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
+	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
+		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
+	}
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 
-func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res fireworksResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse fireworks response as JSON", log.Error(err))
@@ -243,18 +248,15 @@ func pickStarCoderModel(model string, config config.FireworksConfig) string {
 
 func pickFineTunedModel(model string, language string) string {
 	switch model {
-	// 1. Fine-tuned models Mixtral variant
-	case fireworks.FineTunedFIMVariant1:
-		return fireworks.FineTunedMixtralAll
-
-	// 2. Fine-tuned model Language specific mixtral variant
-	case fireworks.FineTunedFIMVariant2:
+	case fireworks.FineTunedFIMLangSpecificMixtral:
 		{
 			switch language {
 			case "typescript", "typescriptreact":
 				return fireworks.FineTunedMixtralTypescript
 			case "javascript":
 				return fireworks.FineTunedMixtralJavascript
+			case "javascriptreact":
+				return fireworks.FineTunedMixtralJsx
 			case "php":
 				return fireworks.FineTunedMixtralPhp
 			case "python":
@@ -263,27 +265,9 @@ func pickFineTunedModel(model string, language string) string {
 				return fireworks.FineTunedMixtralAll
 			}
 		}
-	case fireworks.FineTunedFIMVariant3:
-		return fireworks.FineTunedLlamaAll
-	case fireworks.FineTunedFIMVariant4:
-		{
-			switch language {
-			case "typescript", "typescriptreact":
-				return fireworks.FineTunedLlamaTypescript
-			case "javascript":
-				return fireworks.FineTunedLlamaJavascript
-			case "php":
-				return fireworks.FineTunedLlamaPhp
-			case "python":
-				return fireworks.FineTunedLlamaPython
-			default:
-				return fireworks.FineTunedLlamaAll
-			}
-		}
 	default:
 		return model
 	}
-
 }
 
 // Picks a model based on a specific percentage split. If the percent value is 0, the

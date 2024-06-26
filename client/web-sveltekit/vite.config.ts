@@ -2,6 +2,7 @@ import { join } from 'path'
 
 import { sveltekit } from '@sveltejs/kit/vite'
 import AutoImport from 'unplugin-auto-import/vite'
+import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import { defineConfig, mergeConfig, type UserConfig } from 'vite'
@@ -26,11 +27,16 @@ export default defineConfig(({ mode }) => {
                 resolvers: [
                     IconsResolver({
                         prefix: 'i',
+                        customCollections: ['sg', 'symbol'],
                     }),
                 ],
             }),
             Icons({
                 compiler: 'svelte',
+                customCollections: {
+                    sg: FileSystemIconLoader('./assets/icons'),
+                    symbol: FileSystemIconLoader('./assets/symbol-icons'),
+                },
             }),
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
@@ -73,7 +79,7 @@ export default defineConfig(({ mode }) => {
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|embeddings|code-graph|batch-changes|settings)(/|$)':
+                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|code-graph|batch-changes|settings)(/|$)':
                     {
                         target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                         changeOrigin: true,

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
@@ -147,6 +148,54 @@ func TestFindSymbols(t *testing.T) {
 			if got := findSymbols(tt.patterns); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("findSymbols() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestExpandQuery(t *testing.T) {
+	cases := []struct {
+		queryString string
+		want        []string
+	}{
+		{
+			queryString: "What does this repo do?",
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "Describe my code",
+			want:        []string{kwReadme},
+		},
+		{
+			queryString: "Explain what this project is about",
+			want:        []string{kwReadme},
+		},
+		// Negative tests
+		{
+			queryString: "what does cmd/update.sh do?",
+			want:        nil,
+		},
+		{
+			queryString: "what does update.sh do?",
+			want:        nil,
+		},
+		{
+			queryString: "explain update.sh",
+			want:        nil,
+		},
+		{
+			queryString: "What is the meaning of life?",
+			want:        nil,
+		},
+		{
+			queryString: "Where is my code?",
+			want:        nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.queryString, func(t *testing.T) {
+			got := expandQuery(c.queryString)
+			require.Equal(t, c.want, got)
 		})
 	}
 }

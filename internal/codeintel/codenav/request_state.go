@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -29,14 +30,14 @@ type RequestState struct {
 
 	RepositoryID int
 	Commit       string
-	Path         string
+	Path         core.RepoRelPath
 }
 
 func (r *RequestState) Attrs() []attribute.KeyValue {
 	out := []attribute.KeyValue{
 		attribute.Int("repositoryID", r.RepositoryID),
 		attribute.String("commit", r.Commit),
-		attribute.String("path", r.Path),
+		attribute.String("path", r.Path.RawValue()),
 	}
 	if r.dataLoader != nil {
 		uploads := r.dataLoader.uploads
@@ -52,7 +53,7 @@ func NewRequestState(
 	gitserverClient gitserver.Client,
 	repo *sgTypes.Repo,
 	commit string,
-	path string,
+	path core.RepoRelPath,
 	maxIndexes int,
 	hunkCache HunkCache,
 ) RequestState {
@@ -64,7 +65,7 @@ func NewRequestState(
 	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, path, hunkCache)
+	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, hunkCache)
 	r.SetLocalCommitCache(repoStore, gitserverClient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
@@ -94,11 +95,10 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.CompletedUpload) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) {
-	args := &requestArgs{
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit string, hunkCache HunkCache) {
+	args := &translationBase{
 		repo:   repo,
 		commit: commit,
-		path:   path,
 	}
 
 	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)

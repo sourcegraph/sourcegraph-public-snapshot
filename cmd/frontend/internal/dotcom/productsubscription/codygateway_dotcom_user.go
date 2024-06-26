@@ -333,10 +333,16 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"anthropic/claude-instant-1",
 	"anthropic/claude-instant-1.2-cyan",
 	"anthropic/claude-instant-1.2",
+	"google/" + google.Gemini15Flash,
+	"google/" + google.Gemini15FlashLatest,
+	"google/" + google.GeminiPro,
+	"google/" + google.GeminiProLatest,
 	"fireworks/starcoder",
 	"fireworks/" + fireworks.Llama213bCode,
 	"fireworks/" + fireworks.StarcoderTwo15b,
-	"fireworks/" + fireworks.StarcoderTwo7b},
+	"fireworks/" + fireworks.StarcoderTwo7b,
+	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoder7b},
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
 	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
 
@@ -360,6 +366,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,

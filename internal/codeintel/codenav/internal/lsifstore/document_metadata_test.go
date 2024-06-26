@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
 
 func TestDatabaseExists(t *testing.T) {
@@ -26,7 +27,8 @@ func TestDatabaseExists(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if exists, err := store.GetPathExists(context.Background(), testCase.uploadID, testCase.path); err != nil {
+		if exists, err := store.GetPathExists(context.Background(), testCase.uploadID,
+			core.NewUploadRelPathUnchecked(testCase.path)); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if exists != testCase.expected {
 			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
@@ -113,7 +115,7 @@ func TestStencil(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			ranges, err := store.GetStencil(context.Background(), testCase.uploadID, testCase.path)
+			ranges, err := store.GetStencil(context.Background(), testCase.uploadID, core.NewUploadRelPathUnchecked(testCase.path))
 			if err != nil {
 				t.Fatalf("unexpected error %s", err)
 			}
@@ -133,7 +135,7 @@ func TestStencil(t *testing.T) {
 
 func TestGetRanges(t *testing.T) {
 	store := populateTestStore(t)
-	path := "template/src/util/helpers.ts"
+	path := core.NewUploadRelPathUnchecked("template/src/util/helpers.ts")
 
 	// (comments above)
 	// `export function nonEmpty<T>(value: T | T[] | null | undefined): value is T | T[] {`
@@ -156,22 +158,22 @@ func TestGetRanges(t *testing.T) {
 	)
 
 	var (
-		nonEmptyDefinitionLocations = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 16, 15, 24)}}
-		tDefinitionLocations        = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 25, 15, 26)}}
-		valueDefinitionLocations    = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 28, 15, 33)}}
+		nonEmptyDefinitionLocations = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 16, 15, 24)}}
+		tDefinitionLocations        = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 25, 15, 26)}}
+		valueDefinitionLocations    = []shared.Location{{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 28, 15, 33)}}
 
 		nonEmptyReferenceLocations = []shared.Location{}
 		tReferenceLocations        = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 35, 15, 36)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 39, 15, 40)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 73, 15, 74)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 77, 15, 78)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 35, 15, 36)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 39, 15, 40)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 73, 15, 74)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 77, 15, 78)},
 		}
 		valueReferenceLocations = []shared.Location{
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(15, 64, 15, 69)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 13, 16, 18)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 38, 16, 43)},
-			{UploadID: testSCIPUploadID, Path: path, Range: newRange(16, 48, 16, 53)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(15, 64, 15, 69)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 13, 16, 18)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 38, 16, 43)},
+			{UploadID: testSCIPUploadID, Path: path, Range: shared.NewRange(16, 48, 16, 53)},
 		}
 
 		nonEmptyImplementationLocations = []shared.Location(nil)
@@ -182,7 +184,7 @@ func TestGetRanges(t *testing.T) {
 	expectedRanges := []shared.CodeIntelligenceRange{
 		{
 			// `nonEmpty`
-			Range:           newRange(15, 16, 15, 24),
+			Range:           shared.NewRange(15, 16, 15, 24),
 			Definitions:     nonEmptyDefinitionLocations,
 			References:      nonEmptyReferenceLocations,
 			Implementations: nonEmptyImplementationLocations,
@@ -190,7 +192,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 25, 15, 26),
+			Range:           shared.NewRange(15, 25, 15, 26),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -198,7 +200,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `value`
-			Range:           newRange(15, 28, 15, 33),
+			Range:           shared.NewRange(15, 28, 15, 33),
 			Definitions:     valueDefinitionLocations,
 			References:      valueReferenceLocations,
 			Implementations: valueImplementationLocations,
@@ -206,7 +208,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 35, 15, 36),
+			Range:           shared.NewRange(15, 35, 15, 36),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -214,7 +216,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 39, 15, 40),
+			Range:           shared.NewRange(15, 39, 15, 40),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -222,7 +224,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `value`
-			Range:           newRange(15, 64, 15, 69),
+			Range:           shared.NewRange(15, 64, 15, 69),
 			Definitions:     valueDefinitionLocations,
 			References:      valueReferenceLocations,
 			Implementations: valueImplementationLocations,
@@ -230,7 +232,7 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 73, 15, 74),
+			Range:           shared.NewRange(15, 73, 15, 74),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
@@ -238,14 +240,14 @@ func TestGetRanges(t *testing.T) {
 		},
 		{
 			// `T`
-			Range:           newRange(15, 77, 15, 78),
+			Range:           shared.NewRange(15, 77, 15, 78),
 			Definitions:     tDefinitionLocations,
 			References:      tReferenceLocations,
 			Implementations: tImplementationLocations,
 			HoverText:       tHoverText,
 		},
 	}
-	if diff := cmp.Diff(expectedRanges, ranges); diff != "" {
+	if diff := cmp.Diff(expectedRanges, ranges, cmp.Comparer(core.UploadRelPath.Equal)); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }

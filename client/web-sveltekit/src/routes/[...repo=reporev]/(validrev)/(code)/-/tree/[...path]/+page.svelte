@@ -1,7 +1,6 @@
 <script lang="ts">
     // @sg EnableRollout
-    import { mdiMapSearch } from '@mdi/js'
-
+    import { afterNavigate, beforeNavigate } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -12,13 +11,23 @@
     import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
 
+    import { getRepositoryPageContext } from '../../../../../context'
+
     import type { PageData } from './$types'
 
     export let data: PageData
 
+    const repositoryContext = getRepositoryPageContext()
     const treeEntriesWithCommitInfo = createPromiseStore<TreeEntryWithCommitInfo[]>()
 
     $: treeEntriesWithCommitInfo.set(data.treeEntriesWithCommitInfo)
+
+    afterNavigate(() => {
+        repositoryContext.set({ directoryPath: data.filePath })
+    })
+    beforeNavigate(() => {
+        repositoryContext.set({})
+    })
 </script>
 
 <svelte:head>
@@ -39,7 +48,7 @@
         {#if result === null}
             <div class="error-wrapper">
                 <div class="circle">
-                    <Icon svgPath={mdiMapSearch} --icon-size="80px" />
+                    <Icon icon={ILucideSearchX} --icon-size="80px" />
                 </div>
                 <h2>Directory not found</h2>
             </div>

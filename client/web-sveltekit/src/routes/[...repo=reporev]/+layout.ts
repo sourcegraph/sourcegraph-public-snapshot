@@ -61,6 +61,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     return {
         repoURL: '/' + params.repo,
+        repoURLWithoutRevision: '/' + repoName,
         repoName,
         displayRepoName: displayRepoName(repoName),
         /**
@@ -92,7 +93,7 @@ function displayRevision(revision: string, resolvedRevision: ResolvedRevision | 
         return revision
     }
 
-    if (resolvedRevision.commitID.startsWith(revision)) {
+    if (revision && resolvedRevision.commitID.startsWith(revision)) {
         return resolvedRevision.commitID.slice(0, 7)
     }
 

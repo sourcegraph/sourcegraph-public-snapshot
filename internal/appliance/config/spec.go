@@ -1,7 +1,6 @@
 package config
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -78,20 +77,14 @@ type GrafanaSpec struct {
 	StandardConfig
 }
 
-// IndexedSearchSpec defines the desired state of Index Search.
 type IndexedSearchSpec struct {
-	// Replicas defines the number of Index Search pod replicas.
-	// Default: 1
-	Replicas int32 `json:"replicas,omitempty"`
+	StandardConfig
 
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// IndexedSearchIndexerSpec defines the desired state of the Index Search Indexer.
-type IndexedSearchIndexerSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
+type OtelCollectorSpec struct {
+	StandardConfig
 }
 
 type JaegerSpec struct {
@@ -104,11 +97,6 @@ type PGSQLSpec struct {
 
 	// DatabaseConnection allows for custom database connection details.
 	DatabaseConnection *DatabaseConnectionSpec `json:"database,omitempty"`
-}
-
-type PostgresExporterSpec struct {
-	// Resources allows for custom resource limits and requests.
-	Resources *corev1.ResourceList `json:"resources,omitempty"`
 }
 
 type PreciseCodeIntelSpec struct {
@@ -231,16 +219,12 @@ type SourcegraphSpec struct {
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
 
-	// IndexedSearchIndexer defines the desired state of the Indexed Search Indexer service.
-	IndexedSearchIndexer IndexedSearchIndexerSpec `json:"indexedSearchIndexer,omitempty"`
-
 	Jaeger JaegerSpec `json:"jaeger,omitempty"`
+
+	OtelCollector OtelCollectorSpec `json:"openTelemetry,omitempty"`
 
 	// PGSQL defines the desired state of the PostgreSQL database.
 	PGSQL PGSQLSpec `json:"pgsql,omitempty"`
-
-	// PostgresExporter defines the desired state of the Postgres exporter service.
-	PostgresExporter PostgresExporterSpec `json:"postgresExporter,omitempty"`
 
 	// PreciseCodeIntel defines the desired state of the Precise Code Intel service.
 	PreciseCodeIntel PreciseCodeIntelSpec `json:"preciseCodeIntel,omitempty"`
@@ -273,10 +257,18 @@ type SourcegraphSpec struct {
 	StorageClass StorageClassSpec `json:"storageClass,omitempty"`
 }
 
+// SetupStatus defines the observes status of the setup process.
+type SetupStatus struct {
+	Progress int32
+}
+
 // SourcegraphStatus defines the observed state of Sourcegraph
 type SourcegraphStatus struct {
 	// CurrentVersion is the version of Sourcegraph currently running.
 	CurrentVersion string `json:"currentVersion"`
+
+	// Setup tracks the progress of the setup process.
+	Setup SetupStatus `json:"setup,omitempty"`
 
 	// Represents the latest available observations of Sourcegraph's current state.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`

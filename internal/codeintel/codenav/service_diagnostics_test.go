@@ -6,10 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,6 +19,9 @@ import (
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+var repoRelPath = core.NewRepoRelPathUnchecked
+var uploadRelPath = core.NewUploadRelPathUnchecked
 
 func TestDiagnostics(t *testing.T) {
 	// Set up mocks
@@ -33,7 +38,7 @@ func TestDiagnostics(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -42,7 +47,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []shared.Diagnostic[core.UploadRelPath]{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -52,6 +57,9 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
 
 	mockRequest := PositionalRequestArgs{
 		RequestArgs: RequestArgs{
@@ -73,11 +81,11 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	expectedDiagnostics := []DiagnosticAtUpload{
-		{Upload: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
-		{Upload: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
+		{Upload: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub1/"), DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Upload: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub3/"), DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
@@ -107,7 +115,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -129,7 +137,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	diagnostics := []shared.Diagnostic{
+	diagnostics := []shared.Diagnostic[core.UploadRelPath]{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
@@ -139,6 +147,9 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := PositionalRequestArgs{
@@ -161,9 +172,9 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	}
 
 	expectedDiagnostics := []DiagnosticAtUpload{
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
+		{Upload: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic[core.RepoRelPath]{Path: repoRelPath("sub2/"), DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
 	}
 	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
 		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)

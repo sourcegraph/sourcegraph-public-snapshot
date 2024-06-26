@@ -1,6 +1,6 @@
-import { mdiCodeBraces, mdiFileOutline, mdiFunction, mdiPlusMinus, mdiSourceCommit, mdiSourceFork } from '@mdi/js'
-
 import type { Filter } from '@sourcegraph/shared/src/search/stream'
+
+import type { IconComponent } from '$lib/Icon.svelte'
 
 import { parseExtendedSearchURL } from '..'
 import { SearchCachePolicy, setCachePolicyInURL } from '../state'
@@ -82,13 +82,13 @@ export const staticTypeFilters: URLQueryFilter[] = [
     { kind: 'type', label: 'Diffs', value: 'type:diff' },
 ]
 
-export const typeFilterIcons: Record<string, string> = {
-    Code: mdiCodeBraces,
-    Repositories: mdiSourceFork,
-    Paths: mdiFileOutline,
-    Symbols: mdiFunction,
-    Commits: mdiSourceCommit,
-    Diffs: mdiPlusMinus,
+export const typeFilterIcons: Record<string, IconComponent> = {
+    Code: ILucideBraces,
+    Repositories: ILucideGitFork,
+    Paths: ILucideFile,
+    Symbols: ILucideSquareFunction,
+    Commits: ILucideGitCommitVertical,
+    Diffs: ILucideDiff,
 }
 
 export type FilterGroups = Record<Filter['kind'], SectionItemData[]>

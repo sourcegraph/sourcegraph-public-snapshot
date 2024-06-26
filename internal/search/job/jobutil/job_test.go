@@ -1113,7 +1113,7 @@ func TestNewPlanJob(t *testing.T) {
 `),
 		},
 		{
-			query:      `context:global repo:sourcegraph/.* what's going on'? lang:go`,
+			query:      `context:global repo:sourcegraph/.* are all things possible? lang:go`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeCodyContext,
 			want: autogold.Expect(`
@@ -1142,7 +1142,7 @@ func TestNewPlanJob(t *testing.T) {
     (originalQuery . )
     (patternType . codycontext)
     (CODYCONTEXTSEARCH
-      (patterns . ["symf"])
+      (patterns . [readme symf])
       (codeCount . 12)
       (textCount . 3))))
 `),

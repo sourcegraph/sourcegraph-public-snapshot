@@ -1,8 +1,6 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
-
     import { highlightRanges } from '$lib/dom'
     import { featureFlag } from '$lib/featureflags'
     import Icon from '$lib/Icon.svelte'
@@ -32,19 +30,19 @@
         <RepoRev repoName={result.repository} {rev} highlights={repositoryMatches} />
         {#if result.fork}
             <span class="info">
-                <Icon aria-label="Forked repository" svgPath={mdiSourceFork} inline />
+                <Icon aria-label="Forked repository" icon={ILucideGitFork} inline />
                 <small>Fork</small>
             </span>
         {/if}
         {#if result.archived}
             <span class="info">
-                <Icon aria-label="Archived repository" svgPath={mdiArchive} inline />
+                <Icon aria-label="Archived repository" icon={ILucideArchive} inline />
                 <small>Archive</small>
             </span>
         {/if}
         {#if result.private}
             <span class="info">
-                <Icon aria-label="Private repository" svgPath={mdiLock} inline />
+                <Icon aria-label="Private repository" icon={ILucideLock} inline />
                 <small>Private</small>
             </span>
         {/if}
@@ -98,6 +96,8 @@
     }
 
     .info {
+        --icon-color: currentColor;
+
         border-left: 1px solid var(--border-color);
         margin-left: 0.5rem;
         padding-left: 0.5rem;

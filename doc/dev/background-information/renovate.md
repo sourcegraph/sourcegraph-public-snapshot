@@ -1,6 +1,6 @@
 # Renovate dependency updades
 
-We use Renovate to automatically create pull requests to update dependendies.
+We use Renovate to automatically create pull requests to update dependendies in some repositories.
 Renovate is [configured](https://github.com/sourcegraph/renovate-config/blob/master/renovate.json#L5) to create these in the first week of each month.
 
 It will ask teams to review these dependency updates, depending on code ownership.

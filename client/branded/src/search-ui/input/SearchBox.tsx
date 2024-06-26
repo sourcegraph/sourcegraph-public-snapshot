@@ -194,6 +194,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                     {props.showKeywordSearchToggle ? (
                         <Toggles
                             patternType={props.patternType}
+                            defaultPatternType={props.defaultPatternType}
                             setPatternType={props.setPatternType}
                             caseSensitive={props.caseSensitive}
                             setCaseSensitivity={props.setCaseSensitivity}

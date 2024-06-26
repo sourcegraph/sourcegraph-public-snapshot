@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxTransformedPatterns = 10
+const maxKeywords = 10
 
 type contextQuery struct {
 	symbolQuery  query.Basic
@@ -31,11 +31,11 @@ func parseQuery(queryString string) (*contextQuery, error) {
 	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
 
 	symbols := findSymbols(patterns)
-	transformedPatterns := transformPatterns(patterns)
+	keywords := append(expandQuery(queryString), transformPatterns(patterns)...)
 
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	// To maintain decent latency, limit the number of keywords we search.
+	if len(keywords) > maxKeywords {
+		keywords = keywords[:maxKeywords]
 	}
 
 	symbolQuery, err := newBasicQuery(parameters, symbols)
@@ -43,12 +43,12 @@ func parseQuery(queryString string) (*contextQuery, error) {
 		return nil, err
 	}
 
-	keywordQuery, err := newBasicQuery(parameters, transformedPatterns)
+	keywordQuery, err := newBasicQuery(parameters, keywords)
 	if err != nil {
 		return nil, err
 	}
 
-	return &contextQuery{symbolQuery, symbols, keywordQuery, transformedPatterns}, nil
+	return &contextQuery{symbolQuery, symbols, keywordQuery, keywords}, nil
 }
 
 func newBasicQuery(parameters []query.Parameter, patterns []string) (query.Basic, error) {
@@ -193,4 +193,61 @@ func findSymbols(patterns []string) []string {
 
 func isLikelySymbol(pattern string) bool {
 	return strings.Contains(pattern, "_") || camelCaseRegexp.MatchString(pattern)
+}
+
+var projectSignifiers = []string{
+	"code",
+	"codebase",
+	"library",
+	"module",
+	"package",
+	"program",
+	"project",
+	"repo",
+	"repository",
+}
+
+var questionSignifiers = []string{
+	"what",
+	"how",
+	"describe",
+	"explain",
+}
+
+func needsReadmeContext(input string) bool {
+	loweredInput := strings.ToLower(input)
+
+	var containsQuestionSignifier bool
+	for _, signifier := range questionSignifiers {
+		if strings.Contains(loweredInput, signifier) {
+			containsQuestionSignifier = true
+			break
+		}
+	}
+	if !containsQuestionSignifier {
+		return false
+	}
+
+	for _, signifier := range projectSignifiers {
+		if strings.Contains(loweredInput, signifier) {
+			return true
+		}
+	}
+
+	return false
+}
+
+const (
+	kwReadme string = "readme"
+)
+
+// expandQuery returns a slice of keywords that likely relate to the query but
+// are not explicitly mentioned in it.
+func expandQuery(queryString string) []string {
+	var keywords []string
+	if needsReadmeContext(queryString) {
+		keywords = append(keywords, kwReadme)
+	}
+
+	return keywords
 }

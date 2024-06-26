@@ -7,7 +7,9 @@ go_library(
     tags = [TAG_PLATFORM_GRAPH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
         "//lib/codeintel/precise",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )

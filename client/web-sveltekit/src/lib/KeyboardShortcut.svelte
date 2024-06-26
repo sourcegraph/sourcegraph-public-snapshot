@@ -5,14 +5,14 @@ A component to display the keyboard shortcuts for the application.
     import { isMacPlatform } from '$lib/common'
     import { formatShortcutParts, type Keys } from '$lib/Hotkey'
 
-    export let shorcut: Keys
+    export let shortcut: Keys
     export let inline: boolean = false
 
     const separator = isMacPlatform() ? '' : '+'
 
     $: parts = (() => {
         const result: string[] = []
-        let parts = formatShortcutParts(shorcut)
+        let parts = formatShortcutParts(shortcut)
         for (let i = 0; i < parts.length; i++) {
             if (i > 0) {
                 result.push(separator)
@@ -31,16 +31,32 @@ A component to display the keyboard shortcuts for the application.
 
 <style lang="scss">
     kbd {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.125rem;
-    }
+        all: unset;
+        display: inline-block;
+        &.inline {
+            display: inline;
+        }
 
-    .inline {
-        margin: 0;
-        padding: 0;
-        border: none;
-        box-shadow: none;
-        background-color: transparent;
+        // NOTE: the height of the kdb element is based on the base
+        // line height. There is no way to query the line height of the
+        // parent, so we assume that the container has the standard
+        // line height. In the case the parent has a line height of 1,
+        // this will grow the container slightly. This can be overridden
+        // by setting `--line-height-base` if overriding it in the parent.
+        --height: calc(var(--line-height-base) * 1em);
+        --vertical-padding: calc(var(--height) * 0.25);
+        padding: var(--vertical-padding) calc(1.5 * var(--vertical-padding));
+        font-size: calc(var(--height) - 2 * var(--vertical-padding));
+        font-family: var(--font-family-base);
+        border-radius: 0.5em;
+        line-height: 1;
+
+        background-color: var(--secondary-4);
+        color: var(--text-body);
+
+        // When inside a selected container, show the selected variant
+        :global([aria-selected='true']) & {
+            color: var(--primary);
+        }
     }
 </style>
