@@ -205,6 +205,9 @@ importers:
       classnames:
         specifier: ^2.2.6
         version: 2.3.2
+      cody-web-experimental:
+        specifier: ^0.1.3
+        version: 0.1.3
       comlink:
         specifier: ^4.3.0
         version: 4.3.0
@@ -14710,6 +14713,10 @@ packages:
 
   /codemirror@5.65.9:
     resolution: {integrity: sha512-19Jox5sAKpusTDgqgKB5dawPpQcY+ipQK7xoEI+MVucEF9qqFaXpeqY1KaoyGBso/wHQoDa4HMMxMjdsS3Zzzw==}
+    dev: false
+
+  /cody-web-experimental@0.1.3:
+    resolution: {integrity: sha512-StObdyhhSzB1nZtoXsp54C+bWSLySouNFT+CUsQeIfYpi1dP02UItqgIbyKFinNmq+EWIh7pJJzYcyhFIKdzJA==}
     dev: false
 
   /color-convert@1.9.3:
