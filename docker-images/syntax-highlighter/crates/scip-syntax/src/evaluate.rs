@@ -13,9 +13,8 @@ use scip::types::Index;
 use serde::Serializer;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 use syntax_analysis::range::Range;
-use crate::scip_strict;
 
-use crate::{io::read_index_from_file, progress::*};
+use crate::{io::read_index_from_file, progress::*, scip_strict};
 
 pub fn evaluate_command(
     candidate: &Utf8Path,
@@ -732,11 +731,12 @@ impl SymbolFormatter {
 
     fn try_strip_package_details<T: Copy>(&mut self, sym: SymbolId<T>) -> SymbolId<T> {
         let s = self.display_symbol(sym);
-        let Result::Ok(scip_strict::Symbol::NonLocal(mut symbol)) = scip_strict::Symbol::parse(s) else {
-            return sym
+        let Result::Ok(scip_strict::Symbol::NonLocal(mut symbol)) = scip_strict::Symbol::parse(s)
+        else {
+            return sym;
         };
         symbol.package = scip_strict::Package::default();
-        return self.make_symbol_id(&symbol.to_string())
+        return self.make_symbol_id(&symbol.to_string());
     }
 }
 
