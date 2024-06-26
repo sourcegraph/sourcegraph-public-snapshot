@@ -5,6 +5,7 @@ import type { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import type { QueryState } from '@sourcegraph/shared/src/search'
+import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -24,10 +25,9 @@ import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { type Scalars, SearchPatternType } from '../graphql-operations'
 import type { NamespaceProps } from '../namespaces'
+import { defaultPatternTypeFromSettings } from '../util/settings'
 
 import styles from './SavedSearchForm.module.scss'
-import { defaultPatternTypeFromSettings } from '../util/settings'
-import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 export interface SavedQueryFields {
     id: Scalars['ID']
