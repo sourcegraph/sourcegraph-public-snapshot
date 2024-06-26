@@ -1142,7 +1142,7 @@ func TestNewPlanJob(t *testing.T) {
     (originalQuery . )
     (patternType . codycontext)
     (CODYCONTEXTSEARCH
-      (patterns . [readme symf])
+      (patterns . ["readme","symf"])
       (codeCount . 12)
       (textCount . 3))))
 `),
