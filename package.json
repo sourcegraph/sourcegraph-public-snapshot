@@ -272,7 +272,6 @@
     "yauzl": "^2.10.0"
   },
   "dependencies": {
-    "@sourcegraph/cody-web": "*",
     "@apollo/client": "^3.8.0-alpha.7",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
@@ -336,6 +335,7 @@
     "bloomfilter": "^0.0.18",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
+    "cody-web-experimental": "^0.1.2",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "core-js": "^3.8.2",

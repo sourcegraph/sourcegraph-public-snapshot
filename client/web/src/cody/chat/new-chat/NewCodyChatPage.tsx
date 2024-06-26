@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 
-import { CodyWebChatProvider, ChatHistory } from '@sourcegraph/cody-web'
+import { CodyWebChatProvider, ChatHistory } from 'cody-web-experimental'
+
 import { Badge, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
@@ -9,6 +10,7 @@ import { CodyColorIcon } from '../CodyPageIcon'
 
 import { ChatHistoryList } from './components/chat-history-list/ChatHistoryList'
 import { ChatUi } from './components/chat-ui/ChatUi'
+import { Skeleton } from './components/skeleton/Skeleton'
 
 import styles from './NewCodyChatPage.module.scss'
 
@@ -34,8 +36,14 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
                     <ChatHistory>
                         {history => (
                             <div className={styles.chatHistory}>
-                                {history.loading && 'Loading...'}
-                                {history.error && <p>Error: {history.error.message}</p>}
+                                {history.loading && (
+                                    <>
+                                        <Skeleton />
+                                        <Skeleton />
+                                        <Skeleton />
+                                    </>
+                                )}
+                                {history.error && <Text>Error: {history.error.message}</Text>}
 
                                 {!history.loading && !history.error && (
                                     <ChatHistoryList

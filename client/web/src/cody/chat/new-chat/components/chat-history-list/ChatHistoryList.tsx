@@ -1,10 +1,11 @@
 import type { FC } from 'react'
+import { useMemo } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
+import { type ChatExportResult, getChatTitle } from 'cody-web-experimental'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { type ChatExportResult, getChatTitle } from '@sourcegraph/cody-web'
 import { Icon, Text, Tooltip, Button } from '@sourcegraph/wildcard'
 
 import styles from './ChatHistoryList.module.scss'
@@ -21,9 +22,21 @@ interface ChatHistoryListProps {
 export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
     const { chats, isSelectedChat, className, onChatSelect, onChatDelete, onChatCreate } = props
 
+    const sortedChats = useMemo(() => {
+        try {
+            return [...chats].sort(
+                (chatA, chatB) =>
+                    +safeTimestampToDate(chatB.transcript.lastInteractionTimestamp) -
+                    +safeTimestampToDate(chatA.transcript.lastInteractionTimestamp)
+            )
+        } catch {
+            return chats
+        }
+    }, [chats])
+
     return (
         <ul className={classNames(styles.historyList, className)}>
-            {chats.map(chat => (
+            {sortedChats.map(chat => (
                 <ChatHistoryItem
                     key={chat.chatID}
                     chat={chat}
@@ -32,10 +45,12 @@ export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
                     onDelete={() => onChatDelete(chat)}
                 />
             ))}
-            <Button variant="primary" onClick={onChatCreate} className="text-left">
-                Start new chat
-                <Icon aria-label="Add chat" svgPath={mdiPlus} />
-            </Button>
+            <footer className={styles.footer}>
+                <Button variant="primary" onClick={onChatCreate} className="w-100">
+                    Start new chat
+                    <Icon aria-label="Add chat" svgPath={mdiPlus} />
+                </Button>
+            </footer>
         </ul>
     )
 }
@@ -72,6 +87,7 @@ const ChatHistoryItem: FC<ChatHistoryItemProps> = props => {
                         <Icon
                             aria-label="Delete chat"
                             svgPath={mdiDelete}
+                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
                             onClick={handleDelete}
                             className={styles.deleteButton}
                         />

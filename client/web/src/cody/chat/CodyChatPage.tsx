@@ -3,11 +3,15 @@ import type { FC } from 'react'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import type { SourcegraphContext } from '../../jscontext'
 
-import { NewCodyChatPage } from './new-chat/NewCodyChatPage'
 import { CodyChatPage as OldCodyChatPage } from './old-chat/CodyChatPage'
+
+// Lazy loaded new cody chat page, we have to lazy load it
+// since new cody web client pulls heavy agent
+const LazyNewCodyChatPage = lazyComponent(() => import('./new-chat/NewCodyChatPage'), 'NewCodyChatPage')
 
 interface CodyChatPageProps extends TelemetryV2Props {
     isSourcegraphDotCom: boolean
@@ -24,7 +28,7 @@ export const CodyChatPage: FC<CodyChatPageProps> = props => {
     const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
 
     return newCodyWeb ? (
-        <NewCodyChatPage />
+        <LazyNewCodyChatPage isSourcegraphDotCom={isSourcegraphDotCom} />
     ) : (
         <OldCodyChatPage
             isSourcegraphDotCom={isSourcegraphDotCom}

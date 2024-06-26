@@ -27,12 +27,14 @@
     display: flex;
     flex-grow: 1;
     overflow: hidden;
-    gap: 0.5rem;
+    border-top: 1px solid var(--border-color);
 }
 
 .chat-history {
     width: 30%;
     flex-shrink: 0;
+    overflow: auto;
+    padding-top: 0.5rem;
 }
 
 .chat {
