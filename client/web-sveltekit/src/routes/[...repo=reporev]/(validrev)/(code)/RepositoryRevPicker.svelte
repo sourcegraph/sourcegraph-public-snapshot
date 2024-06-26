@@ -234,7 +234,7 @@
         :global([data-picker-suggestions-list]) {
             display: grid;
             grid-template-rows: auto;
-            grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 6rem);
+            grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 8rem);
         }
 
         :global([data-picker-suggestions-list-item]) {

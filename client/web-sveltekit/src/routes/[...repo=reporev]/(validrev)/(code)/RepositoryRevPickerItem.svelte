@@ -64,8 +64,6 @@
     }
 
     .title {
-        padding-left: 1rem;
-
         :global([data-icon]) {
             flex-shrink: 0;
             color: var(--icon-muted);
@@ -84,7 +82,7 @@
     }
 
     .timestamp {
-        padding-right: 0.75rem;
+        justify-content: flex-end;
         color: var(--text-muted);
     }
 </style>

@@ -154,7 +154,7 @@
 
     .suggestions-list-item {
         cursor: pointer;
-        padding: 0.325rem;
+        padding: 0.325rem 1rem;
         border-bottom: 1px solid var(--border-color);
 
         &:last-child {
