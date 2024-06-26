@@ -37,7 +37,7 @@ func NewTestDB(t testing.TB, system, suite string, tables ...schema.Tabler) *pgx
 	_, err = sqlDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %q", dbName))
 	require.NoError(t, err)
 
-	_, err = sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %q WITH ENCODING=UTF8", dbName))
+	_, err = sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %q TEMPLATE template0", dbName))
 	require.NoError(t, err)
 
 	// Swap out the database name to be the test suite database in the DSN.
