@@ -1,13 +1,17 @@
-use super::{Descriptor, NonLocalSymbol, Package, Scheme, Symbol};
-use nom::branch::alt;
-use nom::bytes::complete::{tag, take_while1};
-use nom::character::complete::char;
-use nom::combinator::{cut, eof, fail};
-use nom::error::{context, convert_error, VerboseError};
-use nom::multi::many1;
-use nom::sequence::{delimited, preceded, tuple};
-use nom::{Finish, IResult, Parser};
 use std::borrow::Cow;
+
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take_while1},
+    character::complete::char,
+    combinator::{cut, eof, fail, opt},
+    error::{context, convert_error, VerboseError},
+    multi::many1,
+    sequence::{delimited, preceded, tuple},
+    Finish, IResult, Parser,
+};
+
+use super::{Descriptor, NonLocalSymbol, Package, Scheme, Symbol};
 
 pub(super) fn parse_symbol(input: &str) -> Result<Symbol<'_>, String> {
     match parse_symbol_inner(input).finish() {
@@ -39,11 +43,13 @@ fn parse_nonlocal_symbol(input: &str) -> PResult<'_, Symbol<'_>> {
         parse_package,
         many1(parse_descriptor),
     ))
-    .map(|(scheme, package, descriptors)| Symbol::NonLocal (NonLocalSymbol {
-        scheme: Scheme(scheme),
-        package,
-        descriptors,
-    }))
+    .map(|(scheme, package, descriptors)| {
+        Symbol::NonLocal(NonLocalSymbol {
+            scheme: Scheme(scheme),
+            package,
+            descriptors,
+        })
+    })
     .parse(input)
 }
 
@@ -90,7 +96,7 @@ fn parse_named_descriptor(input: &str) -> PResult<'_, Descriptor> {
         Some(':') => Ok((&input[1..], Descriptor::Meta(name))),
         Some('!') => Ok((&input[1..], Descriptor::Macro(name))),
         Some('(') => {
-            let (input, disambiguator) = parse_simple_identifier_str(&input[1..])?;
+            let (input, disambiguator) = opt(parse_simple_identifier_str)(&input[1..])?;
             let (input, _) = tag(").")(input)?;
             Ok((
                 input,
@@ -156,4 +162,47 @@ fn parse_terminated(input: &str, terminator: char) -> PResult<'_, Cow<'_, str>> 
         }
     }
     context("Missing terminator", cut(fail))(current)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parsing_symbols() {
+        assert_eq!(
+            Symbol::parse("scip-java . . . Dude#lol!waow.")
+                .unwrap()
+                .to_string(),
+            "scip-java . . . Dude#lol!waow."
+        );
+        assert_eq!(
+            Symbol::parse("scip  java . . . Dude#lol!waow.")
+                .unwrap()
+                .to_string(),
+            "scip  java . . . Dude#lol!waow."
+        );
+        assert_eq!(
+            Symbol::parse("scip  java . . . `Dude```#`lol`!waow.")
+                .unwrap()
+                .to_string(),
+            "scip  java . . . `Dude```#lol!waow."
+        );
+        assert_eq!(Symbol::parse("local 1").unwrap().to_string(), "local 1");
+        assert_eq!(
+            Symbol::parse("rust-analyzer cargo test_rust_dependency 0.1.0 println!")
+                .unwrap()
+                .to_string(),
+            "rust-analyzer cargo test_rust_dependency 0.1.0 println!"
+        );
+        assert_eq!(
+            Symbol::NonLocal(NonLocalSymbol {
+                scheme: Default::default(),
+                package: Default::default(),
+                descriptors: vec![Descriptor::Type("hi".into())]
+            })
+            .to_string(),
+            " . . . hi#"
+        );
+    }
 }

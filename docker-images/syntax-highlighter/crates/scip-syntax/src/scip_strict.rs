@@ -5,9 +5,7 @@ mod parse;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Symbol<'a> {
-    Local {
-        local_id: &'a str,
-    },
+    Local { local_id: &'a str },
     NonLocal(NonLocalSymbol<'a>),
 }
 
@@ -97,51 +95,8 @@ pub enum Descriptor<'a> {
     Macro(Cow<'a, str>),
     Method {
         name: Cow<'a, str>,
-        disambiguator: &'a str,
+        disambiguator: Option<&'a str>,
     },
     TypeParameter(Cow<'a, str>),
     Parameter(Cow<'a, str>),
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        assert_eq!(
-            Symbol::parse("scip-java . . . Dude#lol!waow.")
-                .unwrap()
-                .to_string(),
-            "scip-java . . . Dude#lol!waow."
-        );
-        assert_eq!(
-            Symbol::parse("scip  java . . . Dude#lol!waow.")
-                .unwrap()
-                .to_string(),
-            "scip  java . . . Dude#lol!waow."
-        );
-        assert_eq!(
-            Symbol::parse("scip  java . . . `Dude```#`lol`!waow.")
-                .unwrap()
-                .to_string(),
-            "scip  java . . . `Dude```#lol!waow."
-        );
-        assert_eq!(Symbol::parse("local 1").unwrap().to_string(), "local 1");
-        assert_eq!(
-            Symbol::parse("rust-analyzer cargo test_rust_dependency 0.1.0 println!")
-                .unwrap()
-                .to_string(),
-            "rust-analyzer cargo test_rust_dependency 0.1.0 println!"
-        );
-        assert_eq!(
-            Symbol::NonLocal(NonLocalSymbol {
-                scheme: Default::default(),
-                package: Default::default(),
-                descriptors: vec![Descriptor::Type("hi".into())]
-            })
-            .to_string(),
-            " . . . hi#"
-        );
-    }
 }

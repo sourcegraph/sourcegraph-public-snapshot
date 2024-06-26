@@ -1,63 +1,6 @@
+use std::{borrow::Cow, fmt};
+
 use super::{parse, Descriptor, NonLocalSymbol, Package, Scheme, Symbol};
-use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Write;
-
-pub struct SymbolFormatOptions {
-    pub include_scheme: bool,
-    pub include_package_manager: bool,
-    pub include_package_name: bool,
-    pub include_package_version: bool,
-    pub include_descriptor: bool,
-}
-
-impl SymbolFormatOptions {
-    fn default() -> SymbolFormatOptions {
-        SymbolFormatOptions {
-            include_scheme: true,
-            include_package_manager: true,
-            include_package_name: true,
-            include_package_version: true,
-            include_descriptor: true,
-        }
-    }
-}
-
-pub fn format_symbol_with(symbol: &Symbol, options: SymbolFormatOptions) -> String {
-    let mut buf = String::new();
-    match symbol {
-        Symbol::Local { local_id } => write!(&mut buf, "local {local_id}").unwrap(),
-        Symbol::NonLocal(NonLocalSymbol {
-            scheme,
-            package,
-            descriptors,
-        }) => {
-            if options.include_scheme {
-                write!(&mut buf, "{scheme} ").unwrap()
-            }
-            if options.include_package_manager {
-                write!(&mut buf, "{} ", package.manager).unwrap()
-            }
-            if options.include_package_name {
-                write!(&mut buf, "{} ", package.package_name).unwrap()
-            }
-            if options.include_package_version {
-                write!(&mut buf, "{} ", package.version).unwrap()
-            }
-            if options.include_descriptor {
-                for descriptor in descriptors {
-                    write!(&mut buf, "{descriptor}").unwrap()
-                }
-            }
-        }
-    }
-
-    if buf.ends_with(' ') {
-        buf.pop();
-    }
-
-    buf
-}
 
 impl fmt::Display for Symbol<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -107,7 +50,12 @@ impl fmt::Display for Descriptor<'_> {
             Descriptor::Method {
                 name,
                 disambiguator,
-            } => write!(f, "{}({}).", escape_name(name), disambiguator),
+            } => write!(
+                f,
+                "{}({}).",
+                escape_name(name),
+                disambiguator.unwrap_or_default()
+            ),
             Descriptor::TypeParameter(name) => write!(f, "[{}]", escape_name(name)),
             Descriptor::Parameter(name) => write!(f, "({})", escape_name(name)),
         }
