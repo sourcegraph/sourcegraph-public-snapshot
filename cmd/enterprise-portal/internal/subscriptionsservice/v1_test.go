@@ -2,10 +2,12 @@ package subscriptionsservice
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
 	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -325,71 +327,143 @@ func TestHandlerV1_UpdateEnterpriseSubscription(t *testing.T) {
 }
 
 func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
-	ctx := context.Background()
-	t.Run("via subscription ID", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
-			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
-				SubscriptionId:      "80ca12e2-54b4-448c-a61a-390b1a9c1224",
-				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
+	const (
+		subscriptionID = "80ca12e2-54b4-448c-a61a-390b1a9c1224"
+		instanceDomain = "s1.sourcegraph.com"
+	)
+
+	type assertIAMWrite struct {
+		wantWrites  autogold.Value
+		wantDeletes autogold.Value
+	}
+
+	for _, tc := range []struct {
+		name string
+		req  *subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest
+
+		iamCheckFunc func(opts iam.CheckOptions) (bool, error)
+
+		iamWrite *assertIAMWrite
+	}{
+		{
+			name: "via subscription ID",
+			req: &subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
+				Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
+					SubscriptionId:      "80ca12e2-54b4-448c-a61a-390b1a9c1224",
+					MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+					MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
+				},
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
-			assert.Len(t, opts.Writes, 2)
-			assert.Len(t, opts.Deletes, 0)
-			return nil
-		})
-		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.IAMWriteFunc)
-	})
-
-	t.Run("via instance domain", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
-			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
-				InstanceDomain:      "s1.sourcegraph.com",
-				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-				MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
+			iamWrite: &assertIAMWrite{
+				wantWrites: autogold.Expect([]iam.TupleKey{
+					{
+						Object:        iam.TupleObject("subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+						TupleRelation: iam.TupleRelation("view"),
+						Subject:       iam.TupleSubject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224#member"),
+					},
+					{
+						Object:        iam.TupleObject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+						TupleRelation: iam.TupleRelation("member"),
+						Subject:       iam.TupleSubject("user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9"),
+					},
+				}),
+				wantDeletes: autogold.Expect([]iam.TupleKey{}),
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
-
-		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*subscriptions.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
-			assert.Len(t, opts.Writes, 2)
-			assert.Len(t, opts.Deletes, 0)
-			return nil
-		})
-		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.IAMWriteFunc)
-	})
-
-	t.Run("deletes all roles", func(t *testing.T) {
-		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
-			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
-				InstanceDomain:      "s1.sourcegraph.com",
-				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
-				MemberRoles:         []subscriptionsv1.Role{},
+		},
+		{
+			name: "via instance domain",
+			req: &subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
+				Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
+					InstanceDomain:      instanceDomain,
+					MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+					MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
+				},
 			},
-		})
-		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
+			iamWrite: &assertIAMWrite{
+				wantWrites: autogold.Expect([]iam.TupleKey{
+					{
+						Object:        iam.TupleObject("subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+						TupleRelation: iam.TupleRelation("view"),
+						Subject:       iam.TupleSubject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224#member"),
+					},
+					{
+						Object:        iam.TupleObject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+						TupleRelation: iam.TupleRelation("member"),
+						Subject:       iam.TupleSubject("user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9"),
+					},
+				}),
+				wantDeletes: autogold.Expect([]iam.TupleKey{}),
+			},
+		},
+		{
+			name: "deletes preexisting roles",
+			req: &subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
+				Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
+					InstanceDomain:      "s1.sourcegraph.com",
+					MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+					MemberRoles:         []subscriptionsv1.Role{},
+				},
+			},
+			iamCheckFunc: func(_ iam.CheckOptions) (bool, error) {
+				return true, nil // all tuples exist
+			},
+			iamWrite: &assertIAMWrite{
+				wantWrites: autogold.Expect([]iam.TupleKey{}),
+				wantDeletes: autogold.Expect([]iam.TupleKey{{
+					Object:        iam.TupleObject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+					TupleRelation: iam.TupleRelation("member"),
+					Subject:       iam.TupleSubject("user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9"),
+				}}),
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			req := connect.NewRequest(tc.req)
+			req.Header().Add("Authorization", "Bearer foolmeifyoucan")
 
-		h := newTestHandlerV1()
-		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*subscriptions.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
-		h.mockStore.IAMCheckFunc.SetDefaultReturn(true, nil) // All tuples exist
-		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
-			assert.Len(t, opts.Writes, 0)
-			assert.Len(t, opts.Deletes, 1)
-			return nil
+			h := newTestHandlerV1()
+			h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultHook(
+				func(_ context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+					if slices.Contains(opts.SubscriptionIDs, subscriptionID) {
+						return []*dotcomdb.SubscriptionAttributes{{ID: subscriptionID}}, nil
+					}
+					return nil, nil
+				},
+			)
+			h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultHook(
+				func(_ context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
+					if slices.Contains(opts.IDs, subscriptionID) ||
+						slices.Contains(opts.InstanceDomains, instanceDomain) {
+						return []*subscriptions.Subscription{{ID: subscriptionID}}, nil
+					}
+					return nil, nil
+				},
+			)
+			h.mockStore.IAMCheckFunc.SetDefaultHook(func(_ context.Context, opts iam.CheckOptions) (bool, error) {
+				if tc.iamCheckFunc != nil {
+					return tc.iamCheckFunc(opts)
+				}
+				return false, nil
+			})
+
+			_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
+			require.NoError(t, err)
+
+			if tc.iamWrite == nil {
+				mockrequire.NotCalled(t, h.mockStore.IAMWriteFunc)
+			} else {
+				mockrequire.Called(t, h.mockStore.IAMWriteFunc)
+				assert.Len(t, h.mockStore.IAMWriteFunc.History(), 1,
+					"IAMWrite should only be called once")
+				w := h.mockStore.IAMWriteFunc.History()[0].Arg1
+				tc.iamWrite.wantWrites.Equal(t, w.Writes)
+				tc.iamWrite.wantDeletes.Equal(t, w.Deletes)
+			}
+
+			if tc.iamCheckFunc != nil { // if mock is provided, presumably it should be called
+				mockrequire.Called(t, h.mockStore.IAMCheckFunc)
+			}
 		})
-		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
-		require.NoError(t, err)
-		mockrequire.Called(t, h.mockStore.IAMWriteFunc)
-	})
+	}
 }
