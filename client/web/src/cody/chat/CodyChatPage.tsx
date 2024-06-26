@@ -27,7 +27,9 @@ export const CodyChatPage: FC<CodyChatPageProps> = props => {
     // cody extension.
     const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
 
-    return newCodyWeb ? (
+    // Load new cody web only for authorized users, fallback on old cody web
+    // for better non-logged-in user experience.
+    return newCodyWeb && authenticatedUser !== null ? (
         <LazyNewCodyChatPage isSourcegraphDotCom={isSourcegraphDotCom} />
     ) : (
         <OldCodyChatPage
