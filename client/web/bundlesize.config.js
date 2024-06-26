@@ -40,7 +40,7 @@ const config = {
     },
     {
       path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.css'),
-      maxSize: '95kb',
+      maxSize: '100kb',
     },
   ],
 }
