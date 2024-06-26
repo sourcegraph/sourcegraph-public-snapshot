@@ -184,8 +184,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
     }, [queryState.query])
 
-    const defaultPatternType: SearchPatternType =
-        defaultPatternTypeFromSettings(useSettingsCascade()) || SearchPatternType.keyword
+    const defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
