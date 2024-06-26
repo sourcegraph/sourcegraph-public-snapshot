@@ -645,7 +645,6 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 }
 
 func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
-	return nil
 	rejectUnverifiedCommit := conf.RejectUnverifiedCommit()
 
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
