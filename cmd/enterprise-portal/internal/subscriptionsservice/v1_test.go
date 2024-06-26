@@ -340,6 +340,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 		h.mockStore.ListDotcomEnterpriseSubscriptionsFunc.SetDefaultReturn([]*dotcomdb.SubscriptionAttributes{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
 		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
 			assert.Len(t, opts.Writes, 2)
+			assert.Len(t, opts.Deletes, 0)
 			return nil
 		})
 		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
@@ -361,6 +362,30 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*subscriptions.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
 		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
 			assert.Len(t, opts.Writes, 2)
+			assert.Len(t, opts.Deletes, 0)
+			return nil
+		})
+		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)
+		require.NoError(t, err)
+		mockrequire.Called(t, h.mockStore.IAMWriteFunc)
+	})
+
+	t.Run("deletes all roles", func(t *testing.T) {
+		req := connect.NewRequest(&subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
+			Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
+				InstanceDomain:      "s1.sourcegraph.com",
+				MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+				MemberRoles:         []subscriptionsv1.Role{},
+			},
+		})
+		req.Header().Add("Authorization", "Bearer foolmeifyoucan")
+
+		h := newTestHandlerV1()
+		h.mockStore.ListEnterpriseSubscriptionsFunc.SetDefaultReturn([]*subscriptions.Subscription{{ID: "80ca12e2-54b4-448c-a61a-390b1a9c1224"}}, nil)
+		h.mockStore.IAMCheckFunc.SetDefaultReturn(true, nil) // All tuples exist
+		h.mockStore.IAMWriteFunc.SetDefaultHook(func(_ context.Context, opts iam.WriteOptions) error {
+			assert.Len(t, opts.Writes, 0)
+			assert.Len(t, opts.Deletes, 1)
 			return nil
 		})
 		_, err := h.UpdateEnterpriseSubscriptionMembership(ctx, req)

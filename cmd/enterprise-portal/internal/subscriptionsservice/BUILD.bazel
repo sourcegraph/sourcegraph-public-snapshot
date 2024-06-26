@@ -38,6 +38,7 @@ go_library(
 go_test(
     name = "subscriptionsservice_test",
     srcs = [
+        "adapters_test.go",
         "mocks_test.go",
         "v1_test.go",
     ],
