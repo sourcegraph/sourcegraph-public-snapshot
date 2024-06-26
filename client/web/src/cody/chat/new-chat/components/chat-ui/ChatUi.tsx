@@ -7,6 +7,6 @@ import 'cody-web-experimental/dist/style.css'
 
 import styles from './ChatUI.module.scss'
 
-export const ChatUi: FC<{ className?: string }> = props => {
-    return <CodyWebChat className={classnames(styles.chat, props.className)} />
-}
+export const ChatUi: FC<{ className?: string }> = props => (
+    <CodyWebChat className={classnames(styles.chat, props.className)} />
+)
