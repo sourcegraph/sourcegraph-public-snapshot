@@ -259,6 +259,10 @@ func (s *repos) GetInventory(ctx context.Context, repo api.RepoName, commitID ap
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
+	if commitID == "" {
+		return nil, errors.Errorf("Could not find a commit in the repository. Please add a file first.")
+	}
+
 	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo, "commitID": commitID}, &err)
 	defer done()
 
