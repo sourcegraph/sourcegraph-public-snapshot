@@ -222,7 +222,7 @@ func TestEventTypesRedact(t *testing.T) {
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 			// assert the values are still there for privateMetadata
 			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
-			assert.Nil(t, "redacted", ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
+			assert.Nil(t, ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
 		})
 	})
 }
