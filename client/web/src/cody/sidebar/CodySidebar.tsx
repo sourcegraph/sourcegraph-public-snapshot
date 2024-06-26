@@ -27,7 +27,12 @@ export const CodySidebar: FC<CodySidebarProps> = props => {
     const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
 
     return newCodyWeb ? (
-        <NewCodySidebar filePath={filePath} repository={repository} onClose={onClose} />
+        <NewCodySidebar
+            filePath={filePath}
+            repository={repository}
+            isAuthorized={authenticatedUser !== null}
+            onClose={onClose}
+        />
     ) : (
         <OldCodySidebar telemetryRecorder={telemetryRecorder} authenticatedUser={authenticatedUser} onClose={onClose} />
     )
