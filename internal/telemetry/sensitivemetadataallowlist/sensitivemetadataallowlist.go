@@ -242,13 +242,12 @@ func parseAdditionalAllowedEventTypes(config string) ([]EventType, error) {
 			return nil, errors.Newf(
 				"cannot parse SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES value %q, missing allowlisted fields",
 				rawType)
-		} else {
-			types = append(types, EventType{
-				Feature:                    parts[0],
-				Action:                     parts[1],
-				AllowedPrivateMetadataKeys: parts[2:],
-			})
 		}
+		types = append(types, EventType{
+			Feature:                    parts[0],
+			Action:                     parts[1],
+			AllowedPrivateMetadataKeys: parts[2:],
+		})
 	}
 	return types, nil
 }

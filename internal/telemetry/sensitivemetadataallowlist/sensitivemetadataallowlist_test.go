@@ -200,10 +200,6 @@ func TestEventTypesRedact(t *testing.T) {
 				Action:                     "*",
 				AllowedPrivateMetadataKeys: []string{"foo"},
 			})
-			mode := allowedTypes.Redact(&v1.Event{
-				Feature: "example",
-				Action:  "randomExampleAction",
-			})
 			ev := &v1.Event{
 				Parameters: &v1.EventParameters{
 					PrivateMetadata: &structpb.Struct{
@@ -221,11 +217,12 @@ func TestEventTypesRedact(t *testing.T) {
 						},
 					},
 				}}
+			mode := allowedTypes.Redact(ev)
 
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 			// assert the values are still there for privateMetadata
 			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
-			assert.Equal(t, "redacted", ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
+			assert.Nil(t, "redacted", ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
 		})
 	})
 }
