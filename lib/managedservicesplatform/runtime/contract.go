@@ -8,6 +8,9 @@ import (
 // configuration.
 type Contract = contract.Contract
 
+type ServiceContract = contract.ServiceContract
+type JobContract = contract.JobContract
+
 // Env carries pre-parsed environment variables and variables requested and
 // errors encountered.
 type Env = contract.Env

@@ -29,7 +29,7 @@ var _ runtime.Service[Config] = (*Service)(nil)
 func (Service) Name() string    { return "pings" }
 func (Service) Version() string { return version.Version() }
 
-func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.Routine, error) {
+func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.ServiceContract, config Config) (background.Routine, error) {
 	pubsubClient, err := pubsub.NewTopicClient(config.PubSub.ProjectID, config.PubSub.TopicID)
 	if err != nil {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
