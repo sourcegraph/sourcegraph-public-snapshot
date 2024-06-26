@@ -1,4 +1,4 @@
-import { test, expect } from '../../../../../testing/integration'
+import { test, expect } from '../../../../testing/integration'
 
 const repoName = 'sourcegraph/sourcegraph'
 

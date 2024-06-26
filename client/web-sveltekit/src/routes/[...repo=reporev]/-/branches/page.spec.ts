@@ -1,4 +1,4 @@
-import { expect, test } from '../../../../../testing/integration'
+import { expect, test } from '../../../../testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 const url = `/${repoName}/-/branches`
