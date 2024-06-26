@@ -20,8 +20,8 @@ import (
 // change the key prefix that is used for all hash keys,
 // effectively resetting the cache at the same time the new code
 // is deployed.
-const dataVersion = "v3"
-const dataVersionToDelete = "v2"
+const dataVersion = "v2"
+const dataVersionToDelete = "v1"
 
 // StoreType for selecting Redis store types.
 type StoreType int
