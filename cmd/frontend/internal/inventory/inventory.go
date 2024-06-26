@@ -62,7 +62,7 @@ func getLang(ctx context.Context, file fs.FileInfo, getFileReader func(ctx conte
 
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
-		return Lang{}, errors.Wrap(err, "getting file reader")
+		return Lang{}, errors.Wrap(err, "Failed to create a file reader.")
 	}
 	if rc != nil {
 		defer rc.Close()
