@@ -35,7 +35,7 @@ func TestGetDefinitions(t *testing.T) {
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 
-		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: mockCommit, Root: "sub1/"},
 			{ID: 51, Commit: mockCommit, Root: "sub2/"},
@@ -95,7 +95,7 @@ func TestGetDefinitions(t *testing.T) {
 		// Set up request state
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
 		mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
 		uploads1 := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -218,7 +218,7 @@ func TestGetReferences(t *testing.T) {
 		// Set up request state
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -284,7 +284,7 @@ func TestGetReferences(t *testing.T) {
 		// Set up request state
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 		uploads := []uploadsshared.CompletedUpload{
 			{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 			{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -466,7 +466,7 @@ func TestGetImplementations(t *testing.T) {
 		// Set up request state
 		mockRequestState := RequestState{}
 		mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+		mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 
 		// Empty result set (prevents nil pointer as scanner is always non-nil)
 		mockUploadSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{}, 0, 0, nil)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -37,7 +38,7 @@ func TestDiagnostics(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -56,6 +57,9 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
 
 	mockRequest := PositionalRequestArgs{
 		RequestArgs: RequestArgs{
@@ -111,7 +115,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -143,6 +147,9 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := PositionalRequestArgs{

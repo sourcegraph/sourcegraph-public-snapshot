@@ -65,7 +65,7 @@ func NewRequestState(
 	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, path, hunkCache)
+	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, hunkCache)
 	r.SetLocalCommitCache(repoStore, gitserverClient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
@@ -95,11 +95,10 @@ func (r *RequestState) SetUploadsDataLoader(uploads []shared.CompletedUpload) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit string, path core.RepoRelPath, hunkCache HunkCache) {
-	args := &requestArgs{
+func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit string, hunkCache HunkCache) {
+	args := &translationBase{
 		repo:   repo,
 		commit: commit,
-		path:   path,
 	}
 
 	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)

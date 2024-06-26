@@ -156,7 +156,13 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
 type NavigationSearchBoxState = Pick<
     SearchQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+    | 'queryState'
+    | 'setQueryState'
+    | 'submitSearch'
+    | 'searchCaseSensitivity'
+    | 'searchPatternType'
+    | 'defaultPatternType'
+    | 'searchMode'
 >
 
 /**
@@ -170,6 +176,7 @@ const selectQueryState = (state: SearchQueryState): NavigationSearchBoxState => 
     submitSearch: state.submitSearch,
     searchCaseSensitivity: state.searchCaseSensitivity,
     searchPatternType: state.searchPatternType,
+    defaultPatternType: state.defaultPatternType,
     searchMode: state.searchMode,
 })
 
@@ -191,8 +198,15 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const location = useLocation()
     const showKeywordSearchToggle = useKeywordSearch()
 
-    const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
-        useNavbarQueryState(selectQueryState, shallow)
+    const {
+        searchMode,
+        queryState,
+        searchPatternType,
+        defaultPatternType,
+        searchCaseSensitivity,
+        setQueryState,
+        submitSearch,
+    } = useNavbarQueryState(selectQueryState, shallow)
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -231,6 +245,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 <Toggles
                     searchMode={searchMode}
                     patternType={searchPatternType}
+                    defaultPatternType={defaultPatternType}
                     caseSensitive={searchCaseSensitivity}
                     navbarSearchQuery={queryState.query}
                     structuralSearchDisabled={structuralSearchDisabled}
