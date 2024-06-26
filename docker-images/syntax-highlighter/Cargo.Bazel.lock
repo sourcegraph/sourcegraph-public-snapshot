@@ -1,5 +1,5 @@
 {
-  "checksum": "16af7384c373f405b14982ed18dfb8fd320f4c727086dc073cd004d1316c351d",
+  "checksum": "29abc93382c22b38f87c9f8db7894be1e88ba39e3e45b46fd61a08be146a87e5",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -6479,6 +6479,42 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "minimal-lexical 0.2.1": {
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/minimal-lexical/0.2.1/download",
+          "sha256": "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "minimal_lexical",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "minimal_lexical",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.2.1"
+      },
+      "license": "MIT/Apache-2.0"
+    },
     "miniz_oxide 0.7.1": {
       "name": "miniz_oxide",
       "version": "0.7.1",
@@ -6794,6 +6830,57 @@
         },
         "edition": "2018",
         "version": "0.23.2"
+      },
+      "license": "MIT"
+    },
+    "nom 7.1.3": {
+      "name": "nom",
+      "version": "7.1.3",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/nom/7.1.3/download",
+          "sha256": "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "nom",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "nom",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "alloc",
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "memchr 2.5.0",
+              "target": "memchr"
+            },
+            {
+              "id": "minimal-lexical 0.2.1",
+              "target": "minimal_lexical"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "7.1.3"
       },
       "license": "MIT"
     },
@@ -10613,6 +10700,10 @@
               "target": "lazy_static"
             },
             {
+              "id": "nom 7.1.3",
+              "target": "nom"
+            },
+            {
               "id": "path-clean 1.0.1",
               "target": "path_clean"
             },
@@ -10657,6 +10748,10 @@
         },
         "deps_dev": {
           "common": [
+            {
+              "id": "criterion 0.4.0",
+              "target": "criterion"
+            },
             {
               "id": "tempfile 3.10.1",
               "target": "tempfile"
@@ -18756,6 +18851,7 @@
     "insta 1.34.0",
     "itertools 0.10.5",
     "lazy_static 1.4.0",
+    "nom 7.1.3",
     "once_cell 1.18.0",
     "paste 1.0.14",
     "path-clean 1.0.1",

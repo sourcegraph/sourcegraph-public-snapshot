@@ -1933,6 +1933,7 @@ dependencies = [
  "camino",
  "clap 4.3.23",
  "colored",
+ "criterion",
  "indicatif",
  "insta",
  "lazy_static",
