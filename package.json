@@ -335,7 +335,7 @@
     "bloomfilter": "^0.0.18",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
-    "cody-web-experimental": "^0.1.2",
+    "cody-web-experimental": "^0.1.3",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "core-js": "^3.8.2",
