@@ -284,7 +284,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...props,
                     }}
                 />,
-                <CodyProApiProvider isSourcegraphDotCom={props.isSourcegraphDotCom} />,
+                <CodyProApiProvider />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >

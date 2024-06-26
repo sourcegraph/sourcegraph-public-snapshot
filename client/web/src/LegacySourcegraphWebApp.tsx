@@ -261,7 +261,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
                     <LegacyRouteContextProvider context={legacyContext} />,
-                    <CodyProApiProvider isSourcegraphDotCom={window.context.sourcegraphDotComMode} />,
+                    <CodyProApiProvider />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >
