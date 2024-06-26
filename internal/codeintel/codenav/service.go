@@ -749,7 +749,7 @@ func filterUploadsImpl[U core.UploadLike](
 	}
 
 	filteredUploads := genslices.MapFilter(results, func(res firstPassResult[U]) (U, bool) {
-		if !res.skipDBCheck {
+		if res.skipDBCheck {
 			return res.upload, true
 		}
 		_, found := foundDocIds[res.upload.GetID()]
@@ -765,17 +765,19 @@ func filterUploadsWithPaths(
 	opts uploadsshared.UploadMatchingOptions,
 	candidates []uploadsshared.CompletedUpload,
 ) ([]uploadsshared.CompletedUpload, error) {
-	return filterUploadsImpl(ctx, lsifstore, candidates, opts.Path /*skipDBCheck*/, func(upload uploadsshared.CompletedUpload) bool {
-		switch opts.RootToPathMatching {
-		case uploadsshared.RootMustEnclosePath:
-			return false
-		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
-			// TODO(efritz) - ensure there's a valid document path for this condition as well
-			return true
-		default:
-			panic("Unhandled case for RootToPathMatching")
-		}
-	})
+	return filterUploadsImpl(ctx, lsifstore, candidates, opts.Path,
+		/* skipDBCheck */
+		func(upload uploadsshared.CompletedUpload) bool {
+			switch opts.RootToPathMatching {
+			case uploadsshared.RootMustEnclosePath:
+				return false
+			case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
+				// TODO(efritz) - ensure there's a valid document path for this condition as well
+				return true
+			default:
+				panic("Unhandled case for RootToPathMatching")
+			}
+		})
 }
 
 func copyUploads(uploads []uploadsshared.CompletedUpload) []uploadsshared.CompletedUpload {

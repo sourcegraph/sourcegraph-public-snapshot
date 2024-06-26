@@ -2,7 +2,9 @@ package codenav
 
 import (
 	"context"
+	"hash/fnv"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -91,9 +93,18 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			return nil, &gitdomain.RevisionNotFoundError{}
 		})
 
-		mockLsifStore.GetPathExistsFunc.SetDefaultHook(func(_ context.Context, uploadID int, path core.UploadRelPath) (bool, error) {
-			return collections.NewSet(testCase.lsifStoreAllowedPaths...).Has(
-				idPathPair{uploadID: uploadID, path: path}), nil
+		mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(func(_ context.Context, uploadIDToPathMap map[int]core.UploadRelPath) (map[int]int, error) {
+			uploadPathSet := collections.NewSet(testCase.lsifStoreAllowedPaths...)
+			uploadIDToDocumentID := map[int]int{}
+			for uploadID, path := range uploadIDToPathMap {
+				if uploadPathSet.Has(idPathPair{uploadID: uploadID, path: path}) {
+					hasher := fnv.New64()
+					hasher.Write([]byte(strconv.Itoa(uploadID)))
+					hasher.Write([]byte(path.RawValue()))
+					uploadIDToDocumentID[uploadID] = int(hasher.Sum64())
+				}
+			}
+			return uploadIDToDocumentID, nil
 		})
 
 		testCase.matchingOptions.RepositoryID = repoID
@@ -105,7 +116,7 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 		for _, upload := range filtered {
 			gotIDs = append(gotIDs, upload.ID)
 		}
-		if diff := cmp.Diff(gotIDs, testCase.expectUploadIDs, cmp.Transformer("Sort", func(in []int) []int {
+		if diff := cmp.Diff(testCase.expectUploadIDs, gotIDs, cmp.Transformer("Sort", func(in []int) []int {
 			out := append([]int(nil), in...)
 			slices.Sort(out)
 			return out

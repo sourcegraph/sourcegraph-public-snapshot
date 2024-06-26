@@ -19,7 +19,6 @@ func TestDatabaseFindDocumentIDs(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		// SCIP
 		{testSCIPUploadID, "template/src/lsif/api.ts", true},
 		{testSCIPUploadID, "template/src/lsif/util.ts", true},
 		{testSCIPUploadID, "missing.ts", false},
