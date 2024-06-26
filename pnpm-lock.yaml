@@ -1562,7 +1562,7 @@ importers:
         version: 0.76.0(svelte@4.2.18)
       '@sentry/sveltekit':
         specifier: ^8.7.0
-        version: 8.7.0(@opentelemetry/api@1.8.0)(@opentelemetry/core@1.25.0)(@opentelemetry/instrumentation@0.51.1)(@opentelemetry/sdk-trace-base@1.25.0)(@opentelemetry/semantic-conventions@1.25.0)(@sveltejs/kit@2.4.2)(svelte@4.2.18)
+        version: 8.7.0(@opentelemetry/api@1.8.0)(@opentelemetry/core@1.25.0)(@opentelemetry/instrumentation@0.51.1)(@opentelemetry/sdk-trace-base@1.25.0)(@opentelemetry/semantic-conventions@1.25.0)(@sveltejs/kit@2.5.17)(svelte@4.2.18)
       '@sourcegraph/branded':
         specifier: workspace:*
         version: link:../branded
@@ -1686,13 +1686,13 @@ importers:
         version: 0.2.0
       '@sveltejs/adapter-auto':
         specifier: ^3.0.0
-        version: 3.1.1(@sveltejs/kit@2.4.2)
+        version: 3.1.1(@sveltejs/kit@2.5.17)
       '@sveltejs/adapter-static':
         specifier: ^3.0.0
-        version: 3.0.1(@sveltejs/kit@2.4.2)
+        version: 3.0.1(@sveltejs/kit@2.5.17)
       '@sveltejs/kit':
-        specifier: ^2.0.0
-        version: 2.4.2(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
+        specifier: ^2.5.17
+        version: 2.5.17(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^3.0.0
         version: 3.0.1(svelte@4.2.18)(vite@5.1.5)
@@ -8950,7 +8950,7 @@ packages:
       svelte: 4.2.18
     dev: false
 
-  /@sentry/sveltekit@8.7.0(@opentelemetry/api@1.8.0)(@opentelemetry/core@1.25.0)(@opentelemetry/instrumentation@0.51.1)(@opentelemetry/sdk-trace-base@1.25.0)(@opentelemetry/semantic-conventions@1.25.0)(@sveltejs/kit@2.4.2)(svelte@4.2.18):
+  /@sentry/sveltekit@8.7.0(@opentelemetry/api@1.8.0)(@opentelemetry/core@1.25.0)(@opentelemetry/instrumentation@0.51.1)(@opentelemetry/sdk-trace-base@1.25.0)(@opentelemetry/semantic-conventions@1.25.0)(@sveltejs/kit@2.5.17)(svelte@4.2.18):
     resolution: {integrity: sha512-1fIonUwv5yICQFfaNAMrCYkwRF9c2kp8LLbTUaMXNFrDbJV1I8afXIWJFc8O0Q3/cW22QGdLhH67Mvb5SA81Wg==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -8963,7 +8963,7 @@ packages:
       '@sentry/types': 8.7.0
       '@sentry/utils': 8.7.0
       '@sentry/vite-plugin': 2.14.2
-      '@sveltejs/kit': 2.4.2(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
+      '@sveltejs/kit': 2.5.17(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
       magic-string: 0.30.7
       magicast: 0.2.8
       sorcery: 0.11.0
@@ -11182,25 +11182,25 @@ packages:
     engines: {node: '>=12.16'}
     dev: false
 
-  /@sveltejs/adapter-auto@3.1.1(@sveltejs/kit@2.4.2):
+  /@sveltejs/adapter-auto@3.1.1(@sveltejs/kit@2.5.17):
     resolution: {integrity: sha512-6LeZft2Fo/4HfmLBi5CucMYmgRxgcETweQl/yQoZo/895K3S9YWYN4Sfm/IhwlIpbJp3QNvhKmwCHbsqQNYQpw==}
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
     dependencies:
-      '@sveltejs/kit': 2.4.2(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
+      '@sveltejs/kit': 2.5.17(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
       import-meta-resolve: 4.0.0
     dev: true
 
-  /@sveltejs/adapter-static@3.0.1(@sveltejs/kit@2.4.2):
+  /@sveltejs/adapter-static@3.0.1(@sveltejs/kit@2.5.17):
     resolution: {integrity: sha512-6lMvf7xYEJ+oGeR5L8DFJJrowkefTK6ZgA4JiMqoClMkKq0s6yvsd3FZfCFvX1fQ0tpCD7fkuRVHsnUVgsHyNg==}
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
     dependencies:
-      '@sveltejs/kit': 2.4.2(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
+      '@sveltejs/kit': 2.5.17(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5)
     dev: true
 
-  /@sveltejs/kit@2.4.2(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5):
-    resolution: {integrity: sha512-1HgRMt9jmlaJamrq++nKQtoMP/v5oHPqIamFOlb0oHYW2XaZPJj9ri1BcR0AAA0vu68DD1UdUtj9zbvn1bR/7g==}
+  /@sveltejs/kit@2.5.17(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.18)(vite@5.1.5):
+    resolution: {integrity: sha512-wiADwq7VreR3ctOyxilAZOfPz3Jiy2IIp2C8gfafhTdQaVuGIHllfqQm8dXZKADymKr3uShxzgLZFT+a+CM4kA==}
     engines: {node: '>=18.13'}
     hasBin: true
     requiresBuild: true
@@ -11212,9 +11212,9 @@ packages:
       '@sveltejs/vite-plugin-svelte': 3.0.1(svelte@4.2.18)(vite@5.1.5)
       '@types/cookie': 0.6.0
       cookie: 0.6.0
-      devalue: 4.3.2
+      devalue: 5.0.0
       esm-env: 1.0.0
-      import-meta-resolve: 4.0.0
+      import-meta-resolve: 4.1.0
       kleur: 4.1.5
       magic-string: 0.30.10
       mrmime: 2.0.0
@@ -15937,8 +15937,8 @@ packages:
       debug: 2.6.9
     dev: true
 
-  /devalue@4.3.2:
-    resolution: {integrity: sha512-KqFl6pOgOW+Y6wJgu80rHpo2/3H07vr8ntR9rkkFIRETewbf5GaYYcakYfiKz89K+sLsuPkQIZaXDMjUObZwWg==}
+  /devalue@5.0.0:
+    resolution: {integrity: sha512-gO+/OMXF7488D+u3ue+G7Y4AA3ZmUnB3eHJXmBTgNHvr4ZNzl36A0ZtG+XCRNYCkYx/bFmw4qtkoFLa+wSrwAA==}
 
   /devtools-protocol@0.0.981744:
     resolution: {integrity: sha512-0cuGS8+jhR67Fy7qG3i3Pc7Aw494sb9yG9QgpG97SFVWwolgYjlhJg7n+UaHxOQT30d1TYu/EYe9k01ivLErIg==}
@@ -18956,6 +18956,10 @@ packages:
 
   /import-meta-resolve@4.0.0:
     resolution: {integrity: sha512-okYUR7ZQPH+efeuMJGlq4f8ubUgO50kByRPyt/Cy1Io4PSRsPjxME+YlVaCOx+NIToW7hCsZNFJyTPFFKepRSA==}
+    dev: true
+
+  /import-meta-resolve@4.1.0:
+    resolution: {integrity: sha512-I6fiaX09Xivtk+THaMfAwnA3MVA5Big1WHF1Dfx9hFuvNIWpXnorlkzhcQf6ehrqQiiZECRt1poOAkPmer3ruw==}
 
   /imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
