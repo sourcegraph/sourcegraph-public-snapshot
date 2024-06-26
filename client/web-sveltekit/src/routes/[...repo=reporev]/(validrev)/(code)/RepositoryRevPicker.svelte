@@ -1,5 +1,6 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
+
     import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
@@ -212,7 +213,6 @@
     }
 
     .content {
-        padding: 0.75rem;
         min-width: 35rem;
         max-width: 40rem;
         width: 640px;
@@ -220,18 +220,7 @@
         --align-tabs: flex-start;
 
         :global([data-tab-header]) {
-            border-bottom: 1px solid var(--border-color-2);
-            margin: -0.75rem -0.75rem 0 -0.75rem;
             padding: 0 0.5rem;
-        }
-
-        :global([data-tab]) {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-
-        :global([data-tab-panel]) {
-            margin: 0 -0.75rem -0.75rem -0.75rem;
         }
 
         // Pickers style
