@@ -15,7 +15,7 @@
     import Badge from '$lib/wildcard/Badge.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import { getRepositoryPageContext } from '../../../../context'
+    import { getRepositoryPageContext } from '../../../context'
 
     import type { PageData, Snapshot } from './$types'
 
