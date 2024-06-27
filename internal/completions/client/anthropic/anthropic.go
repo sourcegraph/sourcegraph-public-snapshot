@@ -14,9 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Anthropic model: https://docs.anthropic.com/en/docs/about-claude/models
 const Claude3Haiku = "claude-3-haiku-20240307"
 const Claude3Sonnet = "claude-3-sonnet-20240229"
 const Claude3Opus = "claude-3-opus-20240229"
+const Claude35Sonnet = "claude-3-5-sonnet-20240620"
 
 func NewClient(cli httpcli.Doer, apiURL, accessToken string, viaGateway bool, tokenManager tokenusage.Manager) types.CompletionsClient {
 
@@ -43,11 +45,13 @@ type anthropicClient struct {
 
 func (a *anthropicClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := a.makeRequest(ctx, requestParams, version, false)
 	if err != nil {
 		return nil, err
@@ -78,12 +82,14 @@ func (a *anthropicClient) Complete(
 
 func (a *anthropicClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	version types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+
+	feature := request.Feature
+	version := request.Version
+	requestParams := request.Parameters
+
 	resp, err := a.makeRequest(ctx, requestParams, version, true)
 	if err != nil {
 		return err

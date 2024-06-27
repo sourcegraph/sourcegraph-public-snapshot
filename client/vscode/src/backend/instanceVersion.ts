@@ -18,8 +18,8 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
  * - insiders version format: 134683_2022-03-02_5188fes0101
  */
 export const observeInstanceVersionNumber = (
-    accessToken: string,
-    endpointURL: string
+    accessToken?: string,
+    endpointURL?: string
 ): Observable<string | undefined> =>
     from(requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {}, accessToken, endpointURL)).pipe(
         map(dataOrThrowErrors),

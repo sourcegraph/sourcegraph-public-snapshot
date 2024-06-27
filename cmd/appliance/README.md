@@ -11,3 +11,34 @@ Appliance runs as a standard Kubernetes Deployment and utilizes Kubernetes [cont
 ## Own
 
 For more information or for help, see the [Release Team](https://handbook.sourcegraph.com/departments/engineering/teams/release/).
+
+## Development
+
+You can kick the tires on the appliance version by running:
+
+```
+go run ./cmd/appliance
+```
+
+[`config.go`](./shared/config.go) is the source of truth on appliance
+configuration. Most of the variables there are optional, except for:
+
+- `APPLIANCE_VERSION`: while this does have a default that does not need to be
+  overridden in production, development builds that lack the link-time injected
+  version information will need to set this. Set it to the latest version of
+  Sourcegraph that you want to be offered.
+
+You might want to override the listen addresses to localhost-only, in order to
+avoid macos firewall popups.
+
+The appliance doesn't care if it's running inside or out of the k8s cluster it's
+provisioning resources into. It does a well-known k8s config dance to try to
+load in-cluster config (from a k8s ServiceAccount token), falling back on
+looking for a kubeconfig on the host
+
+If you have some kubernetes running (e.g. minikube, docker desktop), and your
+default context is set in ~/.kube/config, the appliance will build a k8s client
+using that kubeconfig, and everything should "just work".
+
+See [`development.md`](../..internal/appliance/development.md) for more
+information, including about automated testing.

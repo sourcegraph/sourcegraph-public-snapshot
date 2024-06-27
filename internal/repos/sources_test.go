@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -572,12 +571,6 @@ func listRepos(t *testing.T, cf *httpcli.Factory, gc gitserver.Client, svc *type
 	}
 
 	return repos
-}
-
-func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpcli.Factory, func(testing.TB)) {
-	mw, rec := TestClientFactorySetup(t, name)
-	return httpcli.NewFactory(mw, opt, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { Save(t, rec) }
 }
 
 func getAWSEnv(envVar string) string {

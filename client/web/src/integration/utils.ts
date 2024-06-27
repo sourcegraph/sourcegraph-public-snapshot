@@ -4,7 +4,7 @@ import type { Page } from 'puppeteer'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { type Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { percySnapshot, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import type { WebGraphQlOperations } from '../graphql-operations'
@@ -245,7 +245,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     // Typecast "as any" is used to avoid TypeScript complaining
                     // about window not having this property. We decided that
                     // it's fine to use this in a test context
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const fromDOM = (window as any).CodeMirrorFindFromDOM as
                         | typeof EditorView['findFromDOM']
                         | undefined

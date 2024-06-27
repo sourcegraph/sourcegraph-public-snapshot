@@ -1,8 +1,8 @@
-import React, { createContext, useCallback, useMemo, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { type ApolloClient, type ApolloQueryResult, useApolloClient } from '@apollo/client'
+import { useApolloClient, type ApolloClient, type ApolloQueryResult } from '@apollo/client'
 
-import { useQuery, gql, getDocumentNode } from '@sourcegraph/http-client'
+import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
 
 import type {
     CodyIgnoreContentResult,
@@ -10,8 +10,6 @@ import type {
     ContextFiltersResult,
     ContextFiltersVariables,
 } from '../graphql-operations'
-
-import { isCodyEnabled } from './isCodyEnabled'
 
 interface CodyIgnoreFns {
     isRepoIgnored(repoName: string): boolean
@@ -49,7 +47,7 @@ export const CodyIgnoreProvider: React.FC<React.PropsWithChildren<{ isSourcegrap
     children,
 }) => {
     // Cody is not enabled, return default ignore fns.
-    if (!isCodyEnabled()) {
+    if (!window.context?.codyEnabledForCurrentUser) {
         return <CodyIgnoreContext.Provider value={defaultCodyIgnoreFns}>{children}</CodyIgnoreContext.Provider>
     }
 

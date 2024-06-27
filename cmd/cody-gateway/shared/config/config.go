@@ -235,6 +235,7 @@ func (c *Config) Load() {
 			"claude-instant-1.2-cyan",
 			anthropic.Claude3Haiku,
 			anthropic.Claude3Sonnet,
+			anthropic.Claude35Sonnet,
 			anthropic.Claude3Opus,
 		}, ","),
 		"Anthropic models that can be used."))

@@ -63,6 +63,7 @@
     }
 
     $: selectedRev = $page.url?.searchParams.get('rev')
+    $: diffEnabled = $page.url?.searchParams.has('diff')
     $: closeURL = SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString()
 </script>
 
@@ -89,8 +90,8 @@
                     <td><Timestamp date={new Date(commit.author.date)} strict /></td>
                     {#if enableViewAtCommit}
                         <td>
-                            <Tooltip tooltip={selected ? 'Close commit' : 'View at commit'}>
-                                <a href={selected ? closeURL : `?rev=${commit.oid}`}
+                            <Tooltip tooltip={selected && !diffEnabled ? 'Close commit' : 'View at commit'}>
+                                <a href={selected && !diffEnabled ? closeURL : `?rev=${commit.oid}`}
                                     ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                 >
                             </Tooltip>

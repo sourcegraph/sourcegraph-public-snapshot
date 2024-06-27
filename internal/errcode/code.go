@@ -147,11 +147,6 @@ func IsTemporary(err error) bool {
 	return errors.AsInterface(err, &e) && e.Temporary()
 }
 
-func IsRepoDenied(err error) bool {
-	var e interface{ IsRepoDenied() bool }
-	return errors.AsInterface(err, &e) && e.IsRepoDenied()
-}
-
 // IsArchived will check if err or one of its causes is an archived error.
 // (This is generally going to be in the context of repositories being
 // archived.)
@@ -187,6 +182,8 @@ func MakeNonRetryable(err error) error {
 type nonRetryableError struct{ error }
 
 func (nonRetryableError) NonRetryable() bool { return true }
+
+func (e nonRetryableError) Unwrap() error { return e.error }
 
 func MaybeMakeNonRetryable(statusCode int, err error) error {
 	if statusCode > 0 && statusCode < 200 ||

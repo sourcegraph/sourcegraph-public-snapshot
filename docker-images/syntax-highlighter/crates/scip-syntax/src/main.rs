@@ -1,5 +1,6 @@
-use std::{path::PathBuf, process};
+use std::process;
 
+use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions, TarMode};
 
@@ -162,7 +163,7 @@ pub fn main() -> anyhow::Result<()> {
                             options,
                             IndexMode::TarArchive {
                                 input: TarMode::File {
-                                    location: PathBuf::from(tar),
+                                    location: Utf8PathBuf::from(tar),
                                 },
                             },
                         )
@@ -182,8 +183,8 @@ pub fn main() -> anyhow::Result<()> {
             print_false_negatives,
             disable_colors,
         } => scip_syntax::evaluate::evaluate_command(
-            PathBuf::from(candidate),
-            PathBuf::from(ground_truth),
+            Utf8Path::new(&candidate),
+            Utf8Path::new(&ground_truth),
             scip_syntax::evaluate::EvaluationOutputOptions {
                 print_mapping,
                 print_true_positives,
@@ -200,9 +201,9 @@ fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::R
     index_command(
         options.language,
         mode,
-        PathBuf::from(options.out),
-        PathBuf::from(options.project_root),
-        options.evaluate.map(PathBuf::from),
+        Utf8Path::new(&options.out),
+        Utf8Path::new(&options.project_root),
+        options.evaluate.map(Utf8PathBuf::from),
         IndexOptions {
             analysis_mode: options.mode,
             fail_fast: options.fail_fast,

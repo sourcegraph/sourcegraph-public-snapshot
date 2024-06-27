@@ -46,6 +46,7 @@ func NewExporter(
 	} else {
 		opts = defaults.ExternalDialOptions(logger)
 	}
+	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	conn, err := grpc.DialContext(ctx, exportURL.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing telemetry gateway")

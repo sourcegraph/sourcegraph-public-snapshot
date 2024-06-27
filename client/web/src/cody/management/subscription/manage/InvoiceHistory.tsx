@@ -1,45 +1,30 @@
 import { mdiFileDocumentOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { Client } from '../../api/client'
-import { useApiCaller } from '../../api/hooks/useApiClient'
+import { useSubscriptionInvoices } from '../../api/react-query/subscriptions'
 import type { Invoice } from '../../api/teamSubscriptions'
 
 import { humanizeDate, usdCentsToHumanString } from './utils'
 
 import styles from './InvoiceHistory.module.scss'
 
-const invoicesCall = Client.getCurrentSubscriptionInvoices()
-
 export const InvoiceHistory: React.FC = () => {
-    const { loading, error, data, response } = useApiCaller(invoicesCall)
+    const { isLoading, isError, error, data } = useSubscriptionInvoices()
 
-    if (loading) {
+    if (isLoading) {
         return <LoadingSpinner />
     }
 
-    if (error) {
+    if (isError) {
         logger.error('Error fetching current subscription invoices', error)
         return null
     }
 
-    if (response && !response.ok) {
-        if (response.status === 401) {
-            return <Navigate to="/-/sign-out" replace={true} />
-        }
-
-        logger.error(`Fetch Cody subscription invoices request failed with status ${response.status}`)
-        return null
-    }
-
     if (!data) {
-        if (response) {
-            logger.error('Current subscription invoices are not available.')
-        }
+        logger.error('Current subscription invoices are not available.')
         return null
     }
 

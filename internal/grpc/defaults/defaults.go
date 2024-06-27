@@ -38,6 +38,7 @@ func Dial(addr string, logger log.Logger, additionalOpts ...grpc.DialOption) (*g
 
 // DialContext creates a client connection to the given target with the default options.
 func DialContext(ctx context.Context, addr string, logger log.Logger, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	//lint:ignore SA1019 DialContext will be supported throughout 1.x
 	return grpc.DialContext(ctx, addr, DialOptions(logger, additionalOpts...)...)
 }
 

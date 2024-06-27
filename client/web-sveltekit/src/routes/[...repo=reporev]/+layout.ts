@@ -61,6 +61,7 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     return {
         repoURL: '/' + params.repo,
+        repoURLWithoutRevision: '/' + repoName,
         repoName,
         displayRepoName: displayRepoName(repoName),
         /**

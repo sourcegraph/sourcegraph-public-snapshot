@@ -21,10 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
@@ -281,13 +281,11 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 	}
 
 	// special handling in dotcom to prevent syntax highlighting large lock files
-	if dotcom.SourcegraphDotComMode() {
-		for _, f := range syntaxHighlightFileBlocklist {
-			if strings.HasSuffix(r.Path(), f) {
-				// this will force the content to be returned as plaintext
-				// without hitting the syntax highlighter
-				args.Format = string(gosyntect.FormatHTMLPlaintext)
-			}
+	for _, f := range syntaxHighlightFileBlocklist {
+		if strings.HasSuffix(r.Path(), f) {
+			// this will force the content to be returned as plaintext
+			// without hitting the syntax highlighter
+			args.Format = string(gosyntect.FormatHTMLPlaintext)
 		}
 	}
 
@@ -506,7 +504,7 @@ func (r *GitTreeEntryResolver) CodeGraphData(ctx context.Context, args *resolver
 		Args:   args,
 		Repo:   repo,
 		Commit: api.CommitID(r.Commit().OID()),
-		Path:   r.Path(),
+		Path:   core.NewRepoRelPathUnchecked(r.Path()),
 	})
 }
 

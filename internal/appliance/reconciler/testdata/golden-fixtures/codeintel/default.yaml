@@ -320,6 +320,9 @@ resources:
           indexedSearch:
             disabled: true
 
+          openTelemetry:
+            disabled: true
+
           pgsql:
             disabled: true
 
@@ -432,7 +435,7 @@ resources:
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
-      name: codeintel
+      name: codeintel-db
       namespace: NORMALIZED_FOR_TESTING
       ownerReferences:
         - apiVersion: v1

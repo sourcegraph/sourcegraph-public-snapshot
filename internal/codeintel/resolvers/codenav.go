@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,8 +32,12 @@ type CodeNavServiceResolver interface {
 	// that it is not what is exactly provided as input from the GraphQL
 	// client.
 	CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error)
+	// CodeGraphDataByID materializes a CodeGraphDataResolver purely from a graphql.ID.
+	CodeGraphDataByID(ctx context.Context, id graphql.ID) (CodeGraphDataResolver, error)
 	UsagesForSymbol(ctx context.Context, args *UsagesForSymbolArgs) (UsageConnectionResolver, error)
 }
+
+const CodeGraphDataIDKind = "CodeGraphData"
 
 type GitBlobLSIFDataArgs struct {
 	Repo      *types.Repo
@@ -48,9 +53,12 @@ func (a *GitBlobLSIFDataArgs) Options() shared.UploadMatchingOptions {
 		matching = shared.RootEnclosesPathOrPathEnclosesRoot
 	}
 	return shared.UploadMatchingOptions{
-		RepositoryID:       int(a.Repo.ID),
-		Commit:             string(a.Commit),
-		Path:               a.Path,
+		RepositoryID: int(a.Repo.ID),
+		Commit:       string(a.Commit),
+		// OK to use Unchecked method since we expect a repo-root relative
+		// path from the GraphQL API arguments; upload root relative paths
+		// are largely an implementation detail.
+		Path:               core.NewRepoRelPathUnchecked(a.Path),
 		RootToPathMatching: matching,
 		Indexer:            a.ToolName,
 	}
@@ -161,6 +169,8 @@ type DiagnosticResolver interface {
 }
 
 type CodeGraphDataResolver interface {
+	// ID satisfies the Node interface.
+	ID() graphql.ID
 	Provenance(ctx context.Context) (CodeGraphDataProvenance, error)
 	Commit(ctx context.Context) (string, error)
 	ToolInfo(ctx context.Context) (*CodeGraphToolInfo, error)
@@ -168,6 +178,10 @@ type CodeGraphDataResolver interface {
 	Occurrences(ctx context.Context, args *OccurrencesArgs) (SCIPOccurrenceConnectionResolver, error)
 }
 
+// CodeGraphDataProvenance corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
 type CodeGraphDataProvenance string
 
 const (
@@ -192,6 +206,10 @@ func (f *CodeGraphDataFilter) String() string {
 	return ""
 }
 
+// CodeGraphDataArgs represents the arguments to the codeGraphData(...)
+// field on GitBlob in the GraphQL API.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
 type CodeGraphDataArgs struct {
 	Filter *CodeGraphDataFilter
 }
@@ -231,13 +249,13 @@ type CodeGraphDataOpts struct {
 	Args   *CodeGraphDataArgs
 	Repo   *types.Repo
 	Commit api.CommitID
-	Path   string
+	Path   core.RepoRelPath
 }
 
 func (opts *CodeGraphDataOpts) Attrs() []attribute.KeyValue {
 	return append([]attribute.KeyValue{attribute.String("repo", opts.Repo.String()),
 		opts.Commit.Attr(),
-		attribute.String("path", opts.Path)}, opts.Args.Attrs()...)
+		attribute.String("path", opts.Path.RawValue())}, opts.Args.Attrs()...)
 }
 
 type CodeGraphToolInfo struct {
@@ -367,7 +385,9 @@ func (args *UsagesForSymbolArgs) Resolve(
 		resolvedSymbol,
 		*repo,
 		commitID,
-		args.Range.Path,
+		// OK to use Unchecked function as input path is expected to be relative
+		// to repo root
+		core.NewRepoRelPathUnchecked(args.Range.Path),
 		scipRange,
 		resolvedFilter,
 		remainingCount,
@@ -380,7 +400,7 @@ type UsagesForSymbolResolvedArgs struct {
 	Symbol   *ResolvedSymbolComparator
 	Repo     types.Repo
 	CommitID api.CommitID
-	Path     string
+	Path     core.RepoRelPath
 	Range    scip.Range
 	Filter   *ResolvedUsagesFilter
 
@@ -601,6 +621,7 @@ type UsageResolver interface {
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
 	}) (*string, error)
+	UsageKind() SymbolUsageKind
 }
 
 type SymbolInformationResolver interface {
@@ -621,3 +642,16 @@ type SurroundingLines struct {
 	LinesBefore *int32 `json:"linesBefore"`
 	LinesAfter  *int32 `json:"linesAfter"`
 }
+
+// SymbolUsageKind corresponds to the matching type in the GraphQL API.
+//
+// Make sure this type maintains its marshaling/unmarshaling behavior in
+// case the type definition is changed.
+type SymbolUsageKind string
+
+const (
+	UsageKindDefinition     SymbolUsageKind = "DEFINITION"
+	UsageKindReference      SymbolUsageKind = "REFERENCE"
+	UsageKindImplementation SymbolUsageKind = "IMPLEMENTATION"
+	UsageKindSuper          SymbolUsageKind = "SUPER"
+)

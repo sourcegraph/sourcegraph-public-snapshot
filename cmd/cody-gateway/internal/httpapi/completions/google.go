@@ -63,7 +63,8 @@ func (r googleRequest) BuildPrompt() string {
 func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req googleRequest) string {
 	rpc := "generateContent"
 	sseSuffix := ""
-	if feature == codygateway.FeatureChatCompletions {
+	// If we're streaming, we need to use the stream endpoint.
+	if req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
 	}
@@ -93,23 +94,25 @@ func (g *GoogleHandlerMethods) shouldFlagRequest(ctx context.Context, logger log
 }
 
 // Used to modify the request body before it is sent to upstream.
-func (*GoogleHandlerMethods) transformBody(*googleRequest, string) {}
+func (*GoogleHandlerMethods) transformBody(gr *googleRequest, _ string) {
+	// Remove Stream from the request body before sending it to Google.
+	gr.Stream = false
+}
 
 func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model string, additionalMetadata map[string]any) {
-	return body.Model, map[string]any{"stream": body.Stream}
+	return body.Model, map[string]any{"stream": body.ShouldStream()}
 }
 
-func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
+func (o *GoogleHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
 }
 
-func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.BuildPrompt())
-
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.ShouldStream() {
+	if !isStreamRequest {
 		var res googleResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
@@ -131,10 +134,10 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	if err != nil {
 		logger.Error("failed to decode Google streaming response", log.Error(err))
 	}
+	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
 		logger.Warn("did not extract token counts from Google streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
-	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	return promptUsage, completionUsage
 }
 

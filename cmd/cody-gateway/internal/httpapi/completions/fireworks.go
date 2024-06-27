@@ -143,18 +143,22 @@ func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (mod
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (f *FireworksHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
+	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
+		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
+	}
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
 }
 
-func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.Prompt)
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream {
+	if !isStreamRequest {
 		var res fireworksResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse fireworks response as JSON", log.Error(err))

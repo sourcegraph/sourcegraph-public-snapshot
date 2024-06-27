@@ -69,6 +69,7 @@ export interface SearchQueryState {
     queryState: QueryState
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
+    defaultPatternType: SearchPatternType
     searchQueryFromURL: string
     searchMode: SearchMode
 

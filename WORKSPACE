@@ -35,9 +35,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "3dfccf2713288e0518c0485b65574ca66426c6e06495299abe6f5c64e3bc6314",
-    strip_prefix = "rules_js-2.0.0-rc3",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc3/rules_js-v2.0.0-rc3.tar.gz",
+    sha256 = "3bad4ab669d4d38d0d137275b946a46ce6f8f17fecc6c7affba64966a9054246",
+    strip_prefix = "rules_js-2.0.0-rc5",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v2.0.0-rc5/rules_js-v2.0.0-rc5.tar.gz",
 )
 
 http_archive(
@@ -197,7 +197,7 @@ rules_js_dependencies()
 
 load("@aspect_rules_js//js:toolchains.bzl", "rules_js_register_toolchains")
 
-rules_js_register_toolchains(node_version = "20.8.0")
+rules_js_register_toolchains(node_version = "20.8.1")
 
 # rules_js npm setup ============================
 load("@aspect_rules_js//npm:repositories.bzl", "npm_translate_lock")
@@ -291,6 +291,14 @@ go_repository(
     importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
     sum = "h1:xLPZMyuZ4GuqRCIec/zWuIhRFPXh2UOJdLXBSi64ZWQ=",
     version = "v1.14.5",
+)
+
+go_repository(
+    name = "com_google_cloud_go_auth",
+    build_file_proto_mode = "disable_global",
+    importpath = "cloud.google.com/go/auth",
+    sum = "h1:0QNO7VThG54LUzKiQxv8C6x1YX7lUrzlAa1nVLF8CIw=",
+    version = "v0.5.1",
 )
 
 # Overrides the default provided protobuf dep from rules_go by a more

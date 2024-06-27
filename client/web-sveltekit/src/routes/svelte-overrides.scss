@@ -16,6 +16,7 @@ body {
     --code-font-family: var(--monospace-font-family);
     --font-size-base: 0.9375rem;
     --font-size-small: 0.875rem;
+    --font-size-extra-small: 0.6875rem;
     --font-size-tiny: 0.8125rem;
     --code-font-size: 13px;
     --border-radius: 4px;
@@ -43,6 +44,7 @@ label {
     --code-bg: var(--white);
     --modal-bg: rgba(219, 226, 240, 0.5);
     --code-selection-bg: rgba(231, 238, 250, 0.8);
+    --fuzzy-finder-backdrop: rgba(255, 255, 255, 0.96);
 
     // Shadows
     --sidebar-shadow: 0 79px 22px 0 rgba(30, 4, 47, 0), 0 51px 20px 0 rgba(30, 4, 47, 0.01),
@@ -57,6 +59,8 @@ label {
         0 -18px 11px 0 rgba(1, 6, 12, 0.02), 0 -8px 8px 0 rgba(1, 6, 12, 0.03), 0 -2px 4px 0 rgba(1, 6, 12, 0.04);
     --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0), 0 112px 45px 0 rgba(0, 0, 0, 0.01),
         0 63px 38px 0 rgba(0, 0, 0, 0.02), 0 28px 28px 0 rgba(0, 0, 0, 0.03), 0 7px 15px 0 rgba(0, 0, 0, 0.04);
+    --fuzzy-finder-shadow: 0 186px 52px 0 rgba(0, 0, 0, 0), 0 119px 48px 0 rgba(0, 0, 0, 0.01),
+        0 67px 40px 0 rgba(0, 0, 0, 0.02), 0 30px 30px 0 rgba(0, 0, 0, 0.03), 0 7px 16px 0 rgba(0, 0, 0, 0.04);
 }
 
 // Theme Dark
@@ -71,6 +75,7 @@ label {
     --code-selection-bg: var(--color-bg-2);
     --code-bg: var(--gray-12);
     --modal-bg: rgba(52, 58, 77, 0.5);
+    --fuzzy-finder-backdrop: rgba(20, 23, 31, 0.96);
 
     // Shadows
     --sidebar-shadow: 0 240px 80px 0 rgba(12, 1, 19, 0.01), 0 160px 80px 0 rgba(12, 1, 19, 0.02),
@@ -85,4 +90,6 @@ label {
         0 -16px 8px 0 rgba(0, 0, 0, 0.08), 0 -8px 4px 0 rgba(0, 0, 0, 0.16), 0 -2px 4px 0 rgba(0, 0, 0, 0.32);
     --popover-shadow: 0 174px 49px 0 rgba(0, 0, 0, 0.01), 0 112px 45px 0 rgba(0, 0, 0, 0.05),
         0 63px 38px 0 rgba(0, 0, 0, 0.16), 0 28px 28px 0 rgba(0, 0, 0, 0.27), 0 7px 15px 0 rgba(0, 0, 0, 0.31);
+    --fuzzy-finder-shadow: 0 186px 52px 0 rgba(0, 0, 0, 0.01), 0 119px 48px 0 rgba(0, 0, 0, 0.03),
+        0 67px 40px 0 rgba(0, 0, 0, 0.06), 0 30px 30px 0 rgba(0, 0, 0, 0.12), 0 7px 16px 0 rgba(0, 0, 0, 0.24);
 }

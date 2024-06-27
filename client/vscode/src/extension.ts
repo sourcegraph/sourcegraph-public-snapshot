@@ -19,13 +19,13 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import type { Event } from './graphql-operations'
-import { accessTokenSetting, processOldToken } from './settings/accessTokenSetting'
+import { getAccessToken, processOldToken } from './settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, type VSCEQueryState } from './state'
 import { copySourcegraphLinks, focusSearchPanel, openSourcegraphLinks, registerWebviews } from './webview/commands'
-import { secretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { SourcegraphAuthActions } from './webview/platform/AuthProvider'
 
 export let extensionContext: vscode.ExtensionContext
 /**
@@ -35,18 +35,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     extensionContext = context
     const initialInstanceURL = endpointSetting()
     const secretStorage = context.secrets
-    // Register SourcegraphAuthProvider
-    context.subscriptions.push(
-        vscode.authentication.registerAuthenticationProvider(
-            initialInstanceURL,
-            secretTokenKey,
-            new SourcegraphAuthProvider(secretStorage)
-        )
-    )
     await processOldToken(secretStorage)
-    const initialAccessToken = await secretStorage.get(secretTokenKey)
-    const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
-    const session = await vscode.authentication.getSession(initialInstanceURL, [], createIfNone)
+    const initialAccessToken = await getAccessToken()
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
@@ -70,11 +60,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Use for file tree panel
     const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
     // Use api endpoint for stream search
-    const streamSearch = createStreamSearch({
+    const streamSearch = await createStreamSearch({
         context,
         stateMachine,
         sourcegraphURL: `${initialInstanceURL}/.api`,
-        session,
     })
     const authActions = new SourcegraphAuthActions(secretStorage)
     const extensionCoreAPI: ExtensionCoreAPI = {
@@ -91,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         openSourcegraphFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
         openLink: uri => openSourcegraphLinks(uri),
         copyLink: uri => copySourcegraphLinks(uri),
-        getAccessToken: accessTokenSetting(context.secrets),
+        getAccessToken: getAccessToken(),
         removeAccessToken: () => authActions.logout(),
         setEndpointUri: (accessToken, uri) => authActions.login(accessToken, uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),

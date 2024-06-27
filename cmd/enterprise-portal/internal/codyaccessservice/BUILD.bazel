@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "adapters.go",
         "v1.go",
+        "v1_store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice",
     tags = [TAG_INFRA_CORESERVICES],
@@ -21,6 +22,7 @@ go_library(
         "//lib/errors",
         "@com_connectrpc_connect//:connect",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],

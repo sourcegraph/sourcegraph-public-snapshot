@@ -21,7 +21,7 @@
     import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
-    import { createCodeIntelAPI } from '$lib/shared'
+    import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
@@ -85,6 +85,10 @@
     $: showFileModeSwitcher = blob && !isBinaryFile && !embedded
     $: showFormattedView = isRichFile && fileViewModeFromURL === CodeViewMode.Default
     $: showBlameView = fileViewModeFromURL === CodeViewMode.Blame
+    $: rawURL = (function () {
+        const url = `${repoURL}/-/raw/${filePath}`
+        return revisionOverride ? replaceRevisionInURL(url, revisionOverride.abbreviatedOID) : url
+    })()
 
     $: codeIntelAPI =
         !isBinaryFile && !showFormattedView && !disableCodeIntel
@@ -148,26 +152,24 @@
             <slot name="actions" />
         </svelte:fragment>
     </FileHeader>
-{:else if revisionOverride}
-    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
-    </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            {#await data.externalServiceType then externalServiceType}
-                {#if externalServiceType && !isBinaryFile}
-                    <OpenInEditor {externalServiceType} updateUserSetting={data.updateUserSetting} />
-                {/if}
-            {/await}
+            {#if !revisionOverride}
+                {#await data.externalServiceType then externalServiceType}
+                    {#if externalServiceType && !isBinaryFile}
+                        <OpenInEditor {externalServiceType} updateUserSetting={data.updateUserSetting} />
+                    {/if}
+                {/await}
+            {/if}
             {#if blob}
-                <OpenInCodeHostAction data={blob} />
+                <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
-            <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
+            <MenuLink href={rawURL} target="_blank">
                 <Icon icon={ILucideEye} inline aria-hidden /> View raw
             </MenuLink>
             <MenuButton
@@ -272,9 +274,10 @@
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={({ detail: range }) => {
                     goto(
-                        SourcegraphURL.from($page.url.searchParams)
+                        SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
                             .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover').search
+                            .deleteSearchParameter('popover')
+                            .toString()
                     )
                 }}
                 {codeIntelAPI}

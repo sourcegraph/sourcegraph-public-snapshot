@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -99,7 +100,10 @@ func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requ
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cachedUploads[i].RepositoryID, cachedUploads[i].Commit, args.Path, rn)
+		_, adjustedRange, _, err := s.getSourceRange(ctx,
+			args.RequestArgs, requestState,
+			cachedUploads[i].RepositoryID, cachedUploads[i].Commit,
+			args.Path, rn)
 		if err != nil {
 			return "", shared.Range{}, false, err
 		}
@@ -222,7 +226,6 @@ func (s *Service) getOrderedMonikers(ctx context.Context, visibleUploads []visib
 				packageInformationData, _, err := s.lsifstore.GetPackageInformation(
 					ctx,
 					visibleUploads[i].Upload.ID,
-					visibleUploads[i].TargetPathWithoutRoot,
 					string(moniker.PackageInformationID),
 				)
 				if err != nil {
@@ -273,7 +276,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 			uploadLocations = append(uploadLocations, adjustedLocation)
 		} else {
 			repo := api.RepoName(adjustedLocation.Upload.RepositoryName)
-			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, repo, adjustedLocation.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, repo, adjustedLocation.Path.RawValue()); err != nil {
 				return nil, err
 			} else if include {
 				uploadLocations = append(uploadLocations, adjustedLocation)
@@ -288,14 +291,15 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location and a false flag is returned.
 func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, upload uploadsshared.CompletedUpload, location shared.Location) (shared.UploadLocation, bool, error) {
-	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, upload.Root+location.Path, location.Range)
+	repoRootRelPath := core.NewRepoRelPath(&upload, location.Path)
+	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, repoRootRelPath, location.Range)
 	if err != nil {
 		return shared.UploadLocation{}, ok, err
 	}
 
 	return shared.UploadLocation{
 		Upload:       upload,
-		Path:         upload.Root + location.Path,
+		Path:         repoRootRelPath,
 		TargetCommit: adjustedCommit,
 		TargetRange:  adjustedRange,
 	}, ok, nil
@@ -304,13 +308,13 @@ func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, reque
 // getSourceRange translates a range (relative to the indexed commit) into an equivalent range in the requested
 // commit. If the translation fails, then the original commit and range are returned along with a false-valued
 // flag.
-func (s *Service) getSourceRange(ctx context.Context, args RequestArgs, requestState RequestState, repositoryID int, commit, path string, rng shared.Range) (string, shared.Range, bool, error) {
+func (s *Service) getSourceRange(ctx context.Context, args RequestArgs, requestState RequestState, repositoryID int, commit string, path core.RepoRelPath, rng shared.Range) (string, shared.Range, bool, error) {
 	if repositoryID != args.RepositoryID {
 		// No diffs between distinct repositories
 		return commit, rng, true, nil
 	}
 
-	if _, sourceRange, ok, err := requestState.GitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
+	if sourceRange, ok, err := requestState.GitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path.RawValue(), rng, true); err != nil {
 		return "", shared.Range{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 	} else if ok {
 		return args.Commit, sourceRange, true, nil
@@ -379,9 +383,9 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
-	visibleUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
-	if err != nil {
-		return nil, 0, err
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	if len(visibleUploads) == 0 {
+		return nil, 0, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
 	totalCount := 0
@@ -417,7 +421,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 			}
 
 			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, api.RepoName(adjustedDiagnostic.Upload.RepositoryName), adjustedDiagnostic.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, api.RepoName(adjustedDiagnostic.Upload.RepositoryName), adjustedDiagnostic.Path.RawValue()); err != nil {
 				return nil, 0, err
 			} else if include {
 				diagnosticsAtUploads = append(diagnosticsAtUploads, adjustedDiagnostic)
@@ -439,7 +443,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 
 // getRequestedCommitDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
 // in the requested commit.
-func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args RequestArgs, requestState RequestState, adjustedUpload visibleUpload, diagnostic shared.Diagnostic) (DiagnosticAtUpload, error) {
+func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args RequestArgs, requestState RequestState, adjustedUpload visibleUpload, diagnostic shared.Diagnostic[core.UploadRelPath]) (DiagnosticAtUpload, error) {
 	rn := shared.Range{
 		Start: shared.Position{
 			Line:      diagnostic.StartLine,
@@ -453,7 +457,7 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 
 	// Adjust path in diagnostic before reading it. This value is used in the adjustRange
 	// call below, and is also reflected in the embedded diagnostic value in the return.
-	diagnostic.Path = adjustedUpload.Upload.Root + diagnostic.Path
+	diagnostic2 := shared.AdjustDiagnostic(diagnostic, adjustedUpload.Upload)
 
 	adjustedCommit, adjustedRange, _, err := s.getSourceRange(
 		ctx,
@@ -461,7 +465,7 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 		requestState,
 		adjustedUpload.Upload.RepositoryID,
 		adjustedUpload.Upload.Commit,
-		diagnostic.Path,
+		diagnostic2.Path,
 		rn,
 	)
 	if err != nil {
@@ -469,7 +473,7 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 	}
 
 	return DiagnosticAtUpload{
-		Diagnostic:     diagnostic,
+		Diagnostic:     diagnostic2,
 		Upload:         adjustedUpload.Upload,
 		AdjustedCommit: adjustedCommit,
 		AdjustedRange:  adjustedRange,
@@ -484,11 +488,7 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 		}})
 	}()
 
-	visibleUploads, err := s.getUploadPaths(ctx, requestState.Path, requestState)
-	if err != nil {
-		return nil, err
-	}
-
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, requestState.Path)
 	for _, upload := range visibleUploads {
 		uploads = append(uploads, upload.Upload)
 	}
@@ -496,28 +496,49 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 	return
 }
 
-// getUploadPaths adjusts the current target path for each upload visible from the current target
+// filterCachedUploadsContainingPath adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
-func (s *Service) getUploadPaths(ctx context.Context, path string, requestState RequestState) ([]visibleUpload, error) {
-	cacheUploads := requestState.GetCacheUploads()
-	visibleUploads := make([]visibleUpload, 0, len(cacheUploads))
-	for _, cu := range cacheUploads {
-		targetPath, ok, err := requestState.GitTreeTranslator.GetTargetCommitPathFromSourcePath(ctx, cu.Commit, path, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "r.GitTreeTranslator.GetTargetCommitPathFromSourcePath")
+func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, requestState RequestState, path core.RepoRelPath) []visibleUpload {
+	// NOTE(id: path-based-upload-filtering):
+	//
+	// (70% confidence) There are a few cases here for the uploads cached earlier.
+	// 1. The upload was for an older commit.
+	//    1a r.requestState.path exists in upload -> This is OK, we can use the upload as-is.
+	//    1b r.requestState.path doesn't exist in upload, but there is a path P in upload
+	//       such that `git diff upload.Commit..r.requestState.commit` would say that P
+	//       was renamed to r.requestState.path.
+	//       -> This is not easy to do, see NOTE(id: codenav-file-rename-detection) for details.
+	//    1c r.requestState.path doesn't exist in upload, and there is no path in upload
+	//       that was detected to be renamed.
+	//       -> We should detect this case and skip the upload. However, similar to 1b above,
+	//          we can't detect this easily.
+	// 2. The upload is for the same commit. In this case, we can be confident that the
+	//    path exists in the upload (otherwise we wouldn't have cached it).
+	//
+	// For a simplistic implementation here, just loop over the upload IDs and check
+	// if the document exists.
+	cachedUploads := requestState.GetCacheUploads()
+	filteredUploads := make([]visibleUpload, 0, len(cachedUploads))
+	for _, upload := range cachedUploads {
+		visibleUpload := visibleUpload{
+			Upload:                upload,
+			TargetPath:            path,
+			TargetPathWithoutRoot: core.NewUploadRelPath(&upload, path),
 		}
-		if !ok {
+		if upload.Commit == requestState.Commit && path == requestState.Path {
+			filteredUploads = append(filteredUploads, visibleUpload)
 			continue
 		}
-
-		visibleUploads = append(visibleUploads, visibleUpload{
-			Upload:                cu,
-			TargetPath:            targetPath,
-			TargetPathWithoutRoot: strings.TrimPrefix(targetPath, cu.Root),
-		})
+		// TODO(id: check-path-multiple-uploads-api): We could optimize this to a single DB query
+		// instead of a loop along with a bunch of deserialization.
+		if doc, err := s.SCIPDocument(ctx, upload.ID, path); err == nil && doc != nil {
+			// Be pessimistic, ignoring the upload for all errors, not just some
+			// DocumentNotFound or MalformedDocument cases.
+			filteredUploads = append(filteredUploads, visibleUpload)
+			continue
+		}
 	}
-
-	return visibleUploads, nil
+	return filteredUploads
 }
 
 func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
@@ -528,9 +549,9 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 	)
 	defer endObservation()
 
-	uploadsWithPath, err := s.getUploadPaths(ctx, args.Path, requestState)
-	if err != nil {
-		return nil, err
+	uploadsWithPath := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	if len(uploadsWithPath) == 0 {
+		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
 	for i := range uploadsWithPath {
@@ -602,9 +623,9 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: requestState.Attrs()})
 	defer endObservation()
 
-	adjustedUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
-	if err != nil {
-		return nil, err
+	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	if len(adjustedUploads) == 0 {
+		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
 
 	for i := range adjustedUploads {
@@ -708,7 +729,8 @@ func filterUploadsWithPaths(
 		switch opts.RootToPathMatching {
 		case uploadsshared.RootMustEnclosePath:
 			// TODO - this breaks if the file was renamed in git diff
-			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, strings.TrimPrefix(opts.Path, candidate.Root))
+			path := core.NewUploadRelPath(&candidate, opts.Path)
+			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, path)
 			if err != nil {
 				return nil, errors.Wrap(err, "lsifStore.Exists")
 			}
@@ -759,24 +781,25 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		Character: character,
 	}
 
-	targetPath, targetPosition, ok, err := r.GitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, position, false)
+	basePath := r.Path.RawValue()
+	targetPosition, ok, err := r.GitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, basePath, position, false)
 	if err != nil || !ok {
 		return visibleUpload{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitPositionFromSourcePosition")
 	}
 
 	return visibleUpload{
 		Upload:                upload,
-		TargetPath:            targetPath,
+		TargetPath:            r.Path,
 		TargetPosition:        targetPosition,
-		TargetPathWithoutRoot: strings.TrimPrefix(targetPath, upload.Root),
+		TargetPathWithoutRoot: core.NewUploadRelPath(&upload, r.Path),
 	}, true, nil
 }
 
-func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error) {
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit string, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error) {
 	ctx, _, endObservation := s.operations.snapshotForDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoID", repositoryID),
 		attribute.String("commit", commit),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 		attribute.Int("uploadID", uploadID),
 	}})
 	defer func() {
@@ -796,12 +819,12 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, strings.TrimPrefix(path, upload.Root))
+	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(&upload, path))
 	if err != nil || document == nil {
 		return nil, err
 	}
 
-	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path)
+	r, err := s.gitserver.NewFileReader(ctx, api.RepoName(upload.RepositoryName), api.CommitID(upload.Commit), path.RawValue())
 	if err != nil {
 		return nil, err
 	}
@@ -824,10 +847,9 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	if err != nil {
 		return nil, err
 	}
-	gittranslator := NewGitTreeTranslator(s.gitserver, &requestArgs{
+	gittranslator := NewGitTreeTranslator(s.gitserver, &translationBase{
 		repo:   repo,
 		commit: commit,
-		path:   path,
 	}, hunkcache)
 
 	linemap := newLinemap(string(file))
@@ -906,7 +928,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			}
 		}
 
-		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, shared.Position{
+		newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, path.RawValue(), shared.Position{
 			Line:      int(originalRange.Start.Line),
 			Character: int(originalRange.Start.Character),
 		}, false)
@@ -926,8 +948,11 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	return
 }
 
-func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path string) (*scip.Document, error) {
-	return s.lsifstore.SCIPDocument(ctx, uploadID, path)
+func (s *Service) SCIPDocument(ctx context.Context, uploadID int, path core.RepoRelPath) (*scip.Document, error) {
+	// FIXME: This API should handle conversion from RepoRelPath -> UploadRelPath
+	// instead of using the Unchecked function. Other CodeNavService methods also take in core.RepoRelPath
+	// for consistency
+	return s.lsifstore.SCIPDocument(ctx, uploadID, core.NewUploadRelPathUnchecked(path.RawValue()))
 }
 
 type SyntacticUsagesErrorCode int
@@ -964,7 +989,7 @@ func (e SyntacticUsagesError) Error() string {
 	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
 }
 
-func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commit api.CommitID, path string) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
+func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.TraceLogger, repo types.Repo, commit api.CommitID, path core.RepoRelPath) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
 		RepositoryID:       int(repo.ID),
 		Commit:             string(commit),
@@ -980,12 +1005,14 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 		}
 	}
 
-	s.logger.Warn(
-		"Multiple syntactic uploads found, picking the first one",
-		log.String("repo", repo.URI),
-		log.String("commit", commit.Short()),
-		log.String("path", path),
-	)
+	if len(uploads) > 1 {
+		trace.Warn(
+			"Multiple syntactic uploads found, picking the first one",
+			log.String("repo", repo.URI),
+			log.String("commit", commit.Short()),
+			log.String("path", path.RawValue()),
+		)
+	}
 	return uploads[0], nil
 }
 
@@ -993,21 +1020,27 @@ func (s *Service) getSyntacticUpload(ctx context.Context, repo types.Repo, commi
 // in a syntactic upload. If this function returns an error you should most likely
 // log and handle it instead of rethrowing, as this could fail for a myriad of reasons
 // (some broken invariant internally, network issue etc.)
+// If this function doesn't error, the returned slice is guaranteed to be non-empty
+//
+// NOTE(id: single-syntactic-upload): This function returns the uploadID because we're
+// making the assumption that there'll only be a single syntactic upload at the root
+// directory for a particular commit.
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
+	trace observation.TraceLogger,
 	repo types.Repo,
 	commit api.CommitID,
-	path string,
+	path core.RepoRelPath,
 	symbolRange scip.Range,
-) (symbols []*scip.Symbol, err *SyntacticUsagesError) {
-	syntacticUpload, err := s.getSyntacticUpload(ctx, repo, commit, path)
+) (symbols []*scip.Symbol, uploadID int, err *SyntacticUsagesError) {
+	syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, path)
 	if docErr != nil {
-		return nil, &SyntacticUsagesError{
+		return nil, 0, &SyntacticUsagesError{
 			Code:            SU_NoSyntacticIndex,
 			UnderlyingError: docErr,
 		}
@@ -1015,7 +1048,7 @@ func (s *Service) getSyntacticSymbolsAtRange(
 
 	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
 
-	symbols = make([]*scip.Symbol, 0)
+	symbols = []*scip.Symbol{}
 	var parseFail *scip.Occurrence = nil
 
 	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
@@ -1029,61 +1062,121 @@ func (s *Service) getSyntacticSymbolsAtRange(
 	}
 
 	if parseFail != nil {
-		s.logger.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
+		trace.Warn("getSyntacticSymbolsAtRange: Failed to parse symbol", log.String("symbol", parseFail.Symbol))
 	}
 
-	return symbols, nil
+	if len(symbols) == 0 {
+		trace.Warn("getSyntacticSymbolsAtRange: No symbols found at requested range")
+		return nil, 0, &SyntacticUsagesError{
+			Code:            SU_NoSymbolAtRequestedRange,
+			UnderlyingError: nil,
+		}
+	}
+
+	return symbols, syntacticUpload.ID, nil
+}
+
+func (s *Service) findSyntacticMatchesForCandidateFile(
+	ctx context.Context,
+	uploadID int,
+	filePath core.RepoRelPath,
+	candidateFile candidateFile,
+) ([]SyntacticMatch, *SyntacticUsagesError) {
+	results := []SyntacticMatch{}
+
+	document, docErr := s.SCIPDocument(ctx, uploadID, filePath)
+	if docErr != nil {
+		return nil, &SyntacticUsagesError{
+			Code:            SU_NoSyntacticIndex,
+			UnderlyingError: docErr,
+		}
+	}
+
+	// TODO: We can optimize this further by continuously slicing the occurrences array
+	// as both these arrays are sorted
+	for _, candidateRange := range candidateFile.matches {
+		for _, occ := range findOccurrencesWithEqualRange(document.Occurrences, candidateRange) {
+			if !scip.IsLocalSymbol(occ.Symbol) {
+				results = append(results, SyntacticMatch{
+					Path:       filePath,
+					Occurrence: occ,
+				})
+			}
+		}
+	}
+
+	return results, nil
+}
+
+type SyntacticMatch struct {
+	Path       core.RepoRelPath
+	Occurrence *scip.Occurrence
+}
+
+func (m *SyntacticMatch) Range() scip.Range {
+	return scip.NewRangeUnchecked(m.Occurrence.Range)
 }
 
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
 	repo types.Repo,
 	commit api.CommitID,
-	path string,
+	path core.RepoRelPath,
 	symbolRange scip.Range,
-) ([]struct{}, *SyntacticUsagesError) {
+) ([]SyntacticMatch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(repo.ID)),
 		attribute.String("commit", string(commit)),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 		attribute.String("symbolRange", symbolRange.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	symbolsAtRange, err := s.getSyntacticSymbolsAtRange(ctx, repo, commit, path, symbolRange)
+	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(symbolsAtRange) == 0 {
-		return nil, &SyntacticUsagesError{
-			Code:            SU_NoSymbolAtRequestedRange,
-			UnderlyingError: nil,
-		}
-	}
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
 	searchSymbol := symbolsAtRange[0]
 
-	langs, langErr := languages.GetLanguages(path, func() ([]byte, error) { return nil, errors.New("Ambiguous language") })
-	if langErr != nil || len(langs) == 0 {
+	langs, _ := languages.GetLanguages(path.RawValue(), nil)
+	if len(langs) != 1 {
+		langErr := errors.New("Unknown language")
+		if len(langs) > 1 {
+			langErr = errors.New("Ambiguous language")
+		}
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
 	}
 
-	candidateMatches, matchCount, searchErr := findCandidateOccurrencesViaSearch(ctx, s.searchClient, s.logger, repo, commit, searchSymbol, langs[0])
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
+		ctx, s.searchClient, trace,
+		repo, commit, searchSymbol, langs[0],
+	)
 	if searchErr != nil {
 		return nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
 	}
-	trace.AddEvent("findCandidateOccurrencesViaSearch", attribute.Int("matchCount", matchCount))
 
-	_ = candidateMatches
+	results := make([][]SyntacticMatch, candidateMatches.Len())
 
-	return []struct{}{}, nil
+	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
+		// We're assuming the upload we found earlier contains the relevant SCIP document
+		// see NOTE(id: single-syntactic-upload)
+		syntacticMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, uploadID, pair.Key, pair.Value)
+		if err != nil {
+			// TODO: Errors that are not "no index found in the DB" should be reported
+			// TODO: Track metrics about how often this happens (GRAPH-693)
+			continue
+		}
+		results = append(results, syntacticMatches)
+	}
+	return slices.Concat(results...), nil
 }

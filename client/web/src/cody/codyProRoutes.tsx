@@ -2,7 +2,7 @@ import type { RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { type LegacyLayoutRouteContext, LegacyRoute } from '../LegacyRouteContext'
+import { LegacyRoute, type LegacyLayoutRouteContext } from '../LegacyRouteContext'
 
 import { QueryClientProvider } from './management/api/react-query/QueryClientProvider'
 import { isEmbeddedCodyProUIEnabled } from './util'
@@ -42,8 +42,8 @@ export const codyProRoutes: RouteObject[] = Object.values(CodyProRoutes).map(pat
                     telemetryRecorder={props.platformContext.telemetryRecorder}
                 />
             )}
-            condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                isSourcegraphDotCom && licenseFeatures.isCodyEnabled && isRouteEnabled(path)
+            condition={({ isSourcegraphDotCom }) =>
+                isSourcegraphDotCom && window.context?.codyEnabledOnInstance && isRouteEnabled(path)
             }
         />
     ),

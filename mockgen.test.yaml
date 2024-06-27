@@ -172,7 +172,6 @@
         - ExternalServiceStore
         - ReposStore
         - IndexEnqueuer
-        - RepoUpdaterClient
         - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
@@ -198,7 +197,6 @@
         - Store
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
       interfaces:
-        - RepoUpdaterClient
         - InferenceService
         - UploadService
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
@@ -438,4 +436,9 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription
       interfaces:
         - EnterprisePortalClient
-
+- filename: cmd/enterprise-portal/internal/subscriptionsservice/mocks_test.go
+  package: subscriptionsservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice
+      interfaces:
+        - StoreV1

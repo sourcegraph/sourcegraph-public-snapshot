@@ -34,7 +34,6 @@ go_library(
         "sources_test_utils.go",
         "status_messages.go",
         "store.go",
-        "sync_errored.go",
         "sync_worker.go",
         "syncer.go",
         "testing.go",
@@ -198,7 +197,6 @@ go_test(
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@org_golang_x_time//rate",
     ],
 )
 

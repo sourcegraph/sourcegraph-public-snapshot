@@ -273,12 +273,14 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Content: string(m.Name),
 		}
 	case *searchresult.FileMatch:
-		// GetLanguages can return multiple matches for ambiguous languages. If there are multiple
-		// we will take the first one.
-		languages, _ := languages.GetLanguages(m.Path, nil)
-		var lang string
-		if len(languages) > 0 {
-			lang = languages[0]
+		// FIXME(id: language-detection-failure-handling):
+		// Handle failure in language detection as well as ambiguity
+		langs, _ := languages.GetLanguages(m.Path, func() ([]byte, error) {
+			return []byte(content), nil
+		})
+		lang := ""
+		if len(langs) > 0 {
+			lang = langs[0]
 		}
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
@@ -298,12 +300,14 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 		}
 	case *searchresult.CommitDiffMatch:
 		path := m.Path()
-		// GetLanguages can return multiple matches for ambiguous languages. If there are multiple
-		// we will take the first one.
-		languages, _ := languages.GetLanguages(path, nil)
-		var lang string
-		if len(languages) > 0 {
-			lang = languages[0]
+		// FIXME(id: language-detection-failure-handling):
+		// Handle failure in language detection as well as ambiguity
+		langs, _ := languages.GetLanguages(path, func() ([]byte, error) {
+			return []byte(content), nil
+		})
+		lang := ""
+		if len(langs) > 0 {
+			lang = langs[0]
 		}
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),

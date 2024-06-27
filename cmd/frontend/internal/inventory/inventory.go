@@ -9,14 +9,13 @@ import (
 	"io"
 	"io/fs"
 
-	"github.com/go-enry/go-enry/v2"
-	"github.com/go-enry/go-enry/v2/data"
+	"github.com/go-enry/go-enry/v2"      //nolint:depguard - FIXME: replace this usage of enry with languages package
+	"github.com/go-enry/go-enry/v2/data" //nolint:depguard - FIXME: replace this usage of enry with languages package
 	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

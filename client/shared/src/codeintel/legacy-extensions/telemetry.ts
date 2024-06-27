@@ -63,7 +63,7 @@ export class TelemetryEmitter {
         }
 
         try {
-            sourcegraph.logTelemetryEvent(`codeintel.${action + xrepo ? '.xrepo' : ''}`, {
+            sourcegraph.logTelemetryEvent(`codeintel.${action + (xrepo ? '.xrepo' : '')}`, {
                 ...args,
                 durationMs: this.elapsed(),
                 languageId: this.languageID,
@@ -74,6 +74,9 @@ export class TelemetryEmitter {
                 metadata: {
                     durationMs: this.elapsed(),
                     repositoryId: this.repoID,
+                },
+                privateMetadata: {
+                    languageId: this.languageID,
                 },
             })
         } catch {

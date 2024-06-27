@@ -35,11 +35,11 @@ type openAIChatCompletionStreamClient struct {
 
 func (c *openAIChatCompletionStreamClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
 	logger log.Logger,
-) (*types.CompletionResponse, error) {
+	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	feature := request.Feature
+	requestParams := request.Parameters
+
 	var resp *http.Response
 	var err error
 	defer (func() {
@@ -67,7 +67,12 @@ func (c *openAIChatCompletionStreamClient) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(response.Usage.PromptTokens, response.Usage.CompletionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
+		response.Usage.PromptTokens,
+		response.Usage.CompletionTokens,
+		tokenizer.OpenAIModel+"/"+requestParams.Model,
+		string(feature),
+		tokenusage.OpenAI)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
@@ -79,12 +84,12 @@ func (c *openAIChatCompletionStreamClient) Complete(
 
 func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	_ types.CompletionsVersion,
-	requestParams types.CompletionRequestParameters,
-	sendEvent types.SendCompletionEvent,
 	logger log.Logger,
-) error {
+	request types.CompletionRequest,
+	sendEvent types.SendCompletionEvent) error {
+	feature := request.Feature
+	requestParams := request.Parameters
+
 	var resp *http.Response
 	var err error
 

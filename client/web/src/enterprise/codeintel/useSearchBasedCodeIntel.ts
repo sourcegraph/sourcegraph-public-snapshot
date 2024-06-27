@@ -408,7 +408,6 @@ const cache = <Arguments extends unknown[], V>(
     return (...args) => {
         const key = stringify(args)
         if (lru.has(key)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return lru.get(key)!
         }
         const value = func(...args)

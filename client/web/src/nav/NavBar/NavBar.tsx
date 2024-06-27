@@ -2,23 +2,22 @@ import React, { forwardRef, useContext } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
-import { type LinkProps, NavLink as RouterNavLink } from 'react-router-dom'
+import { NavLink as RouterNavLink, type LinkProps } from 'react-router-dom'
 
 import {
-    Link,
-    Icon,
     H1,
-    type ForwardReferenceComponent,
-    VIEWPORT_SM,
+    Icon,
+    Link,
     Menu,
-    MenuList,
     MenuButton,
     MenuLink,
+    MenuList,
+    VIEWPORT_SM,
     useMatchMedia,
+    type ForwardReferenceComponent,
 } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
-import { isCodyOnlyLicense } from '../../util/license'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -52,7 +51,7 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
 }
 
 export const NavBar = forwardRef(function NavBar({ children, logo }, reference): JSX.Element {
-    const logoUrl = isCodyOnlyLicense() ? PageRoutes.Cody : PageRoutes.Search
+    const logoUrl = window.context?.codeSearchEnabledOnInstance ? PageRoutes.Search : PageRoutes.Cody
     return (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             {logo && (
