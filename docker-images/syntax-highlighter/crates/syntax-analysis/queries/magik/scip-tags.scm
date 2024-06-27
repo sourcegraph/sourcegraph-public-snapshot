@@ -3,18 +3,20 @@
 ) @scope
 
 ; This matches a global top-level assignments
-(fragment "_constant" (identifier) @kind.constant @descriptor.term)
-(fragment "_global" (identifier) @kind.variable @descriptor.term)
+(fragment "_global" "_constant" (identifier) @kind.constant @descriptor.term)
+(fragment "_global" "_constant"? @cons
+    (identifier) @kind.variable @descriptor.term
+    (#not-eq? @cons "_constant"))
 
 (invoke
-  receiver: (variable) @name
-  (symbol) @descriptor.type @kind.struct
-  (#eq? @name "def_slotted_exemplar"))
+    receiver: (variable) @name
+    (symbol) @descriptor.type @kind.struct
+    (#eq? @name "def_slotted_exemplar"))
 
 (invoke
-  receiver: (variable) @name
-  (symbol) @descriptor.type @kind.class
-  (#eq? @name "def_mixin"))
+    receiver: (variable) @name
+    (symbol) @descriptor.type @kind.class
+    (#eq? @name "def_mixin"))
 
 (method
     exemplarname: (_) @descriptor.type
