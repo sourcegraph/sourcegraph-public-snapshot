@@ -59,6 +59,13 @@ _private _method line_parser.debug(line, props)
 _endmethod
 
 
+# Mixins
+def_mixin(:my_mixin)
+
+_abstract _method my_mixin.some_thing
+_endmethod
+
+
 _block
     _local some_local << 1
     _constant some_local_constant << 1

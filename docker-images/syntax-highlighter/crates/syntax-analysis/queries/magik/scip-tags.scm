@@ -9,7 +9,12 @@
 (invoke
   receiver: (variable) @name
   (symbol) @descriptor.type @kind.struct
-  (#eq? @name "def_slotted_exemplar")) @scope
+  (#eq? @name "def_slotted_exemplar"))
+
+(invoke
+  receiver: (variable) @name
+  (symbol) @descriptor.type @kind.class
+  (#eq? @name "def_mixin"))
 
 (method
     exemplarname: (_) @descriptor.type
