@@ -29,7 +29,7 @@ const AuthenticatedCodyChatPage: FC<CodyChatPageProps> = ({
     // We have two different version of Cody Web, first was created as original
     // Cody Web chat, second version (NewCodyChatPage) is a port from VSCode
     // cody extension.
-    const newCodyWeb = !useExperimentalFeatures(features => features.newCodyWeb)
+    const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
 
     // Load new cody web only for authorized users, fallback on old cody web
     // for better non-logged-in user experience.
