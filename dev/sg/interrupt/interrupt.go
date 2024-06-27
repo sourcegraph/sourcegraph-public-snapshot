@@ -111,7 +111,11 @@ func Listen() {
 		// Closing this channel should make the interrupt counting goroutine exit
 		close(interrupt)
 		// All the hooks have finished executing - anything left we force exiting by doing an os.Exit here
-		os.Exit(1)
+		if os.Getenv("SG_INTERRUPT_DEBUG") == "1" {
+			std.Out.WriteWarningf("SG_INTERRUPT_DEBUG is set to 1 - not doing os.Exit")
+		} else {
+			os.Exit(1)
+		}
 	}()
 }
 
