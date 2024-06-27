@@ -384,7 +384,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(visibleUploads) == 0 {
 		return nil, 0, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
@@ -482,14 +482,14 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 }
 
 func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (uploads []uploadsshared.CompletedUpload, err error) {
-	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: requestState.Attrs()})
+	ctx, trace, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: requestState.Attrs()})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 			attribute.Int("numUploads", len(uploads)),
 		}})
 	}()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, requestState.Path)
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, requestState.Path)
 	for _, upload := range visibleUploads {
 		uploads = append(uploads, upload.Upload)
 	}
@@ -499,7 +499,7 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 
 // filterCachedUploadsContainingPath adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
-func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, requestState RequestState, path core.RepoRelPath) []visibleUpload {
+func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace observation.TraceLogger, requestState RequestState, path core.RepoRelPath) []visibleUpload {
 	// NOTE(id: path-based-upload-filtering):
 	//
 	// (70% confidence) There are a few cases here for the uploads cached earlier.
@@ -523,7 +523,7 @@ func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, request
 			return upload.Commit == requestState.Commit && path == requestState.Path
 		})
 	if err != nil {
-		s.logger.Warn("FindDocumentIDs failed", log.Error(err))
+		trace.Warn("FindDocumentIDs failed", log.Error(err))
 	}
 
 	return genslices.Map(filteredUploads, func(u uploadsshared.CompletedUpload) visibleUpload {
@@ -540,7 +540,7 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 	)
 	defer endObservation()
 
-	uploadsWithPath := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	uploadsWithPath := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(uploadsWithPath) == 0 {
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
@@ -614,7 +614,7 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: requestState.Attrs()})
 	defer endObservation()
 
-	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(adjustedUploads) == 0 {
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
