@@ -83,6 +83,7 @@ func Listen() {
 	go func() {
 		<-interrupt
 		std.Out.WriteWarningf("Interrupt received, executing hook groups for graceful shutdown...")
+		closed = make(chan struct{})
 
 		// prevent additional hooks from registering once we've received an interrupt
 		mux.Lock()
@@ -90,11 +91,18 @@ func Listen() {
 		go func() {
 			// Count the interrupts and exit after MaxInterruptCount.
 			count := 1
-			for range interrupt {
-				count++
-				if count >= MaxInterruptCount {
-					std.Out.WriteWarningf("Max interrupts received - exiting immediately.")
-					os.Exit(1)
+			for {
+				select {
+				case <-interrupt:
+					count++
+					if count >= MaxInterruptCount {
+						std.Out.WriteWarningf("Max interrupts received - exiting immediately.")
+						os.Exit(1)
+					}
+				case <-closed:
+					// Once the closed channel is closed we exit the interrupt counting goroutine, since it means
+					// all the hooks have finished executing.
+					return
 				}
 			}
 		}()
@@ -109,7 +117,7 @@ func Listen() {
 			std.Out.WriteWarningf("context failure executing hooks: %s", err)
 		}
 		// Closing this channel should make the interrupt counting goroutine exit
-		close(interrupt)
+		close(closed)
 		// All the hooks have finished executing - anything left we force exiting by doing an os.Exit here
 		if os.Getenv("SG_INTERRUPT_DEBUG") == "1" {
 			std.Out.WriteWarningf("SG_INTERRUPT_DEBUG is set to 1 - not doing os.Exit")
