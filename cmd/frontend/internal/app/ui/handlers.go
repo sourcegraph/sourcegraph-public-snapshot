@@ -251,10 +251,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
-			if errcode.IsRepoDenied(err) {
-				serveError(w, r, db, err, http.StatusNotFound)
-				return nil, nil
-			}
 			if gitdomain.IsRepoNotExist(err) {
 				if gitdomain.IsCloneInProgress(err) {
 					// Repo is cloning.
@@ -371,8 +367,7 @@ func serveHome(db database.DB) handlerFunc {
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		// except if the instance is on a Cody-Only license.
 		redirectURL := "/search"
-		features := common.Context.LicenseInfo.Features
-		if !features.CodeSearch && features.Cody && !dotcom.SourcegraphDotComMode() {
+		if !common.Context.CodeSearchEnabledOnInstance && common.Context.CodyEnabledOnInstance && !dotcom.SourcegraphDotComMode() {
 			redirectURL = "/cody"
 		}
 

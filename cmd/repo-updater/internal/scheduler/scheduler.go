@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -104,47 +103,45 @@ func (s *UpdateScheduler) Start() {
 	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
 	s.cancelCtx = cancel
 
-	if !dotcom.SourcegraphDotComMode() {
-		s.logger.Info("hydrating update scheduler")
+	s.logger.Info("hydrating update scheduler")
 
-		// Hydrate the scheduler with the initial set of repos.
-		// This is done to preset the intervals from the database state, so that
-		// repos that haven't changed in a while don't need to be refetched once
-		// after a restart until we restore the previous schedule.
-		var nextCursor int
-		errors := 0
-		for {
-			var (
-				rs  []types.RepoGitserverStatus
-				err error
-			)
-			rs, nextCursor, err = s.db.GitserverRepos().IterateRepoGitserverStatus(ctx, database.IterateRepoGitserverStatusOptions{
-				NextCursor: nextCursor,
-				BatchSize:  1000,
-			})
-			if err != nil {
-				errors++
-				s.logger.Error("failed to iterate gitserver repos", log.Error(err), log.Int("errors", errors))
-				if errors > 5 {
-					s.logger.Error("too many errors, stopping initial hydration of update queue, the queue will build up lazily")
-					return
-				}
-				time.Sleep(time.Second)
-				continue
+	// Hydrate the scheduler with the initial set of repos.
+	// This is done to preset the intervals from the database state, so that
+	// repos that haven't changed in a while don't need to be refetched once
+	// after a restart until we restore the previous schedule.
+	var nextCursor int
+	errors := 0
+	for {
+		var (
+			rs  []types.RepoGitserverStatus
+			err error
+		)
+		rs, nextCursor, err = s.db.GitserverRepos().IterateRepoGitserverStatus(ctx, database.IterateRepoGitserverStatusOptions{
+			NextCursor: nextCursor,
+			BatchSize:  1000,
+		})
+		if err != nil {
+			errors++
+			s.logger.Error("failed to iterate gitserver repos", log.Error(err), log.Int("errors", errors))
+			if errors > 5 {
+				s.logger.Error("too many errors, stopping initial hydration of update queue, the queue will build up lazily")
+				return
 			}
-			for _, r := range rs {
-				cr := configuredRepo{
-					ID:   r.ID,
-					Name: r.Name,
-				}
-				if !s.schedule.upsert(cr) {
-					interval := initialInterval(r)
-					s.schedule.updateInterval(cr, interval)
-				}
+			time.Sleep(time.Second)
+			continue
+		}
+		for _, r := range rs {
+			cr := configuredRepo{
+				ID:   r.ID,
+				Name: r.Name,
 			}
-			if nextCursor == 0 {
-				break
+			if !s.schedule.upsert(cr) {
+				interval := initialInterval(r)
+				s.schedule.updateInterval(cr, interval)
 			}
+		}
+		if nextCursor == 0 {
+			break
 		}
 
 		s.logger.Info("hydrated update scheduler")

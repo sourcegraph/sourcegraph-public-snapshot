@@ -17,6 +17,8 @@ import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from 
 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
+import { CodyProRoutes } from '../../cody/codyProRoutes'
+import { CODY_MARKETING_PAGE_URL } from '../../cody/codyRoutes'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
@@ -49,7 +51,11 @@ interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
  * New experimental global navigation bar with inline search bar and
  * dynamic navigation items.
  */
-export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
+export const NewGlobalNavigationBar: FC<
+    NewGlobalNavigationBar & {
+        __testing__initialSideMenuOpen?: boolean
+    }
+> = props => {
     const {
         isSourcegraphDotCom,
         notebooksEnabled,
@@ -63,11 +69,12 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         showFeedbackModal,
         telemetryService,
         telemetryRecorder,
+        __testing__initialSideMenuOpen,
     } = props
 
     const isLightTheme = useIsLightTheme()
     const [params] = useSearchParams()
-    const [isSideMenuOpen, setSideMenuOpen] = useState(false)
+    const [isSideMenuOpen, setSideMenuOpen] = useState(__testing__initialSideMenuOpen ?? false)
     const routeMatch = useRoutesMatch(props.routes)
 
     // Features enablement flags and conditions
@@ -146,7 +153,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     showBatchChanges={showBatchChanges}
                     showCodeInsights={showCodeInsights}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
                     onClose={() => setSideMenuOpen(false)}
                 />
             )}
@@ -311,7 +317,6 @@ interface SidebarNavigationProps {
     showBatchChanges: boolean
     showCodeInsights: boolean
     onClose: () => void
-    authenticatedUser: AuthenticatedUser | null
 }
 
 const SidebarNavigation: FC<SidebarNavigationProps> = props => {
@@ -323,7 +328,6 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
         showBatchChanges,
         showCodeInsights,
         isSourcegraphDotCom,
-        authenticatedUser,
         onClose,
     } = props
 
@@ -382,11 +386,23 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
-                        Cody
-                    </NavItemLink>
+                    {window.context?.codyEnabledOnInstance && (
+                        <NavItemLink
+                            url={
+                                isSourcegraphDotCom
+                                    ? window.context.codyEnabledForCurrentUser
+                                        ? CodyProRoutes.Manage
+                                        : CODY_MARKETING_PAGE_URL
+                                    : PageRoutes.CodyDashboard
+                            }
+                            icon={CodyLogo}
+                            onClick={handleNavigationClick}
+                        >
+                            Cody
+                        </NavItemLink>
+                    )}
 
-                    {authenticatedUser && (
+                    {window.context?.codyEnabledForCurrentUser && (
                         <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
                             <NavItemLink url={PageRoutes.CodyChat} onClick={handleNavigationClick}>
                                 Web Chat

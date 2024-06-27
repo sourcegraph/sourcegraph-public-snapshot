@@ -16,25 +16,25 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 
 import {
     DiffHunkLineType,
+    ExternalServiceKind,
     type RepositoryContributorsResult,
     type WebGraphQlOperations,
-    ExternalServiceKind,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import {
-    createResolveRepoRevisionResult,
-    createFileExternalLinksResult,
-    createTreeEntriesResult,
     createBlobContentResult,
-    createRepoChangesetsStatsResult,
-    createFileNamesResult,
-    createResolveCloningRepoRevisionResult,
-    createFileTreeEntriesResult,
     createCodyContextFiltersResult,
+    createFileExternalLinksResult,
+    createFileNamesResult,
+    createFileTreeEntriesResult,
+    createRepoChangesetsStatsResult,
+    createResolveCloningRepoRevisionResult,
+    createResolveRepoRevisionResult,
+    createTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
+import { createEditorAPI, removeContextFromQuery } from './utils'
 
 const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -288,8 +288,6 @@ describe('Repository', () => {
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
 
-            // TODO: Reenable later, percy is erroring out on remote images not loading.
-            // await percySnapshotWithVariants(driver.page, 'Repository index page')
             await accessibilityAudit(driver.page)
 
             const numberOfFileEntries = await driver.page.evaluate(
@@ -488,12 +486,10 @@ describe('Repository', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
-            // Wait for clone in progress message before Percy snapshot.
+            // Wait for clone in progress message.
             await driver.page.waitForSelector('[data-testid="hero-page-subtitle"]')
             // Verify that we show the respective message in the UI.
             await assertSelectorHasText('[data-testid="hero-page-subtitle"]', 'Cloning in progress')
-
-            await percySnapshotWithVariants(driver.page, 'Repository cloning in progress page')
         })
 
         it('works with spaces in the repository name', async () => {
@@ -740,7 +736,6 @@ describe('Repository', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
             await driver.page.waitForSelector('.list-group-item', { visible: true })
-            await percySnapshotWithVariants(driver.page, 'Repository commits page')
             await accessibilityAudit(driver.page)
         })
     })
@@ -852,7 +847,6 @@ describe('Repository', () => {
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
                 await driver.page.waitForSelector('.test-filtered-contributors-connection')
-                await percySnapshotWithVariants(driver.page, 'Contributor list')
                 await accessibilityAudit(driver.page)
             })
         })
@@ -1005,7 +999,6 @@ describe('Repository', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
                 await driver.page.waitForSelector('[data-testid="active-branches-list"]')
-                await percySnapshotWithVariants(driver.page, 'Repository branches page')
                 await accessibilityAudit(driver.page)
             })
         })
@@ -1109,7 +1102,6 @@ describe('Repository', () => {
                 await driver.page.waitForSelector('.test-filtered-tags-connection')
                 await driver.page.click('input[name="query"]')
                 await driver.page.waitForSelector('input[name="query"].focus-visible')
-                await percySnapshotWithVariants(driver.page, 'Repository tags page')
                 await accessibilityAudit(driver.page)
             })
         })
@@ -1256,7 +1248,6 @@ describe('Repository', () => {
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
                 await driver.page.waitForSelector('.test-file-diff-connection')
-                await percySnapshotWithVariants(driver.page, 'Repository compare page')
                 await accessibilityAudit(driver.page)
             })
         })

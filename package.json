@@ -73,8 +73,6 @@
     "@graphql-codegen/typescript-operations": "2.5.10",
     "@ianvs/prettier-plugin-sort-imports": "^3.7.1",
     "@octokit/rest": "^16.36.0",
-    "@percy/cli": "^1.24.0",
-    "@percy/puppeteer": "^2.0.2",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
@@ -447,11 +445,6 @@
       "cpu-features": {
         "dependencies": {
           "node-gyp": "*"
-        }
-      },
-      "@percy/sdk-utils": {
-        "dependencies": {
-          "ws": "*"
         }
       },
       "mz": {
