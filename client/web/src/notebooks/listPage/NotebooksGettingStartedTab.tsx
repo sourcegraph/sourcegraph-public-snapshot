@@ -76,7 +76,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     <div className="col-12 col-md-6">
                         <video
                             key={`notebooks_overview_video_${isLightTheme}`}
-                            className="w-100 h-auto shadow percy-hide"
+                            className="w-100 h-auto shadow"
                             muted={true}
                             playsInline={true}
                             {...videoAutoplayAttributes}

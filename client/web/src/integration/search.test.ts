@@ -2,32 +2,27 @@ import expect from 'expect'
 import { afterEach, beforeEach, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { type SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { SymbolKind, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
-    diffSearchStreamEvents,
     diffHighlightResult,
-    mixedSearchStreamEvents,
+    diffSearchStreamEvents,
     highlightFileResult,
-    symbolSearchStreamEvents,
+    mixedSearchStreamEvents,
     ownerSearchStreamEvents,
+    symbolSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import {
-    getSearchQueryInputConfig,
-    percySnapshotWithVariants,
-    type SearchQueryInput,
-    withSearchQueryInput,
-} from './utils'
+import { getSearchQueryInputConfig, withSearchQueryInput, type SearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -214,7 +209,6 @@ describe('Search', () => {
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
                 expect(await editor.getValue()).toStrictEqual('-file:')
-                await percySnapshotWithVariants(driver.page, `Search home page (${name})`)
                 await accessibilityAudit(driver.page)
             })
         })
@@ -537,9 +531,6 @@ describe('Search', () => {
             await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .match-highlight', {
                 visible: true,
             })
-            await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
-                waitForCodeHighlighting: true,
-            })
 
             // Since current Chrome version that we use for integration tests
             // doesn't support @layers rule cody styles leak to the main scope and override
@@ -562,9 +553,6 @@ describe('Search', () => {
                 visible: true,
             })
 
-            await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
-                waitForCodeHighlighting: true,
-            })
             await accessibilityAudit(driver.page)
         })
 
@@ -580,13 +568,6 @@ describe('Search', () => {
                 visible: true,
             })
 
-            await percySnapshotWithVariants(
-                driver.page,
-                'Streaming commit code, file and repo results with filter suggestions',
-                {
-                    waitForCodeHighlighting: true,
-                }
-            )
             await accessibilityAudit(driver.page)
         })
 
@@ -602,9 +583,6 @@ describe('Search', () => {
                 visible: true,
             })
 
-            await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
-                waitForCodeHighlighting: true,
-            })
             await accessibilityAudit(driver.page)
         })
 
@@ -620,9 +598,6 @@ describe('Search', () => {
                 visible: true,
             })
 
-            await percySnapshotWithVariants(driver.page, 'Streaming search owners', {
-                waitForCodeHighlighting: true,
-            })
             await accessibilityAudit(driver.page)
         })
     })
@@ -658,14 +633,12 @@ describe('Search', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches')
             await driver.page.waitForSelector('[data-testid="saved-searches-list-page"]')
-            await percySnapshotWithVariants(driver.page, 'Saved searches list')
             await accessibilityAudit(driver.page)
         })
 
         test('is styled correctly, with saved search form', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches/add')
             await driver.page.waitForSelector('[data-testid="saved-search-form"]')
-            await percySnapshotWithVariants(driver.page, 'Saved search - Form')
             await accessibilityAudit(driver.page)
         })
     })
