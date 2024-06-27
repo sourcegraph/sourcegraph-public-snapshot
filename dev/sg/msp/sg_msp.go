@@ -2,6 +2,7 @@
 package msp
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1194,6 +1195,50 @@ This command supports completions on services and environments.
 				}
 				// Otherwise render it for reader
 				return std.Out.WriteCode("json", string(jsonSchema))
+			},
+		},
+		{
+			Name:  "subscription-matrix",
+			Usage: "Generate dynamic GitHub Action matrix for subscription deployment",
+			Action: func(ctx *cli.Context) error {
+				services, err := msprepo.ListServices()
+				if err != nil {
+					return err
+				}
+
+				type serviceInfo struct {
+					ID       string `json:"id"`
+					Env      string `json:"env"`
+					Category string `json:"category"`
+				}
+
+				type matrix struct {
+					Service []serviceInfo `json:"service"`
+				}
+				var outputServices matrix
+				for _, s := range services {
+					svc, err := spec.Open(msprepo.ServiceYAMLPath(s))
+					if err != nil {
+						return err
+					}
+					for _, e := range svc.Environments {
+						if e.Deploy.Type == spec.EnvironmentDeployTypeSubscription {
+							outputServices.Service = append(outputServices.Service, serviceInfo{
+								ID:       s,
+								Env:      e.ID,
+								Category: string(e.Category),
+							})
+						}
+					}
+				}
+
+				json, err := json.Marshal(outputServices)
+				if err != nil {
+					return err
+				}
+				std.Out.Write(string(json))
+
+				return nil
 			},
 		},
 	},
