@@ -8,6 +8,6 @@ expression: "String::from_utf8_lossy(&output)"
 {"_type":"tag","name":"debug","path":"globals.magik","language":"magik","line":52,"kind":"method","scope":"pp.line_parser"}
 {"_type":"tag","name":"init","path":"globals.magik","language":"magik","line":22,"kind":"method","scope":"pp.line_parser"}
 {"_type":"tag","name":"new","path":"globals.magik","language":"magik","line":17,"kind":"method","scope":"pp.line_parser"}
-{"_type":"tag","name":"line_parser","path":"globals.magik","language":"magik","line":9,"kind":"struct","scope":"pp"}
+{"_type":"tag","name":"line_parser","path":"globals.magik","language":"magik","line":9,"kind":"class","scope":"pp"}
 {"_type":"tag","name":"top_level_constant","path":"globals.magik","language":"magik","line":5,"kind":"constant","scope":"pp"}
 {"_type":"tag","name":"top_level_global","path":"globals.magik","language":"magik","line":4,"kind":"variable","scope":"pp"}

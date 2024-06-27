@@ -10,7 +10,7 @@
 
 (invoke
     receiver: (variable) @name
-    (symbol) @descriptor.type @kind.struct
+    (symbol) @descriptor.type @kind.class
     (#eq? @name "def_slotted_exemplar")
     (#transform! ":(.*)" "$1"))
 
