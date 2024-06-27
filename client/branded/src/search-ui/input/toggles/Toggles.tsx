@@ -77,7 +77,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
     }, [caseSensitive, setCaseSensitivity, submitOnToggle, telemetryRecorder])
 
     const toggleRegexp = useCallback((): void => {
-        const newPatternType = patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : defaultPatternType
+        const newPatternType =
+            patternType !== SearchPatternType.regexp
+                ? SearchPatternType.regexp
+                : // Handle the case where the user has regexp configured as the default pattern type.
+                defaultPatternType === SearchPatternType.regexp
+                ? SearchPatternType.keyword
+                : defaultPatternType
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
