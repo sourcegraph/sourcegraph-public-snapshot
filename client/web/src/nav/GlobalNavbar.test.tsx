@@ -44,7 +44,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 
 describe('GlobalNavbar', () => {
     if (!window.context) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.context = {} as any
     }
     const origCodeSearchEnabledOnInstance = window.context?.codeSearchEnabledOnInstance ?? true

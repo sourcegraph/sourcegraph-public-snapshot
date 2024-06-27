@@ -1402,7 +1402,6 @@ describe('searchResultsToFileContent', () => {
     })
 
     test('returns correct content for repo match with enableRepositoryMetadata=true', () => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const [, results] = data.find(([searchType]) => searchType === 'repo')!
         expect(searchResultsToFileContent(results, sourcegraphURL, true)).toEqual(
             'Match type,Repository,Repository external URL,Repository metadata,Repository metadata JSON\nrepo,github.com/lorenzodifuccia/safaribooks,http://localhost:3443/github.com/lorenzodifuccia/safaribooks,"oss\ndeprecated\nsome"",non-standard-key:value","{""oss"":null,""deprecated"":null,""some\\"",non-standard-key"":""value""}"\nrepo,github.com/rfletcher/safari-json-formatter,http://localhost:3443/github.com/rfletcher/safari-json-formatter,,{}\nrepo,github.com/AdguardTeam/AdGuardForSafari,http://localhost:3443/github.com/AdguardTeam/AdGuardForSafari,,{}\nrepo,github.com/kishikawakatsumi/SourceKitForSafari,http://localhost:3443/github.com/kishikawakatsumi/SourceKitForSafari,,{}\nrepo,github.com/shaojiankui/iOS-UDID-Safari,http://localhost:3443/github.com/shaojiankui/iOS-UDID-Safari,,{}'
