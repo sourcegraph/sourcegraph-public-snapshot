@@ -14,6 +14,13 @@ tuples:
 - user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
   relation: member
   object: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+- user: customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224#member
+  relation: view
+  object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
+
+- user: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5#member
+  relation: view
+  object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
 
 tests:
 - name: unexpected users are not customer_admin members
@@ -44,12 +51,12 @@ tests:
     - user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
       object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
       assertions:
-        view: false
+        view: true
 
     - user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
-      object: subscription_cody_analytics:CDA7E9F-69D8-4594-9637-F964693ADFE5
+      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
       assertions:
-        view: false
+        view: true
 
 - name: non-customer_admin members cannot access Cody Analytics
   check:
@@ -59,7 +66,7 @@ tests:
         view: false
 
     - user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
-      object: subscription_cody_analytics:CDA7E9F-69D8-4594-9637-F964693ADFE5
+      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
       assertions:
         view: false
 
@@ -69,6 +76,6 @@ tests:
         view: false
 
     - user: user:EA71BAB8-09CA-4014-A62F-119B291C62B9 # unknown user
-      object: subscription_cody_analytics:CDA7E9F-69D8-4594-9637-F964693ADFE5
+      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
       assertions:
         view: false
