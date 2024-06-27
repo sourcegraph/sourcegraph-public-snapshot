@@ -22,4 +22,5 @@
     (while)
     (try)
     (loop)
+    (if)
 ] @local
