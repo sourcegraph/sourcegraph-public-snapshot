@@ -7,75 +7,74 @@
 model_file: ./iam_model.fga
 
 tuples:
-- user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
+- user: user:user_uuid_a
   relation: member
-  object: customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224
+  object: customer_admin:subscription_uuid_a
+- user: customer_admin:subscription_uuid_a#member
+  relation: view
+  object: subscription_cody_analytics:subscription_uuid_a
 
-- user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
+- user: user:user_uuid_b
   relation: member
-  object: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5
-- user: customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224#member
+  object: customer_admin:subscription_uuid_b
+- user: customer_admin:subscription_uuid_b#member
   relation: view
-  object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
-
-- user: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5#member
-  relation: view
-  object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+  object: subscription_cody_analytics:subscription_uuid_b
 
 tests:
 - name: unexpected users are not customer_admin members
   check:
-    - user: user:EA71BAB8-09CA-4014-A62F-119B291C62B9 # unknown user
-      object: customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224
+    - user: user:unknown_user_uuid_a # unknown user
+      object: customer_admin:subscription_uuid_a
       assertions:
         member: false
-    - user: user:EA71BAB8-09CA-4014-A62F-119B291C62B9 # unknown user
-      object: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+    - user: user:unknown_user_uuid_a # unknown user
+      object: customer_admin:subscription_uuid_b
       assertions:
         member: false
 
 - name: expected users are customer_admin members
   check:
-    - user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
-      object: customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224
+    - user: user:user_uuid_a
+      object: customer_admin:subscription_uuid_a
       assertions:
         member: true
 
-    - user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
-      object: customer_admin:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+    - user: user:user_uuid_b
+      object: customer_admin:subscription_uuid_b
       assertions:
         member: true
 
 - name: customer_admin members have access to their Cody Analytics
   check:
-    - user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
-      object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
+    - user: user:user_uuid_a
+      object: subscription_cody_analytics:subscription_uuid_a
       assertions:
         view: true
 
-    - user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
-      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+    - user: user:user_uuid_b
+      object: subscription_cody_analytics:subscription_uuid_b
       assertions:
         view: true
 
 - name: non-customer_admin members cannot access Cody Analytics
   check:
-    - user: user:617E04BC-905D-4543-94E7-55DCF7F5E92F
-      object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
+    - user: user:user_uuid_b
+      object: subscription_cody_analytics:subscription_uuid_a
       assertions:
         view: false
 
-    - user: user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9
-      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+    - user: user:user_uuid_a
+      object: subscription_cody_analytics:subscription_uuid_b
       assertions:
         view: false
 
-    - user: user:EA71BAB8-09CA-4014-A62F-119B291C62B9 # unknown user
-      object: subscription_cody_analytics:80ca12e2-54b4-448c-a61a-390b1a9c1224
+    - user: user:unknown_user_uuid_a # unknown user
+      object: subscription_cody_analytics:subscription_uuid_a
       assertions:
         view: false
 
-    - user: user:EA71BAB8-09CA-4014-A62F-119B291C62B9 # unknown user
-      object: subscription_cody_analytics:4CDA7E9F-69D8-4594-9637-F964693ADFE5
+    - user: user:unknown_user_uuid_a # unknown user
+      object: subscription_cody_analytics:subscription_uuid_b
       assertions:
         view: false
