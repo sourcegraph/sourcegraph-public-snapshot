@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "modelconfig",
+    srcs = [
+        "siteconfig_completions.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//internal/modelconfig/types",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "modelconfig_test",
+    srcs = [
+        "siteconfig_completions_test.go",
+        "util_test.go",
+    ],
+    embed = [":modelconfig"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/licensing",
+        "//internal/modelconfig/embedded",
+        "//internal/modelconfig/types",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
