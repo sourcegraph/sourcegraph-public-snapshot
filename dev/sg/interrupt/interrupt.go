@@ -93,7 +93,7 @@ func Listen() {
 			for range interrupt {
 				count++
 				if count >= MaxInterruptCount {
-					std.Out.WriteWarningf("Ok. Loads of interrupts received - exiting immediately.")
+					std.Out.WriteWarningf("Max interrupts received - exiting immediately.")
 					os.Exit(1)
 				}
 			}
@@ -108,7 +108,7 @@ func Listen() {
 		if err != nil {
 			std.Out.WriteWarningf("context failure executing hooks: %s", err)
 		}
-		// Closing this channel should make the interrupt counting gorounting exit
+		// Closing this channel should make the interrupt counting goroutine exit
 		close(interrupt)
 		// All the hooks have finished executing - anything left we force exiting by doing an os.Exit here
 		os.Exit(0)
