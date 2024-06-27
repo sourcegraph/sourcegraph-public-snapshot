@@ -51,6 +51,10 @@ enum IndexCommand {
 
         #[command(flatten)]
         options: IndexCommandOptions,
+
+        /// Fail on first error
+        #[arg(long, default_value_t = false)]
+        parallel: bool,
     },
 
     /// Index a list of files
@@ -142,10 +146,15 @@ pub fn main() -> anyhow::Result<()> {
                     }
                     run_index_command(options, IndexMode::Files { list: filenames })
                 }
-                IndexCommand::Workspace { dir, options } => run_index_command(
+                IndexCommand::Workspace {
+                    dir,
+                    options,
+                    parallel,
+                } => run_index_command(
                     options,
                     IndexMode::Workspace {
                         location: dir.into(),
+                        parallel: parallel,
                     },
                 ),
 

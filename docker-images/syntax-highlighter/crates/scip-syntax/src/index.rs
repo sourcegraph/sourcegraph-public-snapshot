@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     env,
     fs::File,
     io::{self, prelude::*},
@@ -8,9 +9,11 @@ use std::{
 use anyhow::{anyhow, bail, Context, Result};
 use clap::ValueEnum;
 use path_clean;
+use rayon::prelude::*;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{get_globals, get_locals};
 use tree_sitter_all_languages::ParserId;
+use walkdir::DirEntry;
 
 use crate::{
     evaluate::Evaluator,
@@ -58,7 +61,7 @@ pub enum IndexMode {
     Files { list: Vec<String> },
     /// Discover all files that can be handled by the chosen language
     /// in the passed location (which has to be a directory)
-    Workspace { location: PathBuf },
+    Workspace { location: PathBuf, parallel: bool },
 
     /// Discover all files that can be handled by the chosen language
     /// in either a .tar file, or from STDIN to which TAR data is streamed
@@ -88,7 +91,7 @@ pub fn index_command(
     let absolute_project_root = make_absolute(
         &cwd,
         match &index_mode {
-            IndexMode::Workspace { location } => location,
+            IndexMode::Workspace { location, .. } => location,
             _ => &project_root,
         },
     );
@@ -139,27 +142,49 @@ pub fn index_command(
                 index.documents.extend(documents);
             }
         },
-        IndexMode::Workspace { location } => {
+        IndexMode::Workspace { location, parallel } => {
             let bar = create_spinner();
+            if parallel {
+                let documents: Vec<Document> = walkdir::WalkDir::new(location.clone())
+                    .into_iter()
+                    .par_bridge()
+                    .into_par_iter()
+                    .filter_map(|entry| {
+                        if let Ok(doc) = index_dir_entry(
+                            entry.expect("wuuut"),
+                            parser_id,
+                            absolute_project_root.as_path(),
+                            &options,
+                            &extensions,
+                        ) {
+                            doc
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
 
-            for entry in walkdir::WalkDir::new(location) {
-                let Ok(entry) = entry else { continue };
-                if entry.file_type().is_dir() {
-                    continue;
-                }
-                let Some(extension) = entry.path().extension().and_then(|p| p.to_str()) else {
-                    continue;
-                };
-                if extensions.contains(extension) {
-                    bar.set_message(entry.path().display().to_string());
-                    let document = index_file(
-                        &entry.into_path(),
-                        parser_id,
-                        &absolute_project_root,
-                        &options,
-                    )?;
-                    index.documents.push(document);
-                    bar.tick();
+                index.documents.extend(documents);
+            } else {
+                for entry in walkdir::WalkDir::new(location) {
+                    let Ok(entry) = entry else { continue };
+                    if entry.file_type().is_dir() {
+                        continue;
+                    }
+                    let Some(extension) = entry.path().extension().and_then(|p| p.to_str()) else {
+                        continue;
+                    };
+                    if extensions.contains(extension) {
+                        bar.set_message(entry.path().display().to_string());
+                        let document = index_file(
+                            &entry.into_path(),
+                            parser_id,
+                            &absolute_project_root,
+                            &options,
+                        )?;
+                        index.documents.push(document);
+                        bar.tick();
+                    }
                 }
             }
         }
@@ -215,6 +240,49 @@ fn index_file(
             bail!("Failed to index {}: {:?}", filepath.display(), error)
         }
     }
+}
+
+fn index_dir_entry(
+    entry: DirEntry,
+    parser_id: ParserId,
+    absolute_project_root: &Path,
+    options: &IndexOptions,
+    extensions: &HashSet<&str>,
+) -> Result<Option<Document>> {
+    if entry.file_type().is_dir() {
+        return Ok(None);
+    }
+    let path = entry.into_path();
+    let extension = path.extension().and_then(|p| p.to_str());
+
+    if let Some(extension) = extension {
+        if extensions.contains(extension) {
+            //bar.set_message(entry.path().display().to_string());
+            return index_file(&path, parser_id, &absolute_project_root, &options).map(|d| Some(d));
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+    //let Ok(entry) = entry else { continue };
+    //if entry.file_type().is_dir() {
+    //    continue;
+    //}
+    //let Some(extension) = entry.path().extension().and_then(|p| p.to_str()) else {
+    //    continue;
+    //};
+    //if extensions.contains(extension) {
+    //    bar.set_message(entry.path().display().to_string());
+    //    let document = index_file(
+    //        &entry.into_path(),
+    //        parser_id,
+    //        &absolute_project_root,
+    //        &options,
+    //    )?;
+    //    index.documents.push(document);
+    //    bar.tick();
+    //}
 }
 
 fn index_tar_entries<R: Read>(

@@ -65,6 +65,7 @@ fn java_e2e_evaluation() {
         "java".to_string(),
         IndexMode::Workspace {
             location: dir.clone(),
+            parallel: false,
         },
         candidate.clone(),
         dir.clone(),
