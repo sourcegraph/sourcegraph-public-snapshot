@@ -96,18 +96,29 @@ export function uniqueID(prefix = ''): string {
  * An action that dispatches a custom 'click-outside' event when the user clicks
  * outside the attached element.
  */
-export function onClickOutside(
-    node: HTMLElement
-): ActionReturn<void, { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }> {
+export const onClickOutside: Action<
+    HTMLElement,
+    { enabled?: boolean },
+    { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }
+> = (node, { enabled } = { enabled: true }) => {
     function handler(event: MouseEvent): void {
         if (event.target && !node.contains(event.target as HTMLElement)) {
             node.dispatchEvent(new CustomEvent('click-outside', { detail: event.target }))
         }
     }
 
-    window.addEventListener('mousedown', handler)
+    if (enabled) {
+        window.addEventListener('mousedown', handler)
+    }
 
     return {
+        update({ enabled }) {
+            if (enabled) {
+                window.addEventListener('mousedown', handler)
+            } else {
+                window.removeEventListener('mousedown', handler)
+            }
+        },
         destroy() {
             window.removeEventListener('mousedown', handler)
         },

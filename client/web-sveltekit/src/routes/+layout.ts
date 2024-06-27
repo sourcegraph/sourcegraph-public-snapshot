@@ -15,20 +15,11 @@ import {
     EditSettings,
     LatestSettingsQuery,
 } from './layout.gql'
-import { getMainNavigation, Mode } from './navigation'
+import { getMainNavigationEntries, Mode } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false
 export const prerender = false
-
-const mainNavigation = browser
-    ? getMainNavigation(
-          (window.context.sourcegraphDotComMode ? Mode.DOTCOM : Mode.ENTERPRISE) |
-              (window.context.codyEnabled ? Mode.CODY_ENABLED : 0) |
-              (window.context.batchChangesEnabled ? Mode.BATCH_CHANGES_ENABLED : 0) |
-              (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0)
-      )
-    : []
 
 export const load: LayoutLoad = async ({ fetch }) => {
     const client = getGraphQLClient()
@@ -57,10 +48,13 @@ export const load: LayoutLoad = async ({ fetch }) => {
     }
 
     return {
-        navigationEntries: mainNavigation,
-
-        // Other deployment specific settings
-        isCodyEnabled: window.context.codyEnabled,
+        navigationEntries: getMainNavigationEntries(
+            (window.context.sourcegraphDotComMode ? Mode.DOTCOM : Mode.ENTERPRISE) |
+                (window.context.codyEnabledOnInstance ? Mode.CODY_INSTANCE_ENABLED : 0) |
+                (window.context.codyEnabledForCurrentUser ? Mode.CODY_USER_ENABLED : 0) |
+                (window.context.batchChangesEnabled ? Mode.BATCH_CHANGES_ENABLED : 0) |
+                (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0)
+        ),
 
         // User data
         user: result.data.currentUser,

@@ -20,7 +20,8 @@
                 // Local standalone dev server for dotcom can be started with
                 // pnpm dev:dotcom
                 sourcegraphDotComMode: !!'%sveltekit.env.PUBLIC_DOTCOM%',
-                codyEnabled: !!'%sveltekit.env.PUBLIC_CODY_ENABLED%',
+                codyEnabledOnInstance: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_ON_INSTANCE%',
+                codyEnabledForCurrentUser: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_FOR_CURRENT_USER%',
                 batchChangesEnabled: !!'%sveltekit.env.PUBLIC_BATCH_CHANGES_ENABLED%',
                 codeInsightsEnabled: !!'%sveltekit.env.PUBLIC_CODE_INSIGHTS_ENABLED%',
             }

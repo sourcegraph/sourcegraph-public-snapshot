@@ -1,27 +1,68 @@
-import { isRepoRoute } from '$lib/navigation'
-import { Status, isCurrent, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
+import { Status, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
 
 export const enum Mode {
     ENTERPRISE = 1 << 0,
     DOTCOM = 1 << 1,
-    CODY_ENABLED = 1 << 2,
-    BATCH_CHANGES_ENABLED = 1 << 3,
-    CODE_INSIGHTS_ENABLED = 1 << 4,
+    CODY_INSTANCE_ENABLED = 1 << 2,
+    CODY_USER_ENABLED = 1 << 3,
+    BATCH_CHANGES_ENABLED = 1 << 4,
+    CODE_INSIGHTS_ENABLED = 1 << 5,
+    AUTHENTICATED = 1 << 6,
+    UNAUTHENTICATED = 1 << 7,
 }
 
-interface NavigationEntryWithMode extends NavigationEntry {
-    mode: Mode
+interface NavigationEntryDefinition extends Omit<NavigationEntry, 'href'> {
+    href: string | [Mode, string][]
+    mode?: Mode
 }
 
-interface NavigationMenuWithMode extends NavigationMenu {
-    mode: Mode
+interface NavigationMenuDefinition extends Omit<NavigationMenu, 'children' | 'href'> {
+    href: string | [Mode, string][]
+    children: NavigationEntryDefinition[]
+    mode?: Mode
 }
 
-export function getMainNavigation(mode: Mode): (NavigationMenuWithMode | NavigationEntryWithMode)[] {
-    return navigation.filter(entry => (entry.mode & mode) !== 0)
+function matchesMode(entry: NavigationEntryDefinition, mode: Mode): boolean {
+    return entry.mode === undefined || (entry.mode & mode) === entry.mode
 }
 
-const navigation: (NavigationMenuWithMode | NavigationEntryWithMode)[] = [
+function toEntry(entry: NavigationEntryDefinition, mode: Mode): NavigationEntry {
+    return {
+        ...entry,
+        href: matchHref(entry.href, mode),
+    }
+}
+
+function matchHref(href: NavigationEntryDefinition['href'], mode: Mode): string {
+    if (typeof href === 'string') {
+        return href
+    }
+
+    for (const [key, value] of href) {
+        if ((mode & +key) === +key) {
+            return value
+        }
+    }
+    return ''
+}
+
+export function getMainNavigationEntries(mode: Mode): (NavigationMenu | NavigationEntry)[] {
+    return navigationEntries
+        .filter(entry => matchesMode(entry, mode))
+        .map(definition => {
+            const entry = toEntry(definition, mode)
+            return 'children' in definition
+                ? {
+                      ...entry,
+                      children: definition.children
+                          .filter(child => matchesMode(child, mode))
+                          .map(child => toEntry(child, mode)),
+                  }
+                : entry
+        })
+}
+
+const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[] = [
     {
         label: 'Code Search',
         icon: ILucideSearch,
@@ -53,11 +94,6 @@ const navigation: (NavigationMenuWithMode | NavigationEntryWithMode)[] = [
                 status: Status.BETA,
             },
         ],
-        isCurrent(this: NavigationMenu, page) {
-            // This is a special case of the code search menu: It is marked as "current" if the
-            // current page is a repository route.
-            return isRepoRoute(page.route?.id) || this.children.some(entry => isCurrent(entry, page))
-        },
         mode: Mode.ENTERPRISE,
     },
     {
@@ -70,20 +106,40 @@ const navigation: (NavigationMenuWithMode | NavigationEntryWithMode)[] = [
         label: 'Cody',
         icon: ISgCody,
         href: '/cody',
-        isCurrent(this: NavigationMenu, page) {
-            return this.children.some(entry => isCurrent(entry, page))
-        },
         children: [
-            {
-                label: 'Dashboard',
-                href: '/cody',
-            },
             {
                 label: 'Web Chat',
                 href: '/cody/chat',
+                mode: Mode.AUTHENTICATED,
+            },
+            {
+                label: 'Dashboard',
+                href: '/cody/manage',
+                mode: Mode.AUTHENTICATED,
             },
         ],
-        mode: Mode.CODY_ENABLED,
+        mode: Mode.DOTCOM,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: [
+            [Mode.CODY_USER_ENABLED, '/cody/chat'],
+            [Mode.CODY_INSTANCE_ENABLED, '/cody/dashboard'],
+        ],
+        children: [
+            {
+                label: 'Web Chat',
+                href: '/cody/chat',
+                mode: Mode.CODY_USER_ENABLED,
+            },
+            {
+                label: 'Dashboard',
+                href: '/cody/dashboard',
+                mode: Mode.CODY_USER_ENABLED,
+            },
+        ],
+        mode: Mode.ENTERPRISE | Mode.CODY_INSTANCE_ENABLED,
     },
     {
         label: 'Batch Changes',

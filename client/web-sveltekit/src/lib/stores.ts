@@ -4,6 +4,7 @@ import { readable, writable, type Readable, type Writable } from 'svelte/store'
 import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
+import { browser } from '$app/environment'
 
 export { themeSetting, theme, isLightTheme } from './theme'
 
@@ -81,3 +82,17 @@ export function createLocalWritable<T>(localStorageKey: string, defaultValue: T)
         },
     }
 }
+
+/**
+ * Media query store that updates when the media query matches.
+ */
+export function mediaQuery(query: string): Readable<boolean> {
+    const mediaQuery = window.matchMedia(query)
+    return readable(mediaQuery.matches, set => {
+        const listener = () => set(mediaQuery.matches)
+        mediaQuery.addEventListener('change', listener)
+        return () => mediaQuery.removeEventListener('change', listener)
+    })
+}
+
+export const isViewportMediumDown = browser ? mediaQuery('(max-width: 768px)') : readable(false)
