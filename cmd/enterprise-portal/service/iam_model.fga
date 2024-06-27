@@ -11,4 +11,4 @@ type user
 
 type subscription_cody_analytics
   relations
-    define view: [user, customer_admin#member]
+    define view: [customer_admin#member]
