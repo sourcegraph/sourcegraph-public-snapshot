@@ -106,19 +106,23 @@ const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[
         label: 'Cody',
         icon: ISgCody,
         href: '/cody',
+        mode: Mode.DOTCOM | Mode.UNAUTHENTICATED,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: '/cody/chat',
         children: [
             {
                 label: 'Web Chat',
                 href: '/cody/chat',
-                mode: Mode.AUTHENTICATED,
             },
             {
                 label: 'Dashboard',
                 href: '/cody/manage',
-                mode: Mode.AUTHENTICATED,
             },
         ],
-        mode: Mode.DOTCOM,
+        mode: Mode.DOTCOM | Mode.AUTHENTICATED,
     },
     {
         label: 'Cody',

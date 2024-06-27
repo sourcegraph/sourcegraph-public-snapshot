@@ -92,7 +92,8 @@
                                 <Button
                                     variant="icon"
                                     on:click={() => (openedMenu = open ? '' : entry.label)}
-                                    aria-label="{open ? 'Close' : 'Open'} {entry.label} submenu"
+                                    aria-label="{open ? 'Close' : 'Open'} '{entry.label}' submenu"
+                                    aria-expanded={open}
                                 >
                                     <Icon icon={ILucideChevronDown} inline aria-hidden />
                                 </Button>

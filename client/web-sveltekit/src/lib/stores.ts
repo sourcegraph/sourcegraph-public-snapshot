@@ -1,10 +1,10 @@
 import { getContext, setContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
+import { browser } from '$app/environment'
 import type { Settings, TemporarySettingsStorage } from '$lib/shared'
 
 import type { AuthenticatedUser, FeatureFlag } from '../routes/layout.gql'
-import { browser } from '$app/environment'
 
 export { themeSetting, theme, isLightTheme } from './theme'
 

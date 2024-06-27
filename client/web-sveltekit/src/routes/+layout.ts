@@ -53,7 +53,8 @@ export const load: LayoutLoad = async ({ fetch }) => {
                 (window.context.codyEnabledOnInstance ? Mode.CODY_INSTANCE_ENABLED : 0) |
                 (window.context.codyEnabledForCurrentUser ? Mode.CODY_USER_ENABLED : 0) |
                 (window.context.batchChangesEnabled ? Mode.BATCH_CHANGES_ENABLED : 0) |
-                (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0)
+                (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0) |
+                (result.data.currentUser ? Mode.AUTHENTICATED : Mode.UNAUTHENTICATED)
         ),
 
         // User data
