@@ -47,10 +47,9 @@ export interface NavigationMenu<T extends NavigationEntry = NavigationEntry> {
     children: T[]
 
     /**
-     * NavigationMenu item can be rendered as plain link in side navigation mode
-     * This fallbackURL will be used to set URL to this link
+     * Target URL to navigate to when the menu is clicked.
      */
-    href?: string
+    href: string
 
     /**
      * An optional icon to display next to the label.

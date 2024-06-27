@@ -12,7 +12,7 @@ import {
     type FlipOptions,
 } from '@floating-ui/dom'
 import { tick } from 'svelte'
-import type { ActionReturn, Action } from 'svelte/action'
+import type { Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
 import { highlightNode } from '$lib/common'
@@ -98,7 +98,7 @@ export function uniqueID(prefix = ''): string {
  */
 export const onClickOutside: Action<
     HTMLElement,
-    { enabled?: boolean },
+    { enabled?: boolean }|undefined,
     { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }
 > = (node, { enabled } = { enabled: true }) => {
     function handler(event: MouseEvent): void {
@@ -112,7 +112,7 @@ export const onClickOutside: Action<
     }
 
     return {
-        update({ enabled }) {
+        update({ enabled } = {enabled: true}) {
             if (enabled) {
                 window.addEventListener('mousedown', handler)
             } else {

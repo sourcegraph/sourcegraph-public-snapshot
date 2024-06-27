@@ -9,7 +9,8 @@ const config: PlaywrightTestConfig = {
     webServer: process.env.DISABLE_APP_ASSETS_MOCKING
         ? {
               command: 'pnpm build:preview && pnpm preview',
-              port: 4173,
+              port: PORT,
+              reuseExistingServer: true,
           }
         : undefined,
     reporter: 'list',

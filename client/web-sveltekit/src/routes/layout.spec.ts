@@ -78,6 +78,7 @@ test.describe('cody top level navigation', () => {
         test(name, async ({ sg, page }) => {
             const mainNav = page.getByLabel('Main')
             const topNavCodyEntry = mainNav.getByRole('link', { name: topNavName })
+            const menuToggleButton = mainNav.getByLabel("Open 'Cody' submenu")
             await sg.setWindowContext(context)
 
             if (signedIn) {
@@ -94,11 +95,12 @@ test.describe('cody top level navigation', () => {
             }
 
             if (typeof expectedSubNav === 'object') {
+                await expect(menuToggleButton).toBeVisible()
                 for (const [name, href] of Object.entries(expectedSubNav)) {
                     await expect(page.getByRole('link', { name, includeHidden: true })).toHaveAttribute('href', href)
                 }
             } else if (expectedTopNav) {
-                await expect(topNavCodyEntry).not.toHaveAttribute('aria-expanded', 'false')
+                await expect(menuToggleButton).not.toBeAttached()
             }
         })
     })

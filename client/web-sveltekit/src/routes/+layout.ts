@@ -1,6 +1,5 @@
 import { error, redirect } from '@sveltejs/kit'
 
-import { browser } from '$app/environment'
 import { isErrorLike, parseJSONCOrError } from '$lib/common'
 import { getGraphQLClient } from '$lib/graphql'
 import type { SettingsEdit } from '$lib/graphql-types'
