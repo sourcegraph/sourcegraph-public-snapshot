@@ -349,7 +349,7 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 			name: "via subscription ID",
 			req: &subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
 				Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
-					SubscriptionId:      "80ca12e2-54b4-448c-a61a-390b1a9c1224",
+					SubscriptionId:      subscriptionID,
 					MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
 					MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
 				},
@@ -386,6 +386,32 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 						TupleRelation: iam.TupleRelation("view"),
 						Subject:       iam.TupleSubject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224#member"),
 					},
+					{
+						Object:        iam.TupleObject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
+						TupleRelation: iam.TupleRelation("member"),
+						Subject:       iam.TupleSubject("user:018d21f2-04a6-7aaf-9f6f-6fc58c4187b9"),
+					},
+				}),
+				wantDeletes: autogold.Expect([]iam.TupleKey{}),
+			},
+		},
+		{
+			name: "via subscription ID, customer_admin -> cody analytics already exists",
+			req: &subscriptionsv1.UpdateEnterpriseSubscriptionMembershipRequest{
+				Membership: &subscriptionsv1.EnterpriseSubscriptionMembership{
+					SubscriptionId:      subscriptionID,
+					MemberSamsAccountId: "018d21f2-04a6-7aaf-9f6f-6fc58c4187b9",
+					MemberRoles:         []subscriptionsv1.Role{subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN},
+				},
+			},
+			iamCheckFunc: func(opts iam.CheckOptions) (bool, error) {
+				if opts.TupleKey.Object == iam.ToTupleObject(iam.TupleTypeSubscriptionCodyAnalytics, subscriptionID) {
+					return true, nil // already exists
+				}
+				return false, nil
+			},
+			iamWrite: &assertIAMWrite{
+				wantWrites: autogold.Expect([]iam.TupleKey{
 					{
 						Object:        iam.TupleObject("customer_admin:80ca12e2-54b4-448c-a61a-390b1a9c1224"),
 						TupleRelation: iam.TupleRelation("member"),
