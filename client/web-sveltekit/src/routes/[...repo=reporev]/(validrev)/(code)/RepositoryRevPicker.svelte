@@ -26,6 +26,8 @@
 </script>
 
 <script lang="ts">
+    import copy from 'copy-to-clipboard'
+
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -33,7 +35,10 @@
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { Button, Badge } from '$lib/wildcard'
+    import { Badge } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
+    import ButtonGroup from '$lib/wildcard/ButtonGroup.svelte'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
     import type { ResolvedRevision } from '../../+layout'
 
@@ -70,36 +75,34 @@
     const handleCommitSelect = (commit: RepositoryGitCommit): void => {
         goto(replaceRevisionInURL(location.pathname + location.search + location.hash, commit.oid))
     }
+
+    const buttonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
 <Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
-    <div
-        use:registerTarget
-        class="button-group"
-        class:is-on-specific-rev={isOnSpecificRev}
-        data-repo-rev-picker-trigger
-    >
-        <Button variant="secondary" size="sm">
-            <svelte:fragment slot="custom" let:buttonClass>
-                <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
-                    @{revisionLabel}
-                </button>
-            </svelte:fragment>
-        </Button>
+    <div use:registerTarget data-repo-rev-picker-trigger>
+        <ButtonGroup>
+            <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()}>
+                @{revisionLabel}
+            </button>
 
-        {#if isOnSpecificRev}
-            <span class="reset-button-container">
+            <CopyButton value={revisionLabel}>
+                <button let:handleCopy on:click={() => handleCopy()} class="{buttonClass} copy-button hoverable-button">
+                    <Icon icon={ILucideCopy} aria-hidden="true" --icon-size="1em" />
+                </button>
+            </CopyButton>
+
+            {#if isOnSpecificRev}
                 <Tooltip tooltip="Go to default branch">
-                    <Button
-                        size="sm"
-                        variant="secondary"
+                    <button
+                        class="{buttonClass} hoverable-button"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="16px" />
-                    </Button>
+                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="1em" />
+                    </button>
                 </Tooltip>
-            </span>
-        {/if}
+            {/if}
+        </ButtonGroup>
     </div>
 
     <div slot="content" class="content" let:toggle>
@@ -176,39 +179,25 @@
 </Popover>
 
 <style lang="scss">
-    .button-group {
-        display: flex;
-        min-width: 0;
+    [data-repo-rev-picker-trigger] > :global(*) {
+        width: 100%;
+        height: 100%;
+    }
 
-        .reset-button-container {
-            display: contents;
+    .rev-name {
+        border-right: none;
+        text-align: left;
+    }
 
-            // Get access to the reset branch button through container class
-            :global(button) {
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
-            }
+    .copy-button {
+        flex: 0;
+        border-left: none;
+    }
 
-            :global([data-icon]) {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                --icon-size: 16px;
-            }
-        }
-
-        .revision-trigger {
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            flex-grow: 1;
-            text-align: left;
-        }
-
-        &.is-on-specific-rev .revision-trigger {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-            border-right: none;
+    .hoverable-button {
+        color: var(--text-muted);
+        &:hover {
+            color: var(--body-color);
         }
     }
 

@@ -11,8 +11,9 @@
 
 <script lang="ts" generics="T extends Node">
     import { createCombobox, type ComboboxOptionProps } from '@melt-ui/svelte'
-    import { Input, Alert } from '$lib/wildcard'
+
     import { createPromiseStore } from '$lib/utils'
+    import { Input, Alert } from '$lib/wildcard'
 
     export let name: string
     export let seeAllItemsURL: string

@@ -409,7 +409,8 @@
 
 .btn-group {
     // Prevent double borders when buttons are next to each other
-    > *:not(:first-child) {
+    > .btn:not(:first-child),
+    > *:not(:first-child) .btn {
         margin-left: calc(-1 * var(--btn-border-width));
     }
 

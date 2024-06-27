@@ -54,6 +54,7 @@
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import type { LayoutData, Snapshot } from './$types'
@@ -177,6 +178,7 @@
             bottomPanel?.expand()
         }
     }
+    const sidebarButtonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
 <PanelGroup id="blob-page-panels" direction="horizontal">
@@ -193,74 +195,52 @@
     >
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
-                <div class="sidebar-action-row">
-                    <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
-                        <Button
-                            variant="secondary"
-                            outline
-                            size="sm"
-                            on:click={toggleFileSidePanel}
-                            aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
-                        >
-                            <Icon
-                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
-                                inline
-                                aria-hidden
-                            />
-                        </Button>
-                    </Tooltip>
-                    <RepositoryRevPicker
-                        repoURL={data.repoURL}
-                        revision={data.revision}
-                        resolvedRevision={data.resolvedRevision}
-                        getRepositoryBranches={data.getRepoBranches}
-                        getRepositoryCommits={data.getRepoCommits}
-                        getRepositoryTags={data.getRepoTags}
-                    />
-                </div>
+                <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
+                    <button class="{sidebarButtonClass} collapse-button" on:click={toggleFileSidePanel}>
+                        <Icon icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                    </button>
+                </Tooltip>
 
-                <div class="sidebar-action-row">
-                    <Button variant="secondary" outline size="sm">
-                        <svelte:fragment slot="custom" let:buttonClass>
-                            <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
-                                <button
-                                    class={`${buttonClass} search-files-button`}
-                                    on:click={() => openFuzzyFinder('files')}
-                                >
-                                    {#if isCollapsed}
-                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
-                                    {:else}
-                                        <span>Search files</span>
-                                        <KeyboardShortcut shortcut={filesHotkey} />
-                                    {/if}
-                                </button>
-                            </Tooltip>
-                        </svelte:fragment>
-                    </Button>
-                </div>
+                <RepositoryRevPicker
+                    repoURL={data.repoURL}
+                    revision={data.revision}
+                    resolvedRevision={data.resolvedRevision}
+                    getRepositoryBranches={data.getRepoBranches}
+                    getRepositoryCommits={data.getRepoCommits}
+                    getRepositoryTags={data.getRepoTags}
+                />
+
+                <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
+                    <button class="{sidebarButtonClass} search-files-button" on:click={() => openFuzzyFinder('files')}>
+                        {#if isCollapsed}
+                            <Icon icon={ILucideSquareSlash} inline aria-hidden />
+                        {:else}
+                            <span>Search files</span>
+                            <KeyboardShortcut shortcut={filesHotkey} />
+                        {/if}
+                    </button>
+                </Tooltip>
             </header>
 
-            {#if !isCollapsed}
-                <div class="sidebar-file-tree">
-                    {#if $fileTreeStore}
-                        {#if isErrorLike($fileTreeStore)}
-                            <Alert variant="danger">
-                                Unable to fetch file tree data:
-                                {$fileTreeStore.message}
-                            </Alert>
-                        {:else}
-                            <FileTree
-                                {repoName}
-                                {revision}
-                                treeProvider={$fileTreeStore}
-                                selectedPath={data.filePath ?? ''}
-                            />
-                        {/if}
+            <div class="sidebar-file-tree">
+                {#if $fileTreeStore}
+                    {#if isErrorLike($fileTreeStore)}
+                        <Alert variant="danger">
+                            Unable to fetch file tree data:
+                            {$fileTreeStore.message}
+                        </Alert>
                     {:else}
-                        <LoadingSpinner center={false} />
+                        <FileTree
+                            {repoName}
+                            {revision}
+                            treeProvider={$fileTreeStore}
+                            selectedPath={data.filePath ?? ''}
+                        />
                     {/if}
-                </div>
-            {/if}
+                {:else}
+                    <LoadingSpinner center={false} />
+                {/if}
+            </div>
         </div>
     </Panel>
 
@@ -381,82 +361,71 @@
         background-color: var(--color-bg-1);
 
         &.collapsed {
-            flex-direction: column;
-            align-items: center;
-
             header {
-                flex-wrap: nowrap;
-            }
+                grid-template-columns: min-content;
+                grid-template-areas:
+                    'collapse-button'
+                    'search-files';
 
-            header,
-            .sidebar-action-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-                width: 100%;
-            }
+                :global([data-repo-rev-picker-trigger]) {
+                    display: none;
+                }
 
-            // Hide action text and leave just icon for collapsed version
-            .search-files-button {
-                display: block;
-
-                span {
+                .search-files-button span {
                     display: none;
                 }
             }
-
-            :global([data-repo-rev-picker-trigger]),
             .sidebar-file-tree {
                 display: none;
             }
         }
-    }
 
-    header {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
-        align-items: center;
-        padding: 0.5rem 0.5rem;
+        header {
+            display: grid;
+            grid-template-columns: min-content 1fr;
+            grid-template-areas:
+                'collapse-button rev-picker'
+                'search-files search-files';
+            gap: 0.375rem;
+            padding: 0.5rem;
 
-        .sidebar-action-row {
-            display: flex;
-            flex-basis: 100%;
-            align-items: center;
-            gap: 0.5rem;
-            min-width: 0;
-            flex-grow: 1;
-        }
+            .collapse-button {
+                grid-area: collapse-button;
+            }
 
-        :global([data-repo-rev-picker-trigger]) {
-            flex-grow: 1;
-        }
+            :global([data-repo-rev-picker-trigger]) {
+                grid-area: rev-picker;
+            }
 
-        .search-files-button {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.25rem;
-            min-width: 0;
-            flex-grow: 1;
+            .search-files-button {
+                grid-area: search-files;
 
-            span {
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                overflow: hidden;
-                flex-grow: 1;
-                flex-shrink: 1;
-                text-align: left;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.25rem;
+
+                span {
+                    .collapsed & {
+                        display: none;
+                    }
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    flex-grow: 1;
+                    flex-shrink: 1;
+                    text-align: left;
+                }
             }
         }
-    }
 
-    .sidebar-file-tree {
-        flex-grow: 1;
-        min-height: 0;
-        overflow: auto;
-        padding: 0.25rem 0 0.5rem 0;
-        border-top: 1px solid var(--border-color);
+        .sidebar-file-tree {
+            flex-grow: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 0.25rem 0 0.5rem 0;
+            border-top: 1px solid var(--border-color);
+        }
     }
 
     :global([data-panel-id='main-content-panel']) {
