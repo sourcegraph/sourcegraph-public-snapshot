@@ -95,7 +95,7 @@
                     on:click={() => handleCopy()}
                     class="{buttonClass} copy-button hoverable-button"
                 >
-                    <Icon icon={ILucideCopy} aria-hidden="true" --icon-size="1em" />
+                    <Icon icon={ILucideCopy} aria-hidden="true" />
                 </button>
             </CopyButton>
 
@@ -105,7 +105,7 @@
                         class="{buttonClass} hoverable-button"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="1em" />
+                        <Icon icon={ILucideX} aria-hidden="true" />
                     </button>
                 </Tooltip>
             {/if}
@@ -205,6 +205,7 @@
     }
 
     .hoverable-button {
+        --icon-size: 1em;
         color: var(--text-muted);
         &:hover {
             color: var(--body-color);
