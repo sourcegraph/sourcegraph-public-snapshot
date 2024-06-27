@@ -9,7 +9,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,7 +46,7 @@ type Service struct {
 	opts ServiceOptions
 }
 
-func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
@@ -132,10 +132,10 @@ ORDER BY
 		},
 		{
 			Name:  "eventName",
-			Value: codygateway.EventNameCompletionsFinished,
+			Value: EventNameCompletionsFinished,
 		},
 		{
-			Name:  codygateway.CompletionsEventFeatureMetadataField,
+			Name:  CompletionsEventFeatureMetadataField,
 			Value: feature,
 		},
 	}
@@ -168,7 +168,7 @@ ORDER BY
 	return results, nil
 }
 
-func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
@@ -255,11 +255,11 @@ ORDER BY
 		},
 		{
 			Name:  "eventName",
-			Value: codygateway.EventNameEmbeddingsFinished,
+			Value: EventNameEmbeddingsFinished,
 		},
 		{
-			Name:  codygateway.CompletionsEventFeatureMetadataField,
-			Value: codygateway.CompletionsEventFeatureEmbeddings,
+			Name:  CompletionsEventFeatureMetadataField,
+			Value: CompletionsEventFeatureEmbeddings,
 		},
 	}
 

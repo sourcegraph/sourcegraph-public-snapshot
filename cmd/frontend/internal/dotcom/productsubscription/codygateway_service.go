@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygatewayevents"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )

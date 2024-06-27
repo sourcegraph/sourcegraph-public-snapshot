@@ -2,11 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codygatewayevents",
-    srcs = ["codygatewayevents.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/codygatewayevents",
+    srcs = [
+        "codygatewayevents.go",
+        "events.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/codygateway",
+        "//internal/codygateway/codygatewayactor",
         "//internal/completions/types",
         "//lib/errors",
         "@com_google_cloud_go_bigquery//:bigquery",

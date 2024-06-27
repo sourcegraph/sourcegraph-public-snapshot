@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/codygatewayevents"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -68,7 +68,7 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceEnterpriseSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -108,7 +108,7 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceEnterpriseSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -147,7 +147,7 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.sub.UUID(),
-		actorSource: codygateway.ActorSourceEnterpriseSubscription,
+		actorSource: codygatewayactor.ActorSourceEnterpriseSubscription,
 		v:           rateLimit,
 		source:      source,
 	}, nil
@@ -155,7 +155,7 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 
 type codyGatewayRateLimitResolver struct {
 	actorID     string
-	actorSource codygateway.ActorSource
+	actorSource codygatewayactor.ActorSource
 	feature     types.CompletionsFeature
 	source      graphqlbackend.CodyGatewayRateLimitSource
 	v           licensing.CodyGatewayRateLimit
