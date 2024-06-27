@@ -226,7 +226,6 @@ func TestEventTypesRedact(t *testing.T) {
 			// assert that only the allowlisted privateMetadata key (foo) has a value
 			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
 			assert.Nil(t, ev.Parameters.PrivateMetadata.Fields["bar"])
-
 		})
 	})
 }
