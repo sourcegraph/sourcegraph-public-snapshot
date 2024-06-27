@@ -141,7 +141,11 @@ export function showPatternTypeInQuery(
     return patternType !== defaultPatternType && !explicitPatternTypes.has(patternType)
 }
 
-const explicitPatternTypes = new Set([SearchPatternType.regexp, SearchPatternType.structural, SearchPatternType.keyword])
+const explicitPatternTypes = new Set([
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
+    SearchPatternType.keyword,
+])
 
 /**
  * Update or initialize query state related data from settings
