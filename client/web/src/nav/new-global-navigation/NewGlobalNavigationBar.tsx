@@ -18,6 +18,7 @@ import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
 import { CodyProRoutes } from '../../cody/codyProRoutes'
+import { CODY_MARKETING_PAGE_URL } from '../../cody/codyRoutes'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
@@ -391,7 +392,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                                 isSourcegraphDotCom
                                     ? window.context.codyEnabledForCurrentUser
                                         ? CodyProRoutes.Manage
-                                        : PageRoutes.CodyRedirectToMarketingOrDashboard
+                                        : CODY_MARKETING_PAGE_URL
                                     : PageRoutes.CodyDashboard
                             }
                             icon={CodyLogo}

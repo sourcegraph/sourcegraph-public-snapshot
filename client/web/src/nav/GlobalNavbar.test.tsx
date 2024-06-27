@@ -83,7 +83,7 @@ describe('GlobalNavbar', () => {
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
             codyItemType: 'link',
-            codyItemLink: '/cody',
+            codyItemLink: 'https://sourcegraph.com/cody',
         })
     })
 
@@ -151,7 +151,7 @@ describe('GlobalNavbar', () => {
                 <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
-        expect(baseElement.querySelector('a[href^="/cody"]')).toBeNull()
+        expect(baseElement.querySelector('a[href*="cody"]')).toBeNull()
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({ codyItemType: 'none' })
     })
 })
@@ -174,7 +174,7 @@ function describeNavBar(baseElement: HTMLElement): NavBarTestDescription {
         }
     }
 
-    const item = baseElement.querySelector<HTMLAnchorElement>('a[href^="/cody"]')
+    const item = baseElement.querySelector<HTMLAnchorElement>('a[href*="cody"]')
     return item
         ? {
               codyItemType: 'link',
