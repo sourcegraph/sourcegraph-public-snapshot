@@ -15,8 +15,10 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/connectutil",
         "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
+        "//internal/collections",
         "//internal/trace",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/enterpriseportal/subscriptions/v1/v1connect",
@@ -41,7 +43,7 @@ go_test(
     ],
     embed = [":subscriptionsservice"],
     deps = [
-        "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",

@@ -113,7 +113,6 @@ const buildWorkspacesQuery =
 // the snapshot, since the timer in ExecuteBatchSpecPage is live in that case.
 const EXECUTING_BATCH_SPEC_WITH_END_TIME = {
     ...EXECUTING_BATCH_SPEC,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     finishedAt: addMinutes(Date.parse(EXECUTING_BATCH_SPEC.startedAt!), 15).toISOString(),
 }
 
@@ -141,7 +140,6 @@ export const Executing: StoryFn = () => (
 // the snapshot, since the timer in the workspace details section is live in that case.
 const PROCESSING_WORKSPACE_WITH_END_TIMES = {
     ...PROCESSING_WORKSPACE,
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     finishedAt: addMinutes(Date.parse(PROCESSING_WORKSPACE.startedAt!), 15).toISOString(),
     steps: [
         PROCESSING_WORKSPACE.steps[0]!,
@@ -151,7 +149,6 @@ const PROCESSING_WORKSPACE_WITH_END_TIMES = {
         },
         PROCESSING_WORKSPACE.steps[2]!,
     ],
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
 
 export const ExecuteWithAWorkspaceSelected: StoryFn = () => (

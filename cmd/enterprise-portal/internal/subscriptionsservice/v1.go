@@ -7,9 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/maps"
+
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
-	"golang.org/x/exp/maps"
 
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	subscriptionsv1connect "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1/v1connect"
@@ -17,9 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/connectutil"
-	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/samsm2m"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -71,12 +73,8 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 
 	// Validate and process filters.
 	filters := req.Msg.GetFilters()
-	if len(filters) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("at least one filter is required"))
-	}
-
-	onlyArchived := false
-	subscriptionIDs := make([]string, 0, len(filters))
+	isArchived := false
+	subscriptionIDs := make(collections.Set[string], len(filters))
 	var iamListObjectOptions *iam.ListObjectsOptions
 	for _, filter := range filters {
 		switch f := filter.GetFilter().(type) {
@@ -87,12 +85,10 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 					errors.New(`invalid filter: "subscription_id" provided but is empty`),
 				)
 			}
-			subscriptionIDs = append(
-				subscriptionIDs,
-				strings.TrimPrefix(f.SubscriptionId, subscriptionsv1.EnterpriseSubscriptionIDPrefix),
-			)
+			subscriptionIDs.Add(
+				strings.TrimPrefix(f.SubscriptionId, subscriptionsv1.EnterpriseSubscriptionIDPrefix))
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_IsArchived:
-			onlyArchived = f.IsArchived
+			isArchived = f.IsArchived
 		case *subscriptionsv1.ListEnterpriseSubscriptionsFilter_Permission:
 			if f.Permission == nil {
 				return nil, connect.NewError(
@@ -130,34 +126,41 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 		}
 	}
 
-	// When requested, overwrite subscription IDs with those that have the required
-	// permissions. This makes logical sense because even if a subscription ID is
-	// provided, because it may not be accessible by the subject (and thus be
-	// excluded from the response).
+	// When requested, evaluate the list of subscriptions that match the
+	// filtered permission.
 	if iamListObjectOptions != nil {
 		// Object IDs are in the form of `subscription_cody_analytics:<subscriptionID>`.
 		objectIDs, err := s.store.IAMListObjects(ctx, *iamListObjectOptions)
 		if err != nil {
 			return nil, connectutil.InternalError(ctx, logger, err, "list subscriptions from IAM")
 		}
-		// 🚨 SECURITY: If permissions are used as filter, but we found no results, we
-		// should directly return an empty response to not mistaken as list all.
-		if len(objectIDs) == 0 {
-			return connect.NewResponse(&subscriptionsv1.ListEnterpriseSubscriptionsResponse{}), nil
+		allowedSubscriptionIDs := make(collections.Set[string], len(objectIDs))
+		for _, objectID := range objectIDs {
+			allowedSubscriptionIDs.Add(strings.TrimPrefix(objectID, "subscription_cody_analytics:"))
 		}
 
-		subscriptionIDs = make([]string, 0, len(objectIDs))
-		for _, objectID := range objectIDs {
-			subscriptionIDs = append(subscriptionIDs, strings.TrimPrefix(objectID, "subscription_cody_analytics:"))
+		if !subscriptionIDs.IsEmpty() {
+			// If subscription IDs were provided, we only want to return the
+			// subscriptions that are part of the provided IDs.
+			subscriptionIDs = collections.Intersection(subscriptionIDs, allowedSubscriptionIDs)
+		} else {
+			// Otherwise, only return the allowed subscriptions.
+			subscriptionIDs = allowedSubscriptionIDs
+		}
+
+		// 🚨 SECURITY: If permissions are used as filter, but we found no results, we
+		// should directly return an empty response to not mistaken as list all.
+		if len(subscriptionIDs) == 0 {
+			return connect.NewResponse(&subscriptionsv1.ListEnterpriseSubscriptionsResponse{}), nil
 		}
 	}
 
-	subscriptions, err := s.store.ListEnterpriseSubscriptions(
+	subs, err := s.store.ListEnterpriseSubscriptions(
 		ctx,
-		database.ListEnterpriseSubscriptionsOptions{
-			IDs:          subscriptionIDs,
-			OnlyArchived: onlyArchived,
-			PageSize:     int(req.Msg.GetPageSize()),
+		subscriptions.ListEnterpriseSubscriptionsOptions{
+			IDs:        subscriptionIDs.Values(),
+			IsArchived: isArchived,
+			PageSize:   int(req.Msg.GetPageSize()),
 		},
 	)
 	if err != nil {
@@ -165,7 +168,10 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 	}
 
 	// List from dotcom DB and merge attributes.
-	dotcomSubscriptions, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, subscriptionIDs...)
+	dotcomSubscriptions, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
+		SubscriptionIDs: subscriptionIDs.Values(),
+		IsArchived:      isArchived,
+	})
 	if err != nil {
 		return nil, connectutil.InternalError(ctx, logger, err, "list subscriptions from dotcom DB")
 	}
@@ -174,11 +180,23 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 		dotcomSubscriptionsSet[s.ID] = s
 	}
 
-	respSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, 0, len(subscriptions))
-	for _, s := range subscriptions {
+	// Add the "real" subscriptions we already track to the results
+	respSubscriptions := make([]*subscriptionsv1.EnterpriseSubscription, 0, len(subs))
+	for _, s := range subs {
 		respSubscriptions = append(
 			respSubscriptions,
 			convertSubscriptionToProto(s, dotcomSubscriptionsSet[s.ID]),
+		)
+		delete(dotcomSubscriptionsSet, s.ID)
+	}
+
+	// Add any remaining dotcom subscriptions to the results set
+	for _, s := range dotcomSubscriptionsSet {
+		respSubscriptions = append(
+			respSubscriptions,
+			convertSubscriptionToProto(&subscriptions.Subscription{
+				ID: subscriptionsv1.EnterpriseSubscriptionIDPrefix + s.ID,
+			}, s),
 		)
 	}
 
@@ -220,11 +238,6 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 
 	// Validate filters
 	filters := req.Msg.GetFilters()
-	if len(filters) == 0 {
-		// TODO: We may want to allow filter-less usage in the future
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			errors.New("at least one filter is required"))
-	}
 	for _, filter := range filters {
 		// TODO: Implement additional filtering as needed
 		switch f := filter.GetFilter().(type) {
@@ -241,8 +254,6 @@ func (s *handlerV1) ListEnterpriseSubscriptionLicenses(ctx context.Context, req 
 					errors.New(`invalid filter: "subscription_id"" provided but is empty`),
 				)
 			}
-		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
-			// Nothing to validate
 		}
 	}
 
@@ -295,14 +306,16 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 	}
 
 	// Double check with the dotcom DB that the subscription ID is valid.
-	subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, subscriptionID)
+	subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
+		SubscriptionIDs: []string{subscriptionID},
+	})
 	if err != nil {
 		return nil, connectutil.InternalError(ctx, logger, err, "get dotcom enterprise subscription")
 	} else if len(subscriptionAttrs) != 1 {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
 	}
 
-	var opts database.UpsertSubscriptionOptions
+	var opts subscriptions.UpsertSubscriptionOptions
 
 	fieldPaths := req.Msg.GetUpdateMask().GetPaths()
 	// Empty field paths means update all non-empty fields.
@@ -319,6 +332,14 @@ func (s *handlerV1) UpdateEnterpriseSubscription(ctx context.Context, req *conne
 				opts.ForceUpdate = true
 				opts.InstanceDomain = req.Msg.GetSubscription().GetInstanceDomain()
 			}
+		}
+	}
+
+	// Validate and normalize the domain
+	if opts.InstanceDomain != "" {
+		opts.InstanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(opts.InstanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
 		}
 	}
 
@@ -374,16 +395,23 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 
 	if subscriptionID != "" {
 		// Double check with the dotcom DB that the subscription ID is valid.
-		subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, subscriptionID)
+		subscriptionAttrs, err := s.store.ListDotcomEnterpriseSubscriptions(ctx, dotcomdb.ListEnterpriseSubscriptionsOptions{
+			SubscriptionIDs: []string{subscriptionID},
+		})
 		if err != nil {
 			return nil, connectutil.InternalError(ctx, logger, err, "get dotcom enterprise subscription")
 		} else if len(subscriptionAttrs) != 1 {
 			return nil, connect.NewError(connect.CodeNotFound, errors.New("subscription not found"))
 		}
 	} else if instanceDomain != "" {
+		// Validate and normalize the domain
+		instanceDomain, err = subscriptionsv1.NormalizeInstanceDomain(instanceDomain)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.Wrap(err, "invalid instance domain"))
+		}
 		subscriptions, err := s.store.ListEnterpriseSubscriptions(
 			ctx,
-			database.ListEnterpriseSubscriptionsOptions{
+			subscriptions.ListEnterpriseSubscriptionsOptions{
 				InstanceDomains: []string{instanceDomain},
 				PageSize:        1,
 			},

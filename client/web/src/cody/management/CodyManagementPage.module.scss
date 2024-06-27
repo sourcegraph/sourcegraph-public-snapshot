@@ -1,14 +1,15 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .responsive-container {
-    @media (--sm-breakpoint-down) {
-        flex-direction: column;
-        align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
 
-        > div {
-            border: none !important;
-            align-items: center;
-        }
+    background-color: var(--border-color);
+    > * {
+        flex: 1;
+        min-width: 300px;
+        background-color: var(--color-bg-1);
     }
 }
 
@@ -21,33 +22,6 @@
 .plan-name {
     font-size: 1.5rem;
     font-weight: 600;
-}
-
-.counter {
-    font-size: 1.25rem;
-}
-
-.ide-name {
-    font-size: 1rem;
-}
-
-.modal {
-    width: 50rem;
-}
-
-.release-stage {
-    color: var(--gray-07);
-}
-
-.ide-header {
-    padding: calc(var(--spacer) * 0.5);
-    margin: calc(var(--spacer) * -0.5);
-    border-radius: var(--border-radius);
-}
-
-.ide-header:hover {
-    cursor: pointer;
-    background: var(--subtle-bg);
 }
 
 .credit-card-emoji {

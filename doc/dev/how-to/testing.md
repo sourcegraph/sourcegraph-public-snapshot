@@ -389,54 +389,6 @@ You can execute more complex interactions atomically _within the browser_ using 
 Note that the passed callback cannot refer to any scope variables as it is executed in the browser.
 It can however be passed JSON-stringifyable parameters and return a JSON-stringifyable return value.
 
-### Testing visual regressions
-
-#### Reviewing visual changes in a PR
-
-When you submit a PR, a check from https://percy.io/Sourcegraph/Sourcegraph will appear:
-
-![image](https://user-images.githubusercontent.com/1387653/54873096-ac1f3f80-4d8c-11e9-93ff-377b28121df4.png)
-
-If Percy failed CI ❌ then click on the **Details** link to review the visual changes:
-
-![image](https://user-images.githubusercontent.com/1387653/54873144-c0177100-4d8d-11e9-839c-3e344a6d872b.jpg)
-
-Click the image on the right to toggle between diff and full image mode to review the change. Diff mode shows the changes in red.
-
-If the changes are intended, click **Approve** 👍
-
-Once you approve all of the changes, the Percy check will turn green ✅
-
-#### Running the tests locally
-
-It is possible to run our Percy visual regression tests locally.
-
-1. Get `PERCY_TOKEN` from 1Password [here](https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/wo7p6waf5jtqayl2vkynonxspy).
-1. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
-1. Once the tests finish, Percy should output a URL to the created build.
-
-#### Adding a new visual snapshot test
-
-Open an existing appropiate browser-based test file (end-to-end or integration) or create a new one.
-You can take screenshot in any test by calling `percySnapshot()`:
-
-```TypeScript
-test('Repositories list', async function () {
-    await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
-    await page.waitForSelector('[test-repository-name="/github.com/gorilla/mux"]', { visible: true })
-    await percySnapshot(page, this.currentTest!.fullTitle())
-})
-```
-
-When running in CI, this will take a screenshot of the web page at that point in time in the test and upload it to Percy.
-When you submit the PR, Percy will fail until you approve the new snapshot.
-
-#### Flakiness in snapshot tests
-
-Flakiness in snapshot tests can be caused by the search response time, order of results, animations, premature snapshots while the page is still loading, etc.
-
-This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` (to apply `visibility: hidden`) or `percy-display-none` (to apply `display: none`) CSS classes to the problematic element and it will be hidden from Percy.
-
 ### Accessibility tests
 
 We use [axe-core](https://github.com/dequelabs/axe-core) to run accessibility audits through our integration tests. It ensures we can quickly assess entire pages and raise any errors before they become problems in production.
@@ -481,9 +433,6 @@ The breakdown of known client flakes by type with resolution tips:
 
 #### Visual regression flakes
 
-_Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
-_Solution:_ Hide flaky elements from Percy using the `.percy-hide` class name.
-
 _Problem:_ UI depends on the date and time, which are not appropriately mocked.
 _Solution:_ Mock the date and time properly in your integration test or Storybook story.
 
@@ -504,12 +453,3 @@ _Problem examples:_
 2. `TimeoutError: waiting for selector '.theme.theme-dark' failed: timeout 30000ms exceeded`
 
 _Solution:_ These should be disabled immediately and fixed later by owning teams.
-
-#### Percy outages
-
-_Problem:_ Percy API outages result into
-
-1. HTTP requests to upload screenshots fail with internal server errors.
-2. HTTP requests to upload screenshots fail with errors about duplicated snapshot names. `[percy] Error: The name of each snapshot must be unique, and this name already exists in the build`
-
-_Solution:_ Wait for the Percy infrastructure to come back to life and restart the build. 🥲

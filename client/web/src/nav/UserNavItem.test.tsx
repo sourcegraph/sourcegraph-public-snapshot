@@ -2,22 +2,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { CodyProApiProvider } from '../cody/management/api/react-query/CodyProApiProvider'
-
 import { UserNavItem, type UserNavItemProps } from './UserNavItem'
-
-vi.mock('../util/license', () => ({
-    isCodeSearchOnlyLicense: () => false,
-    isCodeSearchPlusCodyLicense: () => true,
-    isCodyOnlyLicense: () => false,
-}))
 
 describe('UserNavItem', () => {
     beforeAll(() => {
@@ -58,22 +50,18 @@ describe('UserNavItem', () => {
         emails: [],
     }
 
-    const isSourcegraphDotCom = true
-
     test('simple', () => {
         expect(
             render(
                 <MemoryRouter>
                     <MockedTestProvider>
-                        <CodyProApiProvider isSourcegraphDotCom={isSourcegraphDotCom}>
-                            <UserNavItem
-                                showKeyboardShortcutsHelp={() => undefined}
-                                authenticatedUser={USER}
-                                isSourcegraphDotCom={true}
-                                showFeedbackModal={() => undefined}
-                                telemetryService={NOOP_TELEMETRY_SERVICE}
-                            />
-                        </CodyProApiProvider>
+                        <UserNavItem
+                            showKeyboardShortcutsHelp={() => undefined}
+                            authenticatedUser={USER}
+                            isSourcegraphDotCom={true}
+                            showFeedbackModal={() => undefined}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                        />
                     </MockedTestProvider>
                 </MemoryRouter>
             ).asFragment()
@@ -83,15 +71,13 @@ describe('UserNavItem', () => {
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         const result = renderWithBrandedContext(
             <MockedTestProvider>
-                <CodyProApiProvider isSourcegraphDotCom={isSourcegraphDotCom}>
-                    <UserNavItem
-                        showKeyboardShortcutsHelp={() => undefined}
-                        authenticatedUser={USER}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                        showFeedbackModal={() => undefined}
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                    />
-                </CodyProApiProvider>
+                <UserNavItem
+                    showKeyboardShortcutsHelp={() => undefined}
+                    authenticatedUser={USER}
+                    isSourcegraphDotCom={true}
+                    showFeedbackModal={() => undefined}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
             </MockedTestProvider>
         )
 

@@ -1,0 +1,26 @@
+- steps: []
+  local_steps:
+    - export DOTNET_EnableWriteXorExecute=0
+  root: ""
+  indexer: sourcegraph/scip-dotnet@sha256:1d8a590edfb3834020fceedacac6608811dd31fcba9092426140093876d8d52e
+  indexer_args:
+    - scip-dotnet
+    - index
+    - one.csproj
+    - --output
+    - index.scip
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps:
+    - export DOTNET_EnableWriteXorExecute=0
+  root: foo/baz
+  indexer: sourcegraph/scip-dotnet@sha256:1d8a590edfb3834020fceedacac6608811dd31fcba9092426140093876d8d52e
+  indexer_args:
+    - scip-dotnet
+    - index
+    - foo/baz/two.vbproj
+    - --output
+    - index.scip
+  outfile: index.scip
+  requestedEnvVars: []

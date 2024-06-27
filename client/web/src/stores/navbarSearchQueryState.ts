@@ -28,16 +28,12 @@ import {
 
 export interface NavbarQueryState extends SearchQueryState {}
 
-const explicitPatternTypes = new Set([
-    SearchPatternType.keyword,
-    SearchPatternType.regexp,
-    SearchPatternType.structural,
-])
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.standard,
+    searchPatternType: SearchPatternType.keyword,
+    defaultPatternType: SearchPatternType.keyword,
     searchMode: SearchMode.SmartSearch,
     searchQueryFromURL: '',
 
@@ -96,7 +92,8 @@ export function setSearchMode(searchMode: SearchMode): void {
  * the one contained in the URL (e.g. when the context:... filter got removed)
  */
 export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = parsedSearchURL.query ?? ''): void {
-    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
+    const currentState = useNavbarQueryState.getState()
+    if (currentState.parametersSource > InitialParametersSource.URL) {
         return
     }
 
@@ -121,9 +118,7 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         const parsedPatternType = parsedSearchURL.patternType
         if (parsedPatternType !== undefined) {
             newState.searchPatternType = parsedPatternType
-            // Only keyword, regexp, and structural are represented in the UI. For other pattern types, we make
-            // sure to surface them in the query input itself.
-            if (!explicitPatternTypes.has(parsedPatternType)) {
+            if (showPatternTypeInQuery(parsedPatternType, currentState.defaultPatternType)) {
                 query = `${query} ${FilterType.patterntype}:${parsedPatternType}`
             }
         }
@@ -137,6 +132,21 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     useNavbarQueryState.setState(newState as any)
 }
 
+// The only pattern types explicitly represented in the UI are the default one, plus regexp and structural. For
+// other pattern types, we make sure to surface them in the query input itself.
+export function showPatternTypeInQuery(
+    patternType: SearchPatternType,
+    defaultPatternType?: SearchPatternType
+): boolean {
+    return patternType !== defaultPatternType && !explicitPatternTypes.has(patternType)
+}
+
+const explicitPatternTypes = new Set([
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
+    SearchPatternType.keyword,
+])
+
 /**
  * Update or initialize query state related data from settings
  */
@@ -146,7 +156,10 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'>
+        Pick<
+            NavbarQueryState,
+            'searchPatternType' | 'defaultPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'
+        >
     > = {
         parametersSource: InitialParametersSource.USER_SETTINGS,
     }
@@ -164,6 +177,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     const searchPatternType = defaultPatternTypeFromSettings(settings)
     if (searchPatternType) {
         newState.searchPatternType = searchPatternType
+        newState.defaultPatternType = searchPatternType
     }
 
     // The way Zustand is designed makes it difficult to build up a partial new

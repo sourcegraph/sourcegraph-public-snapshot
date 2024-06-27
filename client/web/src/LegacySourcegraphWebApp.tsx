@@ -3,34 +3,34 @@ import 'focus-visible'
 import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
-import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, type Observable } from 'rxjs'
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom'
+import { combineLatest, from, fromEvent, Subscription, type Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { type GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { HTTPStatusError, type GraphQLClient } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { fetchHighlightedFileLineRanges, type FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
-    getUserSearchContextNamespaces,
-    fetchSearchContexts,
+    createSearchContext,
+    deleteSearchContext,
     fetchSearchContext,
     fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
+    fetchSearchContexts,
+    getDefaultSearchContextSpec,
+    getUserSearchContextNamespaces,
     isSearchContextSpecAvailable,
     SearchQueryStateStoreProvider,
-    getDefaultSearchContextSpec,
+    updateSearchContext,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
     EMPTY_SETTINGS_CASCADE,
-    type SettingsCascadeProps,
     SettingsProvider,
+    type SettingsCascadeProps,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
@@ -38,10 +38,9 @@ import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
+import { authenticatedUser as authenticatedUserSubject, authenticatedUserValue, type AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
-import { CodyProApiProvider } from './cody/management/api/react-query/CodyProApiProvider'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -56,7 +55,6 @@ import type { StaticAppConfig } from './staticAppConfig'
 import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } from './stores'
 import { TelemetryRecorderProvider } from './telemetry'
 import { UserSessionStores } from './UserSessionStores'
-import { getLicenseFeatures } from './util/license'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
@@ -238,7 +236,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
                             streamSearch={aggregateStreamingSearch}
-                            licenseFeatures={getLicenseFeatures()}
                         />
                     }
                 />
@@ -261,7 +258,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <SearchResultsCacheProvider />,
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
                     <LegacyRouteContextProvider context={legacyContext} />,
-                    <CodyProApiProvider isSourcegraphDotCom={window.context.sourcegraphDotComMode} />,
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >

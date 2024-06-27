@@ -1,6 +1,6 @@
-import React, { type ReactElement, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, type ReactElement } from 'react'
 
-import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
+import { mdiArrowLeft, mdiCreditCardOutline, mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,10 +10,10 @@ import {
     Badge,
     Button,
     ButtonLink,
-    Link,
     H1,
     H2,
     Icon,
+    Link,
     PageHeader,
     Text,
     Tooltip,
@@ -23,12 +23,11 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
+import { CodySubscriptionPlan } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
-import { isCodyEnabled } from '../isCodyEnabled'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
@@ -65,7 +64,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
+    if (!window.context?.codyEnabledForCurrentUser || !data?.currentUser || !authenticatedUser) {
         return null
     }
 

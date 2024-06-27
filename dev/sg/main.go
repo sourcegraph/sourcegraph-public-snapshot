@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
+	"github.com/sourcegraph/sourcegraph/dev/sg/enterprise"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -301,6 +302,7 @@ var sg = &cli.App{
 		msp.Command,
 		securityCommand,
 		sams.Command,
+		enterprise.Command,
 
 		// Util
 		analyticsCommand,

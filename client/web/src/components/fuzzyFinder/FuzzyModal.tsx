@@ -202,9 +202,9 @@ function renderFuzzyResults(
         <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results" className="py-1 px-0 mb-0">
             {linksToRender.map((file, fileIndex) => (
                 <Result
-                    fileIndex={fileIndex}
                     key={file.url || file.text}
                     file={file}
+                    fileIndex={fileIndex}
                     isSelected={focusIndex === fileIndex}
                     onClickItem={onClickItem}
                 />

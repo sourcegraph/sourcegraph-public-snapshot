@@ -66,10 +66,10 @@ func srcValidate(t *testing.T, namespace string) {
 }
 
 func createConfigMap(t *testing.T, namespace string, k8sClient *kubernetes.Clientset, cfg config.SourcegraphSpec) {
-	sg := config.Sourcegraph{
+	sg := &config.Sourcegraph{
 		Spec: cfg,
 	}
-	config.SetLocalDevMode(&sg)
+	sg.SetLocalDevMode()
 	cfgBytes, err := yaml.Marshal(sg)
 	require.NoError(t, err)
 	cfgMap := configmap.NewConfigMap("sg", namespace)

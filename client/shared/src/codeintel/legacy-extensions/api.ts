@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { lastValueFrom, type Observable, type Unsubscribable } from 'rxjs'
 
 import type { GraphQLResult } from '@sourcegraph/http-client'

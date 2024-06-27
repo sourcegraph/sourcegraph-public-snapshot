@@ -11,6 +11,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 )
 
+// Tests for various corner cases and regressions.
+func TestValidationMethods(t *testing.T) {
+	t.Run("ValidateModelRef", func(t *testing.T) {
+		tests := []struct {
+			MRef string
+			// WantErr is the text of the expected error message.
+			// If empty, we expect no error.
+			WantErr string
+		}{
+			// Valid MRefs.
+			{"foo::bar::baz", ""},
+			{"foo-dashed::bar-dashed::baz-dashed-twice", ""},
+			{"foo.dotted::bar.dotted::baz.dotted.twice", ""},
+			{"provider_id::api_id::model_id", ""},
+
+			{"provider::api-version-can-totally/have-slashes::model", ""},
+
+			{"anthropic::2023-06-01::claude-3.5-sonnet", ""},
+
+			// Expected failure with older-style model references.
+			{"claude-2", "modelRef syntax error"},
+			{"anthropic/claude-2", "modelRef syntax error"},
+
+			// Generic validation errors.
+			{"a::b::c::d", "modelRef syntax error"},
+
+			{"provider/v1::api-version::model", "invalid ProviderID"},
+			{"CAPS_PROVIDER::v1::model", "invalid ProviderID"},
+			{"g o o g l e::v1::gemini-1.5", "invalid ProviderID"},
+
+			{"foo::name-with!exclamatnions-should::be-ok", "invalid APIVersionID"},
+			{"google::version one::gemini-1.5", "invalid APIVersionID"},
+
+			{"provider::api-version::model/v1", "invalid ModelID"},
+			{"provider::apiver::CAPS_MODEL", "invalid ModelID"},
+			{"anthropic::2023-01-01::claude instant", "invalid ModelID"},
+			{"google::v1::Gemini 1.5", "invalid ModelID"},
+		}
+
+		for _, test := range tests {
+			ref := types.ModelRef(test.MRef)
+			gotErr := validateModelRef(ref)
+
+			var gotErrText string
+			if gotErr != nil {
+				gotErrText = gotErr.Error()
+			}
+
+			assert.Equal(
+				t, test.WantErr, gotErrText,
+				"didn't get expected validation error for mref %q", test.MRef)
+		}
+	})
+}
+
 // Confirm that the model data currently in the repo is well-formed and valid.
 func TestEmbeddedModelConfig(t *testing.T) {
 	loadModelConfig := func(t *testing.T) types.ModelConfiguration {

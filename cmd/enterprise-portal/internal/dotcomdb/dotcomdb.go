@@ -426,19 +426,27 @@ func (r *Reader) ListEnterpriseSubscriptionLicenses(
 		limit: pageSize,
 	}
 	var args []any
+	var hasRevokedFilter bool
 	for _, filter := range filters {
 		switch filter.GetFilter().(type) {
 		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_SubscriptionId:
 			conds.addWhere(fmt.Sprintf("licenses.product_subscription_id = $%d", len(args)+1))
 			args = append(args,
 				strings.TrimPrefix(filter.GetSubscriptionId(), subscriptionsv1.EnterpriseSubscriptionIDPrefix))
-		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsArchived:
-			if filter.GetIsArchived() {
-				conds.addWhere("subscriptions.archived_at IS NOT NULL")
+		case *subscriptionsv1.ListEnterpriseSubscriptionLicensesFilter_IsRevoked:
+			hasRevokedFilter = true
+			// We treat subscription archived and revoked license the same.
+			if filter.GetIsRevoked() {
+				conds.addWhere("(subscriptions.archived_at IS NOT NULL OR licenses.revoked_at IS NOT NULL)")
 			} else {
 				conds.addWhere("subscriptions.archived_at IS NULL")
+				conds.addWhere("licenses.revoked_at IS NULL")
 			}
 		}
+	}
+	if !hasRevokedFilter {
+		conds.addWhere("subscriptions.archived_at IS NULL")
+		conds.addWhere("licenses.revoked_at IS NULL")
 	}
 
 	query := newLicensesQuery(conds, r.opts)
@@ -464,17 +472,30 @@ type SubscriptionAttributes struct {
 	ArchivedAt *time.Time
 }
 
+type ListEnterpriseSubscriptionsOptions struct {
+	SubscriptionIDs []string
+	IsArchived      bool
+}
+
 // ListEnterpriseSubscriptions returns a list of enterprise subscription
 // attributes with the given IDs. It silently ignores any non-existent
 // subscription IDs. The caller should check the length of the returned slice to
 // ensure all requested subscriptions were found.
-func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*SubscriptionAttributes, error) {
-	if len(subscriptionIDs) == 0 {
-		return []*SubscriptionAttributes{}, nil
+//
+// If no IDs are given, it returns all subscriptions.
+func (r *Reader) ListEnterpriseSubscriptions(ctx context.Context, opts ListEnterpriseSubscriptionsOptions) ([]*SubscriptionAttributes, error) {
+	query := `SELECT id, created_at, archived_at FROM product_subscriptions WHERE true`
+	namedArgs := pgx.NamedArgs{}
+	if len(opts.SubscriptionIDs) > 0 {
+		query += "\nAND id = ANY(@ids)"
+		namedArgs["ids"] = opts.SubscriptionIDs
+	}
+	if opts.IsArchived {
+		query += "\nAND archived_at IS NOT NULL"
+	} else {
+		query += "\nAND archived_at IS NULL"
 	}
 
-	query := `SELECT id, created_at, archived_at FROM product_subscriptions WHERE id = ANY(@ids)`
-	namedArgs := pgx.NamedArgs{"ids": subscriptionIDs}
 	rows, err := r.db.Query(ctx, query, namedArgs)
 	if err != nil {
 		return nil, errors.Wrap(err, "query subscription attributes")
