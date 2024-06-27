@@ -78,7 +78,7 @@
         goto(replaceRevisionInURL(location.pathname + location.search + location.hash, commit.oid))
     }
 
-    const buttonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
+    const buttonClass = getButtonClassName({ variant: 'secondary', outline: false, size: 'sm' })
 </script>
 
 <Popover let:registerTrigger let:registerTarget let:toggle {placement}>
@@ -93,7 +93,7 @@
                     slot="custom"
                     let:handleCopy
                     on:click={() => handleCopy()}
-                    class="{buttonClass} copy-button hoverable-button"
+                    class="{buttonClass} hoverable-button"
                 >
                     <Icon icon={ILucideCopy} aria-hidden="true" />
                 </button>
@@ -102,7 +102,7 @@
             {#if isOnSpecificRev}
                 <Tooltip tooltip="Go to default branch">
                     <button
-                        class="{buttonClass} hoverable-button"
+                        class="{buttonClass} close-button hoverable-button"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
                         <Icon icon={ILucideX} aria-hidden="true" />
@@ -195,17 +195,16 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        border-right: none;
         text-align: left;
     }
 
-    .copy-button {
-        flex: 0;
-        border-left: none;
+    .close-button {
+        border-left: 1px solid var(--secondary);
     }
 
     .hoverable-button {
         --icon-size: 1em;
+        flex: 0;
         color: var(--text-muted);
         &:hover {
             color: var(--body-color);

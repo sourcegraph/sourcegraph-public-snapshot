@@ -169,16 +169,12 @@ test('non-existent tree', async ({ page, sg }) => {
 test('error loading tree data', async ({ page, sg }) => {
     sg.mockOperations({
         TreeEntries: ({}) => {
-            throw new Error('Tree error')
+            throw new Error('Sentinel error')
         },
     })
     await page.goto(url)
     await expect(page.getByRole('heading', { name: 'src' })).toBeVisible()
-    const errorElements = await page.getByText(/Tree error/).all()
-    expect(
-        errorElements.some(elem => elem.isVisible()),
-        'Tree error should be visible somewhere on the page'
-    ).toBeTruthy()
+    await expect(page.getByText(/Unable to load directory.*Sentinel error/)).toBeVisible()
 })
 
 test('error loading commit data', async ({ page, sg }) => {

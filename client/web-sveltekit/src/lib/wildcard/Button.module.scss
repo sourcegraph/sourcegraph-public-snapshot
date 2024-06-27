@@ -209,6 +209,9 @@
         &:global(.active) {
             color: var(--btn-text-color);
             background-color: var(--btn-dark-color-variant);
+            // Bring the button to the top so in button groups, its outline is
+            // visible on all sides
+            z-index: 1;
         }
 
         &:focus-visible,
@@ -311,9 +314,9 @@
 }
 
 .btn-secondary {
-    --btn-base-color: var(--secondary);
-    --btn-light-color-variant: var(--secondary-2);
-    --btn-dark-color-variant: var(--secondary-3);
+    --btn-base-color: var(--secondary-2);
+    --btn-light-color-variant: var(--secondary-3);
+    --btn-dark-color-variant: var(--secondary-4);
     // Use darker text colors for contrast
     --btn-text-color: var(--body-color);
     --btn-light-disabled-text-color: var(--text-disabled);
