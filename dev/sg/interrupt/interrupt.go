@@ -111,7 +111,7 @@ func Listen() {
 		// Closing this channel should make the interrupt counting goroutine exit
 		close(interrupt)
 		// All the hooks have finished executing - anything left we force exiting by doing an os.Exit here
-		os.Exit(0)
+		os.Exit(1)
 	}()
 }
 
