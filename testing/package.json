@@ -1,0 +1,17 @@
+{
+  "name": "testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "1.42.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.42.1",
+    "@types/node": "^20.11.19"
+  }
+}
