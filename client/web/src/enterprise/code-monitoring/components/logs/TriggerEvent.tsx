@@ -106,7 +106,7 @@ export const TriggerEvent: React.FunctionComponent<
                     />
 
                     {triggerEvent.actions.nodes.map(action => (
-                        <>
+                        <React.Fragment key={action.id}>
                             {action.events.nodes.map(actionEvent => (
                                 <CollapsibleDetailsWithStatus
                                     key={actionEvent.id}
@@ -125,7 +125,7 @@ export const TriggerEvent: React.FunctionComponent<
                                     startOpen={startOpen}
                                 />
                             )}
-                        </>
+                        </React.Fragment>
                     ))}
                 </ConnectionList>
             )}

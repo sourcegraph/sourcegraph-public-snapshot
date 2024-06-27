@@ -132,19 +132,9 @@ type FeatureBatchChanges struct {
 	MaxNumChangesets int `json:"maxNumChangesets"`
 }
 
-// LicenseFeatures contains information about licensed features that are
-// enabled/disabled on the current license.
-type LicenseFeatures struct {
-	CodeSearch bool `json:"codeSearch"`
-	Cody       bool `json:"cody"`
-}
-
-// LicenseInfo contains non-sensitive information about the legitimate usage of the
-// current license on the instance. It is technically accessible to all users, so only
-// include information that is safe to be seen by others.
+// LicenseInfo contains non-sensitive information about the current license on the instance.
 type LicenseInfo struct {
 	BatchChanges *FeatureBatchChanges `json:"batchChanges"`
-	Features     LicenseFeatures      `json:"features"`
 }
 
 // FrontendCodyProConfig is the configuration data for Cody Pro that needs to be passed
@@ -221,14 +211,21 @@ type JSContext struct {
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	// CodyEnabled is true `cody.enabled` is not false in site-config
-	CodyEnabled bool `json:"codyEnabled"`
-	// CodyEnabledForCurrentUser is true if CodyEnabled is true and current
+	// CodyEnabledOnInstance is true `cody.enabled` is not false in site config. Check
+	// CodyEnabledForCurrentUser to see if the current user has access to Cody.
+	CodyEnabledOnInstance bool `json:"codyEnabledOnInstance"`
+
+	// CodyEnabledForCurrentUser is true if CodyEnabled is true and the current
 	// user has access to Cody.
 	CodyEnabledForCurrentUser bool `json:"codyEnabledForCurrentUser"`
+
 	// CodyRequiresVerifiedEmail is true if usage of Cody requires the current
 	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
+
+	// CodeSearchEnabledOnInstance is true if code search is licensed. (There is currently no
+	// separate config to disable it if licensed.)
+	CodeSearchEnabledOnInstance bool `json:"codeSearchEnabledOnInstance"`
 
 	ExecutorsEnabled                               bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled                   bool `json:"codeIntelAutoIndexingEnabled"`
@@ -374,6 +371,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	isDotComMode := dotcom.SourcegraphDotComMode()
 
+	licenseInfo, codeSearchLicensed, codyLicensed := licenseInfo()
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -432,9 +431,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               conf.CodyEnabled(),
+		CodyEnabledOnInstance:     conf.CodyEnabled(),
 		CodyEnabledForCurrentUser: codyEnabled,
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
+
+		CodeSearchEnabledOnInstance: codeSearchLicensed,
 
 		ExecutorsEnabled:                               conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:                   conf.CodeIntelAutoIndexingEnabled(),
@@ -457,7 +458,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		LicenseInfo: licenseInfo(),
+		LicenseInfo: licenseInfo,
 
 		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
 
@@ -483,7 +484,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// If the license a Sourcegraph instance is running under does not support Code Search features
 	// we force disable related features (executors, batch-changes, executors, code-insights).
-	if !context.LicenseInfo.Features.CodeSearch {
+	if !codeSearchLicensed {
+		context.CodeSearchEnabledOnInstance = false
 		context.BatchChangesEnabled = false
 		context.CodeInsightsEnabled = false
 		context.ExecutorsEnabled = false
@@ -500,8 +502,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// If the license a Sourcegraph instance is running under does not support Cody features,
 	// we force disable related features.
-	if !context.LicenseInfo.Features.Cody {
-		context.CodyEnabled = false
+	if !codyLicensed {
+		context.CodyEnabledOnInstance = false
 		context.CodyEnabledForCurrentUser = false
 	}
 
@@ -668,7 +670,7 @@ func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
 }
 
-func licenseInfo() (info LicenseInfo) {
+func licenseInfo() (info LicenseInfo, codeSearchLicensed, codyLicensed bool) {
 	if !dotcom.SourcegraphDotComMode() {
 		bcFeature := &licensing.FeatureBatchChanges{}
 		if err := licensing.Check(bcFeature); err == nil {
@@ -687,12 +689,10 @@ func licenseInfo() (info LicenseInfo) {
 		}
 	}
 
-	info.Features = LicenseFeatures{
-		CodeSearch: licensing.Check(licensing.FeatureCodeSearch) == nil,
-		Cody:       licensing.Check(licensing.FeatureCody) == nil,
-	}
+	codeSearchLicensed = licensing.Check(licensing.FeatureCodeSearch) == nil
+	codyLicensed = licensing.Check(licensing.FeatureCody) == nil
 
-	return info
+	return info, codeSearchLicensed, codyLicensed
 }
 
 func makeFrontendCodyProConfig(config *schema.CodyProConfig) *FrontendCodyProConfig {

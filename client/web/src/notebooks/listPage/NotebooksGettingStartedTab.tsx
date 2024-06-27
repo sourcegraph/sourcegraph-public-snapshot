@@ -6,11 +6,9 @@ import classNames from 'classnames'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
+import { Container, H2, H3, Icon, Link, Text, useReducedMotion } from '@sourcegraph/wildcard'
 
-import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { PageRoutes } from '../../routes.constants'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -54,14 +52,13 @@ const functionalityPanels = [
 
 export const NotebooksGettingStartedTab: React.FunctionComponent<
     React.PropsWithChildren<NotebooksGettingStartedTabProps>
-> = ({ telemetryService, authenticatedUser }) => {
+> = ({ telemetryService }) => {
     useEffect(() => {
         // No V2 telemetry required, as this is duplicative with the view event logged in NotebooksListPage.tsx.
         telemetryService.log('NotebooksGettingStartedTabViewed')
     }, [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
-    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -124,21 +121,6 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-
-            {isSourcegraphDotCom && (
-                <CallToActionBanner variant="filled">
-                    To create Notebooks across your team's private repositories,{' '}
-                    <Link
-                        to="https://sourcegraph.com"
-                        onClick={() =>
-                            EVENT_LOGGER.log('ClickedOnEnterpriseCTA', { location: 'NotebooksGettingStarted' })
-                        }
-                    >
-                        get Sourcegraph Enterprise
-                    </Link>
-                    .
-                </CallToActionBanner>
-            )}
 
             <H3>Example notebooks</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>

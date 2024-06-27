@@ -31,7 +31,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
     executorsEnabled: true,
-    codyEnabled: true,
+    codyEnabledOnInstance: true,
+    codeSearchEnabledOnInstance: true,
     codeIntelligenceEnabled: true,
     codeMonitoringEnabled: true,
     notebooksEnabled: true,
@@ -56,10 +57,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChanges: {
             maxNumChangesets: -1,
             unrestricted: true,
-        },
-        features: {
-            codeSearch: true,
-            cody: true,
         },
     },
     needServerRestart: false,

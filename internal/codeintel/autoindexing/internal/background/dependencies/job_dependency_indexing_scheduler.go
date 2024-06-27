@@ -17,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -36,7 +33,6 @@ func NewDependencyIndexingScheduler(
 	externalServiceStore ExternalServiceStore,
 	gitserverRepoStore GitserverRepoStore,
 	indexEnqueuer IndexEnqueuer,
-	repoUpdater RepoUpdaterClient,
 	metrics workerutil.WorkerObservability,
 	config *Config,
 ) *workerutil.Worker[dependencyIndexingJob] {
@@ -49,7 +45,6 @@ func NewDependencyIndexingScheduler(
 		gitserverRepoStore: gitserverRepoStore,
 		indexEnqueuer:      indexEnqueuer,
 		workerStore:        dependencyIndexingStore,
-		repoUpdater:        repoUpdater,
 	}
 
 	return dbworker.NewWorker[dependencyIndexingJob](rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
@@ -69,7 +64,6 @@ type dependencyIndexingSchedulerHandler struct {
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store[dependencyIndexingJob]
-	repoUpdater        RepoUpdaterClient
 }
 
 const requeueBackoff = time.Second * 30
@@ -188,18 +182,8 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		// otherwise skip them.
 		difference := setDifference(repoNames, listedRepoNames)
 
-		if dotcom.SourcegraphDotComMode() {
-			for _, repo := range difference {
-				if _, err := h.repoUpdater.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo}); errcode.IsNotFound(err) {
-					delete(repoToPackages, repo)
-				} else if err != nil {
-					return errors.Wrapf(err, "repoUpdater.RepoLookup", "repo", repo)
-				}
-			}
-		} else {
-			for _, repo := range difference {
-				delete(repoToPackages, repo)
-			}
+		for _, repo := range difference {
+			delete(repoToPackages, repo)
 		}
 	}
 

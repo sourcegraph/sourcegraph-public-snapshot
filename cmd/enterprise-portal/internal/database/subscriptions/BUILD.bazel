@@ -3,7 +3,10 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "subscriptions",
-    srcs = ["subscriptions.go"],
+    srcs = [
+        "subscriptions.go",
+        "subscriptions_conditions.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions",
     tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],

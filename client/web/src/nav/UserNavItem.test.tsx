@@ -13,12 +13,6 @@ import * as codyProHooks from '../cody/useCodyProNavLinks'
 
 import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
-vi.mock('../util/license', () => ({
-    isCodeSearchOnlyLicense: () => false,
-    isCodeSearchPlusCodyLicense: () => true,
-    isCodyOnlyLicense: () => false,
-}))
-
 describe('UserNavItem', () => {
     beforeAll(() => {
         setLinkComponent(RouterLink)
