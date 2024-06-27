@@ -428,15 +428,23 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 	writes := make([]iam.TupleKey, 0, len(roles))
 	for _, role := range roles {
 		switch role {
-		case subscriptionsv1.Role_ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN:
-			// Subscription cody analytics customer admin can:
+		case subscriptionsv1.Role_ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN, //lint:ignore SA1019 Support deprecated option for now
+			subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN:
+			// Subscription customer admin can:
 			//	- View cody analytics of the subscription
 
-			// Make sure the customer_admin role is created for the subscription.
+			// Make sure the customer_admin role is created for the subscription
+			// with all the tuples that the customer_admin role has.
+			//
+			// TODO: We may need a more robust home for this, if we expand more
+			// capabilities of the admin role.
 			tk := iam.TupleKey{
-				Object:        iam.ToTupleObject(iam.TupleTypeSubscriptionCodyAnalytics, subscriptionID),
+				// SUBJECT(subscription customer admin)
+				Subject: iam.ToTupleSubjectCustomerAdmin(subscriptionID, iam.TupleRelationMember),
+				// can RELATION(view)
 				TupleRelation: iam.TupleRelationView,
-				Subject:       iam.ToTupleSubjectCustomerAdmin(subscriptionID, iam.TupleRelationMember),
+				// OBJECT(subscription cody analytics)
+				Object: iam.ToTupleObject(iam.TupleTypeSubscriptionCodyAnalytics, subscriptionID),
 			}
 			allowed, err := s.store.IAMCheck(ctx, iam.CheckOptions{TupleKey: tk})
 			if err != nil {
@@ -448,9 +456,12 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 
 			// Add the user as a member of the customer_admin role of the subscription.
 			tk = iam.TupleKey{
-				Object:        iam.ToTupleObject(iam.TupleTypeCustomerAdmin, subscriptionID),
+				// SUBJECT(SAMS user)
+				Subject: iam.ToTupleSubjectUser(samsAccountID),
+				// is RELATION(member)
 				TupleRelation: iam.TupleRelationMember,
-				Subject:       iam.ToTupleSubjectUser(samsAccountID),
+				// of OBJECT(subscription customer admin) -- aka the "role"
+				Object: iam.ToTupleObject(iam.TupleTypeCustomerAdmin, subscriptionID),
 			}
 			allowed, err = s.store.IAMCheck(ctx, iam.CheckOptions{TupleKey: tk})
 			if err != nil {
