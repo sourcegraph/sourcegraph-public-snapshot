@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"slices"
 	"strings"
 
@@ -289,53 +290,19 @@ WARNING: if you just fixed (automatically or manually) this step, you must resta
 		Name: "sg analytics identity",
 		Checks: []*check.Check[CheckArgs]{
 			{
-				Name:  "Identity file exists",
-				Check: checkAction(check.FileExists("~/.sourcegraph/sg-analytics/identity.json")),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					fmt.Printf("What team are you on? Valid options are %s:\n", strings.Join(analytics.Teams, ", "))
-					var team string
-					n, err := fmt.Fscanln(cio.Input, &team)
-					if err != nil && err.Error() != "unexpected newline" {
-						return err
-					}
-					if n == 0 {
-						return errors.New("Must provide a team or else 'anonymous'")
-					}
-
-					fmt.Print("Optionally, what is your sourcegraph email? Hit enter without further input if you'd like to skip this")
-					var email string
-					n, err = fmt.Fscanln(cio.Input, &email)
-					if err != nil && err.Error() != "unexpected newline" {
+				Name: "Identity file exists & is valid",
+				// Check: checkAction(check.FileExists("~/.sourcegraph/sg-analytics/identity.json")),
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					if err := check.FileExists("~/.sourcegraph/sg-analytics/identity.json")(ctx); err != nil {
 						return err
 					}
 
-					if n == 0 {
-						email = "anonymous@sourcegraph.com"
-					}
-
-					// Create the directory if it doesn't exist
-					if err := os.MkdirAll("~/.sourcegraph/sg-analytics", 0o755); err != nil {
-						return err
-					}
-
-					// Create the file
-					f, err := os.Create("~/.sourcegraph/sg-analytics/identity.json")
+					home, err := os.UserHomeDir()
 					if err != nil {
 						return err
 					}
-					defer f.Close()
 
-					if err := json.NewEncoder(f).Encode(map[string]string{"team": team, "email": email}); err != nil {
-						return err
-					}
-
-					return nil
-				},
-			},
-			{
-				Name: "Identity file is valid",
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					f, err := os.Open("~/.sourcegraph/sg-analytics/identity.json")
+					f, err := os.Open(path.Join(home, ".sourcegraph/sg-analytics/identity.json"))
 					if err != nil {
 						return err
 					}
@@ -355,6 +322,51 @@ WARNING: if you just fixed (automatically or manually) this step, you must resta
 
 					if !slices.Contains(analytics.Teams, identity.Team) {
 						out.WriteWarningf("Unexpected value %q in the sg analytics user identity file denoting your team, please set it manually or rerun 'sg setup'", identity.Team)
+					}
+
+					return nil
+				},
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					cio.Output.Promptf("What team are you on? Valid options are %s", strings.Join(analytics.Teams, ", "))
+					var team string
+					n, err := fmt.Fscanln(cio.Input, &team)
+					if err != nil && err.Error() != "unexpected newline" {
+						return err
+					}
+					if n == 0 {
+						return errors.New("Must provide a team or else 'anonymous'")
+					}
+
+					cio.Output.Promptf("Optionally, what is your sourcegraph email? Hit enter without further input if you'd like to skip this")
+					var email string
+					n, err = fmt.Fscanln(cio.Input, &email)
+					if err != nil && err.Error() != "unexpected newline" {
+						return err
+					}
+
+					if n == 0 {
+						email = "anonymous@sourcegraph.com"
+					}
+
+					home, err := os.UserHomeDir()
+					if err != nil {
+						return err
+					}
+
+					// Create the directory if it doesn't exist
+					if err := os.MkdirAll(path.Join(home, ".sourcegraph/sg-analytics"), 0o755); err != nil {
+						return err
+					}
+
+					// Create the file
+					f, err := os.Create(path.Join(home, ".sourcegraph/sg-analytics/identity.json"))
+					if err != nil {
+						return err
+					}
+					defer f.Close()
+
+					if err := json.NewEncoder(f).Encode(map[string]string{"team": team, "email": email}); err != nil {
+						return err
 					}
 
 					return nil
