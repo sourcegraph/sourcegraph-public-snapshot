@@ -2422,6 +2422,19 @@
           "Comment": ""
         },
         {
+          "Name": "github_app_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
@@ -2480,7 +2493,22 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "batch_changes_site_credentials_github_app_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "github_apps",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id)"
+        },
+        {
+          "Name": "check_github_app_id_and_external_service_type",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -13970,6 +13998,19 @@
           "IsNullable": false,
           "Default": "nextval('github_apps_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "kind",
+          "Index": 16,
+          "TypeName": "character varying(255)",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 255,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
@@ -27213,6 +27254,19 @@
           "Comment": ""
         },
         {
+          "Name": "github_app_id",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
@@ -27298,6 +27352,20 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "check_github_app_id_and_external_service_type",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)"
+        },
+        {
+          "Name": "user_credentials_github_app_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "github_apps",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id)"
+        },
         {
           "Name": "user_credentials_user_id_fkey",
           "ConstraintType": "f",
