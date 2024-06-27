@@ -13,6 +13,10 @@ import { NewGlobalNavigationBar } from './NewGlobalNavigationBar'
 const decorator: Decorator<GlobalNavbarProps> = Story => {
     updateJSContextBatchChangesLicense('full')
 
+    window.context.codeSearchEnabledOnInstance = true
+    window.context.codyEnabledOnInstance = true
+    window.context.codyEnabledForCurrentUser = true
+
     return <WebStory>{() => <Story />}</WebStory>
 }
 

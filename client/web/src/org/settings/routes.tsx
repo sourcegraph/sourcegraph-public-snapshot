@@ -38,7 +38,8 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
                 telemetryRecorder={props.platformContext.telemetryRecorder}
             />
         ),
-        condition: ({ org: { viewerCanAdminister }, license }) => license.isCodeSearchEnabled && viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister } }) =>
+            viewerCanAdminister && window.context?.codeSearchEnabledOnInstance,
     },
 ]
 

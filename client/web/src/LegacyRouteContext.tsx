@@ -1,19 +1,19 @@
-import { type FC, type PropsWithChildren, createContext, useContext, useCallback } from 'react'
+import { createContext, useCallback, useContext, type FC, type PropsWithChildren } from 'react'
 
 import type { Observable } from 'rxjs'
 
 import { isMacPlatform } from '@sourcegraph/common'
-import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { fetchHighlightedFileLineRanges, type FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
+    createSearchContext,
+    deleteSearchContext,
+    fetchSearchContext,
     fetchSearchContextBySpec,
     fetchSearchContexts,
-    fetchSearchContext,
     getUserSearchContextNamespaces,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
     isSearchContextSpecAvailable,
+    updateSearchContext,
     type SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
@@ -25,9 +25,8 @@ import { isBatchChangesExecutionEnabled } from './batches'
 import { useBreadcrumbs, type BreadcrumbSetters, type BreadcrumbsProps } from './components/Breadcrumbs'
 import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
-import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
+import type { DynamicSourcegraphWebAppContext, StaticSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
-import { getLicenseFeatures } from './util/license'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
 
@@ -88,12 +87,7 @@ export interface LegacyLayoutRouteContext
     extends StaticAppConfig,
         StaticSourcegraphWebAppContext,
         DynamicSourcegraphWebAppContext,
-        StaticLegacyRouteContext {
-    licenseFeatures: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
-}
+        StaticLegacyRouteContext {}
 
 interface LegacyRouteProps {
     render: (props: LegacyLayoutRouteContext) => JSX.Element
@@ -168,7 +162,6 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
         ...injections,
         ...computedContextFields,
         ...context,
-        licenseFeatures: getLicenseFeatures(),
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
@@ -179,7 +172,6 @@ export const LegacyRouteContext = createContext<LegacyLayoutRouteContext | null>
 /**
  * DO NOT USE OUTSIDE OF STORM ROUTES!
  * A convenience hook to return the LegacyRouteContext.
- *
  * @deprecated This can be used only in components migrated under Storm routes.
  * Please use Apollo instead to make GraphQL requests and `useSettings` to access settings.
  */
@@ -193,7 +185,6 @@ export const useLegacyContext_onlyInStormRoutes = (): LegacyLayoutRouteContext =
 
 /**
  * A convenience hook to return the platform context.
- *
  * @deprecated This should not be used for new code anymore, please use Apollo instead to make
  * GraphQL requests and `useSettings` to access settings.
  */
