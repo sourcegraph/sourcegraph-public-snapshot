@@ -408,12 +408,6 @@
 }
 
 .btn-group {
-    // Prevent double borders when buttons are next to each other
-    > .btn:not(:first-child),
-    > *:not(:first-child) .btn {
-        margin-left: calc(-1 * var(--btn-border-width));
-    }
-
     // Reset rounded corners
     > .btn:not(:last-child):not(:global(.dropdown-toggle)),
     > *:not(:last-child) .btn {
@@ -425,6 +419,9 @@
     > *:not(:first-child) .btn {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
+
+        // Prevent double borders when buttons are next to each other
+        margin-left: calc(-1 * var(--btn-border-width));
     }
 }
 

@@ -6,6 +6,7 @@
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
 
+    export type { Placement } from '@floating-ui/dom'
     export type RepositoryTags = RepositoryGitRefs['gitRefs']
     export type RepositoryTag = RepositoryTags['nodes'][number]
 
@@ -26,6 +27,8 @@
 </script>
 
 <script lang="ts">
+    import type { Placement } from '@floating-ui/dom'
+
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -46,6 +49,7 @@
     export let repoURL: string
     export let revision: string | undefined
     export let resolvedRevision: ResolvedRevision
+    export let placement: Placement = 'right-start'
 
     // Pickers data sources
     export let getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
@@ -77,7 +81,7 @@
     const buttonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
-<Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
+<Popover let:registerTrigger let:registerTarget let:toggle {placement}>
     <div use:registerTarget data-repo-rev-picker-trigger>
         <ButtonGroup>
             <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()}>
@@ -182,7 +186,7 @@
 </Popover>
 
 <style lang="scss">
-    [data-repo-rev-picker-trigger] > :global(*) {
+    div[data-repo-rev-picker-trigger] > :global(*) {
         width: 100%;
         height: 100%;
     }
