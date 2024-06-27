@@ -23,17 +23,17 @@ func convertAccessAttrsToProto(attrs *dotcomdb.CodyGatewayAccessAttributes) *cod
 		// Rate limits return nil if not enabled, per API spec
 		ChatCompletionsRateLimit: nilIfNotEnabled(attrs.CodyGatewayEnabled, &codyaccessv1.CodyGatewayRateLimit{
 			Source:           limits.ChatSource,
-			Limit:            limits.Chat.Limit,
+			Limit:            uint64(limits.Chat.Limit),
 			IntervalDuration: durationpb.New(limits.Chat.IntervalDuration()),
 		}),
 		CodeCompletionsRateLimit: nilIfNotEnabled(attrs.CodyGatewayEnabled, &codyaccessv1.CodyGatewayRateLimit{
 			Source:           limits.CodeSource,
-			Limit:            limits.Code.Limit,
+			Limit:            uint64(limits.Code.Limit),
 			IntervalDuration: durationpb.New(limits.Code.IntervalDuration()),
 		}),
 		EmbeddingsRateLimit: nilIfNotEnabled(attrs.CodyGatewayEnabled, &codyaccessv1.CodyGatewayRateLimit{
 			Source:           limits.EmbeddingsSource,
-			Limit:            limits.Embeddings.Limit,
+			Limit:            uint64(limits.Embeddings.Limit),
 			IntervalDuration: durationpb.New(limits.Embeddings.IntervalDuration()),
 		}),
 		// This is always provided, even if access is disabled
