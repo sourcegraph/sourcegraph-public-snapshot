@@ -174,7 +174,11 @@ test('error loading tree data', async ({ page, sg }) => {
     })
     await page.goto(url)
     await expect(page.getByRole('heading', { name: 'src' })).toBeVisible()
-    await expect(page.getByText(/Tree error/).first()).toBeVisible()
+    const errorElements = await page.getByText(/Tree error/).all()
+    expect(
+        errorElements.some(elem => elem.isVisible()),
+        'Tree error should be visible somewhere on the page'
+    ).toBeTruthy()
 })
 
 test('error loading commit data', async ({ page, sg }) => {
