@@ -20,7 +20,6 @@ type SubscriptionLicense struct {
 	//
 	// Condition transition details are tracked in 'enterprise_portal_subscription_license_conditions'.
 	CreatedAt time.Time  `gorm:"not null;default:current_timestamp"`
-	ExpiresAt time.Time  `gorm:"not null"` // All license types should be time-bound.
 	RevokedAt *time.Time // Null indicates the licnese is not revoked.
 
 	// LicenseKind is the kind of license stored in LicenseData, corresponding
