@@ -1,5 +1,3 @@
-Hello wortld!
-
 <p align="center">
 <a href="https://sourcegraph.com/" target="_blank">
 <picture>
