@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -174,7 +175,7 @@ func (r *codyGatewayRateLimitResolver) IntervalSeconds() int32 { return r.v.Inte
 
 func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbackend.CodyGatewayUsageDatapoint, error) {
 	var (
-		usage []SubscriptionUsage
+		usage []codygatewayevents.SubscriptionUsage
 		err   error
 	)
 	if r.feature != "" {
