@@ -13,7 +13,7 @@ import (
 
 const (
 	// MaxInterruptCount is the maximum number of interrupts we will handle "catch" before exiting immediately.
-	MaxInterruptCount = 5
+	MaxInterruptCount = 2
 	// InterruptSequential is a value for the interrupt type that indicates the hook should be executed sequentially.
 	InterruptSequential = iota
 	// InterruptConcurrent is a value for the interrupt type that indicates the hook should be executed concurrently.
@@ -83,24 +83,20 @@ func Listen() {
 	go func() {
 		<-interrupt
 		std.Out.WriteWarningf("Interrupt received, executing hook groups for graceful shutdown...")
-		closed = make(chan struct{})
 
 		// prevent additional hooks from registering once we've received an interrupt
 		mux.Lock()
 
 		go func() {
 			// Count the interrupts and exit after MaxInterruptCount.
-			count := 0
-			for count < MaxInterruptCount {
-				select {
-				case <-interrupt:
-					count++
-				case <-closed:
-					return
+			count := 1
+			for range interrupt {
+				count++
+				if count >= MaxInterruptCount {
+					std.Out.WriteWarningf("Ok. Loads of interrupts received - exiting immediately.")
+					os.Exit(1)
 				}
 			}
-			std.Out.WriteWarningf("Ok. Loads of interrupts received - exiting immediately.")
-			os.Exit(1)
 		}()
 
 		// Execute all registered hooks
@@ -112,8 +108,10 @@ func Listen() {
 		if err != nil {
 			std.Out.WriteWarningf("context failure executing hooks: %s", err)
 		}
-		close(closed)
-
+		// Closing this channel should make the interrupt counting gorounting exit
+		close(interrupt)
+		// All the hooks have finished executing - anything left we force exiting by doing an os.Exit here
+		os.Exit(0)
 	}()
 }
 
