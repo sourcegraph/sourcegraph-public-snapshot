@@ -358,7 +358,6 @@
         height: 100%;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
         background-color: var(--color-bg-1);
 
         header {
@@ -376,6 +375,7 @@
 
             :global([data-repo-rev-picker-trigger]) {
                 grid-area: rev-picker;
+                min-width: 0;
             }
 
             .search-files-button {

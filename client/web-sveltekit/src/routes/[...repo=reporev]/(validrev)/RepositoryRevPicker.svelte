@@ -188,7 +188,9 @@
     }
 
     .rev-name {
-        overflow-wrap: anywhere;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         border-right: none;
         text-align: left;
     }
