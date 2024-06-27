@@ -98,7 +98,7 @@ export function uniqueID(prefix = ''): string {
  */
 export const onClickOutside: Action<
     HTMLElement,
-    { enabled?: boolean }|undefined,
+    { enabled?: boolean } | undefined,
     { 'on:click-outside': (event: CustomEvent<HTMLElement>) => void }
 > = (node, { enabled } = { enabled: true }) => {
     function handler(event: MouseEvent): void {
@@ -112,7 +112,7 @@ export const onClickOutside: Action<
     }
 
     return {
-        update({ enabled } = {enabled: true}) {
+        update({ enabled } = { enabled: true }) {
             if (enabled) {
                 window.addEventListener('mousedown', handler)
             } else {
