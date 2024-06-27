@@ -36,48 +36,48 @@ test.describe('cody top level navigation', () => {
     ;[
         {
             name: 'sourcegraph.com, signed out',
-            context: {sourcegraphDotComMode: true},
+            context: { sourcegraphDotComMode: true },
             signedIn: false,
             expectedTopNav: '/cody',
             expectedSubNav: false,
         },
         {
             name: 'sourcegraph.com, signed in',
-            context: {sourcegraphDotComMode: true},
+            context: { sourcegraphDotComMode: true },
             signedIn: true,
             expectedTopNav: '/cody/chat',
             expectedSubNav: {
                 'Web Chat': '/cody/chat',
-                'Dashboard': '/cody/manage',
+                Dashboard: '/cody/manage',
             },
         },
         {
             name: 'enterprise, no user cody',
-            context: {sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: false},
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: false },
             signedIn: true,
             expectedTopNav: '/cody/dashboard',
             expectedSubNav: false,
         },
         {
             name: 'enterprise, user cody',
-            context: {sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: true},
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: true, codyEnabledForCurrentUser: true },
             signedIn: true,
             expectedTopNav: '/cody/chat',
             expectedSubNav: {
                 'Web Chat': '/cody/chat',
-                'Dashboard': '/cody/dashboard',
+                Dashboard: '/cody/dashboard',
             },
         },
         {
             name: 'enterprise, no cody',
-            context: {sourcegraphDotComMode: false, codyEnabledOnInstance: false, codyEnabledForCurrentUser: false},
+            context: { sourcegraphDotComMode: false, codyEnabledOnInstance: false, codyEnabledForCurrentUser: false },
             signedIn: true,
             expectedTopNav: false,
         },
-    ].forEach(({name, context, signedIn, expectedTopNav, expectedSubNav}) => {
+    ].forEach(({ name, context, signedIn, expectedTopNav, expectedSubNav }) => {
         test(name, async ({ sg, page }) => {
             const mainNav = page.getByLabel('Main')
-            const topNavCodyEntry = mainNav.getByRole('link', {name: topNavName})
+            const topNavCodyEntry = mainNav.getByRole('link', { name: topNavName })
             await sg.setWindowContext(context)
 
             if (signedIn) {
@@ -95,9 +95,9 @@ test.describe('cody top level navigation', () => {
 
             if (typeof expectedSubNav === 'object') {
                 for (const [name, href] of Object.entries(expectedSubNav)) {
-                    await expect(page.getByRole('link', {name, includeHidden: true})).toHaveAttribute('href', href)
+                    await expect(page.getByRole('link', { name, includeHidden: true })).toHaveAttribute('href', href)
                 }
-            } else if(expectedTopNav) {
+            } else if (expectedTopNav) {
                 await expect(topNavCodyEntry).not.toHaveAttribute('aria-expanded', 'false')
             }
         })
