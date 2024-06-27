@@ -185,6 +185,7 @@
     }
 
     .rev-name {
+        overflow-wrap: anywhere;
         border-right: none;
         text-align: left;
     }
