@@ -134,7 +134,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <PageTitle title="Dashboard" />
                 <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
-                    <CodyAlert variant="greenCodyPro">
+                    <CodyAlert variant="green" displayCard="CodyPro">
                         <H2 className="mt-4">Welcome to Cody Pro</H2>
                         <Text size="small" className="mb-0">
                             You now have Cody Pro with access to unlimited autocomplete, chats, and commands.
@@ -213,7 +213,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 const UpgradeToProBanner: React.FunctionComponent<{
     onClick: () => void
 }> = ({ onClick }) => (
-    <CodyAlert variant="purpleCodyPro">
+    <CodyAlert variant="purple" displayCard="CodyPro">
         <div className="d-flex justify-content-between align-items-center p-4">
             <div>
                 <H1>

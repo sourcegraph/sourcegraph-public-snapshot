@@ -105,16 +105,16 @@ const AuthenticatedCodyManageTeamPage: React.FunctionComponent<CodyManageTeamPag
                 {errorMessage ? (
                     <CodyAlert variant="error">
                         <H3>We couldn't load team data this time. Please try a bit later.</H3>
-                        <Text size="small" className="text-muted mb-0">
+                        <Text size="small" className="text-muted">
                             {errorMessage}
                         </Text>
                     </CodyAlert>
                 ) : null}
 
                 {newSeatsPurchased && (
-                    <CodyAlert variant="purpleSuccess">
+                    <CodyAlert variant="purple">
                         <H3>{newSeatsPurchased} Cody teams seats purchased!</H3>
-                        <Text size="small" className="mb-0">
+                        <Text size="small">
                             Invited users will receive unlimited autocompletions and unlimited chat messages.
                         </Text>
                     </CodyAlert>

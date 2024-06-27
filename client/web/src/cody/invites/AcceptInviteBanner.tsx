@@ -43,10 +43,8 @@ const AcceptInviteBannerContent: React.FC<{
     ) {
         return (
             <CodyAlert variant="error">
-                <H1 as="p" className="mb-2">
-                    Issue with invite
-                </H1>
-                <Text className="mb-0">The invitation is no longer valid. Contact your team admin.</Text>
+                <H1>Issue with invite</H1>
+                <Text>The invitation is no longer valid. Contact your team admin.</Text>
             </CodyAlert>
         )
     }
@@ -62,22 +60,16 @@ const AcceptInviteBannerContent: React.FC<{
             switch (acceptInviteMutation.status) {
                 case 'error': {
                     return (
-                        <CodyAlert variant="error">
-                            <H1 as="p" className="mb-2">
-                                Issue with invite
-                            </H1>
-                            <Text className="mb-0">
-                                Accepting invite failed with error: {acceptInviteMutation.error.message}.
-                            </Text>
+                        <CodyAlert variant="error" displayCard="Alert">
+                            <H1>Issue with invite</H1>
+                            <Text>Accepting invite failed with error: {acceptInviteMutation.error.message}.</Text>
                         </CodyAlert>
                     )
                 }
                 case 'success': {
                     return (
-                        <CodyAlert variant="greenCodyPro">
-                            <H1 as="p" className="mb-2">
-                                Pro team change complete!
-                            </H1>
+                        <CodyAlert variant="green" displayCard="CodyPro">
+                            <H1>Pro team change complete!</H1>
                             <Text>
                                 {inviteState.initialUserStatus === UserInviteStatus.NoCurrentTeam
                                     ? 'You successfully joined the new Cody Pro team.'
@@ -91,16 +83,14 @@ const AcceptInviteBannerContent: React.FC<{
                 default: {
                     return (
                         <CodyAlert variant="purple">
-                            <H1 as="p" className="mb-2">
-                                Join new Cody Pro team?
-                            </H1>
-                            <Text>You've been invited to a new Cody Pro team by {inviteState.sentBy}.</Text>
+                            <H1>Join new Cody Pro team?</H1>
                             <Text>
+                                You've been invited to a new Cody Pro team by {inviteState.sentBy}. <br />
                                 {inviteState.initialUserStatus === UserInviteStatus.NoCurrentTeam
                                     ? 'You will get unlimited autocompletions, chat messages and commands.'
                                     : 'This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not lose access to your Cody Pro benefits.'}
                             </Text>
-                            <div>
+                            <div className="mt-3">
                                 <Button
                                     variant="primary"
                                     disabled={acceptInviteMutation.isPending || cancelInviteMutation.isPending}
@@ -138,10 +128,8 @@ const AcceptInviteBannerContent: React.FC<{
             }
             return (
                 <CodyAlert variant="error">
-                    <H1 as="p" className="mb-2">
-                        Issue with invite
-                    </H1>
-                    <Text className="mb-0">
+                    <H1>Issue with invite</H1>
+                    <Text>
                         You've been invited to a Cody Pro team by {inviteState.sentBy}.<br />
                         You cannot accept this invite as as you are already on this team.
                     </Text>
@@ -151,15 +139,13 @@ const AcceptInviteBannerContent: React.FC<{
         case UserInviteStatus.AnotherTeamSoleAdmin: {
             return (
                 <CodyAlert variant="error">
-                    <H1 as="p" className="mb-2">
-                        Issue with invite
-                    </H1>
-                    <Text className="mb-0">You've been invited to a new Cody Pro team by {inviteState.sentBy}.</Text>
+                    <H1>Issue with invite</H1>
                     <Text>
+                        You've been invited to a new Cody Pro team by {inviteState.sentBy}. <br />
                         To accept this invite you need to transfer your administrative role to another member of your
                         team and click the invite link again.
                     </Text>
-                    <div>
+                    <div className="mt-3">
                         <ButtonLink variant="primary" to={CodyProRoutes.ManageTeam}>
                             Manage team
                         </ButtonLink>
