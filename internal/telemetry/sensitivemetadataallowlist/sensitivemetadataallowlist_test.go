@@ -42,9 +42,10 @@ func TestIsAllowed(t *testing.T) {
 		},
 		{
 			name: "event with private metadata, that has fields it is allowed to export (feature only)",
+			// This feature's action is defined as a wildcard(*) in the "IsAllowed" check's list of known events
 			event: &v1.Event{
 				Feature: "cody.completion",
-				Action:  "*",
+				Action:  "Accepted",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
