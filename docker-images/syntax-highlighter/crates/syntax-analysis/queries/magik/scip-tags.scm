@@ -2,7 +2,7 @@
     (package (identifier) @descriptor.namespace @kind.package)
 ) @scope
 
-; This matches a global top-level assignments
+; This matches global top-level assignments
 (fragment "_global" "_constant" (identifier) @kind.constant @descriptor.term)
 (fragment "_global" "_constant"? @cons
     (identifier) @kind.variable @descriptor.term
