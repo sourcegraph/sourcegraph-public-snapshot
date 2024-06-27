@@ -149,12 +149,12 @@ func completeAutocomplete(
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
-		return tryCompletionsAPIAutocomplete(ctx, client, requestParams)
+		return doCompletionsAPIAutocomplete(ctx, client, requestParams)
 	}
-	return tryChatCompletionsAPIAutocomplete(ctx, client, requestParams)
+	return doChatCompletionsAPIAutocomplete(ctx, client, requestParams)
 }
 
-func tryChatCompletionsAPIAutocomplete(
+func doChatCompletionsAPIAutocomplete(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
@@ -172,7 +172,7 @@ func tryChatCompletionsAPIAutocomplete(
 	}, nil
 }
 
-func tryCompletionsAPIAutocomplete(
+func doCompletionsAPIAutocomplete(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
@@ -241,13 +241,13 @@ func streamAutocomplete(
 	logger log.Logger,
 ) error {
 	if requestParams.AzureUseDeprecatedCompletionsAPIForOldModels {
-		return tryStreamCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
+		return doStreamCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
 	}
-	return tryStreamChatCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
+	return doStreamChatCompletionsAPI(ctx, client, requestParams, sendEvent, logger)
 }
 
 // Streaming with ChatCompletions API
-func tryStreamChatCompletionsAPI(
+func doStreamChatCompletionsAPI(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
@@ -294,7 +294,7 @@ func tryStreamChatCompletionsAPI(
 }
 
 // Streaming with Completions API
-func tryStreamCompletionsAPI(
+func doStreamCompletionsAPI(
 	ctx context.Context,
 	client CompletionsClient,
 	requestParams types.CompletionRequestParameters,
