@@ -361,26 +361,6 @@
         overflow: hidden;
         background-color: var(--color-bg-1);
 
-        &.collapsed {
-            header {
-                grid-template-columns: min-content;
-                grid-template-areas:
-                    'collapse-button'
-                    'search-files';
-
-                :global([data-repo-rev-picker-trigger]) {
-                    display: none;
-                }
-
-                .search-files-button span {
-                    display: none;
-                }
-            }
-            .sidebar-file-tree {
-                display: none;
-            }
-        }
-
         header {
             display: grid;
             grid-template-columns: min-content 1fr;
@@ -407,9 +387,6 @@
                 gap: 0.25rem;
 
                 span {
-                    .collapsed & {
-                        display: none;
-                    }
                     white-space: nowrap;
                     text-overflow: ellipsis;
                     overflow: hidden;
@@ -426,6 +403,26 @@
             overflow: auto;
             padding: 0.25rem 0 0.5rem 0;
             border-top: 1px solid var(--border-color);
+        }
+
+        &.collapsed {
+            header {
+                grid-template-columns: min-content;
+                grid-template-areas:
+                    'collapse-button'
+                    'search-files';
+
+                :global([data-repo-rev-picker-trigger]) {
+                    display: none;
+                }
+
+                .search-files-button span {
+                    display: none;
+                }
+            }
+            .sidebar-file-tree {
+                display: none;
+            }
         }
     }
 
