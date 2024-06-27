@@ -12,6 +12,7 @@ import {
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ToolsIcon from 'mdi-react/ToolsIcon'
 import { useLocation, type RouteObject } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
@@ -23,7 +24,7 @@ import type { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, ButtonLink, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -311,7 +312,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
     const navbarReference = useRef<HTMLDivElement | null>(null)
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference)
 
-    const searchNavBarItems = useMemo(() => {
+    const toolsItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
             showSearchNotebook && { path: PageRoutes.Notebooks, content: 'Notebooks' },
@@ -320,83 +321,59 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             showCodeMonitoring && { path: '/code-monitoring', content: 'Monitoring' },
             showSearchJobs && {
                 path: PageRoutes.SearchJobs,
-                content: (
-                    <>
-                        Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
-                    </>
-                ),
+                content: 'Search Jobs',
+            },
+            window.context.codyEnabledForCurrentUser && {
+                path: isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.CodyDashboard,
+                content: 'Cody Dashboard',
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext, showSearchJobs, showCodeMonitoring, showSearchNotebook])
+    }, [showSearchContext, showSearchJobs, showCodeMonitoring, showSearchNotebook, isSourcegraphDotCom])
+    const toolsItem = toolsItems.length > 0 && (
+        <NavDropdown
+            key="tools"
+            toggleItem={{
+                path: '',
+                icon: ToolsIcon,
+                content: 'Tools',
+                variant: navLinkVariant,
+            }}
+            routeMatch={routeMatch}
+            items={toolsItems}
+            name="tools"
+        />
+    )
 
-    const searchNavigation =
-        searchNavBarItems.length > 0 ? (
-            <NavDropdown
-                key="search"
-                toggleItem={{
-                    path: PageRoutes.Search,
-                    altPath: PageRoutes.RepoContainer,
-                    icon: MagnifyIcon,
-                    content: 'Code Search',
-                    variant: navLinkVariant,
-                }}
-                routeMatch={routeMatch}
-                homeItem={{ content: 'Search home' }}
-                items={searchNavBarItems}
-                name="search"
-            />
-        ) : (
-            <NavItem icon={MagnifyIcon} key="search">
-                <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                    Code Search
-                </NavLink>
-            </NavItem>
-        )
+    const searchItem = (
+        <NavItem icon={MagnifyIcon} key="search">
+            <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                Code Search
+            </NavLink>
+        </NavItem>
+    )
 
     const CodyLogoWrapper = (): JSX.Element => <CodyLogo withColor={routeMatch?.startsWith('/cody/')} />
-    const codyNavigation = !window.context?.codyEnabledOnInstance ? null : !window.context
-          ?.codyEnabledForCurrentUser ? (
+    const codyItem = window.context?.codyEnabledOnInstance ? (
         <NavItem icon={() => <CodyLogoWrapper />} key="cody">
             <NavLink
                 variant={navLinkVariant}
-                to={isSourcegraphDotCom ? PageRoutes.CodyRedirectToMarketingOrDashboard : PageRoutes.CodyDashboard}
+                to={
+                    window.context.codyEnabledForCurrentUser
+                        ? PageRoutes.CodyChat
+                        : isSourcegraphDotCom
+                        ? PageRoutes.CodyRedirectToMarketingOrDashboard
+                        : PageRoutes.CodyDashboard
+                }
             >
                 Cody
             </NavLink>
         </NavItem>
-    ) : (
-        <NavDropdown
-            key="cody"
-            toggleItem={{
-                path: '/cody/*',
-                icon: () => <CodyLogoWrapper />,
-                content: 'Cody',
-                variant: navLinkVariant,
-            }}
-            routeMatch={routeMatch}
-            items={[
-                {
-                    path: isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.CodyDashboard,
-                    content: 'Dashboard',
-                },
-                {
-                    path: PageRoutes.CodyChat,
-                    content: 'Web Chat',
-                },
-            ]}
-            name="cody"
-            __testing__isOpen={__testing__isOpen}
-        />
-    )
+    ) : null
 
-    let prioritizedLinks: JSX.Element[] = [searchNavigation, codyNavigation].filter(isDefined)
-
-    if (!window.context?.codeSearchEnabledOnInstance) {
-        // This should be cheap considering there will only be two items in the array.
-        prioritizedLinks = prioritizedLinks.reverse()
-    }
-
+    const prioritizedLinks = (
+        window.context?.codeSearchEnabledOnInstance ? [searchItem, codyItem] : [codyItem, searchItem]
+    ).filter(isDefined)
     return (
         <NavGroup ref={navbarReference} className={classNames(className, styles.list)}>
             {prioritizedLinks}
@@ -408,6 +385,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
                     </NavLink>
                 </NavItem>
             )}
+            {toolsItem}
             {isSourcegraphDotCom && (
                 <NavItem>
                     <NavLink variant={navLinkVariant} to="https://sourcegraph.com" external={true}>
