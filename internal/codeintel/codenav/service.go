@@ -719,12 +719,15 @@ type firstPassResult[U any] struct {
 // This is done by consulting the codeintel_scip_document_lookup table
 // in a single query.
 //
-// The skipDBCheck function avoids consulting the database for certain uploads.
-// If the return value is true, then the upload is included in the output slice.
-// Otherwise, the upload is included in the output slice iff the database
-// contains the (uploadID, path) pair.
+// Params:
+//   - If skipDBCheck returns true, then the upload is included in the output slice.
+//     Otherwise, the upload is included in the output slice iff the database
+//     contains the (uploadID, path) pair.
 //
-// The order of the returned slice matches the order of candidates.
+// Post-conditions:
+//   - The order of the returned slice matches the order of candidates.
+//   - Even if there is an error consulting the database, the candidates for
+//     which skipDBCheck was true will be included in the returned slice.
 func filterUploadsImpl[U core.UploadLike](
 	ctx context.Context,
 	lsifstore lsifstore.LsifStore,
