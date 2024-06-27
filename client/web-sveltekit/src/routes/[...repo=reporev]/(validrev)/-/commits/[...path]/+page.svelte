@@ -9,9 +9,8 @@
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
-    import Button from '$lib/wildcard/Button.svelte'
 
-    import RepositoryRevPicker from '../../../(code)/RepositoryRevPicker.svelte'
+    import RepositoryRevPicker from '../../../RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
@@ -67,11 +66,10 @@
 </svelte:head>
 
 <h2>
-    Commits
+    Commit History
     {#if data.path}
         in <code>{data.path}</code>
     {/if}
-    at
     <RepositoryRevPicker
         repoURL={data.repoURL}
         revision={data.revision}

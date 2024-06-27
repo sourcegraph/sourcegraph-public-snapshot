@@ -26,8 +26,6 @@
 </script>
 
 <script lang="ts">
-    import copy from 'copy-to-clipboard'
-
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -40,7 +38,7 @@
     import ButtonGroup from '$lib/wildcard/ButtonGroup.svelte'
     import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import type { ResolvedRevision } from '../../+layout'
+    import type { ResolvedRevision } from '../+layout'
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'

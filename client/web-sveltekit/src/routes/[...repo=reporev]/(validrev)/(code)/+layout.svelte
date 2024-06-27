@@ -57,12 +57,13 @@
     import { getButtonClassName } from '$lib/wildcard/Button'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
+    import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
+
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import ReferencePanel from './ReferencePanel.svelte'
-    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
 
     export let data: LayoutData
 
