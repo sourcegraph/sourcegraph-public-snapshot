@@ -1200,6 +1200,7 @@ This command supports completions on services and environments.
 		{
 			Name:   "gh-actions",
 			Hidden: true,
+			Usage:  "Helper commands for GitHub Actions",
 			Subcommands: []*cli.Command{
 				{
 					Name:  "subscription-matrix",
