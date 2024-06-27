@@ -69,23 +69,12 @@ func (s *store) FindDocumentIDs(ctx context.Context, uploadIDToLookupPath map[in
 	}
 
 	finalQuery := sqlf.Sprintf(findDocumentIDsQuery, sqlf.Join(searchTuples, ","))
-	type idPair struct {
-		uploadID   int32
-		documentID int64
-	}
-	scanner := basestore.NewSliceScanner(func(dbs dbutil.Scanner) (idPair idPair, err error) {
-		err = dbs.Scan(&idPair.uploadID, &idPair.documentID)
-		return idPair, err
+
+	scanner := basestore.NewMapScanner(func(dbs dbutil.Scanner) (uploadID int, documentID int, err error) {
+		err = dbs.Scan(&uploadID, &documentID)
+		return uploadID, documentID, err
 	})
-	idPairs, err := scanner(s.db.Query(ctx, finalQuery))
-	if err != nil {
-		return nil, err
-	}
-	uploadIDToDocumentID = make(map[int]int, len(idPairs))
-	for _, idPair := range idPairs {
-		uploadIDToDocumentID[int(idPair.uploadID)] = int(idPair.documentID)
-	}
-	return uploadIDToDocumentID, nil
+	return scanner(s.db.Query(ctx, finalQuery))
 }
 
 const findDocumentIDsQuery = `
