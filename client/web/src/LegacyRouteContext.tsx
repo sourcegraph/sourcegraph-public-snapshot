@@ -90,7 +90,7 @@ export interface LegacyLayoutRouteContext
         StaticLegacyRouteContext {}
 
 interface LegacyRouteProps {
-    render: (props: LegacyLayoutRouteContext) => JSX.Element
+    render: (props: LegacyLayoutRouteContext) => JSX.Element | null
     condition?: (props: LegacyLayoutRouteContext) => boolean
 }
 

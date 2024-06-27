@@ -14,6 +14,8 @@ const CodySwitchAccountPage = lazyComponent(
 )
 const CodyDashboardPage = lazyComponent(() => import('./dashboard/CodyDashboardPage'), 'CodyDashboardPage')
 
+export const CODY_MARKETING_PAGE_URL = 'https://sourcegraph.com/cody'
+
 /**
  * Use {@link codyProRoutes} for Cody PLG routes.
  */
@@ -22,12 +24,13 @@ export const codyRoutes: RouteObject[] = [
         path: PageRoutes.CodyRedirectToMarketingOrDashboard,
         element: (
             <LegacyRoute
-                render={({ isSourcegraphDotCom }) => (
-                    <Navigate
-                        to={isSourcegraphDotCom ? 'https://sourcegraph.com/cody' : PageRoutes.CodyDashboard}
-                        replace={true}
-                    />
-                )}
+                render={({ isSourcegraphDotCom }) => {
+                    if (isSourcegraphDotCom) {
+                        window.location.href = CODY_MARKETING_PAGE_URL
+                        return null
+                    }
+                    return <Navigate to={PageRoutes.CodyDashboard} replace={true} />
+                }}
                 condition={() => window.context?.codyEnabledOnInstance}
             />
         ),
