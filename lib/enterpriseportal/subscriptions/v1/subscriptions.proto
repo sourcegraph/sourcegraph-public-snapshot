@@ -68,7 +68,8 @@ service SubscriptionsService {
     // optional idempotency in the future.
   }
 
-  // UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+  // UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+  // membership in an authoritative manner.
   rpc UpdateEnterpriseSubscriptionMembership(UpdateEnterpriseSubscriptionMembershipRequest) returns (UpdateEnterpriseSubscriptionMembershipResponse) {
     option idempotency_level = IDEMPOTENT;
   }
@@ -111,14 +112,6 @@ message EnterpriseSubscription {
   }
   // Salesforce details associated with this subscription.
   SalesforceMetadata salesforce = 5;
-}
-
-// EnterpriseSubscription represents a Sourcegraph Enterprise subscription member.
-message EnterpriseSubscriptionMember {
-  // The SAMS account ID of the member.
-  string sams_account_id = 1;
-  // The role of the member.
-  string role = 2;
 }
 
 // EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
@@ -376,7 +369,8 @@ message EnterpriseSubscriptionMembership {
   string instance_domain = 2;
   // The SAMS account ID of the member.
   string member_sams_account_id = 3;
-  // The roles of the member.
+  // The roles of the member. The roles provided are authoritative - all roles
+  // not on the list are revoked.
   repeated Role member_roles = 4;
 }
 
@@ -394,7 +388,7 @@ message UpdateEnterpriseSubscriptionMembershipResponse {}
 // Role represents a role that can be granted to a user.
 enum Role {
   ROLE_UNSPECIFIED = 0;
-  ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN = 1 [deprecated = true];
+  reserved 1; // discontinued value
   ROLE_SUBSCRIPTION_CUSTOMER_ADMIN = 2;
 }
 

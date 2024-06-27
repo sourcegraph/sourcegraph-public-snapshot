@@ -106,7 +106,8 @@ type SubscriptionsServiceClient interface {
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
-	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
 	UpdateEnterpriseSubscriptionMembership(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error)
 }
 
@@ -282,7 +283,8 @@ type SubscriptionsServiceHandler interface {
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
-	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
 	UpdateEnterpriseSubscriptionMembership(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error)
 }
 
