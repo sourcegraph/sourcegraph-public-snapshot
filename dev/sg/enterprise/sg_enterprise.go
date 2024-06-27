@@ -222,7 +222,11 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 			Name:      "set-instance-domain",
 			Usage:     "Assign an instance domain to a subscription",
 			ArgsUsage: "<subscription ID> <instance domain>",
-			Flags:     clientFlags,
+			Flags: append(clientFlags,
+				&cli.BoolFlag{
+					Name:  "auto-approve",
+					Usage: "Skip confirmation prompts",
+				}),
 			Action: func(c *cli.Context) error {
 				client := newSubscriptionsClient(c, scopeWriteSubscriptions)
 				s := &subscriptionsv1.EnterpriseSubscription{
@@ -235,7 +239,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				if !strings.HasPrefix(s.Id, subscriptionsv1.EnterpriseSubscriptionIDPrefix) {
 					return errors.Newf("subscription ID must start with %q", subscriptionsv1.EnterpriseSubscriptionIDPrefix)
 				}
-				if s.InstanceDomain == "" {
+				if s.InstanceDomain == "" && !c.Bool("auto-approve") {
 					var res string
 					ok, err := std.PromptAndScan(std.Out, "No instance domain provided; the assigned domain will be removed, are you sure? (y/N) ", &res)
 					if err != nil {
@@ -297,6 +301,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 							slices.Sort(keys)
 							return keys
 						}(), ", ")),
+				},
+				&cli.BoolFlag{
+					Name:  "auto-approve",
+					Usage: "Skip confirmation prompts",
 				}),
 			Action: func(c *cli.Context) error {
 				ctx := context.Background()
@@ -329,7 +337,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 						return errors.Wrap(err, "normalize instance domain")
 					}
 				}
-				if len(roles) == 0 {
+				if len(roles) == 0 && !c.Bool("auto-approve") {
 					var res string
 					ok, err := std.PromptAndScan(std.Out, "No roles provided; all roles will be removed, are you sure? (y/N) ", &res)
 					if err != nil {
