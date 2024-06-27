@@ -45,7 +45,7 @@ func TestIsAllowed(t *testing.T) {
 			// This feature's action is defined as a wildcard(*) in the "IsAllowed" check's list of known events
 			event: &v1.Event{
 				Feature: "cody.completion",
-				Action:  "Accepted",
+				Action:  "accepted",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
@@ -221,7 +221,6 @@ func TestEventTypesRedact(t *testing.T) {
 					},
 				}}
 			mode := allowedTypes.Redact(ev)
-
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
 
 			// assert that only the allowlisted privateMetadata key (foo) has a value
