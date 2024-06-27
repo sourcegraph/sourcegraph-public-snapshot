@@ -194,13 +194,15 @@ func TestEventTypesRedact(t *testing.T) {
 			assert.Equal(t, redactAllSensitive, mode)
 			assert.Nil(t, ev.Parameters.PrivateMetadata)
 		})
-		t.Run("allowlisted, with wildcard(*) action match", func(t *testing.T) {
+		t.Run("allowlisted with wildcard(*) action", func(t *testing.T) {
 			allowedTypes := eventTypes(EventType{
 				Feature:                    "example",
 				Action:                     "*",
 				AllowedPrivateMetadataKeys: []string{"foo"},
 			})
 			ev := &v1.Event{
+				Feature: "example",
+				Action:  "randomAction",
 				Parameters: &v1.EventParameters{
 					PrivateMetadata: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -220,9 +222,11 @@ func TestEventTypesRedact(t *testing.T) {
 			mode := allowedTypes.Redact(ev)
 
 			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
-			// assert the values are still there for privateMetadata
+
+			// assert that only the allowlisted privateMetadata key (foo) has a value
 			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
-			assert.Nil(t, ev.Parameters.PrivateMetadata.Fields["bar"].GetStringValue())
+			assert.Nil(t, ev.Parameters.PrivateMetadata.Fields["bar"])
+
 		})
 	})
 }
