@@ -23,27 +23,6 @@ query LastCommitQuery($repoName: String!, $revspec: String!, $filePath: String!)
     }
 }
 
-query RepositoryGitRefs($repoName: String!, $query: String, $type: GitRefType!) {
-    repository(name: $repoName) {
-        ...RepositoryGitRefs
-    }
-}
-
-query RepositoryGitCommits($repoName: String!, $query: String!, $revision: String!) {
-    repository(name: $repoName) {
-        commitByHash: commit(rev: $query) {
-            ...RevPickerGitCommit
-        }
-        ancestorCommits: commit(rev: $revision) {
-            ancestors(first: 15, query: $query) {
-                nodes {
-                    ...RevPickerGitCommit
-                }
-            }
-        }
-    }
-}
-
 fragment GitHistory_HistoryConnection on GitCommitConnection {
     ...HistoryPanel_HistoryConnection
     pageInfo {
