@@ -11,12 +11,14 @@
 (invoke
     receiver: (variable) @name
     (symbol) @descriptor.type @kind.struct
-    (#eq? @name "def_slotted_exemplar"))
+    (#eq? @name "def_slotted_exemplar")
+    (#transform! ":(.*)" "$1"))
 
 (invoke
     receiver: (variable) @name
     (symbol) @descriptor.type @kind.class
-    (#eq? @name "def_mixin"))
+    (#eq? @name "def_mixin")
+    (#transform! ":(.*)" "$1"))
 
 (method
     exemplarname: (_) @descriptor.type
