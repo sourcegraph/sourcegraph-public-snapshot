@@ -3,15 +3,15 @@ import React, { type MouseEvent, type KeyboardEvent, useCallback } from 'react'
 import classNames from 'classnames'
 import type * as H from 'history'
 import type { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
 import type { HoverMerged } from '@sourcegraph/client-api'
 import type { Hoverifier } from '@sourcegraph/codeintellify'
 import { SourcegraphURL } from '@sourcegraph/common'
 import type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import type { MatchGroupMatch } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { CodeExcerpt } from '@sourcegraph/branded/src/search-ui/components'
 import type { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import {
     type ContentMatch,
@@ -24,30 +24,9 @@ import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code } from '@sourcegraph/wildcard'
 
-import type { HighlightLineRange } from '../../../graphql-operations'
-import { CodeExcerpt } from '../components/CodeExcerpt'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 import styles from './FileMatchChildren.module.scss'
-
-export interface MatchGroup {
-    blobLines?: string[]
-
-    // The matches in this group to display.
-    matches: MatchGroupMatch[]
-
-    // The 1-based position of where the first match in the group.
-    position: {
-        line: number
-        character: number
-    }
-
-    // The 0-based start line of the group (inclusive.)
-    startLine: number
-
-    // The 0-based end line of the group (exclusive.)
-    endLine: number
-}
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location?: H.Location
@@ -163,43 +142,14 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
+    const { result, grouped } = props
+
+    console.log('FILE_MATCH', { result, grouped, })
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
-    const fetchHighlightedFileRangeLines = React.useCallback(
-        (startLine: number, endLine: number) => {
-            const startTime = Date.now()
-            return fetchHighlightedFileLineRanges(
-                {
-                    repoName: result.repository,
-                    commitID: result.commit || '',
-                    filePath: result.path,
-                    disableTimeout: false,
-                    ranges: grouped.map(
-                        (group): HighlightLineRange => ({
-                            startLine: group.startLine,
-                            endLine: group.endLine,
-                        })
-                    ),
-                },
-                false
-            ).pipe(
-                map(lines => {
-                    telemetryService.log(
-                        'search.latencies.frontend.code-load',
-                        { durationMs: Date.now() - startTime },
-                        { durationMs: Date.now() - startTime }
-                    )
-                    return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-                })
-            )
-        },
-        [result, fetchHighlightedFileLineRanges, grouped, telemetryService]
-    )
-
     const createCodeExcerptLink = (group: MatchGroup): string =>
-        SourcegraphURL.from(getFileMatchUrl(result)).setLineRange(group.position).toString()
+        SourcegraphURL.from(getFileMatchUrl(result)).setLineRange({ line: group.startLine, character: group.endLine }).toString()
 
     /**
      * This handler implements the logic to simulate the click/keyboard
@@ -285,9 +235,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 <div>
                     {grouped.map((group, index) => (
                         <div
-                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
-                                group.position.character
-                            }`}
+                            key={`linematch:${getFileMatchUrl(result)}${group.startLine}:${group.endLine}`}
                             className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
                             <div
@@ -299,31 +247,42 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                 )}
                                 onClick={event =>
                                     navigateToFile(event, {
-                                        line: group.position.line,
-                                        character: group.position.character,
+                                        line: group.startLine,
+                                        character: group.endLine,
                                     })
                                 }
                                 onMouseUp={navigateToFileOnMiddleMouseButtonClick}
                                 onKeyDown={event =>
                                     navigateToFile(event, {
-                                        line: group.position.line,
-                                        character: group.position.character,
+                                        line: group.startLine,
+                                        character: group.endLine,
                                     })
                                 }
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
                             >
+
                                 <CodeExcerpt
                                     repoName={result.repository}
-                                    commitID={result.commit || ''}
+                                    commitID={result.commit ?? ''}
                                     filePath={result.path}
                                     startLine={group.startLine}
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
-                                    fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                    blobLines={group.blobLines}
+                                    plaintextLines={group.plaintextLines}
+                                    highlightedLines={group.highlightedHTMLRows}
                                 />
+                                {/* <CodeExcerpt */}
+                                {/*     repoName={result.repository} */}
+                                {/*     commitID={result.commit || ''} */}
+                                {/*     filePath={result.path} */}
+                                {/*     startLine={group.startLine} */}
+                                {/*     endLine={group.endLine} */}
+                                {/*     highlightRanges={group.matches} */}
+                                {/*     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines} */}
+                                {/*     blobLines={group.blobLines} */}
+                                {/* /> */}
                             </div>
                         </div>
                     ))}

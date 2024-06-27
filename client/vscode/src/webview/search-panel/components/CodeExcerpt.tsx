@@ -110,16 +110,16 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     }, [blobLines, endLine, fetchPlainTextFileRangeLines, isVisible, startLine])
 
     // Get the syntax highlighted blob lines
-    useEffect(() => {
-        let subscription: Subscription | undefined
-        if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
-            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
-                setHighlightedBlobLinesOrError(blobLinesOrError)
-            })
-        }
-        return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
+    // useEffect(() => {
+    //     let subscription: Subscription | undefined
+    //     if (isVisible) {
+    //         const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
+    //         subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
+    //             setHighlightedBlobLinesOrError(blobLinesOrError)
+    //         })
+    //     }
+    //     return () => subscription?.unsubscribe()
+    // }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches
     useLayoutEffect(() => {

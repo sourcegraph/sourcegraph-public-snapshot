@@ -56,6 +56,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                 caseSensitive,
                 patternType,
                 searchMode,
+                chunkMatches: true,
                 version: LATEST_VERSION,
                 trace: undefined,
             })
