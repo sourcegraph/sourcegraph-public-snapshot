@@ -85,7 +85,12 @@
             </button>
 
             <CopyButton value={revisionLabel}>
-                <button let:handleCopy on:click={() => handleCopy()} class="{buttonClass} copy-button hoverable-button">
+                <button
+                    slot="custom"
+                    let:handleCopy
+                    on:click={() => handleCopy()}
+                    class="{buttonClass} copy-button hoverable-button"
+                >
                     <Icon icon={ILucideCopy} aria-hidden="true" --icon-size="1em" />
                 </button>
             </CopyButton>

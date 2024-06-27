@@ -22,7 +22,7 @@
 
 <span class="copy-button">
     <Tooltip {tooltip} placement="bottom">
-        <slot {handleCopy}>
+        <slot name="custom" {handleCopy}>
             <Button on:click={handleCopy} variant="icon" size="sm" aria-label={label}>
                 <Icon inline icon={ILucideCopy} aria-hidden />
             </Button>
