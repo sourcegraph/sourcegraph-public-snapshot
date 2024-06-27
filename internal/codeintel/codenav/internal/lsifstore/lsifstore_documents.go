@@ -63,12 +63,12 @@ func (s *store) FindDocumentIDs(ctx context.Context, uploadIDToLookupPath map[in
 		return nil, nil
 	}
 
-	queries := []*sqlf.Query{}
+	searchTuples := []*sqlf.Query{}
 	for uploadID, path := range uploadIDToLookupPath {
-		queries = append(queries, sqlf.Sprintf("(%d, %s)", uploadID, path.RawValue()))
+		searchTuples = append(searchTuples, sqlf.Sprintf("(%d, %s)", uploadID, path.RawValue()))
 	}
 
-	finalQuery := sqlf.Sprintf(findDocumentIDsQuery, sqlf.Join(queries, ","))
+	finalQuery := sqlf.Sprintf(findDocumentIDsQuery, sqlf.Join(searchTuples, ","))
 	type idPair struct {
 		uploadID   int32
 		documentID int64
