@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 
-import { Navigate, useNavigate, type RouteObject } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { codyProRoutes } from './cody/codyProRoutes'
+import { codyRoutes } from './cody/codyRoutes'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { LegacyRoute, type LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
@@ -60,13 +61,6 @@ const SearchContextPage = lazyComponent(
 )
 const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsellPage'), 'SearchUpsellPage')
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
-const CodyChatPage = lazyComponent(() => import('./cody/chat/CodyChatPage'), 'CodyChatPage')
-const CodySwitchAccountPage = lazyComponent(
-    () => import('./cody/switch-account/CodySwitchAccountPage'),
-    'CodySwitchAccountPage'
-)
-const CodyUpsellPage = lazyComponent(() => import('./cody/upsell/CodyUpsellPage'), 'CodyUpsellPage')
-const CodyDashboardPage = lazyComponent(() => import('./cody/dashboard/CodyDashboardPage'), 'CodyDashboardPage')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
@@ -153,8 +147,8 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalCodeMonitoringArea {...props} />}
-                condition={({ isSourcegraphDotCom, licenseFeatures }) =>
-                    !isSourcegraphDotCom && licenseFeatures.isCodeSearchEnabled
+                condition={({ isSourcegraphDotCom }) =>
+                    !isSourcegraphDotCom && window.context?.codeSearchEnabledOnInstance
                 }
             />
         ),
@@ -190,7 +184,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SearchContextsListPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },
@@ -199,7 +193,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CreateSearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },
@@ -208,7 +202,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <EditSearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },
@@ -217,7 +211,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <SearchContextPage {...props} />}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },
@@ -232,7 +226,7 @@ export const routes: RouteObject[] = [
                 render={props => (
                     <GlobalNotebooksArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
     },
@@ -321,61 +315,9 @@ export const routes: RouteObject[] = [
         path: PageRoutes.Debug,
         element: <PassThroughToServer />,
     },
-    // TODO: [TEMPORARY] remove this redirect route when the marketing page is added.
-    {
-        path: `${PageRoutes.Cody}/*`,
-        element: (
-            <LegacyRoute
-                render={() => {
-                    const chatID = window.location.pathname.split('/').pop()
-                    const navigate = useNavigate()
-
-                    useEffect(() => {
-                        navigate(`/cody/chat/${chatID}`)
-                    }, [navigate, chatID])
-
-                    return <div />
-                }}
-                condition={({ licenseFeatures }) =>
-                    !window.location.pathname.startsWith('/cody/chat') && licenseFeatures.isCodyEnabled
-                }
-            />
-        ),
-    },
-    {
-        path: PageRoutes.CodyChat + '/*',
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
-                        <CodyChatPage
-                            {...props}
-                            context={window.context}
-                            telemetryRecorder={props.platformContext.telemetryRecorder}
-                        />
-                    </CodyIgnoreProvider>
-                )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
-            />
-        ),
-    },
-    {
-        path: PageRoutes.CodySwitchAccount,
-        element: (
-            <LegacyRoute
-                render={props => (
-                    <CodySwitchAccountPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
-                )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodyEnabled}
-            />
-        ),
-    },
     ...codyProRoutes,
+    ...codyRoutes,
     ...communitySearchContextsRoutes,
-    {
-        path: PageRoutes.Cody,
-        element: <LegacyRoute render={props => <CodyDashboardOrUpsellPage {...props} />} />,
-    },
     // this should be the last route to be regustered because it's a catch all route
     // when the instance has the code search feature.
     {
@@ -392,7 +334,7 @@ export const routes: RouteObject[] = [
                         </CodySidebarStoreProvider>
                     </CodyIgnoreProvider>
                 )}
-                condition={({ licenseFeatures }) => licenseFeatures.isCodeSearchEnabled}
+                condition={() => window.context?.codeSearchEnabledOnInstance}
             />
         ),
         // In RR6, the useMatches hook will only give you the location that is matched
@@ -404,17 +346,9 @@ export const routes: RouteObject[] = [
 ]
 
 function SearchPageOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    const { isCodeSearchEnabled } = props.licenseFeatures
-    if (!isCodeSearchEnabled) {
-        return <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
-    }
-    return <SearchPageWrapper {...props} />
-}
-
-function CodyDashboardOrUpsellPage(props: LegacyLayoutRouteContext): JSX.Element {
-    const { isCodyEnabled } = props.licenseFeatures
-    if (!isCodyEnabled) {
-        return <CodyUpsellPage />
-    }
-    return <CodyDashboardPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+    return window.context?.codeSearchEnabledOnInstance ? (
+        <SearchPageWrapper {...props} />
+    ) : (
+        <SearchUpsellPage telemetryRecorder={props.platformContext.telemetryRecorder} />
+    )
 }

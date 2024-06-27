@@ -37,6 +37,9 @@ var repoRelPath = core.NewRepoRelPathUnchecked
 func TestRanges(t *testing.T) {
 	mockCodeNavService := NewMockCodeNavService()
 
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockCodeNavService.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
+
 	mockRequestState := codenav.RequestState{
 		RepositoryID: 1,
 		Commit:       "deadbeef1",

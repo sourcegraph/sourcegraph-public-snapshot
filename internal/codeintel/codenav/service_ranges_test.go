@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
@@ -51,13 +52,16 @@ func TestRanges(t *testing.T) {
 	mockSearchClient := client.NewMockSearchClient()
 	hunkCache, _ := NewHunkCache(50)
 
+	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
+	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
+
 	// Init service
 	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef1", Root: "sub1/", RepositoryID: 42},
 		{ID: 51, Commit: "deadbeef1", Root: "sub2/", RepositoryID: 42},

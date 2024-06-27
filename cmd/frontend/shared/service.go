@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 
-	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 )

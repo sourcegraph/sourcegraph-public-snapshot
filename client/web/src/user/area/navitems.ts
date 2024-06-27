@@ -22,7 +22,8 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister }, license }) => viewerCanAdminister && license.isCodeSearchEnabled,
+        condition: ({ user: { viewerCanAdminister } }) =>
+            viewerCanAdminister && window.context?.codeSearchEnabledOnInstance,
     },
     ...namespaceAreaHeaderNavItems,
 ]

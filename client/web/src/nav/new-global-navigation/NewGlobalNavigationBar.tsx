@@ -17,6 +17,7 @@ import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from 
 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
+import { CodyProRoutes } from '../../cody/codyProRoutes'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
@@ -49,7 +50,11 @@ interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
  * New experimental global navigation bar with inline search bar and
  * dynamic navigation items.
  */
-export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
+export const NewGlobalNavigationBar: FC<
+    NewGlobalNavigationBar & {
+        __testing__initialSideMenuOpen?: boolean
+    }
+> = props => {
     const {
         isSourcegraphDotCom,
         notebooksEnabled,
@@ -63,11 +68,12 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         showFeedbackModal,
         telemetryService,
         telemetryRecorder,
+        __testing__initialSideMenuOpen,
     } = props
 
     const isLightTheme = useIsLightTheme()
     const [params] = useSearchParams()
-    const [isSideMenuOpen, setSideMenuOpen] = useState(false)
+    const [isSideMenuOpen, setSideMenuOpen] = useState(__testing__initialSideMenuOpen ?? false)
     const routeMatch = useRoutesMatch(props.routes)
 
     // Features enablement flags and conditions
@@ -146,7 +152,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     showBatchChanges={showBatchChanges}
                     showCodeInsights={showCodeInsights}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
                     onClose={() => setSideMenuOpen(false)}
                 />
             )}
@@ -156,7 +161,13 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
 
 type NavigationSearchBoxState = Pick<
     SearchQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+    | 'queryState'
+    | 'setQueryState'
+    | 'submitSearch'
+    | 'searchCaseSensitivity'
+    | 'searchPatternType'
+    | 'defaultPatternType'
+    | 'searchMode'
 >
 
 /**
@@ -170,6 +181,7 @@ const selectQueryState = (state: SearchQueryState): NavigationSearchBoxState => 
     submitSearch: state.submitSearch,
     searchCaseSensitivity: state.searchCaseSensitivity,
     searchPatternType: state.searchPatternType,
+    defaultPatternType: state.defaultPatternType,
     searchMode: state.searchMode,
 })
 
@@ -191,8 +203,15 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
     const location = useLocation()
     const showKeywordSearchToggle = useKeywordSearch()
 
-    const { searchMode, queryState, searchPatternType, searchCaseSensitivity, setQueryState, submitSearch } =
-        useNavbarQueryState(selectQueryState, shallow)
+    const {
+        searchMode,
+        queryState,
+        searchPatternType,
+        defaultPatternType,
+        searchCaseSensitivity,
+        setQueryState,
+        submitSearch,
+    } = useNavbarQueryState(selectQueryState, shallow)
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -231,6 +250,7 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
                 <Toggles
                     searchMode={searchMode}
                     patternType={searchPatternType}
+                    defaultPatternType={defaultPatternType}
                     caseSensitive={searchCaseSensitivity}
                     navbarSearchQuery={queryState.query}
                     structuralSearchDisabled={structuralSearchDisabled}
@@ -296,7 +316,6 @@ interface SidebarNavigationProps {
     showBatchChanges: boolean
     showCodeInsights: boolean
     onClose: () => void
-    authenticatedUser: AuthenticatedUser | null
 }
 
 const SidebarNavigation: FC<SidebarNavigationProps> = props => {
@@ -308,7 +327,6 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
         showBatchChanges,
         showCodeInsights,
         isSourcegraphDotCom,
-        authenticatedUser,
         onClose,
     } = props
 
@@ -367,11 +385,23 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         </ul>
                     </li>
 
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
-                        Cody
-                    </NavItemLink>
+                    {window.context?.codyEnabledOnInstance && (
+                        <NavItemLink
+                            url={
+                                isSourcegraphDotCom
+                                    ? window.context.codyEnabledForCurrentUser
+                                        ? CodyProRoutes.Manage
+                                        : PageRoutes.CodyRedirectToMarketingOrDashboard
+                                    : PageRoutes.CodyDashboard
+                            }
+                            icon={CodyLogo}
+                            onClick={handleNavigationClick}
+                        >
+                            Cody
+                        </NavItemLink>
+                    )}
 
-                    {authenticatedUser && (
+                    {window.context?.codyEnabledForCurrentUser && (
                         <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
                             <NavItemLink url={PageRoutes.CodyChat} onClick={handleNavigationClick}>
                                 Web Chat

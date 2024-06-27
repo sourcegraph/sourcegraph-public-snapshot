@@ -1,8 +1,8 @@
-import React, { useMemo, useEffect, useState, useLayoutEffect, useCallback } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { type Location, useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
+import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -11,24 +11,15 @@ import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import {
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Button,
-    Link,
-    ProductStatusBadge,
-    Icon,
-    ButtonLink,
-} from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 
 import {
-    fetchUserCodeMonitors as _fetchUserCodeMonitors,
     fetchCodeMonitors as _fetchCodeMonitors,
+    fetchUserCodeMonitors as _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
@@ -205,10 +196,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                                         }}
                                         className={classNames('nav-link', isActive && 'active')}
                                     >
-                                        <span>
-                                            {title}
-                                            {tab === 'logs' && <ProductStatusBadge status="beta" className="ml-2" />}
-                                        </span>
+                                        <span>{title}</span>
                                     </ButtonLink>
                                 </div>
                             ))}

@@ -206,6 +206,25 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("path match ranges are returned", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:^github.com/sgtest/go-diff$@f935979 type:path file:^\\.travis")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(results.Results) != 1 {
+			t.Fatal("expected 1 result")
+		}
+		pathMatches := results.Results[0].PathMatches
+		if len(pathMatches) != 1 {
+			t.Fatal("expected 1 path match")
+		}
+		pathMatch := pathMatches[0]
+		if pathMatch.Start.Character != 0 || pathMatch.End.Character != 7 {
+			t.Fatal("expected path match to cover range [0, 7)")
+		}
+	})
+
 	t.Run("repo at time", func(t *testing.T) {
 		// Surprisingly, our repo GraphQL resolver for a search result is just
 		// a repo, which does not expose its rev, so GraphQL does not work for this test.
