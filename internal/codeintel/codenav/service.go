@@ -720,6 +720,9 @@ type firstPassResult[U any] struct {
 // in a single query.
 //
 // The skipDBCheck function avoids consulting the database for certain uploads.
+// If the return value is true, then the upload is included in the output slice.
+// Otherwise, the upload is included in the output slice iff the database
+// contains the (uploadID, path) pair.
 //
 // The order of the returned slice matches the order of candidates.
 func filterUploadsImpl[U core.UploadLike](
@@ -735,7 +738,11 @@ func filterUploadsImpl[U core.UploadLike](
 	lookupPaths := map[int]core.UploadRelPath{}
 	for _, upload := range candidates {
 		uploadRelPath := core.NewUploadRelPath(upload, path)
-		results = append(results, firstPassResult[U]{skipDBCheck: skipDBCheck(upload), upload: upload})
+		skipCheck := skipDBCheck(upload)
+		results = append(results, firstPassResult[U]{skipDBCheck: skipCheck, upload: upload})
+		if skipCheck {
+			continue
+		}
 		// We don't have to worry about over-writing because even if an
 		// upload with the same ID is present multiple times, different
 		// copies will have the same Root, so uploadRelPath will be identical.
