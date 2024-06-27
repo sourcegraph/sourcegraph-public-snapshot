@@ -1,6 +1,7 @@
 package modelconfig
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -62,12 +63,6 @@ func validateModel(m types.Model) error {
 	if l := len(m.DisplayName); l < 5 || l > 40 {
 		return errors.Errorf("display name length: %d", l)
 	}
-	// We don't do any validation of the ModelName, as that the
-	// values needed by LLM providers is outside of our control.
-	if !resourceIDRE.MatchString(string(m.ID)) {
-		return errors.New("id format")
-	}
-
 	if err := validateModelRef(m.ModelRef); err != nil {
 		return errors.Wrap(err, "modelref")
 	}
@@ -83,5 +78,147 @@ func validateModel(m types.Model) error {
 	// We intentionally do not validate any of the enum metadata fields, because
 	// older Sourcegraph instances wouldn't be able to recognize any newer values.
 
+	return nil
+}
+
+// ValidateModelConfig validates that the model configuration data expressed is valid.
+func ValidateModelConfig(cfg *types.ModelConfiguration) error {
+	if cfg == nil {
+		return errors.New("no config provided")
+	}
+
+	for _, provider := range cfg.Providers {
+		if err := validateProvider(provider); err != nil {
+			return err
+		}
+	}
+
+	for _, model := range cfg.Models {
+		if err := validateModel(model); err != nil {
+			return err
+		}
+
+		// Verify the model is referencing a known provider.
+		var forKnownProvider bool
+		for _, provider := range cfg.Providers {
+			if strings.HasPrefix(string(model.ModelRef), string(provider.ID)+"::") {
+				forKnownProvider = true
+				break
+			}
+		}
+		if !forKnownProvider {
+			return errors.Errorf("model %q does not match a known provider", model.ModelRef)
+		}
+	}
+
+	isKnownModel := func(mref types.ModelRef) bool {
+		for _, model := range cfg.Models {
+			if model.ModelRef == mref {
+				return true
+			}
+		}
+		return false
+	}
+
+	if !isKnownModel(cfg.DefaultModels.Chat) {
+		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.Chat)
+	}
+	if !isKnownModel(cfg.DefaultModels.CodeCompletion) {
+		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.CodeCompletion)
+	}
+	if !isKnownModel(cfg.DefaultModels.FastChat) {
+		return errors.Errorf("unknown chat model %q", cfg.DefaultModels.FastChat)
+	}
+
+	return nil
+}
+
+// isValidRule returns whether the ModelRef allow/deny list rule is well-formed.
+func isValidRule(rule string) bool {
+	if rule == "" {
+		return false
+	}
+	// Aserisks can only be the first or last character of the rule.
+	for i := 1; i < len(rule)-1; i++ {
+		if rule[i] == '*' {
+			return false
+		}
+	}
+	return true
+}
+
+func verifySourcegraphSiteConfig(sgConfig *types.SourcegraphModelConfig) error {
+	if sgConfig == nil {
+		return nil
+	}
+
+	if endpoint := sgConfig.Endpoint; endpoint != nil {
+		u, err := url.Parse(*endpoint)
+		if err != nil || u.Scheme == "" {
+			return errors.New("invalid endpoint URL")
+		}
+	}
+
+	if modelFilters := sgConfig.ModelFilters; modelFilters != nil {
+		for _, allowRule := range modelFilters.Allow {
+			if !isValidRule(allowRule) {
+				return errors.Errorf("invalid allow list rule: %q", allowRule)
+			}
+		}
+		for _, denyRule := range modelFilters.Deny {
+			if !isValidRule(denyRule) {
+				return errors.Errorf("invalid deny list rule: %q", denyRule)
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateProviderOverrides(overrides []types.ProviderOverride) error {
+	seenProviderIDs := map[types.ProviderID]bool{}
+	for _, override := range overrides {
+		// All provider IDs are unique.
+		if seenProviderIDs[override.ID] {
+			return errors.Errorf("provider %q specified twice", override.ID)
+		}
+		seenProviderIDs[override.ID] = true
+
+		// All provider IDs are valid.
+		if !resourceIDRE.MatchString(string(override.ID)) {
+			return errors.Errorf("invalid provider ID %q", override.ID)
+		}
+	}
+	return nil
+}
+
+func validateModelOverrides(overrides []types.ModelOverride) error {
+	seenModelRefs := map[types.ModelRef]bool{}
+	for _, override := range overrides {
+		// All models have a valid ModelRef.
+		if err := validateModelRef(override.ModelRef); err != nil {
+			return errors.Wrapf(err, "validating model ref %q", override.ModelRef)
+		}
+
+		// All model ID overrides are unique.
+		if seenModelRefs[override.ModelRef] {
+			return errors.Errorf("model %q specified twice", override.ModelRef)
+		}
+		seenModelRefs[override.ModelRef] = true
+	}
+	return nil
+}
+
+// ValidateSiteConfig validates that the site configuration data expressed is valid.
+func ValidateSiteConfig(doc *types.SiteModelConfiguration) error {
+	if err := verifySourcegraphSiteConfig(doc.SourcegraphModelConfig); err != nil {
+		return errors.Wrap(err, "sourcegraph config")
+	}
+	if err := validateProviderOverrides(doc.ProviderOverrides); err != nil {
+		return errors.Wrap(err, "provider overrides")
+	}
+	if err := validateModelOverrides(doc.ModelOverrides); err != nil {
+		return errors.Wrap(err, "model overrides")
+	}
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Tests for various corner cases and regressions.
@@ -124,6 +125,165 @@ func TestEmbeddedModelConfig(t *testing.T) {
 			assert.True(t, isKnownModel(cfg.DefaultModels.Chat))
 			assert.True(t, isKnownModel(cfg.DefaultModels.CodeCompletion))
 			assert.True(t, isKnownModel(cfg.DefaultModels.FastChat))
+		})
+	})
+
+	t.Run("ValidationFn", func(t *testing.T) {
+		cfg := loadModelConfig(t)
+
+		// All of the validation checks in this testsuite should be redundant with
+		// the "official" validation function exported from the package.
+		err := ValidateModelConfig(&cfg)
+		assert.NoError(t, err)
+	})
+}
+
+func TestValidateSiteConfig(t *testing.T) {
+	// getValidSiteConfiguration returns a sophisticated SiteModelConfiguration object
+	// that is valid. So tests can start with something and introduce problems as needed.
+	getValidSiteConfiguration := func() *types.SiteModelConfiguration {
+		return &types.SiteModelConfiguration{
+			SourcegraphModelConfig: &types.SourcegraphModelConfig{
+				PollingInterval: pointers.Ptr("8h"),
+				Endpoint:        pointers.Ptr("https://cody-gateway.sourcegraph.com/current-models.json"),
+				ModelFilters: &types.ModelFilters{
+					StatusFilter: []string{string(types.ModelStatusStable)},
+					Allow:        []string{"openai::*", "anthropic::*"},
+					Deny:         []string{"*-latest"},
+				},
+			},
+
+			ProviderOverrides: []types.ProviderOverride{
+				// BYOK. Supply server-side configuration data for the "openai" provider.
+				{
+					ID: types.ProviderID("opoenai"),
+					ServerSideConfig: &types.ServerSideProviderConfig{
+						AzureOpenAI: &types.AzureOpenAIProviderConfig{
+							AccessToken: "secret",
+							Endpoint:    "https://acmeco-inc-llc.openai.azure.com/ ",
+						},
+					},
+					// Change the defaults for all provider models, those with a ModelRef prefixed
+					// with "anthropic::", to have an extended context window.
+					DefaultModelConfig: &types.DefaultModelConfig{
+						ContextWindow: types.ContextWindow{
+							MaxInputTokens:  100_000,
+							MaxOutputTokens: 10_000,
+						},
+					},
+				},
+				// BYOLLM. Introduce an entirely new ProviderID. None of the Cody Gateway
+				// supplied models will reference this provider ID, but models from this
+				// site config object can.
+				{
+					// Create an "AWS" provider, for serving AWS Titan models.
+					ID: types.ProviderID("aws"),
+					ServerSideConfig: &types.ServerSideProviderConfig{
+						AWSBedrock: &types.AWSBedrockProviderConfig{
+							AccessToken: "AK...",
+							Region:      "us-west-2",
+							Endpoint:    "https://vpce-0000000000-00000000.bedrock-runtime.us-west-2.vpce.amazonaws.com",
+						},
+					},
+					DefaultModelConfig: &types.DefaultModelConfig{
+						Status: types.ModelStatusStable,
+					},
+				},
+			},
+
+			ModelOverrides: []types.ModelOverride{
+				// Add a new LLM model. This will get routed to the overridden "openai" provider.
+				// It uses the same ModelName as GPT 3.5 turbo, but overrides the context window
+				// to have an even larger value than the admin-supplied model default.
+				{
+					ModelRef:     "openai::2024-02-01::gpt-3.5-turbo_extra-turbo",
+					ModelName:    "gpt-3.5-turbo",
+					DisplayName:  "GPT 3.5 Turbo (With Extra Turbo)",
+					Capabilities: []types.ModelCapability{types.ModelCapabilityChat},
+					ContextWindow: types.ContextWindow{
+						MaxInputTokens:  200_000,
+						MaxOutputTokens: 20_000,
+					},
+				},
+				// As an example, this will just replace the DisplayName of an existing
+				// LLM model that we expect to have been provided by Sourcegraph.
+				{
+					ModelRef:    "openai::2024-02-01::gpt-3.5-turbo",
+					DisplayName: "GPT 3.5 Turbo (Not much Turbo)",
+				},
+				// Using BYOLLM, we are introducing a model that will be routed to the
+				// "aws" LLM provider, defined in this site configuration.
+				{
+					ModelRef: "aws::2023-04-20::titan-text-express-v1",
+
+					DisplayName: "Titan Text Express v1",
+					ModelName:   "amazon.titan-text-express-v1",
+
+					Capabilities: []types.ModelCapability{types.ModelCapabilityChat, types.ModelCapabilityAutocomplete},
+					Category:     types.ModelCategoryBalanced,
+					Status:       types.ModelStatusExperimental,
+					Tier:         types.ModelTierEnterprise,
+
+					ContextWindow: types.ContextWindow{
+						MaxInputTokens:  200_000,
+						MaxOutputTokens: 10_000,
+					},
+
+					ServerSideConfig: &types.ServerSideModelConfig{
+						AWSBedrockProvisionedThroughput: &types.AWSBedrockProvisionedThroughput{
+							ARN: "arn:aws:bedrock:us-west-2:012345678901:provisioned-model/xxxxxxxx",
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("SourcegraphModelConfig", func(t *testing.T) {
+		t.Run("Endpoint", func(t *testing.T) {
+			siteConfig := getValidSiteConfiguration()
+			siteConfig.SourcegraphModelConfig.Endpoint = pointers.Ptr("not a valid URL")
+			err := ValidateSiteConfig(siteConfig)
+			assert.ErrorContains(t, err, "sourcegraph config: invalid endpoint URL")
+		})
+		t.Run("AllowDenyList", func(t *testing.T) {
+			// Add a bogus value into the Allow list.
+			{
+				siteConfig := getValidSiteConfiguration()
+				siteConfig.SourcegraphModelConfig.ModelFilters.Allow = []string{
+					"valid", "invalid * because asterisks must be on ends", "valid",
+				}
+				err := ValidateSiteConfig(siteConfig)
+				assert.ErrorContains(t, err, `sourcegraph config: invalid allow list rule: "invalid * because`)
+			}
+			// Add a bogus value into the Deny list.
+			{
+				siteConfig := getValidSiteConfiguration()
+				siteConfig.SourcegraphModelConfig.ModelFilters.Deny = []string{
+					"valid", "invalid * because asterisks must be on ends", "valid",
+				}
+				err := ValidateSiteConfig(siteConfig)
+				assert.ErrorContains(t, err, `sourcegraph config: invalid deny list rule: "invalid * because`)
+			}
+		})
+	})
+
+	t.Run("ProviderOverrides", func(t *testing.T) {
+		t.Run("InvalidProviderID", func(t *testing.T) {
+			siteConfig := getValidSiteConfiguration()
+			siteConfig.ProviderOverrides[0].ID = "invalid id"
+
+			err := ValidateSiteConfig(siteConfig)
+			assert.ErrorContains(t, err, `provider overrides: invalid provider ID "invalid id"`)
+		})
+	})
+	t.Run("ModelOverrides", func(t *testing.T) {
+		t.Run("InvalidModelID", func(t *testing.T) {
+			siteConfig := getValidSiteConfiguration()
+			siteConfig.ModelOverrides[0].ModelRef = types.ModelRef("foo/bar")
+
+			err := ValidateSiteConfig(siteConfig)
+			assert.ErrorContains(t, err, `model overrides: validating model ref "foo/bar": modelRef syntax error`)
 		})
 	})
 }

@@ -40,11 +40,10 @@ const (
 )
 
 type Model struct {
-	ID       ModelID  `json:"modelId"`
 	ModelRef ModelRef `json:"modelRef"`
 
 	DisplayName string `json:"displayName"`
-	ModelName   string `json:"string"`
+	ModelName   string `json:"modelName"`
 
 	Capabilities []ModelCapability `json:"capabilities"`
 	Category     ModelCategory     `json:"category"`
