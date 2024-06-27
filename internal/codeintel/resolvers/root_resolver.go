@@ -63,6 +63,9 @@ func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
 		"PreciseIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
 		},
+		CodeGraphDataIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.codenavResolver.CodeGraphDataByID(ctx, id)
+		},
 	}
 }
 
@@ -127,6 +130,10 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArg
 
 func (r *Resolver) CodeGraphData(ctx context.Context, opts *CodeGraphDataOpts) (*[]CodeGraphDataResolver, error) {
 	return r.codenavResolver.CodeGraphData(ctx, opts)
+}
+
+func (r *Resolver) CodeGraphDataByID(ctx context.Context, id graphql.ID) (CodeGraphDataResolver, error) {
+	return r.codenavResolver.CodeGraphDataByID(ctx, id)
 }
 
 func (r *Resolver) UsagesForSymbol(ctx context.Context, args *UsagesForSymbolArgs) (UsageConnectionResolver, error) {

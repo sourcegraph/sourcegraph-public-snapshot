@@ -11,37 +11,19 @@ import (
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
-	client := gitserver.NewMockClient()
-
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, ok, err := adjuster.GetTargetCommitPathFromSourcePath(context.Background(), "deadbeef2", "/foo/bar.go", false)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
-	if !ok {
-		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
-	}
+var mockTranslationBase = translationBase{
+	repo:   &sgtypes.Repo{ID: 50},
+	commit: "deadbeef1",
 }
 
 func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -51,22 +33,15 @@ func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 
 	posIn := shared.Position{Line: 302, Character: 15}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
 	expectedPos := shared.Position{Line: 294, Character: 15}
@@ -82,22 +57,15 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 
 	posIn := shared.Position{Line: 10, Character: 15}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 	if diff := cmp.Diff(posOut, posIn); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -106,7 +74,7 @@ func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -116,22 +84,15 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 
 	posIn := shared.Position{Line: 302, Character: 15}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, true)
+	posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", "foo/bar.go", posIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
 	expectedPos := shared.Position{Line: 294, Character: 15}
@@ -142,7 +103,7 @@ func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef1..deadbeef2", "--", "foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -155,22 +116,15 @@ func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
 	expectedRange := shared.Range{
@@ -192,22 +146,15 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 	if diff := cmp.Diff(rOut, rIn); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
@@ -216,7 +163,7 @@ func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 
 func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	client := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "/foo/bar.go"}
+		expectedArgs := []string{"diff", "--find-renames", "--full-index", "--inter-hunk-context=3", "--no-prefix", "deadbeef2..deadbeef1", "--", "foo/bar.go"}
 		if diff := cmp.Diff(expectedArgs, args); diff != "" {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
@@ -229,22 +176,14 @@ func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	args := &requestArgs{
-		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
-	}
+	args := &mockTranslationBase
 	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
+	rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "foo/bar.go", rIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-
 	if !ok {
 		t.Errorf("expected translation to succeed")
-	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
 	expectedRange := shared.Range{

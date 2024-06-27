@@ -18,39 +18,58 @@ import (
 // GitTreeTranslator translates a position within a git tree at a source commit into the
 // equivalent position in a target commit. The git tree translator instance carries
 // along with it the source commit.
+//
+// NOTE(id: codenav-file-rename-detection) At the moment, this code cannot handle positions/ranges
+// going from one file to another (notice that the return values don't contain any updated
+// path), because there is no way in gitserver to get rename detection without requesting
+// a diff of the full repo (which may be quite large).
+//
+// Additionally, it's not clear if reusing the Document at path P1 in an older commit,
+// at a different path P2 in a newer commit is even reliably useful, since symbol names
+// may change based on the file name or directory name depending on the language.
+//
+// TODO(id: GitTreeTranslator-cleanup): Instead of storing the translationBase, we should
+// take that as an argument. Specifically, use a struct with two fields, AncestorCommit
+// and DescendantCommit, and avoid Source/Target terminology (which becomes confusing to
+// understand with the reverse parameter). Instead, we can use an enum MappingDirection
+// FromDescendantToAncestor | FromAncestorToDescendant if really needed (to avoid
+// inconsistency when modifying the APIs below, as they take different values for 'reverse'
+// in production).
 type GitTreeTranslator interface {
-	// GetTargetCommitPathFromSourcePath translates the given path from the source commit into the given target
-	// commit. If revese is true, then the source and target commits are swapped.
-	GetTargetCommitPathFromSourcePath(ctx context.Context, commit, path string, reverse bool) (string, bool, error)
-	// AdjustPath
-
 	// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-	// target commit. The target commit's path and position are returned, along with a boolean flag
-	// indicating that the translation was successful. If revese is true, then the source and
+	// target commit. The target commit's position is returned, along with a boolean flag
+	// indicating that the translation was successful. If reverse is true, then the source and
 	// target commits are swapped.
-	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error)
-	// AdjustPosition
+	//
+	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always false in production,
+	// let's remove the extra parameter.
+	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error)
 
 	// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-	// commit. The target commit's path and range are returned, along with a boolean flag indicating
-	// that the translation was successful. If revese is true, then the source and target commits
+	// commit. The target commit's range is returned, along with a boolean flag indicating
+	// that the translation was successful. If reverse is true, then the source and target commits
 	// are swapped.
-	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error)
+	//
+	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always true in production,
+	// let's remove the extra parameter.
+	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error)
 }
 
 type gitTreeTranslator struct {
-	client           gitserver.Client
-	localRequestArgs *requestArgs
-	hunkCache        HunkCache
+	client    gitserver.Client
+	base      *translationBase
+	hunkCache HunkCache
 }
 
-type requestArgs struct {
+// TODO(id: GitTreeTranslator-cleanup): Strictly speaking, calling this translationBase is not
+// quite correct as things can flip around based on the reverse parameter. So get rid
+// of the commit field and pass that as a parameter for increased clarity at call-sites.
+type translationBase struct {
 	repo   *sgtypes.Repo
 	commit string
-	path   string
 }
 
-func (r *requestArgs) GetRepoID() int {
+func (r *translationBase) GetRepoID() int {
 	return int(r.repo.ID)
 }
 
@@ -75,47 +94,40 @@ func NewHunkCache(size int) (HunkCache, error) {
 }
 
 // NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client gitserver.Client, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
+func NewGitTreeTranslator(client gitserver.Client, base *translationBase, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
-		client:           client,
-		hunkCache:        hunkCache,
-		localRequestArgs: args,
+		client:    client,
+		hunkCache: hunkCache,
+		base:      base,
 	}
-}
-
-// GetTargetCommitPathFromSourcePath translates the given path from the source commit into the given target
-// commit. If revese is true, then the source and target commits are swapped.
-func (g *gitTreeTranslator) GetTargetCommitPathFromSourcePath(ctx context.Context, commit, path string, reverse bool) (string, bool, error) {
-	return path, true, nil
 }
 
 // GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-// target commit. The target commit path and position are returned, along with a boolean flag
-// indicating that the translation was successful. If revese is true, then the source and
+// target commit. The target commit position is returned, along with a boolean flag
+// indicating that the translation was successful. If reverse is true, then the source and
 // target commits are swapped.
-// TODO: No todo just letting me know that I updated path just on this one. Need to do it like that.
-func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, g.localRequestArgs.path, reverse)
+func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error) {
+	hunks, err := g.readCachedHunks(ctx, g.base.repo, g.base.commit, commit, path, reverse)
 	if err != nil {
-		return "", shared.Position{}, false, err
+		return shared.Position{}, false, err
 	}
 
 	commitPosition, ok := translatePosition(hunks, px)
-	return g.localRequestArgs.path, commitPosition, ok, nil
+	return commitPosition, ok, nil
 }
 
 // GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-// commit. The target commit path and range are returned, along with a boolean flag indicating
-// that the translation was successful. If revese is true, then the source and target commits
+// commit. The target commit range is returned, along with a boolean flag indicating
+// that the translation was successful. If reverse is true, then the source and target commits
 // are swapped.
-func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, path, reverse)
+func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error) {
+	hunks, err := g.readCachedHunks(ctx, g.base.repo, g.base.commit, commit, path, reverse)
 	if err != nil {
-		return "", shared.Range{}, false, err
+		return shared.Range{}, false, err
 	}
 
 	commitRange, ok := translateRange(hunks, rx)
-	return path, commitRange, ok, nil
+	return commitRange, ok, nil
 }
 
 // readCachedHunks returns a position-ordered slice of changes (additions or deletions) of

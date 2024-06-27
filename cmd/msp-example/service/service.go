@@ -29,7 +29,7 @@ func (s Service) Version() string { return version.Version() }
 func (s Service) Initialize(
 	ctx context.Context,
 	logger log.Logger,
-	contract runtime.Contract,
+	contract runtime.ServiceContract,
 	config Config,
 ) (background.Routine, error) {
 	logger.Info("starting service")
@@ -42,7 +42,7 @@ func (s Service) Initialize(
 	if !config.StatelessMode {
 		var err error
 
-		if bq, err = bigquery.NewClient(ctx, contract); err != nil {
+		if bq, err = bigquery.NewClient(ctx, contract.Contract); err != nil {
 			return nil, errors.Wrap(err, "bigquery")
 		}
 		if err := bq.Write(ctx, "service.initialized"); err != nil {
@@ -50,7 +50,7 @@ func (s Service) Initialize(
 		}
 		logger.Info("bigquery connection success")
 
-		if rd, err = redis.NewClient(ctx, contract); err != nil {
+		if rd, err = redis.NewClient(ctx, contract.Contract); err != nil {
 			return nil, errors.Wrap(err, "redis")
 		}
 		if err := rd.Ping(ctx); err != nil {
@@ -58,18 +58,17 @@ func (s Service) Initialize(
 		}
 		logger.Info("redis connection success")
 
-		if pg, err = postgresql.NewClient(ctx, contract); err != nil {
+		if pg, err = postgresql.NewClient(ctx, contract.Contract); err != nil {
 			return nil, errors.Wrap(err, "postgresl")
 		}
 		if err := pg.Ping(ctx); err != nil {
 			return nil, errors.Wrap(err, "postgresql.Ping")
 		}
 		logger.Info("postgresql connection success")
-
 	}
 
 	h := http.NewServeMux()
-	if err := httpapi.Register(h, contract, config.HTTPAPI); err != nil {
+	if err := httpapi.Register(h, contract.Contract, config.HTTPAPI); err != nil {
 		return nil, errors.Wrap(err, "httpapi.Register")
 	}
 

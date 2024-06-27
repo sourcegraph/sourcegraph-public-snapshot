@@ -1,0 +1,54 @@
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    height: 100%;
+
+    li {
+        margin-right: 0.5rem;
+    }
+}
+
+.history-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    text-align: left;
+    background: var(--body-bg);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        background: var(--color-bg-1);
+
+        .delete-button {
+            visibility: visible;
+        }
+    }
+
+    &.selected,
+    &.selected:hover {
+        background: var(--color-bg-2);
+    }
+
+    .delete-button {
+        color: var(--icon-color);
+        visibility: hidden;
+    }
+}
+
+.footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 0.75rem 0.5rem 0.75rem 0;
+    background: var(--body-bg);
+    border-top: 1px solid var(--border-color);
+}

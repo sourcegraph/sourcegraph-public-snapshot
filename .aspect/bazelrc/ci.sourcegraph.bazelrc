@@ -59,6 +59,9 @@ test --build_event_binary_file_path_conversion=false
 test --build_event_binary_file_upload_mode=wait_for_upload_complete
 test --build_event_publish_all_actions=true
 
+build --experimental_execution_log_compact_file=execution_log.zstd
+test --experimental_execution_log_compact_file=execution_log.zstd
+
 # These likely perform faster locally than the overhead of pulling/pushing from/to the remote cache,
 # as well as being able to reduce how much we push to the cache
 common --modify_execution_info=CopyDirectory=+no-remote,CopyToDirectory=+no-remote,CopyFile=+no-remote

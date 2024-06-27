@@ -29,6 +29,14 @@
             "pointer": true
           }
         },
+        "newCodyWeb": {
+          "description": "Enables new experimental Cody Web UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "newSearchResultsUI": {
           "description": "Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.",
           "type": "boolean",
@@ -48,14 +56,6 @@
         },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showMultilineSearchConsole": {
-          "description": "Enables the multiline search console at search/console",
           "type": "boolean",
           "default": false,
           "!go": {

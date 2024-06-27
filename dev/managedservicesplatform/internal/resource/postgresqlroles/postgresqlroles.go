@@ -59,7 +59,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	// Operator access: grant restricted read-only permissions, based on
 	// https://github.com/sourcegraph/deploy-sourcegraph-managed/blob/ded74a806bb6d1925cb894a8755ed52db7585a4f/modules/terraform-managed-instance-new/sql.tf#L153-L179
 	for _, db := range config.Databases {
-		_ = grant.NewGrant(scope, id.Group(db).TerraformID("operator_access_service_account_connect_grant"), &grant.GrantConfig{
+		id := id.Group(db)
+		_ = grant.NewGrant(scope, id.TerraformID("operator_access_service_account_connect_grant"), &grant.GrantConfig{
 			Provider:   pgProvider,
 			Database:   &db,
 			Role:       config.CloudSQL.OperatorAccessUser.Name(),
@@ -67,8 +68,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Privileges: pointers.Ptr(pointers.Slice([]string{
 				"CONNECT",
 			})),
+			DependsOn: &config.CloudSQL.Databases,
 		})
-		_ = grant.NewGrant(scope, id.Group(db).TerraformID("operator_access_service_account_table_grant"), &grant.GrantConfig{
+		_ = grant.NewGrant(scope, id.TerraformID("operator_access_service_account_table_grant"), &grant.GrantConfig{
 			Provider: pgProvider,
 			Database: &db,
 			Role:     config.CloudSQL.OperatorAccessUser.Name(),
@@ -80,6 +82,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			Privileges: pointers.Ptr(pointers.Slice([]string{
 				"SELECT",
 			})),
+			DependsOn: &config.CloudSQL.Databases,
 		})
 	}
 

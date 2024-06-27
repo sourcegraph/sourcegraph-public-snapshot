@@ -9,22 +9,23 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // GetPathExists determines if the path exists in the database.
-func (s *store) GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error) {
+func (s *store) GetPathExists(ctx context.Context, bundleID int, path core.UploadRelPath) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.getPathExists.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	exists, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
 		existsQuery,
 		bundleID,
-		path,
+		path.RawValue(),
 	)))
 	return exists, err
 }
@@ -40,17 +41,17 @@ SELECT EXISTS (
 `
 
 // Stencil returns all ranges within a single document.
-func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error) {
+func (s *store) GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) (_ []shared.Range, err error) {
 	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		stencilQuery,
 		bundleID,
-		path,
+		path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, err
@@ -80,10 +81,10 @@ LIMIT 1
 `
 
 // GetRanges returns definition, reference, implementation, and hover data for each range within the given span of lines.
-func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
+func (s *store) GetRanges(ctx context.Context, bundleID int, path core.UploadRelPath, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
 	ctx, _, endObservation := s.operations.getRanges.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
+		attribute.String("path", path.RawValue()),
 		attribute.Int("startLine", startLine),
 		attribute.Int("endLine", endLine),
 	}})
@@ -92,7 +93,7 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		rangesDocumentQuery,
 		bundleID,
-		path,
+		path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, err
@@ -132,7 +133,7 @@ WHERE
 LIMIT 1
 `
 
-func convertSCIPRangesToLocations(ranges []scip.Range, uploadID int, path string) []shared.Location {
+func convertSCIPRangesToLocations(ranges []scip.Range, uploadID int, path core.UploadRelPath) []shared.Location {
 	locations := make([]shared.Location, 0, len(ranges))
 	for _, r := range ranges {
 		locations = append(locations, shared.Location{

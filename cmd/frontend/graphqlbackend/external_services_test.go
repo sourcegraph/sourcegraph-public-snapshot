@@ -1224,10 +1224,9 @@ func TestExternalServiceNamespaces(t *testing.T) {
 	}`
 
 	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
 	}
 
 	id := relay.MarshalID("ExternalServiceNamespace", namespace)
@@ -1515,10 +1514,9 @@ func TestExternalServiceRepositories(t *testing.T) {
 	}`
 
 	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
 	}
 
 	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)

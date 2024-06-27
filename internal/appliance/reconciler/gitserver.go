@@ -67,8 +67,6 @@ func (r *Reconciler) reconcileGitServerStatefulSet(ctx context.Context, sg *conf
 				Port: intstr.FromString("rpc"),
 			},
 		},
-		TimeoutSeconds:      5,
-		InitialDelaySeconds: 5,
 	}
 
 	ctr.VolumeMounts = []corev1.VolumeMount{

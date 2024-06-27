@@ -8,21 +8,21 @@ import (
 
 func TestGetPrompt(t *testing.T) {
 	t.Run("invalid speaker", func(t *testing.T) {
-		_, err := getPrompt([]types.Message{{Speaker: "invalid", Text: "hello"}})
+		_, err := getGeminiPrompt([]types.Message{{Speaker: "invalid", Text: "hello"}})
 		if err == nil {
 			t.Errorf("expected error for invalid speaker, got nil")
 		}
 	})
 
 	t.Run("empty text", func(t *testing.T) {
-		_, err := getPrompt([]types.Message{{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: ""}})
+		_, err := getGeminiPrompt([]types.Message{{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: ""}})
 		if err == nil {
 			t.Errorf("expected error for empty text, got nil")
 		}
 	})
 
 	t.Run("invalid prompt starts with human", func(t *testing.T) {
-		_, err := getPrompt([]types.Message{
+		_, err := getGeminiPrompt([]types.Message{
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "human speaking"},
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "hello"},
 			{Speaker: types.ASSISTANT_MESSAGE_SPEAKER, Text: "assistant"},
@@ -38,7 +38,7 @@ func TestGetPrompt(t *testing.T) {
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "hello"},
 			{Speaker: types.ASSISTANT_MESSAGE_SPEAKER, Text: "hi"},
 		}
-		prompt, err := getPrompt(messages)
+		prompt, err := getGeminiPrompt(messages)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -63,7 +63,7 @@ func TestGetPrompt(t *testing.T) {
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "hello"},
 			{Speaker: types.ASSISTANT_MESSAGE_SPEAKER, Text: ""},
 		}
-		prompt, err := getPrompt(messages)
+		prompt, err := getGeminiPrompt(messages)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -77,7 +77,7 @@ func TestGetPrompt(t *testing.T) {
 	})
 
 	t.Run("invalid prompt ends with empty human message", func(t *testing.T) {
-		_, err := getPrompt([]types.Message{
+		_, err := getGeminiPrompt([]types.Message{
 			{Speaker: types.SYSTEM_MESSAGE_SPEAKER, Text: "assistant"},
 			{Speaker: types.HUMAN_MESSAGE_SPEAKER, Text: "hello"},
 			{Speaker: types.ASSISTANT_MESSAGE_SPEAKER, Text: "assistant"},

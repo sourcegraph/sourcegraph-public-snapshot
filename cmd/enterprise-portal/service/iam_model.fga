@@ -1,0 +1,14 @@
+// Playground for this model: https://play.fga.dev/stores/create/?id=01J0HFEZA72MWZ69SRRENC4Y33
+
+model
+  schema 1.1
+
+type customer_admin
+  relations
+    define member: [user]
+
+type user
+
+type subscription_cody_analytics
+  relations
+    define view: [user, customer_admin#member]
