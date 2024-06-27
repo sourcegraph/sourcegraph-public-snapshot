@@ -21,6 +21,7 @@ import {
     getFileMatchUrl,
     getRepositoryUrl,
     getRevision,
+    type LineMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { useSettings, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
@@ -112,10 +113,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const contextLines = useMemo(() => settings?.['search.contextLines'] ?? 1, [settings])
 
-    const unhighlightedGroups: MatchGroup[] = useMemo(
-        () => reranker(result.chunkMatches?.map(chunkToMatchGroup) ?? []),
-        [result, reranker]
-    )
+    const unhighlightedGroups: MatchGroup[] = useMemo(() => reranker(matchesToMatchGroups(result)), [result, reranker])
 
     const [expandedGroups, setExpandedGroups] = useState(unhighlightedGroups)
     const collapsedGroups = truncateGroups(expandedGroups, 5, contextLines)
@@ -299,6 +297,12 @@ function countHighlightRanges(groups: MatchGroup[]): number {
     return groups.reduce((count, group) => count + group.matches.length, 0)
 }
 
+function matchesToMatchGroups(result: ContentMatch): MatchGroup[] {
+    return [
+        ...(result.lineMatches?.map(lineToMatchGroup) ?? []),
+        ...(result.chunkMatches?.map(chunkToMatchGroup) ?? []),
+    ]
+}
 function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
     const matches = chunk.ranges.map(range => ({
         startLine: range.start.line,
@@ -313,5 +317,21 @@ function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
         matches,
         startLine: chunk.contentStart.line,
         endLine: chunk.contentStart.line + plaintextLines.length,
+    }
+}
+
+function lineToMatchGroup(line: LineMatch): MatchGroup {
+    const matches = line.offsetAndLengths.map(offsetAndLength => ({
+        startLine: line.lineNumber,
+        startCharacter: offsetAndLength[0],
+        endLine: line.lineNumber,
+        endCharacter: offsetAndLength[0] + offsetAndLength[1],
+    }))
+    return {
+        plaintextLines: [line.line],
+        highlightedHTMLRows: undefined, // populated lazily
+        matches,
+        startLine: line.lineNumber,
+        endLine: line.lineNumber + 1, // the matches support `endLine` == `startLine`, but MatchGroup requires `endLine` > `startLine`
     }
 }

@@ -2279,6 +2279,11 @@
               "type": "string",
               "default": "https://accounts.sourcegraph.com/cody",
               "description": "The base URL of the Self-Serve Cody site."
+            },
+            "useEmbeddedUI": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether Cody Pro UI is served from sourcegraph.com. If false, users are directed to https://accounts.sourcegraph.com/cody to manage their Cody Pro subscription."
             }
           }
         }

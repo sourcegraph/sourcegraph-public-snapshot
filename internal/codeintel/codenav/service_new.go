@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -191,11 +192,12 @@ func (s *Service) getVisibleUploadsFromCursor(
 				return nil, Cursor{}, ErrConcurrentModification
 			}
 
+			// OK to use Unchecked functions at ~serialization boundary for simplicity.
 			visibleUploads = append(visibleUploads, visibleUpload{
 				Upload:                upload,
-				TargetPath:            u.TargetPath,
+				TargetPath:            core.NewRepoRelPathUnchecked(u.TargetPath),
 				TargetPosition:        u.TargetPosition,
-				TargetPathWithoutRoot: u.TargetPathWithoutRoot,
+				TargetPathWithoutRoot: core.NewUploadRelPathUnchecked(u.TargetPathWithoutRoot),
 			})
 		}
 
@@ -211,9 +213,9 @@ func (s *Service) getVisibleUploadsFromCursor(
 	for i := range visibleUploads {
 		cursorVisibleUpload = append(cursorVisibleUpload, CursorVisibleUpload{
 			UploadID:              visibleUploads[i].Upload.ID,
-			TargetPath:            visibleUploads[i].TargetPath,
+			TargetPath:            visibleUploads[i].TargetPath.RawValue(),
 			TargetPosition:        visibleUploads[i].TargetPosition,
-			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot,
+			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot.RawValue(),
 		})
 	}
 
@@ -328,7 +330,7 @@ func (s *Service) gatherLocalLocations(
 			// Stash paths with non-empty locations in the cursor so we can prevent
 			// local and "remote" searches from returning duplicate sets of of target
 			// ranges.
-			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot
+			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot.RawValue()
 		}
 
 		// stash relevant symbol names in cursor

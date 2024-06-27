@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -14,22 +15,22 @@ import (
 
 type LsifStore interface {
 	// Whole-document data
-	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
-	GetStencil(ctx context.Context, bundleID int, path string) ([]shared.Range, error)
-	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
-	SCIPDocument(ctx context.Context, uploadID int, path string) (_ *scip.Document, err error)
+	GetPathExists(ctx context.Context, bundleID int, path core.UploadRelPath) (bool, error)
+	GetStencil(ctx context.Context, bundleID int, path core.UploadRelPath) ([]shared.Range, error)
+	GetRanges(ctx context.Context, bundleID int, path core.UploadRelPath, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
+	SCIPDocument(ctx context.Context, uploadID int, path core.UploadRelPath) (_ *scip.Document, err error)
 
 	// Fetch symbol names by position
-	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) ([][]precise.MonikerData, error)
-	GetPackageInformation(ctx context.Context, uploadID int, path, packageInformationID string) (precise.PackageInformationData, bool, error)
+	GetMonikersByPosition(ctx context.Context, uploadID int, path core.UploadRelPath, line, character int) ([][]precise.MonikerData, error)
+	GetPackageInformation(ctx context.Context, uploadID int, packageInformationID string) (precise.PackageInformationData, bool, error)
 
 	// Fetch locations by position
 	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
 	GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)
 
 	// Metadata by position
-	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
-	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
+	GetHover(ctx context.Context, bundleID int, path core.UploadRelPath, line, character int) (string, shared.Range, bool, error)
+	GetDiagnostics(ctx context.Context, bundleID int, prefix core.UploadRelPath, limit, offset int) ([]shared.Diagnostic[core.UploadRelPath], int, error)
 
 	// Extraction methods
 	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
@@ -40,7 +41,7 @@ type LsifStore interface {
 
 type LocationKey struct {
 	UploadID  int
-	Path      string
+	Path      core.UploadRelPath
 	Line      int
 	Character int
 }

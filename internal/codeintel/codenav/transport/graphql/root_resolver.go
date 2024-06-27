@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
@@ -94,7 +95,8 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.gitserverClient,
 		args.Repo,
 		string(args.Commit),
-		args.Path,
+		// OK to use Unchecked function based on contract of GraphQL API
+		core.NewRepoRelPathUnchecked(args.Path),
 		r.maximumIndexesPerMonikerSearch,
 		r.hunkCache,
 	)
@@ -229,6 +231,18 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 			}
 		}
+
+		usageResolvers := []resolverstubs.UsageResolver{}
+		for _, result := range results {
+			usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+		}
+		if len(usageResolvers) != 0 {
+			return &usageConnectionResolver{
+				nodes:    usageResolvers,
+				pageInfo: resolverstubs.NewSimplePageInfo(false),
+			}, nil
+		}
+
 		numSyntacticResults = len(results)
 		remainingCount = remainingCount - numSyntacticResults
 	}
@@ -395,15 +409,15 @@ func newCodeGraphDataResolverFromID(
 	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
 		return nil, errors.Wrap(err, "malformed ID")
 	}
-	repos, err := repoStore.GetByIDs(ctx, id.RepoID)
+	repo, err := repoStore.Get(ctx, id.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "repo for CodeGraphData value no longer exists")
+		return nil, err
 	}
 	opts := resolverstubs.CodeGraphDataOpts{
 		Args:   id.Args,
-		Repo:   repos[0],
+		Repo:   repo,
 		Commit: id.Commit,
-		Path:   id.Path,
+		Path:   core.NewRepoRelPathUnchecked(id.Path),
 	}
 	return &codeGraphDataResolver{
 		sync.Once{},
@@ -433,7 +447,7 @@ func (c *codeGraphDataResolver) ID() graphql.ID {
 		c.opts.Args,
 		c.opts.Repo.ID,
 		c.opts.Commit,
-		c.opts.Path,
+		c.opts.Path.RawValue(),
 		c.provenance,
 	}
 	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)

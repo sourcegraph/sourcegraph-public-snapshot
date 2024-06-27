@@ -88,22 +88,6 @@ If you see a certificate expiry warning you may need to delete your certificate 
 
 On macOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
 
-## Running out of disk space
-
-If you see errors similar to this:
-
-```
-gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
-```
-
-You are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
-You can override that by setting this env variable:
-
-```bash
-# means 5%. You may want to put that into .bashrc for convinience
-SRC_REPOS_DESIRED_PERCENT_FREE=5
-```
-
 ## CPU/RAM/bandwidth/battery usage
 
 On first install, the program will use quite a bit of bandwidth to concurrently download all the Go and Node packages. After packages have been installed, the Javascript assets will be compiled into a single Javascript file, which can take up to 5 minutes, and can be heavy on the CPU at times.
@@ -154,4 +138,3 @@ If files do not normally have group permissions in your environment (e.g. if you
 When trying to install `sg` with the pre-built binaries on WSL2 you may run into this error message: `failed to set max open files: invalid argument`. The default configuration of WSL2 does not allow the user to modify the number of open files by default [which `sg` requires](https://github.com/sourcegraph/sourcegraph/blob/379369e3d92c9b28d5891d3251922c7737ed810b/dev/sg/main.go#L75:L90) to start. To work around this you can modify the file limits for your given session with `sudo prlimit --nofile=20000 --pid $$; ulimit -n 20000` then re-run the installation script.
 
 Note: this change will be reverted when your session ends. You will need to reset these limits every time you open a new session and want to use `sg`.
-

@@ -7,6 +7,7 @@ import type { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
 
 import { EventName } from '../../util/constants'
+import { CodyProRoutes } from '../codyProRoutes'
 import type { CodeMirrorEditor } from '../components/CodeMirrorEditor'
 import type { useCodySidebar } from '../sidebar/Provider'
 
@@ -90,7 +91,11 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor; telemetryR
                     onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
                     disabled={isMessageInProgress}
                 />
-                <RecipeAction title="Get Cody in your editor" to="/cody/manage" disabled={isMessageInProgress} />
+                <RecipeAction
+                    title="Get Cody in your editor"
+                    to={CodyProRoutes.Manage}
+                    disabled={isMessageInProgress}
+                />
             </Recipe>
         </Recipes>
     )

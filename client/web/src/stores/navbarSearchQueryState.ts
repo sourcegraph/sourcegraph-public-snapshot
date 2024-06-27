@@ -8,11 +8,12 @@ import create from 'zustand'
 import {
     type BuildSearchQueryURLParameters,
     canSubmitSearch,
-    type SearchQueryState,
-    updateQuery,
     InitialParametersSource,
     SearchMode,
+    type SearchQueryState,
+    updateQuery,
 } from '@sourcegraph/shared/src/search'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -31,7 +32,8 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.standard,
+    searchPatternType: SearchPatternType.keyword,
+    defaultPatternType: SearchPatternType.keyword,
     searchMode: SearchMode.SmartSearch,
     searchQueryFromURL: '',
 
@@ -68,7 +70,10 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
 }))
 
 export function setSearchPatternType(searchPatternType: SearchPatternType): void {
-    useNavbarQueryState.setState({ searchPatternType })
+    // When changing the patterntype, we also need to reset the query to strip out any potential patterntype: filter
+    const state = useNavbarQueryState.getState()
+    const query = state.searchQueryFromURL ?? state.queryState.query
+    useNavbarQueryState.setState({ searchPatternType, queryState: { query } })
 }
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
@@ -87,7 +92,8 @@ export function setSearchMode(searchMode: SearchMode): void {
  * the one contained in the URL (e.g. when the context:... filter got removed)
  */
 export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = parsedSearchURL.query ?? ''): void {
-    if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
+    const currentState = useNavbarQueryState.getState()
+    if (currentState.parametersSource > InitialParametersSource.URL) {
         return
     }
 
@@ -108,8 +114,13 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         // Only update flags if the URL contains a search query.
         newState.parametersSource = InitialParametersSource.URL
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
-        if (parsedSearchURL.patternType !== undefined) {
-            newState.searchPatternType = parsedSearchURL.patternType
+
+        const parsedPatternType = parsedSearchURL.patternType
+        if (parsedPatternType !== undefined) {
+            newState.searchPatternType = parsedPatternType
+            if (showPatternTypeInQuery(parsedPatternType, currentState.defaultPatternType)) {
+                query = `${query} ${FilterType.patterntype}:${parsedPatternType}`
+            }
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query
@@ -121,6 +132,21 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     useNavbarQueryState.setState(newState as any)
 }
 
+// The only pattern types explicitly represented in the UI are the default one, plus regexp and structural. For
+// other pattern types, we make sure to surface them in the query input itself.
+export function showPatternTypeInQuery(
+    patternType: SearchPatternType,
+    defaultPatternType?: SearchPatternType
+): boolean {
+    return patternType !== defaultPatternType && !explicitPatternTypes.has(patternType)
+}
+
+const explicitPatternTypes = new Set([
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
+    SearchPatternType.keyword,
+])
+
 /**
  * Update or initialize query state related data from settings
  */
@@ -130,7 +156,10 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'>
+        Pick<
+            NavbarQueryState,
+            'searchPatternType' | 'defaultPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'
+        >
     > = {
         parametersSource: InitialParametersSource.USER_SETTINGS,
     }
@@ -148,6 +177,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     const searchPatternType = defaultPatternTypeFromSettings(settings)
     if (searchPatternType) {
         newState.searchPatternType = searchPatternType
+        newState.defaultPatternType = searchPatternType
     }
 
     // The way Zustand is designed makes it difficult to build up a partial new

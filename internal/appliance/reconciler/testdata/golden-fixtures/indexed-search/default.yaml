@@ -55,7 +55,7 @@ resources:
                   value: http://$(OTEL_AGENT_HOST):4317
                 - name: OPENTELEMETRY_DISABLED
                   value: "false"
-              image: index.docker.io/sourcegraph/indexed-search:5.3.9104
+              image: index.docker.io/sourcegraph/indexed-searcher:5.3.9104
               imagePullPolicy: IfNotPresent
               name: zoekt-webserver
               ports:

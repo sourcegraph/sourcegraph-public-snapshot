@@ -26,6 +26,7 @@ func (*importsDbConn) AFact() {}
 var allowedToImport = []string{
 	"github.com/sourcegraph/sourcegraph/cmd/embeddings",
 	"github.com/sourcegraph/sourcegraph/cmd/frontend",
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph",
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver",
 	"github.com/sourcegraph/sourcegraph/cmd/migrator",
 	// Transitively depends on updatecheck package which imports but does not use DB

@@ -31,7 +31,6 @@ type FS interface {
 	TempDir(prefix string) (string, error)
 	IgnorePath(string) bool
 	P4HomeDir() (string, error)
-	VisitRepos(func(api.RepoName, common.GitDir) (done bool, _ error)) error
 	RepoCloned(api.RepoName) (bool, error)
 	RemoveRepo(api.RepoName) error
 	ForEachRepo(func(api.RepoName, common.GitDir) (done bool)) error
@@ -94,10 +93,6 @@ func (r *realGitserverFS) IgnorePath(path string) bool {
 
 func (r *realGitserverFS) P4HomeDir() (string, error) {
 	return makeP4HomeDir(r.reposDir)
-}
-
-func (r *realGitserverFS) VisitRepos(visit func(api.RepoName, common.GitDir) (done bool, _ error)) error {
-	return nil
 }
 
 func (r *realGitserverFS) RepoCloned(name api.RepoName) (bool, error) {

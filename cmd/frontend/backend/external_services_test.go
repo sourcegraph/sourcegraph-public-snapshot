@@ -284,9 +284,8 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 }`
 
 	githubSource := types.ExternalService{
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubConnection),
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubConnection),
 	}
 
 	gitlabConnection := `
@@ -296,9 +295,8 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 	}`
 
 	gitlabSource := types.ExternalService{
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(gitlabConnection),
 	}
 
 	githubOrg := &types.ExternalServiceNamespace{
@@ -315,10 +313,9 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 	}`
 
 	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
 	}
 
 	gitlabExternalServiceConfig := `
@@ -329,10 +326,9 @@ func TestExternalService_ListNamespaces(t *testing.T) {
 	}`
 
 	gitlabExternalService := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
+		ID:     2,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
 	}
 
 	gitlabRepository := &types.Repo{
@@ -468,10 +464,9 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 }`
 
 	githubSource := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubConnection),
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubConnection),
 	}
 
 	gitlabConnection := `
@@ -481,10 +476,9 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 	}`
 
 	gitlabSource := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+		ID:     2,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(gitlabConnection),
 	}
 
 	githubRepository := &types.Repo{
@@ -530,10 +524,9 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 	}`
 
 	githubExternalService := types.ExternalService{
-		ID:           1,
-		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
 	}
 
 	gitlabExternalServiceConfig := `
@@ -544,10 +537,9 @@ func TestExternalService_DiscoverRepos(t *testing.T) {
 	}`
 
 	gitlabExternalService := types.ExternalService{
-		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
+		ID:     2,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
 	}
 
 	var idDoesNotExist int64 = 99

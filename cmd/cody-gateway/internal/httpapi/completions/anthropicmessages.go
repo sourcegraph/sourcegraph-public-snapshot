@@ -209,13 +209,13 @@ func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessa
 	}
 }
 
-func (a *AnthropicMessagesHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("X-API-Key", a.config.AccessToken)
-	r.Header.Set("anthropic-version", "2023-06-01")
+func (a *AnthropicMessagesHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
+	upstreamRequest.Header.Set("anthropic-version", "2023-06-01")
 }
 
-func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	for _, m := range body.Messages {
 		promptUsage.characters += len(m.Content)
@@ -232,7 +232,7 @@ func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logge
 
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !body.ShouldStream() {
+	if !isStreamRequest {
 		var res anthropicMessagesNonStreamingResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Anthropic response as JSON", log.Error(err))

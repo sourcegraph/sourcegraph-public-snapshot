@@ -3,7 +3,6 @@ package repoupdater
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
@@ -42,50 +40,6 @@ type Server struct {
 func (s *Server) RepoUpdateSchedulerInfo(_ context.Context, req *proto.RepoUpdateSchedulerInfoRequest) (*proto.RepoUpdateSchedulerInfoResponse, error) {
 	res := s.Scheduler.ScheduleInfo(api.RepoID(req.GetId()))
 	return res.ToProto(), nil
-}
-
-func (s *Server) RepoLookup(ctx context.Context, req *proto.RepoLookupRequest) (result *proto.RepoLookupResponse, err error) {
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	ctx = actor.WithInternalActor(ctx)
-
-	repoName := api.RepoName(req.GetRepo())
-
-	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
-	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
-	// only speak to our database, so response should be in a few ms.
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	tr, ctx := trace.New(ctx, "repoLookup", attribute.String("repo", string(repoName)))
-	defer func() {
-		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
-		tr.SetError(err)
-		tr.End()
-	}()
-
-	if repoName == "" {
-		return nil, errors.New("Repo must be set (is blank)")
-	}
-
-	repo, err := s.Syncer.SyncRepo(ctx, repoName, true)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return (&protocol.RepoLookupResult{ErrorNotFound: true}).ToProto(), nil
-		}
-		if errcode.IsUnauthorized(err) || errcode.IsForbidden(err) {
-			return (&protocol.RepoLookupResult{ErrorUnauthorized: true}).ToProto(), nil
-		}
-		if errcode.IsTemporary(err) {
-			return (&protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}).ToProto(), nil
-		}
-		if errcode.IsRepoDenied(err) {
-			return (&protocol.RepoLookupResult{ErrorRepoDenied: err.Error()}).ToProto(), nil
-		}
-		return nil, err
-	}
-
-	return (&protocol.RepoLookupResult{Repo: protocol.NewRepoInfo(repo)}).ToProto(), nil
 }
 
 func (s *Server) EnqueueRepoUpdate(ctx context.Context, req *proto.EnqueueRepoUpdateRequest) (resp *proto.EnqueueRepoUpdateResponse, err error) {

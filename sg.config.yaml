@@ -415,6 +415,8 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
       go build -gcflags="$GCFLAGS" -o .bin/enterprise-portal github.com/sourcegraph/sourcegraph/cmd/enterprise-portal
+      # Ensure the "msp_iam" database exists (PostgreSQL has no "IF NOT EXISTS" option).
+      createdb -h $PGHOST -p $PGPORT -U $PGUSER msp_iam || true
     checkBinary: .bin/enterprise-portal
     env:
       PORT: '6081'
@@ -485,15 +487,6 @@ commands:
     env:
       WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
-
-  web-standalone-http-prod:
-    description: Standalone web frontend (production) with API proxy to a configurable URL
-    cmd: pnpm --filter @sourcegraph/web serve:prod
-    install: pnpm --filter @sourcegraph/web run build
-    env:
-      NODE_ENV: production
-      WEB_BUILDER_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
     description: Build development web application for integration tests
@@ -1038,6 +1031,34 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
+  sourcegraph:
+    description: Single-program distribution (dev only)
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/sourcegraph
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -buildvcs=false -gcflags="$GCFLAGS" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+    checkBinary: .bin/sourcegraph
+    env:
+      CONFIGURATION_MODE: server
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      EXTSVC_CONFIG_FILE: ../dev-private/enterprise/dev/external-services-config.json
+      WEB_BUILDER_DEV_SERVER: 1
+      INDEXED_SEARCH_SERVERS:
+      GITSERVER_ADDR: 127.0.0.1:3178
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3178
+      SRC_GIT_SERVERS: 127.0.0.1:3178
+      SRC_DISABLE_OOBMIGRATION_VALIDATION: 1
+    watch:
+      - cmd
+      - internal
+      - lib
+      - schema
+
 bazelCommands:
   blobstore:
     target: //cmd/blobstore
@@ -1305,6 +1326,8 @@ dockerCommands:
       CONFIG_DIR: docker-images/prometheus/config
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
+      SRC_LOG_LEVEL: info
+      SRC_DEVELOPMENT: true
       DISABLE_SOURCEGRAPH_CONFIG: false
       DISABLE_ALERTMANAGER: false
       PROMETHEUS_ADDITIONAL_FLAGS: '--web.enable-lifecycle --web.enable-admin-api'
@@ -1764,11 +1787,6 @@ commandsets:
     env:
       SK_PORT: 3080
 
-  web-standalone-prod:
-    commands:
-      - web-standalone-http-prod
-      - caddy
-
   # For testing our OpenTelemetry stack
   otel:
     checks:
@@ -1777,19 +1795,20 @@ commandsets:
       - otel-collector
       - jaeger
 
-  single-program:
+  # NOTE: This is an experimental way of running a subset of Sourcegraph. See
+  # cmd/sourcegraph/README.md.
+  single-program-experimental-blame-sqs:
     checks:
       - git
       - dev-private
+      - redis
     commands:
       - sourcegraph
       - web
       - caddy
     env:
-      DISABLE_CODE_INSIGHTS: false
-      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
-      USE_EMBEDDED_POSTGRESQL: false
+      # Faster builds in local dev.
+      DEV_WEB_BUILDER_NO_SPLITTING: 1
 
   cody-gateway:
     checks:
@@ -1839,8 +1858,7 @@ tests:
   bazel-web-integration:
     cmd: |
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
-      export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
-      bazel test //client/web/src/integration:integration-tests --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY --test_env=PERCY_TOKEN=$PERCY_TOKEN
+      bazel test //client/web/src/integration:integration-tests --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest

@@ -127,7 +127,6 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		Name: githubRepo.Name,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
-	defer mockState.Unmock()
 
 	bstore := store.New(db, observation.TestContextTB(t), nil)
 

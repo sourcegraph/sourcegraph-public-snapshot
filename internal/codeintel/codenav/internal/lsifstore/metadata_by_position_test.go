@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 )
 
 func TestDatabaseHover(t *testing.T) {
@@ -46,7 +47,8 @@ func TestDatabaseHover(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			if actualText, actualRange, exists, err := store.GetHover(context.Background(), testCase.uploadID, testCase.path, testCase.line, testCase.character); err != nil {
+			path := core.NewUploadRelPathUnchecked(testCase.path)
+			if actualText, actualRange, exists, err := store.GetHover(context.Background(), testCase.uploadID, path, testCase.line, testCase.character); err != nil {
 				t.Fatalf("unexpected error %s", err)
 			} else if !exists {
 				t.Errorf("no hover found")

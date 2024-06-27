@@ -21,6 +21,7 @@ go_library(
         "//dev/sg/internal/repo",
         "//dev/sg/internal/std",
         "//internal/jsonc",
+        "//internal/releaseregistry",
         "//lib/errors",
         "//lib/output",
         "@com_github_grafana_regexp//:regexp",

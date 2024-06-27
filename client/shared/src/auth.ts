@@ -42,7 +42,6 @@ export const currentAuthStateQuery = gql`
             viewerCanAdminister
             tosAccepted
             hasVerifiedEmail
-            completedPostSignup
             emails {
                 email
                 verified

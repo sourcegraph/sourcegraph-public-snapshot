@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "vite dev",
-    "dev:dotcom": "vite dev --mode=dotcom",
+    "dev:dotcom": "SOURCEGRAPH_API_URL=https://sourcegraph.com vite dev --mode=dotcom",
     "dev:enterprise": "DEPLOY_TYPE=dev vite build --watch",
     "build": "vite build",
     "build:preview": "vite build --mode=preview",
@@ -47,7 +47,7 @@
     "@storybook/testing-library": "0.2.0",
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-static": "^3.0.0",
-    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/kit": "^2.5.17",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@testing-library/svelte": "^4.0.3",
     "@testing-library/user-event": "^14.4.3",
