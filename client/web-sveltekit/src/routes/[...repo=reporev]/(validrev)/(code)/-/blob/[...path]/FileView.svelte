@@ -6,6 +6,7 @@
     import { capitalize } from 'lodash'
     import { from } from 'rxjs'
     import { writable } from 'svelte/store'
+    import * as uuid from 'uuid'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
     import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
@@ -195,8 +196,13 @@
             </MenuButton>
             {#if codeGraphDataDebugOptions !== undefined}
                 <MenuSeparator />
-                <h6>Code intelligence preview</h6>
-                <MenuRadioGroup values={codeGraphDataDebugOptions} value={selectedCodeGraphDataDebugOption}>
+                {@const labelID = `label-${uuid.v4()}`}
+                <label for={labelID}>Code intelligence preview</label>
+                <MenuRadioGroup
+                    id={labelID}
+                    values={codeGraphDataDebugOptions}
+                    value={selectedCodeGraphDataDebugOption}
+                >
                     <svelte:fragment let:value>
                         {#if value === 'None'}
                             None
@@ -379,7 +385,7 @@
         margin-left: auto;
     }
 
-    h6 {
+    label {
         padding: var(--dropdown-item-padding);
         margin: 0;
         font-size: 0.75rem;
