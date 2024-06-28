@@ -199,9 +199,9 @@
             {#if codeGraphDataDebugOptions !== undefined}
                 <MenuSeparator />
                 {@const labelID = `label-${uuid.v4()}`}
-                <label for={labelID}>Code intelligence preview</label>
+                <h6 id={labelID}>Code intelligence preview</h6>
                 <MenuRadioGroup
-                    id={labelID}
+                    aria-labelledby={labelID}
                     values={codeGraphDataDebugOptions}
                     value={selectedCodeGraphDataDebugOption}
                 >
@@ -387,7 +387,7 @@
         margin-left: auto;
     }
 
-    label {
+    h6 {
         padding: var(--dropdown-item-padding);
         margin: 0;
         font-size: 0.75rem;
