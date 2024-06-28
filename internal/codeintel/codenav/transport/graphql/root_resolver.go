@@ -209,15 +209,22 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
+	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
 		// Attempt to get up to remainingCount precise results.
 		remainingCount = remainingCount - numPreciseResults
 	}
 
+	usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
+		Repo:        args.Repo,
+		Commit:      args.CommitID,
+		Path:        args.Path,
+		SymbolRange: args.Range,
+	}
+	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		// Attempt to get up to remainingCount syntactic results.
-		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
 		if err != nil {
 			switch err.Code {
 			case codenav.SU_Fatal:
@@ -228,28 +235,39 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			default:
 				// None of these errors should cause the whole request to fail
 				// TODO: We might want to log some of them in the future
-
 			}
+		} else {
+			for _, result := range syntacticResult.Matches {
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+			}
+			numSyntacticResults = len(syntacticResult.Matches)
+			remainingCount = remainingCount - numSyntacticResults
+			previousSyntacticSearch = prevSearch
 		}
-
-		usageResolvers := []resolverstubs.UsageResolver{}
-		for _, result := range results {
-			usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
-		}
-		if len(usageResolvers) != 0 {
-			return &usageConnectionResolver{
-				nodes:    usageResolvers,
-				pageInfo: resolverstubs.NewSimplePageInfo(false),
-			}, nil
-		}
-
-		numSyntacticResults = len(results)
-		remainingCount = remainingCount - numSyntacticResults
 	}
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
-		// Attempt to get up to remainingCount search-based results.
-		_ = "shut up nogo linter complaining about empty branch"
+		results, err := r.svc.SearchBasedUsages(ctx, usagesForSymbolArgs, previousSyntacticSearch)
+		if err != nil {
+			// We only want to fail the request on an error here if we didn't get any precise or syntactic results before
+			if len(usageResolvers) == 0 {
+				return nil, err
+			} else {
+				// TODO: We might want to log some of these errors in the future
+				_ = "shut up nogo linter"
+			}
+		} else {
+			for _, result := range results {
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+			}
+		}
+	}
+
+	if len(usageResolvers) != 0 {
+		return &usageConnectionResolver{
+			nodes:    usageResolvers,
+			pageInfo: resolverstubs.NewSimplePageInfo(false),
+		}, nil
 	}
 
 	return nil, errors.New("Not implemented yet")

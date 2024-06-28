@@ -699,7 +699,19 @@ type Usage {
     """
     Information about the symbol itself.
     """
-    symbol: SymbolInformation!
+    symbol: SymbolInformation
+
+    """
+    Coarse-grained information about the data source.
+    """
+    provenance: CodeGraphDataProvenance!
+
+    """
+    Opaque fine-grained information describing the data source.
+    Provided only for debugging.
+    This field should be ignored when checking structural equality.
+    """
+    dataSource: String
 
     """
     Information about where this usage is located.
@@ -891,18 +903,6 @@ type SymbolInformation {
     is no appropriate hover documentation to display.
     """
     documentation: [String!]
-
-    """
-    Coarse-grained information about the data source.
-    """
-    provenance: CodeGraphDataProvenance!
-
-    """
-    Opaque fine-grained information describing the data source.
-    Provided only for debugging.
-    This field should be ignored when checking structural equality.
-    """
-    dataSource: String
 }
 
 """

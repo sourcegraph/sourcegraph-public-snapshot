@@ -24,6 +24,7 @@ type operations struct {
 	snapshotForDocument               *observation.Operation
 	visibleUploadsForPath             *observation.Operation
 	syntacticUsages                   *observation.Operation
+	searchBasedUsages                 *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -59,6 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		snapshotForDocument:               op("SnapshotForDocument"),
 		visibleUploadsForPath:             op("VisibleUploadsForPath"),
 		syntacticUsages:                   op("SyntacticUsages"),
+		searchBasedUsages:                 op("SearchBasedUsages"),
 	}
 }
 
