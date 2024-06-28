@@ -2,6 +2,7 @@ package encryption
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -108,6 +109,7 @@ func (e *Encryptable) Set(value string) {
 // SetKey updates the encryption key used with the encrypted value. This method may trigger an
 // external API call to decrypt the current value.
 func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
+	fmt.Println(e.mutex, "is mutex nil")
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 

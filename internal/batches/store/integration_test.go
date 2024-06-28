@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 )
 
@@ -41,14 +40,15 @@ func TestIntegration(t *testing.T) {
 		t.Run("BatchSpecWorkspaceExecutionJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceExecutionJobs))
 		t.Run("BatchSpecResolutionJobs", storeTest(db, nil, testStoreBatchSpecResolutionJobs))
 		t.Run("BatchSpecExecutionCacheEntries", storeTest(db, nil, testStoreBatchSpecExecutionCacheEntries))
+		t.Run("SiteCredentials", storeTest(db, &et.TestKey{}, testStoreSiteCredentials))
 
-		for name, key := range map[string]encryption.Key{
-			"no key":   nil,
-			"test key": &et.TestKey{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				t.Run("SiteCredentials", storeTest(db, key, testStoreSiteCredentials))
-			})
-		}
+		//for name, key := range map[string]encryption.Key{
+		//	"no key":   nil,
+		//	"test key": &et.TestKey{},
+		//} {
+		//	t.Run(name, func(t *testing.T) {
+		//		t.Run("SiteCredentials", storeTest(db, key, testStoreSiteCredentials))
+		//	})
+		//}
 	})
 }

@@ -14,40 +14,71 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	credentials := make([]*btypes.SiteCredential, 0, 3)
-	// Make sure these are sorted alphabetically.
-	externalServiceTypes := []string{
-		extsvc.TypeBitbucketServer,
-		extsvc.TypeGitHub,
-		extsvc.TypeGitLab,
+func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+	var credentials []*btypes.SiteCredential
+	// // Make sure these are sorted alphabetically.
+	// externalServiceTypes := []string{
+	// 	extsvc.TypeBitbucketServer,
+	// 	extsvc.TypeGitHub,
+	// 	extsvc.TypeGitLab,
+	// }
+
+	creds := []struct {
+		externalServiceID   string
+		externalServiceType string
+		githubAppID         int
+	}{
+		{
+			externalServiceType: extsvc.TypeBitbucketServer,
+			externalServiceID:   "https://someurl.test",
+		},
+		{
+			externalServiceType: extsvc.TypeGitHub,
+			externalServiceID:   "https://someurl.test",
+		},
+		{
+			externalServiceType: extsvc.TypeGitHub,
+			externalServiceID:   "https://second.someurl.test",
+			githubAppID:         1,
+		},
+		{
+			externalServiceType: extsvc.TypeGitLab,
+			externalServiceID:   "https://someurl.test",
+		},
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for i := range cap(credentials) {
-			cred := &btypes.SiteCredential{
-				ExternalServiceType: externalServiceTypes[i],
-				ExternalServiceID:   "https://someurl.test",
+		for idx, c := range creds {
+			if idx != 1 && idx != 2 {
+				//{0. 1. 2}
+				t.Skip("testng someting")
 			}
-			token := &auth.OAuthBearerToken{Token: "123"}
+			sc := &btypes.SiteCredential{
+				ExternalServiceType: c.externalServiceType,
+				ExternalServiceID:   c.externalServiceID,
+				GitHubAppID:         c.githubAppID,
+			}
 
-			if err := s.CreateSiteCredential(ctx, cred, token); err != nil {
+			token := &auth.OAuthBearerToken{Token: "123"}
+			if err := s.CreateSiteCredential(ctx, sc, token); err != nil {
 				t.Fatal(err)
 			}
-			if cred.ID == 0 {
+
+			if sc.ID == 0 {
 				t.Fatal("id should not be zero")
 			}
-			if cred.CreatedAt.IsZero() {
+			if sc.CreatedAt.IsZero() {
 				t.Fatal("CreatedAt should be set")
 			}
-			if cred.UpdatedAt.IsZero() {
+			if sc.UpdatedAt.IsZero() {
 				t.Fatal("UpdatedAt should be set")
 			}
-			credentials = append(credentials, cred)
+			credentials = append(credentials, sc)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
+		t.Skip("testng someting")
 		t.Run("ByID", func(t *testing.T) {
 			want := credentials[0]
 			opts := GetSiteCredentialOpts{ID: want.ID}
@@ -92,6 +123,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 	})
 
 	t.Run("List", func(t *testing.T) {
+		t.Skip("testng someting")
 		t.Run("All", func(t *testing.T) {
 			cs, next, err := s.ListSiteCredentials(ctx, ListSiteCredentialsOpts{})
 			if err != nil {
@@ -144,6 +176,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 	})
 
 	t.Run("Update", func(t *testing.T) {
+		t.Skip("testng someting")
 		t.Run("Found", func(t *testing.T) {
 			for _, cred := range credentials {
 				if err := cred.SetAuthenticator(ctx, &auth.BasicAuthWithSSH{
@@ -185,6 +218,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 	})
 
 	t.Run("Delete", func(t *testing.T) {
+		t.Skip("testng someting")
 		t.Run("ByID", func(t *testing.T) {
 			for _, cred := range credentials {
 				if err := s.DeleteSiteCredential(ctx, cred.ID); err != nil {

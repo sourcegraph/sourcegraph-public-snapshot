@@ -29,12 +29,58 @@ type UserCredential struct {
 	ExternalServiceID   string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+	GitHubAppID         int
 
 	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
 	// we should remove the credential and SSHMigrationApplied fields.
 	SSHMigrationApplied bool
 
 	Credential *EncryptableCredential
+}
+
+// IsGitHubApp returns true if the user credential is a GitHub App.
+func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID != 0 }
+
+// Authenticator decrypts and creates the authenticator associated with the user credential.
+func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+	if uc.IsGitHubApp() {
+		return uc.githubAppAuthenticator()
+	}
+
+	decrypted, err := uc.Credential.Decrypt(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := UnmarshalAuthenticator(decrypted)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshalling authenticator")
+	}
+
+	return a, nil
+}
+
+func (uc *UserCredential) githubAppAuthenticator() (auth.Authenticator, error) {
+	return nil, errors.New("not implemented")
+}
+
+// SetAuthenticator encrypts and sets the authenticator within the user credential.
+func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
+	if uc.IsGitHubApp() {
+		return nil
+	}
+
+	if uc.Credential == nil {
+		uc.Credential = NewUnencryptedCredential(nil)
+	}
+
+	raw, err := MarshalAuthenticator(a)
+	if err != nil {
+		return errors.Wrap(err, "marshalling authenticator")
+	}
+
+	uc.Credential.Set(raw)
+	return nil
 }
 
 type EncryptableCredential = encryption.Encryptable
@@ -49,36 +95,6 @@ func NewUnencryptedCredential(value []byte) *EncryptableCredential {
 
 func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
 	return encryption.NewEncrypted(cipher, keyID, key)
-}
-
-// Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	decrypted, err := uc.Credential.Decrypt(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	a, err := UnmarshalAuthenticator(decrypted)
-	if err != nil {
-		return nil, errors.Wrap(err, "unmarshalling authenticator")
-	}
-
-	return a, nil
-}
-
-// SetAuthenticator encrypts and sets the authenticator within the user credential.
-func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	if uc.Credential == nil {
-		uc.Credential = NewUnencryptedCredential(nil)
-	}
-
-	raw, err := MarshalAuthenticator(a)
-	if err != nil {
-		return errors.Wrap(err, "marshalling authenticator")
-	}
-
-	uc.Credential.Set(raw)
-	return nil
 }
 
 const (
@@ -151,6 +167,7 @@ type UserCredentialScope struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	GitHubAppID         int
 }
 
 // Create creates a new user credential based on the given scope and
@@ -175,6 +192,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
 		encryptedCredential, // N.B.: is already a []byte
+		dbutil.NewNullInt(scope.GitHubAppID),
 		keyID,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
@@ -479,6 +497,7 @@ func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scann
 		&cred.ExternalServiceID,
 		&credential,
 		&keyID,
+		&dbutil.NullInt{N: &cred.GitHubAppID},
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,
