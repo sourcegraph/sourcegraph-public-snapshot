@@ -20,12 +20,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+type tipFn func() string
+
 type bzlgenTarget struct {
 	order  int
 	cmd    string
 	args   []string
 	env    []string
-	protip string
+	protip tipFn
+}
+
+func (t bzlgenTarget) showProTip(out *std.Output) {
+	tip := ""
+	if t.protip != nil {
+		tip = t.protip()
+	}
+
+	if tip != "" {
+		out.WriteLine(output.Emojif(output.EmojiLightbulb, "pro-tip: %s", tip))
+	}
 }
 
 var bzlgenTargets = map[string]bzlgenTarget{
@@ -39,10 +52,15 @@ var bzlgenTargets = map[string]bzlgenTarget{
 		args: []string{"//:gazelle-update-repos"},
 	},
 	"rustdeps": {
-		cmd:    "sync",
-		args:   []string{"--only=crate_index"},
-		env:    []string{"CARGO_BAZEL_REPIN=1"},
-		protip: "run with CARGO_BAZEL_ISOLATED=0 for faster (but less sandboxed) repinning.",
+		cmd:  "sync",
+		args: []string{"--only=crate_index"},
+		env:  []string{"CARGO_BAZEL_REPIN=1"},
+		protip: func() string {
+			if os.Getenv("CARGO_BAZEL_ISOLATED") != "0" {
+				return "run with CARGO_BAZEL_ISOLATED=0 for faster (but less sandboxed) repinning."
+			}
+			return ""
+		},
 	},
 }
 
@@ -153,9 +171,7 @@ If no categories are referenced, then 'builds' is assumed as the default.`,
 
 				for _, c := range categories {
 					std.Out.WriteNoticef("running command %q", strings.Join(append([]string{"bazel", c.cmd}, c.args...), " "))
-					if c.protip != "" {
-						std.Out.WriteLine(output.Emojif(output.EmojiLightbulb, "pro-tip: %s", c.protip))
-					}
+					c.showProTip(std.Out)
 
 					args := append([]string{c.cmd, "--noshow_progress"}, c.args...)
 					cmd := exec.CommandContext(ctx.Context, "bazel", args...)
