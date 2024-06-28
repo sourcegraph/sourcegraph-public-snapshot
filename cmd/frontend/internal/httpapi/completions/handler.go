@@ -118,6 +118,8 @@ func newCompletionsHandler(
 		var err error
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		requestParams.User = completionsConfig.User
+		requestParams.AzureChatModel = completionsConfig.AzureChatModel
+		requestParams.AzureCompletionModel = completionsConfig.AzureCompletionModel
 		if err != nil {
 			// NOTE: We return the raw error to the user assuming that it contains relevant
 			// user-facing diagnostic information, and doesn't leak any internal details.

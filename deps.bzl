@@ -5002,15 +5002,15 @@ def go_dependencies():
         name = "com_github_pkoukk_tiktoken_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pkoukk/tiktoken-go",
-        sum = "h1:JF0TlJzhTbrI30wCvFuiw6FzP2+/bR+FIxUdgEAcUsw=",
-        version = "v0.1.6",
+        sum = "h1:qOBHXX4PHtvIvmOtyg1EeKlwFRiMKAcoMp4Q+bLQDmw=",
+        version = "v0.1.7",
     )
     go_repository(
         name = "com_github_pkoukk_tiktoken_go_loader",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/pkoukk/tiktoken-go-loader",
-        sum = "h1:aOB2gRFzZTCCPi3YsOQXJO771P/5876JAsdebMyazig=",
-        version = "v0.0.1",
+        sum = "h1:Sp8yiuxsitkmCfEvUnmNf8wzuZwlGNkRjI2yF0C3QUQ=",
+        version = "v0.0.2-0.20240522064338-c17e8bc0f699",
     )
     go_repository(
         name = "com_github_playwright_community_playwright_go",
