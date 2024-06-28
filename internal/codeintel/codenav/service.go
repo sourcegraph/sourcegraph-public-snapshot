@@ -1136,8 +1136,8 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 		}
 	}
 
-	syntacticResults := []SyntacticMatch{}
-	searchBasedResults := []SearchBasedMatch{}
+	syntacticMatches := []SyntacticMatch{}
+	searchBasedMatches := []SearchBasedMatch{}
 	// TODO: We can optimize this further by continuously slicing the occurrences array
 	// as both these arrays are sorted
 	for _, candidateRange := range candidateFile.matches {
@@ -1145,30 +1145,26 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 		for _, occ := range findOccurrencesWithEqualRange(document.Occurrences, candidateRange) {
 			if !scip.IsLocalSymbol(occ.Symbol) {
 				foundSyntacticMatch = true
-				syntacticResults = append(syntacticResults, SyntacticMatch{
+				syntacticMatches = append(syntacticMatches, SyntacticMatch{
 					Path:       filePath,
 					Occurrence: occ,
 				})
 			}
 		}
 		if !foundSyntacticMatch {
-			searchBasedResults = append(searchBasedResults, SearchBasedMatch{
-				Path:   filePath,
-				Range_: candidateRange,
+			searchBasedMatches = append(searchBasedMatches, SearchBasedMatch{
+				Path:  filePath,
+				Range: candidateRange,
 			})
 		}
 	}
 
-	return syntacticResults, searchBasedResults, nil
+	return syntacticMatches, searchBasedMatches, nil
 }
 
 type SearchBasedMatch struct {
-	Path   core.RepoRelPath
-	Range_ scip.Range
-}
-
-func (m *SearchBasedMatch) Range() scip.Range {
-	return m.Range_
+	Path  core.RepoRelPath
+	Range scip.Range
 }
 
 type SyntacticMatch struct {
@@ -1224,7 +1220,7 @@ func (s *Service) SyntacticUsages(
 		}
 	}
 
-	symbolName, ok := nameFromSymbol(searchSymbol)
+	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
 		return SyntacticUsagesResult{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -1267,14 +1263,10 @@ func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit
 	if err != nil {
 		return "", err
 	}
-	file, err := io.ReadAll(r)
-	r.Close()
+	defer r.Close()
+	symbolName, err := sliceRangeFromReader(r, symbolRange)
 	if err != nil {
 		return "", err
-	}
-	symbolName, ok := sliceRange(string(file), symbolRange)
-	if !ok {
-		return "", errors.New("can't find symbol name at range")
 	}
 	return symbolName, nil
 }
@@ -1336,8 +1328,8 @@ func (s *Service) SearchBasedUsages(
 		matches := []SearchBasedMatch{}
 		for _, rg := range pair.Value.matches {
 			matches = append(matches, SearchBasedMatch{
-				Path:   pair.Key,
-				Range_: rg,
+				Path:  pair.Key,
+				Range: rg,
 			})
 		}
 		results = append(results, matches)

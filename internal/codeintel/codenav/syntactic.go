@@ -1,9 +1,10 @@
 package codenav
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"strings"
+	"io"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type candidateFile struct {
@@ -119,30 +121,30 @@ func findCandidateOccurrencesViaSearch(
 	return resultMap, nil
 }
 
-func nameFromSymbol(symbol *scip.Symbol) (string, bool) {
+func nameFromGlobalSymbol(symbol *scip.Symbol) (string, bool) {
 	if len(symbol.Descriptors) == 0 || symbol.Descriptors[0].Suffix == scip.Descriptor_Local {
 		return "", false
 	}
 	return symbol.Descriptors[len(symbol.Descriptors)-1].Name, true
 }
 
-// sliceRange returns the substring corresponding to the given single-line range.
-// It returns false if the range spans multiple lines or it is not contained in the string.
-func sliceRange(s string, range_ scip.Range) (substr string, ok bool) {
+// sliceRangeFromReader returns the substring corresponding to the given single-line range.
+// It fails if the range spans multiple lines or it is out-of-bounds for the reader
+func sliceRangeFromReader(reader io.Reader, range_ scip.Range) (substr string, err error) {
 	if range_.Start.Line != range_.End.Line {
-		return "", false
+		return "", errors.New("symbol range spans multiple lines")
 	}
 
-	lines := strings.Split(s, "\n")
-	if len(lines) <= int(range_.Start.Line) {
-		return "", false
+	scanner := bufio.NewScanner(reader)
+	for i := int32(0); scanner.Scan() && i <= range_.Start.Line; i++ {
+		if i == range_.Start.Line {
+			line := scanner.Text()
+			if len(line) < int(range_.End.Character) {
+				return "", errors.New("symbol range is out-of-bounds")
+			}
+			// FIXME(issue: GRAPH-715): wrong (less wrong would be to use rune offsets, actually correct needs encoding of the string _and_ the scip.Range)
+			return line[range_.Start.Character:range_.End.Character], nil
+		}
 	}
-
-	line := lines[range_.Start.Line]
-	if len(line) < int(range_.End.Character) {
-		return "", false
-	}
-
-	// TODO: wrong (less wrong would be to use rune offsets, actually correct needs encoding of the string _and_ the scip.Range)
-	return line[range_.Start.Character:range_.End.Character], true
+	return "", errors.New("symbol range is out-of-bounds")
 }

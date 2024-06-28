@@ -69,7 +69,7 @@ func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository type
 			repository: repository,
 			revision:   revision,
 			path:       usage.Path,
-			range_:     usage.Range(),
+			range_:     usage.Range,
 		},
 	}
 }
