@@ -227,15 +227,15 @@ fn index_file(
     }
 }
 
-fn read_tar_entry<R: Read>(mut entry: tar::Entry<'_, R>) -> Result<(Utf8PathBuf, String)> {
-    let mut contents = String::new();
+fn tar_entry_path<R: Read>(entry: &tar::Entry<'_, R>) -> Result<Utf8PathBuf> {
     let path = entry.path()?;
-    let path =
-        Utf8PathBuf::from_path_buf(path.to_path_buf()).map_err(|_| anyhow!("Non utf-8 path"))?;
-    entry
-        .read_to_string(&mut contents)
-        .with_context(|| format!("Failed to read contents of entry {path}"))?;
-    Ok((path, contents))
+    Utf8PathBuf::from_path_buf(path.to_path_buf()).map_err(|_| anyhow!("Non utf-8 path"))
+}
+
+fn tar_entry_contents<R: Read>(mut entry: tar::Entry<'_, R>) -> Result<String> {
+    let mut contents = String::with_capacity(entry.size() as usize);
+    entry.read_to_string(&mut contents)?;
+    Ok(contents)
 }
 
 fn index_tar<R: Read + Send + 'static>(
@@ -249,13 +249,21 @@ fn index_tar<R: Read + Send + 'static>(
     let (rx, reader_thread_id) = {
         let (tx, rx) = std::sync::mpsc::sync_channel(rayon::current_num_threads() * 2);
         let thread_id = std::thread::spawn(move || -> Result<()> {
+            let extensions = ParserId::language_extensions(&parser);
+
             let mut ar: tar::Archive<_> = tar::Archive::new(reader);
             let entries = ar.entries()?;
             entries
                 .filter_map(|entry| {
-                    // TODO: log errors
+                    // TODO: Skipping any entry we can't read (mostly for non-utf-8 reasons)
+                    // Do we want to log these cases?
                     let entry = entry.ok()?;
-                    read_tar_entry(entry).ok()
+                    let path = tar_entry_path(&entry).ok()?;
+                    if !extensions.contains(path.extension()?) {
+                        return None;
+                    }
+                    let contents = tar_entry_contents(entry).ok()?;
+                    Some((path, contents))
                 })
                 .for_each(|x| tx.send(x).unwrap());
             Ok(())
@@ -267,14 +275,8 @@ fn index_tar<R: Read + Send + 'static>(
         .par_bridge()
         .filter_map(
             |(path, buf): (Utf8PathBuf, String)| -> Option<Result<Document>> {
-                let extensions = ParserId::language_extensions(&parser);
-                if !extensions.contains(path.extension()?) {
-                    return None;
-                }
-                spinner.set_message(format!(
-                    "[{progress}]: {path}",
-                    progress = progress.fetch_add(1, Ordering::Relaxed)
-                ));
+                let progress = progress.fetch_add(1, Ordering::Relaxed);
+                spinner.set_message(format!("[{progress}]: {path}"));
                 match index_content(&buf, parser, options) {
                     Ok(mut document) => {
                         spinner.tick();
