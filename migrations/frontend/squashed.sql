@@ -65,6 +65,12 @@ CREATE TYPE feature_flag_type AS ENUM (
     'rollout'
 );
 
+CREATE TYPE github_app_kind AS ENUM (
+    'COMMIT_SIGNING',
+    'REPO_SYNC',
+    'USER_GITHUB_APP'
+);
+
 CREATE TYPE lsif_uploads_transition_columns AS (
 	state text,
 	expired boolean,
@@ -2720,7 +2726,7 @@ CREATE TABLE github_apps (
     app_url text DEFAULT ''::text NOT NULL,
     webhook_id integer,
     domain text DEFAULT 'repos'::text NOT NULL,
-    kind character varying(255) NOT NULL
+    kind github_app_kind NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq

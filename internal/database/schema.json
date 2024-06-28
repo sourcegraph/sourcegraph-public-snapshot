@@ -46,6 +46,14 @@
       ]
     },
     {
+      "Name": "github_app_kind",
+      "Labels": [
+        "COMMIT_SIGNING",
+        "REPO_SYNC",
+        "USER_GITHUB_APP"
+      ]
+    },
+    {
       "Name": "persistmode",
       "Labels": [
         "record",
@@ -13997,10 +14005,10 @@
         {
           "Name": "kind",
           "Index": 16,
-          "TypeName": "character varying(255)",
+          "TypeName": "github_app_kind",
           "IsNullable": false,
           "Default": "",
-          "CharacterMaximumLength": 255,
+          "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",

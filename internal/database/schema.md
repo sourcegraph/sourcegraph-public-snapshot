@@ -1892,7 +1892,7 @@ Foreign-key constraints:
  app_url           | text                     |           | not null | ''::text
  webhook_id        | integer                  |           |          | 
  domain            | text                     |           | not null | 'repos'::text
- kind              | character varying(255)   |           | not null | 
+ kind              | github_app_kind          |           | not null | 
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
@@ -5107,6 +5107,12 @@ Foreign-key constraints:
 
 - bool
 - rollout
+
+# Type github_app_kind
+
+- COMMIT_SIGNING
+- REPO_SYNC
+- USER_GITHUB_APP
 
 # Type persistmode
 
