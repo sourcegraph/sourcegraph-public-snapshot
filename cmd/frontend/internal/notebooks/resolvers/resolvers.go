@@ -367,10 +367,6 @@ type notebookResolver struct {
 	db       database.DB
 }
 
-func (r *notebookResolver) QueryVersion(_ context.Context) string {
-	return r.notebook.QueryVersion
-}
-
 func (r *notebookResolver) ID() graphql.ID {
 	return marshalNotebookID(r.notebook.ID)
 }
@@ -515,6 +511,10 @@ func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResol
 		return &symbolBlockResolver{r.block}, true
 	}
 	return nil, false
+}
+
+func (r *notebookResolver) PatternType(_ context.Context) string {
+	return r.notebook.PatternType
 }
 
 type markdownBlockResolver struct {

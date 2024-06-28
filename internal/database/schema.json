@@ -46,19 +46,20 @@
       ]
     },
     {
+      "Name": "pattern_type",
+      "Labels": [
+        "keyword",
+        "literal",
+        "regexp",
+        "standard",
+        "structural"
+      ]
+    },
+    {
       "Name": "persistmode",
       "Labels": [
         "record",
         "snapshot"
-      ]
-    },
-    {
-      "Name": "query_version_enum",
-      "Labels": [
-        "V1",
-        "V2",
-        "V3",
-        "V4"
       ]
     }
   ],
@@ -19087,11 +19088,11 @@
           "Comment": ""
         },
         {
-          "Name": "public",
-          "Index": 4,
-          "TypeName": "boolean",
+          "Name": "pattern_type",
+          "Index": 12,
+          "TypeName": "pattern_type",
           "IsNullable": false,
-          "Default": "",
+          "Default": "'standard'::pattern_type",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19100,11 +19101,11 @@
           "Comment": ""
         },
         {
-          "Name": "query_version",
-          "Index": 12,
-          "TypeName": "query_version_enum",
+          "Name": "public",
+          "Index": 4,
+          "TypeName": "boolean",
           "IsNullable": false,
-          "Default": "'V3'::query_version_enum",
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

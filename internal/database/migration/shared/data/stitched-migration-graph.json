@@ -11237,9 +11237,9 @@
 			},
 			{
 				"ID": 1719214941,
-				"Name": "add_field_query_version_to_notebooks",
-				"UpQuery": "DO $$\nBEGIN\n    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'query_version_enum') THEN\n        CREATE TYPE query_version_enum AS ENUM ('V1', 'V2', 'V3', 'V4');\n    END IF;\nEND\n$$;\n\n\nALTER TABLE notebooks ADD COLUMN IF NOT EXISTS query_version query_version_enum NOT NULL DEFAULT 'V3';",
-				"DownQuery": "ALTER TABLE notebooks DROP COLUMN IF EXISTS query_version;\nDROP TYPE IF EXISTS query_version_enum;",
+				"Name": "notebooks_add_field_pattern_type",
+				"UpQuery": "DO $$\nBEGIN\n    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pattern_type') THEN\n        CREATE TYPE pattern_type AS ENUM ('keyword', 'literal', 'regexp', 'standard', 'structural');\n    END IF;\nEND\n$$;\n\nALTER TABLE notebooks ADD COLUMN IF NOT EXISTS pattern_type pattern_type NOT NULL DEFAULT 'standard';",
+				"DownQuery": "ALTER TABLE notebooks DROP COLUMN IF EXISTS pattern_type;\nDROP TYPE IF EXISTS pattern_type;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [

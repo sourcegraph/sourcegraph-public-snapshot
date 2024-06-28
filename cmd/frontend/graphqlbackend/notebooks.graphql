@@ -299,10 +299,9 @@ type Notebook implements Node {
         after: String
     ): NotebookStarConnection!
     """
-    Query version of the notebook. The query version defines the version of the
-    Sourcegraph query language that is used to parse the notebook blocks.
+    The default pattern type that is used to interpret queries that do not contain a patternType: filter.
     """
-    queryVersion: String!
+    patternType: SearchPatternType!
 }
 
 """

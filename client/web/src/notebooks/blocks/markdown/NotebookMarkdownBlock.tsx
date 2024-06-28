@@ -80,7 +80,7 @@ const staticExtensions: Extension[] = [
     editorHeight({ maxHeight: '60rem' }),
 ]
 
-interface NotebookMarkdownBlockProps extends Omit<BlockProps<MarkdownBlock>, 'queryVersion'> {
+interface NotebookMarkdownBlockProps extends Omit<BlockProps<MarkdownBlock>, 'patternType'> {
     isEmbedded?: boolean
 }
 

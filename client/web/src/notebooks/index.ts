@@ -6,6 +6,7 @@ import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/se
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { HighlightLineRange, SymbolKind } from '../graphql-operations'
+import { SearchPatternType } from '../graphql-operations'
 
 // When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
@@ -108,7 +109,7 @@ export interface BlockProps<T extends Block = Block> {
     id: T['id']
     input: T['input']
     output: T['output']
-    queryVersion: string
+    patternType: SearchPatternType
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, blockInput: BlockInput): void

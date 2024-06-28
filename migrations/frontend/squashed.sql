@@ -76,16 +76,17 @@ CREATE TYPE lsif_uploads_transition_columns AS (
 
 COMMENT ON TYPE lsif_uploads_transition_columns IS 'A type containing the columns that make-up the set of tracked transition columns. Primarily used to create a nulled record due to `OLD` being unset in INSERT queries, and creating a nulled record with a subquery is not allowed.';
 
+CREATE TYPE pattern_type AS ENUM (
+    'keyword',
+    'literal',
+    'regexp',
+    'standard',
+    'structural'
+);
+
 CREATE TYPE persistmode AS ENUM (
     'record',
     'snapshot'
-);
-
-CREATE TYPE query_version_enum AS ENUM (
-    'V1',
-    'V2',
-    'V3',
-    'V4'
 );
 
 CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger
@@ -3560,7 +3561,7 @@ CREATE TABLE notebooks (
     namespace_user_id integer,
     namespace_org_id integer,
     updater_user_id integer,
-    query_version query_version_enum DEFAULT 'V3'::query_version_enum NOT NULL,
+    pattern_type pattern_type DEFAULT 'standard'::pattern_type NOT NULL,
     CONSTRAINT blocks_is_array CHECK ((jsonb_typeof(blocks) = 'array'::text)),
     CONSTRAINT notebooks_has_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );

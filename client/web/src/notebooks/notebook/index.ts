@@ -9,9 +9,9 @@ import * as uuid from 'uuid'
 import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
 import {
     aggregateStreamingSearch,
-    defaultPatternTypeFromVersion,
     emptyAggregateResults,
     type SymbolMatch,
+    LATEST_VERSION,
 } from '@sourcegraph/shared/src/search/stream'
 import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -45,7 +45,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
 
 function findSymbolAtRevision(
     input: Omit<SymbolBlockInput, 'revision'>,
-    queryVersion: string,
+    patternType: SearchPatternType,
     revision: string
 ): Observable<{ range: UIRangeSpec['range']; revision: string } | Error> {
     const { repositoryName, filePath, symbolName, symbolContainerName, symbolKind } = input
@@ -53,7 +53,8 @@ function findSymbolAtRevision(
         `repo:${escapeRegExp(repositoryName)} file:${escapeRegExp(
             filePath
         )} rev:${revision} ${symbolName} type:symbol count:50`,
-        queryVersion,
+        patternType,
+        LATEST_VERSION,
         (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
         symbol => symbol
     ).pipe(
@@ -99,13 +100,17 @@ export class NotebookHeadingMarkdownRenderer extends Renderer {
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
-    private queryVersion = ''
+    private patternType: SearchPatternType
 
-    constructor(initializerBlocks: BlockInit[], queryVersion: string, private dependencies: BlockDependencies) {
+    constructor(
+        initializerBlocks: BlockInit[],
+        patternType: SearchPatternType,
+        private dependencies: BlockDependencies
+    ) {
         const blocks = initializerBlocks.map(block => ({ ...block, output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
-        this.queryVersion = queryVersion
+        this.patternType = patternType
         this.blockOrder = blocks.map(block => block.id)
 
         // Pre-run certain blocks, for a better user experience.
@@ -164,13 +169,8 @@ export class Notebook {
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
-                        /**
-                         * TODO(stefan) It's redundant to set "version" here, because we already infer
-                         * "patternType" from "version". Remove "patternType" once it has been changed
-                         * to be an optional parameter.
-                         */
-                        version: this.queryVersion,
-                        patternType: defaultPatternTypeFromVersion(this.queryVersion) || SearchPatternType.standard,
+                        version: LATEST_VERSION,
+                        patternType: this.patternType,
                         caseSensitive: false,
                         trace: undefined,
                         chunkMatches: true,
@@ -200,13 +200,13 @@ export class Notebook {
             }
             case 'symbol': {
                 // Start by searching for the symbol at the latest HEAD (main) revision.
-                const output = findSymbolAtRevision(block.input, this.queryVersion, 'HEAD').pipe(
+                const output = findSymbolAtRevision(block.input, this.patternType, 'HEAD').pipe(
                     switchMap(symbolSearchResult => {
                         if (!isErrorLike(symbolSearchResult)) {
                             return of({ ...symbolSearchResult, symbolFoundAtLatestRevision: true })
                         }
                         // If not found, look at the revision stored in the block input (should always be found).
-                        return findSymbolAtRevision(block.input, this.queryVersion, block.input.revision).pipe(
+                        return findSymbolAtRevision(block.input, this.patternType, block.input.revision).pipe(
                             map(symbolSearchResult =>
                                 !isErrorLike(symbolSearchResult)
                                     ? { ...symbolSearchResult, symbolFoundAtLatestRevision: false }

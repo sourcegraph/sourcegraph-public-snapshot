@@ -5,7 +5,6 @@ import { map } from 'rxjs/operators'
 import { SearchPatternType } from '../../graphql-operations'
 import {
     type AggregateStreamingSearchResults,
-    defaultPatternTypeFromVersion,
     LATEST_VERSION,
     messageHandlers,
     type MessageHandlers,
@@ -46,17 +45,23 @@ function firstMatchStreamingSearch(
 }
 
 export function fetchStreamSuggestions(query: string, sourcegraphURL?: string): Observable<SearchMatch[]> {
-    return fetchStreamSuggestionsVersion(query, LATEST_VERSION, sourcegraphURL)
+    return fetchStreamSuggestionsWithDefaultPatternType(
+        query,
+        SearchPatternType.standard,
+        LATEST_VERSION,
+        sourcegraphURL
+    )
 }
 
-export function fetchStreamSuggestionsVersion(
+export function fetchStreamSuggestionsWithDefaultPatternType(
     query: string,
+    patternType: SearchPatternType,
     version: string,
     sourcegraphURL?: string
 ): Observable<SearchMatch[]> {
     return firstMatchStreamingSearch(of(query), {
         version,
-        patternType: defaultPatternTypeFromVersion(version) || SearchPatternType.standard,
+        patternType,
         caseSensitive: false,
         trace: undefined,
         sourcegraphURL,

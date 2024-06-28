@@ -17,6 +17,7 @@ import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 import { V2BlockTypes, type Block, type BlockDirection, type BlockInit, type BlockInput, type BlockType } from '..'
 import type { AuthenticatedUser } from '../../auth'
 import type { NotebookFields } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { PageRoutes } from '../../routes.constants'
 import type { SearchStreamingProps } from '../../search'
@@ -47,7 +48,7 @@ export interface NotebookComponentProps
     outlineContainerElement?: HTMLElement | null
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
-    queryVersion: string
+    patternType: SearchPatternType
 }
 
 const LOADING = 'LOADING' as const
@@ -95,14 +96,14 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         ownEnabled,
         settingsCascade,
         outlineContainerElement,
-        queryVersion,
+        patternType,
     }) => {
         const notebook = useMemo(
             () =>
-                new Notebook(initialBlocks, queryVersion, {
+                new Notebook(initialBlocks, patternType, {
                     fetchHighlightedFileLineRanges,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, queryVersion]
+            [initialBlocks, fetchHighlightedFileLineRanges, patternType]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
@@ -423,7 +424,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryService={telemetryService}
                                 telemetryRecorder={telemetryRecorder}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                queryVersion={queryVersion}
+                                patternType={patternType}
                             />
                         )
                     }
@@ -441,7 +442,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
-                                queryVersion={queryVersion}
+                                patternType={patternType}
                             />
                         )
                     }
@@ -454,7 +455,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryService={telemetryService}
                                 telemetryRecorder={telemetryRecorder}
                                 platformContext={platformContext}
-                                queryVersion={queryVersion}
+                                patternType={patternType}
                             />
                         )
                     }
@@ -481,7 +482,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                queryVersion,
+                patternType,
             ]
         )
 
