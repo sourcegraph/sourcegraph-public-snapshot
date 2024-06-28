@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "noahtest_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/noahtest",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_morikuni_aec//:aec"],
+)
+
+go_binary(
+    name = "noahtest",
+    embed = [":noahtest_lib"],
+    visibility = ["//visibility:public"],
+)
