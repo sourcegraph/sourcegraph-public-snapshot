@@ -110,7 +110,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 			return info.OID().String()
 		},
-		CacheGet: func(ctx context.Context, cacheKey string, commitID api.CommitID) (inventory.Inventory, bool) {
+		CacheGet: func(ctx context.Context, cacheKey string) (inventory.Inventory, bool) {
 			if cacheKey == "" {
 				return inventory.Inventory{}, false // not cacheable
 			}
@@ -131,7 +131,7 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 			return inventory.Inventory{}, false
 		},
-		CacheSet: func(ctx context.Context, cacheKey string, commitID api.CommitID, inv inventory.Inventory) {
+		CacheSet: func(ctx context.Context, cacheKey string, inv inventory.Inventory) {
 			if cacheKey == "" {
 				return // not cacheable
 			}
@@ -152,6 +152,8 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			return tar.NewReader(reader)
 		},
 		ShouldSkipEnhancedLanguageDetection: !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection,
+		GitServerClient:                     gsClient,
+		CommitID:                            commitID,
 	}
 
 	return invCtx, nil

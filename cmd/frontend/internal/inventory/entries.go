@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"context"
 	"github.com/sourcegraph/conc/iter"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -15,21 +14,21 @@ import (
 
 var maxInvsLength = env.MustGetInt("GET_INVENTORY_MAX_INV_IN_MEMORY", 1000, "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory.")
 
-func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.CommitID) (inv Inventory, err error) {
+func (c *Context) All(ctx context.Context) (inv Inventory, err error) {
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, string(c.Repo), commitID); ok {
+		if inv, ok := c.CacheGet(ctx, string(c.Repo)); ok {
 			return inv, nil
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, string(c.Repo), commitID, inv)
+				c.CacheSet(ctx, string(c.Repo), inv)
 			}
 		}()
 	}
 
-	r, err := gs.ArchiveReader(ctx, c.Repo, gitserver.ArchiveOptions{Treeish: string(commitID), Format: gitserver.ArchiveFormatTar})
+	r, err := c.GitServerClient.ArchiveReader(ctx, c.Repo, gitserver.ArchiveOptions{Treeish: string(c.CommitID), Format: gitserver.ArchiveFormatTar})
 	if err != nil {
 		return Inventory{}, err
 	}
@@ -48,7 +47,7 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.Com
 
 		switch {
 		case entry.Mode().IsRegular():
-			inv, err := c.fileTar(ctx, th, tr, commitID)
+			inv, err := c.fileTar(ctx, th, tr)
 			if err != nil {
 				return Inventory{}, err
 			}
@@ -75,10 +74,10 @@ func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.Com
 //
 // If a file is referenced more than once (e.g., because it is a descendent of a subtree, and it is
 // passed directly), it will be double-counted in the result.
-func (c *Context) Entries(ctx context.Context, commitID api.CommitID, entries ...fs.FileInfo) (Inventory, error) {
+func (c *Context) Entries(ctx context.Context, entries ...fs.FileInfo) (Inventory, error) {
 	invs := make([]Inventory, len(entries))
 	for i, entry := range entries {
-		var f func(context.Context, fs.FileInfo, api.CommitID) (Inventory, error)
+		var f func(context.Context, fs.FileInfo) (Inventory, error)
 		switch {
 		case entry.Mode().IsRegular():
 			f = c.file
@@ -90,7 +89,7 @@ func (c *Context) Entries(ctx context.Context, commitID api.CommitID, entries ..
 		}
 
 		var err error
-		invs[i], err = f(ctx, entry, commitID)
+		invs[i], err = f(ctx, entry)
 		if err != nil {
 			return Inventory{}, err
 		}
@@ -99,17 +98,17 @@ func (c *Context) Entries(ctx context.Context, commitID api.CommitID, entries ..
 	return Sum(invs), nil
 }
 
-func (c *Context) tree(ctx context.Context, tree fs.FileInfo, commitID api.CommitID) (inv Inventory, err error) {
+func (c *Context) tree(ctx context.Context, tree fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(tree), commitID); ok {
+		if inv, ok := c.CacheGet(ctx, c.CacheKey(tree)); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(tree), commitID, inv) // store in cache
+				c.CacheSet(ctx, c.CacheKey(tree), inv) // store in cache
 			}
 		}()
 	}
@@ -129,7 +128,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, commitID api.Commi
 			lang, err := getLang(ctx, e, c.NewFileReader, c.ShouldSkipEnhancedLanguageDetection)
 			return Inventory{Languages: []Lang{lang}}, err
 		case e.Mode().IsDir(): // subtree
-			subtreeInv, err := c.tree(ctx, e, commitID)
+			subtreeInv, err := c.tree(ctx, e)
 			return subtreeInv, err
 		default:
 			// Skip symlinks, submodules, etc.
@@ -145,17 +144,17 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, commitID api.Commi
 }
 
 // file computes the inventory of a single file. It caches the result.
-func (c *Context) file(ctx context.Context, file fs.FileInfo, commitID api.CommitID) (inv Inventory, err error) {
+func (c *Context) file(ctx context.Context, file fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file), commitID); ok {
+		if inv, ok := c.CacheGet(ctx, c.CacheKey(file)); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file), commitID, inv) // store in cache
+				c.CacheSet(ctx, c.CacheKey(file), inv) // store in cache
 			}
 		}()
 	}
@@ -170,17 +169,17 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo, commitID api.Commi
 	return Inventory{Languages: []Lang{lang}}, nil
 }
 
-func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader, commitID api.CommitID) (inv Inventory, err error) {
+func (c *Context) fileTar(ctx context.Context, file *tar.Header, r io.Reader) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(ctx, c.CacheKey(file.FileInfo()), commitID); ok {
+		if inv, ok := c.CacheGet(ctx, c.CacheKey(file.FileInfo())); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(ctx, c.CacheKey(file.FileInfo()), commitID, inv) // store in cache
+				c.CacheSet(ctx, c.CacheKey(file.FileInfo()), inv) // store in cache
 			}
 		}()
 	}
