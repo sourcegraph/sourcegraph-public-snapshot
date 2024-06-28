@@ -2,26 +2,32 @@ package store
 
 import (
 	"context"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+	appID := 1
+	kind := "USER_GITHUB_APP"
+
+	query := sqlf.Sprintf(
+		"INSERT INTO github_apps (app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, app_url, domain, kind) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, DEFAULT, DEFAULT, %s)",
+		appID, "name", "slug", "url", "clientID", "clientSecret", "privateKey", "encryptionKeyID", kind,
+	)
+	if err := s.Store.Exec(ctx, query); err != nil {
+		t.Fatal(err)
+	}
+
 	var credentials []*btypes.SiteCredential
-	// // Make sure these are sorted alphabetically.
-	// externalServiceTypes := []string{
-	// 	extsvc.TypeBitbucketServer,
-	// 	extsvc.TypeGitHub,
-	// 	extsvc.TypeGitLab,
-	// }
 
 	creds := []struct {
 		externalServiceID   string
@@ -34,12 +40,12 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 		},
 		{
 			externalServiceType: extsvc.TypeGitHub,
-			externalServiceID:   "https://someurl.test",
+			externalServiceID:   "https://second.someurl.test",
+			githubAppID:         appID,
 		},
 		{
 			externalServiceType: extsvc.TypeGitHub,
-			externalServiceID:   "https://second.someurl.test",
-			githubAppID:         1,
+			externalServiceID:   "https://someurl.test",
 		},
 		{
 			externalServiceType: extsvc.TypeGitLab,
@@ -48,11 +54,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for idx, c := range creds {
-			if idx != 1 && idx != 2 {
-				//{0. 1. 2}
-				t.Skip("testng someting")
-			}
+		for _, c := range creds {
 			sc := &btypes.SiteCredential{
 				ExternalServiceType: c.externalServiceType,
 				ExternalServiceID:   c.externalServiceID,
@@ -78,7 +80,6 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		t.Skip("testng someting")
 		t.Run("ByID", func(t *testing.T) {
 			want := credentials[0]
 			opts := GetSiteCredentialOpts{ID: want.ID}
@@ -123,7 +124,6 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Skip("testng someting")
 		t.Run("All", func(t *testing.T) {
 			cs, next, err := s.ListSiteCredentials(ctx, ListSiteCredentialsOpts{})
 			if err != nil {
@@ -176,7 +176,6 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		t.Skip("testng someting")
 		t.Run("Found", func(t *testing.T) {
 			for _, cred := range credentials {
 				if err := cred.SetAuthenticator(ctx, &auth.BasicAuthWithSSH{
@@ -218,7 +217,6 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		t.Skip("testng someting")
 		t.Run("ByID", func(t *testing.T) {
 			for _, cred := range credentials {
 				if err := s.DeleteSiteCredential(ctx, cred.ID); err != nil {
