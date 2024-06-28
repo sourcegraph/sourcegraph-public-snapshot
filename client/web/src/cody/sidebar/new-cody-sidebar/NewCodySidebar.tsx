@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 
 import { CodyLogo } from '@sourcegraph/cody-ui'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Icon, Badge, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
+import { Alert, Badge, Button, H4, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './NewCodySidebar.module.scss'
 
@@ -30,7 +30,7 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
             <div className={styles.header}>
                 <div className="d-flex flex-shrink-0 align-items-center">
                     <CodyLogo />
-                    Cody Web
+                    Cody
                     <div className="ml-2">
                         <Badge variant="info">Experimental</Badge>
                     </div>
@@ -54,8 +54,8 @@ export const NewCodySidebar: FC<NewCodySidebarProps> = props => {
 
             {!isAuthorized && (
                 <Alert variant="info" className="m-3">
-                    <H4>Cody Web is only available to signed-in users</H4>
-                    Sign in to get access to use Cody Web
+                    <H4>Cody is only available to signed-in users</H4>
+                    Sign in to get access to use Cody
                 </Alert>
             )}
         </div>

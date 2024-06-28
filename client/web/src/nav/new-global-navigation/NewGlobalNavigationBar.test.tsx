@@ -2,7 +2,7 @@ import React from 'react'
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -29,7 +29,6 @@ const PROPS: React.ComponentProps<typeof NewGlobalNavigationBar> = {
 
 describe('NewGlobalNavigationBar', () => {
     if (!window.context) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.context = {} as any
     }
     const origCodeSearchEnabledOnInstance = window.context?.codeSearchEnabledOnInstance ?? true
@@ -68,7 +67,7 @@ describe('NewGlobalNavigationBar', () => {
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({
-            codyItems: ['Cody /cody'],
+            codyItems: ['Cody https://sourcegraph.com/cody'],
         })
     })
 
@@ -137,7 +136,7 @@ describe('NewGlobalNavigationBar', () => {
             </MockedTestProvider>
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
-        expect(sidebarElement.querySelector('a[href*="/cody"]')).toBeNull()
+        expect(sidebarElement.querySelector('a[href*="cody"]')).toBeNull()
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({ codyItems: [] })
     })
 })
@@ -148,7 +147,7 @@ interface NavBarTestDescription {
 
 function describeNavBarSideMenu(sidebarElement: HTMLElement): NavBarTestDescription {
     return {
-        codyItems: Array.from(sidebarElement.querySelectorAll<HTMLAnchorElement>('a[href^="/cody"]')).map(
+        codyItems: Array.from(sidebarElement.querySelectorAll<HTMLAnchorElement>('a[href*="cody"]')).map(
             a => `${a.textContent?.trim() ?? ''} ${a.getAttribute('href') ?? ''}`
         ),
     }

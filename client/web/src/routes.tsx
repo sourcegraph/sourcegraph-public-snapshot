@@ -42,7 +42,10 @@ const GlobalCodeMonitoringArea = lazyComponent(
     () => import('./enterprise/code-monitoring/global/GlobalCodeMonitoringArea'),
     'GlobalCodeMonitoringArea'
 )
-const CodeInsightsRouter = lazyComponent(() => import('./enterprise/insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const CodeInsightsAppRouter = lazyComponent(
+    () => import('./enterprise/insights/CodeInsightsAppRouter'),
+    'CodeInsightsAppRouter'
+)
 const SearchContextsListPage = lazyComponent(
     () => import('./enterprise/searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
@@ -158,7 +161,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodeInsightsRouter {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
+                    <CodeInsightsAppRouter {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
                 condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
             />

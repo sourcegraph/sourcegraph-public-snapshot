@@ -129,6 +129,11 @@
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
 
+    import {
+        codeGraphData as codeGraphDataFacet,
+        type CodeGraphData,
+    } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
+
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
     import type { LineOrPositionOrRange } from '$lib/common'
@@ -167,6 +172,7 @@
 
     export let blobInfo: BlobInfo
     export let highlights: string
+    export let codeGraphData: CodeGraphData[] = []
     export let wrapLines: boolean = false
     export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI | null
@@ -197,6 +203,7 @@
         blameDataExtension: null,
         blameColumnExtension: null,
         searchExtension: null,
+        codeGraph: null,
     })
     const useFileSearch = createLocalWritable('blob.overrideBrowserFindOnPage', true)
     registerHotkey({
@@ -249,6 +256,7 @@
         : null
     $: lineWrapping = wrapLines ? EditorView.lineWrapping : null
     $: syntaxHighlighting = highlights ? syntaxHighlight.of({ content: blobInfo.content, lsif: highlights }) : null
+    $: codeGraph = codeGraphDataFacet.of(codeGraphData)
     $: staticHighlightExtension = staticHighlights(staticHighlightRanges)
     $: searchExtension = search({
         overrideBrowserFindInPageShortcut: $useFileSearch,
@@ -282,6 +290,7 @@
             codeIntelExtension,
             lineWrapping,
             syntaxHighlighting,
+            codeGraph,
             staticHighlightExtension,
             blameDataExtension,
             searchExtension,
@@ -320,6 +329,7 @@
                     codeIntelExtension,
                     lineWrapping,
                     syntaxHighlighting,
+                    codeGraph,
                     staticHighlightExtension,
                     blameDataExtension,
                     blameColumnExtension,

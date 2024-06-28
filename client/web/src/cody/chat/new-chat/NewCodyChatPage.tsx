@@ -26,7 +26,7 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
 
     return (
         <Page className={styles.root}>
-            <PageTitle title="Cody Web Chat" />
+            <PageTitle title="Cody Chat" />
 
             <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
 

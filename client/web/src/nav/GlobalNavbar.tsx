@@ -30,6 +30,7 @@ import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import type { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyProRoutes } from '../cody/codyProRoutes'
+import { CODY_MARKETING_PAGE_URL } from '../cody/codyRoutes'
 import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
@@ -360,7 +361,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
         <NavItem icon={() => <CodyLogoWrapper />} key="cody">
             <NavLink
                 variant={navLinkVariant}
-                to={isSourcegraphDotCom ? PageRoutes.CodyRedirectToMarketingOrDashboard : PageRoutes.CodyDashboard}
+                to={isSourcegraphDotCom ? CODY_MARKETING_PAGE_URL : PageRoutes.CodyDashboard}
             >
                 Cody
             </NavLink>

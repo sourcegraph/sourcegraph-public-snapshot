@@ -1,4 +1,4 @@
-# Provides secrets like GH_TOKEN and PERCY_TOKEN via --action_env flag.
+# Provides secrets like GH_TOKEN via --action_env flag.
 # Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
@@ -32,7 +32,7 @@ common --test_env=HEADLESS=false
 common --test_env=SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
 common --test_env=DISPLAY=:99
 
-# Provides git commit, branch information to build targets like Percy via status file.
+# Provides git commit, branch information to build targets via status file.
 # https://bazel.build/docs/user-manual#workspace-status
 common --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
 

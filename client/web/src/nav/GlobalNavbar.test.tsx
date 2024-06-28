@@ -44,7 +44,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 
 describe('GlobalNavbar', () => {
     if (!window.context) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         window.context = {} as any
     }
     const origCodeSearchEnabledOnInstance = window.context?.codeSearchEnabledOnInstance ?? true
@@ -83,7 +82,7 @@ describe('GlobalNavbar', () => {
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
             codyItemType: 'link',
-            codyItemLink: '/cody',
+            codyItemLink: 'https://sourcegraph.com/cody',
         })
     })
 
@@ -151,7 +150,7 @@ describe('GlobalNavbar', () => {
                 <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
-        expect(baseElement.querySelector('a[href^="/cody"]')).toBeNull()
+        expect(baseElement.querySelector('a[href*="cody"]')).toBeNull()
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({ codyItemType: 'none' })
     })
 })
@@ -174,7 +173,7 @@ function describeNavBar(baseElement: HTMLElement): NavBarTestDescription {
         }
     }
 
-    const item = baseElement.querySelector<HTMLAnchorElement>('a[href^="/cody"]')
+    const item = baseElement.querySelector<HTMLAnchorElement>('a[href*="cody"]')
     return item
         ? {
               codyItemType: 'link',
