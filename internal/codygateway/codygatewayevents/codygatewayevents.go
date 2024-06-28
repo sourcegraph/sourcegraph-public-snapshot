@@ -66,9 +66,12 @@ func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.Co
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 	defer client.Close()
-	tr.AddEvent("bigquery.NewClient")
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tr.AddEvent("bigquery.NewClient",
+		attribute.String("projectID", s.opts.BigQuery.ProjectID),
+		attribute.String("dataset", s.opts.BigQuery.Dataset),
+		attribute.String("table", s.opts.BigQuery.EventsTable))
 
 	// Count events with the name for made requests for each day in the last 7 days.
 	query := fmt.Sprintf(`
@@ -195,9 +198,12 @@ func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codyg
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 	defer client.Close()
-	tr.AddEvent("bigquery.NewClient")
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tr.AddEvent("bigquery.NewClient",
+		attribute.String("projectID", s.opts.BigQuery.ProjectID),
+		attribute.String("dataset", s.opts.BigQuery.Dataset),
+		attribute.String("table", s.opts.BigQuery.EventsTable))
 
 	// Count amount of tokens across all requests for made requests for each day abd model
 	// in the last 7 days.
