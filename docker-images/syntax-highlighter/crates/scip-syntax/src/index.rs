@@ -5,7 +5,6 @@ use std::{
     fs::File,
     io::{self, prelude::*},
     sync::atomic::{AtomicU32, Ordering},
-    thread::{self, JoinHandle},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -239,58 +238,63 @@ fn read_tar_entry<R: Read>(mut entry: tar::Entry<'_, R>) -> Result<(Utf8PathBuf,
     Ok((path, contents))
 }
 
-fn index_tar<R: Read>(
+fn index_tar<R: Read + Send + 'static>(
     reader: R,
     parser: ParserId,
     options: IndexOptions,
 ) -> anyhow::Result<Vec<Document>> {
-    let mut ar: tar::Archive<_> = tar::Archive::new(reader);
-    let entries = ar.entries()?;
     let progress: AtomicU32 = AtomicU32::new(1);
     let spinner = create_spinner();
-
-    let (tx, rx) = std::sync::mpsc::channel();
-    // We need to move indexing off the main thread, because we're not allowed to move the archive
-    let thread_id: JoinHandle<Result<Vec<Document>>> = thread::spawn(move || {
-        rx.into_iter()
-            .par_bridge()
-            .filter_map(
-                |(path, buf): (Utf8PathBuf, String)| -> Option<Result<Document>> {
-                    let extensions = ParserId::language_extensions(&parser);
-                    if !extensions.contains(path.extension()?) {
-                        return None;
+    // We need to move reading the archive off the main thread, because it can only be done synchronously
+    let (rx, reader_thread_id) = {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let thread_id = std::thread::spawn(move || -> Result<()> {
+            let mut ar: tar::Archive<_> = tar::Archive::new(reader);
+            let entries = ar.entries()?;
+            entries
+                .filter_map(|entry| {
+                    // TODO: log errors
+                    let entry = entry.ok()?;
+                    read_tar_entry(entry).ok()
+                })
+                .for_each(|x| tx.send(x).unwrap());
+            Ok(())
+        });
+        (rx, thread_id)
+    };
+    let documents = rx
+        .into_iter()
+        .par_bridge()
+        .filter_map(
+            |(path, buf): (Utf8PathBuf, String)| -> Option<Result<Document>> {
+                let extensions = ParserId::language_extensions(&parser);
+                if !extensions.contains(path.extension()?) {
+                    return None;
+                }
+                spinner.set_message(format!(
+                    "[{progress}]: {path}",
+                    progress = progress.fetch_add(1, Ordering::Relaxed)
+                ));
+                match index_content(&buf, parser, options) {
+                    Ok(mut document) => {
+                        spinner.tick();
+                        document.relative_path = path.to_string();
+                        Some(Ok(document))
                     }
-                    spinner.set_message(format!(
-                        "[{progress}]: {path}",
-                        progress = progress.fetch_add(1, Ordering::Relaxed)
-                    ));
-                    match index_content(&buf, parser, options) {
-                        Ok(mut document) => {
-                            spinner.tick();
-                            document.relative_path = path.to_string();
-                            Some(Ok(document))
-                        }
-                        Err(error) => {
-                            if options.fail_fast {
-                                Some(Err(anyhow!("failed to index {path}: {error:?}")))
-                            } else {
-                                eprintln!("failed to index {path}: {error:?}");
-                                None
-                            }
+                    Err(error) => {
+                        if options.fail_fast {
+                            Some(Err(anyhow!("failed to index {path}: {error:?}")))
+                        } else {
+                            eprintln!("failed to index {path}: {error:?}");
+                            None
                         }
                     }
-                },
-            )
-            .collect()
-    });
-    entries
-        .filter_map(|entry| {
-            let entry = entry.ok()?;
-            read_tar_entry(entry).ok()
-        })
-        .for_each(|x| tx.send(x).unwrap());
-    drop(tx);
-    thread_id.join().unwrap()
+                }
+            },
+        )
+        .collect();
+    reader_thread_id.join().unwrap()?;
+    documents
 }
 
 thread_local! {
