@@ -173,6 +173,9 @@ func NewDefaultConfig() Sourcegraph {
 			Grafana: GrafanaSpec{
 				StandardConfig: StandardConfig{
 					Disabled: true,
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "2Gi",
+					},
 				},
 			},
 			Jaeger: JaegerSpec{

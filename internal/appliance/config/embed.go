@@ -11,6 +11,7 @@ var (
 
 	PgsqlConfig                     []byte
 	PrometheusDefaultConfigTemplate []byte
+	GrafanaDefaultConfigTemplate    []byte
 	CodeIntelConfig                 []byte
 	CodeInsightsConfig              []byte
 )
@@ -20,4 +21,5 @@ func init() {
 	CodeInsightsConfig, _ = fs.ReadFile("postgres/codeinsights.conf")
 	PgsqlConfig, _ = fs.ReadFile("postgres/pgsql.conf")
 	PrometheusDefaultConfigTemplate, _ = fs.ReadFile("prometheus/default.yml.gotmpl")
+	GrafanaDefaultConfigTemplate, _ = fs.ReadFile("datasources/default.yml.gotmpl")
 }
