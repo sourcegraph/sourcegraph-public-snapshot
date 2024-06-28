@@ -144,11 +144,6 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         // If successful, update setting. This form will no longer be rendered
     }
 
-    const onSignUpClick = (): void => {
-        setHasAccount(true)
-        platformContext.telemetryService.log('VSCESidebarCreateAccount')
-    }
-
     if (state === 'success') {
         // This form should no longer be rendered as the extension context
         // will be invalidated. We should show a notification that the accessToken
@@ -168,25 +163,6 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     if (!hasAccount && !accessToken) {
         return renderCommon(
             <>
-                <Text className={classNames(styles.ctaParagraph)}>
-                    Create an account to search across your private repositories and access advanced features: search
-                    multiple repositories & commit history, monitor code changes, save searches, and more.
-                </Text>
-                <div>
-                    <Link to={signUpURL} className={styles.ctaLink}>
-                        <VSCodeButton
-                            onClick={onSignUpClick}
-                            className={classNames(
-                                'my-1 p-0',
-                                styles.ctaButton,
-                                styles.ctaButtonWrapperWithContextBelow
-                            )}
-                            autofocus={false}
-                        >
-                            Create an account
-                        </VSCodeButton>
-                    </Link>
-                </div>
                 <VSCodeLink className="my-0" onClick={() => setHasAccount(true)}>
                     Have an account?
                 </VSCodeLink>
@@ -216,24 +192,6 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </a>{' '}
                 for a video guide on how to create an access token.
             </Text>
-            {/* ---------- UNRELEASED FEATURE ---------- */}
-            {isSourcegraphDotCom && authenticatedUser?.displayName === 'sourcegraph' && (
-                <Text className={classNames(styles.ctaParagraph)}>
-                    <Link to={isSourcegraphDotCom} className={styles.ctaLink}>
-                        <VSCodeButton
-                            onClick={onSignUpClick}
-                            className={classNames(
-                                'my-1 p-0',
-                                styles.ctaButton,
-                                styles.ctaButtonWrapperWithContextBelow
-                            )}
-                            autofocus={false}
-                        >
-                            Continue in browser
-                        </VSCodeButton>
-                    </Link>
-                </Text>
-            )}
             <Text className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <Input
                     inputClassName={classNames('input', styles.ctaInput)}
@@ -286,11 +244,6 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             <Text className="my-0">
                 <VSCodeLink onClick={() => onInstanceTypeChange()}>
                     {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
-                </VSCodeLink>
-            </Text>
-            <Text className="my-0">
-                <VSCodeLink href={signUpURL} onClick={onSignUpClick}>
-                    Create an account
                 </VSCodeLink>
             </Text>
         </>
