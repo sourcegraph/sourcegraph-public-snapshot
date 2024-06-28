@@ -1313,44 +1313,39 @@ func (s *Service) SearchBasedUsages(
 	defer endObservation(1, observation.Args{})
 
 	var language string
+	var symbolName string
+	var syntacticUploadID *int
+
 	if previousSyntacticSearch != nil {
 		language = previousSyntacticSearch.Language
+		symbolName = previousSyntacticSearch.SymbolName
+		syntacticUploadID = &previousSyntacticSearch.UploadID
 	} else {
 		language, err = languageFromFilepath(trace, path)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	var symbolName string
-	if previousSyntacticSearch != nil {
-		symbolName = previousSyntacticSearch.SymbolName
-	} else {
 		nameFromGit, err := s.symbolNameFromGit(ctx, repo, commit, path, symbolRange)
 		if err != nil {
 			return nil, err
 		}
 		symbolName = nameFromGit
+
+		syntacticUpload, uploadErr := s.getSyntacticUpload(ctx, trace, repo, commit, path)
+		if uploadErr != nil {
+			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
+		} else {
+			syntacticUploadID = &syntacticUpload.ID
+		}
 	}
 
 	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, repo, commit, symbolName, language)
 
-	var syntacticUploadID int
-	if previousSyntacticSearch != nil {
-		syntacticUploadID = previousSyntacticSearch.UploadID
-	} else {
-		syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
-		if err != nil {
-			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
-		} else {
-			syntacticUploadID = syntacticUpload.ID
-		}
-	}
-
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		if syntacticUploadID != 0 {
-			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, syntacticUploadID, pair.Key, pair.Value)
+		if syntacticUploadID != nil {
+			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, *syntacticUploadID, pair.Key, pair.Value)
 			if err == nil {
 				results = append(results, searchBasedMatches)
 				continue
