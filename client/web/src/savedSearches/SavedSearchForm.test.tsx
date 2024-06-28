@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { LazyQueryInput } from '@sourcegraph/branded'
+import { LazyQueryInputFormControl } from '@sourcegraph/branded'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
@@ -10,9 +10,9 @@ import { SavedSearchForm } from './SavedSearchForm'
 const DEFAULT_PATTERN_TYPE = SearchPatternType.regexp
 
 describe('SavedSearchForm', () => {
-    test('renders LazyQueryInput with the default patternType', () => {
+    test('renders LazyQueryInputFormControl with the default patternType', () => {
         vi.mock('@sourcegraph/branded', () => ({
-            LazyQueryInput: vi.fn(() => null),
+            LazyQueryInputFormControl: vi.fn(() => null),
         }))
         vi.mock('../util/settings', () => ({
             defaultPatternTypeFromSettings: () => DEFAULT_PATTERN_TYPE,
@@ -36,7 +36,7 @@ describe('SavedSearchForm', () => {
             />
         )
 
-        expect(LazyQueryInput).toHaveBeenCalledWith(
+        expect(LazyQueryInputFormControl).toHaveBeenCalledWith(
             expect.objectContaining({
                 patternType: DEFAULT_PATTERN_TYPE,
             }),
