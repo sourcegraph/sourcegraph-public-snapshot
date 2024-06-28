@@ -11248,6 +11248,7 @@
         "DownQuery": "-- delete the constraints\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP COLUMN IF EXISTS github_app_id;",
 >>>>>>> 36300054fd3 (feat: introduce new table columns and constraints for batches-gh_apps integration)
 				"Privileged": false,
+<<<<<<< HEAD
         "NonIdempotent": false,
         "Parents": [
           1717699555
@@ -11549,4 +11550,304 @@
       }
     }
   }
+=======
+				"NonIdempotent": false,
+				"Parents": [
+					1717699555
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1719498091,
+				"Name": "add_github_app_id_user_credentials",
+				"UpQuery": "ALTER TABLE IF EXISTS user_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id);\n\n-- We want to make sure that we never have a user_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS user_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
+				"DownQuery": "-- delete the constraints\nALTER TABLE IF EXISTS user_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS user_credentials DROP COLUMN IF EXISTS github_app_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719498032
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1719498128,
+				"Name": "add_kind_column_github_app",
+				"UpQuery": "CREATE TYPE github_app_kind AS ENUM (\n    'COMMIT_SIGNING',\n    'REPO_SYNC',\n    'USER_GITHUB_APP'\n);\n\nALTER TABLE IF EXISTS github_apps\n    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;\n\nUPDATE github_apps\nSET kind = 'COMMIT_SIGNING'\nWHERE domain = 'batches';\n\nUPDATE github_apps\nSET kind = 'REPO_SYNC'\nWHERE domain = 'repos';\n\n-- This is expected to fail if any row is using an unknown value that is not repos or batches.\n-- We only allow repos or batches at this time.\nALTER TABLE IF EXISTS github_apps\nALTER COLUMN kind SET NOT NULL;",
+				"DownQuery": "ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS kind;\n\nDROP TYPE github_app_kind;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719498091
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			}
+		],
+		"BoundsByRev": {
+			"v3.20.0": {
+				"RootID": -1528395684,
+				"LeafIDs": [
+					1528395718
+				],
+				"PreCreation": false
+			},
+			"v3.21.0": {
+				"RootID": -1528395684,
+				"LeafIDs": [
+					1528395733
+				],
+				"PreCreation": false
+			},
+			"v3.22.0": {
+				"RootID": -1528395684,
+				"LeafIDs": [
+					1528395747
+				],
+				"PreCreation": false
+			},
+			"v3.23.0": {
+				"RootID": -1528395684,
+				"LeafIDs": [
+					1528395768
+				],
+				"PreCreation": false
+			},
+			"v3.24.0": {
+				"RootID": -1528395684,
+				"LeafIDs": [
+					1528395773
+				],
+				"PreCreation": false
+			},
+			"v3.25.0": {
+				"RootID": -1528395733,
+				"LeafIDs": [
+					1528395787
+				],
+				"PreCreation": false
+			},
+			"v3.26.0": {
+				"RootID": -1528395733,
+				"LeafIDs": [
+					1528395800
+				],
+				"PreCreation": false
+			},
+			"v3.27.0": {
+				"RootID": -1528395733,
+				"LeafIDs": [
+					1528395816
+				],
+				"PreCreation": false
+			},
+			"v3.28.0": {
+				"RootID": -1528395733,
+				"LeafIDs": [
+					1528395822
+				],
+				"PreCreation": false
+			},
+			"v3.29.0": {
+				"RootID": -1528395787,
+				"LeafIDs": [
+					1528395834
+				],
+				"PreCreation": false
+			},
+			"v3.30.0": {
+				"RootID": -1528395787,
+				"LeafIDs": [
+					1528395853
+				],
+				"PreCreation": false
+			},
+			"v3.31.0": {
+				"RootID": -1528395787,
+				"LeafIDs": [
+					1528395871
+				],
+				"PreCreation": false
+			},
+			"v3.32.0": {
+				"RootID": -1528395787,
+				"LeafIDs": [
+					1528395891
+				],
+				"PreCreation": false
+			},
+			"v3.33.0": {
+				"RootID": -1528395834,
+				"LeafIDs": [
+					1528395918
+				],
+				"PreCreation": false
+			},
+			"v3.34.0": {
+				"RootID": -1528395834,
+				"LeafIDs": [
+					1528395944
+				],
+				"PreCreation": false
+			},
+			"v3.35.0": {
+				"RootID": -1528395834,
+				"LeafIDs": [
+					1528395964
+				],
+				"PreCreation": false
+			},
+			"v3.36.0": {
+				"RootID": -1528395834,
+				"LeafIDs": [
+					1528395968
+				],
+				"PreCreation": false
+			},
+			"v3.37.0": {
+				"RootID": -1528395834,
+				"LeafIDs": [
+					1645106226
+				],
+				"PreCreation": false
+			},
+			"v3.38.0": {
+				"RootID": 1528395943,
+				"LeafIDs": [
+					1646652951,
+					1647282553
+				],
+				"PreCreation": false
+			},
+			"v3.39.0": {
+				"RootID": 1528395943,
+				"LeafIDs": [
+					1649441222,
+					1649759318,
+					1649432863
+				],
+				"PreCreation": false
+			},
+			"v3.40.0": {
+				"RootID": 1528395943,
+				"LeafIDs": [
+					1652228814,
+					1652707934
+				],
+				"PreCreation": false
+			},
+			"v3.41.0": {
+				"RootID": 1644868458,
+				"LeafIDs": [
+					1655481894
+				],
+				"PreCreation": false
+			},
+			"v3.42.0": {
+				"RootID": 1646027072,
+				"LeafIDs": [
+					1654770608,
+					1658174103,
+					1658225452,
+					1657663493
+				],
+				"PreCreation": false
+			},
+			"v3.43.0": {
+				"RootID": 1646027072,
+				"LeafIDs": [
+					1660312877,
+					1658874734
+				],
+				"PreCreation": false
+			},
+			"v4.0.0": {
+				"RootID": 1646027072,
+				"LeafIDs": [
+					1660711451,
+					1662467128
+				],
+				"PreCreation": false
+			},
+			"v4.1.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1665646849,
+					1665770699
+				],
+				"PreCreation": false
+			},
+			"v4.2.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1668603582
+				],
+				"PreCreation": false
+			},
+			"v4.3.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1670350006,
+					1670543231
+				],
+				"PreCreation": false
+			},
+			"v4.4.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1673897709
+				],
+				"PreCreation": false
+			},
+			"v4.5.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1675296942,
+					1676996650,
+					1675864432
+				],
+				"PreCreation": false
+			},
+			"v5.0.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1678899992,
+					1678994673
+				],
+				"PreCreation": false
+			},
+			"v5.1.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1687792857
+				],
+				"PreCreation": false
+			},
+			"v5.2.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1696003224
+				],
+				"PreCreation": false
+			},
+			"v5.3.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1709738515,
+					1711003437,
+					1711538234
+				],
+				"PreCreation": false
+			},
+			"v5.4.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1719498128
+				],
+				"PreCreation": false
+			}
+		}
+	}
+>>>>>>> 120dd4483bb (chore: sg generate)
 }
