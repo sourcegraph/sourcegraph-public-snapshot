@@ -16,7 +16,10 @@ export interface CodeGraphData {
     nonOverlappingOccurrences: Occurrence[]
 }
 
+// A facet that contains the precise code graph data from the occurrences API.
+// It just retains the most recent contribution. At some point, we should
+// probably extend this to be able to accept contributions from multiple
+// sources.
 export const codeGraphData = Facet.define<CodeGraphData[], CodeGraphData[]>({
-    static: true,
     combine: values => values[0] ?? [],
 })
