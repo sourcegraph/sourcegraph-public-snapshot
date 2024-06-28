@@ -1178,9 +1178,6 @@ func (m *SyntacticMatch) Range() scip.Range {
 
 type SyntacticUsagesResult struct {
 	Matches []SyntacticMatch
-	// We're returning these, so we don't have to recompute them when getting search-based usages
-	UploadID   int
-	SymbolName string
 }
 
 func (s *Service) SyntacticUsages(
@@ -1189,7 +1186,7 @@ func (s *Service) SyntacticUsages(
 	commit api.CommitID,
 	path core.RepoRelPath,
 	symbolRange scip.Range,
-) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, *PreviousSyntacticSearch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(repo.ID)),
@@ -1201,7 +1198,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
 	if err != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
+		return SyntacticUsagesResult{}, nil, err
 	}
 
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
@@ -1209,7 +1206,7 @@ func (s *Service) SyntacticUsages(
 	searchSymbol := symbolsAtRange[0]
 	language, langErr := languageFromFilepath(trace, path)
 	if langErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
@@ -1217,7 +1214,7 @@ func (s *Service) SyntacticUsages(
 
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
@@ -1227,7 +1224,7 @@ func (s *Service) SyntacticUsages(
 		repo, commit, symbolName, language,
 	)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -1247,11 +1244,8 @@ func (s *Service) SyntacticUsages(
 		results = append(results, syntacticMatches)
 	}
 	return SyntacticUsagesResult{
-			UploadID:   uploadID,
-			SymbolName: symbolName,
-			Matches:    slices.Concat(results...),
-		}, PreviousSyntacticSearch{
-			Found:      true,
+			Matches: slices.Concat(results...),
+		}, &PreviousSyntacticSearch{
 			UploadID:   uploadID,
 			SymbolName: symbolName,
 			Language:   language,
@@ -1286,7 +1280,6 @@ func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit
 // we've already collected during syntactic usages during
 // search-based usages.
 type PreviousSyntacticSearch struct {
-	Found      bool
 	UploadID   int
 	SymbolName string
 	Language   string
@@ -1309,7 +1302,7 @@ func (s *Service) SearchBasedUsages(
 	commit api.CommitID,
 	path core.RepoRelPath,
 	symbolRange scip.Range,
-	previousSyntacticSearch PreviousSyntacticSearch,
+	previousSyntacticSearch *PreviousSyntacticSearch,
 ) (matches []SearchBasedMatch, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(repo.ID)),
@@ -1320,7 +1313,7 @@ func (s *Service) SearchBasedUsages(
 	defer endObservation(1, observation.Args{})
 
 	var language string
-	if previousSyntacticSearch.Found {
+	if previousSyntacticSearch != nil {
 		language = previousSyntacticSearch.Language
 	} else {
 		language, err = languageFromFilepath(trace, path)
@@ -1330,7 +1323,7 @@ func (s *Service) SearchBasedUsages(
 	}
 
 	var symbolName string
-	if previousSyntacticSearch.Found {
+	if previousSyntacticSearch != nil {
 		symbolName = previousSyntacticSearch.SymbolName
 	} else {
 		nameFromGit, err := s.symbolNameFromGit(ctx, repo, commit, path, symbolRange)
@@ -1343,7 +1336,7 @@ func (s *Service) SearchBasedUsages(
 	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, repo, commit, symbolName, language)
 
 	var syntacticUploadID int
-	if previousSyntacticSearch.Found {
+	if previousSyntacticSearch != nil {
 		syntacticUploadID = previousSyntacticSearch.UploadID
 	} else {
 		syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)

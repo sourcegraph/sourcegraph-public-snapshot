@@ -216,7 +216,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		remainingCount = remainingCount - numPreciseResults
 	}
 
-	var previousSyntacticSearch codenav.PreviousSyntacticSearch
+	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
 		if err != nil {
