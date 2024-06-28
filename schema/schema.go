@@ -668,6 +668,8 @@ type Completions struct {
 	AzureChatModel string `json:"azureChatModel,omitempty"`
 	// AzureCompletionModel description: Optional: Specify the Azure OpenAI model name for chat completions. This is only needed when you want to count tokens associated with your azure model
 	AzureCompletionModel string `json:"azureCompletionModel,omitempty"`
+	// AzureUseDeprecatedCompletionsAPIForOldModels description: Enables the use of the older completions API for select Azure OpenAI models.
+	AzureUseDeprecatedCompletionsAPIForOldModels bool `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommend using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	ChatModel string `json:"chatModel,omitempty"`
