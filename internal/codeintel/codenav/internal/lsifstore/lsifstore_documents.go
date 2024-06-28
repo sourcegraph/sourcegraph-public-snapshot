@@ -52,3 +52,33 @@ WHERE
 	sid.upload_id = %s AND
 	sid.document_path = %s
 `
+
+func (s *store) FindDocumentIDs(ctx context.Context, uploadIDToLookupPath map[int]core.UploadRelPath) (uploadIDToDocumentID map[int]int, err error) {
+	ctx, _, endObservation := s.operations.findDocumentIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numUploadIDs", len(uploadIDToLookupPath)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDToLookupPath) == 0 {
+		return nil, nil
+	}
+
+	searchTuples := []*sqlf.Query{}
+	for uploadID, path := range uploadIDToLookupPath {
+		searchTuples = append(searchTuples, sqlf.Sprintf("(%d, %s)", uploadID, path.RawValue()))
+	}
+
+	finalQuery := sqlf.Sprintf(findDocumentIDsQuery, sqlf.Join(searchTuples, ","))
+
+	scanner := basestore.NewMapScanner(func(dbs dbutil.Scanner) (uploadID int, documentID int, err error) {
+		err = dbs.Scan(&uploadID, &documentID)
+		return uploadID, documentID, err
+	})
+	return scanner(s.db.Query(ctx, finalQuery))
+}
+
+const findDocumentIDsQuery = `
+SELECT sid.upload_id, sid.document_id
+FROM codeintel_scip_document_lookup sid
+WHERE (sid.upload_id, sid.document_path) IN (%s)
+`

@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -291,7 +292,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 // the requested commit. If the translation fails, then the original commit and range are used as the
 // commit and range of the adjusted location and a false flag is returned.
 func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, requestState RequestState, upload uploadsshared.CompletedUpload, location shared.Location) (shared.UploadLocation, bool, error) {
-	repoRootRelPath := core.NewRepoRelPath(&upload, location.Path)
+	repoRootRelPath := core.NewRepoRelPath(upload, location.Path)
 	adjustedCommit, adjustedRange, ok, err := s.getSourceRange(ctx, args, requestState, upload.RepositoryID, upload.Commit, repoRootRelPath, location.Range)
 	if err != nil {
 		return shared.UploadLocation{}, ok, err
@@ -383,7 +384,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(visibleUploads) == 0 {
 		return nil, 0, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
@@ -481,14 +482,14 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 }
 
 func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (uploads []uploadsshared.CompletedUpload, err error) {
-	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: requestState.Attrs()})
+	ctx, trace, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: requestState.Attrs()})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
 			attribute.Int("numUploads", len(uploads)),
 		}})
 	}()
 
-	visibleUploads := s.filterCachedUploadsContainingPath(ctx, requestState, requestState.Path)
+	visibleUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, requestState.Path)
 	for _, upload := range visibleUploads {
 		uploads = append(uploads, upload.Upload)
 	}
@@ -498,7 +499,7 @@ func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState Reques
 
 // filterCachedUploadsContainingPath adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
-func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, requestState RequestState, path core.RepoRelPath) []visibleUpload {
+func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, trace observation.TraceLogger, requestState RequestState, path core.RepoRelPath) []visibleUpload {
 	// NOTE(id: path-based-upload-filtering):
 	//
 	// (70% confidence) There are a few cases here for the uploads cached earlier.
@@ -514,31 +515,21 @@ func (s *Service) filterCachedUploadsContainingPath(ctx context.Context, request
 	//          we can't detect this easily.
 	// 2. The upload is for the same commit. In this case, we can be confident that the
 	//    path exists in the upload (otherwise we wouldn't have cached it).
-	//
-	// For a simplistic implementation here, just loop over the upload IDs and check
-	// if the document exists.
 	cachedUploads := requestState.GetCacheUploads()
-	filteredUploads := make([]visibleUpload, 0, len(cachedUploads))
-	for _, upload := range cachedUploads {
-		visibleUpload := visibleUpload{
-			Upload:                upload,
-			TargetPath:            path,
-			TargetPathWithoutRoot: core.NewUploadRelPath(&upload, path),
-		}
-		if upload.Commit == requestState.Commit && path == requestState.Path {
-			filteredUploads = append(filteredUploads, visibleUpload)
-			continue
-		}
-		// TODO(id: check-path-multiple-uploads-api): We could optimize this to a single DB query
-		// instead of a loop along with a bunch of deserialization.
-		if doc, err := s.SCIPDocument(ctx, upload.ID, path); err == nil && doc != nil {
-			// Be pessimistic, ignoring the upload for all errors, not just some
-			// DocumentNotFound or MalformedDocument cases.
-			filteredUploads = append(filteredUploads, visibleUpload)
-			continue
-		}
+
+	filteredUploads, err := filterUploadsImpl(ctx, s.lsifstore, cachedUploads, path,
+		/*skipDBCheck*/ func(upload uploadsshared.CompletedUpload) bool {
+			// See NOTE(id: path-based-upload-filtering)
+			return upload.Commit == requestState.Commit && path == requestState.Path
+		})
+	if err != nil {
+		trace.Warn("FindDocumentIDs failed", log.Error(err))
 	}
-	return filteredUploads
+
+	return genslices.Map(filteredUploads, func(u uploadsshared.CompletedUpload) visibleUpload {
+		uploadRelPath := core.NewUploadRelPath(&u, path)
+		return visibleUpload{Upload: u, TargetPath: path, TargetPathWithoutRoot: uploadRelPath}
+	})
 }
 
 func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
@@ -549,7 +540,7 @@ func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, req
 	)
 	defer endObservation()
 
-	uploadsWithPath := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	uploadsWithPath := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(uploadsWithPath) == 0 {
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
@@ -623,7 +614,7 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: requestState.Attrs()})
 	defer endObservation()
 
-	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, requestState, args.Path)
+	adjustedUploads := s.filterCachedUploadsContainingPath(ctx, trace, requestState, args.Path)
 	if len(adjustedUploads) == 0 {
 		return nil, errors.New("No valid upload found for provided (repo, commit, path)")
 	}
@@ -718,31 +709,85 @@ func filterUploadsWithCommits(ctx context.Context, commitCache CommitCache, uplo
 	return filtered, nil
 }
 
+type firstPassResult[U any] struct {
+	skipDBCheck bool
+	upload      U
+} // Go doesn't allow type definitions in generic functions
+
+// filterUploadsImpl returns the uploads in 'candidates' containing 'path'.
+//
+// This is done by consulting the codeintel_scip_document_lookup table
+// in a single query.
+//
+// Params:
+//   - If skipDBCheck returns true, then the upload is included in the output slice.
+//     Otherwise, the upload is included in the output slice iff the database
+//     contains the (uploadID, path) pair.
+//
+// Post-conditions:
+//   - The order of the returned slice matches the order of candidates.
+//   - Even if there is an error consulting the database, the candidates for
+//     which skipDBCheck was true will be included in the returned slice.
+func filterUploadsImpl[U core.UploadLike](
+	ctx context.Context,
+	lsifstore lsifstore.LsifStore,
+	candidates []U,
+	path core.RepoRelPath,
+	skipDBCheck func(upload U) bool,
+) ([]U, error) {
+	// Being careful about maintaining determinism here by only
+	// iterating based on order in cachedUploads.
+	results := []firstPassResult[U]{}
+	lookupPaths := map[int]core.UploadRelPath{}
+	for _, upload := range candidates {
+		uploadRelPath := core.NewUploadRelPath(upload, path)
+		skipCheck := skipDBCheck(upload)
+		results = append(results, firstPassResult[U]{skipDBCheck: skipCheck, upload: upload})
+		if skipCheck {
+			continue
+		}
+		// We don't have to worry about over-writing because even if an
+		// upload with the same ID is present multiple times, different
+		// copies will have the same Root, so uploadRelPath will be identical.
+		lookupPaths[upload.GetID()] = uploadRelPath
+	}
+
+	foundDocIds, findDocumentIDsErr := lsifstore.FindDocumentIDs(ctx, lookupPaths)
+	// delay emitting the error, return partial results as much as possible
+	if foundDocIds == nil {
+		foundDocIds = map[int]int{}
+	}
+
+	filteredUploads := genslices.MapFilter(results, func(res firstPassResult[U]) (U, bool) {
+		if res.skipDBCheck {
+			return res.upload, true
+		}
+		_, found := foundDocIds[res.upload.GetID()]
+		return res.upload, found
+	})
+
+	return filteredUploads, findDocumentIDsErr
+}
+
 func filterUploadsWithPaths(
 	ctx context.Context,
 	lsifstore lsifstore.LsifStore,
 	opts uploadsshared.UploadMatchingOptions,
 	candidates []uploadsshared.CompletedUpload,
 ) ([]uploadsshared.CompletedUpload, error) {
-	filtered := make([]uploadsshared.CompletedUpload, 0, len(candidates))
-	for _, candidate := range candidates {
-		switch opts.RootToPathMatching {
-		case uploadsshared.RootMustEnclosePath:
-			// TODO - this breaks if the file was renamed in git diff
-			path := core.NewUploadRelPath(&candidate, opts.Path)
-			pathExists, err := lsifstore.GetPathExists(ctx, candidate.ID, path)
-			if err != nil {
-				return nil, errors.Wrap(err, "lsifStore.Exists")
+	return filterUploadsImpl(ctx, lsifstore, candidates, opts.Path,
+		/* skipDBCheck */
+		func(upload uploadsshared.CompletedUpload) bool {
+			switch opts.RootToPathMatching {
+			case uploadsshared.RootMustEnclosePath:
+				return false
+			case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
+				// TODO(efritz) - ensure there's a valid document path for this condition as well
+				return true
+			default:
+				panic("Unhandled case for RootToPathMatching")
 			}
-			if !pathExists {
-				continue
-			}
-		case uploadsshared.RootEnclosesPathOrPathEnclosesRoot:
-			// TODO(efritz) - ensure there's a valid document path for this condition as well
-		}
-		filtered = append(filtered, candidate)
-	}
-	return filtered, nil
+		})
 }
 
 func copyUploads(uploads []uploadsshared.CompletedUpload) []uploadsshared.CompletedUpload {
@@ -791,7 +836,7 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		Upload:                upload,
 		TargetPath:            r.Path,
 		TargetPosition:        targetPosition,
-		TargetPathWithoutRoot: core.NewUploadRelPath(&upload, r.Path),
+		TargetPathWithoutRoot: core.NewUploadRelPath(upload, r.Path),
 	}, true, nil
 }
 
@@ -819,7 +864,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 	upload := uploads[0]
 
-	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(&upload, path))
+	document, err := s.lsifstore.SCIPDocument(ctx, upload.ID, core.NewUploadRelPath(upload, path))
 	if err != nil || document == nil {
 		return nil, err
 	}
