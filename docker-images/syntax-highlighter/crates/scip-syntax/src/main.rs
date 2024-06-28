@@ -1,5 +1,4 @@
-use std::num::NonZeroUsize;
-use std::process;
+use std::{num::NonZeroUsize, process};
 
 use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
@@ -37,7 +36,7 @@ struct IndexCommandOptions {
     project_root: String,
 
     /// Number of worker threads to use, defaults to number of logical cores
-    #[arg(short='j')]
+    #[arg(short = 'j')]
     worker_count: Option<NonZeroUsize>,
 
     /// Evaluate the build index against an index from a file
@@ -208,7 +207,9 @@ fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::R
         rayon::ThreadPoolBuilder::new()
             .num_threads(worker_count.get())
             .build_global()
-            .context("Failed to initialize global thread_pool, did you call 'run_index_command' twice?")?;
+            .context(
+                "Failed to initialize global thread_pool, did you call 'run_index_command' twice?",
+            )?;
     }
 
     index_command(

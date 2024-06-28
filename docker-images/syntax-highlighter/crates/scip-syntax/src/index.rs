@@ -150,31 +150,36 @@ pub fn index_command(
         },
         IndexMode::Workspace { location } => {
             let bar = create_spinner();
-            let mut filepaths = vec![];
-            for entry in walkdir::WalkDir::new(location) {
-                let Ok(entry) = entry else { continue };
-                if entry.file_type().is_dir() {
-                    continue;
-                }
-                let Some(filepath) = Utf8Path::from_path(entry.path()) else {
-                    continue;
-                };
-                let Some(extension) = filepath.extension() else {
-                    continue;
-                };
-                if extensions.contains(extension) {
-                    filepaths.push(filepath.to_owned());
-                }
-            }
-            let documents = filepaths.par_iter().map(|filepath| {
-                bar.set_message(filepath.to_string());
-                let document = index_file(filepath, parser_id, &absolute_project_root, options);
-                bar.tick();
-                document
-            });
-            index
-                .documents
-                .extend(documents.collect::<Result<Vec<_>, _>>()?);
+            let documents: Result<Vec<Document>> = walkdir::WalkDir::new(location)
+                .into_iter()
+                .par_bridge()
+                .filter_map(|entry| {
+                    let entry = entry.ok()?;
+                    if entry.file_type().is_dir() {
+                        return None;
+                    }
+                    let filepath = Utf8Path::from_path(entry.path())?;
+                    if !extensions.contains(filepath.extension()?) {
+                        return None;
+                    }
+                    bar.set_message(filepath.to_string());
+                    match index_file(filepath, parser_id, &absolute_project_root, options) {
+                        Ok(document) => {
+                            bar.tick();
+                            Some(Ok(document))
+                        }
+                        Err(error) => {
+                            if options.fail_fast {
+                                Some(Err(error))
+                            } else {
+                                eprintln!("failed to index {filepath}: {error:?}");
+                                None
+                            }
+                        }
+                    }
+                })
+                .collect();
+            index.documents.extend(documents?);
         }
     }
 
