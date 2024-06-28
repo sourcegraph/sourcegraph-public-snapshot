@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/dev/sg/sams"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -188,11 +189,6 @@ var sg = &cli.App{
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
-			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
-			if err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
-			}
-
 			// Ensure analytics are persisted
 			interrupt.Register(func() { _ = analytics.Persist(cmd.Context) })
 
@@ -240,13 +236,9 @@ var sg = &cli.App{
 		}
 
 		// Check for updates, unless we are running update manually.
-		skipBackgroundTasks := map[string]struct{}{
-			"update":   {},
-			"version":  {},
-			"live":     {},
-			"teammate": {},
-		}
-		if _, skipped := skipBackgroundTasks[cmd.Args().First()]; !skipped {
+		skipBackgroundTasks := collections.NewSet("update", "version", "live", "teammate")
+
+		if !skipBackgroundTasks.Has(cmd.Args().First()) {
 			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
 				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
