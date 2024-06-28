@@ -67,8 +67,8 @@ func handlePublishEvents(
 		// types of timeouts. Add an error for reporting purposes. We may need
 		// to increase default concurrencies or batch sizes.
 		if duration > 10*time.Second {
-			summary.errorFields = append(summary.errorFields,
-				log.Error(errors.New("slow publish")))
+			summaryFields = append(summaryFields,
+				log.NamedError("publishDurationError", errors.New("slow publish")))
 		}
 
 		logger.Error(summary.message, append(summaryFields, summary.errorFields...)...)
