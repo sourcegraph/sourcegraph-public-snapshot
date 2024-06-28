@@ -42,7 +42,6 @@
 
     $: previewURL = selectedLocation ? getPreviewURL(selectedLocation) : null
     $: locations = connection ? unique(connection.nodes) : []
-    $: isEmpty = locations.length === 0
 </script>
 
 <div class="root">
@@ -77,9 +76,9 @@
                         </li>
                     {/each}
                 </ul>
-                <div class="loader" class:empty={isEmpty}>
-                    <LoadingSpinner center />
-                </div>
+                {#if loading}
+                    <div class="loader"><LoadingSpinner center /></div>
+                {/if}
             </Scroller>
         </Panel>
         {#if previewURL}
