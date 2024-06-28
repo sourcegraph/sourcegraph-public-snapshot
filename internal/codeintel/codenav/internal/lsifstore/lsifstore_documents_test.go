@@ -12,7 +12,7 @@ import (
 
 func TestDatabaseFindDocumentIDs(t *testing.T) {
 	store := populateTestStore(t)
-	const nonExistentUploadID = math.MaxInt
+	const nonExistentUploadID = math.MaxInt32
 
 	testCases := []struct {
 		uploadID int
