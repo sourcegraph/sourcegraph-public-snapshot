@@ -1,5 +1,7 @@
-load("//dev:go_defs.bzl", "go_test")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "version",
@@ -20,4 +22,32 @@ go_test(
     srcs = ["version_test.go"],
     embed = [":version"],
     tags = [TAG_INFRA_RELEASE],
+)
+
+pkg_tar(
+    name = "stamps",
+    srcs = [
+        ":timestamp_file",
+        ":version_file",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+expand_template(
+    name = "version_file",
+    out = "version.txt",
+    stamp = 0,
+    stamp_substitutions = {
+        "STABLE_VERSION": "{{STABLE_VERSION}}",
+    },
+    template = ["STABLE_VERSION"],
+)
+
+expand_template(
+    name = "timestamp_file",
+    out = "timestamp.txt",
+    stamp_substitutions = {
+        "VERSION_TIMESTAMP": "{{VERSION_TIMESTAMP}}",
+    },
+    template = ["VERSION_TIMESTAMP"],
 )
