@@ -1,16 +1,18 @@
 import { type FunctionComponent, useMemo, useCallback, useState } from 'react'
 
+import { mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 import { intlFormatDistance } from 'date-fns'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { H2, Text, Badge, Link, ButtonLink, Button } from '@sourcegraph/wildcard'
+import { H2, Text, Badge, Button, Modal, H3 } from '@sourcegraph/wildcard'
 
 import { CodyAlert } from '../components/CodyAlert'
 import { CodyContainer } from '../components/CodyContainer'
 import { useCancelInvite, useResendInvite } from '../management/api/react-query/invites'
 import { useUpdateTeamMember } from '../management/api/react-query/teams'
 import type { TeamMember, TeamInvite } from '../management/api/types'
+import { LoadingIconButton } from '../management/subscription/manage/LoadingIconButton'
 
 import styles from './TeamMemberList.module.scss'
 
@@ -44,6 +46,11 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
     const updateTeamMemberMutation = useUpdateTeamMember()
     const cancelInviteMutation = useCancelInvite()
     const resendInviteMutation = useResendInvite()
+    const [confirmationModal, setConfirmationModal] = useState<{
+        action: 'removeMember' | 'revokeAdmin'
+        member: TeamMember
+    }>()
+
     const isLoading =
         updateTeamMemberMutation.status === 'pending' ||
         cancelInviteMutation.status === 'pending' ||
@@ -142,6 +149,68 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
         return null
     }
 
+    const renderConfirmActionModal = (): React.ReactNode => {
+        if (!confirmationModal) {
+            return null
+        }
+
+        const { action, member } = confirmationModal
+
+        const dismissModal = (): void => setConfirmationModal(undefined)
+        let title: string
+        let comfirmationText: string
+        let confirmButtonText: string
+        let performAction: () => Promise<void>
+        switch (action) {
+            case 'revokeAdmin': {
+                title = 'Revoke admin'
+                comfirmationText = `Do you want to revoke admin rights for ${member.email}? The user will still have access to Cody Pro and remain on the team.`
+                confirmButtonText = 'Revoke admin'
+                performAction = () => updateRole(member.accountId, 'member')
+                break
+            }
+            case 'removeMember': {
+                title = 'Remove user'
+                comfirmationText = `Do you want to remove ${member.email} from your Cody Pro team? The user will be downgraded to Cody Free.`
+                confirmButtonText = 'Remove from team'
+                performAction = () => removeMember(member.accountId)
+                break
+            }
+            default: {
+                return null
+            }
+        }
+
+        return (
+            <Modal aria-label="Confirmation modal" isOpen={!!confirmationModal} onDismiss={dismissModal}>
+                <div className="pb-3">
+                    <H3>{title}</H3>
+                    <Text className="mt-4 mb-0">{comfirmationText}</Text>
+                </div>
+                <div className="d-flex mt-4 justify-content-end">
+                    <Button
+                        variant="secondary"
+                        outline={true}
+                        disabled={updateTeamMemberMutation.isPending}
+                        onClick={dismissModal}
+                        className="mr-3"
+                    >
+                        Cancel
+                    </Button>
+                    <LoadingIconButton
+                        variant="danger"
+                        disabled={updateTeamMemberMutation.isPending}
+                        isLoading={updateTeamMemberMutation.isPending}
+                        onClick={() => performAction().finally(dismissModal)}
+                        iconSvgPath={mdiCheck}
+                    >
+                        {confirmButtonText}
+                    </LoadingIconButton>
+                </div>
+            </Modal>
+        )
+    }
+
     return (
         <>
             {actionResult && (
@@ -187,7 +256,7 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                         <div className="align-content-center text-center">
                                             <Button
                                                 variant="link"
-                                                onClick={() => updateRole(member.accountId, 'member')}
+                                                onClick={() => setConfirmationModal({ action: 'revokeAdmin', member })}
                                                 className="ml-2"
                                                 disabled={adminCount < 2}
                                             >
@@ -198,22 +267,22 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                 ) : (
                                     <>
                                         <div className="align-content-center text-center">
-                                            <Link
-                                                to="#"
+                                            <Button
+                                                variant="link"
                                                 onClick={() => updateRole(member.accountId, 'admin')}
                                                 className="ml-2"
                                             >
                                                 Make admin
-                                            </Link>
+                                            </Button>
                                         </div>
                                         <div className="align-content-center text-center">
-                                            <Link
-                                                to="#"
-                                                onClick={() => removeMember(member.accountId)}
+                                            <Button
+                                                variant="link"
+                                                onClick={() => setConfirmationModal({ action: 'removeMember', member })}
                                                 className="ml-2"
                                             >
                                                 Remove
-                                            </Link>
+                                            </Button>
                                         </div>
                                     </>
                                 )
@@ -253,26 +322,31 @@ export const TeamMemberList: FunctionComponent<TeamMemberListProps> = ({
                                 {isAdmin && (
                                     <>
                                         <div className="align-content-center text-center">
-                                            <Link to="#" onClick={() => revokeInvite(invite.id)} className="ml-2">
+                                            <Button
+                                                variant="link"
+                                                onClick={() => revokeInvite(invite.id)}
+                                                className="ml-2"
+                                            >
                                                 Revoke
-                                            </Link>
+                                            </Button>
                                         </div>
                                         <div className="align-content-center text-center">
-                                            <ButtonLink
-                                                to="#"
+                                            <Button
                                                 variant="secondary"
                                                 size="sm"
                                                 onClick={() => resendInvite(invite.id)}
                                                 className="ml-2"
                                             >
                                                 Re-send invite
-                                            </ButtonLink>
+                                            </Button>
                                         </div>
                                     </>
                                 )}
                             </li>
                         ))}
                 </ul>
+
+                {renderConfirmActionModal()}
             </CodyContainer>
         </>
     )

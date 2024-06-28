@@ -25,6 +25,7 @@ import {
     CollapsePanel,
 } from '@sourcegraph/wildcard'
 
+import { CodyProRoutes } from '../../../codyProRoutes'
 import { CodyAlert } from '../../../components/CodyAlert'
 import {
     useCreateTeam,
@@ -230,7 +231,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                     creditCardToken: token,
                 })
 
-                navigate('/cody/manage?welcome=1')
+                navigate(`${CodyProRoutes.Manage}?welcome=1`)
 
                 setSubmitting(false)
             } catch (error) {
@@ -264,7 +265,7 @@ export const CodyProCheckoutForm: React.FunctionComponent<CodyProCheckoutFormPro
                 return
             }
 
-            navigate('/cody/team/manage')
+            navigate(CodyProRoutes.ManageTeam)
 
             setSubmitting(false)
         },

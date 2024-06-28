@@ -34,6 +34,10 @@ copy_to_directory(
         "client/web/bundle": "",
         "client/web-sveltekit/build": "",
         "client/web/dist/img": "img",
+        # We need to ensure we're keeping the old names, so older extensions are still working if ran against a newer Sourcegraph instance
+        "client/browser/integration-assets/extension/js/nativeIntegration.main.bundle.js": "extension/scripts/integration.bundle.js",
+        "client/browser/integration-assets/extension/js/phabricatorNativeIntegration.main.bundle.js": "extension/scripts/phabricator.bundle.js",
+        "client/browser/integration-assets/extension/js/extensionHostWorker.bundle.js": "extension/scripts/extensionHostWorker.bundle.js",
         "client/browser/integration-assets": "",
     },
 )

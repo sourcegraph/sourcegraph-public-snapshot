@@ -5,6 +5,7 @@ import type { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
 import type { QueryState } from '@sourcegraph/shared/src/search'
+import { useSettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -24,6 +25,7 @@ import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { type Scalars, SearchPatternType } from '../graphql-operations'
 import type { NamespaceProps } from '../namespaces'
+import { defaultPatternTypeFromSettings } from '../util/settings'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -95,6 +97,8 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
+    const defaultPatternType: SearchPatternType = defaultPatternTypeFromSettings(useSettingsCascade())
+
     useEffect(() => {
         setValues(values => ({ ...values, query: queryState.query }))
     }, [queryState.query])
@@ -123,7 +127,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
                         <LazyQueryInput
                             className={classNames('form-control', styles.queryInput)}
-                            patternType={SearchPatternType.standard}
+                            patternType={defaultPatternType}
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             caseSensitive={false}
                             queryState={queryState}

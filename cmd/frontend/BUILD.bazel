@@ -12,11 +12,7 @@ go_library(
     deps = [
         "//client/web/dist",
         "//cmd/frontend/shared",
-        "//internal/conf",
         "//internal/sanitycheck",
-        "//internal/service/svcmain",
-        "//internal/tracer",
-        "//ui/assets",
     ],
 )
 

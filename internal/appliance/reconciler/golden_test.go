@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/life4/genesis/slices"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +14,6 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 
 	applianceyaml "github.com/sourcegraph/sourcegraph/internal/appliance/yaml"
-	"github.com/sourcegraph/sourcegraph/internal/slices"
 )
 
 // Test helpers

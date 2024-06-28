@@ -39,8 +39,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.26.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.169.0
-	gorm.io/driver/postgres v1.5.9
-	gorm.io/gorm v1.25.10
+	gorm.io/driver/postgres v1.5.4
+	gorm.io/gorm v1.25.6
 )
 
 require (
@@ -89,7 +89,7 @@ require (
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/hexops/valast v1.4.4 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.14.0 // indirect
+	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect

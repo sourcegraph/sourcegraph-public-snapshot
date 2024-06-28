@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -35,12 +36,12 @@ func findCandidateOccurrencesViaSearch(
 	commit api.CommitID,
 	symbol *scip.Symbol,
 	language string,
-) (orderedmap.OrderedMap[string, candidateFile], error) {
+) (orderedmap.OrderedMap[core.RepoRelPath, candidateFile], error) {
 	var contextLines int32 = 0
 	patternType := "standard"
 	repoName := fmt.Sprintf("^%s$", repo.Name)
 	var identifier string
-	resultMap := *orderedmap.New[string, candidateFile]()
+	resultMap := *orderedmap.New[core.RepoRelPath, candidateFile]()
 	if name, ok := nameFromSymbol(symbol); ok {
 		identifier = name
 	} else {
@@ -97,7 +98,8 @@ func findCandidateOccurrencesViaSearch(
 				matches = append(matches, scipRange)
 			}
 		}
-		_, alreadyPresent := resultMap.Set(path, candidateFile{
+		// OK to use Unchecked method here as search API only returns repo-root relative paths
+		_, alreadyPresent := resultMap.Set(core.NewRepoRelPathUnchecked(path), candidateFile{
 			matches:             scip.SortRanges(matches),
 			didSearchEntireFile: !fileMatch.LimitHit,
 		})

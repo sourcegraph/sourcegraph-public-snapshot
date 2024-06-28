@@ -90,6 +90,8 @@ const config = {
     '@typescript-eslint/no-misused-promises': 'off',
     '@typescript-eslint/no-unnecessary-qualifier': 'off',
     '@typescript-eslint/no-unused-vars': 'off', // also duplicated by tsconfig noUnused{Locals,Parameters}
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
     'etc/no-deprecated': 'off',
 
     'no-restricted-imports': [
@@ -256,11 +258,6 @@ const config = {
         selector: 'JSXElement[openingElement.name.name="InputTooltip"]',
         message:
           'Prefer using the <Tooltip> component with an <Input> directly, when possible. Please only use <InputTooltip> when the legacy styling it provides is needed. We will be working to fix style issues with <Input> (especially for checkboxes) in the future.',
-      },
-      {
-        selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
-        message:
-          "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
       },
       {
         selector: 'ImportDeclaration[source.value="react-router"]',

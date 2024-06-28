@@ -29,7 +29,6 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // Debt: intercepted requests in integration tests
         // have 0 status codes, so don't check in test environment.
         const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = {
             agent: getProxyAgent(),
             body: JSON.stringify({

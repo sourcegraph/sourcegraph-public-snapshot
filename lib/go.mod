@@ -13,14 +13,14 @@ require (
 	github.com/derision-test/go-mockgen/v2 v2.0.1
 	github.com/fatih/color v1.15.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-enry/go-enry/v2 v2.8.4
+	github.com/go-enry/go-enry/v2 v2.8.8
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/hexops/autogold/v2 v2.0.3
-	github.com/jackc/pgconn v1.14.0
+	github.com/jackc/pgconn v1.14.3
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/pgzip v1.2.5
 	github.com/mattn/go-isatty v0.0.18

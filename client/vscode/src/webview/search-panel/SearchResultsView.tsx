@@ -17,7 +17,7 @@ import {
 import { LATEST_VERSION, type RepositoryMatch, type SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import type { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import type { SearchResultsState } from '../../state'
 import type { WebviewPageProps } from '../platform/context'
 
@@ -322,6 +322,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     caseSensitive={context.submittedSearchQueryState?.searchCaseSensitivity}
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={context.submittedSearchQueryState?.searchPatternType}
+                    defaultPatternType={SearchPatternType.standard}
                     setPatternType={setPatternType}
                     searchMode={context.submittedSearchQueryState?.searchMode}
                     setSearchMode={setSearchMode}

@@ -31,6 +31,11 @@ func getCodeCompletionModelFn() getModelFn {
 			}
 			return "", errors.Newf("unsupported code completion model %q", requestParams.Model)
 		}
+		// The caller will probably return a 4xx if Cody isn't available on the Sourcegraph
+		// instance before calling getModel.
+		if c == nil {
+			return "", errors.New("no completions config available")
+		}
 		return c.CompletionModel, nil
 	}
 }
@@ -58,6 +63,7 @@ func getChatModelFn(db database.DB) getModelFn {
 
 		// For any other Sourcegraph instance, i.e. using Cody Enterprise,
 		// we just use the configured "chat" or "fastChat" model.
+		// TODO(PRIME-283): Enable LLM model selection Cody Enterprise users.
 		if requestParams.Fast {
 			return c.FastChatModel, nil
 		}
@@ -93,7 +99,9 @@ func isAllowedCodeCompletionModel(model string) bool {
 		"anthropic/claude-instant-1",
 		"anthropic/claude-instant-1.2-cyan",
 		"google/" + google.Gemini15Flash,
+		"google/" + google.Gemini15FlashLatest,
 		"google/" + google.GeminiPro,
+		"google/" + google.GeminiProLatest,
 		"fireworks/accounts/sourcegraph/models/starcoder-7b",
 		"fireworks/accounts/sourcegraph/models/starcoder-16b",
 		"fireworks/accounts/fireworks/models/starcoder-3b-w8a16",
@@ -113,6 +121,7 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		case
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,
@@ -142,6 +151,16 @@ func isAllowedCustomChatModel(model string, isProUser bool) bool {
 		case
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
+			"fireworks/" + fireworks.Mixtral8x7bInstruct,
+			"fireworks/" + fireworks.Mixtral8x22Instruct,
+			"openai/gpt-3.5-turbo",
+			"google/" + google.Gemini15FlashLatest,
+			"google/" + google.Gemini15ProLatest,
+			"google/" + google.GeminiProLatest,
+			"google/" + google.Gemini15Flash,
+			"google/" + google.Gemini15Pro,
+			"google/" + google.GeminiPro,
 			// Remove after the Claude 3 rollout is complete
 			"anthropic/claude-2",
 			"anthropic/claude-2.0",

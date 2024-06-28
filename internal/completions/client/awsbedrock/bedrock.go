@@ -427,7 +427,7 @@ func toAnthropicMessages(messages []types.Message) ([]bedrockAnthropicMessage, e
 		case types.HUMAN_MESSAGE_SPEAKER:
 			anthropicRole = "user"
 		default:
-			return nil, errors.Errorf("unexpected role: %s", text)
+			return nil, errors.Errorf("unexpected role: %s", speaker)
 		}
 
 		if text == "" {

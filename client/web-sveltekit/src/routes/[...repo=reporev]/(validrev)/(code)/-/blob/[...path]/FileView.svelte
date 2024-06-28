@@ -8,6 +8,7 @@
     import { writable } from 'svelte/store'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+    import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
@@ -21,7 +22,7 @@
     import { renderMermaid } from '$lib/repo/mermaid'
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
-    import { createCodeIntelAPI } from '$lib/shared'
+    import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
     import { isLightTheme, settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
@@ -49,9 +50,11 @@
     const lineWrap = writable<boolean>(false)
     const blobLoader = createPromiseStore<Awaited<PageData['blob']>>()
     const highlightsLoader = createPromiseStore<Awaited<PageData['highlights']>>()
+    const codeGraphDataLoader = createPromiseStore<Awaited<PageData['codeGraphData']>>()
 
     let blob: FileViewGitBlob | null = null
     let highlights: FileViewHighlightedFile | null = null
+    let codeGraphData: CodeGraphData[] | null = null
     let cmblob: CodeMirrorBlob | null = null
     let initialScrollPosition: ScrollSnapshot | null = null
     let selectedPosition: LineOrPositionOrRange | null = null
@@ -67,12 +70,14 @@
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
+    $: codeGraphDataLoader.set(data.codeGraphData)
 
     $: if (!$blobLoader.pending) {
         // Only update highlights and position after the file content has been loaded.
         // While the file content is loading we show the previous file content.
         blob = $blobLoader.value ?? null
         highlights = $highlightsLoader.pending ? null : $highlightsLoader.value ?? null
+        codeGraphData = $codeGraphDataLoader.pending ? null : $codeGraphDataLoader.value ?? null
         selectedPosition = data.lineOrPosition
     }
     $: fileLoadingError = !$blobLoader.pending && $blobLoader.error
@@ -85,6 +90,10 @@
     $: showFileModeSwitcher = blob && !isBinaryFile && !embedded
     $: showFormattedView = isRichFile && fileViewModeFromURL === CodeViewMode.Default
     $: showBlameView = fileViewModeFromURL === CodeViewMode.Blame
+    $: rawURL = (function () {
+        const url = `${repoURL}/-/raw/${filePath}`
+        return revisionOverride ? replaceRevisionInURL(url, revisionOverride.abbreviatedOID) : url
+    })()
 
     $: codeIntelAPI =
         !isBinaryFile && !showFormattedView && !disableCodeIntel
@@ -148,26 +157,24 @@
             <slot name="actions" />
         </svelte:fragment>
     </FileHeader>
-{:else if revisionOverride}
-    <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
-        <FileIcon slot="icon" file={blob} inline />
-    </FileHeader>
 {:else}
     <FileHeader type="blob" repoName={data.repoName} path={data.filePath} {revision}>
         <FileIcon slot="icon" file={blob} inline />
         <svelte:fragment slot="actions">
-            {#await data.externalServiceType then externalServiceType}
-                {#if externalServiceType && !isBinaryFile}
-                    <OpenInEditor {externalServiceType} updateUserSetting={data.updateUserSetting} />
-                {/if}
-            {/await}
+            {#if !revisionOverride}
+                {#await data.externalServiceType then externalServiceType}
+                    {#if externalServiceType && !isBinaryFile}
+                        <OpenInEditor {externalServiceType} updateUserSetting={data.updateUserSetting} />
+                    {/if}
+                {/await}
+            {/if}
             {#if blob}
-                <OpenInCodeHostAction data={blob} />
+                <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
             <Permalink {commitID} />
         </svelte:fragment>
         <svelte:fragment slot="actionmenu">
-            <MenuLink href="{repoURL}/-/raw/{filePath}" target="_blank">
+            <MenuLink href={rawURL} target="_blank">
                 <Icon icon={ILucideEye} inline aria-hidden /> View raw
             </MenuLink>
             <MenuButton
@@ -266,15 +273,17 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
+                codeGraphData={codeGraphData ?? undefined}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
                 selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={({ detail: range }) => {
                     goto(
-                        SourcegraphURL.from($page.url.searchParams)
+                        SourcegraphURL.from(embedded ? `${repoURL}/-/blob/${filePath}` : $page.url.searchParams)
                             .setLineRange(range ? { line: range.line, endLine: range.endLine } : null)
-                            .deleteSearchParameter('popover').search
+                            .deleteSearchParameter('popover')
+                            .toString()
                     )
                 }}
                 {codeIntelAPI}

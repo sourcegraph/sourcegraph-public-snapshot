@@ -59,20 +59,20 @@ replace (
 )
 
 require (
-	cloud.google.com/go/bigquery v1.59.1
-	cloud.google.com/go/kms v1.15.7
-	cloud.google.com/go/monitoring v1.18.0
+	cloud.google.com/go/bigquery v1.60.0
+	cloud.google.com/go/kms v1.15.8
+	cloud.google.com/go/monitoring v1.18.1
 	cloud.google.com/go/profiler v0.4.0
-	cloud.google.com/go/pubsub v1.37.0
-	cloud.google.com/go/secretmanager v1.11.5
-	cloud.google.com/go/storage v1.38.0
+	cloud.google.com/go/pubsub v1.38.0
+	cloud.google.com/go/secretmanager v1.12.0
+	cloud.google.com/go/storage v1.40.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.45.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.21.0
 	github.com/Khan/genqlient v0.5.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
-	github.com/RoaringBitmap/roaring v1.3.0
+	github.com/RoaringBitmap/roaring v1.9.4
 	github.com/XSAM/otelsql v0.27.0
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/amit7itz/goset v1.0.1
@@ -106,7 +106,7 @@ require (
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
-	github.com/go-enry/go-enry/v2 v2.8.4
+	github.com/go-enry/go-enry/v2 v2.8.8
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/gobwas/glob v0.2.3
@@ -126,7 +126,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
+	github.com/grafana/regexp v0.0.0-20240607082908-2cb410fa05da
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/graphql-go/graphql v0.8.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -173,7 +173,7 @@ require (
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/slack-go/slack v0.10.1
 	github.com/smacker/go-tree-sitter v0.0.0-20231219031718-233c2f923ac7
-	github.com/sourcegraph/go-ctags v0.0.0-20240325032535-71f1ec6e46e4
+	github.com/sourcegraph/go-ctags v0.0.0-20240424152308-4faeee4849da
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -231,8 +231,8 @@ require (
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.22.0
 	gonum.org/v1/gonum v0.15.0
-	google.golang.org/api v0.169.0
-	google.golang.org/genproto v0.0.0-20240213162025-012b6fc9bca9 // indirect
+	google.golang.org/api v0.182.0
+	google.golang.org/genproto v0.0.0-20240401170217-c3f982113cda // indirect
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -250,12 +250,14 @@ require (
 	cdr.dev/slog v1.4.2-0.20221206192828-e4803b10ae17
 	chainguard.dev/apko v0.14.0
 	cloud.google.com/go/artifactregistry v1.14.8
-	connectrpc.com/connect v1.16.1
+	cloud.google.com/go/auth v0.5.1
+	connectrpc.com/connect v1.16.2
 	connectrpc.com/grpcreflect v1.2.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.5.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/aws/constructs-go/constructs/v10 v10.3.0
 	github.com/aws/jsii-runtime-go v1.98.0
 	github.com/bazelbuild/bazel-gazelle v0.35.0
@@ -281,6 +283,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/jomei/notionapi v1.13.0
+	github.com/life4/genesis v1.10.3
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/mroth/weightedrand/v2 v2.0.1
@@ -306,7 +309,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/tfe v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/notionreposync v0.0.0-20240517090426-98b2d4b017d7
 	github.com/sourcegraph/scip v0.4.0
-	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240531163352-fe74c17cf0d1
+	github.com/sourcegraph/sourcegraph-accounts-sdk-go v0.0.0-20240620234947-0d3d4d90b75e
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20240524140455-2589fef13ea8
 	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
@@ -327,17 +330,17 @@ require (
 )
 
 require (
+	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/cloudsqlconn v1.5.1 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
-	cloud.google.com/go/longrunning v0.5.5 // indirect
-	cloud.google.com/go/trace v1.10.5 // indirect
+	cloud.google.com/go/longrunning v0.5.6 // indirect
+	cloud.google.com/go/trace v1.10.6 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.21.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.45.0 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
@@ -408,7 +411,6 @@ require (
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/matryer/is v1.2.0 // indirect
 	github.com/mazznoer/csscolorparser v0.1.3 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -468,7 +470,7 @@ require (
 	golang.org/x/tools/go/vcs v0.1.0-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/plot v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240617180043-68d350f18fd4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -479,8 +481,8 @@ require (
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.112.1 // indirect
-	cloud.google.com/go/iam v1.1.6 // indirect
+	cloud.google.com/go v0.114.0 // indirect
+	cloud.google.com/go/iam v1.1.7 // indirect
 	cuelang.org/go v0.4.3
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -510,7 +512,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/becheran/wildmatch-go v1.0.0
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.8.0
+	github.com/bits-and-blooms/bitset v1.13.0
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/bufbuild/buf v1.25.0 // indirect
@@ -565,7 +567,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20231205033806-a5a03c77bf08 // indirect
-	github.com/googleapis/gax-go/v2 v2.12.2
+	github.com/googleapis/gax-go/v2 v2.12.4
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
@@ -645,7 +647,7 @@ require (
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/sourcegraph/conc v0.3.1-0.20240108182409-4afefce20f9b
 	github.com/sourcegraph/mountinfo v0.0.0-20240201124957-b314c0befab1
-	github.com/sourcegraph/zoekt v0.0.0-20240528215134-640102a4a30e
+	github.com/sourcegraph/zoekt v0.0.0-20240620084526-5ac92b1a7d4a
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

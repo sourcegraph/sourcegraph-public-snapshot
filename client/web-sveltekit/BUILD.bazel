@@ -324,6 +324,10 @@ svelte_check.svelte_check_test(
     args = [
         "--tsconfig",
         "tsconfig.json",
+        "--compiler-warnings",
+        # missing-declaration is raised for our icon components. The Svelte compiler
+        # does not take into account ambient declarations (will be fixed in Svelte 5).
+        "missing-declaration:ignore",
     ],
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + [

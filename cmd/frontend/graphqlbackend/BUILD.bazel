@@ -252,6 +252,7 @@ go_library(
         "//internal/authz/permssync",
         "//internal/binary",
         "//internal/cloud",
+        "//internal/codeintel/core",
         "//internal/codeintel/dependencies",
         "//internal/codeintel/dependencies/shared",
         "//internal/codeintel/resolvers",
