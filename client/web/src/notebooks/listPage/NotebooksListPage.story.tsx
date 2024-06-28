@@ -2,12 +2,12 @@ import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { type Observable, of } from 'rxjs'
 
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 import type { ListNotebooksResult } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
 
@@ -46,7 +46,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                     { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
                 ],
-                queryVersion: LATEST_VERSION,
+                patternType: SearchPatternType.standard,
             },
             {
                 __typename: 'Notebook',
@@ -62,7 +62,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 updater: { __typename: 'User', username: 'user2' },
                 namespace: { __typename: 'User', namespaceName: 'user2', id: '2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
-                queryVersion: LATEST_VERSION,
+                patternType: SearchPatternType.standard,
             },
         ],
         pageInfo: { hasNextPage: false, endCursor: null },

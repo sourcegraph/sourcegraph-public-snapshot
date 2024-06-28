@@ -299,7 +299,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 settingsCascade={settingsCascade}
                                 platformContext={platformContext}
                                 outlineContainerElement={outlineContainerElement.current}
-                                queryVersion={notebookOrError.queryVersion}
+                                patternType={notebookOrError.patternType}
                             />
                         </>
                     )}

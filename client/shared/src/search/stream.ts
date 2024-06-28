@@ -12,8 +12,7 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 
 import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import type { SymbolKind } from '../graphql-operations'
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
 
@@ -25,23 +24,6 @@ import { SearchMode } from './searchQueryState'
 // V1 - default to interpreting patterns as regular expressions.
 // None - Anything before 3.9.0 will not pass a version parameter and defaults to V1.
 export const LATEST_VERSION = 'V3'
-
-export const defaultPatternTypeFromVersion = (version: string): SearchPatternType | undefined => {
-    switch (version) {
-        case 'V1': {
-            return SearchPatternType.regexp
-        }
-        case 'V2': {
-            return SearchPatternType.literal
-        }
-        case 'V3': {
-            return SearchPatternType.standard
-        }
-        default: {
-            return undefined
-        }
-    }
-}
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null

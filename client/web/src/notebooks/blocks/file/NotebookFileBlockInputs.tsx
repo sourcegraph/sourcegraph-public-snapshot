@@ -7,11 +7,13 @@ import { debounce } from 'lodash'
 import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import type { PathMatch } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import type { BlockProps, FileBlockInput } from '../..'
 import type { HighlightLineRange } from '../../../graphql-operations'
+import { SearchPatternType } from '../../../graphql-operations'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
@@ -21,7 +23,7 @@ import styles from './NotebookFileBlockInputs.module.scss'
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     queryInput: string
-    queryVersion: string
+    patternType: SearchPatternType
     lineRange: HighlightLineRange | null
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
@@ -45,7 +47,7 @@ const editorAttributes = [
 
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, queryVersion, ...inputProps }) => {
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, patternType, ...inputProps }) => {
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -66,11 +68,12 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         (query: string) =>
             fetchSuggestions(
                 getFileSuggestionsQuery(query),
-                queryVersion,
+                patternType,
+                LATEST_VERSION,
                 (suggestion): suggestion is PathMatch => suggestion.type === 'path',
                 file => file
             ),
-        [queryVersion]
+        [patternType]
     )
 
     const countSuggestions = useCallback((suggestions: PathMatch[]) => suggestions.length, [])

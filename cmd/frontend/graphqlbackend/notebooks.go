@@ -60,7 +60,7 @@ type NotebookResolver interface {
 	ViewerCanManage(ctx context.Context) (bool, error)
 	ViewerHasStarred(ctx context.Context) (bool, error)
 	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
-	QueryVersion(ctx context.Context) string
+	PatternType(ctx context.Context) string
 }
 
 type NotebookBlockResolver interface {

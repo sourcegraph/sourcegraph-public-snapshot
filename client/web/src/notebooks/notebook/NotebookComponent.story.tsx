@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -59,7 +59,7 @@ export const Default: StoryFn = () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
-                queryVersion={LATEST_VERSION}
+                patternType={SearchPatternType.standard}
             />
         )}
     </WebStory>
@@ -85,7 +85,7 @@ export const DefaultReadOnly: StoryFn = () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
-                queryVersion={LATEST_VERSION}
+                patternType={SearchPatternType.standard}
             />
         )}
     </WebStory>

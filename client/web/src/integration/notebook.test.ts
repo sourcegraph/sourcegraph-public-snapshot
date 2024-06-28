@@ -6,12 +6,12 @@ import expect from 'expect'
 import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -90,7 +90,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
-    queryVersion: LATEST_VERSION,
+    patternType: SearchPatternType.standard,
 })
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
