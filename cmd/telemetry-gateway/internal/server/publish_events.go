@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cockroachdb/redact"
 	"github.com/sourcegraph/log"
@@ -22,6 +23,7 @@ func handlePublishEvents(
 	publisher *events.Publisher,
 	events []*telemetrygatewayv1.Event,
 ) *telemetrygatewayv1.RecordEventsResponse {
+	start := time.Now()
 	var tr sgtrace.Trace
 	tr, ctx = sgtrace.New(ctx, "handlePublishEvents",
 		attribute.Int("events", len(events)))
@@ -49,15 +51,26 @@ func handlePublishEvents(
 		metric.WithAttributes(attribute.Bool("succeeded", false), resultAttribute, sourceAttribute))
 
 	// Generate a log message for convenience
+	duration := time.Since(start)
 	summaryFields := []log.Field{
 		log.String("result", summary.result),
 		log.Int("submitted", len(events)),
 		log.Int("succeeded", len(summary.succeededEvents)),
 		log.Int("failed", len(summary.failedEvents)),
+		log.Duration("duration", duration),
 	}
 	if len(summary.failedEvents) > 0 {
 		tr.SetError(errors.New(summary.message)) // mark span as failed
 		tr.SetAttributes(attribute.Int("failed", len(summary.failedEvents)))
+
+		// Dangerously slow for a single batch, we're at risk of hitting other
+		// types of timeouts. Add an error for reporting purposes. We may need
+		// to increase default concurrencies or batch sizes.
+		if duration > 10*time.Second {
+			summary.errorFields = append(summary.errorFields,
+				log.Error(errors.New("slow publish")))
+		}
+
 		logger.Error(summary.message, append(summaryFields, summary.errorFields...)...)
 	} else {
 		logger.Info(summary.message, summaryFields...)
@@ -114,6 +127,17 @@ func summarizePublishEventsResults(results []events.PublishEventResult, opts sum
 				// Let the client know that this event failed to submit.
 				failed = append(failed, result)
 			}
+
+			// Don't record an error for context canceled errors, since it's
+			// generally not very interesting - the client probably decided to
+			// cancel or time out. Instead, just record the error string, so
+			// that it doesn't go to Sentry.
+			if errors.IsContextCanceled(result.PublishError) {
+				errFields = append(errFields,
+					log.String(fmt.Sprintf("error.%d", i), result.PublishError.Error()))
+				continue
+			}
+
 			// Construct details to annotate the error with in Sentry reports
 			// without affecting the error itself (which is important for
 			// grouping within Sentry)
