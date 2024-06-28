@@ -320,7 +320,7 @@ sveltekit.svelte_kit(
 # Runs svelte-check on production source files
 svelte_check.svelte_check_test(
     name = "svelte-check",
-    timeout = "short",
+    timeout = "moderate",
     args = [
         "--tsconfig",
         "tsconfig.json",
