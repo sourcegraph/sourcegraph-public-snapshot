@@ -267,6 +267,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
+            hideFilePreviewButton,
         ]
     )
 
