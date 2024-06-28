@@ -48,12 +48,12 @@ func (sc *SiteCredential) githubAppAuthenticator() (auth.Authenticator, error) {
 
 // SetAuthenticator encrypts and sets the authenticator within the site credential.
 func (sc *SiteCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	if sc.IsGitHubApp() {
-		return nil
-	}
-
 	if sc.Credential == nil {
 		sc.Credential = database.NewUnencryptedCredential(nil)
+	}
+
+	if sc.IsGitHubApp() {
+		return nil
 	}
 
 	raw, err := database.MarshalAuthenticator(a)
