@@ -11,7 +11,7 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,7 +46,7 @@ func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
 // Event contains information to be logged.
 type Event struct {
 	// Event categorizes the event. Required.
-	Name codygateway.EventName
+	Name codygatewayevents.EventName
 	// Source indicates the source of the actor associated with the event.
 	// Required.
 	Source string
