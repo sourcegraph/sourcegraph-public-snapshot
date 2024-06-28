@@ -1034,12 +1034,12 @@ func (e SyntacticUsagesError) Error() string {
 	return fmt.Sprintf("%s: %s", msg, e.UnderlyingError)
 }
 
-func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.TraceLogger, repo types.Repo, commit api.CommitID, path core.RepoRelPath) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
+func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.TraceLogger, args UsagesForSymbolArgs) (uploadsshared.CompletedUpload, *SyntacticUsagesError) {
 	uploads, err := s.GetClosestCompletedUploadsForBlob(ctx, uploadsshared.UploadMatchingOptions{
-		RepositoryID:       int(repo.ID),
-		Commit:             string(commit),
+		RepositoryID:       int(args.Repo.ID),
+		Commit:             string(args.Commit),
 		Indexer:            uploadsshared.SyntacticIndexer,
-		Path:               path,
+		Path:               args.Path,
 		RootToPathMatching: uploadsshared.RootMustEnclosePath,
 	})
 
@@ -1053,9 +1053,9 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 	if len(uploads) > 1 {
 		trace.Warn(
 			"Multiple syntactic uploads found, picking the first one",
-			log.String("repo", repo.URI),
-			log.String("commit", commit.Short()),
-			log.String("path", path.RawValue()),
+			log.String("repo", args.Repo.URI),
+			log.String("commit", args.Commit.Short()),
+			log.String("path", args.Path.RawValue()),
 		)
 	}
 	return uploads[0], nil
@@ -1073,17 +1073,14 @@ func (s *Service) getSyntacticUpload(ctx context.Context, trace observation.Trac
 func (s *Service) getSyntacticSymbolsAtRange(
 	ctx context.Context,
 	trace observation.TraceLogger,
-	repo types.Repo,
-	commit api.CommitID,
-	path core.RepoRelPath,
-	symbolRange scip.Range,
+	args UsagesForSymbolArgs,
 ) (symbols []*scip.Symbol, uploadID int, err *SyntacticUsagesError) {
-	syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
+	syntacticUpload, err := s.getSyntacticUpload(ctx, trace, args)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, path)
+	doc, docErr := s.SCIPDocument(ctx, syntacticUpload.ID, args.Path)
 	if docErr != nil {
 		return nil, 0, &SyntacticUsagesError{
 			Code:            SU_NoSyntacticIndex,
@@ -1091,13 +1088,12 @@ func (s *Service) getSyntacticSymbolsAtRange(
 		}
 	}
 
-	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
-
 	symbols = []*scip.Symbol{}
 	var parseFail *scip.Occurrence = nil
 
+	// TODO: Adjust symbolRange based on revision vs syntacticUpload.Commit
 	// FIXME(issue: GRAPH-674): Properly handle different text encodings here.
-	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, symbolRange) {
+	for _, occurrence := range findOccurrencesWithEqualRange(doc.Occurrences, args.SymbolRange) {
 		parsedSymbol, err := scip.ParseSymbol(occurrence.Symbol)
 		if err != nil {
 			parseFail = occurrence
@@ -1180,23 +1176,27 @@ type SyntacticUsagesResult struct {
 	Matches []SyntacticMatch
 }
 
+type UsagesForSymbolArgs struct {
+	Repo        types.Repo
+	Commit      api.CommitID
+	Path        core.RepoRelPath
+	SymbolRange scip.Range
+}
+
 func (s *Service) SyntacticUsages(
 	ctx context.Context,
-	repo types.Repo,
-	commit api.CommitID,
-	path core.RepoRelPath,
-	symbolRange scip.Range,
+	args UsagesForSymbolArgs,
 ) (SyntacticUsagesResult, *PreviousSyntacticSearch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoId", int(repo.ID)),
-		attribute.String("commit", string(commit)),
-		attribute.String("path", path.RawValue()),
-		attribute.String("symbolRange", symbolRange.String()),
+		attribute.Int("repoId", int(args.Repo.ID)),
+		attribute.String("commit", string(args.Commit)),
+		attribute.String("path", args.Path.RawValue()),
+		attribute.String("symbolRange", args.SymbolRange.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
+	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, args)
 	if err != nil {
 		return SyntacticUsagesResult{}, nil, err
 	}
@@ -1204,7 +1204,7 @@ func (s *Service) SyntacticUsages(
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
 	searchSymbol := symbolsAtRange[0]
-	language, langErr := languageFromFilepath(trace, path)
+	language, langErr := languageFromFilepath(trace, args.Path)
 	if langErr != nil {
 		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -1221,7 +1221,7 @@ func (s *Service) SyntacticUsages(
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
 		ctx, s.searchClient, trace,
-		repo, commit, symbolName, language,
+		args.Repo, args.Commit, symbolName, language,
 	)
 	if searchErr != nil {
 		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
@@ -1254,8 +1254,8 @@ func (s *Service) SyntacticUsages(
 
 const MAX_FILE_SIZE_FOR_SYMBOL_DETECTION_BYTES = 10_000_000
 
-func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit api.CommitID, path core.RepoRelPath, symbolRange scip.Range) (string, error) {
-	stat, err := s.gitserver.Stat(ctx, repo.Name, commit, path.RawValue())
+func (s *Service) symbolNameFromGit(ctx context.Context, args UsagesForSymbolArgs) (string, error) {
+	stat, err := s.gitserver.Stat(ctx, args.Repo.Name, args.Commit, args.Path.RawValue())
 	if err != nil {
 		return "", err
 	}
@@ -1264,12 +1264,12 @@ func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit
 		return "", errors.New("code navigation is not supported for files larger than 10MB")
 	}
 
-	r, err := s.gitserver.NewFileReader(ctx, repo.Name, commit, path.RawValue())
+	r, err := s.gitserver.NewFileReader(ctx, args.Repo.Name, args.Commit, args.Path.RawValue())
 	if err != nil {
 		return "", err
 	}
 	defer r.Close()
-	symbolName, err := sliceRangeFromReader(r, symbolRange)
+	symbolName, err := sliceRangeFromReader(r, args.SymbolRange)
 	if err != nil {
 		return "", err
 	}
@@ -1298,17 +1298,14 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 
 func (s *Service) SearchBasedUsages(
 	ctx context.Context,
-	repo types.Repo,
-	commit api.CommitID,
-	path core.RepoRelPath,
-	symbolRange scip.Range,
+	args UsagesForSymbolArgs,
 	previousSyntacticSearch *PreviousSyntacticSearch,
 ) (matches []SearchBasedMatch, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoId", int(repo.ID)),
-		attribute.String("commit", string(commit)),
-		attribute.String("path", path.RawValue()),
-		attribute.String("symbolRange", symbolRange.String()),
+		attribute.Int("repoId", int(args.Repo.ID)),
+		attribute.String("commit", string(args.Commit)),
+		attribute.String("path", args.Path.RawValue()),
+		attribute.String("symbolRange", args.SymbolRange.String()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1321,18 +1318,18 @@ func (s *Service) SearchBasedUsages(
 		symbolName = previousSyntacticSearch.SymbolName
 		syntacticUploadID = &previousSyntacticSearch.UploadID
 	} else {
-		language, err = languageFromFilepath(trace, path)
+		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
 			return nil, err
 		}
 
-		nameFromGit, err := s.symbolNameFromGit(ctx, repo, commit, path, symbolRange)
+		nameFromGit, err := s.symbolNameFromGit(ctx, args)
 		if err != nil {
 			return nil, err
 		}
 		symbolName = nameFromGit
 
-		syntacticUpload, uploadErr := s.getSyntacticUpload(ctx, trace, repo, commit, path)
+		syntacticUpload, uploadErr := s.getSyntacticUpload(ctx, trace, args)
 		if uploadErr != nil {
 			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
 		} else {
@@ -1340,7 +1337,7 @@ func (s *Service) SearchBasedUsages(
 		}
 	}
 
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, repo, commit, symbolName, language)
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, args.Repo, args.Commit, symbolName, language)
 
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {

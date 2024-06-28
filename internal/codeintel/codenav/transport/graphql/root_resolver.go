@@ -216,9 +216,15 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		remainingCount = remainingCount - numPreciseResults
 	}
 
+	usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
+		Repo:        args.Repo,
+		Commit:      args.CommitID,
+		Path:        args.Path,
+		SymbolRange: args.Range,
+	}
 	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
 		if err != nil {
 			switch err.Code {
 			case codenav.SU_Fatal:
@@ -241,7 +247,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
-		results, err := r.svc.SearchBasedUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range, previousSyntacticSearch)
+		results, err := r.svc.SearchBasedUsages(ctx, usagesForSymbolArgs, previousSyntacticSearch)
 		if err != nil {
 			// We only want to fail the request on an error here if we didn't get any precise or syntactic results before
 			if len(usageResolvers) == 0 {
