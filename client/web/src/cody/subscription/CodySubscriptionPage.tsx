@@ -295,8 +295,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     LLM support
                                 </Text>
                                 <Text className="mb-1 text-muted">
-                                    Multiple LLM choices for chat
-                                    <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                    More powerful LLMs for chat and commands
+                                    <Tooltip content="Everything in free, plus GPT-4o, GPT-4 Turbo, and Claude 3 Opus">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -304,7 +304,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         />
                                     </Tooltip>
                                 </Text>
-                                <Text className="mb-0 text-muted">Default LLMs for commands and autocomplete</Text>
+                                <Text className="mb-1 text-muted">
+                                    Multiple LLM choices for chat and commands
+                                    <Tooltip content="Claude 3 (Sonnet, Haiku), Claude Sonnet 3.5, Gemini Flash and Pro, Mixtral">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-label="More info"
+                                        />
+                                    </Tooltip>
+                                </Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3">
