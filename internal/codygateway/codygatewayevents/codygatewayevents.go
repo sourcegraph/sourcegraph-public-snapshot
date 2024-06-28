@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,17 +48,25 @@ type Service struct {
 	opts ServiceOptions
 }
 
-func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygatewayactor.ActorSource, actorID string) (_ []SubscriptionUsage, err error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
 	}
+
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "CompletionsUsageForActor",
+		attribute.String("feature", string(feature)),
+		attribute.String("actorSource", string(actorSource)),
+		attribute.String("actorID", actorID))
+	defer tr.EndWithErrIfNotContext(&err)
 
 	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, s.opts.BigQuery.ClientOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 	defer client.Close()
+	tr.AddEvent("bigquery.NewClient")
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
 
@@ -168,17 +178,24 @@ ORDER BY
 	return results, nil
 }
 
-func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygatewayactor.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *Service) EmbeddingsUsageForActor(ctx context.Context, actorSource codygatewayactor.ActorSource, actorID string) (_ []SubscriptionUsage, err error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
 	}
+
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "EmbeddingsUsageForActor",
+		attribute.String("actorSource", string(actorSource)),
+		attribute.String("actorID", actorID))
+	defer tr.EndWithErrIfNotContext(&err)
 
 	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, s.opts.BigQuery.ClientOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating BigQuery client")
 	}
 	defer client.Close()
+	tr.AddEvent("bigquery.NewClient")
 
 	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
 

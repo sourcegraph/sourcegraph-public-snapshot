@@ -2,8 +2,10 @@ package service
 
 import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/cloudsql"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Config is the configuration for the Enterprise Portal.
@@ -15,6 +17,9 @@ type Config struct {
 
 		IncludeProductionLicenses bool
 	}
+
+	// If nil, no connection was configured.
+	CodyGatewayEvents *codygatewayevents.ServiceBigQueryOptions
 
 	SAMS SAMSConfig
 }
@@ -42,4 +47,18 @@ func (c *Config) Load(env *runtime.Env) {
 		"Sourcegraph Accounts Management System client ID")
 	c.SAMS.ClientSecret = env.Get("ENTERPRISE_PORTAL_SAMS_CLIENT_SECRET", "",
 		"Sourcegraph Accounts Management System client secret")
+
+	codyGatewayEventsProjectID := env.GetOptional("CODY_GATEWAY_EVENTS_PROJECT_ID",
+		"Project ID for Cody Gateway events ('telligentsourcegraph' or 'cody-gateway-dev')")
+	codyGatewayEventsDataset := env.Get("CODY_GATEWAY_EVENTS_DATASET", "cody_gateway",
+		"Dataset for Cody Gateway events")
+	codyGatewayEventsTable := env.Get("CODY_GATEWAY_EVENTS_TABLE", "events",
+		"Table for Cody Gateway events")
+	if codyGatewayEventsProjectID != nil {
+		c.CodyGatewayEvents = &codygatewayevents.ServiceBigQueryOptions{
+			ProjectID:   pointers.DerefZero(codyGatewayEventsProjectID),
+			Dataset:     codyGatewayEventsDataset,
+			EventsTable: codyGatewayEventsTable,
+		}
+	}
 }
