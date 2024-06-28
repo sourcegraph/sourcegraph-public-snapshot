@@ -117,6 +117,18 @@ export async function build(): Promise<void> {
                     './CommitSearchResult': require.resolve('../src/webview/search-panel/alias/CommitSearchResult'),
                     './SymbolSearchResult': require.resolve('../src/webview/search-panel/alias/SymbolSearchResult'),
                     './FileMatchChildren': require.resolve('../src/webview/search-panel/alias/FileMatchChildren'),
+                    // The VSCode Search extension should not display the file preview link on search results.
+                    // Rather than controlling the display of the file preview links by modifying shared components
+                    // in `branded` and drilling props from the vscode code to those shared components,
+                    // clone the affected shared components (FileContentSearchResult and FilePathSearchResult)
+                    // and remove the `SearchResultPreviewButton` from the cloned files.
+                    // This approach is legitimate only because the VSCode Search extension has a limited lifespan at this point
+                    // (it will be merged with Cody in the near future), so the added overhead of keeping track of duplicate code
+                    // (and _finding_ that duplicated code) will be limited.
+                    './FileContentSearchResult': require.resolve(
+                        '../src/webview/search-panel/alias/FileContentSearchResult'
+                    ),
+                    './FilePathSearchResult': require.resolve('../src/webview/search-panel/alias/FilePathSearchResult'),
                     './RepoFileLink': require.resolve('../src/webview/search-panel/alias/RepoFileLink'),
                     '../documentation/ModalVideo': require.resolve('../src/webview/search-panel/alias/ModalVideo'),
                 }),
