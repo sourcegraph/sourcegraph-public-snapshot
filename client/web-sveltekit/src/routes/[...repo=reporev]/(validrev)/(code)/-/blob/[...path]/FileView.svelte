@@ -24,7 +24,7 @@
     import OpenInEditor from '$lib/repo/open-in-editor/OpenInEditor.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
     import { createCodeIntelAPI, replaceRevisionInURL } from '$lib/shared'
-    import { isLightTheme, settings, user } from '$lib/stores'
+    import { isLightTheme, settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { createPromiseStore, formatBytes } from '$lib/utils'
     import { Alert, Badge, MenuButton, MenuLink } from '$lib/wildcard'
@@ -109,7 +109,9 @@
               })
             : null
 
-    $: codeGraphDataCommitHashes = $user?.siteAdmin ? codeGraphData?.map(datum => datum.commit.slice(0, 7)) : undefined
+    $: codeGraphDataCommitHashes = data.user?.siteAdmin
+        ? codeGraphData?.map(datum => datum.commit.slice(0, 7))
+        : undefined
     $: codeGraphDataDebugOptions = codeGraphDataCommitHashes ? ['None', ...codeGraphDataCommitHashes] : undefined
     const selectedCodeGraphDataDebugOption = writable<string>('None')
     $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>
