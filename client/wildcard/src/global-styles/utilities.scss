@@ -134,8 +134,16 @@ $sizes: (
     }
 }
 
+.w-fit-content {
+    width: fit-content !important;
+}
+
 .mw-100 {
     max-width: 100% !important;
+}
+
+.mw-30 {
+    max-width: 30% !important;
 }
 
 .mh-100 {

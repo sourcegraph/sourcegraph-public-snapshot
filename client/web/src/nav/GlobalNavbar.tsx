@@ -304,6 +304,12 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
 
     const toolsItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
+            props.authenticatedUser
+                ? {
+                      path: PageRoutes.SavedSearches,
+                      content: 'Saved Searches',
+                  }
+                : false,
             showSearchContext && { path: PageRoutes.Contexts, content: 'Contexts' },
             showSearchNotebook && { path: PageRoutes.Notebooks, content: 'Notebooks' },
             // We hardcode the code monitoring path here because PageRoutes.CodeMonitoring is a catch-all
@@ -315,7 +321,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [showSearchContext, showSearchJobs, showCodeMonitoring, showSearchNotebook])
+    }, [showSearchContext, showSearchJobs, showCodeMonitoring, showSearchNotebook, props.authenticatedUser])
     const toolsItem = toolsItems.length > 0 && (
         <NavDropdown
             key="tools"

@@ -35,6 +35,7 @@ go_library(
         "//cmd/frontend/internal/rbac",
         "//cmd/frontend/internal/registry",
         "//cmd/frontend/internal/repos/webhooks",
+        "//cmd/frontend/internal/savedsearches",
         "//cmd/frontend/internal/scim",
         "//cmd/frontend/internal/search",
         "//cmd/frontend/internal/searchcontexts",

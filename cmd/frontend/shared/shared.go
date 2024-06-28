@@ -48,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/savedsearches"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts"
@@ -77,6 +78,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
+	"savedsearches":  savedsearches.Init,
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
 	"telemetry":      telemetry.Init,

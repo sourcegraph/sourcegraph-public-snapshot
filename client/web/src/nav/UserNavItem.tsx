@@ -144,7 +144,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Cody dashboard
                                 </MenuLink>
                             )}
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                            <MenuLink as={Link} to={PageRoutes.SavedSearches}>
                                 Saved searches
                             </MenuLink>
                             {!isSourcegraphDotCom && window.context.ownEnabled && (
