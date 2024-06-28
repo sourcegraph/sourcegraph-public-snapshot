@@ -1342,13 +1342,27 @@ func (s *Service) SearchBasedUsages(
 
 	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, repo, commit, symbolName, language)
 
+	var syntacticUploadID int
+	if previousSyntacticSearch.Found {
+		syntacticUploadID = previousSyntacticSearch.UploadID
+	} else {
+		syntacticUpload, err := s.getSyntacticUpload(ctx, trace, repo, commit, path)
+		if err != nil {
+			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
+		} else {
+			syntacticUploadID = syntacticUpload.ID
+		}
+	}
+
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
-		if previousSyntacticSearch.Found {
-			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, previousSyntacticSearch.UploadID, pair.Key, pair.Value)
+		if syntacticUploadID != 0 {
+			_, searchBasedMatches, err := s.findSyntacticMatchesForCandidateFile(ctx, syntacticUploadID, pair.Key, pair.Value)
 			if err == nil {
 				results = append(results, searchBasedMatches)
 				continue
+			} else {
+				trace.Info("findSyntacticMatches failed, skipping filtering search-based results", log.Error(err))
 			}
 		}
 		matches := []SearchBasedMatch{}
