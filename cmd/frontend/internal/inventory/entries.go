@@ -6,16 +6,14 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"io"
 	"io/fs"
 	"sort"
-	"strconv"
-
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var maxInvsLength, _ = strconv.Atoi(env.Get("GET_INVENTORY_MAX_INV_IN_MEMORY", "1000", "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory."))
+var maxInvsLength = env.MustGetInt("GET_INVENTORY_MAX_INV_IN_MEMORY", 1000, "When computing the language stats, every nth iteration all loaded files are aggregated into the inventory to reduce the memory footprint. Increasing this value may make the computation run faster, but will require more memory.")
 
 func (c *Context) All(ctx context.Context, gs gitserver.Client, commitID api.CommitID) (inv Inventory, err error) {
 	if c.CacheGet != nil {
