@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 9b479a7d48de2e94c06ceb44a8f87c7a553ddc458a31323b8bce0d4daad0374c
+        appliance.sourcegraph.com/configHash: f1bd4c4f6bd5a2a3083e02450589711fa4634502af4b91b612684b9a882008a7
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -187,7 +187,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 9b479a7d48de2e94c06ceb44a8f87c7a553ddc458a31323b8bce0d4daad0374c
+        appliance.sourcegraph.com/configHash: f1bd4c4f6bd5a2a3083e02450589711fa4634502af4b91b612684b9a882008a7
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -206,7 +206,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: 9b479a7d48de2e94c06ceb44a8f87c7a553ddc458a31323b8bce0d4daad0374c
+        appliance.sourcegraph.com/configHash: f1bd4c4f6bd5a2a3083e02450589711fa4634502af4b91b612684b9a882008a7
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: grafana
