@@ -1,5 +1,11 @@
+CREATE TYPE github_app_kind AS ENUM (
+    'COMMIT_SIGNING',
+    'REPO_SYNC',
+    'USER_GITHUB_APP'
+);
+
 ALTER TABLE IF EXISTS github_apps
-    ADD COLUMN IF NOT EXISTS kind VARCHAR(255) NULL;
+    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;
 
 UPDATE github_apps
 SET kind = 'COMMIT_SIGNING'
