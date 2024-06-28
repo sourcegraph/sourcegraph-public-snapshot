@@ -1,5 +1,5 @@
 {
-  "checksum": "29abc93382c22b38f87c9f8db7894be1e88ba39e3e45b46fd61a08be146a87e5",
+  "checksum": "c1b7491fb92c7a323a1f0f8dfea0827ffdd308b84238d989ba48701a52f9c789",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -2394,7 +2394,7 @@
               "target": "plotters"
             },
             {
-              "id": "rayon 1.7.0",
+              "id": "rayon 1.10.0",
               "target": "rayon"
             },
             {
@@ -2476,57 +2476,6 @@
         "version": "0.5.0"
       },
       "license": "MIT/Apache-2.0"
-    },
-    "crossbeam-channel 0.5.8": {
-      "name": "crossbeam-channel",
-      "version": "0.5.8",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/crossbeam-channel/0.5.8/download",
-          "sha256": "a33c2bf77f2df06183c3aa30d1e96c0695a313d4f9c453cc3762a6db39f99200"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "crossbeam_channel",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "crossbeam_channel",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "crossbeam-utils",
-            "default",
-            "std"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "cfg-if 1.0.0",
-              "target": "cfg_if"
-            },
-            {
-              "id": "crossbeam-utils 0.8.16",
-              "target": "crossbeam_utils"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.5.8"
-      },
-      "license": "MIT OR Apache-2.0"
     },
     "crossbeam-deque 0.8.3": {
       "name": "crossbeam-deque",
@@ -8990,13 +8939,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "rayon 1.7.0": {
+    "rayon 1.10.0": {
       "name": "rayon",
-      "version": "1.7.0",
+      "version": "1.10.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/rayon/1.7.0/download",
-          "sha256": "1d2df5196e37bcc87abebc0053e20787d73847bb33134a69841207dd0a47f03b"
+          "url": "https://static.crates.io/crates/rayon/1.10.0/download",
+          "sha256": "b418a60154510ca1a002a752ca9714984e21e4241e804d32555251faf8b78ffa"
         }
       },
       "targets": [
@@ -9022,24 +8971,24 @@
               "target": "either"
             },
             {
-              "id": "rayon-core 1.11.0",
+              "id": "rayon-core 1.12.1",
               "target": "rayon_core"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.7.0"
+        "version": "1.10.0"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "rayon-core 1.11.0": {
+    "rayon-core 1.12.1": {
       "name": "rayon-core",
-      "version": "1.11.0",
+      "version": "1.12.1",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/rayon-core/1.11.0/download",
-          "sha256": "4b8f95bd6966f5c87776639160a66bd8ab9895d9d4ab01ddba9fc60661aebe8d"
+          "url": "https://static.crates.io/crates/rayon-core/1.12.1/download",
+          "sha256": "1465873a3dfdaa8ae7cb14b4383657caab0b3e8a0aa9ae8e04b044854c8dfce2"
         }
       },
       "targets": [
@@ -9070,10 +9019,6 @@
         "deps": {
           "common": [
             {
-              "id": "crossbeam-channel 0.5.8",
-              "target": "crossbeam_channel"
-            },
-            {
               "id": "crossbeam-deque 0.8.3",
               "target": "crossbeam_deque"
             },
@@ -9082,18 +9027,14 @@
               "target": "crossbeam_utils"
             },
             {
-              "id": "num_cpus 1.16.0",
-              "target": "num_cpus"
-            },
-            {
-              "id": "rayon-core 1.11.0",
+              "id": "rayon-core 1.12.1",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.11.0"
+        "version": "1.12.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10714,6 +10655,10 @@
             {
               "id": "protobuf 3.2.0",
               "target": "protobuf"
+            },
+            {
+              "id": "rayon 1.10.0",
+              "target": "rayon"
             },
             {
               "id": "scip 0.3.2",
@@ -18857,6 +18802,7 @@
     "path-clean 1.0.1",
     "predicates 3.0.4",
     "protobuf 3.2.0",
+    "rayon 1.10.0",
     "regex 1.9.3",
     "rocket 0.5.0-rc.3",
     "rustc-hash 1.1.0",

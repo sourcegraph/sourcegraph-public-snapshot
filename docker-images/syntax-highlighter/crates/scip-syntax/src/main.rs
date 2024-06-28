@@ -171,7 +171,7 @@ pub fn main() -> anyhow::Result<()> {
                 }
             };
 
-            result.unwrap()
+            result?
         }
 
         Commands::ScipEvaluate {

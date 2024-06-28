@@ -4,12 +4,15 @@ use std::{
     env,
     fs::File,
     io::{self, prelude::*},
+    sync::atomic::{AtomicU32, Ordering},
+    thread::{self, JoinHandle},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::ValueEnum;
 use path_clean;
+use rayon::prelude::*;
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{
     globals,
@@ -25,6 +28,7 @@ use crate::{
     progress::{create_progress_bar, create_spinner},
 };
 
+#[derive(Debug, Copy, Clone)]
 pub struct IndexOptions {
     pub analysis_mode: AnalysisMode,
     /// When true, fail on first encountered error
@@ -128,7 +132,7 @@ pub fn index_command(
             for filename in list {
                 bar.set_message(filename.clone());
                 let filepath = make_absolute(&cwd, &Utf8PathBuf::from(filename));
-                let document = index_file(&filepath, parser_id, &absolute_project_root, &options)?;
+                let document = index_file(&filepath, parser_id, &absolute_project_root, options)?;
                 index.documents.push(document);
                 bar.inc(1);
             }
@@ -137,22 +141,17 @@ pub fn index_command(
         }
         IndexMode::TarArchive { input } => match input {
             TarMode::File { location } => {
-                let mut ar = tar::Archive::new(File::open(location)?);
-                let entries = ar.entries()?;
-                let documents = index_tar_entries(entries, parser_id, &options)?;
+                let documents = index_tar(File::open(location)?, parser_id, options)?;
                 index.documents.extend(documents);
             }
             TarMode::Stdin => {
-                let stdin = io::stdin();
-                let mut ar: tar::Archive<_> = tar::Archive::new(stdin);
-                let entries = ar.entries()?;
-                let documents = index_tar_entries(entries, parser_id, &options)?;
+                let documents = index_tar(io::stdin(), parser_id, options)?;
                 index.documents.extend(documents);
             }
         },
         IndexMode::Workspace { location } => {
             let bar = create_spinner();
-
+            let mut filepaths = vec![];
             for entry in walkdir::WalkDir::new(location) {
                 let Ok(entry) = entry else { continue };
                 if entry.file_type().is_dir() {
@@ -165,13 +164,18 @@ pub fn index_command(
                     continue;
                 };
                 if extensions.contains(extension) {
-                    bar.set_message(entry.path().display().to_string());
-                    let document =
-                        index_file(filepath, parser_id, &absolute_project_root, &options)?;
-                    index.documents.push(document);
-                    bar.tick();
+                    filepaths.push(filepath.to_owned());
                 }
             }
+            let documents = filepaths.par_iter().map(|filepath| {
+                bar.set_message(filepath.to_string());
+                let document = index_file(filepath, parser_id, &absolute_project_root, options);
+                bar.tick();
+                document
+            });
+            index
+                .documents
+                .extend(documents.collect::<Result<Vec<_>, _>>()?);
         }
     }
 
@@ -200,7 +204,7 @@ fn index_file(
     filepath: &Utf8Path,
     parser_id: ParserId,
     absolute_project_root: &Utf8Path,
-    options: &IndexOptions,
+    options: IndexOptions,
 ) -> Result<Document> {
     let contents = std::fs::read_to_string(filepath)
         .with_context(|| format!("Failed to read file at {filepath}"))?;
@@ -224,59 +228,69 @@ fn index_file(
     }
 }
 
-fn index_tar_entries<R: Read>(
-    entries: tar::Entries<'_, R>,
-    parser: ParserId,
-    options: &IndexOptions,
-) -> anyhow::Result<Vec<Document>> {
-    let extensions = ParserId::language_extensions(&parser);
+fn read_tar_entry<R: Read>(mut entry: tar::Entry<'_, R>) -> Result<(Utf8PathBuf, String)> {
     let mut contents = String::new();
-    let mut documents: Vec<Document> = vec![];
-    let mut progress = 0;
-    let spinner = create_spinner();
-    for entry in entries {
-        let mut e = entry?;
-        let Ok(path) = Utf8PathBuf::from_path_buf(e.path()?.to_path_buf()) else {
-            eprintln!("Failed to convert path to utf8: {:?}", e.path()?);
-            continue;
-        };
+    let path = entry.path()?;
+    let path =
+        Utf8PathBuf::from_path_buf(path.to_path_buf()).map_err(|_| anyhow!("Non utf-8 path"))?;
+    entry
+        .read_to_string(&mut contents)
+        .with_context(|| format!("Failed to read contents of entry {path}"))?;
+    Ok((path, contents))
+}
 
-        if matches!(path.extension(), Some(ext) if extensions.contains(ext)) {
-            match e.read_to_string(&mut contents) {
-                Ok(size) => {
-                    match index_content(&contents, parser, options) {
+fn index_tar<R: Read>(
+    reader: R,
+    parser: ParserId,
+    options: IndexOptions,
+) -> anyhow::Result<Vec<Document>> {
+    let mut ar: tar::Archive<_> = tar::Archive::new(reader);
+    let entries = ar.entries()?;
+    let progress: AtomicU32 = AtomicU32::new(1);
+    let spinner = create_spinner();
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    // We need to move indexing off the main thread, because we're not allowed to move the archive
+    let thread_id: JoinHandle<Result<Vec<Document>>> = thread::spawn(move || {
+        rx.into_iter()
+            .par_bridge()
+            .filter_map(
+                |(path, buf): (Utf8PathBuf, String)| -> Option<Result<Document>> {
+                    let extensions = ParserId::language_extensions(&parser);
+                    if !extensions.contains(path.extension()?) {
+                        return None;
+                    }
+                    spinner.set_message(format!(
+                        "[{progress}]: {path}",
+                        progress = progress.fetch_add(1, Ordering::Relaxed)
+                    ));
+                    match index_content(&buf, parser, options) {
                         Ok(mut document) => {
+                            spinner.tick();
                             document.relative_path = path.to_string();
-                            documents.push(document);
+                            Some(Ok(document))
                         }
                         Err(error) => {
                             if options.fail_fast {
-                                anyhow::bail!("Failed to index {path}: {error:?}");
+                                Some(Err(anyhow!("failed to index {path}: {error:?}")))
                             } else {
-                                eprintln!("Failed to index {path}: {error:?}");
+                                eprintln!("failed to index {path}: {error:?}");
+                                None
                             }
                         }
                     }
-                    if size > 0 {
-                        contents.clear();
-                    }
-                }
-                Err(error) => {
-                    if options.fail_fast {
-                        anyhow::bail!("Failed to read contents of path {path}: {error:?}",)
-                    } else {
-                        eprintln!("Failed to read contents of path {path}: {error:?}",);
-                    }
-                }
-            }
-
-            progress += 1;
-            spinner.set_message(format!("[{progress}]: {path}"));
-            spinner.tick();
-        }
-    }
-
-    Ok(documents)
+                },
+            )
+            .collect()
+    });
+    entries
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            read_tar_entry(entry).ok()
+        })
+        .for_each(|x| tx.send(x).unwrap());
+    drop(tx);
+    thread_id.join().unwrap()
 }
 
 thread_local! {
@@ -284,7 +298,7 @@ thread_local! {
     static PARSERS: RefCell<HashMap<ParserId, tree_sitter::Parser>> = RefCell::new(HashMap::new());
 }
 
-fn index_content(contents: &str, parser_id: ParserId, options: &IndexOptions) -> Result<Document> {
+fn index_content(contents: &str, parser_id: ParserId, options: IndexOptions) -> Result<Document> {
     PARSERS.with_borrow_mut(|parsers| {
         let parser = match parsers.entry(parser_id) {
             Entry::Occupied(entry) => {
