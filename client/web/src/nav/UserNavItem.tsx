@@ -9,8 +9,11 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
+import { ThemeSetting, useTheme } from '@sourcegraph/shared/src/theme'
 import {
+    AnchorLink,
+    Icon,
+    Link,
     Menu,
     MenuButton,
     MenuDivider,
@@ -18,15 +21,14 @@ import {
     MenuItem,
     MenuLink,
     MenuList,
-    Link,
     Position,
-    AnchorLink,
     Select,
-    Icon,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
+import { CodyProRoutes } from '../cody/codyProRoutes'
 import { useCodyProNavLinks } from '../cody/useCodyProNavLinks'
+import { PageRoutes } from '../routes.constants'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
 import { useNewSearchNavigation } from './new-global-navigation'
@@ -136,10 +138,18 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
+                            {window.context.codyEnabledForCurrentUser && (
+                                <MenuLink
+                                    as={Link}
+                                    to={isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.CodyDashboard}
+                                >
+                                    Cody dashboard
+                                </MenuLink>
+                            )}
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
-                            {!isSourcegraphDotCom && (
+                            {!isSourcegraphDotCom && window.context.ownEnabled && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>

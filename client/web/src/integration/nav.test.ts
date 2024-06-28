@@ -1,22 +1,22 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
-import { describe, test, before, afterEach, beforeEach, after } from 'mocha'
+import { after, afterEach, before, beforeEach, describe, test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import type { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
-import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import {
-    createResolveRepoRevisionResult,
-    createFileExternalLinksResult,
     createBlobContentResult,
-    createTreeEntriesResult,
+    createFileExternalLinksResult,
     createFileNamesResult,
+    createResolveRepoRevisionResult,
+    createTreeEntriesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, removeContextFromQuery } from './utils'
@@ -106,68 +106,6 @@ describe('GlobalNavbar', () => {
             expect(removeContextFromQuery((await input.getValue()) ?? '')).toStrictEqual(
                 'repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md'
             )
-        })
-    })
-
-    describe('Code Search Dropdown', () => {
-        test('is highlighted on search page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('[data-test-id="/search"]')
-            await driver.page.waitForSelector('[data-test-active="true"]')
-
-            const active = await driver.page.evaluate(() =>
-                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
-            )
-
-            expect(active).toEqual('true')
-        })
-
-        test('is highlighted on repo page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph')
-            await driver.page.waitForSelector('[data-test-id="/search"]')
-            await driver.page.waitForSelector('[data-test-active="true"]')
-
-            const active = await driver.page.evaluate(() =>
-                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
-            )
-
-            expect(active).toEqual('true')
-        })
-
-        test('is highlighted on repo file page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/blob/README.md')
-            await driver.page.waitForSelector('[data-test-id="/search"]')
-            await driver.page.waitForSelector('[data-test-active="true"]')
-
-            const active = await driver.page.evaluate(() =>
-                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
-            )
-
-            expect(active).toEqual('true')
-        })
-
-        test('is highlighted on notebook page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/id')
-            await driver.page.waitForSelector('[data-test-id="/search"]')
-            await driver.page.waitForSelector('[data-test-active="true"]')
-
-            const active = await driver.page.evaluate(() =>
-                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
-            )
-
-            expect(active).toEqual('true')
-        })
-
-        test('is not highlighted on insights page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/id')
-            await driver.page.waitForSelector('[data-test-id="/search"]')
-            await driver.page.waitForSelector('[data-test-active="false"]')
-
-            const active = await driver.page.evaluate(() =>
-                document.querySelector('[data-test-id="/search"]')?.getAttribute('data-test-active')
-            )
-
-            expect(active).toEqual('false')
         })
     })
 })

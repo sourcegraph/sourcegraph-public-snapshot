@@ -41,10 +41,22 @@ func TestIsAllowed(t *testing.T) {
 			expectAllowed: false,
 		},
 		{
-			name: "disallowed event with additional allowed event type",
+			name: "event with private metadata, that has fields it is allowed to export (feature only)",
+			// This feature's action is defined as a wildcard(*) in the "IsAllowed" check's list of known events
 			event: &v1.Event{
 				Feature: "cody.completion",
 				Action:  "accepted",
+			},
+			expectAllowed: true,
+			expectAllowlist: []string{
+				"languageId",
+			},
+		},
+		{
+			name: "event with private metadata, that has fields it is allowed to export (feature and action)",
+			event: &v1.Event{
+				Feature: "cody.hoverCommands",
+				Action:  "visible",
 			},
 			expectAllowed: true,
 			expectAllowlist: []string{
@@ -82,30 +94,27 @@ func TestParseAdditionalAllowedEventTypes(t *testing.T) {
 			name:   "1 type",
 			config: "foo::bar::field",
 			expect: autogold.Expect([]EventType{{
-				Feature: "foo",
-				Action:  "bar",
-				AllowedPrivateMetadataKeys: []string{
-					"field",
-				},
+				Feature:                    "foo",
+				Action:                     "bar",
+				AllowedPrivateMetadataKeys: []string{"field"},
 			}}),
 		},
 		{
 			name:   "multiple types",
-			config: "foo::bar::field::field2,baz.bar::bar.baz::field",
+			config: "foo::bar::field::field2,baz.bar::*::field",
 			expect: autogold.Expect([]EventType{
 				{
 					Feature: "foo",
 					Action:  "bar",
 					AllowedPrivateMetadataKeys: []string{
-						"field", "field2",
+						"field",
+						"field2",
 					},
 				},
 				{
-					Feature: "baz.bar",
-					Action:  "bar.baz",
-					AllowedPrivateMetadataKeys: []string{
-						"field",
-					},
+					Feature:                    "baz.bar",
+					Action:                     "*",
+					AllowedPrivateMetadataKeys: []string{"field"},
 				},
 			}),
 		},
@@ -185,6 +194,38 @@ func TestEventTypesRedact(t *testing.T) {
 			mode := allowedTypes.Redact(ev)
 			assert.Equal(t, redactAllSensitive, mode)
 			assert.Nil(t, ev.Parameters.PrivateMetadata)
+		})
+		t.Run("allowlisted with wildcard(*) action", func(t *testing.T) {
+			allowedTypes := eventTypes(EventType{
+				Feature:                    "example",
+				Action:                     "*",
+				AllowedPrivateMetadataKeys: []string{"foo"},
+			})
+			ev := &v1.Event{
+				Feature: "example",
+				Action:  "randomAction",
+				Parameters: &v1.EventParameters{
+					PrivateMetadata: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"foo": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "allowed",
+								},
+							},
+							"bar": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "redacted",
+								},
+							},
+						},
+					},
+				}}
+			mode := allowedTypes.Redact(ev)
+			assert.Equal(t, redactMarketingAndUnallowedPrivateMetadataKeys, mode)
+
+			// assert that only the allowlisted privateMetadata key (foo) has a value
+			assert.Equal(t, "allowed", ev.Parameters.PrivateMetadata.Fields["foo"].GetStringValue())
+			assert.Nil(t, ev.Parameters.PrivateMetadata.Fields["bar"])
 		})
 	})
 }

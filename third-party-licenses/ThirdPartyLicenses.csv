@@ -313,22 +313,6 @@ PNPM,@opentelemetry/semantic-conventions,1.9.1,Apache 2.0,"",Approved
 PNPM,@peculiar/asn1-schema,2.3.3,MIT,"",Approved
 PNPM,@peculiar/json-schema,1.1.12,MIT,"",Approved
 PNPM,@peculiar/webcrypto,1.4.1,MIT,"",Approved
-PNPM,@percy/cli,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-app,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-build,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-command,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-config,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-exec,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-snapshot,1.24.0,MIT,"",Approved
-PNPM,@percy/cli-upload,1.24.0,MIT,"",Approved
-PNPM,@percy/client,1.24.0,MIT,"",Approved
-PNPM,@percy/config,1.24.0,MIT,"",Approved
-PNPM,@percy/core,1.24.0,MIT,"",Approved
-PNPM,@percy/dom,1.24.0,MIT,"",Approved
-PNPM,@percy/env,1.24.0,MIT,"",Approved
-PNPM,@percy/logger,1.24.0,MIT,"",Approved
-PNPM,@percy/puppeteer,2.0.2,MIT,"",Approved
-PNPM,@percy/sdk-utils,1.24.0,MIT,"",Approved
 PNPM,@phenomnomnominal/tsquery,4.0.0,MIT,"",Approved
 PNPM,@pkgjs/parseargs,0.11.0,MIT,"",Approved
 PNPM,@playwright/test,1.25.0,Apache 2.0,"",Approved

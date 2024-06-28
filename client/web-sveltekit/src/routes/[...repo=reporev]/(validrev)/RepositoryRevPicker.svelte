@@ -1,10 +1,12 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
+
     import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
 
+    export type { Placement } from '@floating-ui/dom'
     export type RepositoryTags = RepositoryGitRefs['gitRefs']
     export type RepositoryTag = RepositoryTags['nodes'][number]
 
@@ -25,6 +27,8 @@
 </script>
 
 <script lang="ts">
+    import type { Placement } from '@floating-ui/dom'
+
     import { goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -32,9 +36,12 @@
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { Button, Badge } from '$lib/wildcard'
+    import { Badge } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
+    import ButtonGroup from '$lib/wildcard/ButtonGroup.svelte'
+    import CopyButton from '$lib/wildcard/CopyButton.svelte'
 
-    import type { ResolvedRevision } from '../../+layout'
+    import type { ResolvedRevision } from '../+layout'
 
     import Picker from './Picker.svelte'
     import RepositoryRevPickerItem from './RepositoryRevPickerItem.svelte'
@@ -42,6 +49,7 @@
     export let repoURL: string
     export let revision: string | undefined
     export let resolvedRevision: ResolvedRevision
+    export let placement: Placement = 'right-start'
 
     // Pickers data sources
     export let getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
@@ -69,36 +77,39 @@
     const handleCommitSelect = (commit: RepositoryGitCommit): void => {
         goto(replaceRevisionInURL(location.pathname + location.search + location.hash, commit.oid))
     }
+
+    const buttonClass = getButtonClassName({ variant: 'secondary', outline: false, size: 'sm' })
 </script>
 
-<Popover let:registerTrigger let:registerTarget let:toggle placement="right-start">
-    <div
-        use:registerTarget
-        class="button-group"
-        class:is-on-specific-rev={isOnSpecificRev}
-        data-repo-rev-picker-trigger
-    >
-        <Button variant="secondary" size="sm">
-            <svelte:fragment slot="custom" let:buttonClass>
-                <button use:registerTrigger class={`${buttonClass} revision-trigger`} on:click={() => toggle()}>
-                    @{revisionLabel}
-                </button>
-            </svelte:fragment>
-        </Button>
+<Popover let:registerTrigger let:registerTarget let:toggle {placement}>
+    <div use:registerTarget data-repo-rev-picker-trigger>
+        <ButtonGroup>
+            <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()}>
+                @{revisionLabel}
+            </button>
 
-        {#if isOnSpecificRev}
-            <span class="reset-button-container">
+            <CopyButton value={revisionLabel}>
+                <button
+                    slot="custom"
+                    let:handleCopy
+                    on:click={() => handleCopy()}
+                    class="{buttonClass} hoverable-button"
+                >
+                    <Icon icon={ILucideCopy} aria-hidden="true" />
+                </button>
+            </CopyButton>
+
+            {#if isOnSpecificRev}
                 <Tooltip tooltip="Go to default branch">
-                    <Button
-                        size="sm"
-                        variant="secondary"
+                    <button
+                        class="{buttonClass} close-button hoverable-button"
                         on:click={() => handleGoToDefaultBranch(resolvedRevision.defaultBranch)}
                     >
-                        <Icon icon={ILucideX} aria-hidden="true" --icon-size="16px" />
-                    </Button>
+                        <Icon icon={ILucideX} aria-hidden="true" />
+                    </button>
                 </Tooltip>
-            </span>
-        {/if}
+            {/if}
+        </ButtonGroup>
     </div>
 
     <div slot="content" class="content" let:toggle>
@@ -175,44 +186,32 @@
 </Popover>
 
 <style lang="scss">
-    .button-group {
-        display: flex;
-        min-width: 0;
+    div[data-repo-rev-picker-trigger] > :global(*) {
+        width: 100%;
+        height: 100%;
+    }
 
-        .reset-button-container {
-            display: contents;
+    .rev-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        text-align: left;
+    }
 
-            // Get access to the reset branch button through container class
-            :global(button) {
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
-            }
+    .close-button {
+        border-left: 1px solid var(--secondary);
+    }
 
-            :global([data-icon]) {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                --icon-size: 16px;
-            }
-        }
-
-        .revision-trigger {
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            flex-grow: 1;
-            text-align: left;
-        }
-
-        &.is-on-specific-rev .revision-trigger {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-            border-right: none;
+    .hoverable-button {
+        --icon-size: 1em;
+        flex: 0;
+        color: var(--text-muted);
+        &:hover {
+            color: var(--body-color);
         }
     }
 
     .content {
-        padding: 0.75rem;
         min-width: 35rem;
         max-width: 40rem;
         width: 640px;
@@ -220,18 +219,7 @@
         --align-tabs: flex-start;
 
         :global([data-tab-header]) {
-            border-bottom: 1px solid var(--border-color-2);
-            margin: -0.75rem -0.75rem 0 -0.75rem;
             padding: 0 0.5rem;
-        }
-
-        :global([data-tab]) {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-
-        :global([data-tab-panel]) {
-            margin: 0 -0.75rem -0.75rem -0.75rem;
         }
 
         // Pickers style
@@ -245,7 +233,7 @@
         :global([data-picker-suggestions-list]) {
             display: grid;
             grid-template-rows: auto;
-            grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 6rem);
+            grid-template-columns: [title] auto [author] minmax(0, 10rem) [timestamp] minmax(0, 8rem);
         }
 
         :global([data-picker-suggestions-list-item]) {

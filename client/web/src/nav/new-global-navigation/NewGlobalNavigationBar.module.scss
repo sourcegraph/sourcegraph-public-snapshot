@@ -157,6 +157,18 @@
     }
 }
 
+.nav-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.6;
+    padding: 0.375rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    user-select: none;
+}
+
 .nav-link {
     display: flex;
     flex-wrap: wrap;

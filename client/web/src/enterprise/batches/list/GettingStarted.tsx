@@ -39,7 +39,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 <div className="row align-items-center">
                     <div className="col-12 col-md-7">
                         <video
-                            className="w-100 h-auto shadow percy-hide"
+                            className="w-100 h-auto shadow"
                             width={1280}
                             height={720}
                             autoPlay={allowAutoplay}

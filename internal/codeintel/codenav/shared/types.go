@@ -26,7 +26,7 @@ type Diagnostic[PathType any] struct {
 func AdjustDiagnostic(d Diagnostic[core.UploadRelPath], upload shared.CompletedUpload) Diagnostic[core.RepoRelPath] {
 	return Diagnostic[core.RepoRelPath]{
 		UploadID:       d.UploadID,
-		Path:           core.NewRepoRelPath(&upload, d.Path),
+		Path:           core.NewRepoRelPath(upload, d.Path),
 		DiagnosticData: d.DiagnosticData,
 	}
 }
