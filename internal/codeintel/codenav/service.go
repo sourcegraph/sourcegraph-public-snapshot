@@ -1189,7 +1189,7 @@ func (s *Service) SyntacticUsages(
 	commit api.CommitID,
 	path core.RepoRelPath,
 	symbolRange scip.Range,
-) (SyntacticUsagesResult, *SyntacticUsagesError) {
+) (SyntacticUsagesResult, PreviousSyntacticSearch, *SyntacticUsagesError) {
 	// The `nil` in the second argument is here, because `With` does not work with custom error types.
 	ctx, trace, endObservation := s.operations.syntacticUsages.With(ctx, nil, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(repo.ID)),
@@ -1201,20 +1201,15 @@ func (s *Service) SyntacticUsages(
 
 	symbolsAtRange, uploadID, err := s.getSyntacticSymbolsAtRange(ctx, trace, repo, commit, path, symbolRange)
 	if err != nil {
-		return SyntacticUsagesResult{}, err
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, err
 	}
 
 	// Overlapping symbolsAtRange should lead to the same display name, but be scored separately.
 	// (Meaning we just need a single Searcher/Zoekt search)
 	searchSymbol := symbolsAtRange[0]
-
-	langs, _ := languages.GetLanguages(path.RawValue(), nil)
-	if len(langs) != 1 {
-		langErr := errors.New("Unknown language")
-		if len(langs) > 1 {
-			langErr = errors.New("Ambiguous language")
-		}
-		return SyntacticUsagesResult{}, &SyntacticUsagesError{
+	language, langErr := languageFromFilepath(trace, path)
+	if langErr != nil {
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: langErr,
 		}
@@ -1222,17 +1217,17 @@ func (s *Service) SyntacticUsages(
 
 	symbolName, ok := nameFromGlobalSymbol(searchSymbol)
 	if !ok {
-		return SyntacticUsagesResult{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
 	}
 	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
 		ctx, s.searchClient, trace,
-		repo, commit, symbolName, langs[0],
+		repo, commit, symbolName, language,
 	)
 	if searchErr != nil {
-		return SyntacticUsagesResult{}, &SyntacticUsagesError{
+		return SyntacticUsagesResult{}, PreviousSyntacticSearch{}, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
 			UnderlyingError: searchErr,
 		}
@@ -1252,10 +1247,15 @@ func (s *Service) SyntacticUsages(
 		results = append(results, syntacticMatches)
 	}
 	return SyntacticUsagesResult{
-		UploadID:   uploadID,
-		SymbolName: symbolName,
-		Matches:    slices.Concat(results...),
-	}, nil
+			UploadID:   uploadID,
+			SymbolName: symbolName,
+			Matches:    slices.Concat(results...),
+		}, PreviousSyntacticSearch{
+			Found:      true,
+			UploadID:   uploadID,
+			SymbolName: symbolName,
+			Language:   language,
+		}, nil
 }
 
 const MAX_FILE_SIZE_FOR_SYMBOL_DETECTION_BYTES = 10_000_000
@@ -1282,10 +1282,25 @@ func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit
 	return symbolName, nil
 }
 
+// PreviousSyntacticSearch is used to avoid recomputing information
+// we've already collected during syntactic usages during
+// search-based usages.
 type PreviousSyntacticSearch struct {
 	Found      bool
 	UploadID   int
 	SymbolName string
+	Language   string
+}
+
+func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) (string, error) {
+	langs, _ := languages.GetLanguages(path.RawValue(), nil)
+	if len(langs) == 0 {
+		return "", errors.New("Unknown language")
+	}
+	if len(langs) > 1 {
+		trace.Info("Ambiguous language for file, arbitrarily choosing the first", log.String("path", path.RawValue()), log.Strings("langs", langs))
+	}
+	return langs[0], nil
 }
 
 func (s *Service) SearchBasedUsages(
@@ -1304,15 +1319,15 @@ func (s *Service) SearchBasedUsages(
 	}})
 	defer endObservation(1, observation.Args{})
 
-	langs, _ := languages.GetLanguages(path.RawValue(), nil)
-	if len(langs) != 1 {
-		langErr := errors.New("Unknown language")
-		if len(langs) > 1 {
-			langErr = errors.New("Ambiguous language")
+	var language string
+	if previousSyntacticSearch.Found {
+		language = previousSyntacticSearch.Language
+	} else {
+		language, err = languageFromFilepath(trace, path)
+		if err != nil {
+			return nil, err
 		}
-		return nil, langErr
 	}
-	language := langs[0]
 
 	var symbolName string
 	if previousSyntacticSearch.Found {

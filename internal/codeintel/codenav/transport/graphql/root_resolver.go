@@ -216,9 +216,9 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		remainingCount = remainingCount - numPreciseResults
 	}
 
-	previousSyntacticSearch := codenav.PreviousSyntacticSearch{}
+	var previousSyntacticSearch codenav.PreviousSyntacticSearch
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		syntacticResult, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
 		if err != nil {
 			switch err.Code {
 			case codenav.SU_Fatal:
@@ -236,12 +236,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
-
-			previousSyntacticSearch = codenav.PreviousSyntacticSearch{
-				Found:      true,
-				UploadID:   syntacticResult.UploadID,
-				SymbolName: syntacticResult.SymbolName,
-			}
+			previousSyntacticSearch = prevSearch
 		}
 	}
 
