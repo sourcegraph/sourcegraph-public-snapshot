@@ -3,6 +3,7 @@ import { EditorSelection, type Text, type EditorState, type SelectionRange } fro
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { CodeGraphData, codeGraphData } from './codeintel/occurrences'
 import { type HighlightIndex, syntaxHighlight } from './highlight'
 
 /**
@@ -25,7 +26,7 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.IdentifierAttribute,
 ])
 
-export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
+const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
     if (!occurrence.kind) {
         return false
     }
@@ -33,23 +34,31 @@ export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
     return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
 }
 
-export function occurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
-    // First we try to get an occurrence from syntax highlighting data.
-    const fromHighlighting = highlightingOccurrenceAtPosition(state, offset)
-    if (fromHighlighting) {
+export function interactiveOccurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
+    const position = positionAtCmPosition(state.doc, offset)
+
+    // First we try to get an occurrence from the occurrences API
+    const data = state.facet(codeGraphData)
+    if (data.length > 0) {
+        return scipOccurrenceAtPosition(data, position)
+    }
+
+    // Next we try to get an occurrence from syntax highlighting data.
+    const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
+    if (fromHighlighting && isInteractiveOccurrence(fromHighlighting)) {
         return fromHighlighting
     }
+
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
-    return inferOccurrenceAtPosition(state, offset)
+    return inferOccurrenceAtOffset(state, offset)
 }
 
 // Returns the occurrence at this position based on syntax highlighting data.
 // The highlighting data can come from Syntect (low-ish quality) or tree-sitter
 // (better quality). When we implement semantic highlighting in the future, the
 // highlighting data may come from precise indexers.
-function highlightingOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
-    const position = positionAtCmPosition(state.doc, offset)
+function highlightingOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
     const table = state.facet(syntaxHighlight)
     for (
         let index = table.lineIndex[position.line];
@@ -66,12 +75,33 @@ function highlightingOccurrenceAtPosition(state: EditorState, offset: number): O
     return undefined
 }
 
+// Returns the occurrence at this position based on data from the GraphQL occurrences API.
+function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
+    for (const datum of data) {
+        // Binary search over the sorted, non-overlapping ranges.
+        const arr = datum.nonOverlappingOccurrences
+        let [low, high] = [0, arr.length]
+        while (low < high) {
+            const mid = Math.floor((low + high) / 2)
+            if (arr[mid].range.contains(position)) {
+                return arr[mid]
+            }
+            if (arr[mid].range.end.compare(position) < 0) {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+    }
+    return undefined
+}
+
 // Returns the occurrence at this position based on CodeMirror's built-in
 // "wordAt" helper method.  This helper is a heuristic that works reasonably
 // well for languages with C/Java-like identifiers, but we may want to customize
 // the heurstic for other languages like Clojure where kebab-case identifiers
 // are common.
-function inferOccurrenceAtPosition(state: EditorState, offset: number): Occurrence | undefined {
+function inferOccurrenceAtOffset(state: EditorState, offset: number): Occurrence | undefined {
     const identifier = state.wordAt(offset)
     // We need to ignore words that end at the requested position to match the logic
     // we use to look up occurrences in SCIP data.

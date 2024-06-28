@@ -2543,6 +2543,8 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
+	// EnablePreciseOccurrences description: Enable the new precise occurrences API, which can provide more accurate hovers for some languages.
+	EnablePreciseOccurrences bool `json:"enablePreciseOccurrences,omitempty"`
 	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
 	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
@@ -2625,6 +2627,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
+	delete(m, "enablePreciseOccurrences")
 	delete(m, "enableSearchFilePrefetch")
 	delete(m, "enableSidebarFilePrefetch")
 	delete(m, "fuzzyFinder")

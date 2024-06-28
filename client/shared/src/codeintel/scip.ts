@@ -20,6 +20,18 @@ export interface JsonOccurrence {
     symbolRoles?: number
 }
 
+// Copied from https://github.com/sourcegraph/scip/blob/62966697fbeaccaaf87dab3870c85048d801ca68/scip.proto#L500
+export enum SymbolRole {
+    Unspecified = 0,
+    Definition = 1,
+    Import = 2,
+    WriteAccess = 4,
+    ReadAccess = 8,
+    Generated = 16,
+    Test = 32,
+    ForwardDefinition = 64,
+}
+
 export class Position implements sourcegraph.Position {
     constructor(public readonly line: number, public readonly character: number) {}
 
@@ -168,7 +180,7 @@ export class Occurrence {
 // non-overlapping occurrences.  The most narrow occurrence "wins", meaning that
 // when two ranges overlap, we pick the syntax kind of the occurrence with the
 // shortest distance between start/end.
-function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
+export function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
     // NOTE: we can't guarantee that the occurrences are sorted from the server
     // or after splitting multiline occurrences into single-line occurrences.
     const stack: Occurrence[] = occurrences.sort((a, b) => a.range.compare(b.range)).reverse()

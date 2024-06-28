@@ -21,8 +21,7 @@ import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverla
 import { syntaxHighlight } from '../highlight'
 import {
     contains,
-    isInteractiveOccurrence,
-    occurrenceAt,
+    interactiveOccurrenceAt,
     positionAtCmPosition,
     rangeToCmSelection,
     closestOccurrenceByCharacter,
@@ -138,10 +137,7 @@ export class CodeIntelAPIAdapter {
             return fromCache
         }
 
-        let occurrence = occurrenceAt(state, offset) ?? null
-        if (occurrence && !isInteractiveOccurrence(occurrence)) {
-            occurrence = null
-        }
+        const occurrence = interactiveOccurrenceAt(state, offset) ?? null
         const range = occurrence ? rangeToCmSelection(state.doc, occurrence.range) : null
         for (let i = range?.from ?? offset, to = range?.to ?? offset; i <= to; i++) {
             this.occurrenceCache.set(offset, { occurrence, range })
@@ -275,10 +271,7 @@ export class CodeIntelAPIAdapter {
                               .join('\n\n----\n\n')
                               .trimEnd()
                 const precise = isPrecise(result)
-                if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
-                    return null
-                }
-                if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
+                if (markdownContents === '') {
                     markdownContents = 'No hover information available'
                 }
                 return markdownContents

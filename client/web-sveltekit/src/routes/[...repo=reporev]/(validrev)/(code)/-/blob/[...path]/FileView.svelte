@@ -8,6 +8,7 @@
     import { writable } from 'svelte/store'
 
     import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
+    import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
     import { goto, preloadData, afterNavigate } from '$app/navigation'
     import { page } from '$app/stores'
@@ -49,9 +50,11 @@
     const lineWrap = writable<boolean>(false)
     const blobLoader = createPromiseStore<Awaited<PageData['blob']>>()
     const highlightsLoader = createPromiseStore<Awaited<PageData['highlights']>>()
+    const codeGraphDataLoader = createPromiseStore<Awaited<PageData['codeGraphData']>>()
 
     let blob: FileViewGitBlob | null = null
     let highlights: FileViewHighlightedFile | null = null
+    let codeGraphData: CodeGraphData[] | null = null
     let cmblob: CodeMirrorBlob | null = null
     let initialScrollPosition: ScrollSnapshot | null = null
     let selectedPosition: LineOrPositionOrRange | null = null
@@ -67,12 +70,14 @@
     } = data)
     $: blobLoader.set(data.blob)
     $: highlightsLoader.set(data.highlights)
+    $: codeGraphDataLoader.set(data.codeGraphData)
 
     $: if (!$blobLoader.pending) {
         // Only update highlights and position after the file content has been loaded.
         // While the file content is loading we show the previous file content.
         blob = $blobLoader.value ?? null
         highlights = $highlightsLoader.pending ? null : $highlightsLoader.value ?? null
+        codeGraphData = $codeGraphDataLoader.pending ? null : $codeGraphDataLoader.value ?? null
         selectedPosition = data.lineOrPosition
     }
     $: fileLoadingError = !$blobLoader.pending && $blobLoader.error
@@ -268,6 +273,7 @@
                     filePath,
                 }}
                 highlights={highlights?.lsif ?? ''}
+                codeGraphData={codeGraphData ?? undefined}
                 showBlame={showBlameView}
                 blameData={$blameData}
                 wrapLines={$lineWrap}
