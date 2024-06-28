@@ -3,7 +3,7 @@ use std::{
     collections::{hash_map::Entry, HashMap},
     env,
     fs::File,
-    io::{self, prelude::*},
+    io::{self, Read},
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -247,7 +247,7 @@ fn index_tar<R: Read + Send + 'static>(
     let spinner = create_spinner();
     // We need to move reading the archive off the main thread, because it can only be done synchronously
     let (rx, reader_thread_id) = {
-        let (tx, rx) = std::sync::mpsc::channel();
+        let (tx, rx) = std::sync::mpsc::sync_channel(rayon::current_num_threads() * 2);
         let thread_id = std::thread::spawn(move || -> Result<()> {
             let mut ar: tar::Archive<_> = tar::Archive::new(reader);
             let entries = ar.entries()?;
