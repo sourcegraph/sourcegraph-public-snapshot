@@ -31,7 +31,7 @@ func runQuery(ctx context.Context, bq bigquery.Client, queryStr string, params [
 	return it, nil
 }
 
-const topThreeSumTime = `WITH extracted_owner AS (
+const topNSumTime = `WITH extracted_owner AS (
 	SELECT
 		*,
 		REGEXP_EXTRACT(bt.tags, 'owner_\\w+') AS owner
@@ -80,18 +80,18 @@ cached_or_not AS (
 	  AND TIMESTAMP_TRUNC(b.started_at, DAY) BETWEEN
 	  	@start_time AND @end_time
   ),
-  cache_ratios AS (
-	  SELECT
-		  COUNTIF(cached = 1)/COUNT(*) AS cache_ratio,
-		  COUNT(*) AS runs,
-		  target
-	  FROM cached_or_not
-	  GROUP BY target
-  )
+cache_ratios AS (
+	SELECT
+		COUNTIF(cached = 1)/COUNT(*) AS cache_ratio,
+		COUNT(*) AS runs,
+		target
+	FROM cached_or_not
+	GROUP BY target
+)
 SELECT r.*, cr.cache_ratio, cr.runs
 FROM ranks r
 JOIN cache_ratios cr
 ON r.target = cr.target
-WHERE rrank < 6
+WHERE rrank < @n
 ORDER BY last_owner, total_time DESC
 `

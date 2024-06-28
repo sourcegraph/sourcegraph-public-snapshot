@@ -37,7 +37,7 @@ func main() {
 		logger.Fatal("failed to parse env", log.Error(err))
 	}
 
-	contract := contract.New(logger.Scoped("msp"), job{}, env)
+	contract := contract.NewJob(logger.Scoped("msp"), job{}, env)
 	if contract.Diagnostics.ConfigureSentry(liblog) {
 		logger.Info("Sentry integration enabled")
 	}
@@ -58,9 +58,11 @@ func main() {
 	defer bq.Close()
 
 	endTime := time.Now().Truncate(time.Hour * 24)
-	startTime := endTime.Add(-time.Hour * 24 * 7)
+	startTime := endTime.Add((-time.Hour * 24 * 7) * time.Duration(config.LookbackWindowWeeks))
 
-	rows, err := runQuery(ctx, *bq, topThreeSumTime, []bigquery.QueryParameter{
+	const n = 6
+
+	rows, err := runQuery(ctx, *bq, topNSumTime, []bigquery.QueryParameter{
 		{
 			Name:  "start_time",
 			Value: startTime,
@@ -69,9 +71,13 @@ func main() {
 			Name:  "end_time",
 			Value: endTime,
 		},
+		{
+			Name:  "n",
+			Value: n,
+		},
 	})
 	if err != nil {
-		logger.Fatal("error fetching top-threes", log.Error(err))
+		logger.Fatal("error fetching top "+strconv.Itoa(n), log.Error(err))
 	}
 
 	type Row struct {
@@ -98,19 +104,15 @@ func main() {
 		teamToTests[row.LastOwner] = append(teamToTests[row.LastOwner], row)
 	}
 
-	teamToChannel := map[string]string{
-		"owner_infra_devinfra": DefaultChannel,
-	}
-
 	for team, tests := range teamToTests {
-		channel, ok := teamToChannel[team]
+		channel, ok := config.TeamChannelMapping[team]
 		if !ok {
 			// continue
 			channel = DefaultChannel
 		}
 
 		// TOOD: include more information such as links to notion, redash dashboard etc.
-		message := fmt.Sprintf(":bazel: *Your team's top %d tests with most CI time in the past week* _for %s_\n", len(tests), strings.ReplaceAll(strings.TrimPrefix(team, "owner_"), "_", " "))
+		message := fmt.Sprintf(":bazel: *Your team's top %d tests with most CI time in the past %d week(s)* _for %s_\n", len(tests), config.LookbackWindowWeeks, strings.ReplaceAll(strings.TrimPrefix(team, "owner_"), "_", " "))
 
 		var out strings.Builder
 		out.WriteString("```\n")
