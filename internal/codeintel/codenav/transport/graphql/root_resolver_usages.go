@@ -88,6 +88,7 @@ func (u *usageResolver) Provenance(ctx context.Context) (resolverstubs.CodeGraph
 
 func (u *usageResolver) DataSource() *string {
 	//TODO implement me
+	// NOTE: For search-based usages it would be good to return if this usage was found via Zoekt or Searcher
 	panic("implement me")
 }
 
