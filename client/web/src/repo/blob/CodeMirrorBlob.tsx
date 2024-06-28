@@ -504,7 +504,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const logEventOnCopy = useCallback(() => {
         telemetryService.log(...codeCopiedEvent('blob-view'))
-        telemetryRecorder.recordEvent('repo.blob.code', 'copy')
+        telemetryRecorder.recordEvent('blob.code', 'copy')
     }, [telemetryService, telemetryRecorder])
 
     return (
