@@ -25,6 +25,16 @@ var LastMinorVersionInMajorRelease = map[int]int{
 }
 
 func init() {
+	versionFromFile, err := os.ReadFile("/version.txt")
+	if err == nil {
+		version = string(versionFromFile)
+	}
+
+	timestampFromFile, err := os.ReadFile("/timestamp.txt")
+	if err == nil {
+		timestamp = string(timestampFromFile)
+	}
+
 	exportedVersion := expvar.NewString("sourcegraph.version")
 	exportedVersion.Set(version)
 }
