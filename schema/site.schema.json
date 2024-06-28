@@ -2883,6 +2883,11 @@
             "enum": ["claude-2", "claude-instant-1"]
           }
         },
+        "azureUseDeprecatedCompletionsAPIForOldModels": {
+          "description": "Enables the use of the older completions API for select Azure OpenAI models.",
+          "type": "boolean",
+          "default": false
+        },
         "fastChatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
           "type": "integer"
