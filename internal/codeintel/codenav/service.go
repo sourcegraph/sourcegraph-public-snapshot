@@ -1258,7 +1258,18 @@ func (s *Service) SyntacticUsages(
 	}, nil
 }
 
+const MAX_FILE_SIZE_FOR_SYMBOL_DETECTION_BYTES = 10_000_000
+
 func (s *Service) symbolNameFromGit(ctx context.Context, repo types.Repo, commit api.CommitID, path core.RepoRelPath, symbolRange scip.Range) (string, error) {
+	stat, err := s.gitserver.Stat(ctx, repo.Name, commit, path.RawValue())
+	if err != nil {
+		return "", err
+	}
+
+	if stat.Size() > MAX_FILE_SIZE_FOR_SYMBOL_DETECTION_BYTES {
+		return "", errors.New("code navigation is not supported for files larger than 10MB")
+	}
+
 	r, err := s.gitserver.NewFileReader(ctx, repo.Name, commit, path.RawValue())
 	if err != nil {
 		return "", err
