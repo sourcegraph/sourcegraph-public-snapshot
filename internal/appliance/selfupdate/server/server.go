@@ -2,26 +2,36 @@ package server
 
 import (
 	"log"
+	"os"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/appliance/selfupdate"
-	"github.com/sourcegraph/sourcegraph/appliance/selfupdate/schema"
 )
 
 const CHECK_INTERVAL = 5 * time.Second
+
+var exitOnSelfUpdate = os.Getenv("EXIT_ON_SELF_UPDATE")
 
 type Server interface {
 	Run()
 }
 
-func New(updater selfupdate.SelfUpdater) Server {
+type UpdaterResult int
+
+const UpdaterResultUpToDate UpdaterResult = 0
+const UpdaterResultUpgraded UpdaterResult = 1
+const UpdaterResultFailed UpdaterResult = 2
+
+type Updater interface {
+	Start() (UpdaterResult, error)
+}
+
+func New(updater Updater) Server {
 	return &server{
 		updater: updater,
 	}
 }
 
 type server struct {
-	updater selfupdate.SelfUpdater
+	updater Updater
 }
 
 func (s *server) Run() {
@@ -45,11 +55,22 @@ func (s *server) Run() {
 
 func (s *server) execute() {
 	// Fetch from the web
-	config, err := schema.Fetch()
-	if err != nil {
-		log.Println("Failed to download self-update manifest", err.Error())
-	}
-	if err := s.updater.Start(config); err != nil {
+	if result, err := s.updater.Start(); err != nil {
 		log.Println("Failed to update the system", err.Error())
+	} else {
+		switch result {
+		case UpdaterResultUpToDate:
+			log.Println("System is up to date")
+		case UpdaterResultUpgraded:
+			log.Println("System updated successfully")
+			if exitOnSelfUpdate == "1" {
+				log.Println("Restarting the self-updater")
+				os.Exit(0)
+			} else {
+				log.Println("Continuing to run")
+			}
+		case UpdaterResultFailed:
+			log.Println("Failed to update the system")
+		}
 	}
 }

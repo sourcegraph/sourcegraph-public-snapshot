@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/sourcegraph/sourcegraph/appliance/selfupdate"
-	"github.com/sourcegraph/sourcegraph/appliance/selfupdate/schema"
+	"github.com/sourcegraph/sourcegraph/appliance/selfupdate/server"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -19,13 +18,12 @@ import (
 
 var (
 	currentVersionVar = ensureEnv("VERSION")
-	applianceId       = ensureEnv("APPLIANCE_ID")
 	applianceChart    = ensureEnv("APPLIANCE_CHART")
 	applianceRepo     = ensureEnv("APPLIANCE_REPO")
 )
 
 type K8sUpdater interface {
-	selfupdate.ComponentUpdate
+	server.Updater
 }
 
 func New() K8sUpdater {
@@ -42,62 +40,46 @@ func ensureEnv(name string) string {
 
 type k8sUpdater struct{}
 
-func (k *k8sUpdater) Update(comp *schema.ComponentUpdateInformation) (*semver.Version, error) {
-	newVer, err := semver.NewVersion(comp.Version)
-	if err != nil {
-		log.Println("Failed to read component version", err.Error())
-		return nil, err
-	}
-	if current, err := k.installedVersion(comp.Name); err != nil {
-		log.Println("Failed to list releases", err.Error())
-		return nil, err
-	} else {
-		switch current.Compare(newVer) {
-		case 0:
-			log.Println("Already installed", comp.Name, current.String())
-			return current, nil
-		case 1:
-			log.Println("Current version is newer. Downgrading",
-				"from", current.String(), "to", newVer.String())
-			return current, nil
-		case -1:
-			log.Println("Current needs update", comp.Name,
-				"from", current.String(), "to", newVer.String())
-			return k.updateToVersion(comp, newVer)
-		}
-	}
-	return nil, nil
-}
+func (k *k8sUpdater) Start() (server.UpdaterResult, error) {
+	log.Println("Starting k8s updater.", "Current version:", currentVersionVar)
 
-func (k *k8sUpdater) installedVersion(pkgName string) (*semver.Version, error) {
 	actionConfig := new(action.Configuration)
 	settings := cli.New()
 
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", log.Printf); err != nil {
-		return nil, fmt.Errorf("failed to initialize helm action configuration: %w", err)
+	if err := actionConfig.Init(
+		settings.RESTClientGetter(),
+		settings.Namespace(),
+		"secret",
+		log.Printf,
+	); err != nil {
+		return server.UpdaterResultFailed,
+			fmt.Errorf("failed to initialize helm action configuration: %w", err)
 	}
 
-	newerVersion, err := k.searchNewerVersion()
-	if err != nil {
-		return nil, fmt.Errorf("failed to search newer version: %w", err)
-	}
-
-	if newerVersion == nil {
-		log.Println("Chart is at current version already.")
-		return nil, nil // no newer version
-	}
-
-	k.upgrade(newerVersion, actionConfig)
-	return nil, nil
-}
-
-func (k *k8sUpdater) searchNewerVersion() (*repo.ChartVersion, error) {
 	repoEntry := &repo.Entry{
 		Name: applianceChart,
 		URL:  applianceRepo,
 	}
 
-	settings := cli.New()
+	newerVersion, err := k.searchNewerVersion(repoEntry, settings)
+	if err != nil {
+		return server.UpdaterResultFailed,
+			fmt.Errorf("failed to search newer version: %w", err)
+	}
+
+	if newerVersion == nil {
+		log.Println("Chart is at current version already.")
+		return server.UpdaterResultUpToDate, nil
+	}
+
+	return server.UpdaterResultUpgraded,
+		k.upgrade(repoEntry, newerVersion, actionConfig, settings)
+}
+
+func (k *k8sUpdater) searchNewerVersion(
+	repoEntry *repo.Entry,
+	settings *cli.EnvSettings,
+) (*repo.ChartVersion, error) {
 	repository, err := repo.NewChartRepository(repoEntry, getter.All(settings))
 	if err != nil {
 		log.Println("Failed to create repo", err.Error())
@@ -141,11 +123,11 @@ func (k *k8sUpdater) searchNewerVersion() (*repo.ChartVersion, error) {
 }
 
 func (k *k8sUpdater) upgrade(
+	repoEntry *repo.Entry,
 	version *repo.ChartVersion,
 	config *action.Configuration,
+	settings *cli.EnvSettings,
 ) error {
-	settings := cli.New()
-
 	chartDownloader := downloader.ChartDownloader{
 		Out:              os.Stdout,
 		Verify:           downloader.VerifyNever,
@@ -155,7 +137,14 @@ func (k *k8sUpdater) upgrade(
 		RepositoryCache:  settings.RepositoryCache,
 	}
 
-	chartPath, _, err := chartDownloader.DownloadTo(version.Name, version.Version, os.TempDir())
+	dir, err := os.MkdirTemp("", "helm-upgrade")
+	if err != nil {
+		log.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	chartUrl := repoEntry.URL + "/" + version.URLs[0]
+	chartPath, _, err := chartDownloader.DownloadTo(chartUrl, version.Version, dir)
 	if err != nil {
 		log.Fatalf("Failed to download chart: %v", err)
 	}
@@ -173,6 +162,7 @@ func (k *k8sUpdater) upgrade(
 	}
 
 	fmt.Println("Chart upgraded successfully")
+	currentVersionVar = version.Version
 
 	return nil
 }
