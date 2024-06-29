@@ -3,6 +3,7 @@ package selfupdate
 import (
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sourcegraph/sourcegraph/appliance/selfupdate/schema"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,15 +12,16 @@ type mockUpdater struct {
 	calls []*schema.ComponentUpdateInformation
 }
 
-func (m *mockUpdater) Update(comp *schema.ComponentUpdateInformation) error {
+func (m *mockUpdater) Update(comp *schema.ComponentUpdateInformation) (*semver.Version, error) {
 	m.calls = append(m.calls, comp)
-	return nil
+	newVer, _ := semver.NewVersion(comp.Version)
+	return newVer, nil
 }
 
 var ConfigWithoutComponents = schema.SelfUpdateDefinition{
-	Version: "1.2.3",
 	SelfUpdate: schema.ComponentUpdateInformation{
 		Name:        "self-update",
+		Version:     "1.2.3",
 		DisplayName: "Self Updater",
 		UpdateUrl:   "http://nowhere/blah/blah",
 	},
@@ -27,9 +29,9 @@ var ConfigWithoutComponents = schema.SelfUpdateDefinition{
 }
 
 var ConfigWithComponents = schema.SelfUpdateDefinition{
-	Version: "1.2.3",
 	SelfUpdate: schema.ComponentUpdateInformation{
 		Name:        "self-update",
+		Version:     "1.2.3",
 		DisplayName: "Self Updater",
 		UpdateUrl:   "http://nowhere/blah/blah",
 	},
@@ -67,7 +69,7 @@ func TestSelfSelfUpdateVersion(t *testing.T) {
 	mock := &mockUpdater{}
 	triedToExit := false
 	config := ConfigWithoutComponents
-	config.Version = "2.3.4"
+	config.SelfUpdate.Version = "2.3.4"
 	sut := selfupdater{
 		currentVersion: "1.2.3",
 		updater:        mock,
@@ -85,7 +87,7 @@ func TestSelfSelfUpdateDoesNotUpdateComponents(t *testing.T) {
 	mock := &mockUpdater{}
 	triedToExit := false
 	config := ConfigWithComponents
-	config.Version = "2.3.4"
+	config.SelfUpdate.Version = "2.3.4"
 	sut := selfupdater{
 		currentVersion: "1.2.3",
 		updater:        mock,

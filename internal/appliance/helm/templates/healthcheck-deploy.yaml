@@ -1,0 +1,26 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthchecker
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: healthchecker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthchecker
+  template:
+    metadata:
+      labels:
+        app: healthchecker
+    spec:
+      containers:
+        - name: healthchecker
+          image: "{{ .Values.registry }}/{{ .Values.healthchecker.image }}"
+          ports:
+            - containerPort: 80
+          env:
+            - name: VERSION
+              value: {{ .Chart.Version }}

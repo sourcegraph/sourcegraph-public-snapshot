@@ -25,6 +25,9 @@ type server struct {
 }
 
 func (s *server) Run() {
+	log.Println("Executing self-update check on startup")
+	s.execute()
+
 	log.Println("Running self-update check loop every", CHECK_INTERVAL)
 	timer := time.NewTicker(CHECK_INTERVAL)
 	defer timer.Stop()
@@ -33,16 +36,20 @@ func (s *server) Run() {
 		for {
 			log.Println("Waiting a little before checking manifest online")
 			<-timer.C
-			// Fetch from the web
-			config, err := schema.Fetch()
-			if err != nil {
-				log.Println("Failed to download self-update manifest", err.Error())
-			}
-			if err := s.updater.Start(config); err != nil {
-				log.Println("Failed to update the system", err.Error())
-			}
+			s.execute()
 		}
 	}()
 
 	time.Sleep(24 * time.Hour)
+}
+
+func (s *server) execute() {
+	// Fetch from the web
+	config, err := schema.Fetch()
+	if err != nil {
+		log.Println("Failed to download self-update manifest", err.Error())
+	}
+	if err := s.updater.Start(config); err != nil {
+		log.Println("Failed to update the system", err.Error())
+	}
 }

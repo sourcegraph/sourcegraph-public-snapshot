@@ -1,0 +1,31 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Self-Updater",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/selfupdate/cmd",
+      "env": {
+        "VERSION": "1.0.0",
+        "APPLIANCE_REPO": "http://sg-appliance.hopto.org/helm",
+        "APPLIANCE_CHART": "appliance",
+        "APPLIANCE_ID": "appliance",
+      }
+    },
+    {
+      "name": "Mock Health Checker",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/mock-hc-app",
+      "env": {
+        "VERSION": "1.2.3",
+      }
+    }
+  ]
+}

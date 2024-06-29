@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selfupdater
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: selfupdater
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selfupdater
+  template:
+    metadata:
+      labels:
+        app: selfupdater
+    spec:
+      containers:
+        - name: selfupdater
+          image: "{{ .Values.registry }}/{{ .Values.selfupdater.image }}"
+          ports:
+            - containerPort: 80
+          env:
+            - name: VERSION
+              value: {{ .Chart.Version }}
+            - name: APPLIANCE_ID
+              value: {{ .Release.Name }}
+            - name: APPLIANCE_CHART
+              value: {{ .Chart.Name }}
+            - name: APPLIANCE_REPO
+              value: {{ .Values.appliance_repo }}
+            - name: EXIT_ON_SELF_UPDATE
+              value: "0"
+      serviceAccountName: selfupdater
