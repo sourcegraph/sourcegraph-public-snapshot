@@ -5,14 +5,11 @@ import classNames from 'classnames'
 
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5, Form } from '@sourcegraph/wildcard'
+import { Alert, Text, Input, H5, Form } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
     VSCE_LINK_MARKETPLACE,
-    VSCE_LINK_AUTH,
-    VSCE_LINK_TOKEN_CALLBACK,
-    VSCE_LINK_TOKEN_CALLBACK_TEST,
     VSCE_LINK_USER_DOCS,
     VSCE_SIDEBAR_PARAMS,
 } from '../../../common/links'
@@ -37,22 +34,11 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
     const [usePrivateInstance, setUsePrivateInstance] = useState(true)
-    const signUpURL = VSCE_LINK_AUTH('sign-up')
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
     const [accessToken, setAccessToken] = useState<string | undefined>('initial')
     const [endpointUrl, setEndpointUrl] = useState(instanceURL)
     const sourcegraphDotCom = 'https://www.sourcegraph.com'
-    const isSourcegraphDotCom = useMemo(() => {
-        const hostname = new URL(instanceURL).hostname
-        if (hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com') {
-            return VSCE_LINK_TOKEN_CALLBACK
-        }
-        if (hostname === 'sourcegraph.test') {
-            return VSCE_LINK_TOKEN_CALLBACK_TEST
-        }
-        return null
-    }, [instanceURL])
 
     useEffect(() => {
         // Get access token from setting
