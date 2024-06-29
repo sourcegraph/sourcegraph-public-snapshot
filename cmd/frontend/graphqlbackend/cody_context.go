@@ -9,6 +9,7 @@ import (
 type CodyContextResolver interface {
 	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 	GetCodyIntent(ctx context.Context, args GetIntentArgs) (IntentResolver, error)
+	ChatIntent(ctx context.Context, args ChatIntentArgs) (IntentResolver, error)
 }
 
 type GetContextArgs struct {
@@ -19,6 +20,10 @@ type GetContextArgs struct {
 }
 
 type GetIntentArgs struct {
+	Query string
+}
+
+type ChatIntentArgs struct {
 	Query string
 }
 

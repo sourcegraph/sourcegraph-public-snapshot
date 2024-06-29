@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -11,13 +11,17 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
-vi.mock('../util/license', () => ({
-    isCodeSearchOnlyLicense: () => false,
-    isCodeSearchPlusCodyLicense: () => true,
-    isCodyOnlyLicense: () => false,
-}))
-
 describe('UserNavItem', () => {
+    const origCodyEnabledForCurrentUser = window.context?.codyEnabledForCurrentUser ?? true
+    const reset = () => {
+        if (!window.context) {
+            window.context = {} as any
+        }
+        window.context.codyEnabledForCurrentUser = origCodyEnabledForCurrentUser
+    }
+    beforeEach(reset)
+    afterEach(reset)
+
     beforeAll(() => {
         setLinkComponent(RouterLink)
     })

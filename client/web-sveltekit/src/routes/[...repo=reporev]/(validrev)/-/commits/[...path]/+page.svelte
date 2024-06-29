@@ -10,6 +10,8 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
 
+    import RepositoryRevPicker from '../../../RepositoryRevPicker.svelte'
+
     import type { PageData, Snapshot } from './$types'
     import type { CommitsPage_GitCommitConnection } from './page.gql'
 
@@ -63,15 +65,25 @@
     <title>{pageTitle}</title>
 </svelte:head>
 
-<h2>
-    Commits
-    {#if data.path}
-        in <code>{data.path}</code>
-    {/if}
-    at <Badge variant="link">
-        <a href={data.repoURL}>{data.displayRevision || data.resolvedRevision.defaultBranch}</a></Badge
-    >
-</h2>
+<header>
+    <h2>
+        Commit History
+        {#if data.path}
+            in <code>{data.path}</code>
+        {/if}
+    </h2>
+    <div>
+        <RepositoryRevPicker
+            repoURL={data.repoURL}
+            revision={data.revision}
+            resolvedRevision={data.resolvedRevision}
+            placement="bottom-start"
+            getRepositoryBranches={data.getRepoBranches}
+            getRepositoryCommits={data.getRepoCommits}
+            getRepositoryTags={data.getRepoTags}
+        />
+    </div>
+</header>
 <section>
     <Scroller bind:this={scroller} margin={600} on:more={fetchMore}>
         {#if !$commitsQuery.restoring && commits}
@@ -138,10 +150,16 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        border-bottom: 1px solid var(--border-color);
     }
 
-    h2,
+    header {
+        border-bottom: 1px solid var(--border-color);
+        div {
+            width: min-content;
+        }
+    }
+
+    header,
     ul.commits,
     .footer {
         max-width: var(--viewport-xl);

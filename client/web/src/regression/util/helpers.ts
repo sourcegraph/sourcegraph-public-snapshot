@@ -127,7 +127,6 @@ async function createTestUser(
     await driver.page.keyboard.type(testUserPassword)
     await driver.page.keyboard.down(Key.Enter)
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await driver.page.waitForFunction(() => document.body.textContent!.includes('Your password was reset'))
 }
 

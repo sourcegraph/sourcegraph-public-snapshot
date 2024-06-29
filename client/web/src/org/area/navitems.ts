@@ -16,7 +16,8 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ org: { viewerCanAdminister }, license }) => license.isCodeSearchEnabled && viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister } }) =>
+            viewerCanAdminister && window.context?.codeSearchEnabledOnInstance,
     },
     ...namespaceAreaHeaderNavItems,
 ]

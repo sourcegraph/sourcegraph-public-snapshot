@@ -4,6 +4,8 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "subscriptions",
     srcs = [
+        "license_conditions.go",
+        "licenses.go",
         "subscriptions.go",
         "subscriptions_conditions.go",
     ],
@@ -12,6 +14,7 @@ go_library(
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "//lib/errors",
+        "@com_github_jackc_pgtype//:pgtype",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//pgxpool",
     ],

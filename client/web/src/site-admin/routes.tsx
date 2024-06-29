@@ -191,12 +191,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: props => <AnalyticsSearchPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/code-intel',
         render: props => <AnalyticsCodeIntelPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/extensions',
@@ -209,7 +209,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/cody',
         render: props => <AnalyticsCodyPage {...props} />,
-        condition: ({ license }) => license.isCodyEnabled,
+        condition: () => window.context?.codyEnabledOnInstance,
     },
     {
         path: '/analytics/code-insights',
@@ -224,7 +224,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: props => <AnalyticsNotebooksPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/configuration',
@@ -457,13 +457,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/lsif-uploads/:id',

@@ -367,8 +367,7 @@ func serveHome(db database.DB) handlerFunc {
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		// except if the instance is on a Cody-Only license.
 		redirectURL := "/search"
-		features := common.Context.LicenseInfo.Features
-		if !features.CodeSearch && features.Cody && !dotcom.SourcegraphDotComMode() {
+		if !common.Context.CodeSearchEnabledOnInstance && common.Context.CodyEnabledOnInstance && !dotcom.SourcegraphDotComMode() {
 			redirectURL = "/cody"
 		}
 

@@ -22,7 +22,7 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import type { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
@@ -35,7 +35,6 @@ import {
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
-import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useCodyIgnore } from '../../cody/useCodyIgnore'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -340,7 +339,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const { isFileIgnored } = useCodyIgnore()
-    const isCodyEnabledForFile = isCodyEnabled() && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
+    const isCodyEnabledForFile =
+        window.context?.codyEnabledForCurrentUser && !isFileIgnored(blobInfo.repoName, blobInfo.filePath)
 
     const extensions = useMemo(
         () => [

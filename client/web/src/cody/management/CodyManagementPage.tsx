@@ -23,7 +23,6 @@ import { CodyAlert } from '../components/CodyAlert'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
-import { isCodyEnabled } from '../isCodyEnabled'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled } from '../util'
 
@@ -91,7 +90,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !subscription) {
+    if (!window.context?.codyEnabledForCurrentUser || !subscription) {
         return null
     }
 
@@ -210,7 +209,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 />
             </div>
 
-            <H3 className="mt-3 text-muted">Use Cody in...</H3>
+            <H3 className="mt-3 text-muted">Use Cody...</H3>
             <div className={classNames('border bg-1 mb-2', styles.container)}>
                 <CodyEditorsAndClients telemetryRecorder={telemetryRecorder} />
             </div>
