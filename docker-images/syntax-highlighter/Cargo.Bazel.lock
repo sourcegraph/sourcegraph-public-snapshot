@@ -1,5 +1,5 @@
 {
-  "checksum": "c1b7491fb92c7a323a1f0f8dfea0827ffdd308b84238d989ba48701a52f9c789",
+  "checksum": "ff2c36de653530e0525fa93207bfa1381d434f2e99df6b8a198b57143537b4b6",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10677,7 +10677,7 @@
               "target": "string_interner"
             },
             {
-              "id": "tar 0.4.40",
+              "id": "tar 0.4.41",
               "target": "tar"
             },
             {
@@ -12052,13 +12052,13 @@
       },
       "license": "MIT"
     },
-    "tar 0.4.40": {
+    "tar 0.4.41": {
       "name": "tar",
-      "version": "0.4.40",
+      "version": "0.4.41",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tar/0.4.40/download",
-          "sha256": "b16afcea1f22891c49a00c751c7b63b2233284064f11a200fc624137c51e2ddb"
+          "url": "https://static.crates.io/crates/tar/0.4.41/download",
+          "sha256": "cb797dad5fb5b76fcf519e702f4a589483b5ef06567f160c392832c1f5e44909"
         }
       },
       "targets": [
@@ -12104,10 +12104,10 @@
             ]
           }
         },
-        "edition": "2018",
-        "version": "0.4.40"
+        "edition": "2021",
+        "version": "0.4.41"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT OR Apache-2.0"
     },
     "tempfile 3.10.1": {
       "name": "tempfile",
@@ -18813,7 +18813,7 @@
     "serde_json 1.0.99",
     "string-interner 0.14.0",
     "syntect 4.7.0",
-    "tar 0.4.40",
+    "tar 0.4.41",
     "tree-sitter 0.20.10",
     "tree-sitter-c 0.20.6",
     "tree-sitter-c-sharp 0.20.0",

@@ -1,6 +1,5 @@
 use std::{num::NonZeroUsize, process};
 
-use anyhow::Context;
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::{Parser, Subcommand};
 use scip_syntax::index::{index_command, AnalysisMode, IndexMode, IndexOptions, TarMode};
@@ -203,21 +202,13 @@ pub fn main() -> anyhow::Result<()> {
 }
 
 fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::Result<()> {
-    if let Some(worker_count) = options.worker_count {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(worker_count.get())
-            .build_global()
-            .context(
-                "Failed to initialize global thread_pool, did you call 'run_index_command' twice?",
-            )?;
-    }
-
     index_command(
         options.language,
         mode,
         Utf8Path::new(&options.out),
         Utf8Path::new(&options.project_root),
         options.evaluate.map(Utf8PathBuf::from),
+        options.worker_count,
         IndexOptions {
             analysis_mode: options.mode,
             fail_fast: options.fail_fast,

@@ -4,14 +4,19 @@ use std::{
     env,
     fs::File,
     io::{self, Read},
-    sync::atomic::{AtomicU32, Ordering},
+    num::NonZeroUsize,
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        mpsc::{sync_channel, Receiver},
+    },
+    thread,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use clap::ValueEnum;
 use path_clean;
-use rayon::prelude::*;
+use rayon::{prelude::*, ThreadPoolBuilder};
 use scip::{types::Document, write_message_to_file};
 use syntax_analysis::{
     globals,
@@ -21,11 +26,7 @@ use syntax_analysis::{
 use tree_sitter;
 use tree_sitter_all_languages::ParserId;
 
-use crate::{
-    evaluate::Evaluator,
-    io::read_index_from_file,
-    progress::{create_progress_bar, create_spinner},
-};
+use crate::{evaluate::Evaluator, io::read_index_from_file, progress::create_spinner};
 
 #[derive(Debug, Copy, Clone)]
 pub struct IndexOptions {
@@ -75,6 +76,12 @@ pub enum IndexMode {
     TarArchive { input: TarMode },
 }
 
+enum PathOrContents {
+    #[allow(dead_code)]
+    Path(Utf8PathBuf),
+    Contents(String),
+}
+
 fn make_absolute(cwd: &Utf8Path, path: &Utf8Path) -> Utf8PathBuf {
     if path.is_absolute() {
         path.to_owned()
@@ -90,6 +97,7 @@ pub fn index_command(
     out: &Utf8Path,
     project_root: &Utf8Path,
     evaluate_against: Option<Utf8PathBuf>,
+    worker_count: Option<NonZeroUsize>,
     options: IndexOptions,
 ) -> Result<()> {
     let parser_id = ParserId::from_name(&language)
@@ -123,65 +131,25 @@ pub fn index_command(
         ..Default::default()
     };
 
-    let extensions = ParserId::language_extensions(&parser_id);
-
-    match index_mode {
-        IndexMode::Files { list } => {
-            let bar = create_progress_bar(list.len() as u64);
-            for filename in list {
-                bar.set_message(filename.clone());
-                let filepath = make_absolute(&cwd, &Utf8PathBuf::from(filename));
-                let document = index_file(&filepath, parser_id, &absolute_project_root, options)?;
-                index.documents.push(document);
-                bar.inc(1);
-            }
-
-            bar.finish();
+    let rx = match index_mode {
+        IndexMode::Files { list } => files_producer(&cwd, &absolute_project_root, list),
+        IndexMode::Workspace { location } => {
+            workspace_producer(&absolute_project_root, location, parser_id)
         }
         IndexMode::TarArchive { input } => match input {
-            TarMode::File { location } => {
-                let documents = index_tar(File::open(location)?, parser_id, options)?;
-                index.documents.extend(documents);
-            }
-            TarMode::Stdin => {
-                let documents = index_tar(io::stdin(), parser_id, options)?;
-                index.documents.extend(documents);
-            }
+            TarMode::File { location } => tar_producer(File::open(location)?, parser_id),
+            TarMode::Stdin => tar_producer(io::stdin(), parser_id),
         },
-        IndexMode::Workspace { location } => {
-            let bar = create_spinner();
-            let documents: Result<Vec<Document>> = walkdir::WalkDir::new(location)
-                .into_iter()
-                .par_bridge()
-                .filter_map(|entry| {
-                    let entry = entry.ok()?;
-                    if entry.file_type().is_dir() {
-                        return None;
-                    }
-                    let filepath = Utf8Path::from_path(entry.path())?;
-                    if !extensions.contains(filepath.extension()?) {
-                        return None;
-                    }
-                    bar.set_message(filepath.to_string());
-                    match index_file(filepath, parser_id, &absolute_project_root, options) {
-                        Ok(document) => {
-                            bar.tick();
-                            Some(Ok(document))
-                        }
-                        Err(error) => {
-                            if options.fail_fast {
-                                Some(Err(error))
-                            } else {
-                                eprintln!("failed to index {filepath}: {error:?}");
-                                None
-                            }
-                        }
-                    }
-                })
-                .collect();
-            index.documents.extend(documents?);
-        }
-    }
+    };
+    let documents = if let Some(worker_count) = worker_count {
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(worker_count.into())
+            .build().context("failed to initialize ThreadPool")?;
+        pool.install(|| process_files(rx, parser_id, options))
+    } else {
+        process_files(rx, parser_id, options)
+    };
+    index.documents.extend(documents?);
 
     eprintln!(
         "\nWriting index for {} documents into {out}",
@@ -204,32 +172,72 @@ pub fn index_command(
         .with_context(|| format!("When writing index to {out}"))
 }
 
-fn index_file(
-    filepath: &Utf8Path,
-    parser_id: ParserId,
+fn files_producer(
+    cwd: &Utf8Path,
     absolute_project_root: &Utf8Path,
-    options: IndexOptions,
-) -> Result<Document> {
-    let contents = std::fs::read_to_string(filepath)
-        .with_context(|| format!("Failed to read file at {filepath}"))?;
+    list: Vec<String>,
+) -> Receiver<(Utf8PathBuf, PathOrContents)> {
+    let (tx, rx) = sync_channel(rayon::current_num_threads() * 2);
+    let cwd = cwd.to_path_buf();
+    let absolute_project_root = absolute_project_root.to_path_buf();
+    thread::spawn(move || {
+        list.into_iter()
+            .filter_map(|filename| {
+                let path = make_absolute(&cwd, &Utf8PathBuf::from(filename));
+                let relative_path = path
+                    .strip_prefix(&absolute_project_root)
+                    .with_context(|| {
+                        format!(
+                    "Failed to strip project root prefix: root={absolute_project_root} file={path}"
+                )
+                    })
+                    .ok()?;
+                let contents = std::fs::read_to_string(&path)
+                    .with_context(|| format!("Failed to read file at {path}"))
+                    .ok()?;
+                // Some((relative_path.to_path_buf(), PathOrContents::Path(path.to_path_buf())))
+                Some((
+                    relative_path.to_path_buf(),
+                    PathOrContents::Contents(contents),
+                ))
+            })
+            .for_each(|x| tx.send(x).unwrap());
+    });
+    rx
+}
 
-    let relative_path = filepath
-        .strip_prefix(absolute_project_root)
-        .with_context(|| {
-            format!(
-                "Failed to strip project root prefix: root={absolute_project_root} file={filepath}"
-            )
-        })?;
-
-    match index_content(&contents, parser_id, options) {
-        Ok(mut document) => {
-            document.relative_path = relative_path.to_string();
-            Ok(document)
-        }
-        Err(error) => {
-            bail!("Failed to index {filepath}: {error:?}")
-        }
-    }
+fn workspace_producer(
+    absolute_project_root: &Utf8Path,
+    location: Utf8PathBuf,
+    parser_id: ParserId,
+) -> Receiver<(Utf8PathBuf, PathOrContents)> {
+    let (tx, rx) = sync_channel(rayon::current_num_threads() * 2);
+    let absolute_project_root = absolute_project_root.to_path_buf();
+    thread::spawn(move || {
+        let extensions = ParserId::language_extensions(&parser_id);
+        walkdir::WalkDir::new(location).into_iter().filter_map(move |entry| {
+              // TODO: Skipping any entry we can't read (mostly for non-utf-8 reasons)
+              // Do we want to log these cases?
+              let entry = entry.ok()?;
+              let path = Utf8Path::from_path(entry.path())?;
+              if !path.is_file() || !extensions.contains(path.extension()?) {
+                  return None;
+              }
+              let relative_path = path
+                  .strip_prefix(&absolute_project_root)
+                  .with_context(|| {
+                      format!(
+                          "Failed to strip project root prefix: root={absolute_project_root} file={path}"
+                      )
+                  }).ok()?;
+              let contents = std::fs::read_to_string(&path)
+                  .with_context(|| format!("Failed to read file at {path}"))
+                  .ok()?;
+              Some((relative_path.to_path_buf(), PathOrContents::Contents(contents)))
+              // Some((relative_path.to_path_buf(), PathOrContents::Path(path.to_path_buf())))
+      }).for_each(|x| tx.send(x).unwrap());
+    });
+    rx
 }
 
 fn tar_entry_path<R: Read>(entry: &tar::Entry<'_, R>) -> Result<Utf8PathBuf> {
@@ -243,65 +251,70 @@ fn tar_entry_contents<R: Read>(mut entry: tar::Entry<'_, R>) -> Result<String> {
     Ok(contents)
 }
 
-fn index_tar<R: Read + Send + 'static>(
+fn tar_producer<R: Read + Send + 'static>(
     reader: R,
-    parser: ParserId,
-    options: IndexOptions,
-) -> anyhow::Result<Vec<Document>> {
-    let progress: AtomicU32 = AtomicU32::new(1);
-    let spinner = create_spinner();
-    // We need to move reading the archive off the main thread, because it can only be done synchronously
-    let (rx, reader_thread_id) = {
-        let (tx, rx) = std::sync::mpsc::sync_channel(rayon::current_num_threads() * 2);
-        let thread_id = std::thread::spawn(move || -> Result<()> {
-            let extensions = ParserId::language_extensions(&parser);
+    parser_id: ParserId,
+) -> Receiver<(Utf8PathBuf, PathOrContents)> {
+    let (tx, rx) = sync_channel(rayon::current_num_threads() * 2);
+    thread::spawn(move || -> Result<()> {
+        let extensions = ParserId::language_extensions(&parser_id);
+        let mut ar: tar::Archive<_> = tar::Archive::new(reader);
+        // The only way .entries() fails is if the tar archive is not at position 0.
+        // As we just created it that cannot happen.
+        let entries = ar.entries().expect("Failed to read tar entries");
+        entries
+            .filter_map(|entry| {
+                // TODO: Skipping any entry we can't read (mostly for non-utf-8 reasons)
+                // Do we want to log these cases?
+                let entry = entry.ok()?;
+                let path = tar_entry_path(&entry).ok()?;
+                if !extensions.contains(path.extension()?) {
+                    return None;
+                }
+                let contents = tar_entry_contents(entry).ok()?;
+                Some((path, PathOrContents::Contents(contents)))
+            })
+            .for_each(|x| tx.send(x).unwrap());
+        Ok(())
+    });
+    rx
+}
 
-            let mut ar: tar::Archive<_> = tar::Archive::new(reader);
-            let entries = ar.entries()?;
-            entries
-                .filter_map(|entry| {
-                    // TODO: Skipping any entry we can't read (mostly for non-utf-8 reasons)
-                    // Do we want to log these cases?
-                    let entry = entry.ok()?;
-                    let path = tar_entry_path(&entry).ok()?;
-                    if !extensions.contains(path.extension()?) {
-                        return None;
-                    }
-                    let contents = tar_entry_contents(entry).ok()?;
-                    Some((path, contents))
-                })
-                .for_each(|x| tx.send(x).unwrap());
-            Ok(())
-        });
-        (rx, thread_id)
-    };
-    let documents = rx
-        .into_iter()
+fn process_files(
+    rx: Receiver<(Utf8PathBuf, PathOrContents)>,
+    parser_id: ParserId,
+    options: IndexOptions,
+) -> Result<Vec<Document>> {
+    let spinner = create_spinner();
+    let progress: AtomicU32 = AtomicU32::new(1);
+    rx.into_iter()
         .par_bridge()
-        .filter_map(
-            |(path, buf): (Utf8PathBuf, String)| -> Option<Result<Document>> {
-                let progress = progress.fetch_add(1, Ordering::Relaxed);
-                spinner.set_message(format!("[{progress}]: {path}"));
-                match index_content(&buf, parser, options) {
-                    Ok(mut document) => {
-                        spinner.tick();
-                        document.relative_path = path.to_string();
-                        Some(Ok(document))
-                    }
-                    Err(error) => {
-                        if options.fail_fast {
-                            Some(Err(anyhow!("failed to index {path}: {error:?}")))
-                        } else {
-                            eprintln!("failed to index {path}: {error:?}");
-                            None
-                        }
+        .filter_map(|(path, contents)| {
+            let contents = match contents {
+                PathOrContents::Contents(contents) => contents,
+                PathOrContents::Path(path) => std::fs::read_to_string(&path)
+                    .with_context(|| format!("Failed to read file at {path}"))
+                    .ok()?,
+            };
+            let progress = progress.fetch_add(1, Ordering::Relaxed);
+            spinner.set_message(format!("[{progress}]: {path}"));
+            match index_content(&contents, parser_id, options) {
+                Ok(mut document) => {
+                    spinner.tick();
+                    document.relative_path = path.to_string();
+                    Some(Ok(document))
+                }
+                Err(error) => {
+                    if options.fail_fast {
+                        Some(Err(anyhow!("failed to index {path}: {error:?}")))
+                    } else {
+                        eprintln!("failed to index {path}: {error:?}");
+                        None
                     }
                 }
-            },
-        )
-        .collect();
-    reader_thread_id.join().unwrap()?;
-    documents
+            }
+        })
+        .collect()
 }
 
 thread_local! {
