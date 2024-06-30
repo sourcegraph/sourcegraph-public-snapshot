@@ -1,7 +1,7 @@
 import { action } from '@storybook/addon-actions'
 import type { Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { EMPTY, NEVER, type Observable, of } from 'rxjs'
+import { EMPTY, NEVER, of, type Observable } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
 import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
