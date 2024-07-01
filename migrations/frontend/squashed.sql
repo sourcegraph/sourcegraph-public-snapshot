@@ -988,7 +988,7 @@ CREATE TABLE batch_changes_site_credentials (
     credential bytea NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
     github_app_id integer,
-    CONSTRAINT check_github_app_id_and_external_service_type CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
+    CONSTRAINT check_github_app_id_and_external_service_type_site_credentials CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
 );
 
 CREATE SEQUENCE batch_changes_site_credentials_id_seq
@@ -4794,7 +4794,7 @@ CREATE TABLE user_credentials (
     ssh_migration_applied boolean DEFAULT false NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
     github_app_id integer,
-    CONSTRAINT check_github_app_id_and_external_service_type CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
+    CONSTRAINT check_github_app_id_and_external_service_type_user_credentials CHECK (((github_app_id IS NULL) OR (external_service_type = 'github'::text)))
 );
 
 CREATE SEQUENCE user_credentials_id_seq

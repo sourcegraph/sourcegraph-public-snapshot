@@ -2500,7 +2500,7 @@
           "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id)"
         },
         {
-          "Name": "check_github_app_id_and_external_service_type",
+          "Name": "check_github_app_id_and_external_service_type_site_credentials",
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
@@ -27338,7 +27338,7 @@
       ],
       "Constraints": [
         {
-          "Name": "check_github_app_id_and_external_service_type",
+          "Name": "check_github_app_id_and_external_service_type_user_credentials",
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,
