@@ -29,7 +29,8 @@ func (u *usageConnectionResolver) PageInfo() resolverstubs.PageInfo {
 }
 
 type usageResolver struct {
-	symbol     resolverstubs.SymbolInformationResolver
+	symbol     *symbolInformationResolver
+	provenance resolverstubs.CodeGraphDataProvenance
 	kind       resolverstubs.SymbolUsageKind
 	usageRange resolverstubs.UsageRangeResolver
 }
@@ -45,10 +46,10 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 	}
 	return &usageResolver{
 		symbol: &symbolInformationResolver{
-			name:       usage.Occurrence.Symbol,
-			provenance: resolverstubs.ProvenanceSyntactic,
+			name: usage.Occurrence.Symbol,
 		},
-		kind: kind,
+		provenance: resolverstubs.ProvenanceSyntactic,
+		kind:       kind,
 		usageRange: &usageRangeResolver{
 			repository: repository,
 			revision:   revision,
@@ -57,9 +58,38 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 		},
 	}
 }
+func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
+	// TODO: We can figure out if something is a definition via symbol search
+	kind := resolverstubs.UsageKindReference
+	return &usageResolver{
+		symbol:     nil,
+		provenance: resolverstubs.ProvenanceSearchBased,
+		kind:       kind,
+		usageRange: &usageRangeResolver{
+			repository: repository,
+			revision:   revision,
+			path:       usage.Path,
+			range_:     usage.Range,
+		},
+	}
+}
 
 func (u *usageResolver) Symbol(ctx context.Context) (resolverstubs.SymbolInformationResolver, error) {
+	if u.symbol == nil {
+		// NOTE: if I try to directly return u.symbol, I get a panic in the resolver.
+		return nil, nil
+	}
 	return u.symbol, nil
+}
+
+func (u *usageResolver) Provenance(ctx context.Context) (resolverstubs.CodeGraphDataProvenance, error) {
+	return u.provenance, nil
+}
+
+func (u *usageResolver) DataSource() *string {
+	//TODO implement me
+	// NOTE: For search-based usages it would be good to return if this usage was found via Zoekt or Searcher
+	panic("implement me")
 }
 
 func (u *usageResolver) UsageRange(ctx context.Context) (resolverstubs.UsageRangeResolver, error) {
@@ -78,8 +108,7 @@ func (u *usageResolver) UsageKind() resolverstubs.SymbolUsageKind {
 }
 
 type symbolInformationResolver struct {
-	name       string
-	provenance resolverstubs.CodeGraphDataProvenance
+	name string
 }
 
 var _ resolverstubs.SymbolInformationResolver = &symbolInformationResolver{}
@@ -89,15 +118,6 @@ func (s *symbolInformationResolver) Name() (string, error) {
 }
 
 func (s *symbolInformationResolver) Documentation() (*[]string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *symbolInformationResolver) Provenance() (resolverstubs.CodeGraphDataProvenance, error) {
-	return s.provenance, nil
-}
-
-func (s *symbolInformationResolver) DataSource() *string {
 	//TODO implement me
 	panic("implement me")
 }

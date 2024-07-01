@@ -227,6 +227,11 @@
           "description": "Whether to enable the 'keyword search' language improvement",
           "type": "boolean",
           "default": true
+        },
+        "enablePreciseOccurrences": {
+          "description": "Enable the new precise occurrences API, which can provide more accurate hovers for some languages.",
+          "type": "boolean",
+          "default": true
         }
       },
       "group": "Experimental"

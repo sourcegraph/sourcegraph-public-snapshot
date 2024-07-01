@@ -209,7 +209,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 />
             </div>
 
-            <H3 className="mt-3 text-muted">Use Cody in...</H3>
+            <H3 className="mt-3 text-muted">Use Cody...</H3>
             <div className={classNames('border bg-1 mb-2', styles.container)}>
                 <CodyEditorsAndClients telemetryRecorder={telemetryRecorder} />
             </div>

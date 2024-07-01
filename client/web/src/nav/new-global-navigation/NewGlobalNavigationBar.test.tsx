@@ -54,7 +54,7 @@ describe('NewGlobalNavigationBar', () => {
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({
-            codyItems: ['Cody /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItems: ['Cody /cody/chat'],
         })
     })
 
@@ -79,7 +79,7 @@ describe('NewGlobalNavigationBar', () => {
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({
-            codyItems: ['Cody /cody/manage', 'Web Chat /cody/chat'],
+            codyItems: ['Cody /cody/chat'],
         })
     })
 
@@ -92,7 +92,7 @@ describe('NewGlobalNavigationBar', () => {
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({
-            codyItems: ['Cody /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItems: ['Cody /cody/chat'],
         })
     })
 
@@ -121,7 +121,7 @@ describe('NewGlobalNavigationBar', () => {
         )
         const sidebarElement = baseElement.querySelector<HTMLElement>('[data-reach-dialog-overlay]')!
         expect(describeNavBarSideMenu(sidebarElement)).toEqual<NavBarTestDescription>({
-            codyItems: ['Cody /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItems: ['Cody /cody/chat'],
         })
     })
 

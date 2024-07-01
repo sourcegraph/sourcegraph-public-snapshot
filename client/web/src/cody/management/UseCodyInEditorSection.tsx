@@ -4,7 +4,9 @@ import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Badge, ButtonLink, H3, Icon, Link, LinkOrSpan, Text } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, H3, Icon, Link, LinkOrSpan, SourcegraphIcon, Text } from '@sourcegraph/wildcard'
+
+import { PageRoutes } from '../../routes.constants'
 
 import styles from './CodyManagementPage.module.scss'
 
@@ -26,15 +28,18 @@ const EditorInstructions: React.FunctionComponent<
     <div className={classNames('d-flex flex-column px-3', className)}>
         {/* eslint-disable-next-line react/forbid-dom-props */}
         <div className="d-flex my-3 align-items-center" style={{ minHeight: `${EDITOR_ICON_HEIGHT}px` }}>
-            {editor.icon && (
-                <img
-                    alt={editor.name}
-                    src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
-                    width={EDITOR_ICON_HEIGHT}
-                    height={EDITOR_ICON_HEIGHT}
-                    className="mr-3"
-                />
-            )}
+            {editor.icon &&
+                (typeof editor.icon === 'string' ? (
+                    <img
+                        alt={editor.name}
+                        src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
+                        width={EDITOR_ICON_HEIGHT}
+                        height={EDITOR_ICON_HEIGHT}
+                        className="mr-3"
+                    />
+                ) : (
+                    <editor.icon className="mr-3" />
+                ))}
             <H3 className="mb-0 font-weight-normal">{editor.name}</H3>
         </div>
         {editor.instructions && <editor.instructions telemetryRecorder={telemetryRecorder} />}
@@ -43,7 +48,7 @@ const EditorInstructions: React.FunctionComponent<
 
 interface EditorInstructionsTile {
     /** Refers to gs://sourcegraph-assets/ideIcons/ideIcon${icon}.svg. */
-    icon?: string
+    icon?: string | React.ComponentType<{ className?: string }>
 
     name: string
     instructions?: React.FunctionComponent<{
@@ -141,6 +146,31 @@ const EDITOR_INSTRUCTIONS: EditorInstructionsTile[] = [
         ),
     },
     {
+        icon: ({ className }) => (
+            <SourcegraphIcon className={className} width={EDITOR_ICON_HEIGHT} height={EDITOR_ICON_HEIGHT} />
+        ),
+        name: 'Web',
+        instructions: ({ telemetryRecorder }) => (
+            <div className="d-flex flex-column flex-gap-2 align-items-start">
+                <ButtonLink
+                    variant="primary"
+                    to={PageRoutes.CodyChat}
+                    onClick={() => {
+                        telemetryRecorder.recordEvent('cody.editorExtensionsInstructions', 'clickWebChat', {
+                            metadata: { chrome: 1 },
+                        })
+                    }}
+                >
+                    Chat with Cody on the web
+                </ButtonLink>
+                <Text className="text-muted small mt-2">
+                    ...or open the <strong>Cody</strong> sidebar when viewing a repository, directory, or code file on
+                    Sourcegraph.
+                </Text>
+            </div>
+        ),
+    },
+    {
         name: 'Other editors & clients',
         instructions: ({ telemetryRecorder }) => (
             <ul className="d-flex flex-column flex-gap-2 align-items-start list-unstyled">
@@ -177,12 +207,6 @@ const OTHER_CLIENTS: {
     telemetryMetadataKey: string
     releaseStage?: 'Experimental' | 'Coming soon'
 }[] = [
-    {
-        name: 'Cody Web',
-        url: 'https://sourcegraph.com/docs/cody/clients/cody-with-sourcegraph',
-        telemetryMetadataKey: 'web',
-        releaseStage: 'Experimental',
-    },
     {
         name: 'Neovim',
         url: 'https://github.com/sourcegraph/sg.nvim#setup',

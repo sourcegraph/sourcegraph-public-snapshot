@@ -33,10 +33,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 type fakeActorSource struct {
-	name codygateway.ActorSource
+	name codygatewayactor.ActorSource
 }
 
 func (s fakeActorSource) Name() string {
@@ -95,7 +96,7 @@ func request(t *testing.T) *http.Request {
 func TestSuccess(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ps := fakeActorSource{
-		name: codygateway.ActorSourceEnterpriseSubscription,
+		name: codygatewayactor.ActorSourceEnterpriseSubscription,
 	}
 	authr := &auth.Authenticator{
 		Sources:     actor.NewSources(ps),
@@ -155,7 +156,7 @@ func (g dummyDotComGraphQLApi) MakeRequest(
 func TestFailsForDotcomUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dotCom := fakeActorSource{
-		name: codygateway.ActorSourceDotcomUser,
+		name: codygatewayactor.ActorSourceDotcomUser,
 	}
 	authr := &auth.Authenticator{
 		Sources:     actor.NewSources(dotCom),
@@ -177,7 +178,7 @@ func TestFailsForDotcomUsers(t *testing.T) {
 func TestUnavailableIfConfigDisabled(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dotCom := fakeActorSource{
-		name: codygateway.ActorSourceEnterpriseSubscription,
+		name: codygatewayactor.ActorSourceEnterpriseSubscription,
 	}
 	authr := &auth.Authenticator{
 		Sources:     actor.NewSources(dotCom),

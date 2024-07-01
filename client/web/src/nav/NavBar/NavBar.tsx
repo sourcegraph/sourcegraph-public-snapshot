@@ -51,7 +51,7 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
 }
 
 export const NavBar = forwardRef(function NavBar({ children, logo }, reference): JSX.Element {
-    const logoUrl = window.context?.codeSearchEnabledOnInstance ? PageRoutes.Search : PageRoutes.Cody
+    const logoUrl = window.context?.codeSearchEnabledOnInstance ? PageRoutes.Search : PageRoutes.CodyChat
     return (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
             {logo && (

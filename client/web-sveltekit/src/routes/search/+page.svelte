@@ -41,5 +41,7 @@
         selectedFilters={data.queryFilters}
     />
 {:else}
-    <SearchHome {queryState} codyHref={data.codyHref} showDotcomStuff={data.showDotcomFooterLinks} />
+    <SearchHome {queryState}>
+        <svelte:component this={data.footer} />
+    </SearchHome>
 {/if}

@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
@@ -248,11 +249,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				err := eventLogger.LogEvent(
 					ctx,
 					events.Event{
-						Name:       codygateway.EventNameRequestBlocked,
+						Name:       codygatewayevents.EventNameRequestBlocked,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
 						Metadata: events.MergeMaps(requestMetadata, map[string]any{
-							codygateway.CompletionsEventFeatureMetadataField: feature,
+							codygatewayevents.CompletionsEventFeatureMetadataField: feature,
 							"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
 							"provider": upstreamName,
 
@@ -371,11 +372,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			err := eventLogger.LogEvent(
 				ctx,
 				events.Event{
-					Name:       codygateway.EventNameCompletionsFinished,
+					Name:       codygatewayevents.EventNameCompletionsFinished,
 					Source:     act.Source.Name(),
 					Identifier: act.ID,
 					Metadata: events.MergeMaps(requestMetadata, usageData, map[string]any{
-						codygateway.CompletionsEventFeatureMetadataField: feature,
+						codygatewayevents.CompletionsEventFeatureMetadataField: feature,
 						"model":    gatewayModel,
 						"provider": upstreamName,
 
