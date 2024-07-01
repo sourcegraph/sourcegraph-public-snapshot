@@ -1,0 +1,13 @@
+namespace: sourcegraph
+
+global:
+  registry: us-central1-docker.pkg.dev/nelsona-sandbox/nelsona-dev-images
+
+# appliance:
+#   healthchecker:
+#     image: ...
+
+# selfupdater:
+#   enabled: ... <- TODO: implement this, e.g. set replicas=0 or skip deploy=selfupdater
+#   appliance:
+#     distrib: http://path-to-my-own-helm-repo/... (override in selfupdater for default distribution)

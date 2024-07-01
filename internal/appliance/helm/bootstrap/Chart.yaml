@@ -1,0 +1,13 @@
+apiVersion: v2
+name: bootstrap
+description: Sourcegraph Appliance -- Bootstrapper
+type: application
+version: 1.0.395803
+appVersion: 1.0.0
+dependencies:
+  - name: appliance
+    version: 1.0.341803
+    repository: file://../appliance
+  - name: selfupdater
+    version: 1.0.517974
+    repository: file://../selfupdater

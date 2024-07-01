@@ -1,0 +1,6 @@
+namespace: sourcegraph
+
+registry: <registry-path-goes-here.updated-by-bootstrap-chart>
+
+healthchecker:
+  image: healthchecker

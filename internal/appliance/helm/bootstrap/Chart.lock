@@ -1,0 +1,9 @@
+dependencies:
+- name: appliance
+  repository: file://../appliance
+  version: 1.0.341803
+- name: selfupdater
+  repository: file://../selfupdater
+  version: 1.0.517974
+digest: sha256:f07dce01c9380a37ca857c7a015ab51430bfbbdf1c55cc65d07bbac8c49d6093
+generated: "2024-07-01T09:52:58.687102016-07:00"

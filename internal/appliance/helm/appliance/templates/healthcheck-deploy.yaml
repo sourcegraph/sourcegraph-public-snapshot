@@ -18,9 +18,11 @@ spec:
     spec:
       containers:
         - name: healthchecker
-          image: "{{ .Values.registry }}/{{ .Values.healthchecker.image }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.healthchecker.image }}:v{{ .Chart.AppVersion }}"
           ports:
             - containerPort: 80
           env:
             - name: VERSION
               value: {{ .Chart.Version }}
+            - name: SOME_CONFIG
+              value: "222"

@@ -2,5 +2,5 @@ apiVersion: v2
 name: appliance
 description: Sourcegraph Appliance
 type: application
-version: 1.0.61304
-appVersion: 1.0.61304
+version: 1.0.341803
+appVersion: 1.0.341239

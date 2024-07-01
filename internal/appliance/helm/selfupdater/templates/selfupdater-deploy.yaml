@@ -18,18 +18,35 @@ spec:
     spec:
       containers:
         - name: selfupdater
-          image: "{{ .Values.registry }}/{{ .Values.selfupdater.image }}"
+          image: "{{ .Values.global.registry }}/{{ .Values.image }}:v{{ .Chart.AppVersion }}"
           ports:
             - containerPort: 80
           env:
             - name: VERSION
               value: {{ .Chart.Version }}
+            - name: VERSION_CONFIG_FILE
+              value: /etc/config/version
             - name: APPLIANCE_ID
               value: {{ .Release.Name }}
             - name: APPLIANCE_CHART
-              value: {{ .Chart.Name }}
+              valueFrom:
+                configMapKeyRef:
+                  name: bootstrap
+                  key: chart
+            - name: APPLIANCE_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: bootstrap
+                  key: version
             - name: APPLIANCE_REPO
-              value: {{ .Values.appliance_repo }}
+              value: {{ .Values.appliance.distrib }}
             - name: EXIT_ON_SELF_UPDATE
               value: "0"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+      volumes:
+        - name: config
+          configMap:
+            name: bootstrap
       serviceAccountName: selfupdater

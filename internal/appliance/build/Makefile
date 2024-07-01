@@ -1,4 +1,4 @@
-VERSION=v1.0.$$(( $(shell date +%s) - 1719292685 ))
+VERSION=1.0.$$(( $(shell date +%s) - 1719292685 ))
 
 REGISTRY=us-central1-docker.pkg.dev/nelsona-sandbox/nelsona-dev-images
 
@@ -42,13 +42,13 @@ pkg.selfupdater:
 
 helm:
 	@echo "Updating Helm to version ${VERSION}"
-	cat ../helm/values.yaml \
+	cat ../helm/selfupdater/values.yaml \
 	  | sed -e "s#registry:.*#registry: ${REGISTRY}#" \
 	  | sed -e "s/\(.*image:.*\):[^:]*/\1:${VERSION}/" \
-	  > ../helm/values.yaml.tmp
-	mv ../helm/values.yaml.tmp ../helm/values.yaml
-	cat ../helm/Chart.yaml \
+	  > ../helm/selfupdater/values.yaml.tmp
+	mv ../helm/selfupdater/values.yaml.tmp ../helm/selfupdater/values.yaml
+	cat ../helm/selfupdater/Chart.yaml \
 	  | sed -e "s/version:.*/version: ${VERSION}/" \
-	  | sed -e "s/appVersion:.*/appVersion: \"${VERSION}\"/" \
-	  > ../helm/Chart.yaml.tmp
-	mv ../helm/Chart.yaml.tmp ../helm/Chart.yaml
+	  | sed -e "s/appVersion:.*/appVersion: ${VERSION}/" \
+	  > ../helm/selfupdater/Chart.yaml.tmp
+	mv ../helm/selfupdater/Chart.yaml.tmp ../helm/selfupdater/Chart.yaml

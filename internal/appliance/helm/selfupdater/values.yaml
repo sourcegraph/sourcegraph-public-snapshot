@@ -1,0 +1,8 @@
+namespace: sourcegraph
+
+registry: us-central1-docker.pkg.dev/nelsona-sandbox/nelsona-dev-images
+
+appliance:
+  distrib: http://sg-appliance.hopto.org/helm
+
+image: selfupdater

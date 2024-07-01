@@ -11,10 +11,12 @@
       "mode": "auto",
       "program": "${workspaceFolder}/selfupdate/cmd",
       "env": {
-        "VERSION": "1.0.0",
+        "VERSION": "1.0.61304",
+        "VERSION_CONFIG_FILE": "../testdata/config.txt",
+        "APPLIANCE_VERSION": "1.0.61304",
         "APPLIANCE_REPO": "http://sg-appliance.hopto.org/helm",
-        "APPLIANCE_CHART": "appliance",
-        "APPLIANCE_ID": "appliance",
+        "APPLIANCE_CHART": "bootstrap",
+        "APPLIANCE_ID": "foofoo",
       }
     },
     {

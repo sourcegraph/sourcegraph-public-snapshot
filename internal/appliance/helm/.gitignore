@@ -1,0 +1,2 @@
+# Do not package the generated charts
+charts/*.tgz
