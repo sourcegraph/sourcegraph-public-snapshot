@@ -279,10 +279,10 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// the job structs directly.
 	regexEscapedRepoNames := make([]string, len(args.Repos))
 	for i, repo := range args.Repos {
-		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
+		regexEscapedRepoNames[i] = fmt.Sprintf("^%s$", regexp.QuoteMeta(string(repo.Name)))
 	}
 
-	keywordQuery := fmt.Sprintf(`repo:^%s$ %s %s`, query.UnionRegExps(regexEscapedRepoNames), getKeywordContextExcludeFilePathsQuery(), args.Query)
+	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, query.UnionRegExps(regexEscapedRepoNames), getKeywordContextExcludeFilePathsQuery(), args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
