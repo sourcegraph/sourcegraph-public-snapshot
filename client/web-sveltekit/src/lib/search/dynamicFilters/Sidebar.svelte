@@ -244,10 +244,10 @@
         />
         <Section items={sectionItems['commit date']} title="By commit date">
             <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('commit date')}>
-                <span class="commit-date-label" slot="label">
+                <svelte:fragment slot="label">
                     {item.label}
                     <small><pre>{item.value}</pre></small>
-                </span>
+                </svelte:fragment>
             </SectionItem>
         </Section>
         <Section items={sectionItems.file} title="By file" showAll on:select={() => handleFilterSelect('file')} />
@@ -255,10 +255,10 @@
 
         <Section items={sectionItems.snippet} title="Snippets">
             <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('snippet')}>
-                <span class="commit-date-label" slot="label">
+                <svelte:fragment slot="label">
                     {item.label}
                     <small><pre>{item.value}</pre></small>
-                </span>
+                </svelte:fragment>
             </SectionItem>
         </Section>
 
