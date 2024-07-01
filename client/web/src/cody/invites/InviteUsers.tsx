@@ -107,7 +107,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
 
     if (updateSubscriptionMutation.isSuccess) {
         return (
-            <CodyAlert variant="green" title="Remaining invites removed from plan">
+            <CodyAlert title="Remaining invites removed from plan" variant="green">
                 <Text>You can add more seats at any time with the "Add seats" button.</Text>
             </CodyAlert>
         )
@@ -123,8 +123,8 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
         <>
             {sendInviteMutation.status === 'success' && (
                 <CodyAlert
-                    variant="green"
                     title={`${emailAddresses.length} ${pluralize('invite', emailAddresses.length)} sent!`}
+                    variant="green"
                 >
                     <Text size="small" className="mb-0">
                         Invitees will receive an email from cody@sourcegraph.com.
@@ -132,7 +132,7 @@ export const InviteUsers: React.FunctionComponent<InviteUsersProps> = ({ telemet
                 </CodyAlert>
             )}
             {sendInviteMutation.status === 'error' && (
-                <CodyAlert variant="error" title="Invites not sent.">
+                <CodyAlert title="Invites not sent." variant="error">
                     <Text size="small">Error sending invites: {sendInviteMutation.error?.message}</Text>
                     <Text size="small" className="mt-2">
                         If you encounter this issue repeatedly, please contact support at{' '}
