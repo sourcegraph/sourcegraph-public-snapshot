@@ -284,6 +284,7 @@ go_test(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
+        "//internal/github_apps/types",
         "//internal/jsonc",
         "//internal/licensing",
         "//internal/own/codeowners/v1:codeowners",
