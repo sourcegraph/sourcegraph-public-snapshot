@@ -10,7 +10,7 @@
     "build:watch": "vite build --watch",
     "preview": "vite preview",
     "install:browsers": "playwright install",
-    "test": "playwright test",
+    "test": "DISABLE_APP_ASSETS_MOCKING=true playwright test",
     "test:dev": "DISABLE_APP_ASSETS_MOCKING=true PORT=5173 playwright test --ui",
     "test:svelte": "vitest --run",
     "sync": "svelte-kit sync",

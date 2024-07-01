@@ -39,10 +39,12 @@ var (
 	scopeWriteSubscriptionsPermissions = scopes.ToScope(scopes.ServiceEnterprisePortal, "permission.subscription", scopes.ActionWrite)
 )
 
-var clientFlags = append(samsflags.ClientCredentials(), &cli.StringFlag{
-	Name:  "enterprise-portal-server",
-	Usage: "The URL of the Enterprise Portal server to use (defaults to the appropriate one for SG_SAMS_SERVER_URL)",
-})
+func clientFlags() []cli.Flag {
+	return append(samsflags.ClientCredentials(), &cli.StringFlag{
+		Name:  "enterprise-portal-server",
+		Usage: "The URL of the Enterprise Portal server to use (defaults to the appropriate one for SG_SAMS_SERVER_URL)",
+	})
+}
 
 func newSubscriptionsClient(c *cli.Context, ss ...scopes.Scope) subscriptionsv1connect.SubscriptionsServiceClient {
 	ctx := c.Context
@@ -94,8 +96,8 @@ func resolveUserReference(ctx context.Context, users *sams.UsersServiceV1, userR
 var Command = &cli.Command{
 	Name:     "enterprise",
 	Category: category.Company,
-	Usage:    "Manage Sourcegraph Enterprise subscriptions in Enterprise Portal",
-	Description: `TODO
+	Usage:    "[EXPERIMENTAL] Manage Sourcegraph Enterprise subscriptions in Enterprise Portal",
+	Description: `[EXPERIMENTAL] See https://www.notion.so/sourcegraph/Sourcegraph-Enterprise-Portal-EP-c6311818978547beb981bd2a593c6acf?pvs=4
 
 Please reach out to #discuss-core-services for assistance if you have any questions!`,
 	Subcommands: []*cli.Command{{
@@ -105,7 +107,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 			Name:      "list",
 			Usage:     "List subscriptions",
 			ArgsUsage: "[subscription IDs...]",
-			Flags: append(clientFlags,
+			Flags: append(clientFlags(),
 				&cli.StringFlag{
 					Name:  "member.cody-analytics-viewer",
 					Usage: "Member with Cody Analytics viewer permission to filter for (email or SAMS user ID)",
@@ -176,7 +178,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				Name:      "list",
 				Usage:     "List licenses for all or specified subscriptions",
 				ArgsUsage: "[subscription IDs...]",
-				Flags:     clientFlags,
+				Flags:     clientFlags(),
 				Action: func(c *cli.Context) error {
 					client := newSubscriptionsClient(c, scopeReadSubscriptions)
 					req := &subscriptionsv1.ListEnterpriseSubscriptionLicensesRequest{
@@ -222,7 +224,11 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 			Name:      "set-instance-domain",
 			Usage:     "Assign an instance domain to a subscription",
 			ArgsUsage: "<subscription ID> <instance domain>",
-			Flags:     clientFlags,
+			Flags: append(clientFlags(),
+				&cli.BoolFlag{
+					Name:  "auto-approve",
+					Usage: "Skip confirmation prompts",
+				}),
 			Action: func(c *cli.Context) error {
 				client := newSubscriptionsClient(c, scopeWriteSubscriptions)
 				s := &subscriptionsv1.EnterpriseSubscription{
@@ -235,7 +241,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 				if !strings.HasPrefix(s.Id, subscriptionsv1.EnterpriseSubscriptionIDPrefix) {
 					return errors.Newf("subscription ID must start with %q", subscriptionsv1.EnterpriseSubscriptionIDPrefix)
 				}
-				if s.InstanceDomain == "" {
+				if s.InstanceDomain == "" && !c.Bool("auto-approve") {
 					var res string
 					ok, err := std.PromptAndScan(std.Out, "No instance domain provided; the assigned domain will be removed, are you sure? (y/N) ", &res)
 					if err != nil {
@@ -278,7 +284,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 			Usage:       "Update or assign membership to a subscription for one or more SAMS users",
 			Description: "Only one of --subscription-id or --subscription-instance-domain needs to be specified.",
 			ArgsUsage:   "<SAMS account email or ID...>",
-			Flags: append(clientFlags,
+			Flags: append(clientFlags(),
 				&cli.StringFlag{
 					Name:  "subscription-id",
 					Usage: "ID of the subscription to assign membership to",
@@ -297,6 +303,10 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 							slices.Sort(keys)
 							return keys
 						}(), ", ")),
+				},
+				&cli.BoolFlag{
+					Name:  "auto-approve",
+					Usage: "Skip confirmation prompts",
 				}),
 			Action: func(c *cli.Context) error {
 				ctx := context.Background()
@@ -329,7 +339,7 @@ Please reach out to #discuss-core-services for assistance if you have any questi
 						return errors.Wrap(err, "normalize instance domain")
 					}
 				}
-				if len(roles) == 0 {
+				if len(roles) == 0 && !c.Bool("auto-approve") {
 					var res string
 					ok, err := std.PromptAndScan(std.Out, "No roles provided; all roles will be removed, are you sure? (y/N) ", &res)
 					if err != nil {

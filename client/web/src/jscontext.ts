@@ -196,14 +196,21 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
-    /** Whether cody is enabled site-wide. */
-    codyEnabled: boolean
+    /**
+     * Whether Cody is enabled on this instance. Check
+     * {@link SourcegraphContext.codyEnabledForCurrentUser} to see whether Cody is enabled for the
+     * current user.
+     */
+    codyEnabledOnInstance: boolean
 
-    /** Whether cody is enabled for the user. */
+    /** Whether Cody is enabled for the user. */
     codyEnabledForCurrentUser: boolean
 
-    /** Whether the site requires a verified email for cody. */
+    /** Whether the instance requires a verified email for Cody. */
     codyRequiresVerifiedEmail: boolean
+
+    /** Whether the code search feature is enabled on the instance. */
+    codeSearchEnabledOnInstance: boolean
 
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
@@ -285,7 +292,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Contains information about the product license. */
     licenseInfo?: {
         batchChanges?: BatchChangesLicenseInfo
-        features: LicenseFeatures
     }
 
     /** sha256 hashed license key */
@@ -319,12 +325,4 @@ export interface BrandAssets {
     logo?: string
     /** The URL to the symbol used as the search icon */
     symbol?: string
-}
-
-/**
- * Defines the license features available.
- */
-export interface LicenseFeatures {
-    codeSearch: boolean
-    cody: boolean
 }

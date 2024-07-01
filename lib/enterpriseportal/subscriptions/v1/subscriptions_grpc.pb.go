@@ -61,7 +61,8 @@ type SubscriptionsServiceClient interface {
 	ArchiveEnterpriseSubscription(ctx context.Context, in *ArchiveEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(ctx context.Context, in *CreateEnterpriseSubscriptionRequest, opts ...grpc.CallOption) (*CreateEnterpriseSubscriptionResponse, error)
-	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
 	UpdateEnterpriseSubscriptionMembership(ctx context.Context, in *UpdateEnterpriseSubscriptionMembershipRequest, opts ...grpc.CallOption) (*UpdateEnterpriseSubscriptionMembershipResponse, error)
 }
 
@@ -185,7 +186,8 @@ type SubscriptionsServiceServer interface {
 	ArchiveEnterpriseSubscription(context.Context, *ArchiveEnterpriseSubscriptionRequest) (*ArchiveEnterpriseSubscriptionResponse, error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *CreateEnterpriseSubscriptionRequest) (*CreateEnterpriseSubscriptionResponse, error)
-	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription membership.
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
 	UpdateEnterpriseSubscriptionMembership(context.Context, *UpdateEnterpriseSubscriptionMembershipRequest) (*UpdateEnterpriseSubscriptionMembershipResponse, error)
 	mustEmbedUnimplementedSubscriptionsServiceServer()
 }

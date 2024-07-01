@@ -20,6 +20,12 @@ export interface FilePathSearchResult extends SettingsCascadeProps {
     onSelect: () => void
     containerClassName?: string
     index: number
+    /**
+     * Don't display the file preview button in the VSCode extension.
+     * Expose this prop to allow the VSCode extension to hide the button.
+     * Name it "hide" in an attempt to communicate that hiding is a special case.
+     */
+    hideFilePreviewButton?: boolean
 }
 
 export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps & TelemetryV2Props> = ({
@@ -31,6 +37,7 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps & Te
     telemetryService,
     telemetryRecorder,
     settingsCascade,
+    hideFilePreviewButton = false, // hiding the file preview button is a special case for the VSCode extension; we normally want it shown.
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
@@ -72,11 +79,13 @@ export const FilePathSearchResult: FC<FilePathSearchResult & TelemetryProps & Te
             className={classNames(resultStyles.copyButtonContainer, containerClassName)}
             repoLastFetched={result.repoLastFetched}
             actions={
-                <SearchResultPreviewButton
-                    result={result}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                />
+                !hideFilePreviewButton ? (
+                    <SearchResultPreviewButton
+                        result={result}
+                        telemetryService={telemetryService}
+                        telemetryRecorder={telemetryRecorder}
+                    />
+                ) : undefined
             }
         />
     )

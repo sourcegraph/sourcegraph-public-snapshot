@@ -617,6 +617,8 @@ type UsageConnectionResolver = PagedConnectionResolver[UsageResolver]
 
 type UsageResolver interface {
 	Symbol(context.Context) (SymbolInformationResolver, error)
+	Provenance(context.Context) (CodeGraphDataProvenance, error)
+	DataSource() *string
 	UsageRange(context.Context) (UsageRangeResolver, error)
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
@@ -627,8 +629,6 @@ type UsageResolver interface {
 type SymbolInformationResolver interface {
 	Name() (string, error)
 	Documentation() (*[]string, error)
-	Provenance() (CodeGraphDataProvenance, error)
-	DataSource() *string
 }
 
 type UsageRangeResolver interface {

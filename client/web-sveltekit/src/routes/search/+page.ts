@@ -19,6 +19,7 @@ import {
 } from '$lib/shared'
 
 import type { PageLoad } from './$types'
+import DotcomFooterLinks from './DotcomFooterLinks.svelte'
 
 type SearchStreamCacheEntry = Observable<AggregateStreamingSearchResults>
 
@@ -142,7 +143,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
 
         return {
             codyHref,
-            showDotcomFooterLinks: window.context.sourcegraphDotComMode,
+            footer: window.context.sourcegraphDotComMode ? DotcomFooterLinks : null,
             searchStream,
             queryFilters,
             queryFromURL: query,
@@ -157,7 +158,7 @@ export const load: PageLoad = async ({ parent, url, depends }) => {
     }
     return {
         codyHref,
-        showDotcomFooterLinks: window.context.sourcegraphDotComMode,
+        footer: window.context.sourcegraphDotComMode ? DotcomFooterLinks : null,
         queryOptions: {
             query: '',
         },

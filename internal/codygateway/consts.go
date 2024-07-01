@@ -1,33 +1,5 @@
 package codygateway
 
-type ActorSource string
-
-const (
-	// We retain legacy naming just in case there are hard dependencies on this
-	// name. Today, these are Enterprise Subscriptions sourced from the Enterprise
-	// Portal service.
-	ActorSourceEnterpriseSubscription ActorSource = "dotcom-product-subscriptions"
-	// Sourcegraph.com user actors.
-	ActorSourceDotcomUser ActorSource = "dotcom-user"
-)
-
-const CompletionsEventFeatureMetadataField = "feature"
-const EmbeddingsTokenUsageMetadataField = "tokens_used"
-
-const CompletionsEventFeatureEmbeddings = "embeddings"
-
-type EventName string
-
-const (
-	EventNameUnauthorized         EventName = "Unauthorized"
-	EventNameAccessDenied         EventName = "AccessDenied"
-	EventNameRateLimited          EventName = "RateLimited"
-	EventNameCompletionsFinished  EventName = "CompletionsFinished"
-	EventNameEmbeddingsFinished   EventName = "EmbeddingsFinished"
-	EventNameRequestBlocked       EventName = "RequestBlocked"
-	EventNameCodeCompletionLogged EventName = "CodeCompletionLogged"
-)
-
 const FeatureHeaderName = "X-Sourcegraph-Feature"
 
 // GQLErrCodeDotcomUserNotFound is the GraphQL error code returned when

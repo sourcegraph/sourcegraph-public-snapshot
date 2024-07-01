@@ -7,7 +7,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
+import { BeforeUnloadPrompt, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -140,12 +140,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div
-                className={classNames(
-                    'test-settings-file percy-hide d-flex flex-grow-1 flex-column',
-                    styles.settingsFile
-                )}
-            >
+            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
                 <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor

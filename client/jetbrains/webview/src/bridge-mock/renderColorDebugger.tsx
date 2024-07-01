@@ -44,7 +44,6 @@ const ColorPalette = ({
     }
     for (const [key, value] of Object.entries(light)) {
         if (colors.has(key)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             colors.get(key)!.light = value
         } else {
             colors.set(key, { dark: null, light: value })

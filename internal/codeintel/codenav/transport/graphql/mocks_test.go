@@ -11,12 +11,10 @@ import (
 	"sync"
 
 	scip "github.com/sourcegraph/scip/bindings/go/scip"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
 	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	core "github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // MockAutoIndexingService is a mock implementation of the
@@ -213,6 +211,9 @@ type MockCodeNavService struct {
 	// SCIPDocumentFunc is an instance of a mock function object controlling
 	// the behavior of the method SCIPDocument.
 	SCIPDocumentFunc *CodeNavServiceSCIPDocumentFunc
+	// SearchBasedUsagesFunc is an instance of a mock function object
+	// controlling the behavior of the method SearchBasedUsages.
+	SearchBasedUsagesFunc *CodeNavServiceSearchBasedUsagesFunc
 	// SnapshotForDocumentFunc is an instance of a mock function object
 	// controlling the behavior of the method SnapshotForDocument.
 	SnapshotForDocumentFunc *CodeNavServiceSnapshotForDocumentFunc
@@ -278,13 +279,18 @@ func NewMockCodeNavService() *MockCodeNavService {
 				return
 			},
 		},
+		SearchBasedUsagesFunc: &CodeNavServiceSearchBasedUsagesFunc{
+			defaultHook: func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) (r0 []codenav.SearchBasedMatch, r1 error) {
+				return
+			},
+		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
 			defaultHook: func(context.Context, int, string, core.RepoRelPath, int) (r0 []shared1.SnapshotData, r1 error) {
 				return
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) (r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, codenav.UsagesForSymbolArgs) (r0 codenav.SyntacticUsagesResult, r1 *codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
 				return
 			},
 		},
@@ -350,13 +356,18 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 				panic("unexpected invocation of MockCodeNavService.SCIPDocument")
 			},
 		},
+		SearchBasedUsagesFunc: &CodeNavServiceSearchBasedUsagesFunc{
+			defaultHook: func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error) {
+				panic("unexpected invocation of MockCodeNavService.SearchBasedUsages")
+			},
+		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
 			defaultHook: func(context.Context, int, string, core.RepoRelPath, int) ([]shared1.SnapshotData, error) {
 				panic("unexpected invocation of MockCodeNavService.SnapshotForDocument")
 			},
 		},
 		SyntacticUsagesFunc: &CodeNavServiceSyntacticUsagesFunc{
-			defaultHook: func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
+			defaultHook: func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
 				panic("unexpected invocation of MockCodeNavService.SyntacticUsages")
 			},
 		},
@@ -402,6 +413,9 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 		},
 		SCIPDocumentFunc: &CodeNavServiceSCIPDocumentFunc{
 			defaultHook: i.SCIPDocument,
+		},
+		SearchBasedUsagesFunc: &CodeNavServiceSearchBasedUsagesFunc{
+			defaultHook: i.SearchBasedUsages,
 		},
 		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
 			defaultHook: i.SnapshotForDocument,
@@ -1572,6 +1586,120 @@ func (c CodeNavServiceSCIPDocumentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// CodeNavServiceSearchBasedUsagesFunc describes the behavior when the
+// SearchBasedUsages method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceSearchBasedUsagesFunc struct {
+	defaultHook func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)
+	hooks       []func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)
+	history     []CodeNavServiceSearchBasedUsagesFuncCall
+	mutex       sync.Mutex
+}
+
+// SearchBasedUsages delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) SearchBasedUsages(v0 context.Context, v1 codenav.UsagesForSymbolArgs, v2 *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error) {
+	r0, r1 := m.SearchBasedUsagesFunc.nextHook()(v0, v1, v2)
+	m.SearchBasedUsagesFunc.appendCall(CodeNavServiceSearchBasedUsagesFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SearchBasedUsages
+// method of the parent MockCodeNavService instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavServiceSearchBasedUsagesFunc) SetDefaultHook(hook func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SearchBasedUsages method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceSearchBasedUsagesFunc) PushHook(hook func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceSearchBasedUsagesFunc) SetDefaultReturn(r0 []codenav.SearchBasedMatch, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceSearchBasedUsagesFunc) PushReturn(r0 []codenav.SearchBasedMatch, r1 error) {
+	f.PushHook(func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceSearchBasedUsagesFunc) nextHook() func(context.Context, codenav.UsagesForSymbolArgs, *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceSearchBasedUsagesFunc) appendCall(r0 CodeNavServiceSearchBasedUsagesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceSearchBasedUsagesFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavServiceSearchBasedUsagesFunc) History() []CodeNavServiceSearchBasedUsagesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceSearchBasedUsagesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceSearchBasedUsagesFuncCall is an object that describes an
+// invocation of method SearchBasedUsages on an instance of
+// MockCodeNavService.
+type CodeNavServiceSearchBasedUsagesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 codenav.UsagesForSymbolArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *codenav.PreviousSyntacticSearch
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []codenav.SearchBasedMatch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceSearchBasedUsagesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceSearchBasedUsagesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // CodeNavServiceSnapshotForDocumentFunc describes the behavior when the
 // SnapshotForDocument method of the parent MockCodeNavService instance is
 // invoked.
@@ -1696,24 +1824,24 @@ func (c CodeNavServiceSnapshotForDocumentFuncCall) Results() []interface{} {
 // SyntacticUsages method of the parent MockCodeNavService instance is
 // invoked.
 type CodeNavServiceSyntacticUsagesFunc struct {
-	defaultHook func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
-	hooks       []func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)
+	defaultHook func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
+	hooks       []func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)
 	history     []CodeNavServiceSyntacticUsagesFuncCall
 	mutex       sync.Mutex
 }
 
 // SyntacticUsages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 types.Repo, v2 api.CommitID, v3 core.RepoRelPath, v4 scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
-	r0, r1 := m.SyntacticUsagesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.SyntacticUsagesFunc.appendCall(CodeNavServiceSyntacticUsagesFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
+func (m *MockCodeNavService) SyntacticUsages(v0 context.Context, v1 codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
+	r0, r1, r2 := m.SyntacticUsagesFunc.nextHook()(v0, v1)
+	m.SyntacticUsagesFunc.appendCall(CodeNavServiceSyntacticUsagesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the SyntacticUsages
 // method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)) {
 	f.defaultHook = hook
 }
 
@@ -1721,7 +1849,7 @@ func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultHook(hook func(context.Con
 // SyntacticUsages method of the parent MockCodeNavService instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError)) {
+func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1729,20 +1857,20 @@ func (f *CodeNavServiceSyntacticUsagesFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
-	f.SetDefaultHook(func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
-		return r0, r1
+func (f *CodeNavServiceSyntacticUsagesFunc) SetDefaultReturn(r0 codenav.SyntacticUsagesResult, r1 *codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
+	f.SetDefaultHook(func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 []codenav.SyntacticMatch, r1 *codenav.SyntacticUsagesError) {
-	f.PushHook(func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
-		return r0, r1
+func (f *CodeNavServiceSyntacticUsagesFunc) PushReturn(r0 codenav.SyntacticUsagesResult, r1 *codenav.PreviousSyntacticSearch, r2 *codenav.SyntacticUsagesError) {
+	f.PushHook(func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
+		return r0, r1, r2
 	})
 }
 
-func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, types.Repo, api.CommitID, core.RepoRelPath, scip.Range) ([]codenav.SyntacticMatch, *codenav.SyntacticUsagesError) {
+func (f *CodeNavServiceSyntacticUsagesFunc) nextHook() func(context.Context, codenav.UsagesForSymbolArgs) (codenav.SyntacticUsagesResult, *codenav.PreviousSyntacticSearch, *codenav.SyntacticUsagesError) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1781,34 +1909,28 @@ type CodeNavServiceSyntacticUsagesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 types.Repo
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.CommitID
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 core.RepoRelPath
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 scip.Range
+	Arg1 codenav.UsagesForSymbolArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []codenav.SyntacticMatch
+	Result0 codenav.SyntacticUsagesResult
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 *codenav.SyntacticUsagesError
+	Result1 *codenav.PreviousSyntacticSearch
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 *codenav.SyntacticUsagesError
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeNavServiceSyntacticUsagesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeNavServiceSyntacticUsagesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // CodeNavServiceVisibleUploadsForPathFunc describes the behavior when the

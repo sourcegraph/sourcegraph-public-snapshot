@@ -223,7 +223,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
             />
 
             {isSourcegraphCloudManagedFeatureFlagsWarningShown && (
-                <Alert variant="warning">
+                <Alert variant="info">
                     Feature flag settings are managed by Sourcegraph and will be overridden by updates. Contact support
                     for help.
                 </Alert>

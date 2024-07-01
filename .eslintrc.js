@@ -90,6 +90,8 @@ const config = {
     '@typescript-eslint/no-misused-promises': 'off',
     '@typescript-eslint/no-unnecessary-qualifier': 'off',
     '@typescript-eslint/no-unused-vars': 'off', // also duplicated by tsconfig noUnused{Locals,Parameters}
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
     'etc/no-deprecated': 'off',
 
     'no-restricted-imports': [
