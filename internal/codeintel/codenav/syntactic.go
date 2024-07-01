@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -119,6 +121,91 @@ func findCandidateOccurrencesViaSearch(
 	}
 
 	return resultMap, nil
+}
+
+type symbolData struct {
+	range_ scip.Range
+	kind   string
+}
+
+func (s *symbolData) Range() scip.Range {
+	return s.range_
+}
+
+// symbolSearchResult maps file paths to a list of symbols sorted by range
+type symbolSearchResult struct {
+	inner orderedmap.OrderedMap[core.RepoRelPath, []symbolData]
+}
+
+func (s *symbolSearchResult) Contains(path core.RepoRelPath, range_ scip.Range) bool {
+	if symbols, ok := s.inner.Get(path); ok {
+		_, found := slices.BinarySearchFunc(symbols, range_, func(s1 symbolData, s2 scip.Range) int {
+			return s1.range_.CompareStrict(s2)
+		})
+		return found
+	}
+	return false
+}
+
+func symbolSearch(
+	ctx context.Context,
+	client searchclient.SearchClient,
+	trace observation.TraceLogger,
+	repo types.Repo,
+	identifier string,
+	language string,
+) (symbolSearchResult, error) {
+	if identifier == "" {
+		return symbolSearchResult{}, nil
+	}
+	var contextLines int32 = 0
+	patternType := "standard"
+	repoName := fmt.Sprintf("^%s$", repo.Name)
+	// Using the same limit as the current web app
+	countLimit := 50
+	symbolQuery := fmt.Sprintf("type:symbol repo:%s lang:%s count:%d case:yes /\\b%s\\b/", repoName, language, countLimit, identifier)
+
+	plan, err := client.Plan(ctx, "V3", &patternType, symbolQuery, search.Precise, search.Streaming, &contextLines)
+	if err != nil {
+		return symbolSearchResult{}, err
+	}
+	stream := streaming.NewAggregatingStream()
+	_, err = client.Execute(ctx, stream, plan)
+	if err != nil {
+		return symbolSearchResult{}, err
+	}
+	matchCount := 0
+
+	resultMap := *orderedmap.New[core.RepoRelPath, []symbolData]()
+	for _, streamResult := range stream.Results {
+		fileMatch, ok := streamResult.(*result.FileMatch)
+		if !ok {
+			continue
+		}
+		symbolDatas := genslices.MapFilter(fileMatch.Symbols, func(symbol *result.SymbolMatch) (symbolData, bool) {
+			scipRange, err := scip.NewRange([]int32{
+				int32(symbol.Symbol.Range().Start.Line),
+				int32(symbol.Symbol.Range().Start.Character),
+				int32(symbol.Symbol.Range().End.Line),
+				int32(symbol.Symbol.Range().End.Character),
+			})
+			if err != nil {
+				return symbolData{}, false
+			}
+			return symbolData{
+				range_: scipRange,
+				kind:   symbol.Symbol.Kind,
+			}, true
+		})
+		slices.SortFunc(symbolDatas, func(s1 symbolData, s2 symbolData) int {
+			return s1.range_.CompareStrict(s2.range_)
+		})
+		matchCount += len(symbolDatas)
+		resultMap.Set(core.NewRepoRelPathUnchecked(fileMatch.Path), symbolDatas)
+	}
+	trace.AddEvent("symbolSearch", attribute.Int("matchCount", matchCount))
+
+	return symbolSearchResult{resultMap}, nil
 }
 
 func nameFromGlobalSymbol(symbol *scip.Symbol) (string, bool) {
