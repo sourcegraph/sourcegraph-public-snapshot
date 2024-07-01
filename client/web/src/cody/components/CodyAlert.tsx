@@ -39,7 +39,7 @@ export const CodyAlert: React.FunctionComponent<CodyAlertProps> = ({
         // eslint-disable-next-line no-restricted-syntax
         <div className={alertClassName} {...props}>
             {badge && (
-                <div className={classNames('mt-auto', 'h-100', 'mr-3')}>
+                <div className={styles.badge}>
                     <div className={styles.cardClip}>{badge === 'CodyPro' ? <CodyProBadge /> : <AlertBadge />}</div>
                 </div>
             )}

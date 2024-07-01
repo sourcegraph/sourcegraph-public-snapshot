@@ -1,10 +1,11 @@
 import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
-import { Text, H2, Button } from '@sourcegraph/wildcard'
+import { Text, H2, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../src/components/WebStory'
 
 import { CodyAlert } from './CodyAlert'
+import { ProIcon } from './CodyIcon'
 
 const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
@@ -15,11 +16,30 @@ const config: Meta = {
 
 export default config
 
-export const SimpleAlert: StoryFn = () => (
+export const CodyProBanner: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="purple">
-                <Text>Something has happened.</Text>
+            <CodyAlert variant="purple" badge="CodyPro">
+                <div>
+                    <H2>
+                        Get unlimited help with <span>Cody Pro</span>
+                    </H2>
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div className="w-100">
+                            <ul className="pl-4 mb-0">
+                                <li>Unlimited autocompletions</li>
+                                <li>Unlimited chat messages</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <ButtonLink to="/" variant="primary" size="sm">
+                                <div className="textNowrap">
+                                    <ProIcon className="mr-1" /> Upgrade now
+                                </div>
+                            </ButtonLink>
+                        </div>
+                    </div>
+                </div>
             </CodyAlert>
         )}
     </WebStory>

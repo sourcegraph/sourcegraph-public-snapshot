@@ -45,6 +45,10 @@
     border-radius: var(--border-radius);
 }
 
+.text-nowrap{
+    text-wrap: nowrap;
+}
+
 .ide-header:hover {
     cursor: pointer;
     background: var(--subtle-bg);
@@ -56,7 +60,6 @@
 
 .cody-pro-gradient-text {
     font-family: Inter, sans-serif;
-    font-size: 1.75rem;
     font-style: normal;
 
     font-weight: 700;

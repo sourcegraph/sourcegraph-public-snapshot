@@ -1,9 +1,15 @@
 .alert {
     display: flex;
-    padding: 1.5rem 1.5rem 0rem 3rem;
+    padding: 1.5rem 3rem 0rem 3rem;
     border-radius: 3px;
     color: var(--gray-11);
     width:100%;
+}
+
+.badge {
+    height: 100%;
+    margin-top:auto;
+    margin-right:1rem;
 }
 
 .card-clip {
@@ -13,6 +19,7 @@
 
 .content {
     margin-top:auto;
+    width:100%;
     padding-bottom:1.5rem;
     & p {
         margin-bottom: 0;

@@ -211,20 +211,32 @@ const UpgradeToProBanner: React.FunctionComponent<{
     onClick: () => void
 }> = ({ onClick }) => (
     <CodyAlert variant="purple" badge="CodyPro">
-        <div className="d-flex justify-content-between align-items-center p-4">
+        <div className="d-flex justify-content-between align-items-center">
             <div>
-                <H1>
+                <H2>
                     Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span>
-                </H1>
-                <ul className="pl-4 mb-0">
-                    <li>Unlimited autocompletions</li>
-                    <li>Unlimited chat messages</li>
-                </ul>
+                </H2>
+                <div>
+                    <div>
+                        <ul className="pl-4 mb-0">
+                            <li>Unlimited autocompletions</li>
+                            <li>Unlimited chat messages</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div>
-                <ButtonLink to={CodyProRoutes.Subscription} variant="primary" size="sm" onClick={onClick}>
-                    <ProIcon className="mr-1" />
-                    Upgrade now
+                <ButtonLink
+                    to={CodyProRoutes.Subscription}
+                    variant="primary"
+                    className="text-nowrap"
+                    size="sm"
+                    onClick={onClick}
+                >
+                    <div className="textNowrap">
+                        <ProIcon className="mr-1" />
+                        Upgrade now
+                    </div>
                 </ButtonLink>
             </div>
         </div>
