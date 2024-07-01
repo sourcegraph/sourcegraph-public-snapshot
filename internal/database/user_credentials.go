@@ -27,9 +27,9 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	GitHubAppID         int
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
-	GitHubAppID         int
 
 	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
 	// we should remove the credential and SSHMigrationApplied fields.
@@ -225,6 +225,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.ExternalServiceID,
 		[]byte(encryptedCredential),
 		keyID,
+		dbutil.NewNullInt(credential.GitHubAppID),
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
@@ -406,6 +407,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("github_app_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("ssh_migration_applied"),
@@ -471,8 +473,8 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
-	github_app_id = %s,
 	encryption_key_id = %s,
+	github_app_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
 WHERE

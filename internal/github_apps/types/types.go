@@ -25,6 +25,7 @@ type GitHubApp struct {
 	PrivateKey    string
 	EncryptionKey string
 	Logo          string
+	Kind          string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
