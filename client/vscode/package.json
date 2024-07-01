@@ -110,19 +110,6 @@
       "type": "object",
       "title": "Sourcegraph extension configuration",
       "properties": {
-        "sourcegraph.url": {
-          "type": [
-            "string"
-          ],
-          "default": "https://sourcegraph.com",
-          "description": "The base URL of the Sourcegraph instance to use."
-        },
-        "sourcegraph.accessToken": {
-          "type": [
-            null
-          ],
-          "description": "[Depreciated after v2.2.12] The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
-        },
         "sourcegraph.remoteUrlReplacements": {
           "type": [
             "object"
