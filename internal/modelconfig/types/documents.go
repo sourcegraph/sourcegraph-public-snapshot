@@ -51,13 +51,13 @@ type SiteModelConfiguration struct {
 	//      {
 	//          "id": "anthropic",
 	//          "serverSideConfig": {
-	// 	            "awsBedrockConfig": {
-	// 		            "region": "us-west-2",
+	//              "awsBedrockConfig": {
+	//                  "region": "us-west-2",
 	//                  "accessKeyId": "AK...",
 	//                  "secretAccessKey": "...",
 	//                  "sessionToken": "..."
 	//              }
-	// 	        },
+	//          },
 	//          "defaultModelConfig": {
 	//              "clientSideConfig": { ... }
 	//          }
@@ -91,8 +91,8 @@ type SiteModelConfiguration struct {
 	//     {
 	//         "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
 	//         "contextWindow": {
-	//		       "maxInputTokens": 200000,
-	//	           "maxOutputTokens": 20000
+	//             "maxInputTokens": 200000,
+	//             "maxOutputTokens": 20000
 	//         }
 	//     }
 	//     ...
