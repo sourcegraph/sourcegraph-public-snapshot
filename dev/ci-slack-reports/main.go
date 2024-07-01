@@ -107,15 +107,13 @@ func main() {
 	for team, tests := range teamToTests {
 		channel, ok := config.TeamChannelMapping[team]
 		if !ok {
-			// continue
 			channel = DefaultChannel
 		}
 
-		// TOOD: include more information such as links to notion, redash dashboard etc.
 		message := fmt.Sprintf(":bazel: *Your team's top %d tests with most CI time in the past %d week(s)* _for %s_\n", len(tests), config.LookbackWindowWeeks, strings.ReplaceAll(strings.TrimPrefix(team, "owner_"), "_", " "))
+		message += "See <https://www.notion.so/sourcegraph/Understanding-Bazel-test-ownership-and-CI-impact-64b02df8f7934df9b908bf464c120847#c00955bfc98d478a9504f190139bb855|the Notion doc> for more information."
 
 		var out strings.Builder
-		out.WriteString("```\n")
 		table := tablewriter.NewWriter(&out)
 		table.SetHeader([]string{"Target", "Time", "Cache %", "Runs"})
 
@@ -128,16 +126,14 @@ func main() {
 		table.SetAutoWrapText(false)
 		table.SetColWidth(80)
 		table.Render()
-		out.WriteString("\n```")
 
 		_, err := slackClient.UploadFile(slack.FileUploadParameters{
 			Content:        out.String(),
-			Filetype:       "markdown",
 			InitialComment: message,
 			Channels:       []string{channel},
 		})
 		if err != nil {
-			logger.Fatal("failed to upload table", log.Error(err))
+			logger.Error("failed to upload a report", log.Error(err), log.String("team", team), log.String("channel", channel))
 		}
 	}
 }
