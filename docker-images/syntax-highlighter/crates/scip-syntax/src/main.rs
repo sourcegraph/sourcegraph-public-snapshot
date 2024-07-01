@@ -34,9 +34,9 @@ struct IndexCommandOptions {
     #[arg(short, long, default_value = "./")]
     project_root: String,
 
-    /// Number of worker threads to use, defaults to number of logical cores
-    #[arg(short = 'j')]
-    worker_count: Option<NonZeroUsize>,
+    /// Number of jobs to run in parallel, defaults to number of logical cores
+    #[arg(short, long)]
+    jobs: Option<NonZeroUsize>,
 
     /// Evaluate the build index against an index from a file
     #[arg(long)]
@@ -208,7 +208,7 @@ fn run_index_command(options: IndexCommandOptions, mode: IndexMode) -> anyhow::R
         Utf8Path::new(&options.out),
         Utf8Path::new(&options.project_root),
         options.evaluate.map(Utf8PathBuf::from),
-        options.worker_count,
+        options.jobs,
         IndexOptions {
             analysis_mode: options.mode,
             fail_fast: options.fail_fast,
