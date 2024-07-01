@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap},
     env,
     fs::File,
     io::{self, prelude::*},
@@ -286,13 +286,15 @@ thread_local! {
 
 fn index_content(contents: &str, parser_id: ParserId, options: &IndexOptions) -> Result<Document> {
     PARSERS.with_borrow_mut(|parsers| {
-        let parser = parsers
-            .entry(parser_id)
-            .and_modify(|p| {
-                // Tree-sitter parsing is stateful, so reset the parser state explicitly
-                p.reset()
-            })
-            .or_insert_with(|| parser_id.get_parser());
+        let parser = match parsers.entry(parser_id) {
+            Entry::Occupied(entry) => {
+                let p = entry.into_mut();
+                // tree-sitter parsing is stateful, so reset the parser state explicitly
+                p.reset();
+                p
+            }
+            Entry::Vacant(v) => v.insert(parser_id.get_parser()),
+        };
         let tree = parser
             .parse(contents.as_bytes(), None)
             .ok_or(anyhow!("Failed to parse when indexing content"))?;
