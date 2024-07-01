@@ -22,9 +22,7 @@
     </span>
     <CountBadge count={item.count} exhaustive={item.exhaustive} />
     {#if item.selected}
-        <span class="close">
-            <Icon icon={ILucideX} inline aria-hidden />
-        </span>
+        <Icon icon={ILucideX} inline aria-hidden />
     {/if}
 </a>
 
@@ -73,10 +71,6 @@
             .label {
                 color: var(--light-text);
             }
-        }
-
-        .close {
-            flex-shrink: 0;
         }
     }
 </style>
