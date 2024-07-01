@@ -1,7 +1,8 @@
 CREATE TYPE github_app_kind AS ENUM (
     'COMMIT_SIGNING',
     'REPO_SYNC',
-    'USER_GITHUB_APP'
+    'USER_CREDENTIAL',
+    'SITE_CREDENTIAL'
 );
 
 ALTER TABLE IF EXISTS github_apps
