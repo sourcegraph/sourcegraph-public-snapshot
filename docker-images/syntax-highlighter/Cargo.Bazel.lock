@@ -1,5 +1,5 @@
 {
-  "checksum": "31748fbba83a1f037f24462114667576f5abb10cf202f1ae7b083d6c48c5c1f1",
+  "checksum": "16af7384c373f405b14982ed18dfb8fd320f4c727086dc073cd004d1316c351d",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -10643,6 +10643,10 @@
             {
               "id": "tar 0.4.40",
               "target": "tar"
+            },
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
             },
             {
               "id": "walkdir 2.3.3",
