@@ -11,6 +11,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
+        "//internal/modelconfig",
         "//internal/modelconfig/types",
         "//lib/errors",
     ],
