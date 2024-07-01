@@ -49,7 +49,6 @@ export const ExperimentalExecutionDisabled: StoryFn = () => (
             <CreateBatchChangePage
                 {...props}
                 headingElement="h1"
-                authenticatedUser={mockAuthenticatedUser}
                 settingsCascade={{
                     ...EMPTY_SETTINGS_CASCADE,
                     final: { experimentalFeatures: { batchChangesExecution: false } },

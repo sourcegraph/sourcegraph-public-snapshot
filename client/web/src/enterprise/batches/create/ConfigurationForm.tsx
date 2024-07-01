@@ -2,13 +2,12 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import type { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Button, Container, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, Button, Container, ErrorAlert, Form, Input } from '@sourcegraph/wildcard'
 
-import type { AuthenticatedUser } from '../../../auth'
 import type {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
@@ -17,11 +16,11 @@ import type {
     CreateEmptyBatchChangeVariables,
     Scalars,
 } from '../../../graphql-operations'
+import { NamespaceSelector } from '../../../namespaces/NamespaceSelector'
+import { useAffiliatedNamespaces } from '../../../namespaces/useAffiliatedNamespaces'
 import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-import { NamespaceSelector } from './NamespaceSelector'
-import { useNamespaces } from './useNamespaces'
 
 import styles from './ConfigurationForm.module.scss'
 
@@ -29,10 +28,6 @@ import styles from './ConfigurationForm.module.scss'
 const NAME_PATTERN = /^[\w.-]+$/
 
 type ConfigurationFormProps = {
-    /**
-     * The currently signed-in user.
-     */
-    authenticatedUser: AuthenticatedUser | null
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -73,7 +68,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     renderTemplate,
     insightTitle,
     initialNamespaceID,
-    authenticatedUser,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -91,7 +85,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     // The set of namespaces the user has permissions to create batch changes in, and the
     // namespace among those that should be selected by default.
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(authenticatedUser, initialNamespaceID)
+    const { namespaces, defaultSelectedNamespace } = useAffiliatedNamespaces(initialNamespaceID)
 
     // If the user is creating a new batch change, this is the namespace selected.
     const [selectedNamespace, setSelectedNamespace] = useState<
