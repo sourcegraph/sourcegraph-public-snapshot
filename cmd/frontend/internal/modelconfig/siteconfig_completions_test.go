@@ -221,7 +221,7 @@ func TestConvertCompletionsConfig(t *testing.T) {
 			assert.EqualValues(t, "anthropic::unknown::anthropic.claude-instant-v1", completionModel.ModelRef)
 			assert.Nil(t, completionModel.ServerSideConfig)
 
-			// DefaultModels. Note the that model was modified, such as stripping out the ARNM.
+			// DefaultModels. Note the that model was modified, such as stripping out the ARN.
 			require.NotNil(t, siteModelConfig.DefaultModels)
 			assert.EqualValues(t, "anthropic::unknown::anthropic.claude-3-haiku-20240307-v1_0-100k", siteModelConfig.DefaultModels.Chat)
 			assert.EqualValues(t, "anthropic::unknown::anthropic.claude-instant-v1", siteModelConfig.DefaultModels.FastChat)
