@@ -68,6 +68,7 @@ type Notebook struct {
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	PatternType     string
 }
 
 type NotebookStar struct {
