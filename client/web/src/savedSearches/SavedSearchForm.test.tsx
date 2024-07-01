@@ -1,7 +1,6 @@
-import { describe, test, expect, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
-import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
@@ -34,7 +33,6 @@ describe('SavedSearchForm', () => {
                     id: '',
                     url: '',
                 }}
-                telemetryRecorder={noOpTelemetryRecorder}
             />
         )
 
