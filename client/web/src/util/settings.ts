@@ -2,7 +2,6 @@ import { startCase } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import type { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
@@ -29,22 +28,11 @@ export function viewerSubjectFromSettings(
     }
     return siteSubjectNoAdmin()
 }
-
-function isKeywordSearchEnabled(settingsCascade: SettingsCascadeOrError): boolean {
-    const features = getFromSettings(settingsCascade, 'experimentalFeatures') as SettingsExperimentalFeatures
-    return features?.keywordSearch !== false
-}
-
 /**
  * Returns the user-configured default search mode or undefined if not
  * configured by the user.
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
-    // When the 'keyword search' language update is enabled, make sure to disable smart search
-    if (isKeywordSearchEnabled(settingsCascade)) {
-        return SearchMode.Precise
-    }
-
     switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
         case 'precise': {
             return SearchMode.Precise
@@ -57,24 +45,18 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
 }
 
 /**
- * Returns the user-configured search pattern type or undefined if not
- * configured by the user.
+ * Returns the user-configured search pattern type or the default 'keyword' if not configured.
  */
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType {
     const defaultPatternType: SearchPatternType | undefined = getFromSettings(
         settingsCascade,
         'search.defaultPatternType'
     )
-    // When the 'keyword search' language update is enabled, default to the 'keyword' patterntype if none set
-    if (isKeywordSearchEnabled(settingsCascade)) {
-        return defaultPatternType ?? SearchPatternType.keyword
-    }
-    return defaultPatternType ?? SearchPatternType.standard
+    return defaultPatternType ?? SearchPatternType.keyword
 }
 
 /**
- * Returns the user-configured case sensitivity setting or undefined if not
- * configured by the user.
+ * Returns the user-configured case sensitivity setting or undefined if not configured.
  */
 export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {
     return getFromSettings(settingsCascade, 'search.defaultCaseSensitive')

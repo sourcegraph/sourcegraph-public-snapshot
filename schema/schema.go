@@ -2574,7 +2574,7 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
-	// KeywordSearch description: Whether to enable the 'keyword search' language improvement
+	// KeywordSearch description: Whether to enable the 'keyword search' language improvement. DEPRECATED: this setting is no longer used. To disable keyword search, set `search.defaultPatternType: standard` instead.
 	KeywordSearch bool `json:"keywordSearch,omitempty"`
 	// NewCodyWeb description: Enables new experimental Cody Web UI
 	NewCodyWeb *bool `json:"newCodyWeb,omitempty"`
