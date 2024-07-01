@@ -76,5 +76,4 @@
   "rust-analyzer.linkedProjects": [
     "docker-images/syntax-highlighter/Cargo.toml"
   ],
-  "sourcegraph.accessToken": null
 }
