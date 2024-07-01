@@ -11277,8 +11277,8 @@
 			{
 				"ID": 1719498128,
 				"Name": "add_kind_column_github_app",
-				"UpQuery": "CREATE TYPE github_app_kind AS ENUM (\n    'COMMIT_SIGNING',\n    'REPO_SYNC',\n    'USER_CREDENTIAL',\n    'SITE_CREDENTIAL'\n);\n\nALTER TABLE IF EXISTS github_apps\n    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;\n\nUPDATE github_apps\nSET kind = 'COMMIT_SIGNING'\nWHERE domain = 'batches';\n\nUPDATE github_apps\nSET kind = 'REPO_SYNC'\nWHERE domain = 'repos';\n\n-- This is expected to fail if any row is using an unknown value that is not repos or batches.\n-- We only allow repos or batches at this time.\nALTER TABLE IF EXISTS github_apps\nALTER COLUMN kind SET NOT NULL;",
-				"DownQuery": "ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS kind;\n\nDROP TYPE github_app_kind;",
+				"UpQuery": "CREATE TYPE github_app_kind AS ENUM (\n    'COMMIT_SIGNING',\n    'REPO_SYNC',\n    'USER_CREDENTIAL',\n    'SITE_CREDENTIAL'\n);\n\nDO $$\nBEGIN\n    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'github_app_kind') THEN\n        CREATE TYPE github_app_kind AS ENUM (\n            'COMMIT_SIGNING',\n            'REPO_SYNC',\n            'USER_CREDENTIAL',\n            'SITE_CREDENTIAL'\n        );\n    END IF;\nEND\n$$;\n\nALTER TABLE IF EXISTS github_apps\n    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;\n\nUPDATE github_apps\nSET kind = 'COMMIT_SIGNING'\nWHERE domain = 'batches';\n\nUPDATE github_apps\nSET kind = 'REPO_SYNC'\nWHERE domain = 'repos';\n\n-- This is expected to fail if any row is using an unknown value that is not repos or batches.\n-- We only allow repos or batches at this time.\nALTER TABLE IF EXISTS github_apps\nALTER COLUMN kind SET NOT NULL;",
+				"DownQuery": "ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS kind;\n\nDROP TYPE IF EXISTS github_app_kind;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
