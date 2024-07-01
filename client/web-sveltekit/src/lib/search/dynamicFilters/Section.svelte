@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher, type ComponentProps } from 'svelte'
+    import type { ComponentProps } from 'svelte'
 
     import { Button } from '$lib/wildcard'
 
@@ -20,8 +20,6 @@
     let showMore = false
     $: showCount = showAll ? items.length : showMore ? 10 : 5
     $: limitedItems = filteredItems.slice(0, showCount)
-
-    const dispatch = createEventDispatcher<{ 'item-click': string }>()
 </script>
 
 {#if items.length > 0}
@@ -34,7 +32,7 @@
             {#each limitedItems as item}
                 <li>
                     <slot name="item" {item}>
-                        <SectionItem {...item} on:click={ev => dispatch('item-click', ev.detail)} />
+                        <SectionItem {...item} on:select />
                     </slot>
                 </li>
             {/each}

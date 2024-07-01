@@ -9,7 +9,11 @@ import { SearchCachePolicy, setCachePolicyInURL } from '../state'
  * necessary to render the selected filter before the backend streams back
  * any filters.
  */
-export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
+export type URLQueryFilter = {
+    kind: string
+    label: string
+    value: string
+}
 
 const DYNAMIC_FILTER_URL_QUERY_KEY = 'df'
 

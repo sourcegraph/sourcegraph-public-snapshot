@@ -11,11 +11,11 @@
     export let count: ComponentProps<CountBadge> | undefined = undefined
     export let selected: boolean
 
-    const dispatch = createEventDispatcher<{ click: string }>()
+    const dispatch = createEventDispatcher<{ select: {} }>()
 </script>
 
 <!-- TODO: a11y. This should expose the aria selected state and use the proper roles -->
-<a href={href.toString()} class:selected on:click={() => dispatch('click', label)}>
+<a href={href.toString()} class:selected on:click={() => dispatch('select', {})}>
     <slot name="icon" />
     <span class="label">
         <slot name="label" {label} {value}>

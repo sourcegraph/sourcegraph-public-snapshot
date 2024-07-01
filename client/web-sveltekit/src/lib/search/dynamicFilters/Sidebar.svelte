@@ -200,23 +200,18 @@
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
-            <Section items={sectionItems.type} title="By type" showAll on:item-click={() => handleFilterSelect('type')}>
-                <SectionItem slot="item" let:item {...item}>
+            <Section items={sectionItems.type} title="By type" showAll>
+                <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('type')}>
                     <Icon slot="icon" icon={typeFilterIcons[item.label]} inline />
                 </SectionItem>
             </Section>
         {/if}
 
-        <Section
-            items={sectionItems.repo}
-            title="By repository"
-            filterPlaceholder="Filter repositories"
-            on:item-click={() => handleFilterSelect('repo')}
-        >
+        <Section items={sectionItems.repo} title="By repository" filterPlaceholder="Filter repositories">
             <svelte:fragment slot="item" let:item>
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
-                        <SectionItem {...item}>
+                        <SectionItem {...item} on:select={() => handleFilterSelect('repo')}>
                             <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
                             <span slot="label">{displayRepoName(item.label)}</span>
                         </SectionItem>
@@ -231,23 +226,13 @@
                 </Popover>
             </svelte:fragment>
         </Section>
-        <Section
-            items={sectionItems.lang}
-            title="By language"
-            filterPlaceholder="Filter languages"
-            on:item-click={() => handleFilterSelect('lang')}
-        >
-            <SectionItem slot="item" let:item {...item}>
+        <Section items={sectionItems.lang} title="By language" filterPlaceholder="Filter languages">
+            <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('lang')}>
                 <LanguageIcon slot="icon" language={item.label} inline />
             </SectionItem>
         </Section>
-        <Section
-            items={sectionItems['symbol type']}
-            title="By symbol type"
-            filterPlaceholder="Filter symbol types"
-            on:item-click={() => handleFilterSelect('symbol type')}
-        >
-            <SectionItem slot="item" let:item {...item}>
+        <Section items={sectionItems['symbol type']} title="By symbol type" filterPlaceholder="Filter symbol types">
+            <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('symbol type')}>
                 <SymbolKindIcon slot="icon" symbolKind={item.label.toUpperCase()} />
             </SectionItem>
         </Section>
@@ -255,30 +240,21 @@
             items={sectionItems.author}
             title="By author"
             filterPlaceholder="Filter authors"
-            on:item-click={() => handleFilterSelect('author')}
+            on:select={() => handleFilterSelect('author')}
         />
-        <Section
-            items={sectionItems['commit date']}
-            title="By commit date"
-            on:item-click={() => handleFilterSelect('commit date')}
-        >
-            <SectionItem slot="item" let:item {...item}>
+        <Section items={sectionItems['commit date']} title="By commit date">
+            <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('commit date')}>
                 <span class="commit-date-label" slot="label">
                     {item.label}
                     <small><pre>{item.value}</pre></small>
                 </span>
             </SectionItem>
         </Section>
-        <Section items={sectionItems.file} title="By file" showAll on:item-click={() => handleFilterSelect('file')} />
-        <Section
-            items={sectionItems.utility}
-            title="Utility"
-            showAll
-            on:item-click={() => handleFilterSelect('utility')}
-        />
+        <Section items={sectionItems.file} title="By file" showAll on:select={() => handleFilterSelect('file')} />
+        <Section items={sectionItems.utility} title="Utility" showAll on:select={() => handleFilterSelect('utility')} />
 
-        <Section items={sectionItems.snippet} title="Snippets" on:item-click={() => handleFilterSelect('snippet')}>
-            <SectionItem slot="item" let:item {...item}>
+        <Section items={sectionItems.snippet} title="Snippets">
+            <SectionItem slot="item" let:item {...item} on:select={() => handleFilterSelect('snippet')}>
                 <span class="commit-date-label" slot="label">
                     {item.label}
                     <small><pre>{item.value}</pre></small>
