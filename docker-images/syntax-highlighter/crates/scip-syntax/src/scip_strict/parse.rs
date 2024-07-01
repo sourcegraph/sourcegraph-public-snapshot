@@ -128,32 +128,31 @@ fn parse_simple_identifier(input: &str) -> PResult<'_, Cow<'_, str>> {
 
 fn parse_escaped_identifier(input: &str) -> PResult<'_, Cow<'_, str>> {
     let (input, _) = char('`')(input)?;
-    let (input, name) = parse_terminated(input, '`')?;
+    let (input, name) = parse_terminated(input, b'`')?;
     let (input, _) = char('`')(input)?;
     Ok((input, name))
 }
 
 fn parse_space_terminated(input: &str) -> PResult<'_, Cow<'_, str>> {
-    let (input, terminated) = parse_terminated(input, ' ')?;
+    let (input, terminated) = parse_terminated(input, b' ')?;
     let (input, _) = char(' ')(input)?;
     Ok((input, terminated))
 }
 
-fn parse_terminated(input: &str, terminator: char) -> PResult<'_, Cow<'_, str>> {
-    let terminator_len = terminator.len_utf8();
+fn parse_terminated(input: &str, terminator: u8) -> PResult<'_, Cow<'_, str>> {
     let mut needs_escape = false;
     let mut current = input;
-    while let Some(offset) = current.find(terminator) {
-        let (_, rest) = current.split_at(offset + terminator_len);
-        if rest.starts_with(terminator) {
+    while let Some(offset) = current.find(terminator as char) {
+        let (_, rest) = current.split_at(offset + 1);
+        if rest.starts_with(terminator as char) {
             needs_escape = true;
-            current = &rest[terminator_len..];
+            current = &rest[1..];
         } else {
-            let (raw, rest) = input.split_at(input.len() - rest.len() - terminator_len);
+            let (raw, rest) = input.split_at(input.len() - rest.len() - 1);
             let escaped = if needs_escape {
                 Cow::Owned(raw.replace(
-                    &format!("{terminator}{terminator}"),
-                    &terminator.to_string(),
+                    str::from_utf8(&[terminator, terminator]).unwrap(),
+                    str::from_utf8(&[terminator]).unwrap(),
                 ))
             } else {
                 Cow::Borrowed(raw)
