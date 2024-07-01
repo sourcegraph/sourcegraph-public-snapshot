@@ -415,7 +415,6 @@ go_test(
         "main_test.go",
         "namespaces_test.go",
         "org_invitations_test.go",
-        "org_members_test.go",
         "org_test.go",
         "orgs_test.go",
         "outbound_webhook_logs_test.go",
