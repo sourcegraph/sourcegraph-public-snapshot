@@ -192,8 +192,8 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
 		encryptedCredential, // N.B.: is already a []byte
-		dbutil.NewNullInt(scope.GitHubAppID),
 		keyID,
+		dbutil.NewNullInt(scope.GitHubAppID),
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -443,11 +443,13 @@ INSERT INTO
 		external_service_id,
 		credential,
 		encryption_key_id,
+	    github_app_id,
 		created_at,
 		updated_at,
 		ssh_migration_applied
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -469,6 +471,7 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
+	github_app_id = %s,
 	encryption_key_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
