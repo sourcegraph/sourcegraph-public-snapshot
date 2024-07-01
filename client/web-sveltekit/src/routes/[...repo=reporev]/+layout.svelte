@@ -40,14 +40,24 @@
          * Who can see this entry.
          */
         visibility: 'admin' | 'user'
+        /**
+         * Whether or not to preserve the revision in the URL.
+         */
+        preserveRevision?: boolean
     }
 
     export let data: LayoutData
 
     const menuOpen = writable(false)
     const navEntries: MenuEntry[] = [
-        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user' },
-        { path: '/-/commits', icon: ILucideGitCommitVertical, label: 'Commits', visibility: 'user' },
+        { path: '', icon: ILucideCode, label: 'Code', visibility: 'user', preserveRevision: true },
+        {
+            path: '/-/commits',
+            icon: ILucideGitCommitVertical,
+            label: 'Commits',
+            visibility: 'user',
+            preserveRevision: true,
+        },
         { path: '/-/branches', icon: ILucideGitBranch, label: 'Branches', visibility: 'user' },
         { path: '/-/tags', icon: ILucideTag, label: 'Tags', visibility: 'user' },
         { path: '/-/stats/contributors', icon: ILucideUsers, label: 'Contributors', visibility: 'user' },
@@ -55,7 +65,6 @@
     const menuEntries: MenuEntry[] = [
         { path: '/-/compare', icon: ILucideGitCompare, label: 'Compare', visibility: 'user' },
         { path: '/-/own', icon: ILucideUsers, label: 'Ownership', visibility: 'admin' },
-        { path: '/-/embeddings', icon: ILucideSpline, label: 'Embeddings', visibility: 'admin' },
         { path: '/-/code-graph', icon: ILucideCodesandbox, label: 'Code graph data', visibility: 'admin' },
         { path: '/-/batch-changes', icon: ISgBatchChanges, label: 'Batch changes', visibility: 'admin' },
         { path: '/-/settings', icon: ILucideSettings, label: 'Settings', visibility: 'admin' },
@@ -96,7 +105,7 @@
         id: entry.label,
         title: entry.label,
         icon: entry.icon,
-        href: data.repoURL + entry.path,
+        href: (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path,
     }))
     $: selectedTab = tabs.findIndex(tab => isActive(tab.href, $page.url))
 
@@ -160,7 +169,7 @@
         </svelte:fragment>
         {#each allMenuEntries as entry}
             {#if entry.visibility === 'user' || (entry.visibility === 'admin' && data.user?.siteAdmin)}
-                {@const href = data.repoURL + entry.path}
+                {@const href = (entry.preserveRevision ? data.repoURL : data.repoURLWithoutRevision) + entry.path}
                 <MenuLink {href}>
                     <div class="overflow-entry">
                         {#if entry.icon}

@@ -9,7 +9,7 @@ import (
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -69,8 +69,8 @@ type Config struct {
 
 	OpenTelemetry OpenTelemetryConfig
 
-	ActorConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
-	ActorRateLimitNotify        codygateway.ActorRateLimitNotifyConfig
+	ActorConcurrencyLimit       codygatewayactor.ActorConcurrencyLimitConfig
+	ActorRateLimitNotify        codygatewayactor.ActorRateLimitNotifyConfig
 	AutoFlushStreamingResponses bool
 	IdentifiersToLogFor         collections.Set[string]
 
@@ -235,6 +235,7 @@ func (c *Config) Load() {
 			"claude-instant-1.2-cyan",
 			anthropic.Claude3Haiku,
 			anthropic.Claude3Sonnet,
+			anthropic.Claude35Sonnet,
 			anthropic.Claude3Opus,
 		}, ","),
 		"Anthropic models that can be used."))

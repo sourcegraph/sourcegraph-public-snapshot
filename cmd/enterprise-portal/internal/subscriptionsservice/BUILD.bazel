@@ -15,8 +15,10 @@ go_library(
     deps = [
         "//cmd/enterprise-portal/internal/connectutil",
         "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
+        "//internal/collections",
         "//internal/trace",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/enterpriseportal/subscriptions/v1/v1connect",
@@ -36,18 +38,20 @@ go_library(
 go_test(
     name = "subscriptionsservice_test",
     srcs = [
+        "adapters_test.go",
         "mocks_test.go",
         "v1_test.go",
     ],
     embed = [":subscriptionsservice"],
     deps = [
-        "//cmd/enterprise-portal/internal/database",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/samsm2m",
         "//lib/enterpriseportal/subscriptions/v1:subscriptions",
         "//lib/managedservicesplatform/iam",
         "@com_connectrpc_connect//:connect",
         "@com_github_derision_test_go_mockgen_v2//testutil/require",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
         "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//clients/v1:clients",

@@ -18,7 +18,6 @@ var clientRootFiles = append(pnpmFiles, []string{
 	"postcss.config.js",
 	"tsconfig.base.json",
 	"tsconfig.json",
-	".percy.yml",
 	".eslintrc.js",
 }...)
 

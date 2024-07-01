@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -164,6 +165,10 @@ func UpdateChannel() string {
 }
 
 func BatchChangesEnabled() bool {
+	if dotcom.SourcegraphDotComMode() {
+		// Batch Changes is always disabled on dotcom.
+		return false
+	}
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
@@ -927,13 +932,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
-		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
-		AccessToken:                      completionsConfig.AccessToken,
-		ChatModel:                        completionsConfig.ChatModel,
-		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		SmartContextWindow:               completionsConfig.SmartContextWindow,
-		FastChatModel:                    completionsConfig.FastChatModel,
-		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
+		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
+		AccessToken:            completionsConfig.AccessToken,
+		ChatModel:              completionsConfig.ChatModel,
+		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
+		SmartContextWindow:     completionsConfig.SmartContextWindow,
+		FastChatModel:          completionsConfig.FastChatModel,
+		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
+		AzureUseDeprecatedCompletionsAPIForOldModels: completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
 		CompletionModel:                  completionsConfig.CompletionModel,
 		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
@@ -948,6 +954,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		PerCommunityUserCodeCompletionsMonthlyInteractionLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyInteractionLimit,
 		PerProUserChatDailyInteractionLimit:                    completionsConfig.PerProUserChatDailyInteractionLimit,
 		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
+		AzureCompletionModel:                                   completionsConfig.AzureCompletionModel,
+		AzureChatModel:                                         completionsConfig.AzureChatModel,
 	}
 
 	return computedConfig
@@ -1257,7 +1265,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" || model == anthropic.Claude3Haiku || model == anthropic.Claude3Opus || model == anthropic.Claude3Sonnet || model == anthropic.Claude35Sonnet {
 		// TODO: Technically, v2 and v3 also uses a 100k/200k window respectively, but we should
 		// validate that returning 100k here is the right thing to do.
 		return 12_000

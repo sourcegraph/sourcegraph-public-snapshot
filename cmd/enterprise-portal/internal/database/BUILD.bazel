@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -6,50 +5,26 @@ go_library(
     srcs = [
         "database.go",
         "migrate.go",
-        "subscriptions.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database",
+    tags = [TAG_INFRA_CORESERVICES],
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
+        "//cmd/enterprise-portal/internal/database/internal/tables",
+        "//cmd/enterprise-portal/internal/database/subscriptions",
         "//lib/errors",
         "//lib/managedservicesplatform/runtime",
         "//lib/redislock",
-        "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//pgxpool",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@com_github_sourcegraph_log//:log",
         "@io_gorm_driver_postgres//:postgres",
         "@io_gorm_gorm//:gorm",
         "@io_gorm_gorm//logger",
-        "@io_gorm_gorm//schema",
         "@io_gorm_plugin_opentelemetry//tracing",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
-    ],
-)
-
-go_test(
-    name = "database_test",
-    srcs = [
-        "main_test.go",
-        "subscriptions_test.go",
-    ],
-    embed = [":database"],
-    tags = [
-        # Test requires localhost database
-        "requires-network",
-    ],
-    deps = [
-        "//internal/database/dbtest",
-        "@com_github_google_uuid//:uuid",
-        "@com_github_jackc_pgx_v5//:pgx",
-        "@com_github_jackc_pgx_v5//pgxpool",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
-        "@io_gorm_driver_postgres//:postgres",
-        "@io_gorm_gorm//:gorm",
-        "@io_gorm_gorm//schema",
     ],
 )

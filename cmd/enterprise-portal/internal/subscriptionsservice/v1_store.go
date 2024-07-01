@@ -7,6 +7,7 @@ import (
 	clientsv1 "github.com/sourcegraph/sourcegraph-accounts-sdk-go/clients/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/iam"
@@ -18,10 +19,10 @@ import (
 type StoreV1 interface {
 	// UpsertEnterpriseSubscription upserts a enterprise subscription record based
 	// on the given options.
-	UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error)
+	UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error)
 	// ListEnterpriseSubscriptions returns a list of enterprise subscriptions based
 	// on the given options.
-	ListEnterpriseSubscriptions(ctx context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error)
+	ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error)
 
 	// ListDotcomEnterpriseSubscriptionLicenses returns a list of enterprise
 	// subscription license attributes with the given filters. It silently ignores
@@ -32,7 +33,9 @@ type StoreV1 interface {
 	// attributes with the given IDs from dotcom DB. It silently ignores any
 	// non-existent subscription IDs. The caller should check the length of the
 	// returned slice to ensure all requested subscriptions were found.
-	ListDotcomEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*dotcomdb.SubscriptionAttributes, error)
+	//
+	// If no IDs are provided, it returns all subscriptions.
+	ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error)
 
 	// IntrospectSAMSToken takes a SAMS access token and returns relevant metadata.
 	//
@@ -79,11 +82,11 @@ func NewStoreV1(opts NewStoreV1Options) StoreV1 {
 	}
 }
 
-func (s *storeV1) UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts database.UpsertSubscriptionOptions) (*database.Subscription, error) {
+func (s *storeV1) UpsertEnterpriseSubscription(ctx context.Context, subscriptionID string, opts subscriptions.UpsertSubscriptionOptions) (*subscriptions.Subscription, error) {
 	return s.db.Subscriptions().Upsert(ctx, subscriptionID, opts)
 }
 
-func (s *storeV1) ListEnterpriseSubscriptions(ctx context.Context, opts database.ListEnterpriseSubscriptionsOptions) ([]*database.Subscription, error) {
+func (s *storeV1) ListEnterpriseSubscriptions(ctx context.Context, opts subscriptions.ListEnterpriseSubscriptionsOptions) ([]*subscriptions.Subscription, error) {
 	return s.db.Subscriptions().List(ctx, opts)
 }
 
@@ -91,8 +94,8 @@ func (s *storeV1) ListDotcomEnterpriseSubscriptionLicenses(ctx context.Context, 
 	return s.dotcomDB.ListEnterpriseSubscriptionLicenses(ctx, filters, limit)
 }
 
-func (s *storeV1) ListDotcomEnterpriseSubscriptions(ctx context.Context, subscriptionIDs ...string) ([]*dotcomdb.SubscriptionAttributes, error) {
-	return s.dotcomDB.ListEnterpriseSubscriptions(ctx, subscriptionIDs...)
+func (s *storeV1) ListDotcomEnterpriseSubscriptions(ctx context.Context, opts dotcomdb.ListEnterpriseSubscriptionsOptions) ([]*dotcomdb.SubscriptionAttributes, error) {
+	return s.dotcomDB.ListEnterpriseSubscriptions(ctx, opts)
 }
 
 func (s *storeV1) IntrospectSAMSToken(ctx context.Context, token string) (*sams.IntrospectTokenResponse, error) {

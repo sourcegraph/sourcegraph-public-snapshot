@@ -3,7 +3,6 @@ package authz
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -34,12 +33,6 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 
 	authzProviders = z
 	allowAccessByDefault = authzAllowByDefault
-
-	// 🚨 SECURITY: We do not want to allow access by default by any means on
-	// dotcom.
-	if dotcom.SourcegraphDotComMode() {
-		allowAccessByDefault = false
-	}
 
 	authzProvidersReadyOnce.Do(func() {
 		close(authzProvidersReady)

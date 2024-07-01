@@ -46,6 +46,16 @@
       ]
     },
     {
+      "Name": "pattern_type",
+      "Labels": [
+        "keyword",
+        "literal",
+        "regexp",
+        "standard",
+        "structural"
+      ]
+    },
+    {
       "Name": "persistmode",
       "Labels": [
         "record",
@@ -19070,6 +19080,19 @@
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "pattern_type",
+          "Index": 12,
+          "TypeName": "pattern_type",
+          "IsNullable": false,
+          "Default": "'standard'::pattern_type",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

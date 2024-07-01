@@ -70,9 +70,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
-	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease, runtype.InternalRelease) {
-		env["PERCY_TARGET_BRANCH"] = c.Branch
 		// When we are building a release, we do not want to cache the client bundle.
 		//
 		// This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
@@ -155,7 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+				addBrowserExtensionIntegrationTests(),
 			))
 		}
 
@@ -166,7 +164,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CoreTestOperationsOptions{
 				IsMainBranch: buildOptions.Branch == "main",
 			},
-			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
+			addBrowserExtensionIntegrationTests(),
 			wait,
 			addBrowserExtensionReleaseSteps)
 

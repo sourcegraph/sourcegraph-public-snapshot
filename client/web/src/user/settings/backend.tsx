@@ -48,6 +48,7 @@ export const userExternalAccountFragment = gql`
 export const USER_EXTERNAL_ACCOUNTS = gql`
     query UserExternalAccountsWithAccountData($username: String!) {
         user(username: $username) {
+            id
             externalAccounts {
                 nodes {
                     id

@@ -22,7 +22,7 @@ const config = {
     },
     {
       path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.js'),
-      maxSize: '600kb', // 2 monaco chunks are very big
+      maxSize: '6.45MB', // Cody web chunk is very big
     },
     /**
      * Our main entry CSS bundle, contains core styles that are loaded on every page.
@@ -40,7 +40,7 @@ const config = {
     },
     {
       path: path.join(STATIC_ASSETS_PATH, 'chunks/chunk-*.css'),
-      maxSize: '45kb',
+      maxSize: '100kb',
     },
   ],
 }

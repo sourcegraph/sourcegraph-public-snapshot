@@ -21,7 +21,6 @@ export const currentUserMock = {
     emails: [{ email: 'felix@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
     hasVerifiedEmail: true,
-    completedPostSignup: true,
     permissions: {
         __typename: 'PermissionConnection',
         nodes: [

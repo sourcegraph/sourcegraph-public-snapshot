@@ -29,6 +29,14 @@
             "pointer": true
           }
         },
+        "newCodyWeb": {
+          "description": "Enables new experimental Cody Web UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "newSearchResultsUI": {
           "description": "Enables new experimental search results UI, such as preview panel feature and updated search and filter layouts.",
           "type": "boolean",
@@ -219,6 +227,11 @@
           "description": "Whether to enable the 'keyword search' language improvement",
           "type": "boolean",
           "default": true
+        },
+        "enablePreciseOccurrences": {
+          "description": "Enable the new precise occurrences API, which can provide more accurate hovers for some languages.",
+          "type": "boolean",
+          "default": true
         }
       },
       "group": "Experimental"
@@ -398,9 +411,9 @@
       "pattern": "precise|smart"
     },
     "search.defaultPatternType": {
-      "description": "The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
+      "description": "The default pattern type that search queries will be interpreted as.",
       "type": "string",
-      "pattern": "standard|literal|regexp|lucky|keyword|codycontext"
+      "pattern": "standard|literal|regexp|keyword|codycontext"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",

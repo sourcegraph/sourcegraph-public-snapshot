@@ -16,7 +16,7 @@ fi
 SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 # No scip-clang as that doesn't have a Docker image
-for indexer in scip-go scip-rust scip-java scip-python scip-typescript scip-ruby; do
+for indexer in scip-go scip-rust scip-java scip-python scip-typescript scip-ruby scip-dotnet; do
   tag="latest"
   if [[ "${indexer}" = "scip-python" ]] || [[ "${indexer}" = "scip-typescript" || "${indexer}" = "scip-ruby" ]]; then
     tag="autoindex"

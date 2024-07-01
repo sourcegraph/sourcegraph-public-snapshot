@@ -1,10 +1,68 @@
-import { isRepoRoute } from '$lib/navigation'
-import { Status, isCurrent, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
+import { Status, type NavigationEntry, type NavigationMenu } from '$lib/navigation/mainNavigation'
 
-/**
- * The main navigation of the application.
- */
-export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
+export const enum Mode {
+    ENTERPRISE = 1 << 0,
+    DOTCOM = 1 << 1,
+    CODY_INSTANCE_ENABLED = 1 << 2,
+    CODY_USER_ENABLED = 1 << 3,
+    BATCH_CHANGES_ENABLED = 1 << 4,
+    CODE_INSIGHTS_ENABLED = 1 << 5,
+    AUTHENTICATED = 1 << 6,
+    UNAUTHENTICATED = 1 << 7,
+}
+
+interface NavigationEntryDefinition extends Omit<NavigationEntry, 'href'> {
+    href: string | [Mode, string][]
+    mode?: Mode
+}
+
+interface NavigationMenuDefinition extends Omit<NavigationMenu, 'children' | 'href'> {
+    href: string | [Mode, string][]
+    children: NavigationEntryDefinition[]
+    mode?: Mode
+}
+
+function matchesMode(entry: NavigationEntryDefinition, mode: Mode): boolean {
+    return entry.mode === undefined || (entry.mode & mode) === entry.mode
+}
+
+function toEntry(entry: NavigationEntryDefinition, mode: Mode): NavigationEntry {
+    return {
+        ...entry,
+        href: matchHref(entry.href, mode),
+    }
+}
+
+function matchHref(href: NavigationEntryDefinition['href'], mode: Mode): string {
+    if (typeof href === 'string') {
+        return href
+    }
+
+    for (const [key, value] of href) {
+        if ((mode & +key) === +key) {
+            return value
+        }
+    }
+    return ''
+}
+
+export function getMainNavigationEntries(mode: Mode): (NavigationMenu | NavigationEntry)[] {
+    return navigationEntries
+        .filter(entry => matchesMode(entry, mode))
+        .map(definition => {
+            const entry = toEntry(definition, mode)
+            return 'children' in definition
+                ? {
+                      ...entry,
+                      children: definition.children
+                          .filter(child => matchesMode(child, mode))
+                          .map(child => toEntry(child, mode)),
+                  }
+                : entry
+        })
+}
+
+const navigationEntries: (NavigationMenuDefinition | NavigationEntryDefinition)[] = [
     {
         label: 'Code Search',
         icon: ILucideSearch,
@@ -36,71 +94,72 @@ export const mainNavigation: (NavigationMenu | NavigationEntry)[] = [
                 status: Status.BETA,
             },
         ],
-        isCurrent(this: NavigationMenu, page) {
-            // This is a special case of the code search menu: It is marked as "current" if the
-            // current page is a repository route.
-            return isRepoRoute(page.route?.id) || this.children.some(entry => isCurrent(entry, page))
-        },
+        mode: Mode.ENTERPRISE,
     },
     {
-        label: 'Cody AI',
+        label: 'Code Search',
+        icon: ILucideSearch,
+        href: '/search',
+        mode: Mode.DOTCOM,
+    },
+    {
+        label: 'Cody',
         icon: ISgCody,
         href: '/cody',
-        isCurrent(this: NavigationMenu, page) {
-            return this.children.some(entry => isCurrent(entry, page))
-        },
+        mode: Mode.DOTCOM | Mode.UNAUTHENTICATED,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: '/cody/chat',
         children: [
-            {
-                label: 'Dashboard',
-                href: '/cody',
-            },
             {
                 label: 'Web Chat',
                 href: '/cody/chat',
             },
+            {
+                label: 'Dashboard',
+                href: '/cody/manage',
+            },
         ],
+        mode: Mode.DOTCOM | Mode.AUTHENTICATED,
+    },
+    {
+        label: 'Cody',
+        icon: ISgCody,
+        href: [
+            [Mode.CODY_USER_ENABLED, '/cody/chat'],
+            [Mode.CODY_INSTANCE_ENABLED, '/cody/dashboard'],
+        ],
+        children: [
+            {
+                label: 'Web Chat',
+                href: '/cody/chat',
+                mode: Mode.CODY_USER_ENABLED,
+            },
+            {
+                label: 'Dashboard',
+                href: '/cody/dashboard',
+                mode: Mode.CODY_USER_ENABLED,
+            },
+        ],
+        mode: Mode.ENTERPRISE | Mode.CODY_INSTANCE_ENABLED,
     },
     {
         label: 'Batch Changes',
         icon: ISgBatchChanges,
         href: '/batch-changes',
+        mode: Mode.BATCH_CHANGES_ENABLED,
     },
     {
         label: 'Insights',
         icon: ILucideBarChartBig,
         href: '/insights',
-    },
-]
-
-/**
- * The main navigation for sourcegraph.com
- */
-export const dotcomMainNavigation: (NavigationMenu | NavigationEntry)[] = [
-    {
-        label: 'Code Search',
-        icon: ILucideSearch,
-        href: '/search',
-    },
-    {
-        label: 'Cody AI',
-        icon: ISgCody,
-        href: '/cody',
-        children: [
-            {
-                label: 'Dashboard',
-                href: '/cody',
-            },
-            {
-                label: 'Web Chat',
-                href: '/cody/chat',
-            },
-        ],
-        isCurrent(this: NavigationMenu, page) {
-            return this.children.some(entry => isCurrent(entry, page))
-        },
+        mode: Mode.CODE_INSIGHTS_ENABLED,
     },
     {
         label: 'About Sourcegraph',
         href: '/',
+        mode: Mode.DOTCOM,
     },
 ]

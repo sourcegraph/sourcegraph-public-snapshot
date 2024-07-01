@@ -4,15 +4,15 @@ import (
 	"context"
 	"os"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
-	"gorm.io/gorm/schema"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
+
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions"
 )
 
 var databaseTracer = otel.Tracer("enterprise-portal/internal/database")
@@ -22,13 +22,8 @@ type DB struct {
 	db *pgxpool.Pool
 }
 
-func (db *DB) Subscriptions() *SubscriptionsStore {
-	return newSubscriptionsStore(db.db)
-}
-
-// ⚠️ WARNING: This list is meant to be read-only.
-var allTables = []schema.Tabler{
-	&Subscription{},
+func (db *DB) Subscriptions() *subscriptions.Store {
+	return subscriptions.NewStore(db.db)
 }
 
 func databaseName(msp bool) string {
@@ -56,27 +51,8 @@ func NewHandle(ctx context.Context, logger log.Logger, contract runtime.Contract
 	return &DB{db: pool}, nil
 }
 
-// transaction executes the given function within a transaction. If the function
-// returns an error, the transaction will be rolled back.
-func transaction(ctx context.Context, db *pgxpool.Pool, fn func(tx pgx.Tx) error) (err error) {
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "begin")
-	}
-	defer func() {
-		rollbackErr := tx.Rollback(ctx)
-		// Only return the rollback error if there is no other error.
-		if err == nil {
-			err = errors.Wrap(rollbackErr, "rollback")
-		}
-	}()
-
-	if err = fn(tx); err != nil {
-		return err
-	}
-
-	if err = tx.Commit(ctx); err != nil {
-		return errors.Wrap(err, "commit")
-	}
-	return nil
+// Close closes all connections in the pool and rejects future Acquire calls.
+// Blocks until all connections are returned to pool and closed.
+func (db *DB) Close() {
+	db.db.Close()
 }

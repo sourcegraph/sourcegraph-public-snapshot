@@ -11,16 +11,14 @@ import {
 import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { OccurrenceIndex } from './codeintel/occurrences'
 import { positionToOffset } from './utils'
 
-/**
- * This data structure combines the syntax highlighting data received from the
- * server with a lineIndex map (implemented as array), for fast lookup by line
- * number, with minimal additional impact on memory (e.g. garbage collection).
- */
-export interface HighlightIndex {
-    occurrences: Occurrence[]
-    lineIndex: (number | undefined)[]
+interface HighlightIndex {
+    // allOccurrences is an index including all occurrences in the syntax highlighting data.
+    allOccurrences: OccurrenceIndex
+    // interactiveOccurrences is the interactive subset of allOccurrences in the syntax highlighting data.
+    interactiveOccurrences: OccurrenceIndex
 }
 
 interface HighlightData {
@@ -34,37 +32,46 @@ interface HighlightData {
  * ranges.
  */
 export function createHighlightTable(info: HighlightData): HighlightIndex {
-    const lineIndex: (number | undefined)[] = []
-
-    if (!info.lsif) {
-        return { occurrences: [], lineIndex }
-    }
-
-    try {
-        const occurrences = Occurrence.fromInfo(info)
-        let previousEndline: number | undefined
-
-        for (let index = 0; index < occurrences.length; index++) {
-            const current = occurrences[index]
-
-            if (previousEndline !== current.range.start.line) {
-                // Only use the current index if there isn't already an occurrence on
-                // the current line.
-                lineIndex[current.range.start.line] = index
-            }
-
-            if (!current.range.isSingleLine()) {
-                lineIndex[current.range.end.line] = index
-            }
-
-            previousEndline = current.range.end.line
+    let occurrences: Occurrence[] = []
+    if (info.lsif) {
+        try {
+            occurrences = Occurrence.fromInfo(info)
+        } catch (error) {
+            logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         }
-
-        return { occurrences, lineIndex }
-    } catch (error) {
-        logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
-        return { occurrences: [], lineIndex }
     }
+    return {
+        allOccurrences: new OccurrenceIndex(occurrences),
+        interactiveOccurrences: new OccurrenceIndex(occurrences.filter(isInteractiveOccurrence)),
+    }
+}
+
+/**
+ * Occurrences that are possibly interactive (i.e. they can have code intelligence).
+ */
+const INTERACTIVE_OCCURRENCE_KINDS = new Set([
+    SyntaxKind.Identifier,
+    SyntaxKind.IdentifierBuiltin,
+    SyntaxKind.IdentifierConstant,
+    SyntaxKind.IdentifierMutableGlobal,
+    SyntaxKind.IdentifierParameter,
+    SyntaxKind.IdentifierLocal,
+    SyntaxKind.IdentifierShadowed,
+    SyntaxKind.IdentifierModule,
+    SyntaxKind.IdentifierFunction,
+    SyntaxKind.IdentifierFunctionDefinition,
+    SyntaxKind.IdentifierMacro,
+    SyntaxKind.IdentifierMacroDefinition,
+    SyntaxKind.IdentifierType,
+    SyntaxKind.IdentifierAttribute,
+])
+
+function isInteractiveOccurrence(occurrence: Occurrence): boolean {
+    if (!occurrence.kind) {
+        return false
+    }
+
+    return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
 }
 
 class SyntaxHighlightManager implements PluginValue {
@@ -90,15 +97,15 @@ class SyntaxHighlightManager implements PluginValue {
             const fromLine = view.state.doc.lineAt(from)
             const toLine = view.state.doc.lineAt(to)
 
-            const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
+            const occurrences = view.state.facet(syntaxHighlight).allOccurrences
 
             // Find index of first relevant token
             let startIndex: number | undefined
             {
                 let line = fromLine.number - 1
                 do {
-                    startIndex = lineIndex[line++]
-                } while (startIndex === undefined && line < lineIndex.length)
+                    startIndex = occurrences.lineIndex[line++]
+                } while (startIndex === undefined && line < occurrences.lineIndex.length)
             }
 
             // Cache current line object
@@ -160,6 +167,6 @@ class SyntaxHighlightManager implements PluginValue {
 export const syntaxHighlight = Facet.define<HighlightData, HighlightIndex>({
     static: true,
     compareInput: (inputA, inputB) => inputA.lsif === inputB.lsif,
-    combine: values => (values[0]?.lsif ? createHighlightTable(values[0]) : { occurrences: [], lineIndex: [] }),
+    combine: values => createHighlightTable(values[0] ?? {}),
     enables: ViewPlugin.fromClass(SyntaxHighlightManager, { decorations: plugin => plugin.decorations }),
 })

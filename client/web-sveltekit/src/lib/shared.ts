@@ -67,8 +67,9 @@ export {
     type RelevantTokenResult,
     EMPTY_RELEVANT_TOKEN_RESULT,
 } from '@sourcegraph/shared/src/search/query/analyze'
-export { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-export { KeywordKind, type Token } from '@sourcegraph/shared/src/search/query/token'
+export { scanSearchQuery, scanSearchQueryAsPatterns } from '@sourcegraph/shared/src/search/query/scanner'
+export { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
+export { KeywordKind, PatternKind, type Token } from '@sourcegraph/shared/src/search/query/token'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { isFilterOfType } from '@sourcegraph/shared/src/search/query/utils'
@@ -78,7 +79,7 @@ export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { SyntaxKind, Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'
