@@ -43,10 +43,9 @@ using that kubeconfig, and everything should "just work".
 You must set an admin password, e.g:
 
 ```
-pwgen -s 40 1
-# Copy the result
-
-kubectl -n test create secret generic appliance-password --from-literal password=<password>
+SG_APPLIANCE_PW=$(pwgen -s 40 1)
+echo -e "Your Sourcegraph appliance password is:\n\n${SG_APPLIANCE_PW}\n"
+kubectl -n test create secret generic appliance-password --from-literal password="${SG_APPLIANCE_PW}"
 ```
 
 On first boot the appliance will hash that password, transpose it to another
