@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//lib/errors",
         "//lib/gitservice",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

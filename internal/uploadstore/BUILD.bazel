@@ -25,6 +25,7 @@ go_library(
         "//internal/observation",
         "//lib/errors",
         "//lib/iterator",
+        "//lib/pointers",
         "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",

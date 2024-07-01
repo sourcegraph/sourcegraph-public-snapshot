@@ -5,11 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,15 +23,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
-	"github.com/sourcegraph/src-cli/internal/validate"
+	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/src-cli/internal/validate"
 )
 
 var (
-	sourcegraphFrontend    = regexp.MustCompile(`^sourcegraph-frontend-.*`)
-	sourcegraphRepoUpdater = regexp.MustCompile(`^repo-updater-.*`)
-	sourcegraphWorker      = regexp.MustCompile(`^worker-.*`)
+	sourcegraphFrontend    = lazyregexp.New(`^sourcegraph-frontend-.*`)
+	sourcegraphRepoUpdater = lazyregexp.New(`^repo-updater-.*`)
+	sourcegraphWorker      = lazyregexp.New(`^worker-.*`)
 )
 
 type Option = func(config *Config)
@@ -89,7 +89,9 @@ func Validate(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *
 		opt(cfg)
 	}
 
-	log.SetOutput(cfg.output)
+	ll := log.Scoped("src-validate")
+	ll.
+		log.SetOutput(cfg.output)
 
 	validations := []validation{
 		{Pods, "validating pods", "pods validated", "validating pods failed"},

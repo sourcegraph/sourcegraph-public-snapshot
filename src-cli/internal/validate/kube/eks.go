@@ -3,7 +3,6 @@ package kube
 import (
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -18,9 +17,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
-	"github.com/sourcegraph/src-cli/internal/validate"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/src-cli/internal/validate"
 )
 
 type EbsTestObjects struct {
@@ -38,17 +38,17 @@ type RolePolicy struct {
 func GenerateAWSClients(ctx context.Context) Option {
 	eksConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		log.Printf("error while loading config: %s\n", err)
+		log.Error(err)
 	}
 
 	ec2Config, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		log.Printf("error while loading config: %s\n", err)
+		log.Error(errors.Newf("error while loading config: %s\n", err))
 	}
 
 	iamConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		log.Printf("error while loading config: %s\n", err)
+		log.Error(errors.Newf("error while loading config: %s\n", err))
 	}
 
 	return func(config *Config) {
@@ -253,7 +253,7 @@ func validateRolePolicy(rolePolicy RolePolicy) (result []validate.Result) {
 }
 
 func getAddons(ctx context.Context, client *eks.Client) ([]string, error) {
-	clusterName := getClusterName(ctx, client)
+	clusterName := getClusterName()
 	inputs := &eks.ListAddonsInput{ClusterName: clusterName}
 	outputs, err := client.ListAddons(ctx, inputs)
 
@@ -327,11 +327,11 @@ func getEBSCSIPolicy(ctx context.Context, client *iam.Client, sa string) (RolePo
 	return RolePolicy{}, nil
 }
 
-func getClusterName(ctx context.Context, client *eks.Client) *string {
+func getClusterName() *string {
 	home := homedir.HomeDir()
 	pathToKubeConfig := filepath.Join(home, ".kube", "config")
 
-	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: pathToKubeConfig},
 		&clientcmd.ConfigOverrides{
 			CurrentContext: "",
@@ -342,7 +342,7 @@ func getClusterName(ctx context.Context, client *eks.Client) *string {
 		return nil
 	}
 
-	currentContext := strings.Split(config.CurrentContext, "/")
+	currentContext := strings.Split(cfg.CurrentContext, "/")
 	clusterName := currentContext[len(currentContext)-1]
 
 	return &clusterName

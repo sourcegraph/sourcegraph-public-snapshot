@@ -14,11 +14,11 @@ go_library(
         "//src-cli/internal/scout",
         "//src-cli/internal/scout/kube",
         "//src-cli/internal/scout/style",
-        "@com_github_charmbracelet_bubbles//table:go_default_library",
+        "@com_github_charmbracelet_bubbles//table",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_client_go//kubernetes",
         "@io_k8s_client_go//rest",
-        "@io_k8s_metrics//pkg/client/clientset/versioned:go_default_library",
+        "@io_k8s_metrics//pkg/client/clientset/versioned",
     ],
 )
 

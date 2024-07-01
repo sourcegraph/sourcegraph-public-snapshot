@@ -3,7 +3,7 @@ package install
 import (
 	"context"
 
-	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/sourcegraph/src-cli/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

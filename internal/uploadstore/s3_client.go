@@ -3,6 +3,7 @@ package uploadstore
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"io"
 	"strings"
 	"sync"
@@ -14,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -250,7 +252,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 			Bucket:     multipartUpload.Bucket,
 			Key:        multipartUpload.Key,
 			UploadId:   multipartUpload.UploadId,
-			PartNumber: int32(partNumber),
+			PartNumber: pointers.Ptr(int32(partNumber)),
 			CopySource: aws.String(fmt.Sprintf("%s/%s", s.bucket, source)),
 		})
 		if err != nil {
@@ -272,7 +274,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 
 		parts = append(parts, s3types.CompletedPart{
 			ETag:       etags[partNumber],
-			PartNumber: int32(partNumber),
+			PartNumber: pointers.Ptr(int32(partNumber)),
 		})
 	}
 
@@ -293,7 +295,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 		return 0, errors.Wrap(err, "failed to stat composed object")
 	}
 
-	return obj.ContentLength, nil
+	return pointers.Deref(obj.ContentLength, 0), nil
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
@@ -437,10 +439,24 @@ func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)
 }
 
+type resolverV2 struct{}
+
+var _ s3.EndpointResolverV2 = (*resolverV2)(nil)
+
+func (*resolverV2) ResolveEndpoint(ctx context.Context, params s3.EndpointParameters) (
+	smithyendpoints.Endpoint, error,
+) {
+	// s3.Options.BaseEndpoint is accessible here:
+	// fallback to default
+	return s3.NewDefaultEndpointResolverV2().ResolveEndpoint(ctx, params)
+}
+
 func s3ClientOptions(config S3Config) func(o *s3.Options) {
 	return func(o *s3.Options) {
 		if config.Endpoint != "" {
-			o.EndpointResolver = s3.EndpointResolverFromURL(config.Endpoint)
+			// https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/endpoints/
+			o.BaseEndpoint = aws.String(config.Endpoint)
+			o.EndpointResolverV2 = &resolverV2{}
 		}
 
 		o.UsePathStyle = config.UsePathStyle

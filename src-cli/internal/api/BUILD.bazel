@@ -15,7 +15,7 @@ go_library(
     deps = [
         "//lib/errors",
         "//src-cli/internal/version",
-        "@com_github_jig_teereadcloser//:go_default_library",
+        "@com_github_jig_teereadcloser//:teereadcloser",
         "@com_github_kballard_go_shellquote//:go-shellquote",
         "@com_github_mattn_go_isatty//:go-isatty",
     ],

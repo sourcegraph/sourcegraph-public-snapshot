@@ -10,9 +10,9 @@ go_library(
     visibility = ["//src-cli:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_atotto_clipboard//:go_default_library",
-        "@com_github_charmbracelet_bubbles//table:go_default_library",
-        "@com_github_charmbracelet_bubbletea//:go_default_library",
-        "@com_github_charmbracelet_lipgloss//:go_default_library",
+        "@com_github_atotto_clipboard//:clipboard",
+        "@com_github_charmbracelet_bubbles//table",
+        "@com_github_charmbracelet_bubbletea//:bubbletea",
+        "@com_github_charmbracelet_lipgloss//:lipgloss",
     ],
 )

@@ -27,7 +27,7 @@ go_library(
         "//src-cli/internal/batches/repozip",
         "//src-cli/internal/batches/util",
         "//src-cli/internal/batches/workspace",
-        "@com_github_neelance_parallel//:go_default_library",
+        "@com_github_neelance_parallel//:parallel",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )
