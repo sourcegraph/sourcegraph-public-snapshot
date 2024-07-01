@@ -4,12 +4,7 @@ import { EditorView } from '@codemirror/view'
 
 import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import {
-    getFileMatchUrl,
-    getRepositoryUrl,
-    type SymbolMatch,
-    LATEST_VERSION,
-} from '@sourcegraph/shared/src/search/stream'
+import { getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
@@ -52,7 +47,6 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
             fetchSuggestions(
                 getSymbolSuggestionsQuery(query),
                 patternType,
-                LATEST_VERSION,
                 (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
                 symbol => symbol
             ),

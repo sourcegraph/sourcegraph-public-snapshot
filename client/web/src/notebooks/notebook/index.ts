@@ -54,7 +54,6 @@ function findSymbolAtRevision(
             filePath
         )} rev:${revision} ${symbolName} type:symbol count:50`,
         patternType,
-        LATEST_VERSION,
         (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
         symbol => symbol
     ).pipe(

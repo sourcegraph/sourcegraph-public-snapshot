@@ -8,11 +8,10 @@ import { fetchStreamSuggestionsPatternTypeVersion } from '@sourcegraph/shared/sr
 export function fetchSuggestions<T extends RepositoryMatch | PathMatch | SymbolMatch, O>(
     query: string,
     patternType: SearchPatternType,
-    version: string,
     filterSuggestionFunc: (match: SearchMatch) => match is T,
     mapSuggestionFunc: (match: T) => O
 ): Observable<O[]> {
-    return fetchStreamSuggestionsPatternTypeVersion(query, patternType, version).pipe(
+    return fetchStreamSuggestionsPatternTypeVersion(query, patternType).pipe(
         map(suggestions => suggestions.filter(filterSuggestionFunc).map(mapSuggestionFunc))
     )
 }

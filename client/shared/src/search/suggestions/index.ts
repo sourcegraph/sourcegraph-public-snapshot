@@ -45,17 +45,16 @@ function firstMatchStreamingSearch(
 }
 
 export function fetchStreamSuggestions(query: string, sourcegraphURL?: string): Observable<SearchMatch[]> {
-    return fetchStreamSuggestionsPatternTypeVersion(query, SearchPatternType.standard, LATEST_VERSION, sourcegraphURL)
+    return fetchStreamSuggestionsPatternTypeVersion(query, SearchPatternType.standard, sourcegraphURL)
 }
 
 export function fetchStreamSuggestionsPatternTypeVersion(
     query: string,
     patternType: SearchPatternType,
-    version: string,
     sourcegraphURL?: string
 ): Observable<SearchMatch[]> {
     return firstMatchStreamingSearch(of(query), {
-        version,
+        version: LATEST_VERSION,
         patternType,
         caseSensitive: false,
         trace: undefined,

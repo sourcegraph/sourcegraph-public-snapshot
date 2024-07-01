@@ -7,7 +7,6 @@ import { debounce } from 'lodash'
 import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import type { PathMatch } from '@sourcegraph/shared/src/search/stream'
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
@@ -69,7 +68,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
             fetchSuggestions(
                 getFileSuggestionsQuery(query),
                 patternType,
-                LATEST_VERSION,
                 (suggestion): suggestion is PathMatch => suggestion.type === 'path',
                 file => file
             ),
