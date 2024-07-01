@@ -14,6 +14,10 @@ type CompletionsConfig struct {
 	CompletionModel          string
 	CompletionModelMaxTokens int
 
+	AzureCompletionModel                         string
+	AzureChatModel                               string
+	AzureUseDeprecatedCompletionsAPIForOldModels bool
+
 	AccessToken                                            string
 	Provider                                               CompletionsProviderName
 	Endpoint                                               string

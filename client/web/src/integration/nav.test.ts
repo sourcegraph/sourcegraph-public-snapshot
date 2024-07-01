@@ -3,7 +3,7 @@ import expect from 'expect'
 import { after, afterEach, before, beforeEach, describe, test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -66,6 +66,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    patternType: SearchPatternType.standard,
 })
 
 describe('GlobalNavbar', () => {

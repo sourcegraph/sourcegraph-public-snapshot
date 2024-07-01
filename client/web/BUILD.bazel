@@ -1284,6 +1284,7 @@ ts_project(
         "src/repo/blob/codemirror/blame-decorations.ts",
         "src/repo/blob/codemirror/code-folding.tsx",
         "src/repo/blob/codemirror/codeintel/api.ts",
+        "src/repo/blob/codemirror/codeintel/debugOccurrences.ts",
         "src/repo/blob/codemirror/codeintel/decorations.ts",
         "src/repo/blob/codemirror/codeintel/definition.ts",
         "src/repo/blob/codemirror/codeintel/document-highlights.ts",

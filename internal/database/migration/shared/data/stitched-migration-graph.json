@@ -11236,40 +11236,14 @@
 				"IndexMetadata": null
 			},
 			{
-				"ID": 1719498032,
-				"Name": "add_github_app_batch_changes_site_credential",
-				"UpQuery": "ALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id);\n\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP CONSTRAINT IF EXISTS batch_changes_site_credentials_github_app_id_fkey;\n\nALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey_cascade\n        FOREIGN KEY (github_app_id)\n            REFERENCES github_apps (id)\n            ON DELETE CASCADE;\n\n-- We want to make sure that we never have a user_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_site_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
-				"DownQuery": "-- delete the constraints\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_site_credentials;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP COLUMN IF EXISTS github_app_id;\n\n-- delete the constraint replacement\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP CONSTRAINT IF EXISTS batch_changes_site_credentials_github_app_id_fkey_cascade;\n\n-- restore the old constraint\nALTER TABLE ONLY IF EXISTS batch_changes_site_credentials\n    ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id);",
+				"ID": 1719214941,
+				"Name": "notebooks_add_field_pattern_type",
+				"UpQuery": "DO $$\nBEGIN\n    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pattern_type') THEN\n        CREATE TYPE pattern_type AS ENUM ('keyword', 'literal', 'regexp', 'standard', 'structural');\n    END IF;\nEND\n$$;\n\nALTER TABLE notebooks ADD COLUMN IF NOT EXISTS pattern_type pattern_type NOT NULL DEFAULT 'standard';",
+				"DownQuery": "ALTER TABLE notebooks DROP COLUMN IF EXISTS pattern_type;\nDROP TYPE IF EXISTS pattern_type;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
 					1717699555
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
-			},
-			{
-				"ID": 1719498091,
-				"Name": "add_github_app_id_user_credentials",
-				"UpQuery": "ALTER TABLE IF EXISTS user_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id);\n\nALTER TABLE IF EXISTS user_credentials DROP CONSTRAINT IF EXISTS user_credentials_github_app_id_fkey;\n\nALTER TABLE IF EXISTS user_credentials\n    ADD CONSTRAINT user_credentials_github_app_id_fkey\n        FOREIGN KEY (github_app_id)\n            REFERENCES github_apps (id)\n            ON DELETE CASCADE;\n\n-- We want to make sure that we never have a user_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS user_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_user_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
-				"DownQuery": "-- delete the constraints\nALTER TABLE IF EXISTS user_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_user_credentials;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS user_credentials DROP COLUMN IF EXISTS github_app_id;\n\n-- delete the constraint replacement\nALTER TABLE IF EXISTS user_credentials DROP CONSTRAINT IF EXISTS user_credentials_github_app_id_fkey_cascade;\n\n-- restore the old constraint\nALTER TABLE ONLY IF EXISTS user_credentials\n    ADD CONSTRAINT user_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id);",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1719498032
-				],
-				"IsCreateIndexConcurrently": false,
-				"IndexMetadata": null
-			},
-			{
-				"ID": 1719498128,
-				"Name": "add_kind_column_github_app",
-				"UpQuery": "CREATE TYPE github_app_kind AS ENUM (\n    'COMMIT_SIGNING',\n    'REPO_SYNC',\n    'USER_CREDENTIAL',\n    'SITE_CREDENTIAL'\n);\n\nALTER TABLE IF EXISTS github_apps\n    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;\n\nUPDATE github_apps\nSET kind = 'COMMIT_SIGNING'\nWHERE domain = 'batches';\n\nUPDATE github_apps\nSET kind = 'REPO_SYNC'\nWHERE domain = 'repos';\n\n-- This is expected to fail if any row is using an unknown value that is not repos or batches.\n-- We only allow repos or batches at this time.\nALTER TABLE IF EXISTS github_apps\nALTER COLUMN kind SET NOT NULL;",
-				"DownQuery": "ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS kind;\n\nDROP TYPE github_app_kind;",
-				"Privileged": false,
-				"NonIdempotent": false,
-				"Parents": [
-					1719498091
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -11533,7 +11507,7 @@
 			"v5.4.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1719498128
+					1719214941
 				],
 				"PreCreation": false
 			}
