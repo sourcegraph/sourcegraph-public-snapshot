@@ -4,31 +4,34 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "modelconfig",
     srcs = [
-        "updates.go",
+        "siteconfig_completions.go",
         "util.go",
-        "validation.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/modelconfig",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//internal/conf/conftypes",
+        "//internal/modelconfig",
         "//internal/modelconfig/types",
         "//lib/errors",
-        "@com_github_grafana_regexp//:regexp",
     ],
 )
 
 go_test(
     name = "modelconfig_test",
     srcs = [
-        "until_test.go",
-        "updates_test.go",
-        "validation_test.go",
+        "siteconfig_completions_test.go",
+        "util_test.go",
     ],
     embed = [":modelconfig"],
     deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/licensing",
         "//internal/modelconfig/embedded",
         "//internal/modelconfig/types",
         "//lib/pointers",
+        "//schema",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
