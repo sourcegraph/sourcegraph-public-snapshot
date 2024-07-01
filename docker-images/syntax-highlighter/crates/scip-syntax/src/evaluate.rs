@@ -736,7 +736,7 @@ impl SymbolFormatter {
             return sym;
         };
         symbol.package = scip_strict::Package::default();
-        return self.make_symbol_id(&symbol.to_string());
+        self.make_symbol_id(&symbol.to_string())
     }
 }
 

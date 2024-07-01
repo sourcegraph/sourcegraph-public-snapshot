@@ -1,5 +1,5 @@
 use camino::Utf8Path;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use scip_syntax::{io::read_index_from_file, scip_strict};
 
 fn parse_symbols(symbols: &[&str]) {
@@ -31,16 +31,16 @@ fn symbols_from_index(path: &str) -> impl Iterator<Item = String> {
 fn bench_symbol_parsing(c: &mut Criterion) {
     // let all_symbols: Vec<String> = symbols_from_index("~/work/scip-indices/spring-framework-syntactic.scip").collect();
     let all_symbols: Vec<String> = symbols_from_index("/Users/creek/work/scip-indices/chromium-1.scip").collect();
-    let symbol_count = all_symbols.len();
-    let n = 10_000;
-    let symbols: Vec<&str> = all_symbols.iter().step_by(symbol_count / n).map(|s| s.as_str()).collect();
     let mut group = c.benchmark_group("symbol parsing");
-    group.bench_function("parse", |b| {
-        b.iter(|| parse_symbols(&symbols))
-    });
-    group.bench_function("parse_v2", |b| {
-        b.iter(|| parse_symbols_v2(&symbols))
-    });
+    for n in [10_000, 100_000, 1_000_000] {
+        let symbols: Vec<&str> = all_symbols.iter().take(n).map(|s| s.as_str()).collect();
+        group.bench_with_input(BenchmarkId::new("parse_v1", n), &symbols, |b, syms| {
+            b.iter(|| parse_symbols(syms))
+        });
+        group.bench_with_input(BenchmarkId::new("parse_v2", n), &symbols, |b, syms| {
+            b.iter(|| parse_symbols_v2(syms))
+        });
+    }
 }
 
 criterion_group!(benches, bench_symbol_parsing);
