@@ -1035,6 +1035,8 @@ type ExperimentalFeatures struct {
 	RubyPackages string `json:"rubyPackages,omitempty"`
 	// RustPackages description: Allow adding Rust package code host connections
 	RustPackages string `json:"rustPackages,omitempty"`
+	// ScipBasedAPIs description: Enable usage of new CodeGraph and usagesForSymbol APIs
+	ScipBasedAPIs *bool `json:"scipBasedAPIs,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchIndexQueryContexts description: Enables indexing of revisions of repos matching any query defined in search contexts.
@@ -1109,6 +1111,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "rateLimitAnonymous")
 	delete(m, "rubyPackages")
 	delete(m, "rustPackages")
+	delete(m, "scipBasedAPIs")
 	delete(m, "search.index.branches")
 	delete(m, "search.index.query.contexts")
 	delete(m, "search.index.revisions")
