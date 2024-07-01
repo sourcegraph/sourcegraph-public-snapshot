@@ -1,27 +1,21 @@
 <script lang="ts">
-    import type { ComponentProps } from 'svelte'
+    import { createEventDispatcher, type ComponentProps } from 'svelte'
 
-    import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
 
     import CountBadge from './CountBadge.svelte'
-    import { updateFilterInURL } from './index'
 
     export let label: string
     export let value: string
-    export let kind: string
+    export let href: URL
     export let count: ComponentProps<CountBadge> | undefined = undefined
     export let selected: boolean
 
-    export let onFilterSelect: (kind: string) => void = () => {}
+    const dispatch = createEventDispatcher<{ click: string }>()
 </script>
 
 <!-- TODO: a11y. This should expose the aria selected state and use the proper roles -->
-<a
-    href={updateFilterInURL($page.url, { kind, label, value }, selected).toString()}
-    class:selected
-    on:click={() => onFilterSelect(kind)}
->
+<a href={href.toString()} class:selected on:click={() => dispatch('click', label)}>
     <slot name="icon" />
     <span class="label">
         <slot name="label" {label} {value}>

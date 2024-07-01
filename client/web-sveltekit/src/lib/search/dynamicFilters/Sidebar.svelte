@@ -8,49 +8,33 @@
         return filters.some(filter => filter.field.value === 'type')
     }
 
-    type FilterGroups = Record<string, ComponentProps<SectionItem>[]>
+    const sectionKinds = [
+        'file',
+        'repo',
+        'lang',
+        'utility',
+        'author',
+        'commit date',
+        'symbol type',
+        'type',
+        'snippet',
+    ] as const
 
-    function groupFilters(currentURL: URL, streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
-        const groupedFilters: FilterGroups = {
-            type: [],
-            repo: [],
-            lang: [],
-            utility: [],
-            author: [],
-            file: [],
-            'commit date': [],
-            'symbol type': [],
-        }
-        for (const selectedFilter of selectedFilters) {
-            const streamFilter = streamFilters.find(
-                streamFilter => streamFilter.kind === selectedFilter.kind && streamFilter.value === selectedFilter.value
-            )
-            groupedFilters[selectedFilter.kind].push({
-                value: selectedFilter.value,
-                label: selectedFilter.label,
-                kind: selectedFilter.kind,
-                href: updateFilterInURL(currentURL, selectedFilter, true).toString(),
-                selected: true,
-                // Use count and exhaustiveness from the stream filter if it exists
-                count: streamFilter?.count
-                    ? { count: streamFilter.count, exhaustive: streamFilter?.exhaustive ?? false }
-                    : undefined,
-            })
-        }
-        for (const filter of streamFilters) {
-            if (groupedFilters[filter.kind].some(existingFilter => existingFilter.value === filter.value)) {
-                // Skip any filters that were already added by the selected loop above
-                continue
-            }
-            groupedFilters[filter.kind].push({
-                ...filter,
-                count: { count: filter.count, exhaustive: filter.exhaustive },
-                href: updateFilterInURL(currentURL, filter, false).toString(),
-                selected: false,
-            })
-        }
-        return groupedFilters
+    type SectionKind = typeof sectionKinds[number]
+
+    type StaticFilter = {
+        label: string
+        value: string
     }
+
+    type SelectedFilter = StaticFilter
+
+    type StreamFilter = StaticFilter & {
+        count: number
+        exhaustive: boolean
+    }
+
+    type MergedFilter = Omit<ComponentProps<SectionItem>, 'href'>
 
     const typeFilterIcons: Record<string, IconComponent> = {
         Code: ILucideBraces,
@@ -59,6 +43,60 @@
         Symbols: ILucideSquareFunction,
         Commits: ILucideGitCommitVertical,
         Diffs: ILucideDiff,
+    }
+
+    const staticTypeFilters: StaticFilter[] = [
+        { label: 'Code', value: 'type:file' },
+        { label: 'Repositories', value: 'type:repo' },
+        { label: 'Paths', value: 'type:path' },
+        { label: 'Symbols', value: 'type:symbol' },
+        { label: 'Commits', value: 'type:commit' },
+        { label: 'Diffs', value: 'type:diff' },
+    ]
+
+    function mergeFilterSources(
+        staticFilters: readonly StaticFilter[],
+        selectedFilters: readonly SelectedFilter[],
+        streamFilters: readonly StreamFilter[]
+    ): MergedFilter[] {
+        // Start with static filters, which are well-ordered
+        const merged: MergedFilter[] = staticFilters.map(filter => ({
+            ...filter,
+            selected: false,
+            count: undefined,
+        }))
+
+        for (const selectedFilter of selectedFilters) {
+            const found = merged.find(filter => filter.label === selectedFilter.label)
+            if (found !== undefined) {
+                // If we found a matching static filter, update it to be selected
+                found.selected = true
+            } else {
+                // Othersie, add it to the end of the list
+                merged.push({
+                    ...selectedFilter,
+                    selected: true,
+                    count: undefined,
+                })
+            }
+        }
+
+        for (const streamFilter of streamFilters) {
+            const found = merged.find(filter => filter.label === streamFilter.label)
+            if (found !== undefined) {
+                // If we found a matching filter, update its count
+                found.count = { count: streamFilter.count, exhaustive: streamFilter.exhaustive }
+            } else {
+                // Otherwise, add it to the end of the list
+                merged.push({
+                    ...streamFilter,
+                    count: { count: streamFilter.count, exhaustive: streamFilter.exhaustive },
+                    selected: false,
+                })
+            }
+        }
+
+        return merged
     }
 </script>
 
@@ -78,19 +116,14 @@
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import SymbolKindIcon from '$lib/search/SymbolKindIcon.svelte'
     import { TELEMETRY_FILTER_TYPES, displayRepoName, scanSearchQuery, type Filter } from '$lib/shared'
+    import { settings } from '$lib/stores'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { delay } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
     import Button from '$lib/wildcard/Button.svelte'
 
     import HelpFooter from './HelpFooter.svelte'
-    import {
-        type URLQueryFilter,
-        staticTypeFilters,
-        moveFiltersToQuery,
-        resetFilters,
-        updateFilterInURL,
-    } from './index'
+    import { type URLQueryFilter, moveFiltersToQuery, resetFilters, updateFilterInURL } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
     import SectionItem from './SectionItem.svelte'
@@ -100,18 +133,37 @@
     export let selectedFilters: URLQueryFilter[]
     export let state: 'complete' | 'error' | 'loading'
 
-    $: groupedFilters = groupFilters($page.url, streamFilters, selectedFilters)
-    $: typeFilters = staticTypeFilters.map((staticTypeFilter): ComponentProps<SectionItem> => {
-        const selectedOrStreamFilter = groupedFilters.type.find(
-            typeFilter => typeFilter.label === staticTypeFilter.label
-        )
-        return {
-            ...staticTypeFilter,
-            href: updateFilterInURL($page.url, staticTypeFilter, selectedOrStreamFilter?.selected ?? false).toString(),
-            count: selectedOrStreamFilter?.count,
-            selected: selectedOrStreamFilter?.selected || false,
-        }
-    })
+    let groupedStaticFilters: Partial<Record<SectionKind, StaticFilter[]>>
+    $: groupedStaticFilters = {
+        type: staticTypeFilters,
+        snippet:
+            $settings?.['search.scopes']?.map(
+                (scope): StaticFilter => ({
+                    label: scope.name,
+                    value: scope.value,
+                })
+            ) ?? [],
+    }
+
+    let groupedSelectedFilters: Partial<Record<SectionKind, SelectedFilter[]>>
+    $: groupedSelectedFilters = Object.groupBy(selectedFilters, ({ kind }) => kind)
+
+    let groupedStreamFilters: Partial<Record<SectionKind, StreamFilter[]>>
+    $: groupedStreamFilters = Object.groupBy(streamFilters, ({ kind }) => kind)
+
+    $: sectionItems = Object.fromEntries(
+        sectionKinds.map(sectionKind => [
+            sectionKind,
+            mergeFilterSources(
+                groupedStaticFilters[sectionKind] ?? [],
+                groupedSelectedFilters[sectionKind] ?? [],
+                groupedStreamFilters[sectionKind] ?? []
+            ).map(mergedFilter => ({
+                ...mergedFilter,
+                href: updateFilterInURL($page.url, { ...mergedFilter, kind: sectionKind }, mergedFilter.selected),
+            })) satisfies ComponentProps<SectionItem>[],
+        ])
+    ) as Record<SectionKind, ComponentProps<SectionItem>[]>
 
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
@@ -122,15 +174,10 @@
         }
     }
 
-    function handleFilterSelect(kind: string): void {
-        function isFilterKind(kind: string): kind is keyof typeof TELEMETRY_FILTER_TYPES {
-            return kind in TELEMETRY_FILTER_TYPES
-        }
-        if (isFilterKind(kind)) {
-            TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
-                metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
-            })
-        }
+    function handleFilterSelect(kind: keyof typeof TELEMETRY_FILTER_TYPES): void {
+        TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
+            metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
+        })
     }
 
     // TODO: use registerHotkey
@@ -153,7 +200,7 @@
         </div>
 
         {#if !queryHasTypeFilter(searchQuery)}
-            <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
+            <Section items={sectionItems.type} title="By type" showAll on:item-click={() => handleFilterSelect('type')}>
                 <SectionItem slot="item" let:item {...item}>
                     <Icon slot="icon" icon={typeFilterIcons[item.label]} inline />
                 </SectionItem>
@@ -161,17 +208,17 @@
         {/if}
 
         <Section
-            items={groupedFilters.repo}
+            items={sectionItems.repo}
             title="By repository"
             filterPlaceholder="Filter repositories"
-            onFilterSelect={handleFilterSelect}
+            on:item-click={() => handleFilterSelect('repo')}
         >
             <svelte:fragment slot="item" let:item>
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
                         <SectionItem {...item}>
                             <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
-                            <span slot="label" let:label>{displayRepoName(label)}</span>
+                            <span slot="label">{displayRepoName(item.label)}</span>
                         </SectionItem>
                     </div>
                     <svelte:fragment slot="content">
@@ -185,32 +232,36 @@
             </svelte:fragment>
         </Section>
         <Section
-            items={groupedFilters.lang}
+            items={sectionItems.lang}
             title="By language"
             filterPlaceholder="Filter languages"
-            onFilterSelect={handleFilterSelect}
+            on:item-click={() => handleFilterSelect('lang')}
         >
             <SectionItem slot="item" let:item {...item}>
                 <LanguageIcon slot="icon" language={item.label} inline />
             </SectionItem>
         </Section>
         <Section
-            items={groupedFilters['symbol type']}
+            items={sectionItems['symbol type']}
             title="By symbol type"
             filterPlaceholder="Filter symbol types"
-            onFilterSelect={handleFilterSelect}
+            on:item-click={() => handleFilterSelect('symbol type')}
         >
             <SectionItem slot="item" let:item {...item}>
                 <SymbolKindIcon slot="icon" symbolKind={item.label.toUpperCase()} />
             </SectionItem>
         </Section>
         <Section
-            items={groupedFilters.author}
+            items={sectionItems.author}
             title="By author"
             filterPlaceholder="Filter authors"
-            onFilterSelect={handleFilterSelect}
+            on:item-click={() => handleFilterSelect('author')}
         />
-        <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
+        <Section
+            items={sectionItems['commit date']}
+            title="By commit date"
+            on:item-click={() => handleFilterSelect('commit date')}
+        >
             <SectionItem slot="item" let:item {...item}>
                 <span class="commit-date-label" slot="label">
                     {item.label}
@@ -218,8 +269,13 @@
                 </span>
             </SectionItem>
         </Section>
-        <Section items={groupedFilters.file} title="By file" showAll onFilterSelect={handleFilterSelect} />
-        <Section items={groupedFilters.utility} title="Utility" showAll onFilterSelect={handleFilterSelect} />
+        <Section items={sectionItems.file} title="By file" showAll on:item-click={() => handleFilterSelect('file')} />
+        <Section
+            items={sectionItems.utility}
+            title="Utility"
+            showAll
+            on:item-click={() => handleFilterSelect('utility')}
+        />
 
         {#if state === 'loading'}
             <LoadingSkeleton />

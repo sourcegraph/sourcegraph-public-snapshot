@@ -69,12 +69,3 @@ export function resetFilters(url: URL): URL {
 export function filtersFromParams(params: URLSearchParams): URLQueryFilter[] {
     return params.getAll(DYNAMIC_FILTER_URL_QUERY_KEY).map(deserializeURLFilter)
 }
-
-export const staticTypeFilters: URLQueryFilter[] = [
-    { kind: 'type', label: 'Code', value: 'type:file' },
-    { kind: 'type', label: 'Repositories', value: 'type:repo' },
-    { kind: 'type', label: 'Paths', value: 'type:path' },
-    { kind: 'type', label: 'Symbols', value: 'type:symbol' },
-    { kind: 'type', label: 'Commits', value: 'type:commit' },
-    { kind: 'type', label: 'Diffs', value: 'type:diff' },
-]
