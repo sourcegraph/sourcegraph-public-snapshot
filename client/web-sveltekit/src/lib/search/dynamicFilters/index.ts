@@ -1,4 +1,4 @@
-import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { Filter } from '$lib/shared'
 
 import { parseExtendedSearchURL } from '..'
 import { SearchCachePolicy, setCachePolicyInURL } from '../state'
@@ -9,11 +9,7 @@ import { SearchCachePolicy, setCachePolicyInURL } from '../state'
  * necessary to render the selected filter before the backend streams back
  * any filters.
  */
-export type URLQueryFilter = {
-    kind: string
-    label: string
-    value: string
-}
+export type URLQueryFilter = Pick<Filter, 'kind' | 'label' | 'value'>
 
 const DYNAMIC_FILTER_URL_QUERY_KEY = 'df'
 
