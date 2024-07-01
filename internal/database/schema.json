@@ -50,7 +50,8 @@
       "Labels": [
         "COMMIT_SIGNING",
         "REPO_SYNC",
-        "USER_GITHUB_APP"
+        "USER_CREDENTIAL",
+        "SITE_CREDENTIAL"
       ]
     },
     {
@@ -2493,11 +2494,11 @@
       ],
       "Constraints": [
         {
-          "Name": "batch_changes_site_credentials_github_app_id_fkey",
+          "Name": "batch_changes_site_credentials_github_app_id_fkey_cascade",
           "ConstraintType": "f",
           "RefTableName": "github_apps",
           "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id)"
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
         },
         {
           "Name": "check_github_app_id_and_external_service_type_site_credentials",
@@ -27349,7 +27350,7 @@
           "ConstraintType": "f",
           "RefTableName": "github_apps",
           "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id)"
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
         },
         {
           "Name": "user_credentials_user_id_fkey",
