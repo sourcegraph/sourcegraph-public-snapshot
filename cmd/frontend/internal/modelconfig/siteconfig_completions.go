@@ -213,7 +213,7 @@ func convertCompletionsConfig(completionsCfg *conftypes.CompletionsConfig) (*typ
 		switch legacyModelRef.provider {
 		case "aws-bedrock":
 			effectiveProviderID = "anthropic"
-		case "azure-ai":
+		case "azure-openai":
 			effectiveProviderID = "openai"
 		default:
 			effectiveProviderID = legacyModelRef.provider
@@ -352,7 +352,7 @@ func convertCompletionsConfig(completionsCfg *conftypes.CompletionsConfig) (*typ
 		FastChat:       configuredModels[defModelFastChatModel].ModelRef,
 	}
 
-	// Now lineraize those maps.
+	// Now linearize those maps.
 	var providerOverrides []types.ProviderOverride
 	for _, providerOverride := range configuredProviders {
 		providerOverrides = append(providerOverrides, *providerOverride)
