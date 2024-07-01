@@ -273,10 +273,8 @@
     {#if selectedFilters.length > 0}
         <div class="move-button">
             <Button variant="secondary" display="block" outline on:click={() => goto(moveFiltersToQuery($page.url))}>
-                <svelte:fragment>
-                    Move filters to query&nbsp;
-                    <Icon icon={ILucideCornerRightDown} aria-hidden inline />
-                </svelte:fragment>
+                Move filters to query&nbsp;
+                <Icon icon={ILucideCornerRightDown} aria-hidden inline />
             </Button>
         </div>
     {/if}
