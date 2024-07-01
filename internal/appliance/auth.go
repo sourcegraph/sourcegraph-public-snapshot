@@ -33,6 +33,10 @@ func (a *Appliance) CheckAuthorization(next http.Handler) http.Handler {
 			a.authRedirect(w, req, err)
 			return
 		}
+		if !token.Valid {
+			a.authRedirect(w, req, errors.New("JWT is not valid"))
+			return
+		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
