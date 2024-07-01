@@ -16,6 +16,7 @@
     export let onFilterSelect: (kind: string) => void = () => {}
 </script>
 
+<!-- TODO: a11y. This should expose the aria selected state and use the proper roles -->
 <a
     href={updateFilterInURL($page.url, { kind, label, value }, selected).toString()}
     class:selected

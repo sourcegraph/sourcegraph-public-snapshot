@@ -8,9 +8,9 @@
         return filters.some(filter => filter.field.value === 'type')
     }
 
-    type FilterGroups = Record<Filter['kind'], ComponentProps<SectionItem>[]>
+    type FilterGroups = Record<string, ComponentProps<SectionItem>[]>
 
-    function groupFilters(streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
+    function groupFilters(currentURL: URL, streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
         const groupedFilters: FilterGroups = {
             type: [],
             repo: [],
@@ -29,6 +29,7 @@
                 value: selectedFilter.value,
                 label: selectedFilter.label,
                 kind: selectedFilter.kind,
+                href: updateFilterInURL(currentURL, selectedFilter, true).toString(),
                 selected: true,
                 // Use count and exhaustiveness from the stream filter if it exists
                 count: streamFilter?.count
@@ -44,6 +45,7 @@
             groupedFilters[filter.kind].push({
                 ...filter,
                 count: { count: filter.count, exhaustive: filter.exhaustive },
+                href: updateFilterInURL(currentURL, filter, false).toString(),
                 selected: false,
             })
         }
@@ -84,10 +86,10 @@
     import HelpFooter from './HelpFooter.svelte'
     import {
         type URLQueryFilter,
-        type SectionItemData,
         staticTypeFilters,
         moveFiltersToQuery,
         resetFilters,
+        updateFilterInURL,
     } from './index'
     import LoadingSkeleton from './LoadingSkeleton.svelte'
     import Section from './Section.svelte'
@@ -98,13 +100,14 @@
     export let selectedFilters: URLQueryFilter[]
     export let state: 'complete' | 'error' | 'loading'
 
-    $: groupedFilters = groupFilters(streamFilters, selectedFilters)
+    $: groupedFilters = groupFilters($page.url, streamFilters, selectedFilters)
     $: typeFilters = staticTypeFilters.map((staticTypeFilter): ComponentProps<SectionItem> => {
         const selectedOrStreamFilter = groupedFilters.type.find(
             typeFilter => typeFilter.label === staticTypeFilter.label
         )
         return {
             ...staticTypeFilter,
+            href: updateFilterInURL($page.url, staticTypeFilter, selectedOrStreamFilter?.selected ?? false).toString(),
             count: selectedOrStreamFilter?.count,
             selected: selectedOrStreamFilter?.selected || false,
         }
@@ -119,12 +122,18 @@
         }
     }
 
-    function handleFilterSelect(kind: SectionItemData['kind']): void {
-        TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
-            metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
-        })
+    function handleFilterSelect(kind: string): void {
+        function isFilterKind(kind: string): kind is keyof typeof TELEMETRY_FILTER_TYPES {
+            return kind in TELEMETRY_FILTER_TYPES
+        }
+        if (isFilterKind(kind)) {
+            TELEMETRY_RECORDER.recordEvent('search.filters', 'select', {
+                metadata: { filterKind: TELEMETRY_FILTER_TYPES[kind] },
+            })
+        }
     }
 
+    // TODO: use registerHotkey
     onMount(() => {
         window.addEventListener('keydown', handleResetKeydown)
         return () => window.removeEventListener('keydown', handleResetKeydown)
