@@ -36,6 +36,12 @@ type AzureOpenAIProviderConfig struct {
 	AccessToken string `json:"accessToken"`
 	// From the Azure OpenAI Service portal.
 	Endpoint string `json:"endpoint"`
+
+	// Enables the use of the older completions API for select Azure OpenAI models. This is just an escape hatch
+	// for backwards compatibility, because not all Azure OpenAI models are available on the "newer" completions API.
+	//
+	// Moving forward, this information should be encoded in the ModelRef's APIVersionID instead.
+	UseDeprecatedCompletionsAPI bool
 }
 
 // GenericProvider is the generic format that older Sourcegraph instances used.

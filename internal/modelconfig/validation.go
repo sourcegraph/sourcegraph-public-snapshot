@@ -17,9 +17,16 @@ import (
 
 const maxDisplayNameLength = 128
 
-// resourceIDRE is a regular expression for verifying resource IDs are
-// of a simple format.
-var resourceIDRE = regexp.MustCompile(`^[a-z0-9][a-z0-9_\-\.]*[a-z0-9]$`)
+var (
+	// resourceIDRE is a regular expression for verifying resource IDs are
+	// of a simple format.
+	resourceIDRE = regexp.MustCompile(`^[a-z0-9_][a-z0-9_\-\.]*[a-z0-9_]$`)
+
+	// The "parts" of resourceIDRE so we can more easily identify and replace
+	// invalid characters when sanitizing user-supplied resource names.
+	resourceIDFirstLastRE = regexp.MustCompile(`[a-z0-9]`)
+	resourceIDMiddleRE    = regexp.MustCompile(`[a-z0-9_\-\.]`)
+)
 
 func validateProvider(p types.Provider) error {
 	// Display name is optional, but if it is set ensure it is under 128 chars.

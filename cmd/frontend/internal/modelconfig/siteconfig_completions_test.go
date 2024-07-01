@@ -229,6 +229,79 @@ func TestConvertCompletionsConfig(t *testing.T) {
 		})
 	})
 
+	t.Run("AzureOpenAI", func(t *testing.T) {
+		t.Run("ExplicitAzureModelNames", func(t *testing.T) {
+			compConfig := loadCompletionsConfig(schema.Completions{
+				Provider:        "azure-openai",
+				ChatModel:       "azure-deployment-id - {7d1f5676-189d-4a97-9dd9-10ae187aba99}",
+				CompletionModel: "azure-deployment-id - {a3ffed36-e0da-4005-ab3d-04e37889fd44}",
+				FastChatModel:   "azure-deployment-id - {54e1331b-4ccc-44b8-b9ef-59c6b050fdb8}",
+				AccessToken:     "azure-portal-api-key",
+				Endpoint:        "https://azure-openai.azure.com",
+
+				// Supply model IDs distinct from the Azure deployment information.
+				// This was added so we can associate token counts to more useful identifiers,
+				// but we use the data to provide better ModelRefs as well.
+				AzureChatModel:       "gpt-3.5",
+				AzureCompletionModel: "gpt-4o",
+
+				AzureUseDeprecatedCompletionsAPIForOldModels: true,
+			})
+			require.NotNil(t, compConfig)
+
+			siteModelConfig, err := convertCompletionsConfig(compConfig)
+			require.NoError(t, err)
+
+			assert.Nil(t, siteModelConfig.SourcegraphModelConfig)
+			require.NotNil(t, siteModelConfig.ProviderOverrides)
+			require.NotNil(t, siteModelConfig.ModelOverrides)
+
+			// The ID of the ProviderOverride is "anthropic", to match the models referenced.
+			// However, the API Provider, i.e. the ProviderOverride's server-side configuration
+			// will define how to _use_ this provider, which will be via AWS Bedrock.
+			require.Equal(t, 1, len(siteModelConfig.ProviderOverrides))
+			providerOverride := siteModelConfig.ProviderOverrides[0]
+			assert.EqualValues(t, "openai", providerOverride.ID)
+			require.NotNil(t, providerOverride.ServerSideConfig)
+
+			azureProviderConfig := providerOverride.ServerSideConfig.AzureOpenAI
+			require.NotNil(t, azureProviderConfig)
+			assert.Equal(t, "https://azure-openai.azure.com", azureProviderConfig.Endpoint)
+			assert.Equal(t, "azure-portal-api-key", azureProviderConfig.AccessToken)
+			assert.True(t, azureProviderConfig.UseDeprecatedCompletionsAPI)
+
+			// ModelOverrides
+			// For AzureOpenAI, we verify that the "ModelName" and "ModelID" are set independently, based on
+			// the configuration data.
+			require.Equal(t, 3, len(siteModelConfig.ModelOverrides))
+			{
+				// BUG: The "model name alias" configuration doesn't apply to FastChat, hence the awkward ModelID.
+				m := siteModelConfig.ModelOverrides[0]
+				assert.EqualValues(t, "openai::unknown::azure-deployment-id_-__54e1331b-4ccc-44b8-b9ef-59c6b050fdb8_", m.ModelRef)
+				assert.EqualValues(t, "azure-deployment-id - {54e1331b-4ccc-44b8-b9ef-59c6b050fdb8}", m.ModelName)
+				require.Nil(t, m.ServerSideConfig)
+			}
+			{
+				m := siteModelConfig.ModelOverrides[1]
+				assert.EqualValues(t, "openai::unknown::gpt-3.5", m.ModelRef)
+				assert.EqualValues(t, "azure-deployment-id - {7d1f5676-189d-4a97-9dd9-10ae187aba99}", m.ModelName)
+				require.Nil(t, m.ServerSideConfig)
+			}
+			{
+				m := siteModelConfig.ModelOverrides[2]
+				assert.EqualValues(t, "openai::unknown::gpt-4o", m.ModelRef)
+				assert.EqualValues(t, "azure-deployment-id - {a3ffed36-e0da-4005-ab3d-04e37889fd44}", m.ModelName)
+				require.Nil(t, m.ServerSideConfig)
+			}
+
+			// DefaultModels
+			require.NotNil(t, siteModelConfig.DefaultModels)
+			assert.EqualValues(t, "openai::unknown::gpt-3.5", siteModelConfig.DefaultModels.Chat)
+			assert.EqualValues(t, "openai::unknown::azure-deployment-id_-__54e1331b-4ccc-44b8-b9ef-59c6b050fdb8_", siteModelConfig.DefaultModels.FastChat)
+			assert.EqualValues(t, "openai::unknown::gpt-4o", siteModelConfig.DefaultModels.CodeCompletion)
+		})
+	})
+
 	t.Run("MaxTokens", func(t *testing.T) {
 		t.Run("Alising", func(t *testing.T) {
 			compConfig := loadCompletionsConfig(schema.Completions{

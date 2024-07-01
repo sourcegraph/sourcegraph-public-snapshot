@@ -39,21 +39,25 @@ func (k defModelKind) String() string {
 // i.e. the potentially ambugious format we used prior to types.ModelRef.
 type legacyModelRef struct {
 	provider string
-	model    string
-	// If using AWS Bedrock, we support encoding the ARN in the model name in the
-	// site config. See `conftypes.NewBedrockModelRefFromModelID` for more info.`
-	awsBedrockConfig *types.ServerSideModelConfig
+	// Opaque string for human reference, used to uniquely identify this model. e.g. "gpt-4o"
+	modelID string
+	// String used to identify the model to the API provider. e.g. "gpt-4o-2024-07-02_vBeta9er".
+	modelName string
+
+	// When using AzureAI or AWS Bedrock, some of the configuration data is specific to
+	// the model itself. Though in most cases, we expect this to be nil.
+	serverSideConfig *types.ServerSideModelConfig
 }
 
 // parseLegacyModelRef takes a reference to a model from the site configuration in the "legacy format",
 // and infers all the surrounding data. e.g. "claude-instant", "openai/gpt-4o".
 func parseLegacyModelRef(
-	completionsCfg *conftypes.CompletionsConfig, modelIDFromConfig string) (legacyModelRef, error) {
+	completionsCfg *conftypes.CompletionsConfig, kind defModelKind, modelIDFromConfig string) (legacyModelRef, error) {
 	var (
-		providerID string
-		modelID    string
-
-		awsBedrockConfig *types.ServerSideModelConfig
+		providerID       string
+		modelID          string
+		modelName        string
+		serverSideConfig *types.ServerSideModelConfig
 	)
 	// SplitN because in the AWS Bedrock case, there may be many slashes in the ARN.
 	parts := strings.SplitN(modelIDFromConfig, "/", 2)
@@ -61,33 +65,72 @@ func parseLegacyModelRef(
 	case 1:
 		providerID = string(completionsCfg.Provider)
 		modelID = parts[0]
+		modelName = modelID
 	case 2:
 		providerID = parts[0]
 		modelID = parts[1]
+		modelName = modelID
 	default:
 		return legacyModelRef{}, errors.Errorf("invalid model ID in config %q", modelIDFromConfig)
 	}
-	// Edge case, we support the user encoding an ARN in the model in the config.
-	if completionsCfg.Provider == conftypes.CompletionsProviderNameAWSBedrock {
+	// Deal with providers that require special care.
+	switch completionsCfg.Provider {
+
+	// AWS Bedrock
+	case conftypes.CompletionsProviderNameAWSBedrock:
 		bedrockModelRef := conftypes.NewBedrockModelRefFromModelID(modelIDFromConfig)
 		providerID = "anthropic"
-		// The model ID may contain colons, which we reject as part of the ModelID validation,
-		// so we strip those out here.
-		modelID = strings.ReplaceAll(bedrockModelRef.Model, ":", "_")
+		// The model ID may contain colons or other invalid characters. So we strip those out here.
+		modelID = modelconfig.SanitizeResourceName(bedrockModelRef.Model)
+		modelName = modelID
 
 		if bedrockModelRef.ProvisionedCapacity != nil {
-			awsBedrockConfig = &types.ServerSideModelConfig{
+			serverSideConfig = &types.ServerSideModelConfig{
 				AWSBedrockProvisionedThroughput: &types.AWSBedrockProvisionedThroughput{
 					ARN: *bedrockModelRef.ProvisionedCapacity,
 				},
 			}
 		}
+
+	// AzureOpenAI
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		// AzureOpenAI (at least for v5.3) only supports openai-provided models.
+		// However, the site configuration requires you to specify the "Azure Deployment ID"
+		// in place of the model name. And to later diambiguate this, admins could optionally
+		// supply more meaningful model names. (Although the "deployment ID" is what is still
+		// required to be used when making the API call.)
+		providerID = "openai"
+
+		// The ModelName needs to match the ModelID, since that's what is required to actually
+		// use the LLM API. And for the AzureOpenAI case, it is the Azure Deployment ID.
+		modelName = modelID
+
+		modelNameFromConfig := map[defModelKind]string{
+			defModelChatModel:  completionsCfg.AzureChatModel,
+			defModelCompletion: completionsCfg.AzureCompletionModel,
+			// BUG: There is no correpsonding site config to allow an admin to specify
+			// the model name for the configured fast chat model.
+			defModelFastChatModel: "",
+		}
+		// So if the admin supplied a specific model name, use that for the Model ID.
+		// However, we STILL need to use the original modelID from the site config,
+		// e.g. the `completionsConfig.ChatModel` or `completionsConfig.CompletionsModel`
+		// in the Server-side  configuration so we can make API calls correctly.
+		if modelNameFromConfig[kind] != "" {
+			modelID = modelNameFromConfig[kind]
+		}
+		// Finally, sanitize the user-supplied model ID to ensure it is valid.
+		modelID = modelconfig.SanitizeResourceName(modelID)
+
+	default:
+		// No other processing is needed.
 	}
 
 	ref := legacyModelRef{
 		provider:         providerID,
-		model:            modelID,
-		awsBedrockConfig: awsBedrockConfig,
+		modelID:          modelID,
+		modelName:        modelName,
+		serverSideConfig: serverSideConfig,
 	}
 	return ref, nil
 }
@@ -105,6 +148,8 @@ func getProviderConfiguration(siteConfig *conftypes.CompletionsConfig) *types.Se
 		serverSideConfig.AzureOpenAI = &types.AzureOpenAIProviderConfig{
 			AccessToken: siteConfig.AccessToken,
 			Endpoint:    siteConfig.Endpoint,
+
+			UseDeprecatedCompletionsAPI: siteConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
 		}
 	case conftypes.CompletionsProviderNameSourcegraph:
 		serverSideConfig.SourcegraphProvider = &types.SourcegraphProviderConfig{
@@ -156,7 +201,7 @@ func convertCompletionsConfig(completionsCfg *conftypes.CompletionsConfig) (*typ
 	// model.
 	extractModelConfigInfo := func(
 		kind defModelKind, modelIDFromConfig string) (*types.ProviderOverride, *types.ModelOverride, error) {
-		legacyModelRef, err := parseLegacyModelRef(completionsCfg, modelIDFromConfig)
+		legacyModelRef, err := parseLegacyModelRef(completionsCfg, kind, modelIDFromConfig)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "parsing legacy model ref")
 		}
@@ -195,12 +240,12 @@ func convertCompletionsConfig(completionsCfg *conftypes.CompletionsConfig) (*typ
 		}
 
 		// Create the ModelOverride if we haven't seen this model before.
-		rawModelRef := fmt.Sprintf("%s::unknown::%s", effectiveProviderID, legacyModelRef.model)
+		rawModelRef := fmt.Sprintf("%s::unknown::%s", effectiveProviderID, legacyModelRef.modelID)
 		modelRef := types.ModelRef(rawModelRef)
 		modelOverride := types.ModelOverride{
 			ModelRef:    types.ModelRef(modelRef),
-			DisplayName: legacyModelRef.model,
-			ModelName:   legacyModelRef.model,
+			ModelName:   legacyModelRef.modelName,
+			DisplayName: legacyModelRef.modelID,
 
 			// BUG: The ModelConfiguration schema does not recognize "smart context", and
 			// will likely have breaking changes when rolled out. Carefully read this thread
@@ -216,7 +261,7 @@ func convertCompletionsConfig(completionsCfg *conftypes.CompletionsConfig) (*typ
 			},
 
 			// Will only be non-nil when appropriate.
-			ServerSideConfig: legacyModelRef.awsBedrockConfig,
+			ServerSideConfig: legacyModelRef.serverSideConfig,
 		}
 
 		return &providerOverride, &modelOverride, nil
