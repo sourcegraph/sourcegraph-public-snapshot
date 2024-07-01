@@ -55,6 +55,16 @@
       ]
     },
     {
+      "Name": "pattern_type",
+      "Labels": [
+        "keyword",
+        "literal",
+        "regexp",
+        "standard",
+        "structural"
+      ]
+    },
+    {
       "Name": "persistmode",
       "Labels": [
         "record",
@@ -2494,7 +2504,7 @@
       ],
       "Constraints": [
         {
-          "Name": "batch_changes_site_credentials_github_app_id_fkey_cascade",
+          "Name": "batch_changes_site_credentials_github_app_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "github_apps",
           "IsDeferrable": false,

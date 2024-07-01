@@ -6538,7 +6538,7 @@ ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_changes_site_credentials
-    ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey_cascade FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
+    ADD CONSTRAINT batch_changes_site_credentials_github_app_id_fkey FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;

@@ -164,7 +164,7 @@ Indexes:
 Check constraints:
     "check_github_app_id_and_external_service_type_site_credentials" CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)
 Foreign-key constraints:
-    "batch_changes_site_credentials_github_app_id_fkey_cascade" FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+    "batch_changes_site_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -1899,7 +1899,7 @@ Indexes:
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
 Referenced by:
-    TABLE "batch_changes_site_credentials" CONSTRAINT "batch_changes_site_credentials_github_app_id_fkey_cascade" FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+    TABLE "batch_changes_site_credentials" CONSTRAINT "batch_changes_site_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE
     TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_github_app_id_fkey" FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
@@ -5108,6 +5108,14 @@ Foreign-key constraints:
 
 - bool
 - rollout
+
+# Type github_app_kind
+
+- COMMIT_SIGNING
+- REPO_SYNC
+- USER_CREDENTIAL
+- SITE_CREDENTIAL
+
 # Type pattern_type
 
 - keyword
@@ -5115,14 +5123,6 @@ Foreign-key constraints:
 - regexp
 - standard
 - structural
-# Type github_app_kind
-
-- COMMIT_SIGNING
-- REPO_SYNC
-
-- USER_GITHUB_APP
-- USER_CREDENTIAL
-- SITE_CREDENTIAL
 
 # Type persistmode
 
