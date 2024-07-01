@@ -1931,6 +1931,7 @@ dependencies = [
  "syntax-analysis",
  "tar",
  "tempfile",
+ "tree-sitter",
  "tree-sitter-all-languages",
  "walkdir",
 ]

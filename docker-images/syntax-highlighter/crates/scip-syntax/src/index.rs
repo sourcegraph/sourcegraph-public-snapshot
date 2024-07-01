@@ -1,4 +1,6 @@
 use std::{
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
     env,
     fs::File,
     io::{self, prelude::*},
@@ -9,7 +11,12 @@ use camino::{Utf8Path, Utf8PathBuf};
 use clap::ValueEnum;
 use path_clean;
 use scip::{types::Document, write_message_to_file};
-use syntax_analysis::{get_globals, get_locals};
+use syntax_analysis::{
+    globals,
+    languages::{get_local_configuration, get_tag_configuration},
+    locals,
+};
+use tree_sitter;
 use tree_sitter_all_languages::ParserId;
 
 use crate::{
@@ -272,20 +279,41 @@ fn index_tar_entries<R: Read>(
     Ok(documents)
 }
 
-fn index_content(contents: &str, parser: ParserId, options: &IndexOptions) -> Result<Document> {
-    let mut document: Document;
+thread_local! {
+    // We only want to initialize one parser per language per thread
+    static PARSERS: RefCell<HashMap<ParserId, tree_sitter::Parser>> = RefCell::new(HashMap::new());
+}
 
-    if options.analysis_mode.globals() {
-        let (mut scope, hint) = get_globals(parser, contents)?;
-        document = scope.into_document(hint, vec![]);
-    } else {
-        document = Document::new();
-    }
+fn index_content(contents: &str, parser_id: ParserId, options: &IndexOptions) -> Result<Document> {
+    PARSERS.with_borrow_mut(|parsers| {
+        let parser = match parsers.entry(parser_id) {
+            Entry::Occupied(entry) => {
+                let p = entry.into_mut();
+                // tree-sitter parsing is stateful, so reset the parser state explicitly
+                p.reset();
+                p
+            }
+            Entry::Vacant(v) => v.insert(parser_id.get_parser()),
+        };
+        let tree = parser
+            .parse(contents.as_bytes(), None)
+            .ok_or(anyhow!("Failed to parse when indexing content"))?;
 
-    if options.analysis_mode.locals() {
-        let occurrences = get_locals(parser, contents)?;
-        document.occurrences.extend(occurrences)
-    }
+        let mut document = if options.analysis_mode.globals() {
+            let tag_config = get_tag_configuration(parser_id)
+                .ok_or_else(|| anyhow!("No tag configuration for language: {parser_id:?}"))?;
+            let (mut scope, hint) = globals::parse_tree(tag_config, &tree, contents)?;
+            scope.into_document(hint, vec![])
+        } else {
+            Document::new()
+        };
 
-    Ok(document)
+        if options.analysis_mode.locals() {
+            let config = get_local_configuration(parser_id)
+                .ok_or_else(|| anyhow!("No local configuration for language: {parser_id:?}"))?;
+            let occurrences = locals::find_locals(config, &tree, contents)?;
+            document.occurrences.extend(occurrences)
+        }
+        Ok(document)
+    })
 }
