@@ -11251,7 +11251,7 @@
 			{
 				"ID": 1719498032,
 				"Name": "add_github_app_batch_changes_site_credential",
-				"UpQuery": "ALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id) ON DELETE CASCADE;\n\n-- We want to make sure that we never have a site_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_site_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
+				"UpQuery": "ALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id) ON DELETE CASCADE;\n\nALTER TABLE batch_changes_site_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_site_credentials;\n\n-- We want to make sure that we never have a site_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS batch_changes_site_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_site_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
 				"DownQuery": "-- delete the constraints\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_site_credentials;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS batch_changes_site_credentials DROP COLUMN IF EXISTS github_app_id;",
 				"Privileged": false,
 				"NonIdempotent": false,
@@ -11264,7 +11264,7 @@
 			{
 				"ID": 1719498091,
 				"Name": "add_github_app_id_user_credentials",
-				"UpQuery": "ALTER TABLE IF EXISTS user_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id) ON DELETE CASCADE;\n\n-- We want to make sure that we never have a user_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS user_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_user_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
+				"UpQuery": "ALTER TABLE IF EXISTS user_credentials\n    ADD COLUMN IF NOT EXISTS github_app_id INT NULL REFERENCES github_apps(id) ON DELETE CASCADE;\n\nALTER TABLE user_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_user_credentials;\n\n-- We want to make sure that we never have a user_credential with a `github_app_id` with an `external_service_type`\n-- that isn't `github`.\nALTER TABLE IF EXISTS user_credentials\n    ADD CONSTRAINT check_github_app_id_and_external_service_type_user_credentials\n    CHECK ((github_app_id IS NULL) OR (external_service_type = 'github'));",
 				"DownQuery": "ALTER TABLE IF EXISTS user_credentials DROP CONSTRAINT IF EXISTS check_github_app_id_and_external_service_type_user_credentials;\n\n-- delete the `github_app_id` column\nALTER TABLE IF EXISTS user_credentials DROP COLUMN IF EXISTS github_app_id;",
 				"Privileged": false,
 				"NonIdempotent": false,
