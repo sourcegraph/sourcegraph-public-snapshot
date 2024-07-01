@@ -12,7 +12,7 @@ END
 $$;
 
 ALTER TABLE IF EXISTS github_apps
-    ADD COLUMN IF NOT EXISTS kind github_app_kind NULL;
+    ADD COLUMN IF NOT EXISTS kind github_app_kind DEFAULT 'REPO_SYNC';
 
 UPDATE github_apps
 SET kind = 'COMMIT_SIGNING'
