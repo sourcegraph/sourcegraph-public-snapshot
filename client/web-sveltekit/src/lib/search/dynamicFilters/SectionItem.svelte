@@ -1,27 +1,36 @@
 <script lang="ts">
+    import type { ComponentProps } from 'svelte'
+
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
 
     import CountBadge from './CountBadge.svelte'
-    import { updateFilterInURL, type SectionItemData } from './index'
+    import { updateFilterInURL } from './index'
 
-    export let item: SectionItemData
-    export let onFilterSelect: (kind: SectionItemData['kind']) => void = () => {}
+    export let label: string
+    export let value: string
+    export let kind: string
+    export let count: ComponentProps<CountBadge> | undefined = undefined
+    export let selected: boolean
+
+    export let onFilterSelect: (kind: string) => void = () => {}
 </script>
 
 <a
-    href={updateFilterInURL($page.url, item, item.selected).toString()}
-    class:selected={item.selected}
-    on:click={() => onFilterSelect(item.kind)}
+    href={updateFilterInURL($page.url, { kind, label, value }, selected).toString()}
+    class:selected
+    on:click={() => onFilterSelect(kind)}
 >
     <slot name="icon" />
     <span class="label">
-        <slot name="label" label={item.label} value={item.value}>
-            {item.label}
+        <slot name="label" {label} {value}>
+            {label}
         </slot>
     </span>
-    <CountBadge count={item.count} exhaustive={item.exhaustive} />
-    {#if item.selected}
+    {#if count}
+        <CountBadge {...count} />
+    {/if}
+    {#if selected}
         <Icon icon={ILucideX} inline aria-hidden />
     {/if}
 </a>

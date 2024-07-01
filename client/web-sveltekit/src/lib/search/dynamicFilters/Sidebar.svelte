@@ -7,17 +7,68 @@
         const filters = tokens.term.filter((token): token is QueryFilter => token.type === 'filter')
         return filters.some(filter => filter.field.value === 'type')
     }
+
+    type FilterGroups = Record<Filter['kind'], ComponentProps<SectionItem>[]>
+
+    function groupFilters(streamFilters: Filter[], selectedFilters: URLQueryFilter[]): FilterGroups {
+        const groupedFilters: FilterGroups = {
+            type: [],
+            repo: [],
+            lang: [],
+            utility: [],
+            author: [],
+            file: [],
+            'commit date': [],
+            'symbol type': [],
+        }
+        for (const selectedFilter of selectedFilters) {
+            const streamFilter = streamFilters.find(
+                streamFilter => streamFilter.kind === selectedFilter.kind && streamFilter.value === selectedFilter.value
+            )
+            groupedFilters[selectedFilter.kind].push({
+                value: selectedFilter.value,
+                label: selectedFilter.label,
+                kind: selectedFilter.kind,
+                selected: true,
+                // Use count and exhaustiveness from the stream filter if it exists
+                count: streamFilter?.count
+                    ? { count: streamFilter.count, exhaustive: streamFilter?.exhaustive ?? false }
+                    : undefined,
+            })
+        }
+        for (const filter of streamFilters) {
+            if (groupedFilters[filter.kind].some(existingFilter => existingFilter.value === filter.value)) {
+                // Skip any filters that were already added by the selected loop above
+                continue
+            }
+            groupedFilters[filter.kind].push({
+                ...filter,
+                count: { count: filter.count, exhaustive: filter.exhaustive },
+                selected: false,
+            })
+        }
+        return groupedFilters
+    }
+
+    const typeFilterIcons: Record<string, IconComponent> = {
+        Code: ILucideBraces,
+        Repositories: ILucideGitFork,
+        Paths: ILucideFile,
+        Symbols: ILucideSquareFunction,
+        Commits: ILucideGitCommitVertical,
+        Diffs: ILucideDiff,
+    }
 </script>
 
 <script lang="ts">
-    import { onMount } from 'svelte'
+    import { onMount, type ComponentProps } from 'svelte'
 
     import type { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { getGraphQLClient } from '$lib/graphql'
-    import Icon from '$lib/Icon.svelte'
+    import Icon, { type IconComponent } from '$lib/Icon.svelte'
     import KeyboardShortcut from '$lib/KeyboardShortcut.svelte'
     import LanguageIcon from '$lib/LanguageIcon.svelte'
     import Popover from '$lib/Popover.svelte'
@@ -35,8 +86,6 @@
         type URLQueryFilter,
         type SectionItemData,
         staticTypeFilters,
-        typeFilterIcons,
-        groupFilters,
         moveFiltersToQuery,
         resetFilters,
     } from './index'
@@ -50,14 +99,13 @@
     export let state: 'complete' | 'error' | 'loading'
 
     $: groupedFilters = groupFilters(streamFilters, selectedFilters)
-    $: typeFilters = staticTypeFilters.map((staticTypeFilter): SectionItemData => {
+    $: typeFilters = staticTypeFilters.map((staticTypeFilter): ComponentProps<SectionItem> => {
         const selectedOrStreamFilter = groupedFilters.type.find(
             typeFilter => typeFilter.label === staticTypeFilter.label
         )
         return {
             ...staticTypeFilter,
             count: selectedOrStreamFilter?.count,
-            exhaustive: selectedOrStreamFilter?.exhaustive || false,
             selected: selectedOrStreamFilter?.selected || false,
         }
     })
@@ -97,7 +145,7 @@
 
         {#if !queryHasTypeFilter(searchQuery)}
             <Section items={typeFilters} title="By type" showAll onFilterSelect={handleFilterSelect}>
-                <SectionItem slot="item" let:item {item}>
+                <SectionItem slot="item" let:item {...item}>
                     <Icon slot="icon" icon={typeFilterIcons[item.label]} inline />
                 </SectionItem>
             </Section>
@@ -112,7 +160,7 @@
             <svelte:fragment slot="item" let:item>
                 <Popover showOnHover let:registerTrigger placement="right-start">
                     <div use:registerTrigger>
-                        <SectionItem {item}>
+                        <SectionItem {...item}>
                             <CodeHostIcon slot="icon" disableTooltip repository={item.label} />
                             <span slot="label" let:label>{displayRepoName(label)}</span>
                         </SectionItem>
@@ -133,7 +181,7 @@
             filterPlaceholder="Filter languages"
             onFilterSelect={handleFilterSelect}
         >
-            <SectionItem slot="item" let:item {item}>
+            <SectionItem slot="item" let:item {...item}>
                 <LanguageIcon slot="icon" language={item.label} inline />
             </SectionItem>
         </Section>
@@ -143,7 +191,7 @@
             filterPlaceholder="Filter symbol types"
             onFilterSelect={handleFilterSelect}
         >
-            <SectionItem slot="item" let:item {item}>
+            <SectionItem slot="item" let:item {...item}>
                 <SymbolKindIcon slot="icon" symbolKind={item.label.toUpperCase()} />
             </SectionItem>
         </Section>
@@ -154,7 +202,7 @@
             onFilterSelect={handleFilterSelect}
         />
         <Section items={groupedFilters['commit date']} title="By commit date" onFilterSelect={handleFilterSelect}>
-            <SectionItem slot="item" let:item {item}>
+            <SectionItem slot="item" let:item {...item}>
                 <span class="commit-date-label" slot="label">
                     {item.label}
                     <small><pre>{item.value}</pre></small>
