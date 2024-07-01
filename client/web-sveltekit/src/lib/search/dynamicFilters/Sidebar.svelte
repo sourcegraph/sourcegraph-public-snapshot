@@ -277,6 +277,15 @@
             on:item-click={() => handleFilterSelect('utility')}
         />
 
+        <Section items={sectionItems.snippet} title="Snippets" on:item-click={() => handleFilterSelect('snippet')}>
+            <SectionItem slot="item" let:item {...item}>
+                <span class="commit-date-label" slot="label">
+                    {item.label}
+                    <small><pre>{item.value}</pre></small>
+                </span>
+            </SectionItem>
+        </Section>
+
         {#if state === 'loading'}
             <LoadingSkeleton />
         {/if}
