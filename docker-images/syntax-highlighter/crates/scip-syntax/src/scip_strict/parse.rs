@@ -1,29 +1,26 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, str};
 
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
     character::complete::char,
-    combinator::{cut, eof, fail, opt},
-    error::{context, convert_error, VerboseError},
+    combinator::{cut, eof, fail, opt, verify},
+    error::context,
     multi::many1,
     sequence::{delimited, preceded, tuple},
     Finish, IResult, Parser,
 };
 
-use super::{Descriptor, NonLocalSymbol, Package, Scheme, Symbol};
+use super::{context_error::CtxError, Descriptor, NonLocalSymbol, Package, Scheme, Symbol};
 
 pub(super) fn parse_symbol(input: &str) -> Result<Symbol<'_>, String> {
     match parse_symbol_inner(input).finish() {
         Ok((_, symbol)) => Ok(symbol),
-        Err(err) => Err(format!(
-            "Invalid symbol: '{input}'\n{}",
-            convert_error(input, err)
-        )),
+        Err(err) => Err(format!("Invalid symbol: '{input}'\n{err}",)),
     }
 }
 
-type PResult<'a, A> = IResult<&'a str, A, VerboseError<&'a str>>;
+type PResult<'a, A> = IResult<&'a str, A, CtxError<&'a str>>;
 
 fn parse_symbol_inner(input: &str) -> PResult<'_, Symbol<'_>> {
     let (input, symbol) = alt((parse_local_symbol, parse_nonlocal_symbol))(input)?;
@@ -38,26 +35,33 @@ fn parse_local_symbol(input: &str) -> PResult<'_, Symbol<'_>> {
 }
 
 fn parse_nonlocal_symbol(input: &str) -> PResult<'_, Symbol<'_>> {
-    tuple((
-        parse_space_terminated,
-        parse_package,
-        many1(parse_descriptor),
-    ))
-    .map(|(scheme, package, descriptors)| {
-        Symbol::NonLocal(NonLocalSymbol {
-            scheme: Scheme(scheme),
-            package,
-            descriptors,
+    tuple((parse_scheme, parse_package, many1(parse_descriptor)))
+        .map(|(scheme, package, descriptors)| {
+            Symbol::NonLocal(NonLocalSymbol {
+                scheme,
+                package,
+                descriptors,
+            })
         })
-    })
+        .parse(input)
+}
+
+fn parse_scheme(input: &str) -> PResult<'_, Scheme> {
+    context(
+        "Invalid scheme",
+        verify(parse_space_terminated, |s: &Cow<'_, str>| {
+            !s.starts_with("local")
+        }),
+    )
+    .map(Scheme)
     .parse(input)
 }
 
 fn parse_package(input: &str) -> PResult<'_, Package> {
     tuple((
-        parse_space_terminated,
-        parse_space_terminated,
-        parse_space_terminated,
+        context("Invalid package manager", parse_space_terminated),
+        context("Invalid package name", parse_space_terminated),
+        context("Invalid package version", parse_space_terminated),
     ))
     .map(|(manager, package_name, version)| Package {
         manager,
