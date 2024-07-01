@@ -175,6 +175,15 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "scipBasedAPIs": {
+          "description": "Enable usage of new CodeGraph and usagesForSymbol APIs",
+          "type": "boolean",
+          "default": true,
+          "_comment": "Keep default 'true' above in sync with NOTE(id: scip-based-apis-feature-flag)",
+          "!go": {
+            "pointer": true
+          }
+        },
         "codyContextIgnore": {
           "description": "Enabled filtering of remote Cody context based on repositories ./cody/ignore file",
           "type": "boolean",

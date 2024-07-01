@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -116,6 +117,10 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	ctx, _, endObservation := r.operations.codeGraphData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, nil
+	}
+
 	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
 		if prov == resolverstubs.ProvenanceSyntactic {
@@ -191,6 +196,11 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
+
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, nil
+	}
+
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
