@@ -122,7 +122,7 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 		initialPasswordSecretNsName := types.NamespacedName{Name: initialPasswordSecretName, Namespace: a.namespace}
 		var initialPasswordSecret corev1.Secret
 		if err := a.client.Get(ctx, initialPasswordSecretNsName, &initialPasswordSecret); err != nil {
-			a.logger.Info("no initial password secret exists")
+			a.logger.Info("no initial password secret exists. Please refer to https://github.com/sourcegraph/sourcegraph/blob/main/cmd/appliance/README.md#development")
 			// We don't return an error here because we don't want to crash on
 			// startup. We want to show the user an error message guiding them
 			// to configure a password.
@@ -138,7 +138,7 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 				return errors.Wrap(err, "deleting initial password secret")
 			}
 		} else {
-			a.logger.Info("initial password secret exists, but no password key")
+			a.logger.Info("The k8s secret appliance-password exists, but it does not contain a key password. Please refer to https://github.com/sourcegraph/sourcegraph/blob/main/cmd/appliance/README.md#development")
 			// We don't return an error here because we don't want to crash on
 			// startup. We want to show the user an error message guiding them
 			// to configure a password.
