@@ -237,6 +237,7 @@ TEST_BUILD_DEPS = [
 
 vitest_test(
     name = "unit_tests",
+    timeout = "moderate",
     bin = vitest_bin,
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + TESTS + TEST_BUILD_DEPS,
