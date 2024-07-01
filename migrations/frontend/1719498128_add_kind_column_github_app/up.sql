@@ -1,10 +1,3 @@
-CREATE TYPE github_app_kind AS ENUM (
-    'COMMIT_SIGNING',
-    'REPO_SYNC',
-    'USER_CREDENTIAL',
-    'SITE_CREDENTIAL'
-);
-
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'github_app_kind') THEN
