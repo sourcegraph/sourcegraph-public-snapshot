@@ -134,11 +134,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                 <PageTitle title="Dashboard" />
                 <AcceptInviteBanner onSuccess={refetch} />
                 {welcomeToPro && (
-                    <CodyAlert variant="green" displayCard="CodyPro">
-                        <H2 className="mt-4">Welcome to Cody Pro</H2>
-                        <Text size="small" className="mb-0">
-                            You now have Cody Pro with access to unlimited autocomplete, chats, and commands.
-                        </Text>
+                    <CodyAlert title="Welcome to Cody Pro" variant="green" badge="CodyPro">
+                        <Text>You now have Cody Pro with access to unlimited autocomplete, chats, and commands.</Text>
                     </CodyAlert>
                 )}
                 <PageHeader
@@ -213,7 +210,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 const UpgradeToProBanner: React.FunctionComponent<{
     onClick: () => void
 }> = ({ onClick }) => (
-    <CodyAlert variant="purple" displayCard="CodyPro">
+    <CodyAlert variant="purple" badge="CodyPro">
         <div className="d-flex justify-content-between align-items-center p-4">
             <div>
                 <H1>

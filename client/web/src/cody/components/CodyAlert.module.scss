@@ -1,3 +1,9 @@
+// We need to import *both* SCSS variables (e.g., $oc-red-9) *and* CSS variables (e.g.,
+// var(--oc-red-9). The SCSS variables are used for SCSS color math at build time, and the CSS
+// variables are used at runtime.
+@import 'open-color/open-color.scss';
+@import 'open-color/open-color.css';
+
 .alert {
     display: flex;
     padding: 1.5rem 1.5rem 0rem 3rem;
@@ -6,20 +12,9 @@
     width:100%;
 }
 
-.card {
-    height: 100%;
-    margin-top:auto;
-    margin-right:1rem;
-}
-
-
 .card-clip {
     height: 100px;
     overflow:hidden;
-}
-
-.action-button-wrapper {
-    padding:1em;
 }
 
 .content {
@@ -34,30 +29,30 @@
     background-color: var(--violet-01);
     color: var(--violet-06);
 
-    border:1px solid #D089EC;
+    border:var(--border-width) solid var(--brand-secondary);
     :global(.theme-dark) & {
-        background-color: var(--pink);
-        color: var(--gray-08);
-        border:1px solid #E8D1FF;
+        background-color:var(--pink);
+        color:var(--gray-08);
+        border-color:var(--purple-01);
     }
 }
 
 .green {
     background-color: #e0f9d5;
     color: #054410;
-    border:1px solid #95D579;
+    border:var(--border-width) solid var(--border-green-color);
     :global(.theme-dark) & {
         background-color: #51cf66;
-        border:1px solid #BFF9C9;
+        border-color: #BFF9C9;
     }
 }
 
 .error {
     background-color: var(--oc-orange-1);
     color: var(--gray-08);
-    border:1px solid #FFA94D;
+    border:var(--border-width) solid #FFA94D;
     :global(.theme-dark) & {
         background-color: var(--oc-orange-4);
-        border:1px solid #FFE8CC;
+        border-color: #FFE8CC;
     }
 }

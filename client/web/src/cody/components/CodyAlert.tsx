@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { H2 } from '@sourcegraph/wildcard'
+
 import { AlertBadge } from './AlertBadge'
 import { CodyProBadge } from './CodyProBadge'
 
@@ -10,7 +12,8 @@ import styles from './CodyAlert.module.scss'
 interface CodyAlertProps extends React.HTMLAttributes<HTMLDivElement> {
     variant: 'purple' | 'green' | 'error'
     className?: string
-    displayCard?: 'CodyPro' | 'Alert' | ''
+    title?: string
+    badge?: 'CodyPro' | 'Alert'
     children: React.ReactNode
 }
 
@@ -19,7 +22,7 @@ export const CodyAlert: React.FunctionComponent<CodyAlertProps> = ({
     className,
     title,
     children,
-    displayCard = '',
+    badge,
     ...props
 }) => {
     const alertClassName = classNames(
@@ -35,14 +38,15 @@ export const CodyAlert: React.FunctionComponent<CodyAlertProps> = ({
     return (
         // eslint-disable-next-line no-restricted-syntax
         <div className={alertClassName} {...props}>
-            {displayCard !== '' && (
-                <div className={styles.card}>
-                    <div className={styles.cardClip}>
-                        {displayCard === 'CodyPro' ? <CodyProBadge /> : <AlertBadge />}
-                    </div>
+            {badge && (
+                <div className={classNames('mt-auto', 'h-100', 'mr-3')}>
+                    <div className={styles.cardClip}>{badge === 'CodyPro' ? <CodyProBadge /> : <AlertBadge />}</div>
                 </div>
             )}
-            <div className={styles.content}>{children}</div>
+            <div className={styles.content}>
+                <H2>{title}</H2>
+                <div>{children}</div>
+            </div>
         </div>
     )
 }

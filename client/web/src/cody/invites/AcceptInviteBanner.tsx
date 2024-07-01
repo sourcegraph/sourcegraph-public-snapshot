@@ -1,4 +1,4 @@
-import { Button, ButtonLink, H1, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Text } from '@sourcegraph/wildcard'
 
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
@@ -42,8 +42,7 @@ const AcceptInviteBannerContent: React.FC<{
         inviteState.initialUserStatus === UserInviteStatus.Error
     ) {
         return (
-            <CodyAlert variant="error">
-                <H1>Issue with invite</H1>
+            <CodyAlert title="Issue with invite" variant="error">
                 <Text>The invitation is no longer valid. Contact your team admin.</Text>
             </CodyAlert>
         )
@@ -60,16 +59,14 @@ const AcceptInviteBannerContent: React.FC<{
             switch (acceptInviteMutation.status) {
                 case 'error': {
                     return (
-                        <CodyAlert variant="error" displayCard="Alert">
-                            <H1>Issue with invite</H1>
+                        <CodyAlert title="Issue with invite" variant="error" badge="Alert">
                             <Text>Accepting invite failed with error: {acceptInviteMutation.error.message}.</Text>
                         </CodyAlert>
                     )
                 }
                 case 'success': {
                     return (
-                        <CodyAlert variant="green" displayCard="CodyPro">
-                            <H1>Pro team change complete!</H1>
+                        <CodyAlert title="Pro team change complete!" variant="green" badge="CodyPro">
                             <Text>
                                 {inviteState.initialUserStatus === UserInviteStatus.NoCurrentTeam
                                     ? 'You successfully joined the new Cody Pro team.'
@@ -82,8 +79,7 @@ const AcceptInviteBannerContent: React.FC<{
                 case 'pending':
                 default: {
                     return (
-                        <CodyAlert variant="purple">
-                            <H1>Join new Cody Pro team?</H1>
+                        <CodyAlert title="Join new Cody Pro team?" variant="purple">
                             <Text>
                                 You've been invited to a new Cody Pro team by {inviteState.sentBy}. <br />
                                 {inviteState.initialUserStatus === UserInviteStatus.NoCurrentTeam
@@ -127,8 +123,7 @@ const AcceptInviteBannerContent: React.FC<{
                 void cancelInviteMutation.mutate({ teamId, inviteId }, { onSettled: clearInviteParams })
             }
             return (
-                <CodyAlert variant="error">
-                    <H1>Issue with invite</H1>
+                <CodyAlert title="Issue with invite" variant="error">
                     <Text>
                         You've been invited to a Cody Pro team by {inviteState.sentBy}.<br />
                         You cannot accept this invite as as you are already on this team.
@@ -138,8 +133,7 @@ const AcceptInviteBannerContent: React.FC<{
         }
         case UserInviteStatus.AnotherTeamSoleAdmin: {
             return (
-                <CodyAlert variant="error">
-                    <H1>Issue with invite</H1>
+                <CodyAlert title="Issue with invite" variant="error">
                     <Text>
                         You've been invited to a new Cody Pro team by {inviteState.sentBy}. <br />
                         To accept this invite you need to transfer your administrative role to another member of your

@@ -15,11 +15,20 @@ const config: Meta = {
 
 export default config
 
-export const AlertWithActions: StoryFn = () => (
+export const SimpleAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <CodyAlert variant="purple">
-                <H2>Join new Cody Pro team?</H2>
+                <Text>Something has happened.</Text>
+            </CodyAlert>
+        )}
+    </WebStory>
+)
+
+export const AlertWithActions: StoryFn = () => (
+    <WebStory>
+        {props => (
+            <CodyAlert variant="purple" title="Card with display card">
                 <Text>
                     You've been invited to a new Cody Pro team by rob@biglike.com <br />
                     This will terminate your current Cody Pro plan, and place you on the new Cody Pro team. You will not
@@ -39,8 +48,7 @@ export const AlertWithActions: StoryFn = () => (
 export const PurpulePro: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="purple" displayCard={'CodyPro'}>
-                <H2>Card with display card</H2>
+            <CodyAlert variant="purple" badge={'CodyPro'} title="Card with display card">
                 <Text>A success message</Text>
             </CodyAlert>
         )}
@@ -50,8 +58,7 @@ export const PurpulePro: StoryFn = () => (
 export const Purple: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="purple">
-                <H2>A Tile</H2>
+            <CodyAlert variant="purple" title="A Tile">
                 <Text>Purple success message</Text>
             </CodyAlert>
         )}
@@ -61,8 +68,7 @@ export const Purple: StoryFn = () => (
 export const Green: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="green">
-                <H2>A Tile</H2>
+            <CodyAlert variant="green" title="A Tile">
                 <Text>Success message</Text>
             </CodyAlert>
         )}
@@ -72,8 +78,7 @@ export const Green: StoryFn = () => (
 export const GreenPro: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="green" displayCard={'CodyPro'}>
-                <H2>A Tile</H2>
+            <CodyAlert variant="green" badge={'CodyPro'} title="A Tile">
                 <Text>Success message</Text>
             </CodyAlert>
         )}
@@ -83,8 +88,7 @@ export const GreenPro: StoryFn = () => (
 export const Error: StoryFn = () => (
     <WebStory>
         {props => (
-            <CodyAlert variant="error" displayCard={'Alert'}>
-                <H2>A Tile</H2>
+            <CodyAlert variant="error" badge={'Alert'} title="A Tile">
                 <Text>A success message</Text>
             </CodyAlert>
         )}

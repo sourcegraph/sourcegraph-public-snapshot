@@ -4,53 +4,53 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
     <svg width="124" height="149" viewBox="0 0 124 149" fill="none" xmlns="http://www.w3.org/2000/svg">
         <g filter="url(#filter0_d_5879_15442)">
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="#D9D9D9"
             />
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="#EFF2F5"
             />
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="url(#paint0_angular_5879_15442)"
             />
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="url(#paint1_radial_5879_15442)"
             />
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="white"
-                fill-opacity="0.2"
+                fillOpacity="0.2"
             />
             <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M11 5C7.68555 5 5 8.2189 5 12.1897V136.81C5 140.781 7.68555 144 11 144H113C116.314 144 119 140.781 119 136.81V12.1897C119 8.2189 116.314 5 113 5H11ZM55.8203 16.173C54.168 16.173 52.8301 17.7773 52.8301 19.7563C52.8301 21.7353 54.168 23.3397 55.8203 23.3397H68.1816C69.832 23.3397 71.1719 21.7353 71.1719 19.7563C71.1719 17.7773 69.832 16.173 68.1816 16.173H55.8203Z"
                 fill="url(#paint2_linear_5879_15442)"
             />
             <path
                 d="M5.2 12.1897C5.2 8.29394 7.82837 5.2 11 5.2H113C116.172 5.2 118.8 8.29394 118.8 12.1897V136.81C118.8 140.706 116.172 143.8 113 143.8H11C7.82837 143.8 5.2 140.706 5.2 136.81V12.1897ZM55.8203 15.973C54.0251 15.973 52.6301 17.7023 52.6301 19.7563C52.6301 21.8103 54.0251 23.5397 55.8203 23.5397H68.1816C69.9748 23.5397 71.3719 21.8104 71.3719 19.7563C71.3719 17.7022 69.9748 15.973 68.1816 15.973H55.8203Z"
                 stroke="black"
-                stroke-opacity="0.16"
-                stroke-width="0.4"
+                strokeOpacity="0.16"
+                strokeWidth="0.4"
             />
             <g filter="url(#filter1_dd_5879_15442)">
                 <path
                     d="M13.502 44.7906C13.502 39.5653 13.502 36.9526 14.4241 34.9175C15.4599 32.6313 17.2915 30.7998 19.5776 29.7639C21.6128 28.8418 24.2255 28.8418 29.4508 28.8418C34.6761 28.8418 37.2888 28.8418 39.324 29.7639C41.6101 30.7998 43.4417 32.6313 44.4775 34.9175C45.3996 36.9526 45.3996 39.5653 45.3996 44.7906C45.3996 50.016 45.3996 52.6286 44.4775 54.6638C43.4417 56.9499 41.6101 58.7815 39.324 59.8173C37.2888 60.7395 34.6761 60.7395 29.4508 60.7395C24.2255 60.7395 21.6128 60.7395 19.5776 59.8173C17.2915 58.7815 15.4599 56.9499 14.4241 54.6638C13.502 52.6286 13.502 50.016 13.502 44.7906Z"
                     fill="url(#paint3_radial_5879_15442)"
-                    fill-opacity="0.2"
+                    fillOpacity="0.2"
                 />
                 <path
                     d="M13.502 44.7906C13.502 39.5653 13.502 36.9526 14.4241 34.9175C15.4599 32.6313 17.2915 30.7998 19.5776 29.7639C21.6128 28.8418 24.2255 28.8418 29.4508 28.8418C34.6761 28.8418 37.2888 28.8418 39.324 29.7639C41.6101 30.7998 43.4417 32.6313 44.4775 34.9175C45.3996 36.9526 45.3996 39.5653 45.3996 44.7906C45.3996 50.016 45.3996 52.6286 44.4775 54.6638C43.4417 56.9499 41.6101 58.7815 39.324 59.8173C37.2888 60.7395 34.6761 60.7395 29.4508 60.7395C24.2255 60.7395 21.6128 60.7395 19.5776 59.8173C17.2915 58.7815 15.4599 56.9499 14.4241 54.6638C13.502 52.6286 13.502 50.016 13.502 44.7906Z"
@@ -59,8 +59,8 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 <path
                     d="M29.4508 60.5401C26.8352 60.5401 24.8843 60.54 23.3326 60.4254C21.7829 60.3109 20.6472 60.0831 19.6599 59.6357C17.4178 58.6199 15.6215 56.8236 14.6057 54.5815C14.1583 53.5942 13.9305 52.4585 13.816 50.9088C13.7014 49.3572 13.7013 47.4063 13.7013 44.7906C13.7013 42.175 13.7014 40.2241 13.816 38.6724C13.9305 37.1227 14.1583 35.9871 14.6057 34.9997C15.6215 32.7577 17.4178 30.9614 19.6599 29.9455C20.6472 29.4982 21.7829 29.2703 23.3326 29.1559C24.8843 29.0413 26.8352 29.0412 29.4508 29.0412C32.0664 29.0412 34.0173 29.0413 35.569 29.1559C37.1187 29.2703 38.2544 29.4982 39.2417 29.9455C41.4837 30.9614 43.28 32.7577 44.2959 34.9997C44.7432 35.9871 44.9711 37.1227 45.0855 38.6724C45.2001 40.2241 45.2003 42.175 45.2003 44.7906C45.2003 47.4063 45.2001 49.3572 45.0855 50.9088C44.9711 52.4585 44.7432 53.5942 44.2959 54.5815C43.28 56.8236 41.4837 58.6199 39.2417 59.6357C38.2544 60.0831 37.1187 60.3109 35.569 60.4254C34.0173 60.54 32.0664 60.5401 29.4508 60.5401Z"
                     stroke="white"
-                    stroke-opacity="0.58"
-                    stroke-width="0.398721"
+                    strokeOpacity="0.58"
+                    strokeWidth="0.398721"
                 />
             </g>
             <path
@@ -91,9 +91,9 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 width="123"
                 height="148"
                 filterUnits="userSpaceOnUse"
-                color-interpolation-filters="sRGB"
+                colorInterpolationFilters="sRGB"
             >
-                <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
                 <feColorMatrix
                     in="SourceAlpha"
                     type="matrix"
@@ -114,9 +114,9 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 width="39.8729"
                 height="39.8719"
                 filterUnits="userSpaceOnUse"
-                color-interpolation-filters="sRGB"
+                colorInterpolationFilters="sRGB"
             >
-                <feFlood flood-opacity="0" result="BackgroundImageFix" />
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
                 <feColorMatrix
                     in="SourceAlpha"
                     type="matrix"
@@ -149,10 +149,10 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(18.2465 56.9756) rotate(-22.8629) scale(127.99 158.536)"
             >
-                <stop offset="0.276853" stop-color="#4AC1E8" />
-                <stop offset="0.546021" stop-color="#7048E8" />
-                <stop offset="0.87464" stop-color="#4D0B79" />
-                <stop offset="1" stop-color="#FF5543" />
+                <stop offset="0.276853" stopColor="#4AC1E8" />
+                <stop offset="0.546021" stopColor="#7048E8" />
+                <stop offset="0.87464" stopColor="#4D0B79" />
+                <stop offset="1" stopColor="#FF5543" />
             </radialGradient>
             <radialGradient
                 id="paint1_radial_5879_15442"
@@ -162,11 +162,11 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(141.381 55.8386) rotate(-169.197) scale(135.358 167.663)"
             >
-                <stop offset="0.322213" stop-color="#4AC1E8" />
-                <stop offset="0.570219" stop-color="#7048E8" />
-                <stop offset="0.760912" stop-color="#4D0B79" />
-                <stop offset="0.829022" stop-color="#FF5543" />
-                <stop offset="0.979485" stop-color="#FFB0A8" />
+                <stop offset="0.322213" stopColor="#4AC1E8" />
+                <stop offset="0.570219" stopColor="#7048E8" />
+                <stop offset="0.760912" stopColor="#4D0B79" />
+                <stop offset="0.829022" stopColor="#FF5543" />
+                <stop offset="0.979485" stopColor="#FFB0A8" />
             </radialGradient>
             <linearGradient
                 id="paint2_linear_5879_15442"
@@ -176,8 +176,8 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 y2="5"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop offset="0.433329" stop-color="white" />
-                <stop offset="1" stop-color="white" stop-opacity="0" />
+                <stop offset="0.433329" stopColor="white" />
+                <stop offset="1" stopColor="white" stopOpacity="0" />
             </linearGradient>
             <radialGradient
                 id="paint3_radial_5879_15442"
@@ -187,8 +187,8 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="translate(25.9544 5.19109) rotate(77.074) scale(30.9493)"
             >
-                <stop stop-color="#00DBFF" />
-                <stop offset="1" stop-color="#00DBFF" stop-opacity="0" />
+                <stop stopColor="#00DBFF" />
+                <stop offset="1" stopColor="#00DBFF" stopOpacity="0" />
             </radialGradient>
             <linearGradient
                 id="paint4_linear_5879_15442"
@@ -198,8 +198,8 @@ export const CodyProBadge = ({ className }: { className?: string }): ReactElemen
                 y2="65.729"
                 gradientUnits="userSpaceOnUse"
             >
-                <stop stop-color="#7048E8" />
-                <stop offset="1" stop-color="#7D0EC6" />
+                <stop stopColor="#7048E8" />
+                <stop offset="1" stopColor="#7D0EC6" />
             </linearGradient>
         </defs>
     </svg>
