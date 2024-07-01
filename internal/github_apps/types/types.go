@@ -25,10 +25,19 @@ type GitHubApp struct {
 	PrivateKey    string
 	EncryptionKey string
 	Logo          string
-	Kind          string
+	Kind          GitHubAppKind
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
+
+type GitHubAppKind string
+
+const (
+	CommitSigningGitHubAppKind  GitHubAppKind = "COMMIT_SIGNING"
+	RepoSyncGitHubAppKind       GitHubAppKind = "REPO_SYNC"
+	UserCredentialGitHubAppKind GitHubAppKind = "USER_CREDENTIAL"
+	SiteCredentialGitHubAppKind GitHubAppKind = "SITE_CREDENTIAL"
+)
 
 // GitHubAppInstallation represents an installation of a GitHub App.
 type GitHubAppInstallation struct {

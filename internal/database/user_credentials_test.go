@@ -188,7 +188,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 		WebhookSecret: "",
 		PrivateKey:    "",
 		EncryptionKey: "",
-		Kind:          "REPO_SYNC", // todo: after rebase make this USER_CREDENTIAL
+		Kind:          ghtypes.RepoSyncGitHubAppKind,
 	})
 	if err != nil {
 		t.Fatal(err)

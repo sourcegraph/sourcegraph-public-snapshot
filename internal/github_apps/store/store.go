@@ -129,7 +129,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
 	if domain == itypes.BatchesGitHubAppDomain {
 		existingGHApp, err := s.GetByDomain(ctx, domain, baseURL.String())
-		// An error is expected if no existing app was found, but we double check that
+		// An error is expected if no existing app was found, but we double-check that
 		// we didn't get a different, unrelated error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
 			return -1, errors.Wrap(err, "checking for existing batches app")
@@ -137,6 +137,12 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		if existingGHApp != nil {
 			return -1, errors.New("GitHub App already exists for this GitHub instance in the batches domain")
 		}
+	}
+
+	// Backwards compatibility for apps that did not set the GitHubAppKind.
+	kind := app.Kind
+	if kind == "" {
+		kind = "REPO_SYNC"
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
