@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,7 +18,7 @@ import (
 
 func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
 	appID := 1
-	kind := "USER_GITHUB_APP"
+	kind := ghtypes.SiteCredentialGitHubAppKind
 
 	query := sqlf.Sprintf(
 		"INSERT INTO github_apps (app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, app_url, domain, kind) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, DEFAULT, DEFAULT, %s)",
