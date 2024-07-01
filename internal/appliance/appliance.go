@@ -128,7 +128,7 @@ func (a *Appliance) ensureBackingSecretKeysExist(ctx context.Context, secret *co
 			// to configure a password.
 		}
 		if adminPassword, ok := initialPasswordSecret.Data[initialPasswordSecretPasswordKey]; ok {
-			adminPasswordBcrypt, err := bcrypt.GenerateFromPassword(adminPassword, 0)
+			adminPasswordBcrypt, err := bcrypt.GenerateFromPassword(adminPassword, 14)
 			if err != nil {
 				return errors.Wrap(err, "bcrypt-hashing password")
 			}
