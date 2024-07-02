@@ -14,25 +14,25 @@ package clientconfig
 // GetForActor method.
 type ClientConfig struct {
 	// Whether the site admin allows this user to make use of Cody at all.
-	CodyEnabled bool
+	CodyEnabled bool `json:"codyEnabled"`
 
 	// Whether the site admin allows this user to make use of the Cody chat feature.
-	ChatEnabled bool
+	ChatEnabled bool `json:"chatEnabled"`
 
 	// Whether the site admin allows this user to make use of the Cody autocomplete feature.
-	AutoCompleteEnabled bool
+	AutoCompleteEnabled bool `json:"autoCompleteEnabled"`
 
 	// Whether the site admin allows this user to make use of the Cody commands feature.
-	CommandsEnabled bool
+	CommandsEnabled bool `json:"commandsEnabled"`
 
 	// Whether the site admin allows this user to make use of the Cody attribution feature.
-	AttributionEnabled bool
+	AttributionEnabled bool `json:"attributionEnabled"`
 
 	// Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
 	// instance supports various new GraphQL APIs needed to make it work.
-	SmartContextWindowEnabled bool
+	SmartContextWindowEnabled bool `json:"smartContextWindowEnabled"`
 
 	// Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
 	// models are available.
-	ModelsAPIEnabled bool
+	ModelsAPIEnabled bool `json:"modelsAPIEnabled"`
 }
