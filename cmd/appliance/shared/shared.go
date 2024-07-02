@@ -18,12 +18,12 @@ import (
 
 	"github.com/sourcegraph/log"
 	sglogr "github.com/sourcegraph/log/logr"
-
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/reconciler"
 	pb "github.com/sourcegraph/sourcegraph/internal/appliance/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,7 +42,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 		return err
 	}
 
-	app := appliance.NewAppliance(k8sClient, logger)
+	relregClient := releaseregistry.NewClient(config.relregEndpoint)
+
+	app, err := appliance.NewAppliance(k8sClient, relregClient, config.applianceVersion, config.namespace, logger)
+	if err != nil {
+		logger.Error("failed to create appliance", log.Error(err))
+		return err
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Logger: logr,

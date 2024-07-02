@@ -143,7 +143,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			server.JanitorConfig{
 				ShardID:                        hostname,
 				JanitorInterval:                config.JanitorInterval,
-				DesiredPercentFree:             config.JanitorReposDesiredPercentFree,
 				DisableDeleteReposOnWrongShard: config.JanitorDisableDeleteReposOnWrongShard,
 			},
 			db,

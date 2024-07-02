@@ -95,6 +95,16 @@ describe('navbar query state', () => {
 
             expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.keyword)
         })
+
+        it('should add patterntype to query if not keyword or regexp', () => {
+            setQueryStateFromURL(parseSearchURL('q=hello!&patternType=keyword'))
+            expect(useNavbarQueryState.getState().queryState.query).toBe('hello!')
+            expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.keyword)
+
+            setQueryStateFromURL(parseSearchURL('q=hello!!&patternType=standard'))
+            expect(useNavbarQueryState.getState().queryState.query).toBe('hello!! patterntype:standard')
+            expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.standard)
+        })
     })
 
     describe('state initialization precedence', () => {

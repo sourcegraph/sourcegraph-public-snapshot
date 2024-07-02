@@ -56,7 +56,6 @@ func NewDependencyIndexSchedulers(
 	depsSvc dependencies.DependenciesService,
 	store store.Store,
 	indexEnqueuer dependencies.IndexEnqueuer,
-	repoUpdater dependencies.RepoUpdaterClient,
 	config *dependencies.Config,
 ) []goroutine.BackgroundRoutine {
 	metrics := dependencies.NewResetterMetrics(observationCtx)
@@ -85,7 +84,6 @@ func NewDependencyIndexSchedulers(
 			externalServiceStore,
 			gitserverRepoStore,
 			indexEnqueuer,
-			repoUpdater,
 			workerutil.NewMetrics(observationCtx, "codeintel_dependency_index_queueing"),
 			config,
 		),

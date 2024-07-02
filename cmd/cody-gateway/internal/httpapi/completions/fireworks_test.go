@@ -18,7 +18,7 @@ func TestFireworksRequestGetTokenCount(t *testing.T) {
 		req := fireworksRequest{Stream: true}
 		r := strings.NewReader(fireworksStreamingResponse)
 		handler := &FireworksHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, true)
 
 		assert.Equal(t, 79, promptUsage.tokens)
 		assert.Equal(t, 30, completionUsage.tokens)
@@ -28,7 +28,7 @@ func TestFireworksRequestGetTokenCount(t *testing.T) {
 		req := fireworksRequest{Stream: false}
 		r := strings.NewReader(fireworksNonStreamingResponse)
 		handler := &FireworksHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, false)
 
 		assert.Equal(t, 79, promptUsage.tokens)
 		assert.Equal(t, 30, completionUsage.tokens)

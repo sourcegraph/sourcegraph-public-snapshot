@@ -1,13 +1,13 @@
-import React, { type PropsWithChildren, useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, type PropsWithChildren } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import {
+    SearchContextsOrderBy,
     type ListSearchContextsResult,
     type ListSearchContextsVariables,
-    SearchContextsOrderBy,
     type SearchContextMinimalFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -15,8 +15,8 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 
 import type { AuthenticatedUser } from '../../auth'
 import {
-    type Connection,
     FilteredConnection,
+    type Connection,
     type FilteredConnectionFilter,
     type FilteredConnectionFilterValue,
 } from '../../components/FilteredConnection'
@@ -97,31 +97,15 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
                 values: [
                     {
                         value: 'spec-asc',
-                        label: 'A-Z',
+                        label: 'By name',
                         args: {
                             orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
-                            descending: false,
-                        },
-                    },
-                    {
-                        value: 'spec-desc',
-                        label: 'Z-A',
-                        args: {
-                            orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
-                            descending: true,
-                        },
-                    },
-                    {
-                        value: 'updated-at-asc',
-                        label: 'Oldest updates',
-                        args: {
-                            orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
                             descending: false,
                         },
                     },
                     {
                         value: 'updated-at-desc',
-                        label: 'Newest updates',
+                        label: 'Recently updated',
                         args: {
                             orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
                             descending: true,
@@ -208,8 +192,8 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             pluralNoun="search contexts"
             cursorPaging={true}
             inputClassName={classNames(styles.filterInput)}
-            inputPlaceholder="Find a context"
-            inputAriaLabel="Find a context"
+            inputPlaceholder="Find a context..."
+            inputAriaLabel="Find a context..."
             formClassName={styles.filtersForm}
             onUpdate={onUpdateContexts}
         />

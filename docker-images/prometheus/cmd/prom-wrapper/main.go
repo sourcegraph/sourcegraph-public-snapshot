@@ -64,7 +64,7 @@ func main() {
 	if len(os.Args) > 1 {
 		promArgs = os.Args[1:] // propagate args to prometheus
 	}
-	go runCmd(logger, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
+	go runCmd(log.Scoped("prometheus"), procErrs, NewPrometheusCmd(promArgs, prometheusPort))
 
 	// router serves endpoints accessible from outside the container (defined by `exportPort`)
 	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying services, etc.
@@ -82,13 +82,13 @@ func main() {
 		logger.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
 	} else {
 		// start alertmanager
-		go runCmd(logger, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
+		go runCmd(log.Scoped("alertmanager"), procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
 
 		// wait for alertmanager to become available
 		logger.Info("waiting for alertmanager")
 		alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
-			logger.Fatal("unable to reach Alertmanager", log.Error(err))
+			logger.Fatal("unable to reach Alertmanager within deadline", log.Error(err))
 		}
 		cancel()
 		logger.Debug("detected alertmanager ready")

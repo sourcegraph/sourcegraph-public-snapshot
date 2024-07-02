@@ -92,6 +92,7 @@ return require("sg.autoindex.config").new({
 	-- ["sg.ruby"] = false,
 	-- ["sg.rust"] = false,
 	-- ["sg.typescript"] = false,
+	-- ["sg.dotnet"] = false,
 	["acme.custom"] = custom_recognizer,
 })
 `

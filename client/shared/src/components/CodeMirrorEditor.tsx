@@ -1,21 +1,21 @@
 import React, {
     forwardRef,
-    type MutableRefObject,
-    type RefObject,
     useEffect,
     useImperativeHandle,
     useMemo,
     useRef,
+    type MutableRefObject,
+    type RefObject,
 } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
-    type ChangeSpec,
     Compartment,
     EditorState,
+    StateEffect,
+    type ChangeSpec,
     type EditorStateConfig,
     type Extension,
-    StateEffect,
 } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
@@ -26,7 +26,7 @@ if (process.env.INTEGRATION_TESTS) {
     // Typecast "as any" is used to avoid TypeScript complaining about window
     // not having this property. We decided that it's fine to use this in a test
     // context
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     ;(window as any).CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<typeof EditorView['findFromDOM']> =>
         EditorView.findFromDOM(element)
 }
@@ -170,11 +170,10 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  * Use `useMemo` to compute the extension from some input:
  *
  * const extension = useCompartment(
- *   editorRef,
- *   useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ * editorRef,
+ * useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
  * )
  * const editor = useCodeMirror(..., ..., extension)
- *
  * @param editorRef - Ref object to the editor instance
  * @param extension - the dynamic extension(s) to add to the editor
  * @returns a compartmentalized extension

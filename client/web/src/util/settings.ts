@@ -60,7 +60,7 @@ export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOr
  * Returns the user-configured search pattern type or undefined if not
  * configured by the user.
  */
-export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
+export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType {
     const defaultPatternType: SearchPatternType | undefined = getFromSettings(
         settingsCascade,
         'search.defaultPatternType'
@@ -69,7 +69,7 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
     if (isKeywordSearchEnabled(settingsCascade)) {
         return defaultPatternType ?? SearchPatternType.keyword
     }
-    return defaultPatternType
+    return defaultPatternType ?? SearchPatternType.standard
 }
 
 /**

@@ -20,6 +20,7 @@ go_library(
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/api",
         "//internal/codeintel/codenav",
+        "//internal/codeintel/core",
         "//internal/codeintel/uploads/shared",
         "//internal/database",
         "//internal/gitserver",

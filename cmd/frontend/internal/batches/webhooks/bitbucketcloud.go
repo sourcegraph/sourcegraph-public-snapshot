@@ -167,7 +167,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 		}
 	}
 
-	if extSvc == nil || err != nil {
+	if extSvc == nil {
 		return nil, nil, &httpError{http.StatusUnauthorized, err}
 	}
 

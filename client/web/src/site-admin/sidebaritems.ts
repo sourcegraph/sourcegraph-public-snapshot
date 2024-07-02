@@ -9,7 +9,6 @@ import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { BatchChangesIcon } from '../batches/icons'
-import { CodyPageIcon } from '../cody/chat/CodyPageIcon'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
@@ -30,17 +29,17 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
-            condition: ({ license }) => license.isCodeSearchEnabled,
+            condition: () => window.context?.codeSearchEnabledOnInstance,
         },
         {
             label: 'Cody',
             to: '/site-admin/analytics/cody',
-            condition: ({ license }) => license.isCodyEnabled,
+            condition: () => window.context?.codyEnabledOnInstance,
         },
         {
             label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
-            condition: ({ license }) => license.isCodeSearchEnabled,
+            condition: () => window.context?.codeSearchEnabledOnInstance,
         },
         {
             label: 'Users',
@@ -59,7 +58,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
-            condition: ({ license }) => license.isCodeSearchEnabled,
+            condition: () => window.context?.codeSearchEnabledOnInstance,
         },
         {
             label: 'Search extensions',
@@ -68,7 +67,7 @@ const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code ownership',
             to: '/site-admin/analytics/own',
-            condition: ({ license }) => license.isCodeSearchEnabled,
+            condition: () => window.context?.codeSearchEnabledOnInstance,
         },
         {
             label: 'Feedback survey',
@@ -278,25 +277,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/own-signal-page',
         },
     ],
-    condition: ({ license }) => license.isCodeSearchEnabled,
-}
-
-export const codyGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Cody', icon: CodyPageIcon },
-    items: [
-        {
-            label: 'Embeddings jobs',
-            to: '/site-admin/embeddings',
-            exact: true,
-            condition: () => window.context?.embeddingsEnabled,
-        },
-        {
-            label: 'Embeddings policies',
-            to: '/site-admin/embeddings/configuration',
-            condition: () => window.context?.embeddingsEnabled,
-        },
-    ],
-    condition: () => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled),
+    condition: () => window.context?.codeSearchEnabledOnInstance,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
@@ -381,7 +362,6 @@ export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
-    codyGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,

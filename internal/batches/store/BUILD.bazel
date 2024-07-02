@@ -120,6 +120,7 @@ go_test(
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
+        "//internal/github_apps/types",
         "//internal/observation",
         "//internal/timeutil",
         "//internal/types",

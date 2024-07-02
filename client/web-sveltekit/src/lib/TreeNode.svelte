@@ -178,10 +178,10 @@
         &::before {
             position: absolute;
             content: '';
-            border-left: 1px solid var(--border-color);
+            border-left: 1px solid var(--secondary);
             height: 100%;
             transform: translateX(
-                calc(var(--tree-node-nested-level) * #{$shiftWidth} + var(--icon-inline-size) * 1.5 + #{$gap} + 1px)
+                calc(var(--tree-node-nested-level) * #{$shiftWidth} + var(--icon-inline-size) * 1.5 + #{$gap} + 2px)
             );
             z-index: 1;
         }

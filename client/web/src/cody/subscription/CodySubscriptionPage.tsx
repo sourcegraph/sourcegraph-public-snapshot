@@ -1,6 +1,6 @@
-import React, { type ReactElement, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, type ReactElement } from 'react'
 
-import { mdiArrowLeft, mdiInformationOutline, mdiTrendingUp, mdiCreditCardOutline } from '@mdi/js'
+import { mdiArrowLeft, mdiCreditCardOutline, mdiInformationOutline, mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,10 +10,10 @@ import {
     Badge,
     Button,
     ButtonLink,
-    Link,
     H1,
     H2,
     Icon,
+    Link,
     PageHeader,
     Text,
     Tooltip,
@@ -23,11 +23,11 @@ import {
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { CodySubscriptionPlan } from '../../graphql-operations'
 import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
-import { CodyColorIcon } from '../chat/CodyPageIcon'
+import { CodySubscriptionPlan } from '../../graphql-operations'
+import { CodyProRoutes } from '../codyProRoutes'
 import { ProIcon } from '../components/CodyIcon'
-import { isCodyEnabled } from '../isCodyEnabled'
+import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled, manageSubscriptionRedirectURL } from '../util'
 
 import { USER_CODY_PLAN } from './queries'
@@ -56,7 +56,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
 
     useEffect(() => {
         if (!!data && !data?.currentUser) {
-            navigate('/sign-in?returnTo=/cody/subscription')
+            navigate(`/sign-in?returnTo=${CodyProRoutes.Subscription}`)
         }
     }, [data, navigate])
 
@@ -64,7 +64,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         throw dataError
     }
 
-    if (!isCodyEnabled() || !data?.currentUser || !authenticatedUser) {
+    if (!window.context?.codyEnabledForCurrentUser || !data?.currentUser || !authenticatedUser) {
         return null
     }
 
@@ -73,9 +73,9 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     return (
         <>
             <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Cody Subscription" />
+                <PageTitle title="Cody subscription" />
                 <PageHeader
-                    className="mb-4"
+                    className="my-4 d-inline-flex align-items-center"
                     actions={
                         isProUser && (
                             <ButtonLink
@@ -93,13 +93,12 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                         )
                     }
                 >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <div className="d-inline-flex align-items-center">
-                            <CodyColorIcon width={40} height={40} className="mr-2" /> Subscription plans
-                        </div>
+                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                        <PageHeaderIcon name="cody-logo" className="mr-3" />
+                        <Text as="span">Subscription plans</Text>
                     </PageHeader.Heading>
                 </PageHeader>
-                <Link to="/cody/manage" className="my-4">
+                <Link to={CodyProRoutes.Manage}>
                     <Icon className="mr-1 text-link" svgPath={mdiArrowLeft} aria-hidden={true} />
                     Back to Cody Dashboard
                 </Link>
@@ -117,13 +116,13 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    500
+                                    Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">autocompletions per month</Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="d-inline">
-                                    20
+                                    200
                                 </Text>{' '}
                                 <Text className="d-inline text-muted">messages and commands per month</Text>
                             </div>
@@ -227,7 +226,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 })
                                                 // We add ?seats=2 to the URL to initiate creating a team.
                                                 const url = new URL(
-                                                    '/cody/manage/subscription/new',
+                                                    CodyProRoutes.NewProSubscription,
                                                     window.location.origin
                                                 )
                                                 url.searchParams.append('seats', '2')
@@ -239,7 +238,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         </Button>
                                         <Link
                                             className="text-center"
-                                            to="/cody/manage/subscription/new"
+                                            to={CodyProRoutes.NewProSubscription}
                                             target="_blank"
                                             rel="noreferrer noopener"
                                             onClick={event => {
@@ -247,7 +246,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                                 telemetryRecorder.recordEvent('cody.planSelection', 'click', {
                                                     metadata: { tier: 1, team: 0 },
                                                 })
-                                                navigate('/cody/manage/subscription/new')
+                                                navigate(CodyProRoutes.NewProSubscription)
                                             }}
                                         >
                                             Upgrade yourself to Pro
@@ -295,8 +294,8 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                     LLM support
                                 </Text>
                                 <Text className="mb-1 text-muted">
-                                    Multiple LLM choices for chat
-                                    <Tooltip content="Claude Instant 1.2, Claude 2, ChatGPT 3.5 Turbo, ChatGPT 4 Turbo Preview">
+                                    More powerful LLMs for chat and commands
+                                    <Tooltip content="Everything in free, plus GPT-4o, GPT-4 Turbo, and Claude 3 Opus">
                                         <Icon
                                             className="ml-1 text-muted"
                                             svgPath={mdiInformationOutline}
@@ -304,7 +303,16 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                                         />
                                     </Tooltip>
                                 </Text>
-                                <Text className="mb-0 text-muted">Default LLMs for commands and autocomplete</Text>
+                                <Text className="mb-1 text-muted">
+                                    Multiple LLM choices for chat and commands
+                                    <Tooltip content="Claude 3 (Sonnet, Haiku), Claude Sonnet 3.5, Gemini Flash and Pro, Mixtral">
+                                        <Icon
+                                            className="ml-1 text-muted"
+                                            svgPath={mdiInformationOutline}
+                                            aria-label="More info"
+                                        />
+                                    </Tooltip>
+                                </Text>
                             </div>
                             <div className="border-bottom py-4">
                                 <Text weight="bold" className="mb-3">

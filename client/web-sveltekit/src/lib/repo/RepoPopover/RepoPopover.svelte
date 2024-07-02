@@ -84,7 +84,7 @@
     {/if}
 
     <div class="footer">
-        <RepoStars repoStars={data.stars} small />
+        <RepoStars repoStars={data.stars} />
     </div>
 </div>
 
@@ -198,7 +198,7 @@
     .footer {
         display: flex;
         color: var(--text-muted);
-        align-items: center;
         justify-content: flex-end;
+        font-size: var(--font-size-tiny);
     }
 </style>

@@ -7,6 +7,7 @@ import shallow from 'zustand/shallow'
 import { SearchBox, LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     type CaseSensitivityProps,
     type SearchPatternTypeProps,
@@ -39,9 +40,12 @@ const isTouchOnlyDevice =
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> &
+    SearchPatternTypeProps &
+    Pick<SearchModeProps, 'searchMode'> & { defaultPatternType: SearchPatternType } => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    defaultPatternType: state.defaultPatternType,
     searchMode: state.searchMode,
 })
 
@@ -73,7 +77,10 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     const location = useLocation()
     const navigate = useNavigate()
 
-    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType, defaultPatternType, searchMode } = useNavbarQueryState(
+        queryStateSelector,
+        shallow
+    )
     const [v2QueryInput] = useV2QueryInput()
 
     const { recentSearches } = useRecentSearches()
@@ -151,6 +158,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             {props.showKeywordSearchToggle ? (
                 <Toggles
                     patternType={patternType}
+                    defaultPatternType={defaultPatternType}
                     caseSensitive={caseSensitive}
                     setPatternType={setSearchPatternType}
                     setCaseSensitivity={setSearchCaseSensitivity}
@@ -193,6 +201,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             showSearchContextManagement={true}
             caseSensitive={caseSensitive}
             patternType={patternType}
+            defaultPatternType={defaultPatternType}
             setPatternType={setSearchPatternType}
             setCaseSensitivity={setSearchCaseSensitivity}
             searchMode={searchMode}

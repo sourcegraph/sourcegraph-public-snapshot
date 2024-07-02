@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -103,15 +104,15 @@ func NewHandler(
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
-						Name:       codygateway.EventNameEmbeddingsFinished,
+						Name:       codygatewayevents.EventNameEmbeddingsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
 						Metadata: map[string]any{
 							"model": body.Model,
-							codygateway.CompletionsEventFeatureMetadataField: codygateway.CompletionsEventFeatureEmbeddings,
-							"upstream_request_duration_ms":                   upstreamFinished.Milliseconds(),
-							"resolved_status_code":                           resolvedStatusCode,
-							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
+							codygatewayevents.CompletionsEventFeatureMetadataField: codygatewayevents.CompletionsEventFeatureEmbeddings,
+							"upstream_request_duration_ms":                         upstreamFinished.Milliseconds(),
+							"resolved_status_code":                                 resolvedStatusCode,
+							codygatewayevents.EmbeddingsTokenUsageMetadataField:    usedTokens,
 							"batch_size": len(body.Input),
 							"input_character_count": func() (characters int) {
 								for _, input := range body.Input {

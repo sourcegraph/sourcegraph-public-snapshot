@@ -9,7 +9,7 @@
     export let label = 'Copy to clipboard'
 
     let recentlyCopied = false
-    function handleCopyPath(): void {
+    function handleCopy(): void {
         copy(value)
         recentlyCopied = true
         setTimeout(() => {
@@ -20,16 +20,18 @@
     $: tooltip = recentlyCopied ? 'Copied!' : label
 </script>
 
-<span class="copy-path-button">
+<span class="copy-button">
     <Tooltip {tooltip} placement="bottom">
-        <Button on:click={handleCopyPath} variant="icon" size="sm" aria-label={label}>
-            <Icon inline icon={ILucideCopy} aria-hidden />
-        </Button>
+        <slot name="custom" {handleCopy}>
+            <Button on:click={handleCopy} variant="icon" size="sm" aria-label={label}>
+                <Icon inline icon={ILucideCopy} aria-hidden />
+            </Button>
+        </slot>
     </Tooltip>
 </span>
 
 <style lang="scss">
-    .copy-path-button {
+    .copy-button {
         display: contents;
         color: var(--text-muted);
 

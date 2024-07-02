@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/custom.css">
+    <script src="/static/script/htmx.min.js"></script>
+    <script src="/static/script/bootstrap.bundle.min.js"></script>
+    <title>{{ block "title" . }}{{ end }}</title>
+</head>
+
+<body hx-boost="true" class="container">
+{{ block "content" . }}{{ end }}
+</body>
+</html>

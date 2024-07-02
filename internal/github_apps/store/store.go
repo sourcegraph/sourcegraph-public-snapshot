@@ -129,7 +129,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
 	if domain == itypes.BatchesGitHubAppDomain {
 		existingGHApp, err := s.GetByDomain(ctx, domain, baseURL.String())
-		// An error is expected if no existing app was found, but we double check that
+		// An error is expected if no existing app was found, but we double-check that
 		// we didn't get a different, unrelated error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
 			return -1, errors.Wrap(err, "checking for existing batches app")
@@ -139,11 +139,19 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		}
 	}
 
+	// Backwards compatibility for apps that did not set the GitHubAppKind.
+	kind := app.Kind
+	if kind == "" {
+		kind = ghtypes.RepoSyncGitHubAppKind
+	} else if !kind.Valid() {
+		return -1, errors.New(fmt.Sprintf("The GitHubAppKind %s is not valid.", kind))
+	}
+
 	query := sqlf.Sprintf(`INSERT INTO
-	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
-    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo, kind)
+    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }

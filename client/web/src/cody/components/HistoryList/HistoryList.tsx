@@ -93,7 +93,6 @@ const HistoryListItem: React.FunctionComponent<{
 
     return (
         <button
-            key={id}
             type="button"
             className={classNames(
                 'text-left',

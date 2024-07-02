@@ -6,23 +6,23 @@ import (
 	"math"
 	"slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/google"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -142,7 +142,7 @@ func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureChat,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -162,7 +162,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	return &codyGatewayRateLimitResolver{
 		feature:     types.CompletionsFeatureCode,
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      rateLimitSource,
 		v:           rateLimit,
 	}, nil
@@ -189,7 +189,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 
 	return &codyGatewayRateLimitResolver{
 		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
+		actorSource: codygatewayactor.ActorSourceDotcomUser,
 		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
 		v:           rateLimit,
 	}, nil
@@ -334,6 +334,9 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"anthropic/claude-instant-1.2-cyan",
 	"anthropic/claude-instant-1.2",
 	"google/" + google.Gemini15Flash,
+	"google/" + google.Gemini15FlashLatest,
+	"google/" + google.GeminiPro,
+	"google/" + google.GeminiProLatest,
 	"fireworks/starcoder",
 	"fireworks/" + fireworks.Llama213bCode,
 	"fireworks/" + fireworks.StarcoderTwo15b,
@@ -363,6 +366,7 @@ func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 		chatModels := []string{
 			"anthropic/" + anthropic.Claude3Haiku,
 			"anthropic/" + anthropic.Claude3Sonnet,
+			"anthropic/" + anthropic.Claude35Sonnet,
 			"anthropic/" + anthropic.Claude3Opus,
 			"fireworks/" + fireworks.Mixtral8x7bInstruct,
 			"fireworks/" + fireworks.Mixtral8x22Instruct,

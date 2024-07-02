@@ -1,12 +1,12 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import {
-    Observable,
     fromEvent,
-    Subscription,
+    type Notification,
+    Observable,
     type OperatorFunction,
     pipe,
     type Subscriber,
-    type Notification,
+    Subscription,
 } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 
@@ -501,6 +501,12 @@ export const messageHandlers: MessageHandlers = {
 
 export interface StreamSearchOptions {
     version: string
+    /**
+     * TODO(stefan): "patternType" should be an optional parameter. Both Stream API and the GQL API don't require it.
+     * In the UI, we sometimes prefer to remove the "patternType:" filter from the query for better readability.
+     * "patternType" should be used to set the patternType of a query for those cases. Use "version" to
+     * define the default patternType instead.
+     */
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined

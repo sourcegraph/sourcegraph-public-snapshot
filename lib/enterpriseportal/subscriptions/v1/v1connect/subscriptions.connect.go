@@ -57,23 +57,23 @@ const (
 	// SubscriptionsServiceCreateEnterpriseSubscriptionProcedure is the fully-qualified name of the
 	// SubscriptionsService's CreateEnterpriseSubscription RPC.
 	SubscriptionsServiceCreateEnterpriseSubscriptionProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/CreateEnterpriseSubscription"
-	// SubscriptionsServiceUpdateSubscriptionMembershipProcedure is the fully-qualified name of the
-	// SubscriptionsService's UpdateSubscriptionMembership RPC.
-	SubscriptionsServiceUpdateSubscriptionMembershipProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateSubscriptionMembership"
+	// SubscriptionsServiceUpdateEnterpriseSubscriptionMembershipProcedure is the fully-qualified name
+	// of the SubscriptionsService's UpdateEnterpriseSubscriptionMembership RPC.
+	SubscriptionsServiceUpdateEnterpriseSubscriptionMembershipProcedure = "/enterpriseportal.subscriptions.v1.SubscriptionsService/UpdateEnterpriseSubscriptionMembership"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	subscriptionsServiceServiceDescriptor                                   = v1.File_subscriptions_proto.Services().ByName("SubscriptionsService")
-	subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor           = subscriptionsServiceServiceDescriptor.Methods().ByName("GetEnterpriseSubscription")
-	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor         = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
-	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor  = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
-	subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscriptionLicense")
-	subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("RevokeEnterpriseSubscriptionLicense")
-	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
-	subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor       = subscriptionsServiceServiceDescriptor.Methods().ByName("ArchiveEnterpriseSubscription")
-	subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscription")
-	subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor        = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateSubscriptionMembership")
+	subscriptionsServiceServiceDescriptor                                      = v1.File_subscriptions_proto.Services().ByName("SubscriptionsService")
+	subscriptionsServiceGetEnterpriseSubscriptionMethodDescriptor              = subscriptionsServiceServiceDescriptor.Methods().ByName("GetEnterpriseSubscription")
+	subscriptionsServiceListEnterpriseSubscriptionsMethodDescriptor            = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptions")
+	subscriptionsServiceListEnterpriseSubscriptionLicensesMethodDescriptor     = subscriptionsServiceServiceDescriptor.Methods().ByName("ListEnterpriseSubscriptionLicenses")
+	subscriptionsServiceCreateEnterpriseSubscriptionLicenseMethodDescriptor    = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscriptionLicense")
+	subscriptionsServiceRevokeEnterpriseSubscriptionLicenseMethodDescriptor    = subscriptionsServiceServiceDescriptor.Methods().ByName("RevokeEnterpriseSubscriptionLicense")
+	subscriptionsServiceUpdateEnterpriseSubscriptionMethodDescriptor           = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscription")
+	subscriptionsServiceArchiveEnterpriseSubscriptionMethodDescriptor          = subscriptionsServiceServiceDescriptor.Methods().ByName("ArchiveEnterpriseSubscription")
+	subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor           = subscriptionsServiceServiceDescriptor.Methods().ByName("CreateEnterpriseSubscription")
+	subscriptionsServiceUpdateEnterpriseSubscriptionMembershipMethodDescriptor = subscriptionsServiceServiceDescriptor.Methods().ByName("UpdateEnterpriseSubscriptionMembership")
 )
 
 // SubscriptionsServiceClient is a client for the
@@ -96,8 +96,7 @@ type SubscriptionsServiceClient interface {
 	// Enterprise subscription, permanently disabling its use for features
 	// managed by Sourcegraph. Revocation cannot be undone.
 	RevokeEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error)
-	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
-	// Only properties specified by the update_mask are applied.
+	// UpdateEnterpriseSubscription updates an existing enterprise subscription.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
@@ -107,9 +106,9 @@ type SubscriptionsServiceClient interface {
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
-	// UpdateSubscriptionMembership updates a subscription membership. It creates
-	// a new one if it does not exist and allow_missing is set to true.
-	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
+	UpdateEnterpriseSubscriptionMembership(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error)
 }
 
 // NewSubscriptionsServiceClient constructs a client for the
@@ -177,10 +176,10 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		updateSubscriptionMembership: connect.NewClient[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse](
+		updateEnterpriseSubscriptionMembership: connect.NewClient[v1.UpdateEnterpriseSubscriptionMembershipRequest, v1.UpdateEnterpriseSubscriptionMembershipResponse](
 			httpClient,
-			baseURL+SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
-			connect.WithSchema(subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor),
+			baseURL+SubscriptionsServiceUpdateEnterpriseSubscriptionMembershipProcedure,
+			connect.WithSchema(subscriptionsServiceUpdateEnterpriseSubscriptionMembershipMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -189,15 +188,15 @@ func NewSubscriptionsServiceClient(httpClient connect.HTTPClient, baseURL string
 
 // subscriptionsServiceClient implements SubscriptionsServiceClient.
 type subscriptionsServiceClient struct {
-	getEnterpriseSubscription           *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.GetEnterpriseSubscriptionResponse]
-	listEnterpriseSubscriptions         *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
-	listEnterpriseSubscriptionLicenses  *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
-	createEnterpriseSubscriptionLicense *connect.Client[v1.CreateEnterpriseSubscriptionLicenseRequest, v1.CreateEnterpriseSubscriptionLicenseResponse]
-	revokeEnterpriseSubscriptionLicense *connect.Client[v1.RevokeEnterpriseSubscriptionLicenseRequest, v1.RevokeEnterpriseSubscriptionLicenseResponse]
-	updateEnterpriseSubscription        *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
-	archiveEnterpriseSubscription       *connect.Client[v1.ArchiveEnterpriseSubscriptionRequest, v1.ArchiveEnterpriseSubscriptionResponse]
-	createEnterpriseSubscription        *connect.Client[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse]
-	updateSubscriptionMembership        *connect.Client[v1.UpdateSubscriptionMembershipRequest, v1.UpdateSubscriptionMembershipResponse]
+	getEnterpriseSubscription              *connect.Client[v1.GetEnterpriseSubscriptionRequest, v1.GetEnterpriseSubscriptionResponse]
+	listEnterpriseSubscriptions            *connect.Client[v1.ListEnterpriseSubscriptionsRequest, v1.ListEnterpriseSubscriptionsResponse]
+	listEnterpriseSubscriptionLicenses     *connect.Client[v1.ListEnterpriseSubscriptionLicensesRequest, v1.ListEnterpriseSubscriptionLicensesResponse]
+	createEnterpriseSubscriptionLicense    *connect.Client[v1.CreateEnterpriseSubscriptionLicenseRequest, v1.CreateEnterpriseSubscriptionLicenseResponse]
+	revokeEnterpriseSubscriptionLicense    *connect.Client[v1.RevokeEnterpriseSubscriptionLicenseRequest, v1.RevokeEnterpriseSubscriptionLicenseResponse]
+	updateEnterpriseSubscription           *connect.Client[v1.UpdateEnterpriseSubscriptionRequest, v1.UpdateEnterpriseSubscriptionResponse]
+	archiveEnterpriseSubscription          *connect.Client[v1.ArchiveEnterpriseSubscriptionRequest, v1.ArchiveEnterpriseSubscriptionResponse]
+	createEnterpriseSubscription           *connect.Client[v1.CreateEnterpriseSubscriptionRequest, v1.CreateEnterpriseSubscriptionResponse]
+	updateEnterpriseSubscriptionMembership *connect.Client[v1.UpdateEnterpriseSubscriptionMembershipRequest, v1.UpdateEnterpriseSubscriptionMembershipResponse]
 }
 
 // GetEnterpriseSubscription calls
@@ -248,10 +247,10 @@ func (c *subscriptionsServiceClient) CreateEnterpriseSubscription(ctx context.Co
 	return c.createEnterpriseSubscription.CallUnary(ctx, req)
 }
 
-// UpdateSubscriptionMembership calls
-// enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateSubscriptionMembership.
-func (c *subscriptionsServiceClient) UpdateSubscriptionMembership(ctx context.Context, req *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
-	return c.updateSubscriptionMembership.CallUnary(ctx, req)
+// UpdateEnterpriseSubscriptionMembership calls
+// enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscriptionMembership.
+func (c *subscriptionsServiceClient) UpdateEnterpriseSubscriptionMembership(ctx context.Context, req *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error) {
+	return c.updateEnterpriseSubscriptionMembership.CallUnary(ctx, req)
 }
 
 // SubscriptionsServiceHandler is an implementation of the
@@ -274,8 +273,7 @@ type SubscriptionsServiceHandler interface {
 	// Enterprise subscription, permanently disabling its use for features
 	// managed by Sourcegraph. Revocation cannot be undone.
 	RevokeEnterpriseSubscriptionLicense(context.Context, *connect.Request[v1.RevokeEnterpriseSubscriptionLicenseRequest]) (*connect.Response[v1.RevokeEnterpriseSubscriptionLicenseResponse], error)
-	// UpdateEnterpriseSubscription updates an existing Enterprise subscription.
-	// Only properties specified by the update_mask are applied.
+	// UpdateEnterpriseSubscription updates an existing enterprise subscription.
 	UpdateEnterpriseSubscription(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionResponse], error)
 	// ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
 	// subscription. This is a permanent operation, and cannot be undone.
@@ -285,9 +283,9 @@ type SubscriptionsServiceHandler interface {
 	ArchiveEnterpriseSubscription(context.Context, *connect.Request[v1.ArchiveEnterpriseSubscriptionRequest]) (*connect.Response[v1.ArchiveEnterpriseSubscriptionResponse], error)
 	// CreateEnterpriseSubscription creates an Enterprise subscription.
 	CreateEnterpriseSubscription(context.Context, *connect.Request[v1.CreateEnterpriseSubscriptionRequest]) (*connect.Response[v1.CreateEnterpriseSubscriptionResponse], error)
-	// UpdateSubscriptionMembership updates a subscription membership. It creates
-	// a new one if it does not exist and allow_missing is set to true.
-	UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error)
+	// UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+	// membership in an authoritative manner.
+	UpdateEnterpriseSubscriptionMembership(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error)
 }
 
 // NewSubscriptionsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -350,10 +348,10 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 		connect.WithSchema(subscriptionsServiceCreateEnterpriseSubscriptionMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	subscriptionsServiceUpdateSubscriptionMembershipHandler := connect.NewUnaryHandler(
-		SubscriptionsServiceUpdateSubscriptionMembershipProcedure,
-		svc.UpdateSubscriptionMembership,
-		connect.WithSchema(subscriptionsServiceUpdateSubscriptionMembershipMethodDescriptor),
+	subscriptionsServiceUpdateEnterpriseSubscriptionMembershipHandler := connect.NewUnaryHandler(
+		SubscriptionsServiceUpdateEnterpriseSubscriptionMembershipProcedure,
+		svc.UpdateEnterpriseSubscriptionMembership,
+		connect.WithSchema(subscriptionsServiceUpdateEnterpriseSubscriptionMembershipMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -375,8 +373,8 @@ func NewSubscriptionsServiceHandler(svc SubscriptionsServiceHandler, opts ...con
 			subscriptionsServiceArchiveEnterpriseSubscriptionHandler.ServeHTTP(w, r)
 		case SubscriptionsServiceCreateEnterpriseSubscriptionProcedure:
 			subscriptionsServiceCreateEnterpriseSubscriptionHandler.ServeHTTP(w, r)
-		case SubscriptionsServiceUpdateSubscriptionMembershipProcedure:
-			subscriptionsServiceUpdateSubscriptionMembershipHandler.ServeHTTP(w, r)
+		case SubscriptionsServiceUpdateEnterpriseSubscriptionMembershipProcedure:
+			subscriptionsServiceUpdateEnterpriseSubscriptionMembershipHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -418,6 +416,6 @@ func (UnimplementedSubscriptionsServiceHandler) CreateEnterpriseSubscription(con
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.CreateEnterpriseSubscription is not implemented"))
 }
 
-func (UnimplementedSubscriptionsServiceHandler) UpdateSubscriptionMembership(context.Context, *connect.Request[v1.UpdateSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateSubscriptionMembershipResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateSubscriptionMembership is not implemented"))
+func (UnimplementedSubscriptionsServiceHandler) UpdateEnterpriseSubscriptionMembership(context.Context, *connect.Request[v1.UpdateEnterpriseSubscriptionMembershipRequest]) (*connect.Response[v1.UpdateEnterpriseSubscriptionMembershipResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("enterpriseportal.subscriptions.v1.SubscriptionsService.UpdateEnterpriseSubscriptionMembership is not implemented"))
 }

@@ -59,13 +59,13 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
+	getModel getModelFn,
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, db, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -73,7 +73,8 @@ func newCompletionsHandler(
 		defer cancel()
 
 		if isEnabled, reason := cody.IsCodyEnabled(ctx, db); !isEnabled {
-			http.Error(w, fmt.Sprintf("cody is not enabled: %s", reason), http.StatusUnauthorized)
+			errResponse := fmt.Sprintf("cody is not enabled: %s", reason)
+			http.Error(w, errResponse, http.StatusUnauthorized)
 			return
 		}
 
@@ -99,11 +100,14 @@ func newCompletionsHandler(
 		isDotcom := dotcom.SourcegraphDotComMode()
 		if !isDotcom {
 			if err := checkClientCodyIgnoreCompatibility(ctx, db, r); err != nil {
+				logger.Info("rejecting request due to CodyIngore compat", log.Error(err))
 				http.Error(w, err.Error(), err.statusCode)
 				return
 			}
 		}
 
+		// We don't perform any sort of validation. So we would silently accept a totally bogus
+		// JSON payload. And just have a zero-value CompletionRequestParameters, e.g. no prompt.
 		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
@@ -114,7 +118,13 @@ func newCompletionsHandler(
 		var err error
 		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		requestParams.User = completionsConfig.User
+		requestParams.AzureChatModel = completionsConfig.AzureChatModel
+		requestParams.AzureCompletionModel = completionsConfig.AzureCompletionModel
+		requestParams.AzureUseDeprecatedCompletionsAPIForOldModels = completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels
 		if err != nil {
+			// NOTE: We return the raw error to the user assuming that it contains relevant
+			// user-facing diagnostic information, and doesn't leak any internal details.
+			logger.Info("error fetching model", log.Error(err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -242,6 +252,9 @@ func newSwitchingResponseHandler(logger log.Logger, db database.DB, feature type
 func newStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore, test guardrails.AttributionTest) {
 		var eventWriter = sync.OnceValue[*streamhttp.Writer](func() *streamhttp.Writer {
+			// NOTE: The HTTP response defaults to 200 if not set explicitly before writing the response.
+			// This means that this function will never serve a non-OK response. (Which makes sense, since
+			// we don't know ahead of time if some later SSE event will fail.
 			eventWriter, err := streamhttp.NewWriter(w)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -316,14 +329,21 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 				f = ff
 			}
 		}
-		err := cc.Stream(ctx, feature, version, requestParams,
-			func(event types.CompletionResponse) error {
-				if !firstEventObserved {
-					firstEventObserved = true
-					timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
-				}
-				return f.Send(ctx, event)
-			}, logger)
+
+		// Build and send the completions request.
+		compReq := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		sendEventFn := func(event types.CompletionResponse) error {
+			if !firstEventObserved {
+				firstEventObserved = true
+				timeToFirstEventMetrics.Observe(time.Since(start).Seconds(), 1, nil, requestParams.Model)
+			}
+			return f.Send(ctx, event)
+		}
+		err := cc.Stream(ctx, logger, compReq, sendEventFn)
 		if err != nil {
 			l := trace.Logger(ctx, logger)
 
@@ -394,7 +414,12 @@ func newStreamingResponseHandler(logger log.Logger, db database.DB, feature type
 // to the client.
 func newNonStreamingResponseHandler(logger log.Logger, db database.DB, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
 	return func(ctx context.Context, requestParams types.CompletionRequestParameters, version types.CompletionsVersion, cc types.CompletionsClient, w http.ResponseWriter, userStore database.UserStore) {
-		completion, err := cc.Complete(ctx, feature, version, requestParams, logger)
+		compRequest := types.CompletionRequest{
+			Feature:    feature,
+			Version:    version,
+			Parameters: requestParams,
+		}
+		completion, err := cc.Complete(ctx, logger, compRequest)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 

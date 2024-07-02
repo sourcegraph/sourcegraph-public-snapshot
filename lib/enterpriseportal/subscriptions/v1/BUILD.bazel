@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_proto_grpc//doc:defs.bzl", "doc_template_compile")
@@ -30,6 +31,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1",
     visibility = ["//visibility:public"],
     deps = [
+        "//lib/errors",
         "@org_golang_google_grpc//:grpc",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
@@ -45,4 +47,15 @@ buf_lint_test(
     timeout = "short",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],
+)
+
+go_test(
+    name = "subscriptions_test",
+    srcs = ["v1_test.go"],
+    embed = [":subscriptions"],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

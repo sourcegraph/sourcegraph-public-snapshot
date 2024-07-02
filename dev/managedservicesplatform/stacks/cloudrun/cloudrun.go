@@ -372,6 +372,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL logical replication")
 			}
+			publications = replication.Publications
+
 			// Make output visible for configuration in consumer tools like
 			// Datastream
 			for _, pub := range replication.Publications {

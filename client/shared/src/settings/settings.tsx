@@ -311,6 +311,7 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     isInitialized: true,
     searchQueryInput: 'v2',
     newSearchResultFiltersPanel: true,
+    newCodyWeb: true,
 }
 
 /**

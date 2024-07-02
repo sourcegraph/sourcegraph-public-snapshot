@@ -40,7 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 		return result, nil
 	})
 
-	iter := NewAllReposIterator(repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
+	iter := NewAllReposIterator(repoStore, clock, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
 	{
 		// Do we get all 9 repositories?
 		var each []string

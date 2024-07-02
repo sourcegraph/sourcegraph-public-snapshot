@@ -318,6 +318,10 @@ type DiffOptions struct {
 	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
 	RangeType string
 
+	// Paths specifies the paths to filter for during diffing.
+	//
+	// NOTE: Rename detection does not work if only the old path or the new path
+	// is specified in this slice.
 	Paths []string
 }
 

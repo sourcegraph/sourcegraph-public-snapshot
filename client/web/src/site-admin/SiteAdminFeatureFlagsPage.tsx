@@ -9,10 +9,11 @@ import { asError, type ErrorLike, isErrorLike, pluralize } from '@sourcegraph/co
 import { aggregateStreamingSearch, type ContentMatch, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Code, H3, Text, Icon, Tooltip, ButtonLink, Alert } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, type FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { type FeatureFlagFields, SearchPatternType } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
@@ -189,6 +190,10 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
         [featureFlagsOrErrorsObservable]
     )
 
+    const [isSourcegraphCloudManagedFeatureFlagsWarningShown] = useFeatureFlag(
+        'sourcegraph-cloud-managed-feature-flags-warning-shown'
+    )
+
     useEffect(() => telemetryRecorder.recordEvent('admin.featureFlags', 'view'), [telemetryRecorder])
 
     return (
@@ -216,6 +221,13 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                     </ButtonLink>
                 }
             />
+
+            {isSourcegraphCloudManagedFeatureFlagsWarningShown && (
+                <Alert variant="info">
+                    Feature flag settings are managed by Sourcegraph and will be overridden by updates. Contact support
+                    for help.
+                </Alert>
+            )}
 
             <Container>
                 <FilteredConnection<FeatureFlagAndReferences, {}>

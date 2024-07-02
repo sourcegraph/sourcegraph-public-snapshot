@@ -17,7 +17,7 @@ func TestGoogleRequestGetTokenCount(t *testing.T) {
 		req := googleRequest{Stream: true}
 		r := strings.NewReader(googleStreamingResponse)
 		handler := &GoogleHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, true)
 
 		assert.Equal(t, 21, promptUsage.tokens)
 		assert.Equal(t, 87, completionUsage.tokens)
@@ -27,7 +27,7 @@ func TestGoogleRequestGetTokenCount(t *testing.T) {
 		req := googleRequest{Stream: false}
 		r := strings.NewReader(googleNonStreamingResponse)
 		handler := &GoogleHandlerMethods{}
-		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r)
+		promptUsage, completionUsage := handler.parseResponseAndUsage(logger, req, r, false)
 
 		assert.Equal(t, 59, promptUsage.tokens)
 		assert.Equal(t, 54, completionUsage.tokens)
