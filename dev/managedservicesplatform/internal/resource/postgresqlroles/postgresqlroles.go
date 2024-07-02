@@ -88,7 +88,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		for _, p := range config.Publications {
 			id := id.Group(p.Name)
 
-			// 	GRANT SELECT ON ALL TABLES IN SCHEMA SCHEMA_NAME TO USER_NAME;
+			// Grant SELECT privileges to the publication's tables
 			_ = grant.NewGrant(scope, id.TerraformID("user_table_select_grant"), &grant.GrantConfig{
 				Provider:   config.PostgreSQLProvider,
 				Database:   &p.Database,
@@ -101,7 +101,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 					"SELECT",
 				})),
 			})
-			// 	GRANT USAGE ON SCHEMA SCHEMA_NAME TO USER_NAME;
+			// Grant USAGE dabatases on the public schema
 			_ = grant.NewGrant(scope, id.TerraformID("user_schema_usage_grant"), &grant.GrantConfig{
 				Provider:   config.PostgreSQLProvider,
 				Database:   &p.Database,
