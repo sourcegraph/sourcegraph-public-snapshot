@@ -76,7 +76,7 @@ func progressTasks(tasks []operator.Task) []operator.Task {
 	return result
 }
 
-func calculateProgress(tasks []operator.Task) ([]operator.Task, int) {
+func calculateProgress() ([]operator.Task, int) {
 	var result []operator.Task
 
 	var taskWeights int = 0

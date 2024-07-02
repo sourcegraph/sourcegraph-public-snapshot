@@ -23,7 +23,7 @@ func InstallProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 	var progress int
 
-	installTasks, progress = calculateProgress(installTasks)
+	installTasks, progress = calculateProgress()
 
 	result := InstallProgress{
 		Version:  installVersion,
