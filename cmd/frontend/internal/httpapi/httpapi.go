@@ -17,10 +17,6 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 
-	// Use the current model config (models.json) that is built with the binary.
-	// TODO: Load this from memory, so that we can apply any server-side config settings,
-	// e.g. what the user specified from site config, or updates we pulled from Cody Gateway.
-
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
