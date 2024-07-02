@@ -59,6 +59,7 @@ export const SearchSidebarView: FC<SearchSidebarViewProps> = React.memo(function
                 queryState: { query: '' },
                 searchCaseSensitivity: false,
                 searchPatternType: SearchPatternType.standard,
+                defaultPatternType: SearchPatternType.standard, // Not used here
                 searchQueryFromURL: '',
                 searchMode: SearchMode.Precise,
 

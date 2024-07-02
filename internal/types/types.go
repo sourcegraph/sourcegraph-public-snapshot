@@ -621,7 +621,6 @@ type ExternalService struct {
 	LastSyncAt     time.Time
 	NextSyncAt     time.Time
 	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
@@ -852,7 +851,6 @@ type User struct {
 	BuiltinAuth           bool
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
-	CompletedPostSignup   bool
 	SCIMControlled        bool
 }
 
@@ -939,14 +937,6 @@ func (n *NamespacePermission) DisplayName() string {
 	// Based on the zanzibar representation for data relations:
 	// <namespace>:<object_id>#@<user_id | user_group>
 	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
-}
-
-type OrgMemberAutocompleteSearchItem struct {
-	ID          int32
-	Username    string
-	DisplayName string
-	AvatarURL   string
-	InOrg       int32
 }
 
 type Org struct {

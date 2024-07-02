@@ -3,7 +3,11 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "modelconfig",
-    srcs = ["validation.go"],
+    srcs = [
+        "updates.go",
+        "util.go",
+        "validation.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/modelconfig",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -15,11 +19,16 @@ go_library(
 
 go_test(
     name = "modelconfig_test",
-    srcs = ["validation_test.go"],
+    srcs = [
+        "until_test.go",
+        "updates_test.go",
+        "validation_test.go",
+    ],
     embed = [":modelconfig"],
     deps = [
         "//internal/modelconfig/embedded",
         "//internal/modelconfig/types",
+        "//lib/pointers",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

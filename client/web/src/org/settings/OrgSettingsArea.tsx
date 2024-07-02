@@ -1,7 +1,7 @@
 import React, { type FC } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Routes, Route } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -11,7 +11,6 @@ import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import type { OrgAreaOrganizationFields } from '../../graphql-operations'
 import type { RouteV6Descriptor } from '../../util/contributions'
-import { getLicenseFeatures } from '../../util/license'
 import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { OrgSettingsSidebar, type OrgSettingsSidebarItems } from './OrgSettingsSidebar'
@@ -35,11 +34,6 @@ export interface OrgSettingsAreaProps extends OrgAreaRouteContext {
 
 export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
     org: OrgAreaOrganizationFields
-
-    license: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
 }
 
 /**
@@ -49,7 +43,6 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
 const AuthenticatedOrgSettingsArea: FC<OrgSettingsAreaProps> = props => {
     const context: OrgSettingsAreaRouteContext = {
         ...props,
-        license: getLicenseFeatures(),
     }
 
     return (

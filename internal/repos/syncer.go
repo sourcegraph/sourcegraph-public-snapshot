@@ -14,18 +14,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/bytesize"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -62,7 +58,6 @@ func NewSyncer(observationCtx *observation.Context, store Store, sourcer Sourcer
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
 	EnqueueInterval func() time.Duration // Defaults to 1 minute
-	IsDotCom        bool                 // Defaults to false
 	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
@@ -99,7 +94,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 				return nil
 			}
 
-			if err := store.EnqueueSyncJobs(ctx, opts.IsDotCom); err != nil {
+			if err := store.EnqueueSyncJobs(ctx); err != nil {
 				return errors.Wrap(err, "enqueueing sync jobs")
 			}
 
@@ -111,11 +106,6 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 	)
 
 	routines := []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
-
-	if opts.IsDotCom {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
-		routines = append(routines, s.newSyncReposWithLastErrorsWorker(ctx, rateLimiter))
-	}
 
 	return routines
 }
@@ -189,180 +179,6 @@ func (e ErrAccountSuspended) AccountSuspended() bool {
 	return true
 }
 
-// SyncRepo syncs a single repository by name and associates it with an external service.
-//
-// It works for repos from:
-//
-//  1. Public "cloud_default" code hosts since we don't sync them in the background
-//     (which would delete lazy synced repos).
-//  2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
-//     repos in the `lsif_dependency_repos` table which is used as the source of truth
-//     for the next full sync, so lazy added repos don't get wiped.
-//
-// The "background" boolean flag indicates that we should run this
-// sync in the background vs block and call s.syncRepo synchronously.
-func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
-	logger := s.ObsvCtx.Logger.With(log.String("name", string(name)), log.Bool("background", background))
-
-	logger.Debug("SyncRepo started")
-
-	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
-	defer tr.End()
-
-	repo, err = s.Store.RepoStore().GetByName(ctx, name)
-	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "GetByName failed for %q", name)
-	}
-
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
-	if codehost == nil {
-		if repo != nil {
-			return repo, nil
-		}
-
-		logger.Debug("no associated code host found, skipping")
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
-	if repo != nil {
-		// Only public repos can be individually synced on sourcegraph.com
-		if repo.Private {
-			logger.Debug("repo is private, skipping")
-			return nil, &database.RepoNotFoundErr{Name: name}
-		}
-		// Don't sync the repo if it's been updated in the past 1 minute.
-		if s.Now().Sub(repo.UpdatedAt) < time.Minute {
-			logger.Debug("repo updated recently, skipping")
-			return repo, nil
-		}
-	}
-
-	if background && repo != nil {
-		logger.Debug("starting background sync in goroutine")
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-			defer cancel()
-
-			// We don't care about the return value here, but we still want to ensure that
-			// only one is in flight at a time.
-			updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
-				return s.syncRepo(ctx, codehost, name, repo)
-			})
-			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", updatedRepo.(*types.Repo))))
-			if err != nil {
-				logger.Error("background.SyncRepo", log.Error(err), log.Bool("shared", shared))
-			}
-		}()
-		return repo, nil
-	}
-
-	logger.Debug("starting foreground sync")
-	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
-		return s.syncRepo(ctx, codehost, name, repo)
-	})
-	if err != nil {
-		logger.Warn("foreground sync failed", log.Error(err), log.Bool("shared", shared))
-		return nil, err
-	}
-	return updatedRepo.(*types.Repo), nil
-}
-
-func (s *Syncer) syncRepo(
-	ctx context.Context,
-	codehost *extsvc.CodeHost,
-	name api.RepoName,
-	stored *types.Repo,
-) (repo *types.Repo, err error) {
-	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", name.Attr())
-	defer func() { save(svc, err) }()
-
-	svcs, err := s.Store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
-		// Since package host external services have the set of repositories to sync in
-		// the lsif_dependency_repos table, we can lazy-sync individual repos without wiping them
-		// out in the next full background sync as long as we add them to that table.
-		//
-		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
-		OnlyCloudDefault: !codehost.IsPackageHost(),
-		LimitOffset:      &database.LimitOffset{Limit: 1},
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing external services")
-	}
-
-	if len(svcs) != 1 {
-		return nil, errors.Wrapf(
-			&database.RepoNotFoundErr{Name: name},
-			"cloud default external service of type %q not found", codehost.ServiceType,
-		)
-	}
-
-	svc = svcs[0]
-
-	src, err := s.Sourcer(ctx, svc)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve Sourcer")
-	}
-
-	rg, ok := src.(RepoGetter)
-	if !ok {
-		return nil, errors.Wrapf(
-			&database.RepoNotFoundErr{Name: name},
-			"can't get repo metadata for service of type %q", codehost.ServiceType,
-		)
-	}
-
-	path := strings.TrimPrefix(string(name), strings.TrimPrefix(codehost.ServiceID, "https://"))
-
-	if stored != nil {
-		defer func() {
-			s.ObsvCtx.Logger.Debug("deferred deletable repo check")
-			if isDeleteableRepoError(err) {
-				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
-				if err2 != nil {
-					s.ObsvCtx.Logger.Error(
-						"SyncRepo failed to delete",
-						log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)),
-						log.String("repo", string(name)),
-						log.NamedError("cause", err),
-						log.Error(err2),
-					)
-				}
-				s.ObsvCtx.Logger.Debug("external service repo deleted", log.Int32("deleted ID", int32(stored.ID)))
-				s.notifyDeleted(ctx, stored.ID)
-			}
-		}()
-	}
-
-	repo, err = rg.GetRepo(ctx, path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get repo with path: %q", path)
-	}
-
-	if err := repoCanBeAddedOnDemandDotcom(repo); err != nil {
-		return nil, err
-	}
-
-	if repo.Private {
-		s.ObsvCtx.Logger.Debug("repo is private, skipping")
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
-	if _, err = s.sync(ctx, svc, repo); err != nil {
-		return nil, err
-	}
-
-	return repo, nil
-}
-
-// isDeleteableRepoError checks whether the error returned from a repo sync
-// signals that we can safely delete the repo
-func isDeleteableRepoError(err error) bool {
-	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) ||
-		errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) || errcode.IsUnavailableForLegalReasons(err)
-}
-
 func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 	var d types.RepoSyncDiff
 	for _, id := range deleted {
@@ -377,13 +193,6 @@ func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 		}
 	}
 }
-
-// ErrCloudDefaultSync is returned by SyncExternalService if an attempt to
-// sync a cloud default external service is done. We can't sync these external services
-// because their repos are added via the lazy-syncing mechanism on sourcegraph.com
-// instead of config (which is empty), so attempting to sync them would delete all of
-// the lazy-added repos.
-var ErrCloudDefaultSync = errors.New("cloud default external services can't be synced")
 
 // SyncProgress represents running counts for an external service sync.
 type SyncProgress struct {
@@ -460,15 +269,6 @@ func (s *Syncer) SyncExternalService(
 
 		logger.Debug("synced external service", log.Duration("backoff duration", interval))
 	}()
-
-	// We have fail-safes in place to prevent enqueuing sync jobs for cloud default
-	// external services, but in case those fail to prevent a sync for any reason,
-	// we have this additional check here. Cloud default external services have their
-	// repos added via the lazy-syncing mechanism on sourcegraph.com instead of config
-	// (which is empty), so attempting to sync them would delete all of the lazy-added repos.
-	if svc.CloudDefault {
-		return ErrCloudDefaultSync
-	}
 
 	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
@@ -921,32 +721,4 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
-}
-
-const (
-	maxSize  = 1 * bytesize.GB
-	minStars = 100
-)
-
-type ErrRepoDeniedTooBig struct{}
-
-func (e ErrRepoDeniedTooBig) Error() string {
-	// NOTE: This message is visible to users!
-	return "repository is larger than 1GB and has less than 100 stars"
-}
-
-func (e ErrRepoDeniedTooBig) IsRepoDenied() bool { return true }
-
-// repoCanBeAddedOnDemandDotcom returns nil if the repository can be added on
-// dotcom and an error if it doesn't meet requirements. For example: if the
-// repo is too big for the number of stars it has, an error is returned with an
-// error message that explains this.
-func repoCanBeAddedOnDemandDotcom(repo *types.Repo) error {
-	if r, ok := repo.Metadata.(*github.Repository); ok {
-		if r.SizeBytes() >= maxSize && r.StargazerCount < minStars {
-			return ErrRepoDeniedTooBig{}
-		}
-	}
-
-	return nil
 }

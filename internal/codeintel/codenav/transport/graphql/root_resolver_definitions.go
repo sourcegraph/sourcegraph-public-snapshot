@@ -37,7 +37,7 @@ func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolve
 	if args.Filter != nil && *args.Filter != "" {
 		filtered := def[:0]
 		for _, loc := range def {
-			if strings.Contains(loc.Path, *args.Filter) {
+			if strings.Contains(loc.Path.RawValue(), *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}

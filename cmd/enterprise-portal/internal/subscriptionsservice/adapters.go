@@ -78,7 +78,7 @@ func convertProtoToIAMTupleObjectType(typ subscriptionsv1.PermissionType) iam.Tu
 	case subscriptionsv1.PermissionType_PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS:
 		return iam.TupleTypeSubscriptionCodyAnalytics
 	default:
-		panic("unexpected permission type")
+		return ""
 	}
 }
 
@@ -87,6 +87,15 @@ func convertProtoToIAMTupleRelation(action subscriptionsv1.PermissionRelation) i
 	case subscriptionsv1.PermissionRelation_PERMISSION_RELATION_VIEW:
 		return iam.TupleRelationView
 	default:
-		panic("unexpected permission relation")
+		return ""
+	}
+}
+
+func convertProtoRoleToIAMTupleObject(role subscriptionsv1.Role, subscriptionID string) iam.TupleObject {
+	switch role {
+	case subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN:
+		return iam.ToTupleObject(iam.TupleTypeCustomerAdmin, subscriptionID)
+	default:
+		return ""
 	}
 }

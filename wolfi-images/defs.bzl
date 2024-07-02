@@ -14,6 +14,7 @@ def wolfi_base(name = "wolfi", target = None):
             "//wolfi-images:sourcegraph-template.yaml",
         ],
         visibility = ["//visibility:private"],
+        stamp = 0,
     )
 
     apko_image(

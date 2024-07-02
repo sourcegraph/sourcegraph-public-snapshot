@@ -29,7 +29,7 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/axe-core",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
     bundle_name = "%s_bundle" % name
 
     # Bundle the tests to remove the use of esm modules in tests
@@ -71,7 +71,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
     # - GH_TOKEN
     # - DISPLAY
     # - HEADLESS
-    # - PERCY_TOKEN
     env = dict(env, **{
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
@@ -93,33 +92,10 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "INTEGRATION_TESTS": "true",
     })
 
-    if is_percy_enabled:
-        js_test(
-            name = name,
-            args = args,
-            env = dict(env, **{
-                "PERCY_ON": "true",
-            }),
-            data = data + [
-                "//:node_modules/@percy/cli",
-                "//:node_modules/@percy/puppeteer",
-                "//:node_modules/mocha",
-                "//:node_modules/resolve-bin",
-                "//client/shared/dev:run_mocha_tests_with_percy",
-            ],
-            # Executed mocha tests with Percy enabled via `percy exec -- mocha ...`
-            # Prepends volatile env variables to the command to make Percy aware of the
-            # current git branch and commit.
-            entry_point = "//client/shared/dev:run_mocha_tests_with_percy",
-            flaky = kwargs.pop("flaky"),
-            timeout = kwargs.pop("timeout"),
-            **kwargs
-        )
-    else:
-        mocha_bin.mocha_test(
-            name = name,
-            args = args,
-            data = data,
-            env = env,
-            **kwargs
-        )
+    mocha_bin.mocha_test(
+        name = name,
+        args = args,
+        data = data,
+        env = env,
+        **kwargs
+    )

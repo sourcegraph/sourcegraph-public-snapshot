@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { noop } from 'lodash'
 
 import type {
-    TranscriptJSON,
-    TranscriptJSONScope,
     CodyClient,
-    CodyClientScope,
     CodyClientConfig,
     CodyClientEvent,
+    CodyClientScope,
+    TranscriptJSON,
+    TranscriptJSONScope,
 } from '@sourcegraph/cody-shared'
-import { Transcript, useClient, NoopEditor } from '@sourcegraph/cody-shared'
+import { NoopEditor, Transcript, useClient } from '@sourcegraph/cody-shared'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
@@ -18,8 +18,8 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { EventName } from '../util/constants'
 
-import { isEmailVerificationNeededForCody } from './isCodyEnabled'
 import { useCodyIgnore } from './useCodyIgnore'
+import { currentUserRequiresEmailVerificationForCody } from './util'
 
 export interface CodyChatStore
     extends Pick<
@@ -179,7 +179,7 @@ export const useCodyChat = ({
             accessToken: null,
             customHeaders: window.context.xhrHeaders,
             debugEnable: false,
-            needsEmailVerification: isEmailVerificationNeededForCody(),
+            needsEmailVerification: currentUserRequiresEmailVerificationForCody(),
             experimentalLocalSymbols: false,
         },
         scope: initialScope,
