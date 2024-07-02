@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "subscriptions",
+    srcs = [
+        "license_conditions.go",
+        "licenses.go",
+        "subscriptions.go",
+        "subscriptions_conditions.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/subscriptions",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_jackc_pgtype//:pgtype",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
+    ],
+)
+
+go_test(
+    name = "subscriptions_test",
+    srcs = ["subscriptions_test.go"],
+    tags = [
+        TAG_INFRA_CORESERVICES,
+        "requires-network",
+    ],
+    deps = [
+        ":subscriptions",
+        "//cmd/enterprise-portal/internal/database/databasetest",
+        "//cmd/enterprise-portal/internal/database/internal/tables",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

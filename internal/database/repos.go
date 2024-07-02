@@ -81,15 +81,6 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
-	// plus all repos from the following data sources:
-	// - src.fedoraproject.org
-	// - maven
-	// - NPM
-	// - JDK
-	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
-	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
@@ -1296,92 +1287,6 @@ func containsOrderBySizeField(orderBy OrderBy) bool {
 
 const embeddedReposQueryFmtstr = `
 	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed'
-`
-
-type ListSourcegraphDotComIndexableReposOptions struct {
-	// CloneStatus if set will only return indexable repos of that clone
-	// status.
-	CloneStatus types.CloneStatus
-}
-
-// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
-// repo to be indexed on sourcegraph.com.
-const listSourcegraphDotComIndexableReposMinStars = 5
-
-func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListIndexable")
-	defer tr.EndWithErr(&err)
-
-	var joins, where []*sqlf.Query
-	if opts.CloneStatus != types.CloneStatusUnknown {
-		if opts.CloneStatus == types.CloneStatusCloned {
-			// **Performance optimization case**:
-			//
-			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
-			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
-			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
-			//
-			// If these scales change significantly this optimization should be reconsidered. The original query
-			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
-			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
-		} else {
-			// Normal case: Filter out rows that do not have a gitserver repo with the target status
-			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
-		}
-	}
-
-	if len(where) == 0 {
-		where = append(where, sqlf.Sprintf("TRUE"))
-	}
-
-	q := sqlf.Sprintf(
-		listSourcegraphDotComIndexableReposQuery,
-		sqlf.Join(joins, "\n"),
-		listSourcegraphDotComIndexableReposMinStars,
-		sqlf.Join(where, "\nAND"),
-	)
-
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "querying indexable repos")
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var r types.MinimalRepo
-		if err := rows.Scan(&r.ID, &r.Name, &dbutil.NullInt{N: &r.Stars}); err != nil {
-			return nil, errors.Wrap(err, "scanning indexable repos")
-		}
-		results = append(results, r)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning indexable repos")
-	}
-
-	return results, nil
-}
-
-// N.B. This query's exact conditions are mirrored in the Postgres index
-// repo_dotcom_indexable_repos_idx. Any substantial changes to this query
-// may require an associated index redefinition.
-const listSourcegraphDotComIndexableReposQuery = `
-SELECT
-	repo.id,
-	repo.name,
-	repo.stars
-FROM repo
-%s
-WHERE
-	deleted_at IS NULL AND
-	blocked IS NULL AND
-	(
-		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
-		OR
-		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
-	) AND
-	%s
-ORDER BY stars DESC NULLS LAST
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

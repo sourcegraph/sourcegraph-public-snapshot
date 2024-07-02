@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import pTimeout from 'p-timeout'
 import { Subject } from 'rxjs'
 import { describe, expect, it, test } from 'vitest'

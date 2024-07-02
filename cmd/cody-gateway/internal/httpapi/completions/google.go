@@ -64,10 +64,9 @@ func (g *GoogleHandlerMethods) getAPIURL(feature codygateway.Feature, req google
 	rpc := "generateContent"
 	sseSuffix := ""
 	// If we're streaming, we need to use the stream endpoint.
-	if feature == codygateway.FeatureChatCompletions || req.ShouldStream() {
+	if req.ShouldStream() {
 		rpc = "streamGenerateContent"
 		sseSuffix = "&alt=sse"
-		req.Stream = true
 	}
 	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:%s?key=%s%s", req.Model, rpc, g.config.AccessToken, sseSuffix)
 }
@@ -104,16 +103,16 @@ func (*GoogleHandlerMethods) getRequestMetadata(body googleRequest) (model strin
 	return body.Model, map[string]any{"stream": body.ShouldStream()}
 }
 
-func (o *GoogleHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
+func (o *GoogleHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
 }
 
-func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody googleRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {
 	// First, extract prompt usage details from the request.
 	promptUsage.characters = len(reqBody.BuildPrompt())
 	// Try to parse the request we saw, if it was non-streaming, we can simply parse
 	// it as JSON.
-	if !reqBody.Stream && !reqBody.ShouldStream() {
+	if !isStreamRequest {
 		var res googleResponse
 		if err := json.NewDecoder(r).Decode(&res); err != nil {
 			logger.Error("failed to parse Google response as JSON", log.Error(err))
@@ -135,10 +134,10 @@ func (*GoogleHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody go
 	if err != nil {
 		logger.Error("failed to decode Google streaming response", log.Error(err))
 	}
+	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	if completionUsage.tokens == -1 || promptUsage.tokens == -1 {
 		logger.Warn("did not extract token counts from Google streaming response", log.Int("prompt-tokens", promptUsage.tokens), log.Int("completion-tokens", completionUsage.tokens))
 	}
-	promptUsage.tokens, completionUsage.tokens = promptTokens, completionTokens
 	return promptUsage, completionUsage
 }
 

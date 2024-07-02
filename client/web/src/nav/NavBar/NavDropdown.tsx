@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
+import { EMPTY_RECTANGLE, Icon, Link, Menu, MenuButton, MenuLink, MenuList } from '@sourcegraph/wildcard'
 
 import { MobileNavGroupContext, NavItem, NavLink, type NavLinkProps } from '.'
 
@@ -26,11 +26,6 @@ interface NavDropdownProps {
         /** Alternative path to match against if item is active */
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
-    /**
-     * The first item in the dropdown menu that serves as the "home" item. It uses the path from the
-     * toggleItem.
-     */
-    homeItem?: Omit<NavDropdownItem, 'path'>
     /** Items to display in the dropdown */
     items: NavDropdownItem[]
     /** A current react router route match */
@@ -41,7 +36,6 @@ interface NavDropdownProps {
 
 export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
     toggleItem,
-    homeItem: homeItem,
     items,
     routeMatch,
     name,
@@ -102,11 +96,6 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 </div>
 
                                 <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
-                                    {homeItem && (
-                                        <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
-                                            {homeItem.content}
-                                        </MenuLink>
-                                    )}
                                     {items.map(item => (
                                         <MenuLink as={Link} key={item.path} to={item.path} target={item.target}>
                                             {item.content}

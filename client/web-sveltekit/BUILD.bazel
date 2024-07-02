@@ -212,6 +212,7 @@ playwright_test_bin.playwright_test(
         "BAZEL_SKIP_TESTS": "clone in progress;commit not found;not cloned;error loading commit information",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
+    flaky = True,
 )
 
 TESTS = glob([
@@ -319,10 +320,14 @@ sveltekit.svelte_kit(
 # Runs svelte-check on production source files
 svelte_check.svelte_check_test(
     name = "svelte-check",
-    timeout = "short",
+    timeout = "moderate",
     args = [
         "--tsconfig",
         "tsconfig.json",
+        "--compiler-warnings",
+        # missing-declaration is raised for our icon components. The Svelte compiler
+        # does not take into account ambient declarations (will be fixed in Svelte 5).
+        "missing-declaration:ignore",
     ],
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + [

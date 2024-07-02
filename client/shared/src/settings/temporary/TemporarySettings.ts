@@ -93,7 +93,6 @@ export interface TemporarySettingsSchema {
     'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
     'cody.onboarding.completed': boolean
-    'cody.onboarding.step': number
 
     /** OpenCodeGraph */
     'openCodeGraph.annotations.visible': boolean
@@ -161,7 +160,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'admin.hasCompletedLicenseCheck': null,
     'simple.search.toggle': null,
     'cody.onboarding.completed': null,
-    'cody.onboarding.step': null,
     'openCodeGraph.annotations.visible': null,
 }
 

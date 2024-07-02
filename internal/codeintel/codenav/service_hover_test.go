@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -33,7 +34,7 @@ func TestHover(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -90,7 +91,7 @@ func TestHoverRemote(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef"},
 	}
@@ -132,12 +133,13 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
+	uploadRelPath := core.NewUploadRelPathUnchecked
 	locations := []shared.Location{
-		{UploadID: 151, Path: "a.go", Range: testRange1},
-		{UploadID: 151, Path: "b.go", Range: testRange2},
-		{UploadID: 151, Path: "a.go", Range: testRange3},
-		{UploadID: 151, Path: "b.go", Range: testRange4},
-		{UploadID: 151, Path: "c.go", Range: testRange5},
+		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange1},
+		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange2},
+		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange3},
+		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
+		{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 	}
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)

@@ -5,18 +5,23 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -91,7 +96,8 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.gitserverClient,
 		args.Repo,
 		string(args.Commit),
-		args.Path,
+		// OK to use Unchecked function based on contract of GraphQL API
+		core.NewRepoRelPathUnchecked(args.Path),
 		r.maximumIndexesPerMonikerSearch,
 		r.hunkCache,
 	)
@@ -110,6 +116,10 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.CodeGraphDataOpts) (_ *[]resolverstubs.CodeGraphDataResolver, err error) {
 	ctx, _, endObservation := r.operations.codeGraphData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, nil
+	}
 
 	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
 		indexer := ""
@@ -159,6 +169,10 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	return &[]resolverstubs.CodeGraphDataResolver{}, nil
 }
 
+func (r *rootResolver) CodeGraphDataByID(ctx context.Context, id graphql.ID) (resolverstubs.CodeGraphDataResolver, error) {
+	return newCodeGraphDataResolverFromID(ctx, r.repoStore, r.svc, r.operations, id)
+}
+
 func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.CompletedUpload {
 	// Use orderedmap instead of a map to preserve the order of the uploads
 	// and to avoid introducing non-determinism.
@@ -182,6 +196,11 @@ func preferUploadsWithLongestRoots(uploads []shared.CompletedUpload) []shared.Co
 
 func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *resolverstubs.UsagesForSymbolArgs) (_ resolverstubs.UsageConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
+
+	if !conf.SCIPBasedAPIsEnabled() {
+		return nil, nil
+	}
+
 	numPreciseResults := 0
 	numSyntacticResults := 0
 	numSearchBasedResults := 0
@@ -200,15 +219,22 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
+	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
 		// Attempt to get up to remainingCount precise results.
 		remainingCount = remainingCount - numPreciseResults
 	}
 
+	usagesForSymbolArgs := codenav.UsagesForSymbolArgs{
+		Repo:        args.Repo,
+		Commit:      args.CommitID,
+		Path:        args.Path,
+		SymbolRange: args.Range,
+	}
+	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
-		// Attempt to get up to remainingCount syntactic results.
-		results, err := r.svc.SyntacticUsages(ctx, args.Repo, args.CommitID, args.Path, args.Range)
+		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
 		if err != nil {
 			switch err.Code {
 			case codenav.SU_Fatal:
@@ -219,16 +245,39 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			default:
 				// None of these errors should cause the whole request to fail
 				// TODO: We might want to log some of them in the future
-
 			}
+		} else {
+			for _, result := range syntacticResult.Matches {
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+			}
+			numSyntacticResults = len(syntacticResult.Matches)
+			remainingCount = remainingCount - numSyntacticResults
+			previousSyntacticSearch = prevSearch
 		}
-		numSyntacticResults = len(results)
-		remainingCount = remainingCount - numSyntacticResults
 	}
 
 	if remainingCount > 0 && provsForSCIPData.SearchBased {
-		// Attempt to get up to remainingCount search-based results.
-		_ = "shut up nogo linter complaining about empty branch"
+		results, err := r.svc.SearchBasedUsages(ctx, usagesForSymbolArgs, previousSyntacticSearch)
+		if err != nil {
+			// We only want to fail the request on an error here if we didn't get any precise or syntactic results before
+			if len(usageResolvers) == 0 {
+				return nil, err
+			} else {
+				// TODO: We might want to log some of these errors in the future
+				_ = "shut up nogo linter"
+			}
+		} else {
+			for _, result := range results {
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+			}
+		}
+	}
+
+	if len(usageResolvers) != 0 {
+		return &usageConnectionResolver{
+			nodes:    usageResolvers,
+			pageInfo: resolverstubs.NewSimplePageInfo(false),
+		}, nil
 	}
 
 	return nil, errors.New("Not implemented yet")
@@ -317,12 +366,32 @@ type codeGraphDataResolver struct {
 
 	// Arguments
 	svc        CodeNavService
-	upload     shared.CompletedUpload
+	upload     UploadData
 	opts       *resolverstubs.CodeGraphDataOpts
 	provenance resolverstubs.CodeGraphDataProvenance
 
 	// O11y
 	operations *operations
+}
+
+// UploadData represents the subset of information of shared.CompletedUpload
+// that we actually care about for the purposes of the GraphQL API.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
+type UploadData struct {
+	UploadID       int
+	Commit         string
+	Indexer        string
+	IndexerVersion string
+}
+
+func NewUploadData(upload shared.CompletedUpload) UploadData {
+	return UploadData{
+		UploadID:       upload.ID,
+		Commit:         upload.Commit,
+		Indexer:        upload.Indexer,
+		IndexerVersion: upload.IndexerVersion,
+	}
 }
 
 func newCodeGraphDataResolver(
@@ -337,11 +406,57 @@ func newCodeGraphDataResolver(
 		/*document*/ nil,
 		/*documentRetrievalError*/ nil,
 		svc,
-		upload,
+		NewUploadData(upload),
 		opts,
 		provenance,
 		operations,
 	}
+}
+
+// CodeGraphDataID represents the serializable state needed to materialize
+// a CodeGraphData value from an opaque GraphQL ID.
+//
+// All fields are left public for JSON marshaling/unmarshaling.
+type CodeGraphDataID struct {
+	UploadData
+	Args *resolverstubs.CodeGraphDataArgs
+	api.RepoID
+	Commit api.CommitID
+	Path   string
+	resolverstubs.CodeGraphDataProvenance
+}
+
+func newCodeGraphDataResolverFromID(
+	ctx context.Context,
+	repoStore database.RepoStore,
+	svc CodeNavService,
+	operations *operations,
+	rawID graphql.ID,
+) (resolverstubs.CodeGraphDataResolver, error) {
+	var id CodeGraphDataID
+	if err := relay.UnmarshalSpec(rawID, &id); err != nil {
+		return nil, errors.Wrap(err, "malformed ID")
+	}
+	repo, err := repoStore.Get(ctx, id.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	opts := resolverstubs.CodeGraphDataOpts{
+		Args:   id.Args,
+		Repo:   repo,
+		Commit: id.Commit,
+		Path:   core.NewRepoRelPathUnchecked(id.Path),
+	}
+	return &codeGraphDataResolver{
+		sync.Once{},
+		/*document*/ nil,
+		/*documentRetrievalError*/ nil,
+		svc,
+		id.UploadData,
+		&opts,
+		id.CodeGraphDataProvenance,
+		operations,
+	}, nil
 }
 
 func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.Document, error) {
@@ -349,9 +464,21 @@ func (c *codeGraphDataResolver) tryRetrieveDocument(ctx context.Context) (*scip.
 	// from the database, we can avoid performing a JOIN between codeintel_scip_document_lookup
 	// and codeintel_scip_documents
 	c.retrievedDocument.Do(func() {
-		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.ID, c.opts.Path)
+		c.document, c.documentRetrievalError = c.svc.SCIPDocument(ctx, c.upload.UploadID, c.opts.Path)
 	})
 	return c.document, c.documentRetrievalError
+}
+
+func (c *codeGraphDataResolver) ID() graphql.ID {
+	dataID := CodeGraphDataID{
+		c.upload,
+		c.opts.Args,
+		c.opts.Repo.ID,
+		c.opts.Commit,
+		c.opts.Path.RawValue(),
+		c.provenance,
+	}
+	return relay.MarshalID(resolverstubs.CodeGraphDataIDKind, dataID)
 }
 
 func (c *codeGraphDataResolver) Provenance(_ context.Context) (resolverstubs.CodeGraphDataProvenance, error) {

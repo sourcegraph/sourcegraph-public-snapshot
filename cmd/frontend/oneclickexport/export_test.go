@@ -122,7 +122,6 @@ const (
     "LastSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
     "Unrestricted": false,
-    "CloudDefault": false,
     "HasWebhooks": null,
     "TokenExpiresAt": null
   },
@@ -151,7 +150,6 @@ const (
     "LastSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
     "Unrestricted": false,
-    "CloudDefault": false,
     "HasWebhooks": null,
     "TokenExpiresAt": null
   },
@@ -175,7 +173,6 @@ const (
     "LastSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
     "Unrestricted": false,
-    "CloudDefault": false,
     "HasWebhooks": null,
     "TokenExpiresAt": null
   }

@@ -7,7 +7,6 @@ import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testin
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
-import { percySnapshotWithVariants } from '../utils'
 
 import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from './fixtures/calculated-insights'
 import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
@@ -36,7 +35,6 @@ describe('Code insights single insight page', () => {
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('svg circle')
         await delay(500)
-        await percySnapshotWithVariants(driver.page, name)
     }
 
     it('is styled correctly with common backend insights', async () => {

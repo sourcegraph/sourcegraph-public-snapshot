@@ -39,11 +39,26 @@ const selectQueryState = ({
     submitSearch,
     searchCaseSensitivity,
     searchPatternType,
+    defaultPatternType,
     searchMode,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode })
+    | 'queryState'
+    | 'setQueryState'
+    | 'submitSearch'
+    | 'searchCaseSensitivity'
+    | 'searchPatternType'
+    | 'defaultPatternType'
+    | 'searchMode'
+> => ({
+    queryState,
+    setQueryState,
+    submitSearch,
+    searchCaseSensitivity,
+    searchPatternType,
+    defaultPatternType,
+    searchMode,
+})
 
 /**
  * The search item in the navbar
@@ -52,8 +67,15 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const navigate = useNavigate()
     const location = useLocation()
 
-    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
-        useNavbarQueryState(selectQueryState, shallow)
+    const {
+        queryState,
+        setQueryState,
+        submitSearch,
+        searchCaseSensitivity,
+        searchPatternType,
+        defaultPatternType,
+        searchMode,
+    } = useNavbarQueryState(selectQueryState, shallow)
 
     const [v2QueryInput] = useV2QueryInput()
 
@@ -107,6 +129,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     {props.showKeywordSearchToggle ? (
                         <Toggles
                             patternType={searchPatternType}
+                            defaultPatternType={defaultPatternType}
                             caseSensitive={searchCaseSensitivity}
                             setPatternType={setSearchPatternType}
                             setCaseSensitivity={setSearchCaseSensitivity}
@@ -153,6 +176,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}
+                defaultPatternType={defaultPatternType}
                 setPatternType={setSearchPatternType}
                 searchMode={searchMode}
                 setSearchMode={setSearchMode}

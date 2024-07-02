@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import type { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
 import type {
@@ -206,42 +205,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         </span>
                     </small>
                 )}
-                <hr className="my-3" aria-hidden={true} />
-                <strong className="d-block mb-2">
-                    Visibility
-                    <Tooltip content="Coming soon">
-                        <Icon
-                            aria-label="Private batch changes coming soon"
-                            className="ml-1"
-                            svgPath={mdiInformationOutline}
-                        />
-                    </Tooltip>
-                </strong>
-                <div className="form-group mb-1" aria-hidden={true}>
-                    <RadioButton
-                        name="visibility"
-                        value="public"
-                        className="mr-2"
-                        checked={true}
-                        disabled={true}
-                        label="Public"
-                        aria-label="Public"
-                    />
-                </div>
-                <div className="form-group mb-0" aria-hidden={true}>
-                    <RadioButton
-                        name="visibility"
-                        value="private"
-                        className="mr-2 mb-0"
-                        disabled={true}
-                        label={
-                            <>
-                                Private <Icon aria-hidden={true} className="text-warning" svgPath={mdiLock} />
-                            </>
-                        }
-                        aria-label="Private"
-                    />
-                </div>
             </Container>
 
             {!isReadOnly && (

@@ -225,6 +225,9 @@
         if (editor) {
             setMode(editor, currentMode => (currentMode === 'History' ? null : 'History'))
             editor.focus()
+            // This ensures that history suggestions are shown after the button was pressed,
+            // before the user has interacted with the input in any other way.
+            userHasInteracted = true
         }
     }
 </script>

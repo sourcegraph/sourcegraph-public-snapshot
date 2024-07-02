@@ -18,6 +18,7 @@ export {
     isLinuxPlatform,
     getPlatform,
 } from '@sourcegraph/common/src/util/browserDetection'
+export { dirname, basename } from '@sourcegraph/common/src/util/path'
 
 let highlightingLoaded = false
 

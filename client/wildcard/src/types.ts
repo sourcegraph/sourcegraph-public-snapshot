@@ -7,7 +7,6 @@ export type ForwardReferenceExoticComponent<E, OwnProps> = React.ForwardRefExoti
 >
 
 type PropsWithChildren<P> = P &
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ({ children?: React.ReactNode | undefined } | { children: (...args: any[]) => React.ReactNode })
 
 export interface ForwardReferenceComponent<

@@ -37,7 +37,7 @@ var _ runtime.Service[Config] = (*Service)(nil)
 func (Service) Name() string    { return "enterprise-portal" }
 func (Service) Version() string { return version.Version() }
 
-func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.Routine, error) {
+func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.ServiceContract, config Config) (background.Routine, error) {
 	// We use Sourcegraph tracing code, so explicitly configure a trace policy
 	policy.SetTracePolicy(policy.TraceAll)
 
@@ -46,7 +46,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "initialize Redis client")
 	}
 
-	dbHandle, err := database.NewHandle(ctx, logger, contract, redisClient, version.Version())
+	dbHandle, err := database.NewHandle(ctx, logger, contract.Contract, redisClient, version.Version())
 	if err != nil {
 		return nil, errors.Wrap(err, "initialize database handle")
 	}
@@ -76,6 +76,11 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
 	}
 
+	iamClient, closeIAMClient, err := newIAMClient(ctx, logger, contract.Contract, redisClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize IAM client")
+	}
+
 	httpServer := http.NewServeMux()
 
 	// Register MSP endpoints
@@ -93,16 +98,26 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	}
 
 	// Register connect endpoints
-	codyaccessservice.RegisterV1(logger, httpServer, samsClient.Tokens(), dotcomDB,
-		connect.WithInterceptors(otelConnctInterceptor))
+	codyaccessservice.RegisterV1(
+		logger,
+		httpServer,
+		codyaccessservice.NewStoreV1(
+			codyaccessservice.StoreV1Options{
+				SAMSClient: samsClient,
+			},
+		),
+		dotcomDB,
+		connect.WithInterceptors(otelConnctInterceptor),
+	)
 	subscriptionsservice.RegisterV1(
 		logger,
 		httpServer,
-		samsClient.Tokens(),
 		subscriptionsservice.NewStoreV1(
 			subscriptionsservice.NewStoreV1Options{
-				DB:       dbHandle,
-				DotcomDB: dotcomDB,
+				DB:         dbHandle,
+				DotcomDB:   dotcomDB,
+				SAMSClient: samsClient,
+				IAMClient:  iamClient,
 			},
 		),
 		connect.WithInterceptors(otelConnctInterceptor),
@@ -151,16 +166,39 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		},
 	)
 	return background.LIFOStopRoutine{
-		background.CallbackRoutine{
-			StopFunc: func(ctx context.Context) error {
-				start := time.Now()
-				// NOTE: If we simply shut down, some in-fly requests may be dropped as the
-				// service exits, so we attempt to gracefully shutdown first.
-				dotcomDB.Close()
-				logger.Info("database connection pool closed", log.Duration("elapsed", time.Since(start)))
-				return nil
+		// Everything else can be stopped in conjunction
+		background.CombinedRoutine{
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close IAM client" },
+				StopFunc: func(context.Context) error {
+					closeIAMClient()
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close database handle" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dbHandle.Close()
+					logger.Info("database handle closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
+			},
+			background.CallbackRoutine{
+				NameFunc: func() string { return "close dotcom database connection pool" },
+				StopFunc: func(context.Context) error {
+					start := time.Now()
+					// NOTE: If we simply shut down, some in-fly requests may be dropped as the
+					// service exits, so we attempt to gracefully shutdown first.
+					dotcomDB.Close()
+					logger.Info("dotcom database connection pool closed", log.Duration("elapsed", time.Since(start)))
+					return nil
+				},
 			},
 		},
-		server, // stop server first
+		// Stop server first
+		server,
 	}, nil
 }

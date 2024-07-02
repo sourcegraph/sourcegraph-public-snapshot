@@ -98,7 +98,13 @@ EXPERIMENTAL: This type may change in a backwards-incompatible way.
 TODO(issue: GRAPH-614): 'commit' field should have type GitCommit
 before stabilizing this API.
 """
-type CodeGraphData {
+type CodeGraphData implements Node {
+    """
+    ID of this object that can be used to identify the CodeGraphData
+    for pagination in the codeGraphData field.
+    """
+    id: ID!
+
     """
     Coarse description of the data source for this code graph data.
     """
@@ -119,8 +125,12 @@ type CodeGraphData {
     toolInfo: CodeGraphToolInfo
 
     """
-    Occurrences are guaranteed to be sorted by range. It is possible
-    for there to be multiple occurrences for the same exact source range.
+    Occurrences are guaranteed to be sorted by range based on
+    (start.line, start.character, end.line, end.character) as a 4-tuple.
+    It is possible for there to be:
+    - Multiple occurrences for the same exact source range.
+    - Occurrences which intersect without one containing the other.
+    - Occurrences which span across multiple lines.
 
     At the moment, using higher values of 'first:' should not cause
     significantly worst performance.
@@ -218,6 +228,9 @@ type SCIPOccurrence {
     The 'Definition' and 'Reference' roles are mutually exclusive (exactly
     one of those will be present in the array below).
     """
+    # NOTE: At the moment, we do not support all symbol roles present
+    # in SCIP because indexers do not consistently implement roles other
+    # than the ones supported below.
     roles: [SymbolRole!]
     # We can add diagnostics etc. here in the future if needed.
 }
@@ -686,7 +699,19 @@ type Usage {
     """
     Information about the symbol itself.
     """
-    symbol: SymbolInformation!
+    symbol: SymbolInformation
+
+    """
+    Coarse-grained information about the data source.
+    """
+    provenance: CodeGraphDataProvenance!
+
+    """
+    Opaque fine-grained information describing the data source.
+    Provided only for debugging.
+    This field should be ignored when checking structural equality.
+    """
+    dataSource: String
 
     """
     Information about where this usage is located.
@@ -708,6 +733,149 @@ type Usage {
     until the start/end of the file.
     """
     surroundingContent(surroundingLines: SurroundingLines = { linesBefore: 0, linesAfter: 0 }): String
+
+    """
+    Describes the relationship between this usage and the input symbol
+    (as specified by the source range or directly).
+    """
+    usageKind: SymbolUsageKind!
+}
+
+"""
+Categorizes a usage based on its relationship to the symbol of interest.
+
+This enum may be expanded in the future.
+
+EXPERIMENTAL: This type may change in a backwards-incompatible way in the future.
+"""
+enum SymbolUsageKind {
+    """
+    Denotes a usage as being a definition.
+
+    interface Animal:
+        sound()
+
+    class Dog implements Animal:
+        sound() override { ... }
+
+    func makeSounds(animal: Animal, dog: Dog):
+        animal.sound()
+        #      ^---^ (1)
+        dog.sound()
+        #   ^---^ (2)
+
+    Here, usagesForSymbol for (1) will return a Definition usage for Animal.sound().
+    Similarly, usagesForSymbol for (2) will return a Definition usage for Dog.sound().
+
+    In the general case, a symbol may have multiple definitions.
+    Here are some examples:
+
+    1. Python allows for multiple inheritance, so the same field can
+       be declared in multiple parent classes. In such a situation,
+       even Precise results may have multiple definitions.
+    2. A function may have different definitions based on the build
+       configuration, such as for macOS vs Windows. A precise SCIP indexer
+       may unify all such definitions into a single index as SCIP
+       currently (as of June 20 2024) doesn't support tracking build
+       configuration.
+    3. Syntactic or search-based results may not be able to find the
+       exact definition, so they may return a superset of the full set
+       of definitions.
+    """
+    DEFINITION
+
+    """
+    Denotes a usage as being a reference. References are unified across
+    the inheritance hierarchy. For example, consider the following pseudocode:
+
+    interface Animal:
+        sound()
+
+    class Dog implements Animal:
+        sound() override { ... }
+
+    func makeSounds(animal: Animal, dog: Dog):
+        animal.sound()
+    #          ^---^ (1)
+        dog.sound()
+    #       ^---^ (2)
+
+    Here, usagesForSymbol for both (1) and (2) will return Reference usages
+    for both Animal.sound() and Dog.sound().
+    - For (1), it makes sense to also return reference usages for Dog.sound()
+      because 'animal' may actually be a Dog.
+    - For (2), it makes sense to also return reference usages for Animal.sound()
+      because 'dog' value may be up-cast to Animal at some point and the
+      and 'sound()' might be called on it after that.
+    """
+    REFERENCE
+
+    """
+    Denotes a usage as being an 'implementation', generally of a method, interface
+    or similar (the exact terminology varies across languages - traits, protocols etc.).
+
+    For example, consider the following pseudocode:
+
+    interface Animal:
+    #         ^----^ (1)
+        sound()
+    #   ^---^ (2)
+
+    class Dog implements Animal:
+        sound() override { ... }
+
+    Here, usagesForSymbol for (1) will return an Implementation usage for Dog.
+    Similarly, usagesForSymbol for (2) will return an Implementation usage for Dog.sound().
+
+    As of June 20 2024, Implementation usages are only supported by
+    Precise indexers. Syntactic and search-based usagesForSymbol will mark all
+    such usages as Reference.
+    """
+    IMPLEMENTATION
+
+    """
+    Denotes a usage as being a 'super', generally of a method, type or similar.
+    The exact terminology varies across languages and the syntax under question -
+    for functions, it might be 'superclass method', 'interface method', 'trait method' etc.
+    and for types, it might be 'superclass', 'interface', 'trait' etc.
+
+    For example, consider the following pseudocode:
+
+    interface Animal:
+        sound()
+
+    class Dog implements Animal:
+        sound() override { ... }
+
+    func bark(dog: Dog):
+                   ^-^ (1)
+        dog.sound()
+            ^---^ (2)
+
+    Here, usagesForSymbol for (1) will return a Super usage for Animal.
+    Similarly, usagesForSymbol for (2) will return a Super usage for Animal.sound().
+
+    As of June 20 2024, Super usages are only supported by
+    Precise indexers. Syntactic and search-based usagesForSymbol will mark all
+    such usages as Reference.
+
+    UI note: Strictly speaking, depending on the exact symbol and language under
+    consideration, 'Super' usages would be better be grouped under a heading like:
+
+    - Method specification (for methods satisfying the signature of an interface
+      method in Go or Java)
+    - Interface (for types implementing an interface in Go or Java)
+    - Trait method (for methods satisfying the signature of a trait method in Rust)
+    - Trait (for types implementing a trait in Rust)
+
+    and so on. Due to this large variation across languages, we've chosen
+    to group all such usages under 'Super' for now.
+
+    Historical note: This was previously called 'prototype' in the old API.
+    However, 'prototype' has a specific meaning in C++ different from our usage,
+    so we recommend avoiding the term 'prototype' in the UI.
+    """
+    SUPER
 }
 
 """
@@ -735,18 +903,6 @@ type SymbolInformation {
     is no appropriate hover documentation to display.
     """
     documentation: [String!]
-
-    """
-    Coarse-grained information about the data source.
-    """
-    provenance: CodeGraphDataProvenance!
-
-    """
-    Opaque fine-grained information describing the data source.
-    Provided only for debugging.
-    This field should be ignored when checking structural equality.
-    """
-    dataSource: String
 }
 
 """

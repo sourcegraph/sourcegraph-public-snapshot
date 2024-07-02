@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Template used for local development only -->
 <html lang="en">
     <head>
         <meta charset="utf-8" />
@@ -16,6 +17,16 @@
                 xhrHeaders: {
                     'X-Requested-With': 'Sourcegraph',
                 },
+                // Local standalone dev server for dotcom can be started with
+                // pnpm dev:dotcom
+                sourcegraphDotComMode: !!'%sveltekit.env.PUBLIC_DOTCOM%',
+                codyEnabledOnInstance: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_ON_INSTANCE%',
+                codyEnabledForCurrentUser: !!'%sveltekit.env.PUBLIC_CODY_ENABLED_FOR_CURRENT_USER%',
+                batchChangesEnabled: !!'%sveltekit.env.PUBLIC_BATCH_CHANGES_ENABLED%',
+                codeInsightsEnabled: !!'%sveltekit.env.PUBLIC_CODE_INSIGHTS_ENABLED%',
+
+                // The following are used to mock context in playwright tests
+                ...(typeof window.context === 'object' ? window.context : {}),
             }
             window.pageError = undefined
         </script>

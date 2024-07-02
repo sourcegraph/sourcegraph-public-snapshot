@@ -37,24 +37,104 @@ func AllowedEventTypes() EventTypes {
 				"testField",
 			},
 		},
-		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
+		// The 'languageId' key is included for feature:'cody.completions' events to provide
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
 			Feature: "cody.completion",
-			Action:  "suggested",
+			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
 			},
 		},
-		// The 'languageId' key is included for feature:'cody.completions' action:suggested/accepted events to provide
+		// The 'languageId' key is included for feature:'cody.hoverCommands' action: 'visible' events to provide
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
 		EventType{
-			Feature: "cody.completion",
-			Action:  "accepted",
+			Feature: "cody.hoverCommands",
+			Action:  "visible",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
+			},
+		},
+		// The 'languageId' key is included for feature:'blob.codeintel' events to provide
+		// customers with valuable language-specific insights from the analytics we offer.
+		// This information helps them better understand code completion usage patterns.
+		EventType{
+			Feature: "blob.codeintel",
+			Action:  "*",
+			AllowedPrivateMetadataKeys: []string{
+				"languageId",
+			},
+		},
+		// The 'chatModel' key is included for feature:'cody.chat-question' action:'submitted' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.chat-question",
+			Action:  "submitted",
+			AllowedPrivateMetadataKeys: []string{
+				"chatModel",
+			},
+		},
+		// The 'chatModel' key is included for feature:'cody.chatResponse' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.chatResponse",
+			Action:  "*",
+			AllowedPrivateMetadataKeys: []string{
+				"chatModel",
+			},
+		},
+		// The 'chatModel' key is included for feature:'cody.chatResponseNew' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.chatResponseNew",
+			Action:  "*",
+			AllowedPrivateMetadataKeys: []string{
+				"chatModel",
+			},
+		},
+		// The 'model' key is included for feature:'cody.command.doc' action: 'executed' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.command.doc",
+			Action:  "executed",
+			AllowedPrivateMetadataKeys: []string{
+				"model",
+			},
+		},
+		// The 'model' key is included for feature:'cody.command.edit' action: 'executed' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.command.edit",
+			Action:  "executed",
+			AllowedPrivateMetadataKeys: []string{
+				"model",
+			},
+		},
+		// The 'model' key is included for feature:'cody.command.fix' action: 'executed' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.command.fix",
+			Action:  "executed",
+			AllowedPrivateMetadataKeys: []string{
+				"model",
+			},
+		},
+		// The 'model' key is included for feature:'cody.command.test' action: 'executed' events to provide
+		// customers with valuable chat-model specific insights from the analytics we offer.
+		// Access to this information can help customers determine which models best suit their specific use cases
+		EventType{
+			Feature: "cody.command.test",
+			Action:  "executed",
+			AllowedPrivateMetadataKeys: []string{
+				"model",
 			},
 		},
 	)...)
@@ -62,14 +142,18 @@ func AllowedEventTypes() EventTypes {
 
 type EventTypes struct {
 	types []EventType
-	// index of '{feature}.{action}:{allowedfields}' for checking
+	// index of '{feature}/{action}:{allowedfields}' for checking
 	index map[string][]string
 }
 
 func eventTypes(types ...EventType) EventTypes {
 	index := make(map[string][]string, len(types))
 	for _, t := range types {
-		index[fmt.Sprintf("%s.%s", t.Feature, t.Action)] = t.AllowedPrivateMetadataKeys
+		key := fmt.Sprintf("%s/%s", t.Feature, t.Action)
+		if t.Action == "*" {
+			key = t.Feature
+		}
+		index[key] = t.AllowedPrivateMetadataKeys
 	}
 	return EventTypes{types: types, index: index}
 }
@@ -90,9 +174,19 @@ func (e EventTypes) Redact(event *telemetrygatewayv1.Event) redactMode {
 // IsAllowed indicates an event is on the sensitive telemetry allowlist, and the fields that
 // are allowed.
 func (e EventTypes) IsAllowed(event *telemetrygatewayv1.Event) ([]string, bool) {
-	key := fmt.Sprintf("%s.%s", event.GetFeature(), event.GetAction())
-	allowedKeys, allowed := e.index[key]
-	return allowedKeys, allowed
+	// Check for the specific feature/action combination
+	key := fmt.Sprintf("%s/%s", event.GetFeature(), event.GetAction())
+	if allowedKeys, allowed := e.index[key]; allowed {
+		return allowedKeys, true
+	}
+
+	// Check for the feature-wide entry
+	if allowedKeys, allowed := e.index[event.GetFeature()]; allowed {
+		return allowedKeys, true
+	}
+
+	// If neither specific nor feature-wide entry is found, return false
+	return nil, false
 }
 
 func (e EventTypes) validate() error {

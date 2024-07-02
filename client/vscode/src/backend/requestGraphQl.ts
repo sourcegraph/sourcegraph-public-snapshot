@@ -1,9 +1,7 @@
-import { authentication } from 'vscode'
-
 import { asError } from '@sourcegraph/common'
 import { checkOk, GRAPHQL_URI, type GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
 
-import { handleAccessTokenError } from '../settings/accessTokenSetting'
+import { handleAccessTokenError, getAccessToken } from '../settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
 import { fetch, getProxyAgent, Headers, type HeadersInit } from './fetch'
@@ -15,9 +13,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     overrideSourcegraphURL?: string
 ): Promise<GraphQLResult<R>> => {
     const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
-    const accessToken =
-        overrideAccessToken ||
-        (await authentication.getSession(sourcegraphURL, [], { createIfNone: false }))?.accessToken
+    const accessToken = overrideAccessToken || (await getAccessToken())
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     const customHeaders = endpointRequestHeadersSetting()
@@ -33,7 +29,6 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // Debt: intercepted requests in integration tests
         // have 0 status codes, so don't check in test environment.
         const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const options: any = {
             agent: getProxyAgent(),
             body: JSON.stringify({

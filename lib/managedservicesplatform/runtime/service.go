@@ -21,7 +21,7 @@ type Service[ConfigT any] interface {
 	Initialize(
 		ctx context.Context,
 		logger log.Logger,
-		contract Contract,
+		contract ServiceContract,
 		config ConfigT,
 	) (background.Routine, error)
 }
@@ -69,7 +69,7 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	ctr := contract.New(log.Scoped("msp.contract"), service, env)
+	ctr := contract.NewService(log.Scoped("msp.contract"), service, env)
 
 	// Fast-exit with configuration facts if requested
 	if *showHelp {

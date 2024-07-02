@@ -14,7 +14,7 @@ import {
     EditSettings,
     LatestSettingsQuery,
 } from './layout.gql'
-import { dotcomMainNavigation, mainNavigation } from './navigation'
+import { getMainNavigationEntries, Mode } from './navigation'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -47,11 +47,20 @@ export const load: LayoutLoad = async ({ fetch }) => {
     }
 
     return {
+        navigationEntries: getMainNavigationEntries(
+            (window.context.sourcegraphDotComMode ? Mode.DOTCOM : Mode.ENTERPRISE) |
+                (window.context.codyEnabledOnInstance ? Mode.CODY_INSTANCE_ENABLED : 0) |
+                (window.context.codyEnabledForCurrentUser ? Mode.CODY_USER_ENABLED : 0) |
+                (window.context.batchChangesEnabled ? Mode.BATCH_CHANGES_ENABLED : 0) |
+                (window.context.codeInsightsEnabled ? Mode.CODE_INSIGHTS_ENABLED : 0) |
+                (result.data.currentUser ? Mode.AUTHENTICATED : Mode.UNAUTHENTICATED)
+        ),
+
+        // User data
         user: result.data.currentUser,
-        navigationEntries: window.context.sourcegraphDotComMode ? dotcomMainNavigation : mainNavigation,
-        // Initial user settings
         settings,
         featureFlags: result.data.evaluatedFeatureFlags,
+
         globalSiteAlerts: globalSiteAlerts.then(result => result.data?.site),
         fetchEvaluatedFeatureFlags: async () => {
             const result = await client.query(EvaluatedFeatureFlagsQuery, {}, { requestPolicy: 'network-only', fetch })

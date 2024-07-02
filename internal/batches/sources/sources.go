@@ -524,12 +524,17 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
+	// @BolajiOlajide I found a bug in the existing credential validation (especially with GitHub) where a leading or trailing
+	// space in a PAT is ignored by GitHub and that credential is marked as valid.
+	// However, if stored in the database, the leading/trailing space is preserved and the PAT when used to push a commit
+	// will fail. The URL returned looks like `https://%20<TOKEN>@github.com/sourcegraph/sourcegraph.git` which is invalid.
+	trimmedToken := strings.TrimSpace(token)
 	switch extSvcType {
 	case extsvc.TypeGitHub:
-		u.User = url.User(token)
+		u.User = url.User(trimmedToken)
 
 	case extsvc.TypeGitLab:
-		u.User = url.UserPassword("git", token)
+		u.User = url.UserPassword("git", trimmedToken)
 
 	case extsvc.TypeBitbucketServer:
 		return errors.New("require username/token to push commits to BitbucketServer")

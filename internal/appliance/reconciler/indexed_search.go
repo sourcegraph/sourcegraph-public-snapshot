@@ -40,7 +40,7 @@ func (r *Reconciler) reconcileIndexedSearcherStatefulSet(ctx context.Context, sg
 	cfg := sg.Spec.IndexedSearch
 
 	webServer := container.NewContainer("zoekt-webserver", cfg, config.ContainerConfig{
-		Image: config.GetDefaultImage(sg, name),
+		Image: config.GetDefaultImage(sg, "indexed-searcher"),
 		Resources: &corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("500m"),
