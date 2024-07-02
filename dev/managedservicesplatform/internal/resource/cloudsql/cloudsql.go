@@ -155,7 +155,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			IpConfiguration: &sqldatabaseinstance.SqlDatabaseInstanceSettingsIpConfiguration{
 				Ipv4Enabled:    pointers.Ptr(true),
 				PrivateNetwork: config.Network.Id(),
-				RequireSsl:     pointers.Ptr(true),
+
+				// https://cloud.google.com/sql/docs/postgres/admin-api/rest/v1beta4/instances#SslMode
+				RequireSsl: pointers.Ptr(true),
+				SslMode:    pointers.Ptr("TRUSTED_CLIENT_CERTIFICATE_REQUIRED"),
 
 				EnablePrivatePathForGoogleCloudServices: pointers.Ptr(true),
 			},
