@@ -39,8 +39,7 @@ func (h *HTTPHandlers) GetClientConfigHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	clientConfigSvc := Get()
-	currentConfig, err := clientConfigSvc.GetForActor(r.Context(), callingActor)
+	currentConfig, err := GetForActor(r.Context(), h.logger, h.db, callingActor)
 	if err != nil {
 		h.logger.Error("fetching current cody client configuration", log.Error(err))
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

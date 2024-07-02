@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
 	codeintelinit "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
@@ -56,7 +55,6 @@ type EnterpriseInitializer = func(context.Context, *observation.Context, databas
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
 	"batches":        batches.Init,
-	"clientconfig":   clientconfig.Init,
 	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
 	"completions":    completions.Init,

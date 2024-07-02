@@ -12,41 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-// Service is the system-wide component for obtaining the client config
-// for a given user.
-//
-// You can obtain the global, package-level instance of this interface by
-// calling the Get() method. It is safe for concurrent reads.
-type Service interface {
-	// Get returns the current cody client configuration for the authenticated
-	// user. Callers should not modify the returned data, and treat it as if it
-	// were immutable.
-	GetForActor(ctx context.Context, actor *actor.Actor) (*clientconfig.ClientConfig, error)
-}
-
-// Global instance of the client config service. We don't initialize via
-// a sync.Once because we ensure Init cannot be called twice, and assume it
-// will not be called concurrently.
-var singletonConfigService *service
-
-// Get returns the singleton ClientConfigService.
-//
-// This requires that the Init function has been called before hand, which
-// is typically done on application startup.
-func Get() Service {
-	if singletonConfigService == nil {
-		panic("ClientConfigService not initialized. Init not called.")
-	}
-	return singletonConfigService
-}
-
-// service implements the Service interface
-type service struct {
-	logger log.Logger
-	db     database.DB
-}
-
-func (svc *service) GetForActor(ctx context.Context, actor *actor.Actor) (*clientconfig.ClientConfig, error) {
+func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *actor.Actor) (*clientconfig.ClientConfig, error) {
 	c := clientconfig.ClientConfigV1{
 		// TODO(chrsmith): TODO(slimsag): Set this to `true` when and only when clients should use
 		// the new LLM models httpapi endpoint being added in e.g. https://github.com/sourcegraph/sourcegraph/pull/63507
@@ -55,7 +21,7 @@ func (svc *service) GetForActor(ctx context.Context, actor *actor.Actor) (*clien
 
 	// 🚨 SECURITY: This code lets site admins restrict who has access to Cody at all via RBAC.
 	// https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise#enable-cody-only-for-some-users
-	c.CodyEnabled, _ = cody.IsCodyEnabled(ctx, svc.db)
+	c.CodyEnabled, _ = cody.IsCodyEnabled(ctx, db)
 
 	// 🚨 SECURITY: This code enforces that users do not have access to Cody features which
 	// site admins do not want them to have access to.

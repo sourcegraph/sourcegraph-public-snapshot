@@ -9,15 +9,12 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -48,17 +45,6 @@ func TestAPI(t *testing.T) {
 		},
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
-
-	// Initialize the service
-	autogold.Expect(nil).Equal(t, Init(
-		ctx,
-		observation.TestContextTB(t),
-		db,
-		codeintel.Services{},
-		conf.DefaultClient(),
-		&enterprise.Services{},
-	))
-	t.Cleanup(func() { singletonConfigService = nil })
 
 	// Grab HTTP handlers
 	handlers := NewHandlers(db, logger)
@@ -94,7 +80,7 @@ func TestAPI(t *testing.T) {
         "AutoCompleteEnabled": true,
         "CommandsEnabled": true,
         "AttributionEnabled": false,
-        "SmartContextWindowEnabled": false,
+        "SmartContextWindowEnabled": true,
         "ModelsAPIEnabled": false
     }
 }
