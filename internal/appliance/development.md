@@ -98,6 +98,17 @@ if-statements and loops in those templates. You may want to pass values to Helm
 (see -helm-template-extra-args docs in the README), and add corresponding
 customization controls in your config element in the appliance.
 
+#### Jaeger
+
+Jaeger is a little special since the component is called `all-in-one` and not `jaeger`. It also requires an extra flag:
+```bash
+go run ./internal/appliance/dev/compare-helm \
+  -deploy-sourcegraph-helm-path ../../deploy-sourcegraph-helm \
+  -component all-in-one \
+  -golden-file internal/appliance/reconciler/testdata/golden-fixtures/jaeger/default.yaml \
+  -helm-template-extra-args '--set jaeger.enabled=true'
+```
+
 ## Running tests
 
 To (re)generate golden fixtures, pass the following argument to `go test`:
