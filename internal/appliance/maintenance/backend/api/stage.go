@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"sourcegraph.com/operator/api/operator"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/operator"
 )
 
 var maintenanceEndpoint = os.Getenv("MAINTENANCE_ENDPOINT")

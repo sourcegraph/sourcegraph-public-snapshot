@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"sourcegraph.com/operator/api/api"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/api"
 )
 
 func main() {

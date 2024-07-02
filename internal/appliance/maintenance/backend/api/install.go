@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"sourcegraph.com/operator/api/operator"
+	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/operator"
 )
 
 var installError string = ""
