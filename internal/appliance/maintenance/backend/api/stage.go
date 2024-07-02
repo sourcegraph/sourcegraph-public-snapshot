@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,7 +16,8 @@ var maintenanceEndpoint = os.Getenv("MAINTENANCE_ENDPOINT")
 
 func init() {
 	if adminPassword == "" {
-		log.Fatal("Variable MAINTENANCE_ENDPOINT is missing.")
+		fmt.Println("Variable MAINTENANCE_PASSWORD is missing.")
+		os.Exit(1)
 	}
 }
 
@@ -44,20 +44,20 @@ var currentStage operator.Stage = operator.StageInstall
 var switchToAdminTime time.Time = epoch
 
 func init() {
-	log.Println("Initial stage:", currentStage)
+	fmt.Println("Initial stage:", currentStage)
 }
 
 func StageHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request for stage")
+	fmt.Println("Received request for stage")
 
 	status, _ := GetSearchStatus()
-	log.Println("GetSearchStatus", status)
+	fmt.Println("GetSearchStatus", status)
 
 	switch status {
 	case "installing":
 		currentStage = operator.StageInstalling
 	case "ready":
-		log.Println("ready!", switchToAdminTime, currentStage)
+		fmt.Println("ready!", switchToAdminTime, currentStage)
 		if switchToAdminTime == time.Unix(0, 0) {
 			if currentStage != operator.StageRefresh && currentStage != operator.StageWaitingForAdmin {
 				switchToAdminTime = time.Now().Add(5 * time.Second)
@@ -81,17 +81,17 @@ func StageHandler(w http.ResponseWriter, r *http.Request) {
 		currentStage = operator.StageUnknown
 	}
 
-	log.Println("Sending current stage", result)
+	fmt.Println("Sending current stage", result)
 	sendJson(w, result)
 }
 
 func SetStageHandlerForTesting(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request to set stage")
+	fmt.Println("Received request to set stage")
 
 	var request StageResponse
 	receiveJson(w, r, &request)
 
-	log.Println("Setting stage to", request.Stage)
+	fmt.Println("Setting stage to", request.Stage)
 	currentStage = operator.Stage(request.Stage)
 
 	fmt.Println(installTasks)
@@ -119,7 +119,7 @@ func GetSearchStatus() (string, error) {
 	url := fmt.Sprintf("http://%s:8734/operator.maintenance.v1.MaintenanceService/GetFeature", maintenanceEndpoint)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
@@ -128,7 +128,7 @@ func GetSearchStatus() (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
@@ -136,17 +136,17 @@ func GetSearchStatus() (string, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
 	var feature FeatureResponse
 	if err := json.Unmarshal(body, &feature); err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
-	log.Println("install feature", feature)
+	fmt.Println("install feature", feature)
 
 	if feature.Feature.Status == "installing" {
 		installTasks[InstallTaskWaitForCluster].Finished = true
@@ -168,7 +168,7 @@ func EnableSearch() (string, error) {
 	url := fmt.Sprintf("http://%s:8734/operator.maintenance.v1.MaintenanceService/EnableFeature", maintenanceEndpoint)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
@@ -177,7 +177,7 @@ func EnableSearch() (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
@@ -185,13 +185,13 @@ func EnableSearch() (string, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		return "", err
 	}
 
 	var feature FeatureResponse
 	if err := json.Unmarshal(body, &feature); err != nil {
-		log.Printf("Error %v", err)
+		fmt.Printf("Error %v", err)
 		installError = err.Error()
 		return "", err
 	}

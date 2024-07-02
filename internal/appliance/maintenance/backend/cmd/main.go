@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/api"
 )
 
 func main() {
 	server := api.New()
-	log.Println("Starting mock API server")
+	fmt.Println("Starting mock API server")
 	server.Run()
 }

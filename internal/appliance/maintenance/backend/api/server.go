@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -29,7 +29,7 @@ func (s *server) Run() {
 	s.statusApi(r)
 	s.enableDebugBarApi(r)
 
-	log.Println("Listening on ", endpoint)
+	fmt.Println("Listening on ", endpoint)
 	http.ListenAndServe(endpoint, r)
 }
 

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 )
 
@@ -22,7 +22,7 @@ type Service struct {
 var serviceStatus []*Service
 
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request for status")
+	fmt.Println("Received request for status")
 
 	result := Status{
 		Services: serviceStatus,
@@ -32,17 +32,17 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 		installTasks = progressTasks(installTasks)
 	}
 
-	log.Println("Sending current status", result)
+	fmt.Println("Sending current status", result)
 	sendJson(w, result)
 }
 
 func SetStatusHandlerForTesting(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request to set status")
+	fmt.Println("Received request to set status")
 
 	var request StatusRequest
 	receiveJson(w, r, &request)
 
-	log.Println("Setting health to", request.Healthy)
+	fmt.Println("Setting health to", request.Healthy)
 	serviceStatus = serviceList(request.Healthy)
 }
 

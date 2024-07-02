@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/operator"
@@ -19,7 +19,7 @@ type InstallProgress struct {
 }
 
 func InstallProgressHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request for install progress")
+	fmt.Println("Received request for install progress")
 
 	var progress int
 
@@ -36,12 +36,12 @@ func InstallProgressHandler(w http.ResponseWriter, r *http.Request) {
 		installTasks = progressTasks(installTasks)
 	}
 
-	log.Println("Sending current install progress", result)
+	fmt.Println("Sending current install progress", result)
 	sendJson(w, result)
 }
 
 func SetInstallErrorForTesting(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received request to set error")
+	fmt.Println("Received request to set error")
 
 	installError = "Something tragic happened. Sorry! Please wait until we try something creative..."
 

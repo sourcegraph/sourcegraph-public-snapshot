@@ -1,7 +1,7 @@
 package api
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"os"
 )
@@ -12,7 +12,8 @@ var adminPassword = os.Getenv("MAINTENANCE_PASSWORD")
 
 func init() {
 	if adminPassword == "" {
-		log.Fatal("Variable MAINTENANCE_PASSWORD is missing.")
+		fmt.Println("Variable MAINTENANCE_PASSWORD is missing.")
+		os.Exit(1)
 	}
 }
 
@@ -31,7 +32,8 @@ func checkAdminKey(r *http.Request) bool {
 	if adminKey := r.Header.Get(adminKeyCookieName); adminKey != "" {
 		return adminKey == adminPassword
 	} else {
-		log.Println("Could not find admin key cookie")
+		fmt.Println("Could not find admin key cookie")
+		os.Exit(1)
 		return false
 	}
 }
