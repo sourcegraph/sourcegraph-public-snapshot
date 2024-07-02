@@ -148,15 +148,15 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const createState = useCallback(async () => {
         setError(undefined)
         try {
+            let appStateUrl = `/githubapp/new-app-state?appName=${encodeURIComponent(
+                name
+            )}&webhookURN=${url}&domain=${appDomain}&baseURL=${encodeURIComponent(url)}&kind=${appKind}`
+            if (authenticatedUser) {
+                appStateUrl = `${appStateUrl}&userID=${authenticatedUser.id}`
+            }
             // We encode the name and url here so that special characters like `#` are interpreted as
             // part of the URL and not the fragment.
-            const response = await fetch(
-                `/githubapp/new-app-state?appName=${encodeURIComponent(
-                    name
-                )}&webhookURN=${url}&domain=${appDomain}&baseURL=${encodeURIComponent(url)}&kind=${appKind}&userID=${
-                    authenticatedUser.id
-                }`
-            )
+            const response = await fetch(appStateUrl)
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {
                     const error = await response.text()
@@ -181,7 +181,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL, appKind, authenticatedUser.id])
+    }, [submitForm, name, appDomain, url, originURL, appKind, authenticatedUser])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)

@@ -411,7 +411,6 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/batch-changes/github-apps/new',
         render: ({ authenticatedUser }) => (
             <BatchChangesCreateGitHubAppPage
-                minimizedMode={false}
                 authenticatedUser={authenticatedUser}
                 kind={GitHubAppKind.COMMIT_SIGNING}
             />
