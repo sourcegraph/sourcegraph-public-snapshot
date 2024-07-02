@@ -2735,7 +2735,7 @@ CREATE TABLE github_apps (
     app_url text DEFAULT ''::text NOT NULL,
     webhook_id integer,
     domain text DEFAULT 'repos'::text NOT NULL,
-    kind github_app_kind NOT NULL
+    kind github_app_kind DEFAULT 'REPO_SYNC'::github_app_kind NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq

@@ -14018,7 +14018,7 @@
           "Index": 16,
           "TypeName": "github_app_kind",
           "IsNullable": false,
-          "Default": "",
+          "Default": "'REPO_SYNC'::github_app_kind",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
