@@ -246,17 +246,17 @@ export interface Skipped {
      * - display :: we hit the display limit, so we stopped sending results from the backend.
      */
     reason:
-        | 'document-match-limit'
-        | 'shard-match-limit'
-        | 'repository-limit'
-        | 'shard-timedout'
-        | 'repository-cloning'
-        | 'repository-missing'
-        | 'repository-fork'
-        | 'backend-missing'
-        | 'excluded-archive'
-        | 'display'
-        | 'error'
+    | 'document-match-limit'
+    | 'shard-match-limit'
+    | 'repository-limit'
+    | 'shard-timedout'
+    | 'repository-cloning'
+    | 'repository-missing'
+    | 'repository-fork'
+    | 'backend-missing'
+    | 'excluded-archive'
+    | 'display'
+    | 'error'
     /**
      * A short message. eg 1,200 timed out.
      */
@@ -284,7 +284,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility' | 'author' | 'commit date' | 'symbol type' | 'type'
 }
 
-export const TELEMETRY_FILTER_TYPES: { [key in Filter['kind'] | 'snippet']: number } = {
+export const TELEMETRY_FILTER_TYPES = {
     file: 1,
     repo: 2,
     lang: 3,
@@ -294,6 +294,7 @@ export const TELEMETRY_FILTER_TYPES: { [key in Filter['kind'] | 'snippet']: numb
     'symbol type': 7,
     type: 8,
     snippet: 9,
+    count: 10,
 }
 
 export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
