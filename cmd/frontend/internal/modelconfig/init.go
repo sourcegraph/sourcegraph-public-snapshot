@@ -39,7 +39,7 @@ func Init(
 	initialSiteConfig := initialConf.SiteConfig()
 	// If Cody isn't enabled on startup, we don't bother registering anything.
 	// Because there is no need to.
-	if codyEnabled := initialSiteConfig.CodyEnabled; codyEnabled == nil || *codyEnabled == false {
+	if codyEnabled := initialSiteConfig.CodyEnabled; codyEnabled == nil || !*codyEnabled {
 		logger.Info("Cody is not enabled, not registering ModelConfigService")
 		return nil
 	}
