@@ -697,7 +697,7 @@
 				"ID": 1719914228,
 				"Name": "insight_series_modify_query",
 				"UpQuery": "ALTER TABLE insight_series ADD COLUMN IF NOT EXISTS query_old TEXT;\nUPDATE insight_series SET query_old = query;\n\n-- prefix query with patternType:standard if there is no patterntype: in the query\nUPDATE insight_series\nSET query = 'patterntype:standard ' || query\nWHERE\n    query NOT ILIKE '%patterntype:%';\n\nCOMMENT ON COLUMN insight_series.query_old IS 'Backup for migration. Remove with release 5.6 or later.';",
-				"DownQuery": "UPDATE insight_series SET query = query_old;\nALTER TABLE insight_series DROP COLUMN IF EXISTS query_old;",
+				"DownQuery": "DO\n$$\n    BEGIN\n        -- Check if column 'query_old' exists\n        IF EXISTS (SELECT 1\n                   FROM information_schema.columns\n                   WHERE table_name = 'insight_series' AND column_name = 'query_old') THEN\n            -- Update the 'query' column with values from 'query_old'\n            UPDATE insight_series SET query = query_old;\n            -- Drop the 'query_old' column if it exists\n            ALTER TABLE insight_series\n                DROP COLUMN query_old;\n        END IF;\n    END\n$$;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
