@@ -780,13 +780,6 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 	}
 }
 
-// listPublicArchivedRepos returns all of the public archived repositories listed on the /search/repositories endpoint.
-// NOTE: There is a limitation on the search API that this uses, if there are more than 1000 public archived repos that
-// were created in the same time (to the second), this list will miss any repos that lie outside of the first 1000.
-func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan *githubResult) {
-	s.listSearch(ctx, "archived:true is:public", results)
-}
-
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
 // It returns the repositories affiliated with the client token by hitting the /user/repos
 // endpoint.
