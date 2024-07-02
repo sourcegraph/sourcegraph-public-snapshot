@@ -54,6 +54,7 @@
         { label: 'Diffs', value: 'type:diff' },
     ]
 
+    // mergeFilterSources merges the filters of a shared kind from different sources.
     function mergeFilterSources(
         staticFilters: readonly StaticFilter[],
         selectedFilters: readonly SelectedFilter[],
@@ -66,6 +67,7 @@
             count: undefined,
         }))
 
+        // Then merge in the selected filters
         for (const selectedFilter of selectedFilters) {
             const found = merged.find(filter => filter.label === selectedFilter.label)
             if (found !== undefined) {
@@ -81,6 +83,7 @@
             }
         }
 
+        // Finally, merge in the filters from the search stream
         for (const streamFilter of streamFilters) {
             const found = merged.find(filter => filter.label === streamFilter.label)
             if (found !== undefined) {
