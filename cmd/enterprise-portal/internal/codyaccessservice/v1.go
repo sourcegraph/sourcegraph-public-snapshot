@@ -149,7 +149,7 @@ func (s *handlerV1) ListCodyGatewayAccesses(ctx context.Context, req *connect.Re
 func (s *handlerV1) GetCodyGatewayUsage(ctx context.Context, req *connect.Request[codyaccessv1.GetCodyGatewayUsageRequest]) (*connect.Response[codyaccessv1.GetCodyGatewayUsageResponse], error) {
 	logger := trace.Logger(ctx, s.logger)
 
-	// 🚨 SECURITY: Require approrpiate M2M scope.
+	// 🚨 SECURITY: Require appropriate M2M scope.
 	requiredScope := samsm2m.EnterprisePortalScope("codyaccess", scopes.ActionRead)
 	clientAttrs, err := samsm2m.RequireScope(ctx, logger, s.store, requiredScope, req)
 	if err != nil {
