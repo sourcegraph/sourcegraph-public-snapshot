@@ -46,6 +46,25 @@
       ]
     },
     {
+      "Name": "github_app_kind",
+      "Labels": [
+        "COMMIT_SIGNING",
+        "REPO_SYNC",
+        "USER_CREDENTIAL",
+        "SITE_CREDENTIAL"
+      ]
+    },
+    {
+      "Name": "pattern_type",
+      "Labels": [
+        "keyword",
+        "literal",
+        "regexp",
+        "standard",
+        "structural"
+      ]
+    },
+    {
       "Name": "persistmode",
       "Labels": [
         "record",
@@ -2412,6 +2431,19 @@
           "Comment": ""
         },
         {
+          "Name": "github_app_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
@@ -2470,7 +2502,22 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "batch_changes_site_credentials_github_app_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "github_apps",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "check_github_app_id_and_external_service_type_site_credentials",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -13967,6 +14014,19 @@
           "Comment": ""
         },
         {
+          "Name": "kind",
+          "Index": 16,
+          "TypeName": "github_app_kind",
+          "IsNullable": false,
+          "Default": "'REPO_SYNC'::github_app_kind",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "logo",
           "Index": 10,
           "TypeName": "text",
@@ -19070,6 +19130,19 @@
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "pattern_type",
+          "Index": 12,
+          "TypeName": "pattern_type",
+          "IsNullable": false,
+          "Default": "'standard'::pattern_type",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -27190,6 +27263,19 @@
           "Comment": ""
         },
         {
+          "Name": "github_app_id",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "bigint",
@@ -27275,6 +27361,20 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "check_github_app_id_and_external_service_type_user_credentials",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (github_app_id IS NULL OR external_service_type = 'github'::text)"
+        },
+        {
+          "Name": "user_credentials_github_app_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "github_apps",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (github_app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
+        },
         {
           "Name": "user_credentials_user_id_fkey",
           "ConstraintType": "f",

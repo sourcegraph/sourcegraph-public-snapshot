@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "service",
     srcs = [
+        "codygatewayevents.go",
         "config.go",
         "dotcomdb.go",
         "iam.go",
@@ -19,6 +20,7 @@ go_library(
         "//cmd/enterprise-portal/internal/database",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/subscriptionsservice",
+        "//internal/codygateway/codygatewayevents",
         "//internal/debugserver",
         "//internal/httpserver",
         "//internal/trace/policy",
@@ -28,6 +30,7 @@ go_library(
         "//lib/managedservicesplatform/cloudsql",
         "//lib/managedservicesplatform/iam",
         "//lib/managedservicesplatform/runtime",
+        "//lib/pointers",
         "@com_connectrpc_connect//:connect",
         "@com_connectrpc_grpcreflect//:grpcreflect",
         "@com_connectrpc_otelconnect//:otelconnect",

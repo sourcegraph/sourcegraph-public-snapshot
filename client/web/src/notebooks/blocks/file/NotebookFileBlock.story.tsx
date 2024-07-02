@@ -2,6 +2,7 @@ import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import type { FileBlockInput } from '../..'
@@ -49,6 +50,7 @@ export const Default: StoryFn = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
+                patternType={SearchPatternType.standard}
             />
         )}
     </WebStory>
@@ -67,6 +69,7 @@ export const EditMode: StoryFn = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
+                patternType={SearchPatternType.standard}
             />
         )}
     </WebStory>
@@ -87,6 +90,7 @@ export const ErrorFetchingFile: StoryFn = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
+                patternType={SearchPatternType.standard}
             />
         )}
     </WebStory>

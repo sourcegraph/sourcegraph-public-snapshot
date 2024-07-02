@@ -3,14 +3,17 @@
     import Icon from '$lib/Icon.svelte'
 
     export let repoStars: number
-    export let small = false
 </script>
 
-<span>
+<div>
     <Icon inline icon={ILucideStar} aria-label="Repository stars" />
-    {#if small}
-        <small>&nbsp;{formatRepositoryStarCount(repoStars)}</small>
-    {:else}
-        &nbsp;{formatRepositoryStarCount(repoStars)}
-    {/if}
-</span>
+    {formatRepositoryStarCount(repoStars)}
+</div>
+
+<style lang="scss">
+    div {
+        display: flex;
+        align-items: center;
+        gap: 0.25em;
+    }
+</style>

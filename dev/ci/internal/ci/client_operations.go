@@ -2,7 +2,6 @@ package ci
 
 import (
 	"fmt"
-	"strconv"
 
 	bk "github.com/sourcegraph/sourcegraph/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/operations"
@@ -16,12 +15,7 @@ func addStylelint(pipeline *bk.Pipeline) {
 
 var browsers = []string{"chrome"}
 
-func getParallelTestCount(webParallelTestCount int) int {
-	return webParallelTestCount + len(browsers)
-}
-
-func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Operation {
-	testCount := getParallelTestCount(parallelTestCount)
+func addBrowserExtensionIntegrationTests() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, browser := range browsers {
 			pipeline.AddStep(
@@ -32,8 +26,6 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("LOG_BROWSER_CONSOLE", "false"),
 				bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
-				bk.Env("PERCY_ON", "true"),
-				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
 				bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 				bk.Cmd("pnpm --filter @sourcegraph/browser run build"),
 				bk.Cmd("pnpm run test-browser-integration"),

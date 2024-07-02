@@ -72,6 +72,7 @@ fn java_e2e_evaluation() {
         &candidate,
         &dir,
         None,
+        None,
         IndexOptions {
             analysis_mode: AnalysisMode::Full,
             fail_fast: true,

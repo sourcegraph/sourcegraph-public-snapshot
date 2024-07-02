@@ -22,7 +22,8 @@ go run ./cmd/cody-gateway-config \
 
 # Run the unit tests which among other things verifies that the static
 # ModelConfiguration document is well-formed.
-go test ./internal/modelconfig
+go test ./cmd/frontend/internal/modelconfig/...
+go test ./internal/modelconfig/...
 
 # And finally, rerun the `sg lint` command, to ensure it is formatted
 # as expected.

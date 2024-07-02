@@ -38,7 +38,7 @@ import {
 import { CodyServicesSection } from './CodyServicesSection'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
-import { accessTokenPath, errorForPath } from './utils'
+import { accessTokenPath, errorForPath, enterprisePortalID } from './utils'
 
 interface Props extends TelemetryV2Props {}
 
@@ -130,7 +130,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     headingElement="h2"
                     path={[
                         { text: 'Enterprise subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
-                        { text: productSubscription.name },
+                        { text: enterprisePortalID(subscriptionUUID) },
                     ]}
                     description={
                         <span className="text-muted">
@@ -152,7 +152,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         <tbody>
                             <tr>
                                 <th className="text-nowrap">ID</th>
-                                <td className="w-100">{productSubscription.name}</td>
+                                <td className="w-100">{enterprisePortalID(subscriptionUUID)}</td>
                             </tr>
                             <tr>
                                 <th className="text-nowrap">Current Plan</th>

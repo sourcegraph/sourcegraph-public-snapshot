@@ -33,8 +33,8 @@ func NewClient(endpoint string) *Client {
 	}
 }
 
-func (r *Client) newRequest(ctx context.Context, method, path string) (*http.Request, error) {
-	urlPath, err := url.JoinPath(r.endpoint, path)
+func (r *Client) newRequest(ctx context.Context, method string, path ...string) (*http.Request, error) {
+	urlPath, err := url.JoinPath(r.endpoint, path...)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,12 @@ func (r *Client) newRequest(ctx context.Context, method, path string) (*http.Req
 	return req, nil
 }
 
-func (r *Client) ListVersions(ctx context.Context) ([]ReleaseInfo, error) {
-	req, err := r.newRequest(ctx, http.MethodGet, "releases")
+func (r *Client) ListVersions(ctx context.Context, product string) ([]ReleaseInfo, error) {
+	pathParts := []string{"releases"}
+	if product != "" {
+		pathParts = append(pathParts, product)
+	}
+	req, err := r.newRequest(ctx, http.MethodGet, pathParts...)
 	if err != nil {
 		return nil, err
 	}

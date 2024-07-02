@@ -3,20 +3,20 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { afterEach, beforeEach, describe, test } from 'mocha'
 
-import type { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchContextMinimalFields, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, getSearchQueryInputConfig, percySnapshotWithVariants } from './utils'
+import { createEditorAPI, getSearchQueryInputConfig } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -219,7 +219,6 @@ describe('Search contexts', () => {
         )
 
         // Take Snapshot
-        await percySnapshotWithVariants(driver.page, 'Create static search context page')
         await accessibilityAudit(driver.page)
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
@@ -286,7 +285,6 @@ describe('Search contexts', () => {
         await editor.focus()
 
         // Take Snapshot
-        await percySnapshotWithVariants(driver.page, 'Create dynamic query search context page')
 
         // Enter search query
         await editor.replace('repo:abc')
@@ -573,8 +571,6 @@ describe('Search contexts', () => {
             {},
             searchContextsCount
         )
-
-        await percySnapshotWithVariants(driver.page, 'Search contexts list page')
         await accessibilityAudit(driver.page)
     })
 

@@ -39,7 +39,7 @@ func (s Service) Version() string { return version.Version() }
 func (s Service) Initialize(
 	ctx context.Context,
 	logger log.Logger,
-	contract runtime.Contract,
+	contract runtime.ServiceContract,
 	config Config,
 ) (background.Routine, error) {
 	logger.Info("starting service")

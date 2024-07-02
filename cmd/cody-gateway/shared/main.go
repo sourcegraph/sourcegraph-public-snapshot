@@ -26,7 +26,6 @@ import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -57,6 +56,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/shared/config"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, cfg *config.Config) error {
@@ -131,10 +131,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		dotcomURL.String(),
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
-			codygateway.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
+			codygatewayactor.ActorSourceEnterpriseSubscription: []int{90, 95, 100},
 			// No notifications for individual dotcom users - this can get quite
 			// spammy.
-			codygateway.ActorSourceDotcomUser: []int{},
+			codygatewayactor.ActorSourceDotcomUser: []int{},
 		},
 		cfg.ActorRateLimitNotify.SlackWebhookURL,
 		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {

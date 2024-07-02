@@ -11,6 +11,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 
 import type { Block, BlockInit } from '..'
 import type { NotebookFields } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../../search'
 import type { CopyNotebookProps } from '../notebook'
@@ -31,6 +32,7 @@ export interface NotebookContentProps
     outlineContainerElement?: HTMLElement | null
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
+    patternType: SearchPatternType
 }
 
 export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<NotebookContentProps>> = React.memo(
@@ -52,6 +54,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         platformContext,
         outlineContainerElement,
         isEmbedded,
+        patternType,
     }) => {
         const initializerBlocks: BlockInit[] = useMemo(
             () =>
@@ -101,6 +104,7 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
                 onCopyNotebook={onCopyNotebook}
                 outlineContainerElement={outlineContainerElement}
                 isEmbedded={isEmbedded}
+                patternType={patternType}
             />
         )
     }

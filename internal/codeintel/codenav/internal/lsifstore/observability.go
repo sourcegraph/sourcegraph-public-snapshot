@@ -21,6 +21,7 @@ type operations struct {
 	getHover                   *observation.Operation
 	getDiagnostics             *observation.Operation
 	scipDocument               *observation.Operation
+	findDocumentIDs            *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -57,5 +58,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
 		scipDocument:               op("SCIPDocument"),
+		findDocumentIDs:            op("FindDocumentIDs"),
 	}
 }

@@ -56,15 +56,9 @@ type GitserverRepoStore interface {
 	// a matching row does not yet exist a new one will be created.
 	// If the size value hasn't changed, the row will not be updated.
 	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
-	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
-	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
-	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
 	// ListPurgeableRepos returns all purgeable repos. These are repos that
 	// are cloned on disk but have been deleted or blocked.
 	ListPurgeableRepos(ctx context.Context, options ListPurgableReposOptions) ([]api.RepoName, error)
-	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
-	// counting repos with an associated cloud_default external service.
-	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 	UpdateRepoSizes(ctx context.Context, logger log.Logger, shardID string, repos map[api.RepoName]int64) (int, error)
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
@@ -149,51 +143,6 @@ FROM locked_data
 WHERE
 	locked_data.repo_id = gr.repo_id
 `
-
-func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(totalErroredCloudDefaultReposQuery)))
-	return count, err
-}
-
-const totalErroredCloudDefaultReposQuery = `
-SELECT
-	COUNT(*)
-FROM gitserver_repos gr
-JOIN repo r ON r.id = gr.repo_id
-JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
-JOIN external_services es on esr.external_service_id = es.id
-WHERE
-	gr.last_error != ''
-	AND r.blocked IS NULL
-	AND r.deleted_at IS NULL
-	AND es.cloud_default IS TRUE
-`
-
-func (s *gitserverRepoStore) ListReposWithLastError(ctx context.Context) ([]api.RepoName, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
-	return scanLastErroredRepos(rows, err)
-}
-
-const nonemptyLastErrorQuery = `
-SELECT
-	repo.name
-FROM repo
-JOIN gitserver_repos gr ON repo.id = gr.repo_id
-JOIN external_service_repos esr ON repo.id = esr.repo_id
-JOIN external_services es on esr.external_service_id = es.id
-WHERE
-	gr.last_error != ''
-	AND repo.blocked IS NULL
-	AND repo.deleted_at IS NULL
-	AND es.cloud_default IS TRUE
-`
-
-func scanLastErroredRepoRow(scanner dbutil.Scanner) (name api.RepoName, err error) {
-	err = scanner.Scan(&name)
-	return name, err
-}
-
-var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
 
 type ListPurgableReposOptions struct {
 	// DeletedBefore will filter the deleted repos to only those that were deleted

@@ -167,6 +167,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         caseSensitive={caseSensitive}
                         setCaseSensitivity={setCaseSensitivity}
                         patternType={patternType}
+                        defaultPatternType={SearchPatternType.standard}
                         setPatternType={setPatternType}
                         searchMode={searchMode}
                         setSearchMode={setSearchMode}

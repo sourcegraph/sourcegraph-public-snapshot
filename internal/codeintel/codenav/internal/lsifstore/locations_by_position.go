@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -76,7 +77,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     row.URI,
+				Path:     core.NewUploadRelPathUnchecked(row.URI),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
@@ -323,7 +324,7 @@ func (s *store) extractLocationsFromPosition(
 ) (_ []shared.Location, _ []string, err error) {
 	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", locationKey.UploadID),
-		attribute.String("path", locationKey.Path),
+		attribute.String("path", locationKey.Path.RawValue()),
 		attribute.Int("line", locationKey.Line),
 		attribute.Int("character", locationKey.Character),
 	}})
@@ -332,7 +333,7 @@ func (s *store) extractLocationsFromPosition(
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		locationsDocumentQuery,
 		locationKey.UploadID,
-		locationKey.Path,
+		locationKey.Path.RawValue(),
 	)))
 	if err != nil || !exists {
 		return nil, nil, err
@@ -435,7 +436,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     row.URI,
+				Path:     core.NewUploadRelPathUnchecked(row.URI),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 

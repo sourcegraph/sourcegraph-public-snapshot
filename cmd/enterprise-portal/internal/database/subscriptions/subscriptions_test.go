@@ -67,7 +67,9 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		assert.Equal(t, s2.ID, ss[1].ID)
 
 		t.Run("no match", func(t *testing.T) {
-			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{IDs: []string{"1234"}})
+			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
+				IDs: []string{uuid.Must(uuid.NewV7()).String()},
+			})
 			require.NoError(t, err)
 			require.Len(t, ss, 0)
 		})
@@ -83,7 +85,9 @@ func SubscriptionsStoreList(t *testing.T, ctx context.Context, s *subscriptions.
 		assert.Equal(t, s2.ID, ss[1].ID)
 
 		t.Run("no match", func(t *testing.T) {
-			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{InstanceDomains: []string{"1234"}})
+			ss, err = s.List(ctx, subscriptions.ListEnterpriseSubscriptionsOptions{
+				InstanceDomains: []string{"1234"},
+			})
 			require.NoError(t, err)
 			require.Len(t, ss, 0)
 		})

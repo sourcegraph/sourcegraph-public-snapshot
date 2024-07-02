@@ -192,21 +192,14 @@ func GitServer() *monitoring.Dashboard {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining",
 							Query:       "(src_gitserver_disk_space_available{instance=~`${shard:regex}`} / src_gitserver_disk_space_total{instance=~`${shard:regex}`}) * 100",
-							// Warning alert when we have disk space remaining that is
-							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE
-							Warning: monitoring.Alert().Less(15),
-							// Critical alert when we have less space remaining than the
-							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
-							// This means that gitserver should be evicting repos, but it's
-							// either filling up faster than it can evict, or there is an
-							// issue with the janitor job.
-							Critical: monitoring.Alert().Less(10).For(10 * time.Minute),
+							Warning:     monitoring.Alert().Less(15),
+							Critical:    monitoring.Alert().Less(10).For(10 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerSource,
 							Interpretation: `
-								Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
+								Indicates disk space remaining for each gitserver instance. When disk space is low, gitserver may experience slowdowns or fails to fetch repositories.
 							`,
 							NextSteps: `
 								- On a warning alert, you may want to provision more disk space: Disk pressure may result in decreased performance, users having to wait for repositories to clone, etc.
@@ -490,17 +483,6 @@ func GitServer() *monitoring.Dashboard {
 							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerSource,
 							Interpretation: "the rate of failures over 5m (by job)",
-						},
-					},
-					{
-						{
-							Name:           "repos_removed",
-							Description:    "repositories removed due to disk pressure",
-							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure{instance=~`${shard:regex}`}[5m]))",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "Repositories removed due to disk pressure",
 						},
 					},
 					{

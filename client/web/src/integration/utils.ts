@@ -4,8 +4,7 @@ import type { Page } from 'puppeteer'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { type Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 
 import type { WebGraphQlOperations } from '../graphql-operations'
 
@@ -41,17 +40,11 @@ const waitForCodeHighlighting = async (page: Page): Promise<void> => {
 
 type ColorScheme = 'dark' | 'light'
 
-/**
- * Percy couldn't capture <img /> since they have `src` values with testing domain name.
- * We need to call this function before asking Percy to take snapshots,
- * <img /> with base64 data would be visible on Percy snapshot
- */
 export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
     await page.evaluate(() => {
-        // Skip images with data-skip-percy
         // Skip images with .cm-widgetBuffer, which CodeMirror uses when using a widget decoration
         // See https://github.com/sourcegraph/sourcegraph/issues/28949
-        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy]):not(.cm-widgetBuffer)')
+        const imgs = document.querySelectorAll<HTMLImageElement>('img:not(.cm-widgetBuffer)')
 
         for (const img of imgs) {
             if (img.src.startsWith('data:image')) {
@@ -91,49 +84,6 @@ export const setColorScheme = async (
         page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
         shouldWaitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
     ])
-}
-
-export interface PercySnapshotConfig {
-    /**
-     * How long to wait for the UI to settle before taking a screenshot.
-     */
-    timeout: number
-    waitForCodeHighlighting: boolean
-}
-
-/**
- * Takes a Percy snapshot in 2 variants: dark/light
- */
-export const percySnapshotWithVariants = async (
-    page: Page,
-    name: string,
-    { timeout = 1000, waitForCodeHighlighting = false } = {}
-): Promise<void> => {
-    const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-
-    if (!percyEnabled) {
-        return
-    }
-
-    // Theme-dark
-    await setColorScheme(page, 'dark', waitForCodeHighlighting)
-    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
-    await page.waitForSelector('html.theme.theme-dark')
-    // Wait for the UI to settle before converting images and taking the
-    // screenshot.
-    await page.waitForTimeout(timeout)
-    await convertImgSourceHttpToBase64(page)
-    await percySnapshot(page, `${name} - dark theme`)
-
-    // Theme-light
-    await setColorScheme(page, 'light', waitForCodeHighlighting)
-    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
-    await page.waitForSelector('html.theme.theme-light')
-    // Wait for the UI to settle before converting images and taking the
-    // screenshot.
-    await page.waitForTimeout(timeout)
-    await convertImgSourceHttpToBase64(page)
-    await percySnapshot(page, `${name} - light theme`)
 }
 
 type Editor = 'monaco' | 'codemirror6' | 'v2'
@@ -245,7 +195,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     // Typecast "as any" is used to avoid TypeScript complaining
                     // about window not having this property. We decided that
                     // it's fine to use this in a test context
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const fromDOM = (window as any).CodeMirrorFindFromDOM as
                         | typeof EditorView['findFromDOM']
                         | undefined
