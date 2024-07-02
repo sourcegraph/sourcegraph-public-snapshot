@@ -31,6 +31,8 @@ type CodeNavService interface {
 	SearchBasedUsages(ctx context.Context, args codenav.UsagesForSymbolArgs, previous *codenav.PreviousSyntacticSearch) ([]codenav.SearchBasedMatch, error)
 }
 
+var _ CodeNavService = &codenav.Service{}
+
 type AutoIndexingService interface {
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }

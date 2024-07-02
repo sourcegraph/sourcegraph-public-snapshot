@@ -840,9 +840,9 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 	}, true, nil
 }
 
-func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit api.CommitID, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error) {
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID api.RepoID, commit api.CommitID, path core.RepoRelPath, uploadID int) (data []shared.SnapshotData, err error) {
 	ctx, _, endObservation := s.operations.snapshotForDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", repositoryID),
+		attribute.Int("repoID", int(repositoryID)),
 		attribute.String("commit", string(commit)),
 		attribute.String("path", path.RawValue()),
 		attribute.Int("uploadID", uploadID),
