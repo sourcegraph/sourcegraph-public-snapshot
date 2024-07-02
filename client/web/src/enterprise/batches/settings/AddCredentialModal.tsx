@@ -105,7 +105,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     const [authStrategy, setAuthStrategy] = useState<AuthenticationStrategyType>(
         AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     )
-    const [isFeatureFlagEnabled] = useFeatureFlag('batches-github-app-integration')
+    const [isGithubAppIntegrationEnabled] = useFeatureFlag('batches-github-app-integration')
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
@@ -167,7 +167,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                {isGitHubKind && isFeatureFlagEnabled && isTokenSection && (
+                {isGitHubKind && isGithubAppIntegrationEnabled && isTokenSection && (
                     <Select
                         id="credential-kind"
                         selectSize="sm"

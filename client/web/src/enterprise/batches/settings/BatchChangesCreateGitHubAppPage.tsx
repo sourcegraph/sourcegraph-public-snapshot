@@ -34,7 +34,7 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
     const searchParams = new URLSearchParams(location.search)
     const baseURL = searchParams.get('baseURL')
 
-    const isKindCredential = kind === GitHubAppKind.USER_CREDENTIAL || kind === GitHubAppKind.SITE_CREDENTIAL
+    const isGitHubAppKindCredential = kind === GitHubAppKind.USER_CREDENTIAL || kind === GitHubAppKind.SITE_CREDENTIAL
 
     const { connection } = useGlobalBatchChangesCodeHostConnection()
     // validateURL compares a provided URL against the URLs of existing commit signing
@@ -50,7 +50,7 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
             // assume this call will succeed.
             const asURL = new URL(url)
             const isDuplicate = connection.nodes.some(node => {
-                const existingURL = isKindCredential
+                const existingURL = isGitHubAppKindCredential
                     ? node.externalServiceURL
                     : node.commitSigningConfiguration?.baseURL
                 if (!existingURL) {
@@ -60,13 +60,13 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
                 return new URL(existingURL).hostname === asURL.hostname
             })
             const errorMsg = `A ${
-                isKindCredential ? 'GitHub app' : 'commit signing'
+                isGitHubAppKindCredential ? 'GitHub app' : 'commit signing'
             } integration for the code host at this URL already exists.`
             return isDuplicate ? errorMsg : true
         },
-        [connection, isKindCredential]
+        [connection, isGitHubAppKindCredential]
     )
-    const pageTitle = isKindCredential
+    const pageTitle = isGitHubAppKindCredential
         ? `Create GitHub app for ${
               kind === GitHubAppKind.USER_CREDENTIAL ? authenticatedUser.username : 'Global'
           } Batch Changes credential`
@@ -77,7 +77,7 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
     // commit using the GraphQL request and the changeset is created with the PAT.
     const permissions = {
         ...DEFAULT_PERMISSIONS,
-        ...(isKindCredential ? { pull_requests: 'write' } : {}),
+        ...(isGitHubAppKindCredential ? { pull_requests: 'write' } : {}),
     }
     return (
         <CreateGitHubAppPage
@@ -89,8 +89,8 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
             pageTitle={pageTitle}
             headerDescription={
                 <>
-                    Register a GitHub App to enable Sourcegraph {isKindCredential ? 'create' : 'sign commits for'} Batch
-                    Change changesets on your behalf.
+                    Register a GitHub App to enable Sourcegraph{' '}
+                    {isGitHubAppKindCredential ? 'create' : 'sign commits for'} Batch Change changesets on your behalf.
                     {/* TODO (@BolajiOlajide/@bahrmichael) update link here for credential github app */}
                     <Link to="/help/admin/config/batch_changes#commit-signing-for-github" className="ml-1">
                         See how GitHub App configuration works.
