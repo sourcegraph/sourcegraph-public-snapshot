@@ -133,6 +133,14 @@
     export let selectedFilters: URLQueryFilter[]
     export let state: 'complete' | 'error' | 'loading'
 
+    // We have three potential sources for filters:
+    // - Static filters (types, snippets)
+    // - Selected filters (stored in the URL)
+    // - Stream filters (generated from search results)
+    //
+    // First, we group each source of filters by kind which is only relevant
+    // for grouping and not for rendering individual items.
+
     let groupedStaticFilters: Partial<Record<SectionKind, StaticFilter[]>>
     $: groupedStaticFilters = {
         type: staticTypeFilters,
@@ -151,9 +159,15 @@
     let groupedStreamFilters: Partial<Record<SectionKind, StreamFilter[]>>
     $: groupedStreamFilters = Object.groupBy(streamFilters, ({ kind }) => kind)
 
+    // Then we merge the groups together. Different sources provide different
+    // information (see mergeFilterSources for details). After we've merged, add
+    // an href to the results. At that point, we have everything we need to render
+    // a SectionItem.
+
+    let sectionItems: Record<SectionKind, ComponentProps<SectionItem>[]>
     $: sectionItems = Object.fromEntries(
         sectionKinds.map(sectionKind => [
-            sectionKind,
+            sectionKind satisfies SectionKind,
             mergeFilterSources(
                 groupedStaticFilters[sectionKind] ?? [],
                 groupedSelectedFilters[sectionKind] ?? [],
@@ -163,7 +177,7 @@
                 href: updateFilterInURL($page.url, { ...mergedFilter, kind: sectionKind }, mergedFilter.selected),
             })) satisfies ComponentProps<SectionItem>[],
         ])
-    ) as Record<SectionKind, ComponentProps<SectionItem>[]>
+    ) as Record<SectionKind, ComponentProps<SectionItem>[]> // Safe assertion because of internal `satisfies`
 
     $: resetURL = resetFilters($page.url).toString()
     $: enableReset = selectedFilters.length > 0
