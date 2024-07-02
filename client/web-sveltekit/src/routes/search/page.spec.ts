@@ -277,7 +277,7 @@ test.describe('search filters', async () => {
         await stream.close()
 
         for (const typeFilter of ['Code', 'Repositories', 'Paths', 'Symbols', 'Commits', 'Diffs']) {
-            expect(page.getByRole('link', { name: typeFilter })).toBeVisible()
+            await expect(page.getByRole('link', { name: typeFilter })).toBeVisible()
         }
     })
 
@@ -304,7 +304,7 @@ test.describe('search filters', async () => {
         )
         await stream.close()
 
-        page.getByRole('link', { name: 'Test snippet' }).click()
+        await page.getByRole('link', { name: 'Test snippet' }).click()
         await page.waitForURL(/Test\+snippet/)
     })
 })
