@@ -2,8 +2,10 @@ package codyaccessservice
 
 import (
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/dotcomdb"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayevents"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 )
@@ -59,4 +61,16 @@ func nilIfNotEnabled[T any](enabled bool, value *T) *T {
 		return nil
 	}
 	return value
+}
+
+func convertCodyGatewayUsageDatapoints(usage []codygatewayevents.SubscriptionUsage) []*codyaccessv1.CodyGatewayUsage_UsageDatapoint {
+	results := make([]*codyaccessv1.CodyGatewayUsage_UsageDatapoint, len(usage))
+	for i, datapoint := range usage {
+		results[i] = &codyaccessv1.CodyGatewayUsage_UsageDatapoint{
+			Time:  timestamppb.New(datapoint.Date),
+			Usage: uint64(datapoint.Count),
+			Model: datapoint.Model,
+		}
+	}
+	return results
 }
