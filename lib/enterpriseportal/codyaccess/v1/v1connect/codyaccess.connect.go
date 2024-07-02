@@ -107,7 +107,7 @@ func NewCodyAccessServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			httpClient,
 			baseURL+CodyAccessServiceGetCodyGatewayUsageProcedure,
 			connect.WithSchema(codyAccessServiceGetCodyGatewayUsageMethodDescriptor),
-			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -189,7 +189,7 @@ func NewCodyAccessServiceHandler(svc CodyAccessServiceHandler, opts ...connect.H
 		CodyAccessServiceGetCodyGatewayUsageProcedure,
 		svc.GetCodyGatewayUsage,
 		connect.WithSchema(codyAccessServiceGetCodyGatewayUsageMethodDescriptor),
-		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/enterpriseportal.codyaccess.v1.CodyAccessService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

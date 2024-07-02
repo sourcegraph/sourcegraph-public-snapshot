@@ -32,7 +32,7 @@ service CodyAccessService {
   // GetCodyGatewayUsage returns data about a subscription's recent usage of
   // Cody Gateway.
   rpc GetCodyGatewayUsage(GetCodyGatewayUsageRequest) returns (GetCodyGatewayUsageResponse) {
-    option idempotency_level = IDEMPOTENT;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 
