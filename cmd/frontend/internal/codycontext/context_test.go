@@ -1,9 +1,11 @@
 package codycontext
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -70,4 +72,14 @@ func TestFileMatchToContextMatches(t *testing.T) {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func TestReposAsRegexp(t *testing.T) {
+	t.Run("SRCH-658", func(t *testing.T) {
+		repos := []types.RepoIDName{{Name: "github.com/sourcegraph/docs"}, {Name: "github.com/sourcegraph/docs"}}
+		pattern := reposAsRegexp(repos)
+		re := regexp.MustCompile(pattern)
+		require.True(t, re.MatchString("github.com/sourcegraph/docs"))
+		require.False(t, re.MatchString("github.com/sourcegraph/docsite"))
+	})
 }
