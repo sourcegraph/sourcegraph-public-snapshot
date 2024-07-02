@@ -22,18 +22,23 @@
 
     type SectionKind = typeof sectionKinds[number]
 
+    // A statically-defined filter
     type StaticFilter = {
         label: string
         value: string
     }
 
+    // A selected filter
     type SelectedFilter = StaticFilter
 
+    // A filter sourced from the stream API
     type StreamFilter = StaticFilter & {
         count: number
         exhaustive: boolean
     }
 
+    // Everything needed to render a SectionItem except the href, which
+    // can be calculated from the current URL and the other props.
     type MergedFilter = Omit<ComponentProps<SectionItem>, 'href'>
 
     const typeFilterIcons: Record<string, IconComponent> = {
