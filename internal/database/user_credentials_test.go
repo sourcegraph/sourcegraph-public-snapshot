@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"fmt"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"net/http"
 	"reflect"
 	"testing"
@@ -174,6 +176,24 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	fx := setUpUserCredentialTest(t, db)
 
+	_, err := db.GitHubApps().Create(context.Background(), &ghtypes.GitHubApp{
+		ID:            0,
+		AppID:         0,
+		Name:          "",
+		Domain:        "batches",
+		BaseURL:       "",
+		AppURL:        "",
+		ClientID:      "",
+		ClientSecret:  "",
+		WebhookSecret: "",
+		PrivateKey:    "",
+		EncryptionKey: "",
+		Kind:          ghtypes.RepoSyncGitHubAppKind,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Authorisation failure tests. (We'll test the happy path below.)
 	t.Run("unauthorised", func(t *testing.T) {
 		for name, tc := range authFailureTestCases(t, fx) {
@@ -214,6 +234,48 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 				UserID:              fx.user.ID,
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalServiceID:   "https://github.com",
+			}
+
+			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
+			assert.NoError(t, err)
+			assert.NotNil(t, cred)
+			assert.NotZero(t, cred.ID)
+			assert.Equal(t, scope.Domain, cred.Domain)
+			assert.Equal(t, scope.UserID, cred.UserID)
+			assert.Equal(t, scope.ExternalServiceType, cred.ExternalServiceType)
+			assert.Equal(t, scope.ExternalServiceID, cred.ExternalServiceID)
+			assert.NotZero(t, cred.CreatedAt)
+			assert.NotZero(t, cred.UpdatedAt)
+
+			have, err := cred.Authenticator(fx.userCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, authenticator.Hash(), have.Hash())
+
+			// Ensure that trying to insert again fails.
+			second, err := fx.db.Create(fx.userCtx, scope, authenticator)
+			assert.Error(t, err)
+			assert.Nil(t, second)
+
+			// Valid update contexts.
+			newExternalServiceType := extsvc.TypeGitLab
+			cred.ExternalServiceType = newExternalServiceType
+
+			err = fx.db.Update(fx.userCtx, cred)
+			assert.NoError(t, err)
+
+			updatedCred, err := fx.db.GetByID(fx.userCtx, cred.ID)
+			assert.NoError(t, err)
+			assert.Equal(t, cred, updatedCred)
+		})
+
+		t.Run(fmt.Sprintf("%s-%s", name, "with github app id"), func(t *testing.T) {
+			t.Skip("not implemented yet")
+			scope := UserCredentialScope{
+				Domain:              name,
+				UserID:              fx.user.ID,
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalServiceID:   "https://github.com",
+				GitHubAppID:         1,
 			}
 
 			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
@@ -557,6 +619,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				"id",
 				secret,
 				kid,
+				nil,
 				sqlf.Sprintf("id"),
 			)
 
