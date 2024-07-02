@@ -184,10 +184,22 @@ var sg = &cli.App{
 		if BuildCommit == "dev" {
 			printSkippedInDevWarning()
 		}
+		
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
+		if err != nil {
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+		}
 
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
+			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
+				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			}
+
 			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
 			if err != nil {
 				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
@@ -224,14 +236,6 @@ var sg = &cli.App{
 		}
 		if configOverwriteFile == "" {
 			return errors.Newf("--overwrite must not be empty")
-		}
-
-		// Set up access to secrets
-		secretsStore, err := loadSecrets()
-		if err != nil {
-			std.Out.WriteWarningf("failed to open secrets: %s", err)
-		} else {
-			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
 
 		// We always try to set this, since we often want to watch files, start commands, etc...
