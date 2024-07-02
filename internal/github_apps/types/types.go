@@ -39,6 +39,18 @@ const (
 	SiteCredentialGitHubAppKind GitHubAppKind = "SITE_CREDENTIAL"
 )
 
+func (s GitHubAppKind) Valid() bool {
+	switch s {
+	case CommitSigningGitHubAppKind,
+		RepoSyncGitHubAppKind,
+		UserCredentialGitHubAppKind,
+		SiteCredentialGitHubAppKind:
+		return true
+	default:
+		return false
+	}
+}
+
 // GitHubAppInstallation represents an installation of a GitHub App.
 type GitHubAppInstallation struct {
 	ID               int

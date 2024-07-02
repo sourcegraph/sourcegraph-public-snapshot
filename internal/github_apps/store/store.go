@@ -142,7 +142,9 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	// Backwards compatibility for apps that did not set the GitHubAppKind.
 	kind := app.Kind
 	if kind == "" {
-		kind = "REPO_SYNC"
+		kind = ghtypes.RepoSyncGitHubAppKind
+	} else if !kind.Valid() {
+		return -1, errors.New(fmt.Sprintf("The GitHubAppKind %s is not valid.", kind))
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
