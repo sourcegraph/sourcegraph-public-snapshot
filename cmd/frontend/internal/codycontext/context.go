@@ -277,12 +277,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	regexEscapedRepoNames := make([]string, len(args.Repos))
-	for i, repo := range args.Repos {
-		regexEscapedRepoNames[i] = fmt.Sprintf("^%s$", regexp.QuoteMeta(string(repo.Name)))
-	}
-
-	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, query.UnionRegExps(regexEscapedRepoNames), getKeywordContextExcludeFilePathsQuery(), args.Query)
+	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), args.Query)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -333,6 +328,16 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return collected, nil
+}
+
+// reposAsRegexp returns a regex pattern that matches the names of the given repos,
+// and only the names of the given repos.
+func reposAsRegexp(repos []types.RepoIDName) string {
+	anchoredAndEscapedNames := make([]string, len(repos))
+	for i, repo := range repos {
+		anchoredAndEscapedNames[i] = fmt.Sprintf("^%s$", regexp.QuoteMeta(string(repo.Name)))
+	}
+	return query.UnionRegExps(anchoredAndEscapedNames)
 }
 
 func addLimitsAndFilter(plan *search.Inputs, filter fileMatcher, args GetContextArgs) {
