@@ -13,5 +13,8 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance/maintenance/backend/api",
     visibility = ["//:__subpackages__"],
-    deps = ["@com_github_gorilla_mux//:mux"],
+    deps = [
+        "//internal/appliance/maintenance/backend/operator",
+        "@com_github_gorilla_mux//:mux",
+    ],
 )
