@@ -9,6 +9,7 @@ import {
     type BatchChangesCredentialFields,
     ExternalServiceKind,
     type UserBatchChangesCodeHostsResult,
+    type UserAreaUserFields,
 } from '../../../graphql-operations'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from '../mocks'
@@ -133,7 +134,7 @@ export const Overview: StoryFn = () => (
                     },
                 ]}
             >
-                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-1' }} />
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-1' } as UserAreaUserFields} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -214,7 +215,7 @@ export const ConfigAdded: StoryFn = () => (
                     },
                 ]}
             >
-                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' } as UserAreaUserFields} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -297,7 +298,7 @@ export const RolloutWindowsConfigurationStory: StoryFn = () => (
                     },
                 ]}
             >
-                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' } as UserAreaUserFields} />
             </MockedTestProvider>
         )}
     </WebStory>
