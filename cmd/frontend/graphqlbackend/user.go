@@ -413,16 +413,6 @@ func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to state of
-	// post-signup flow completion.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return false, err
-	}
-
-	return r.user.CompletedPostSignup, nil
-}
-
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -702,24 +692,6 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationA
 
 	tosAccepted := true
 	update := database.UserUpdate{TosAccepted: &tosAccepted}
-	return r.updateAffectedUser(ctx, affectedUserID, update)
-}
-
-func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	affectedUserID, err := r.affectedUserID(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-
-	has, err := backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, affectedUserID)
-	if err != nil {
-		return nil, err
-	} else if !has {
-		return nil, errors.New("must have a verified email to complete post-signup flow")
-	}
-
-	completedPostSignup := true
-	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
 	return r.updateAffectedUser(ctx, affectedUserID, update)
 }
 

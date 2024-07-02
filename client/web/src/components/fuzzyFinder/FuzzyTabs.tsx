@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 
 import type { ApolloClient } from '@apollo/client'
 import type * as H from 'history'
@@ -151,7 +151,7 @@ export class FuzzyTabs {
     public entries(): [FuzzyTabKey, Tab][] {
         const result: [FuzzyTabKey, Tab][] = []
         for (const key of Object.keys(this.underlying)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const value = (this.underlying as any)[key as keyof Tab] as Tab
             if (value.isEnabled) {
                 result.push([key as FuzzyTabKey, value])

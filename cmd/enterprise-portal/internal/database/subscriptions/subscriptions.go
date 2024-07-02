@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,11 +14,33 @@ import (
 
 // Subscription is an Enterprise subscription record.
 type Subscription struct {
-	// ID is the prefixed UUID-format identifier for the subscription.
-	ID string `gorm:"primaryKey"`
+	// ID is the internal (unprefixed) UUID-format identifier for the subscription.
+	ID string `gorm:"type:uuid;primaryKey"`
 	// InstanceDomain is the instance domain associated with the subscription, e.g.
-	// "acme.sourcegraphcloud.com".
-	InstanceDomain string `gorm:"unique"`
+	// "acme.sourcegraphcloud.com". This is set explicitly.
+	//
+	// It must be unique across all currently un-archived subscriptions.
+	InstanceDomain string `gorm:"uniqueIndex:,where:archived_at IS NULL"`
+
+	// WARNING: The below fields are not yet used in production.
+
+	// DisplayName is the human-friendly name of this subscription, e.g. "Acme, Inc."
+	//
+	// It must be unique across all currently un-archived subscriptions.
+	DisplayName string `gorm:"size:256;not null;uniqueIndex:,where:archived_at IS NULL AND display_name != 'Unnamed subscription';default:'Unnamed subscription'"`
+
+	// Timestamps representing the latest timestamps of key conditions related
+	// to this subscription.
+	//
+	// Condition transition details are tracked in 'enterprise_portal_subscription_conditions'.
+	CreatedAt  time.Time  `gorm:"not null;default:current_timestamp"`
+	UpdatedAt  time.Time  `gorm:"not null;default:current_timestamp"`
+	ArchivedAt *time.Time // Null indicates the subscription is not archived.
+
+	// SalesforceSubscriptionID associated with this Enterprise subscription.
+	SalesforceSubscriptionID *string
+	// SalesforceOpportunityID associated with this Enterprise subscription.
+	SalesforceOpportunityID *string
 }
 
 func (s *Subscription) TableName() string {

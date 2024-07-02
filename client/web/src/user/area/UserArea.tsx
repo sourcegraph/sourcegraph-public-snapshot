@@ -1,16 +1,17 @@
-import { type FC, useMemo, Suspense } from 'react'
+import { Suspense, useMemo, type FC } from 'react'
 
-import { useParams, Routes, Route } from 'react-router-dom'
+import { Route, Routes, useParams } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { BatchChangesProps } from '../../batches'
-import type { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BreadcrumbSetters, BreadcrumbsProps } from '../../components/Breadcrumbs'
 import { RouteError } from '../../components/ErrorBoundary'
 import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
@@ -21,7 +22,6 @@ import type {
 } from '../../graphql-operations'
 import type { NamespaceProps } from '../../namespaces'
 import type { RouteV6Descriptor } from '../../util/contributions'
-import { getLicenseFeatures } from '../../util/license'
 import { isAccessTokenCallbackPage } from '../settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import type { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -104,6 +104,7 @@ export interface UserAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
         TelemetryProps,
+        TelemetryV2Props,
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -127,12 +128,6 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
-
-    // license related properties
-    license: {
-        isCodeSearchEnabled: boolean
-        isCodyEnabled: boolean
-    }
 }
 
 /**
@@ -193,7 +188,6 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isS
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
-        license: getLicenseFeatures(),
         telemetryRecorder: props.platformContext.telemetryRecorder,
     }
 

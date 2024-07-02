@@ -150,11 +150,10 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		// Set up mocks to prevent the diffstat computation from trying to
 		// use a real gitserver, and so we can control what diff is used to
 		// create the diffstat.
-		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
+		bt.MockChangesetSyncState(&protocol.RepoInfo{
 			Name: "repo",
 			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 		})
-		defer state.Unmock()
 
 		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential, githubRepo)
 		if err != nil {

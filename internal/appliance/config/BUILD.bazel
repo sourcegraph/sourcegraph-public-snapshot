@@ -32,5 +32,9 @@ go_test(
     srcs = ["dev_mode_test.go"],
     embed = [":config"],
     tags = [TAG_INFRA_RELEASE],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+    ],
 )

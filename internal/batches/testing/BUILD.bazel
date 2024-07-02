@@ -44,7 +44,6 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/rbac",
-        "//internal/repoupdater",
         "//internal/repoupdater/protocol",
         "//internal/timeutil",
         "//internal/types",

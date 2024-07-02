@@ -1,17 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/custom.css">
-    <script src="/static/script/htmx.min.js"></script>
-    <script src="/static/script/bootstrap.bundle.min.js"></script>
-    <title>Sourcegraph Appliance - Setup</title>
-</head>
+{{ template "layout.gohtml" }}
 
-<body hx-boost="true" class="container">
+{{ define "title" }}Sourcegraph Appliance - Setup{{ end }}
+
+{{- define "content" }}
 <h1>Sourcegraph Appliance Setup</h1>
 
 <form action="/appliance/setup" method="post">
@@ -22,9 +13,9 @@
         </div>
         <div class="col">
             <select id="version" name="version" class="row form-select mb-3" aria-label="Sourcegraph version selection">
-                <option selected>Latest</option>
-                <option value="5.4">5.4</option>
-                <option value="5.3">5.3</option>
+                {{- range $idx, $version := .Versions }}
+                <option{{ if eq $idx 0 }} selected{{ end }}>{{ $version }}</option>
+                {{- end }}
             </select>
         </div>
     </div>
@@ -141,8 +132,18 @@
 
         </div>
     </div>
+    <div class="row">
+       <div class="col">
+           <label for="dev_mode" class="fw-bold">Developer mode</label>
+           <p>Would you like to run in development mode (No resource requests/limits)?</p>
+       </div>
+        <div class="col">
+            <div class="form-switch mb-3">
+                <input class="form-check-input" data-bs-toggle="collapse" type="checkbox" id="dev_mode" name="dev_mode">
+                <label class="form-check-label" for="dev_mode">Use dev mode</label>
+            </div>
+        </div>
+    </div>
     <button type="submit" class="btn btn-primary">Start Setup</button>
 </form>
-
-</body>
-</html>
+{{- end }}

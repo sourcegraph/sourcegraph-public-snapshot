@@ -1,5 +1,5 @@
 {
-  "checksum": "31748fbba83a1f037f24462114667576f5abb10cf202f1ae7b083d6c48c5c1f1",
+  "checksum": "ff2c36de653530e0525fa93207bfa1381d434f2e99df6b8a198b57143537b4b6",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -2394,7 +2394,7 @@
               "target": "plotters"
             },
             {
-              "id": "rayon 1.7.0",
+              "id": "rayon 1.10.0",
               "target": "rayon"
             },
             {
@@ -2476,57 +2476,6 @@
         "version": "0.5.0"
       },
       "license": "MIT/Apache-2.0"
-    },
-    "crossbeam-channel 0.5.8": {
-      "name": "crossbeam-channel",
-      "version": "0.5.8",
-      "repository": {
-        "Http": {
-          "url": "https://static.crates.io/crates/crossbeam-channel/0.5.8/download",
-          "sha256": "a33c2bf77f2df06183c3aa30d1e96c0695a313d4f9c453cc3762a6db39f99200"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "crossbeam_channel",
-            "crate_root": "src/lib.rs",
-            "srcs": [
-              "**/*.rs"
-            ]
-          }
-        }
-      ],
-      "library_target_name": "crossbeam_channel",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": {
-          "common": [
-            "crossbeam-utils",
-            "default",
-            "std"
-          ],
-          "selects": {}
-        },
-        "deps": {
-          "common": [
-            {
-              "id": "cfg-if 1.0.0",
-              "target": "cfg_if"
-            },
-            {
-              "id": "crossbeam-utils 0.8.16",
-              "target": "crossbeam_utils"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.5.8"
-      },
-      "license": "MIT OR Apache-2.0"
     },
     "crossbeam-deque 0.8.3": {
       "name": "crossbeam-deque",
@@ -6479,6 +6428,42 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "minimal-lexical 0.2.1": {
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/minimal-lexical/0.2.1/download",
+          "sha256": "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "minimal_lexical",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "minimal_lexical",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "std"
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.2.1"
+      },
+      "license": "MIT/Apache-2.0"
+    },
     "miniz_oxide 0.7.1": {
       "name": "miniz_oxide",
       "version": "0.7.1",
@@ -6794,6 +6779,57 @@
         },
         "edition": "2018",
         "version": "0.23.2"
+      },
+      "license": "MIT"
+    },
+    "nom 7.1.3": {
+      "name": "nom",
+      "version": "7.1.3",
+      "repository": {
+        "Http": {
+          "url": "https://static.crates.io/crates/nom/7.1.3/download",
+          "sha256": "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "nom",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "nom",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "alloc",
+            "default",
+            "std"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "memchr 2.5.0",
+              "target": "memchr"
+            },
+            {
+              "id": "minimal-lexical 0.2.1",
+              "target": "minimal_lexical"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "7.1.3"
       },
       "license": "MIT"
     },
@@ -8903,13 +8939,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "rayon 1.7.0": {
+    "rayon 1.10.0": {
       "name": "rayon",
-      "version": "1.7.0",
+      "version": "1.10.0",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/rayon/1.7.0/download",
-          "sha256": "1d2df5196e37bcc87abebc0053e20787d73847bb33134a69841207dd0a47f03b"
+          "url": "https://static.crates.io/crates/rayon/1.10.0/download",
+          "sha256": "b418a60154510ca1a002a752ca9714984e21e4241e804d32555251faf8b78ffa"
         }
       },
       "targets": [
@@ -8935,24 +8971,24 @@
               "target": "either"
             },
             {
-              "id": "rayon-core 1.11.0",
+              "id": "rayon-core 1.12.1",
               "target": "rayon_core"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.7.0"
+        "version": "1.10.0"
       },
       "license": "MIT OR Apache-2.0"
     },
-    "rayon-core 1.11.0": {
+    "rayon-core 1.12.1": {
       "name": "rayon-core",
-      "version": "1.11.0",
+      "version": "1.12.1",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/rayon-core/1.11.0/download",
-          "sha256": "4b8f95bd6966f5c87776639160a66bd8ab9895d9d4ab01ddba9fc60661aebe8d"
+          "url": "https://static.crates.io/crates/rayon-core/1.12.1/download",
+          "sha256": "1465873a3dfdaa8ae7cb14b4383657caab0b3e8a0aa9ae8e04b044854c8dfce2"
         }
       },
       "targets": [
@@ -8983,10 +9019,6 @@
         "deps": {
           "common": [
             {
-              "id": "crossbeam-channel 0.5.8",
-              "target": "crossbeam_channel"
-            },
-            {
               "id": "crossbeam-deque 0.8.3",
               "target": "crossbeam_deque"
             },
@@ -8995,18 +9027,14 @@
               "target": "crossbeam_utils"
             },
             {
-              "id": "num_cpus 1.16.0",
-              "target": "num_cpus"
-            },
-            {
-              "id": "rayon-core 1.11.0",
+              "id": "rayon-core 1.12.1",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2021",
-        "version": "1.11.0"
+        "version": "1.12.1"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -10613,6 +10641,10 @@
               "target": "lazy_static"
             },
             {
+              "id": "nom 7.1.3",
+              "target": "nom"
+            },
+            {
               "id": "path-clean 1.0.1",
               "target": "path_clean"
             },
@@ -10623,6 +10655,10 @@
             {
               "id": "protobuf 3.2.0",
               "target": "protobuf"
+            },
+            {
+              "id": "rayon 1.10.0",
+              "target": "rayon"
             },
             {
               "id": "scip 0.3.2",
@@ -10641,8 +10677,12 @@
               "target": "string_interner"
             },
             {
-              "id": "tar 0.4.40",
+              "id": "tar 0.4.41",
               "target": "tar"
+            },
+            {
+              "id": "tree-sitter 0.20.10",
+              "target": "tree_sitter"
             },
             {
               "id": "walkdir 2.3.3",
@@ -10653,6 +10693,10 @@
         },
         "deps_dev": {
           "common": [
+            {
+              "id": "criterion 0.4.0",
+              "target": "criterion"
+            },
             {
               "id": "tempfile 3.10.1",
               "target": "tempfile"
@@ -12008,13 +12052,13 @@
       },
       "license": "MIT"
     },
-    "tar 0.4.40": {
+    "tar 0.4.41": {
       "name": "tar",
-      "version": "0.4.40",
+      "version": "0.4.41",
       "repository": {
         "Http": {
-          "url": "https://static.crates.io/crates/tar/0.4.40/download",
-          "sha256": "b16afcea1f22891c49a00c751c7b63b2233284064f11a200fc624137c51e2ddb"
+          "url": "https://static.crates.io/crates/tar/0.4.41/download",
+          "sha256": "cb797dad5fb5b76fcf519e702f4a589483b5ef06567f160c392832c1f5e44909"
         }
       },
       "targets": [
@@ -12060,10 +12104,10 @@
             ]
           }
         },
-        "edition": "2018",
-        "version": "0.4.40"
+        "edition": "2021",
+        "version": "0.4.41"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT OR Apache-2.0"
     },
     "tempfile 3.10.1": {
       "name": "tempfile",
@@ -18752,11 +18796,13 @@
     "insta 1.34.0",
     "itertools 0.10.5",
     "lazy_static 1.4.0",
+    "nom 7.1.3",
     "once_cell 1.18.0",
     "paste 1.0.14",
     "path-clean 1.0.1",
     "predicates 3.0.4",
     "protobuf 3.2.0",
+    "rayon 1.10.0",
     "regex 1.9.3",
     "rocket 0.5.0-rc.3",
     "rustc-hash 1.1.0",
@@ -18767,7 +18813,7 @@
     "serde_json 1.0.99",
     "string-interner 0.14.0",
     "syntect 4.7.0",
-    "tar 0.4.40",
+    "tar 0.4.41",
     "tree-sitter 0.20.10",
     "tree-sitter-c 0.20.6",
     "tree-sitter-c-sharp 0.20.0",

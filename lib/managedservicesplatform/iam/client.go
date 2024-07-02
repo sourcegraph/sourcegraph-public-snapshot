@@ -113,6 +113,20 @@ type ListObjectsOptions struct {
 	Subject  TupleSubject
 }
 
+func (l ListObjectsOptions) Validate() error {
+	var errs error
+	if l.Type == "" {
+		errs = errors.Append(errs, errors.New("unknown type"))
+	}
+	if l.Relation == "" {
+		errs = errors.Append(errs, errors.New("unknown relation"))
+	}
+	if l.Subject == "" {
+		errs = errors.Append(errs, errors.New("unknown subject"))
+	}
+	return errs
+}
+
 // ListObjects returns a list of object IDs that satisfy the given options.
 func (c *ClientV1) ListObjects(ctx context.Context, opts ListObjectsOptions) ([]string, error) {
 	resp, err := c.server.ListObjects(

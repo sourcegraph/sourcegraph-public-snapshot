@@ -415,7 +415,7 @@ func main() {
 type Service struct{}
 
 // Initialize implements runtime.Service.
-func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config config.Config) (background.Routine, error) {
+func (s Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.ServiceContract, config config.Config) (background.Routine, error) {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", config.SlackChannel), log.Bool("Production", config.Production)))
 
 	bqWriter, err := contract.BigQuery.GetTableWriter(context.Background(), "agent_status")

@@ -12,5 +12,8 @@ import (
 func All() []schema.Tabler {
 	return []schema.Tabler{
 		&subscriptions.Subscription{},
+		&subscriptions.SubscriptionCondition{},
+		&subscriptions.SubscriptionLicense{},
+		&subscriptions.SubscriptionLicenseCondition{},
 	}
 }

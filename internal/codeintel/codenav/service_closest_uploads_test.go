@@ -2,7 +2,9 @@ package codenav
 
 import (
 	"context"
+	"hash/fnv"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -21,7 +24,7 @@ import (
 
 type idPathPair struct {
 	uploadID int
-	path     string
+	path     core.UploadRelPath
 }
 
 type TestCase struct {
@@ -35,14 +38,17 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 	const repoID = 37
 	const missingCommitSHA = "C1"
 	const presentCommitSHA = "C2"
+	repoRootPath := core.NewRepoRelPathUnchecked
+	uploadRootPath := core.NewUploadRelPathUnchecked
+
 	testCases := []TestCase{
 		{
 			closestUploads: []shared.CompletedUpload{
 				{ID: 22, Commit: missingCommitSHA, Root: ""},
 				{ID: 23, Commit: presentCommitSHA, Root: "subdir/"},
 			},
-			lsifStoreAllowedPaths: []idPathPair{{22, "a.c"}},
-			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
+			lsifStoreAllowedPaths: []idPathPair{{22, uploadRootPath("a.c")}},
+			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: repoRootPath("a.c")},
 			// bug fix: doesn't have upload for which path check fails
 			expectUploadIDs: []int{},
 		},
@@ -51,8 +57,8 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 				{ID: 22, Commit: missingCommitSHA, Root: "subdir/"},
 				{ID: 23, Commit: presentCommitSHA, Root: ""},
 			},
-			lsifStoreAllowedPaths: []idPathPair{{23, "a.c"}},
-			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: "a.c"},
+			lsifStoreAllowedPaths: []idPathPair{{23, uploadRootPath("a.c")}},
+			matchingOptions:       shared.UploadMatchingOptions{Commit: "C2", Path: repoRootPath("a.c")},
 			// bug fix: has upload for which path check succeeds
 			expectUploadIDs: []int{23},
 		},
@@ -87,10 +93,7 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 			return nil, &gitdomain.RevisionNotFoundError{}
 		})
 
-		mockLsifStore.GetPathExistsFunc.SetDefaultHook(func(_ context.Context, uploadID int, path string) (bool, error) {
-			return collections.NewSet(testCase.lsifStoreAllowedPaths...).Has(
-				idPathPair{uploadID: uploadID, path: path}), nil
-		})
+		mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncLimited(testCase.lsifStoreAllowedPaths))
 
 		testCase.matchingOptions.RepositoryID = repoID
 		testCase.matchingOptions.RootToPathMatching = shared.RootMustEnclosePath
@@ -101,12 +104,38 @@ func TestGetClosestCompletedUploadsForBlob(t *testing.T) {
 		for _, upload := range filtered {
 			gotIDs = append(gotIDs, upload.ID)
 		}
-		if diff := cmp.Diff(gotIDs, testCase.expectUploadIDs, cmp.Transformer("Sort", func(in []int) []int {
+		if diff := cmp.Diff(testCase.expectUploadIDs, gotIDs, cmp.Transformer("Sort", func(in []int) []int {
 			out := append([]int(nil), in...)
 			slices.Sort(out)
 			return out
 		})); diff != "" {
 			t.Errorf("unexpected filtered uploads (-want +got):\n%s", diff)
 		}
+	}
+}
+
+type findDocumentIDsFuncType = func(_ context.Context, uploadIDToPathMap map[int]core.UploadRelPath) (map[int]int, error)
+
+func findDocumentIDsFuncAllowAny() findDocumentIDsFuncType {
+	return findDocumentIDsFuncImpl(true, nil)
+}
+
+func findDocumentIDsFuncLimited(allowedPaths []idPathPair) findDocumentIDsFuncType {
+	return findDocumentIDsFuncImpl(false, allowedPaths)
+}
+
+func findDocumentIDsFuncImpl(allowAny bool, allowedPaths []idPathPair) findDocumentIDsFuncType {
+	return func(_ context.Context, uploadIDToPathMap map[int]core.UploadRelPath) (map[int]int, error) {
+		uploadPathSet := collections.NewSet(allowedPaths...)
+		uploadIDToDocumentID := map[int]int{}
+		for uploadID, path := range uploadIDToPathMap {
+			if allowAny || uploadPathSet.Has(idPathPair{uploadID: uploadID, path: path}) {
+				hasher := fnv.New64()
+				hasher.Write([]byte(strconv.Itoa(uploadID)))
+				hasher.Write([]byte(path.RawValue()))
+				uploadIDToDocumentID[uploadID] = int(hasher.Sum64())
+			}
+		}
+		return uploadIDToDocumentID, nil
 	}
 }

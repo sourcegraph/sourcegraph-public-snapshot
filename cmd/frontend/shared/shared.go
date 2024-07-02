@@ -129,7 +129,7 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 	return codeintelshared.NewCodeIntelDB(logger, db)
 }
 
-func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
+func switchableSiteConfig() conftypes.WatchableSiteConfig {
 	confClient := conf.DefaultClient()
 	switchable := &switchingSiteConfig{
 		watchers:            make([]func(), 0),

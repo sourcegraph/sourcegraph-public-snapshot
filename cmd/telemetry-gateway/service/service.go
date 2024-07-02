@@ -42,7 +42,7 @@ var _ runtime.Service[Config] = (*Service)(nil)
 func (Service) Name() string    { return "telemetry-gateway" }
 func (Service) Version() string { return version.Version() }
 
-func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.Routine, error) {
+func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.ServiceContract, config Config) (background.Routine, error) {
 	// We use Sourcegraph tracing code, so explicitly configure a trace policy
 	policy.SetTracePolicy(policy.TraceAll)
 

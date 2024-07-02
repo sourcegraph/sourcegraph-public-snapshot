@@ -6,29 +6,29 @@ import expect from 'expect'
 import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
+    NotebookBlockType,
+    SymbolKind,
     type CreateNotebookBlockInput,
     type NotebookFields,
     type WebGraphQlOperations,
-    NotebookBlockType,
-    SymbolKind,
 } from '../graphql-operations'
 import type { BlockType } from '../notebooks'
 
-import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
-import { percySnapshotWithVariants } from './utils'
 
 const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
@@ -89,6 +89,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    patternType: SearchPatternType.standard,
 })
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
@@ -269,7 +270,6 @@ describe('Search Notebook', () => {
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
-        await percySnapshotWithVariants(driver.page, 'Search notebook')
         await accessibilityAudit(driver.page)
     })
 
@@ -341,7 +341,6 @@ describe('Search Notebook', () => {
             queryResultContainerSelector
         )
         expect(isResultContainerVisible).toBeTruthy()
-        await percySnapshotWithVariants(driver.page, 'Search notebook with markdown and query blocks')
         await accessibilityAudit(driver.page)
     })
 
@@ -782,7 +781,6 @@ ${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@branch/-/
     it('Notebooks list page should be accessible', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks?tab=notebooks')
         await driver.page.waitForSelector('[data-testid="filtered-connection-nodes"]', { visible: true })
-        await percySnapshotWithVariants(driver.page, 'Notebooks list')
         await accessibilityAudit(driver.page)
     })
 })

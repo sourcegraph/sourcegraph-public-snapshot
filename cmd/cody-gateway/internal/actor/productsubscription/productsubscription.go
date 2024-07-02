@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
@@ -63,7 +64,7 @@ type Source struct {
 
 	enterprisePortal EnterprisePortalClient
 
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
+	concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig
 }
 
 var _ actor.Source = &Source{}
@@ -74,7 +75,7 @@ func NewSource(
 	logger log.Logger,
 	cache ListingCache,
 	enterprisePortal EnterprisePortalClient,
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig,
+	concurrencyConfig codygatewayactor.ActorConcurrencyLimitConfig,
 ) *Source {
 	return &Source{
 		log:   logger.Scoped("productsubscriptions"),
@@ -86,7 +87,7 @@ func NewSource(
 	}
 }
 
-func (s *Source) Name() string { return string(codygateway.ActorSourceEnterpriseSubscription) }
+func (s *Source) Name() string { return string(codygatewayactor.ActorSourceEnterpriseSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {

@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { TELEMETRY_RECORDER } from '$lib/telemetry'
-
     const links = [
         {
             name: 'Docs',
@@ -31,7 +29,9 @@
     ]
 
     function handleLinkClick(telemetryType: number): void {
-        TELEMETRY_RECORDER.recordEvent('home.footer.CTA', 'click', { metadata: { type: telemetryType } })
+        import('$lib/telemetry').then(({ TELEMETRY_RECORDER }) => {
+            TELEMETRY_RECORDER.recordEvent('home.footer.CTA', 'click', { metadata: { type: telemetryType } })
+        })
     }
 </script>
 

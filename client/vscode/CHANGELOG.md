@@ -8,20 +8,23 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Changes
 
 - Change the extension name from "Sourcegraph" to "Search by
-  Sourcegraph" [pull/51790](https://github.com/sourcegraph/sourcegraph/pull/51790)
+  Sourcegraph" [#51790](https://github.com/sourcegraph/sourcegraph/pull/51790)
+- Remove the URL and Access Token settings because authentication is managed in the extension now. [#63559](https://github.com/sourcegraph/sourcegraph/pull/63559)
+- Remove the signup link for sourcegraph.com because sourcegraph.com no longer hosts private code. [#63558](https://github.com/sourcegraph/sourcegraph/pull/63558)
 
 ### Fixes
 
-- Various UI fixes for dark and light themes [pull/50598](https://github.com/sourcegraph/sourcegraph/pull/50598)
-- Fix authentication so it works through the UI instead of requiring manual modification of `settings.json` [pull/63175](https://github.com/sourcegraph/sourcegraph/pull/63175)
+- Various UI fixes for dark and light themes [#50598](https://github.com/sourcegraph/sourcegraph/pull/50598)
+- Fix authentication so it works through the UI instead of requiring manual modification of `settings.json` [#63175](https://github.com/sourcegraph/sourcegraph/pull/63175)
+- Fix repo and file browsing not loading/taking a long time to load (no specific PR, just natural progression of the code)
 
 ## 2.2.15
 
 ### Fixes
 
 - Prefer `upstream` and `origin` remotes when no remote is
-  selected [issues/2761](https://github.com/sourcegraph/sourcegraph/issues/2761) [pull/48369](https://github.com/sourcegraph/sourcegraph/pull/48369)
-- Fixes content security policy configuration: [pull/47263](https://github.com/sourcegraph/sourcegraph/pull/47263)
+  selected [issues/2761](https://github.com/sourcegraph/sourcegraph/issues/2761) [#48369](https://github.com/sourcegraph/sourcegraph/pull/48369)
+- Fixes content security policy configuration: [#47263](https://github.com/sourcegraph/sourcegraph/pull/47263)
 
 ## 2.2.14
 
@@ -35,7 +38,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Changes
 
 - Support for logical multiline matches in the UI for Sourcegraph instance versions >=
-  3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+  3.42.0 [#43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
 - Tokens will now be stored in secret storage and removed from user
   settings [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
 - Users can now log in through the
@@ -46,32 +49,32 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Fixes
 
 - Fix issue where pattern type was always set to `literal` for Sourcegraph instance versions earlier than v3.43.0, which
-  was overriding regex/structural toggles [pull/43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
+  was overriding regex/structural toggles [#43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
 
 ## 2.2.12
 
 ### Fixes
 
 - Vary search pattern type depending on Sourcegraph instance
-  version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [pull/42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
+  version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [#42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
 
 ## 2.2.10
 
 ### Changes
 
-- Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+- Remove tracking parameters from all shareable URLs [#42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
 
 ### Fixes
 
 - Fix Sourcegraph blob link
-  generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [pull/42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
+  generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [#42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
 
 ## 2.2.9
 
 ### Fixes
 
 - Fix an issue that prevented search results on some older Sourcegraph instance versions to not render
-  properly [pull/40621](https://github.com/sourcegraph/sourcegraph/pull/40621)
+  properly [#40621](https://github.com/sourcegraph/sourcegraph/pull/40621)
 
 ## 2.2.8
 
@@ -80,7 +83,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 - `Internal:` Automate release step for Open-VSX
   registry: [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
 - Remove integrations banners and corresponding
-  pings: [issues/38625](https://github.com/sourcegraph/sourcegraph/issues/38625), [pull/38715](https://github.com/sourcegraph/sourcegraph/pull/38715), [pull/38862](https://github.com/sourcegraph/sourcegraph/pull/38862)
+  pings: [issues/38625](https://github.com/sourcegraph/sourcegraph/issues/38625), [#38715](https://github.com/sourcegraph/sourcegraph/pull/38715), [#38862](https://github.com/sourcegraph/sourcegraph/pull/38862)
 
 ### Fixes
 
@@ -89,7 +92,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Changes
 
 - Remove references to creating an account on cloud, or configuring a cloud
-  account [pull/38071](https://github.com/sourcegraph/sourcegraph/pull/38071)
+  account [#38071](https://github.com/sourcegraph/sourcegraph/pull/38071)
 
 ### Fixes
 

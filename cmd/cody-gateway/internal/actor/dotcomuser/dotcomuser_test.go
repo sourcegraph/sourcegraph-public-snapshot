@@ -20,11 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNewActor(t *testing.T) {
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{
+	concurrencyConfig := codygatewayactor.ActorConcurrencyLimitConfig{
 		Percentage: 50,
 		Interval:   10 * time.Second,
 	}

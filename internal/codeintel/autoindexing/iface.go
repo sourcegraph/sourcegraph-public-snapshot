@@ -17,10 +17,6 @@ type (
 	InferenceService     = jobselector.InferenceService
 )
 
-type RepoUpdaterClient interface {
-	dependencies.RepoUpdaterClient
-}
-
 type UploadService interface {
 	dependencies.UploadService
 	summary.UploadService
