@@ -22,8 +22,8 @@ type ClientConfig struct {
 	// Whether the site admin allows this user to make use of the Cody autocomplete feature.
 	AutoCompleteEnabled bool `json:"autoCompleteEnabled"`
 
-	// Whether the site admin allows this user to make use of the Cody commands feature.
-	CommandsEnabled bool `json:"commandsEnabled"`
+	// Whether the site admin allows the user to make use of the **custom** Cody commands feature.
+	CustomCommandsEnabled bool `json:"customCommandsEnabled"`
 
 	// Whether the site admin allows this user to make use of the Cody attribution feature.
 	AttributionEnabled bool `json:"attributionEnabled"`
