@@ -50,7 +50,7 @@ func MakeCommit(i int) api.CommitID {
 	return api.CommitID(fmt.Sprintf("%040d", i))
 }
 
-func InsertSyntacticIndexingRecords(t testing.TB, db database.DB, records ... jobstore.SyntacticIndexingJob) {
+func InsertSyntacticIndexingRecords(t testing.TB, db database.DB, records ...jobstore.SyntacticIndexingJob) {
 	for _, index := range records {
 		if index.Commit == "" {
 			index.Commit = MakeCommit(index.ID)
