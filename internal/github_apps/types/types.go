@@ -25,8 +25,30 @@ type GitHubApp struct {
 	PrivateKey    string
 	EncryptionKey string
 	Logo          string
+	Kind          GitHubAppKind
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+type GitHubAppKind string
+
+const (
+	CommitSigningGitHubAppKind  GitHubAppKind = "COMMIT_SIGNING"
+	RepoSyncGitHubAppKind       GitHubAppKind = "REPO_SYNC"
+	UserCredentialGitHubAppKind GitHubAppKind = "USER_CREDENTIAL"
+	SiteCredentialGitHubAppKind GitHubAppKind = "SITE_CREDENTIAL"
+)
+
+func (s GitHubAppKind) Valid() bool {
+	switch s {
+	case CommitSigningGitHubAppKind,
+		RepoSyncGitHubAppKind,
+		UserCredentialGitHubAppKind,
+		SiteCredentialGitHubAppKind:
+		return true
+	default:
+		return false
+	}
 }
 
 // GitHubAppInstallation represents an installation of a GitHub App.

@@ -37,7 +37,7 @@ var _ runtime.Service[Config] = (*Service)(nil)
 func (Service) Name() string    { return "enterprise-portal" }
 func (Service) Version() string { return version.Version() }
 
-func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.Contract, config Config) (background.Routine, error) {
+func (Service) Initialize(ctx context.Context, logger log.Logger, contract runtime.ServiceContract, config Config) (background.Routine, error) {
 	// We use Sourcegraph tracing code, so explicitly configure a trace policy
 	policy.SetTracePolicy(policy.TraceAll)
 
@@ -46,7 +46,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "initialize Redis client")
 	}
 
-	dbHandle, err := database.NewHandle(ctx, logger, contract, redisClient, version.Version())
+	dbHandle, err := database.NewHandle(ctx, logger, contract.Contract, redisClient, version.Version())
 	if err != nil {
 		return nil, errors.Wrap(err, "initialize database handle")
 	}
@@ -76,7 +76,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		return nil, errors.Wrap(err, "create Sourcegraph Accounts client")
 	}
 
-	iamClient, closeIAMClient, err := newIAMClient(ctx, logger, contract, redisClient)
+	iamClient, closeIAMClient, err := newIAMClient(ctx, logger, contract.Contract, redisClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "initialize IAM client")
 	}

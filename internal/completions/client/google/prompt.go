@@ -35,7 +35,7 @@ func getAnthropicPrompt(messages []types.Message) ([]anthropicMessage, string, e
 		case types.HUMAN_MESSAGE_SPEAKER:
 			anthropicRole = "user"
 		default:
-			return nil, "", errors.Errorf("unexpected role: %s", message.Text)
+			return nil, "", errors.Errorf("unexpected role: %s", message.Speaker)
 		}
 
 		// Trim whitespace from the message text if it's the last message

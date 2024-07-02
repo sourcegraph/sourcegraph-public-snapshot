@@ -172,7 +172,6 @@
         - ExternalServiceStore
         - ReposStore
         - IndexEnqueuer
-        - RepoUpdaterClient
         - UploadService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
@@ -198,7 +197,6 @@
         - Store
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
       interfaces:
-        - RepoUpdaterClient
         - InferenceService
         - UploadService
 - filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go

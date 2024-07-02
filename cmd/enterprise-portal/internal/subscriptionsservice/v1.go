@@ -123,6 +123,12 @@ func (s *handlerV1) ListEnterpriseSubscriptions(ctx context.Context, req *connec
 				Relation: convertProtoToIAMTupleRelation(f.Permission.Relation),
 				Subject:  iam.ToTupleSubjectUser(f.Permission.SamsAccountId),
 			}
+			if err := iamListObjectOptions.Validate(); err != nil {
+				return nil, connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.Wrap(err, `invalid filter: "permission" provided but invalid`),
+				)
+			}
 		}
 	}
 
@@ -426,17 +432,34 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 
 	roles := req.Msg.GetMembership().GetMemberRoles()
 	writes := make([]iam.TupleKey, 0, len(roles))
+	seenRoles := map[subscriptionsv1.Role]struct{}{}
 	for _, role := range roles {
+		if _, ok := seenRoles[role]; ok {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				errors.Newf("duplicate role: %s", role))
+		}
+		seenRoles[role] = struct{}{}
+
+		// "role for subscription"
+		roleObject := convertProtoRoleToIAMTupleObject(role, subscriptionID)
+
 		switch role {
-		case subscriptionsv1.Role_ROLE_SUBSCRIPTION_CODY_ANALYTICS_CUSTOMER_ADMIN:
-			// Subscription cody analytics customer admin can:
+		case subscriptionsv1.Role_ROLE_SUBSCRIPTION_CUSTOMER_ADMIN:
+			// Subscription customer admin can:
 			//	- View cody analytics of the subscription
 
-			// Make sure the customer_admin role is created for the subscription.
+			// Make sure the customer_admin role is created for the subscription
+			// with all the tuples that the customer_admin role has.
+			//
+			// TODO: We may need a more robust home for this, if we expand more
+			// capabilities of the admin role.
 			tk := iam.TupleKey{
-				Object:        iam.ToTupleObject(iam.TupleTypeSubscriptionCodyAnalytics, subscriptionID),
+				// SUBJECT(subscription customer admin)
+				Subject: iam.ToTupleSubjectCustomerAdmin(subscriptionID, iam.TupleRelationMember),
+				// can RELATION(view)
 				TupleRelation: iam.TupleRelationView,
-				Subject:       iam.ToTupleSubjectCustomerAdmin(subscriptionID, iam.TupleRelationMember),
+				// OBJECT(subscription cody analytics)
+				Object: iam.ToTupleObject(iam.TupleTypeSubscriptionCodyAnalytics, subscriptionID),
 			}
 			allowed, err := s.store.IAMCheck(ctx, iam.CheckOptions{TupleKey: tk})
 			if err != nil {
@@ -448,9 +471,12 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 
 			// Add the user as a member of the customer_admin role of the subscription.
 			tk = iam.TupleKey{
-				Object:        iam.ToTupleObject(iam.TupleTypeCustomerAdmin, subscriptionID),
+				// SUBJECT(SAMS user)
+				Subject: iam.ToTupleSubjectUser(samsAccountID),
+				// is RELATION(member)
 				TupleRelation: iam.TupleRelationMember,
-				Subject:       iam.ToTupleSubjectUser(samsAccountID),
+				// of OBJECT(role)
+				Object: roleObject,
 			}
 			allowed, err = s.store.IAMCheck(ctx, iam.CheckOptions{TupleKey: tk})
 			if err != nil {
@@ -464,10 +490,44 @@ func (s *handlerV1) UpdateEnterpriseSubscriptionMembership(ctx context.Context, 
 		}
 	}
 
+	// Revoke membership to all roles that exist but are not specified in the
+	// request.
+	deletes := make([]iam.TupleKey, 0)
+	for rid := range subscriptionsv1.Role_name {
+		role := subscriptionsv1.Role(rid)
+		if role == subscriptionsv1.Role_ROLE_UNSPECIFIED {
+			continue
+		}
+
+		if _, ok := seenRoles[role]; !ok {
+			roleObject := convertProtoRoleToIAMTupleObject(role, subscriptionID)
+			if roleObject == "" {
+				continue // unsupported, continue
+			}
+			tk := iam.TupleKey{
+				// SUBJECT(SAMS user)
+				Subject: iam.ToTupleSubjectUser(samsAccountID),
+				// is RELATION(member)
+				TupleRelation: iam.TupleRelationMember,
+				// of OBJECT(role)
+				Object: roleObject,
+			}
+			allowed, err := s.store.IAMCheck(ctx, iam.CheckOptions{TupleKey: tk})
+			if err != nil {
+				return nil, connectutil.InternalError(ctx, logger, err, "check relation tuple in IAM")
+			}
+			if allowed {
+				// Delete tuple
+				deletes = append(deletes, tk)
+			}
+		}
+	}
+
 	err = s.store.IAMWrite(
 		ctx,
 		iam.WriteOptions{
-			Writes: writes,
+			Writes:  writes,
+			Deletes: deletes,
 		},
 	)
 	if err != nil {

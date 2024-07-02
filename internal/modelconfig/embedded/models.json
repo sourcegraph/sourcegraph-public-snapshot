@@ -21,11 +21,10 @@
   ],
   "models": [
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-06-01::claude-3-sonnet",
       "displayName": "Claude 3 Sonnet",
-      "string": "claude-3-sonnet-20240229",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-3-sonnet-20240229",
+      "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "stable",
       "tier": "free",
@@ -35,11 +34,10 @@
       }
     },
     {
-      "modelId": "unknown",
-      "modelRef": "anthropic::2023-06-01::claude-3-5-sonnet",
+      "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
       "displayName": "Claude 3.5 Sonnet",
-      "string": "claude-3-5-sonnet-20240620",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-3-5-sonnet-20240620",
+      "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
       "tier": "pro",
@@ -49,11 +47,10 @@
       }
     },
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-06-01::claude-3-opus",
       "displayName": "Claude 3 Opus",
-      "string": "claude-3-opus-20240229",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-3-opus-20240229",
+      "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
       "tier": "pro",
@@ -63,11 +60,10 @@
       }
     },
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-06-01::claude-3-haiku",
       "displayName": "Claude 3 Haiku",
-      "string": "claude-3-haiku-20240307",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-3-haiku-20240307",
+      "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
       "tier": "pro",
@@ -77,11 +73,10 @@
       }
     },
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-01-01::claude-2.1",
       "displayName": "Claude 2.1",
-      "string": "claude-2.1",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-2.1",
+      "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
       "tier": "free",
@@ -91,11 +86,10 @@
       }
     },
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-01-01::claude-2.0",
       "displayName": "Claude 2.0",
-      "string": "claude-2.0",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-2.0",
+      "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
       "tier": "free",
@@ -105,11 +99,10 @@
       }
     },
     {
-      "modelId": "unknown",
       "modelRef": "anthropic::2023-01-01::claude-instant-1.2",
       "displayName": "Claude Instant",
-      "string": "claude-instant-1.2",
-      "capabilities": ["chat", "edit"],
+      "modelName": "claude-instant-1.2",
+      "capabilities": ["autocomplete", "chat"],
       "category": "balanced",
       "status": "deprecated",
       "tier": "free",
@@ -119,39 +112,10 @@
       }
     },
     {
-      "modelId": "unknown",
-      "modelRef": "mistral::v1::mixtral-8x7b-instruct",
-      "displayName": "Mixtral 8x7B",
-      "string": "mixtral-8x7b-instruct",
-      "capabilities": ["chat", "edit"],
-      "category": "speed",
-      "status": "stable",
-      "tier": "pro",
-      "contextWindow": {
-        "maxInputTokens": 7000,
-        "maxOutputTokens": 4000
-      }
-    },
-    {
-      "modelId": "unknown",
-      "modelRef": "mistral::v1::mixtral-8x22b-instruct",
-      "displayName": "Mixtral 8x22B",
-      "string": "mixtral-8x22b-instruct",
-      "capabilities": ["chat", "edit"],
-      "category": "accuracy",
-      "status": "stable",
-      "tier": "pro",
-      "contextWindow": {
-        "maxInputTokens": 7000,
-        "maxOutputTokens": 4000
-      }
-    },
-    {
-      "modelId": "unknown",
-      "modelRef": "openai::2024-02-01::gpt-4o",
-      "displayName": "GPT-4o",
-      "string": "gpt-4o",
-      "capabilities": ["chat", "edit"],
+      "modelRef": "google::v1::gemini-1.5-pro-latest",
+      "displayName": "Gemini 1.5 Pro",
+      "modelName": "gemini-1.5-pro-latest",
+      "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
       "tier": "pro",
@@ -161,11 +125,36 @@
       }
     },
     {
-      "modelId": "unknown",
-      "modelRef": "openai::2024-02-01::gpt-4-turbo",
-      "displayName": "GPT-4 Turbo",
-      "string": "gpt-4-turbo",
-      "capabilities": ["chat", "edit"],
+      "modelRef": "google::v1::gemini-1.5-flash-latest",
+      "displayName": "Gemini 1.5 Flash",
+      "modelName": "google/gemini-1.5-flash-latest",
+      "capabilities": ["autocomplete", "chat"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 30000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelRef": "mistral::v1::mixtral-8x7b-instruct",
+      "displayName": "Mixtral 8x7B",
+      "modelName": "mixtral-8x7b-instruct",
+      "capabilities": ["autocomplete", "chat"],
+      "category": "speed",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 7000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelRef": "mistral::v1::mixtral-8x22b-instruct",
+      "displayName": "Mixtral 8x22B",
+      "modelName": "mixtral-8x22b-instruct",
+      "capabilities": ["autocomplete", "chat"],
       "category": "accuracy",
       "status": "stable",
       "tier": "pro",
@@ -175,11 +164,36 @@
       }
     },
     {
-      "modelId": "unknown",
+      "modelRef": "openai::2024-02-01::gpt-4o",
+      "displayName": "GPT-4o",
+      "modelName": "gpt-4o",
+      "capabilities": ["autocomplete", "chat"],
+      "category": "accuracy",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 30000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
+      "modelRef": "openai::2024-02-01::gpt-4-turbo",
+      "displayName": "GPT-4 Turbo",
+      "modelName": "gpt-4-turbo",
+      "capabilities": ["autocomplete", "chat"],
+      "category": "balanced",
+      "status": "stable",
+      "tier": "pro",
+      "contextWindow": {
+        "maxInputTokens": 7000,
+        "maxOutputTokens": 4000
+      }
+    },
+    {
       "modelRef": "openai::2024-02-01::gpt-3.5-turbo",
       "displayName": "GPT-3.5 Turbo",
-      "string": "gpt-3.5-turbo",
-      "capabilities": ["chat", "edit"],
+      "modelName": "gpt-3.5-turbo",
+      "capabilities": ["autocomplete", "chat"],
       "category": "speed",
       "status": "stable",
       "tier": "pro",

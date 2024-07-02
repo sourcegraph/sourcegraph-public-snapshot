@@ -8,6 +8,8 @@ import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
 
+import { enterprisePortalID } from './utils'
+
 export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>
         <tr>
@@ -31,9 +33,9 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminProductSubscriptionNodeProps>
 > = ({ node }) => (
     <tr>
-        <td className="text-nowrap">
+        <td>
             <LinkOrSpan to={node.urlForSiteAdmin} className="mr-3">
-                {node.name}
+                {enterprisePortalID(node.uuid)}
             </LinkOrSpan>
         </td>
         <td className="w-100">

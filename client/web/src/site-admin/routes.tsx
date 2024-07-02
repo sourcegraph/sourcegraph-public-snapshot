@@ -3,9 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
-import { isEmbeddingsEnabled } from '../cody/isCodyEnabled'
 import type { BatchSpecsPageProps } from '../enterprise/batches/BatchSpecsPage'
-import { CodeIntelConfigurationPolicyPage } from '../enterprise/codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscriptions/features'
 import { OwnAnalyticsPage } from '../enterprise/own/admin-ui/OwnAnalyticsPage'
 import type { SiteAdminRolesPageProps } from '../enterprise/rbac/SiteAdminRolesPage'
@@ -185,15 +183,6 @@ const CodeInsightsJobsPage = lazyComponent(
 )
 const OwnStatusPage = lazyComponent(() => import('../enterprise/own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
 
-const SiteAdminCodyPage = lazyComponent(
-    () => import('../enterprise/site-admin/cody/SiteAdminCodyPage'),
-    'SiteAdminCodyPage'
-)
-const CodyConfigurationPage = lazyComponent(
-    () => import('../enterprise/cody/configuration/pages/CodyConfigurationPage'),
-    'CodyConfigurationPage'
-)
-
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
@@ -202,12 +191,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: props => <AnalyticsSearchPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/code-intel',
         render: props => <AnalyticsCodeIntelPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/extensions',
@@ -220,7 +209,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/cody',
         render: props => <AnalyticsCodyPage {...props} />,
-        condition: ({ license }) => license.isCodyEnabled,
+        condition: () => window.context?.codyEnabledOnInstance,
     },
     {
         path: '/analytics/code-insights',
@@ -235,7 +224,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: props => <AnalyticsNotebooksPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/configuration',
@@ -468,13 +457,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/lsif-uploads/:id',
@@ -486,31 +475,6 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/executors/*',
         render: props => <ExecutorsSiteAdminArea telemetryRecorder={props.platformContext.telemetryRecorder} />,
         condition: () => Boolean(window.context?.executorsEnabled),
-    },
-
-    // Cody configuration
-    {
-        exact: true,
-        path: '/cody',
-        render: () => <Navigate to="/site-admin/embeddings" />,
-        condition: isEmbeddingsEnabled,
-    },
-    {
-        exact: true,
-        path: '/embeddings',
-        render: props => <SiteAdminCodyPage {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />,
-        condition: isEmbeddingsEnabled,
-    },
-    {
-        exact: true,
-        path: '/embeddings/configuration',
-        render: props => <CodyConfigurationPage {...props} />,
-        condition: isEmbeddingsEnabled,
-    },
-    {
-        path: '/embeddings/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
-        condition: isEmbeddingsEnabled,
     },
 
     // rbac-related routes

@@ -155,15 +155,15 @@ func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (mod
 	}
 }
 
-func (a *AnthropicHandlerMethods) transformRequest(r *http.Request) {
+func (a *AnthropicHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-	r.Header.Set("Cache-Control", "no-cache")
-	r.Header.Set("Accept", "application/json")
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-	r.Header.Set("X-API-Key", a.config.AccessToken)
-	r.Header.Set("anthropic-version", "2023-01-01")
+	upstreamRequest.Header.Set("Cache-Control", "no-cache")
+	upstreamRequest.Header.Set("Accept", "application/json")
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
+	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
+	upstreamRequest.Header.Set("anthropic-version", "2023-01-01")
 }
 
 func (a *AnthropicHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody anthropicRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {

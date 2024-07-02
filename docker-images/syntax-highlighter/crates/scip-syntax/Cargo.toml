@@ -6,6 +6,10 @@ edition = "2021"
 [[bin]]
 name = "scip-syntax"
 
+[[bench]]
+name = "symbol_parsing"
+harness = false
+
 [dependencies]
 assert_cmd = "2.0.12"
 predicates = "3.0.4"
@@ -25,6 +29,9 @@ string-interner = { workspace = true }
 walkdir = { workspace = true }
 path-clean = { workspace = true }
 camino = { workspace = true }
+tree-sitter = { workspace = true }
+nom = { workspace = true }
+rayon = { workspace = true }
 
 syntax-analysis = { path = "../syntax-analysis" }
 tree-sitter-all-languages = { path = "../tree-sitter-all-languages" }
@@ -32,3 +39,4 @@ tar = "0.4.40"
 
 [dev-dependencies]
 tempfile="3.10.1"
+criterion = { version = "0.4", features = ["html_reports"] }

@@ -209,10 +209,10 @@ func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessa
 	}
 }
 
-func (a *AnthropicMessagesHandlerMethods) transformRequest(r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("X-API-Key", a.config.AccessToken)
-	r.Header.Set("anthropic-version", "2023-06-01")
+func (a *AnthropicMessagesHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+	upstreamRequest.Header.Set("Content-Type", "application/json")
+	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
+	upstreamRequest.Header.Set("anthropic-version", "2023-06-01")
 }
 
 func (a *AnthropicMessagesHandlerMethods) parseResponseAndUsage(logger log.Logger, body anthropicMessagesRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {

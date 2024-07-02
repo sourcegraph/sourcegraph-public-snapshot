@@ -1,47 +1,39 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiCreditCardOutline, mdiPlusThick } from '@mdi/js'
+import { mdiCreditCardOutline, mdiHelpCircleOutline, mdiPlusThick } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { ButtonLink, H1, H2, Icon, Link, PageHeader, Text, useSearchParameters, Button } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, H3, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import {
+    CodySubscriptionPlan,
     type UserCodyPlanResult,
     type UserCodyPlanVariables,
     type UserCodyUsageResult,
     type UserCodyUsageVariables,
-    CodySubscriptionPlan,
 } from '../../graphql-operations'
 import { CodyProRoutes } from '../codyProRoutes'
 import { CodyAlert } from '../components/CodyAlert'
-import { ProIcon } from '../components/CodyIcon'
 import { PageHeaderIcon } from '../components/PageHeaderIcon'
 import { AcceptInviteBanner } from '../invites/AcceptInviteBanner'
 import { InviteUsers } from '../invites/InviteUsers'
-import { isCodyEnabled } from '../isCodyEnabled'
-import { CodyOnboarding, type IEditor } from '../onboarding/CodyOnboarding'
 import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
-import { getManageSubscriptionPageURL } from '../util'
+import { getManageSubscriptionPageURL, isEmbeddedCodyProUIEnabled } from '../util'
 
 import { useSubscriptionSummary } from './api/react-query/subscriptions'
 import { SubscriptionStats } from './SubscriptionStats'
-import { UseCodyInEditorSection } from './UseCodyInEditorSection'
+import { CodyEditorsAndClients } from './UseCodyInEditorSection'
 
 import styles from './CodyManagementPage.module.scss'
 
 interface CodyManagementPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
-}
-
-export enum EditorStep {
-    SetupInstructions = 0,
-    CodyFeatures = 1,
 }
 
 export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps> = ({
@@ -77,10 +69,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     )
 
     const subscriptionSummaryQueryResult = useSubscriptionSummary()
-    const isAdmin = subscriptionSummaryQueryResult?.data?.userRole === 'admin'
-
-    const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
-    const [selectedEditorStep, setSelectedEditorStep] = React.useState<EditorStep | null>(null)
 
     const subscription = data?.currentUser?.codySubscription
 
@@ -89,26 +77,6 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
             navigate(`/sign-in?returnTo=${CodyProRoutes.Manage}`)
         }
     }, [data, navigate])
-
-    const getTeamInviteButton = (): JSX.Element | null => {
-        const isSoloUser = subscriptionSummaryQueryResult?.data?.teamMaxMembers === 1
-        const hasFreeSeats = subscriptionSummaryQueryResult?.data
-            ? subscriptionSummaryQueryResult.data.teamMaxMembers >
-              subscriptionSummaryQueryResult.data.teamCurrentMembers
-            : false
-        const targetUrl = hasFreeSeats ? CodyProRoutes.ManageTeam : `${CodyProRoutes.NewProSubscription}?addSeats=1`
-        const label = isSoloUser || hasFreeSeats ? 'Invite co-workers' : 'Add seats'
-
-        if (!subscriptionSummaryQueryResult?.data) {
-            return null
-        }
-
-        return (
-            <Button as={Link} to={targetUrl} variant="success" className="text-nowrap">
-                <Icon aria-hidden={true} svgPath={mdiPlusThick} /> {label}
-            </Button>
-        )
-    }
 
     const onClickUpgradeToProCTA = useCallback(() => {
         telemetryRecorder.recordEvent('cody.management.upgradeToProCTA', 'click')
@@ -122,31 +90,45 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         throw dataError || usageDateError
     }
 
-    if (!isCodyEnabled() || !subscription) {
+    if (!window.context?.codyEnabledForCurrentUser || !subscription) {
         return null
     }
 
     const isUserOnProTier = subscription.plan === CodySubscriptionPlan.PRO
 
     return (
-        <>
-            <Page className={classNames('d-flex flex-column')}>
-                <PageTitle title="Dashboard" />
-                <AcceptInviteBanner onSuccess={refetch} />
-                {welcomeToPro && (
-                    <CodyAlert title="Welcome to Cody Pro" variant="green" badge="CodyPro">
-                        <Text>You now have Cody Pro with access to unlimited autocomplete, chats, and commands.</Text>
-                    </CodyAlert>
-                )}
-                <PageHeader
-                    className="my-4 d-inline-flex align-items-center"
-                    actions={isAdmin && <div className="d-flex">{getTeamInviteButton()}</div>}
-                >
-                    <PageHeader.Heading as="h1" className="text-3xl font-medium">
-                        <PageHeaderIcon name="dashboard" className="mr-3" />
-                        <Text as="span">Dashboard</Text>
-                    </PageHeader.Heading>
-                </PageHeader>
+        <Page className={classNames('d-flex flex-column')}>
+            <PageTitle title="Dashboard" />
+
+            {inviteWidgets.banner}
+
+            {welcomeToPro && (
+                <CodyAlert title="Welcome to Cody Pro" variant="green" badge="CodyPro">
+                    <Text>You now have Cody Pro with access to unlimited autocomplete, chats, and commands.</Text>
+                </CodyAlert>
+            )}
+            <PageHeader
+                className="my-4 d-inline-flex align-items-center"
+                actions={
+                    <div className="d-flex flex-column flex-gap-2">
+                        {pageHeaderLink}
+                        <Link
+                            to="https://help.sourcegraph.com"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-muted text-center text-sm"
+                        >
+                            <Icon svgPath={mdiHelpCircleOutline} className="mr-1" aria-hidden={true} />
+                            Help &amp; community
+                        </Link>
+                    </div>
+                }
+            >
+                <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                    <PageHeaderIcon name="dashboard" className="mr-3" />
+                    <Text as="span">Cody dashboard</Text>
+                </PageHeader.Heading>
+            </PageHeader>
 
                 {isAdmin && !!subscriptionSummaryQueryResult.data && (
                     <InviteUsers
@@ -188,57 +170,29 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             </div>
                         )}
                     </div>
-                    <SubscriptionStats {...{ subscription, usageData }} />
-                </div>
+                }
+            >
+                <PageHeader.Heading as="h1" className="text-3xl font-medium">
+                    <PageHeaderIcon name="dashboard" className="mr-3" />
+                    <Text as="span">Cody dashboard</Text>
+                </PageHeader.Heading>
+            </PageHeader>
 
-                <UseCodyInEditorSection
-                    {...{
-                        selectedEditor,
-                        setSelectedEditor,
-                        selectedEditorStep,
-                        setSelectedEditorStep,
-                        isUserOnProTier,
-                        telemetryRecorder,
-                    }}
+            {inviteWidgets.form}
+
+            <div className={classNames('border bg-1 mb-2', styles.container)}>
+                <SubscriptionStats
+                    subscription={subscription}
+                    usageData={usageData}
+                    onClickUpgradeToProCTA={onClickUpgradeToProCTA}
                 />
-            </Page>
-            <CodyOnboarding authenticatedUser={authenticatedUser} telemetryRecorder={telemetryRecorder} />
-        </>
-    )
-}
+            </div>
 
-const UpgradeToProBanner: React.FunctionComponent<{
-    onClick: () => void
-}> = ({ onClick }) => (
-    <CodyAlert variant="purple" badge="CodyPro">
-        <div className="d-flex justify-content-between align-items-center">
-            <div>
-                <H2>
-                    Get unlimited help with <span className={styles.codyProGradientText}>Cody Pro</span>
-                </H2>
-                <div>
-                    <div>
-                        <ul className="pl-4 mb-0">
-                            <li>Unlimited autocompletions</li>
-                            <li>Unlimited chat messages</li>
-                        </ul>
-                    </div>
-                </div>
+            <H3 className="mt-3 text-muted">Use Cody...</H3>
+            <div className={classNames('border bg-1 mb-2', styles.container)}>
+                <CodyEditorsAndClients telemetryRecorder={telemetryRecorder} />
             </div>
-            <div>
-                <ButtonLink
-                    to={CodyProRoutes.Subscription}
-                    variant="primary"
-                    className="text-nowrap"
-                    size="sm"
-                    onClick={onClick}
-                >
-                    <div className="textNowrap">
-                        <ProIcon className="mr-1" />
-                        Upgrade now
-                    </div>
-                </ButtonLink>
-            </div>
-        </div>
+        </div>b
     </CodyAlert>
 )
+}

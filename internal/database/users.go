@@ -542,7 +542,6 @@ type UserUpdate struct {
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
-	CompletedPostSignup    *bool
 }
 
 // Update updates a user's profile information.
@@ -582,9 +581,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.TosAccepted != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
-	}
-	if update.CompletedPostSignup != nil {
-		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
@@ -1344,7 +1340,6 @@ SELECT u.id,
 	u.passwd IS NOT NULL,
 	u.invalidated_sessions_at,
 	u.tos_accepted,
-	u.completed_post_signup,
 	EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
@@ -1357,7 +1352,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
