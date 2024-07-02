@@ -50,7 +50,6 @@ export const BatchChangesCreateGitHubAppPage: FC<BatchChangesCreateGitHubAppPage
             // assume this call will succeed.
             const asURL = new URL(url)
             const isDuplicate = connection.nodes.some(node => {
-                // const existingURL = node.commitSigningConfiguration?.baseURL
                 const existingURL = isKindCredential
                     ? node.externalServiceURL
                     : node.commitSigningConfiguration?.baseURL
