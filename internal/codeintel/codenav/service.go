@@ -1220,10 +1220,13 @@ func (s *Service) SyntacticUsages(
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
 	}
-	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
-		ctx, s.searchClient, trace,
-		args.Repo, args.Commit, symbolName, language,
-	)
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
 	if searchErr != nil {
 		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -1338,11 +1341,17 @@ func (s *Service) SearchBasedUsages(
 		}
 	}
 
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, args.Repo, args.Commit, symbolName, language)
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
 	if err != nil {
 		return nil, err
 	}
-	candidateSymbols, err := symbolSearch(ctx, s.searchClient, trace, args.Repo, symbolName, language)
+	candidateSymbols, err := symbolSearch(ctx, trace, s.searchClient, searchCoords)
 	if err != nil {
 		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
 	}
