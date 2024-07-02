@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log" //nolint:logging // TODO move all logging to sourcegraph/log
 	"net/http"
@@ -17,11 +18,17 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc"
 
+	// Use the current model config (models.json) that is built with the binary.
+	// TODO: Load this from memory, so that we can apply any server-side config settings,
+	// e.g. what the user specified from site config, or updates we pulled from Cody Gateway.
+	embeddedModelCfg "github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded"
+
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
@@ -172,6 +179,26 @@ func NewHandler(
 
 	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
 	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
+
+	// HTTP endpoints related to Cody client configuration.
+	clientConfigHandlers := clientconfig.NewHandlers(db, logger)
+	m.Path("/client-config").Methods("GET").HandlerFunc(clientConfigHandlers.GetClientConfigHandler)
+
+	// DO NOT SUBMIT
+	// chrsmith's super kickass LLM model config spike.
+	m.Path("/supported-llms").Methods("GET").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Error("fetching supported LLMs")
+
+		staticModelCfg, err := embeddedModelCfg.GetCodyGatewayModelConfig()
+		if err != nil {
+			http.Error(w, "::horror:: "+err.Error(), http.StatusInternalServerError)
+		}
+		rawJSON, err := json.Marshal(&staticModelCfg)
+		if err != nil {
+			http.Error(w, "::shrug:: "+err.Error(), http.StatusInternalServerError)
+		}
+		http.Error(w, string(rawJSON), http.StatusOK)
+	}))
 
 	if dotcom.SourcegraphDotComMode() {
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(handlers.NewDotcomLicenseCheckHandler())
