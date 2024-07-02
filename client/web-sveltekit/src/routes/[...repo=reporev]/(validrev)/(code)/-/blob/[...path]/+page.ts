@@ -194,7 +194,6 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
         codeGraphData: resolvedRevision.then(async resolvedRevision => {
-            console.log((await parent()).settings.experimentalFeatures)
             if ((await parent()).settings.experimentalFeatures?.enablePreciseOccurrences ?? false) {
                 return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
             } else {

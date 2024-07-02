@@ -5,7 +5,9 @@ go_library(
     name = "appliance",
     srcs = [
         "appliance.go",
+        "auth.go",
         "embed.go",
+        "errors.go",
         "grpc.go",
         "html.go",
         "routes.go",
@@ -19,6 +21,8 @@ go_library(
         "web/static/css/custom.css",
         "web/static/script/bootstrap.bundle.min.js",
         "web/template/layout.gohtml",
+        "web/template/landing.gohtml",
+        "web/template/error.gohtml",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/appliance",
     visibility = ["//:__subpackages__"],
@@ -28,16 +32,19 @@ go_library(
         "//internal/releaseregistry",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
         "@com_github_gorilla_mux//:mux",
         "@com_github_life4_genesis//slices",
         "@com_github_masterminds_semver_v3//:semver",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_wagslane_go_password_validator//:go-password-validator",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/errors",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_yaml//:yaml",
+        "@org_golang_x_crypto//bcrypt",
     ],
 )
 
@@ -48,9 +55,14 @@ filegroup(
 
 go_test(
     name = "appliance_test",
-    srcs = ["versions_test.go"],
+    srcs = [
+        "auth_test.go",
+        "versions_test.go",
+    ],
+    embed = [":appliance"],
     deps = [
-        ":appliance",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",
     ],
 )
