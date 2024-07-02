@@ -224,7 +224,7 @@
           }
         },
         "keywordSearch": {
-          "description": "Whether to enable the 'keyword search' language improvement. DEPRECATED: this setting is no longer used. To disable keyword search, set `search.defaultPatternType: standard` instead.",
+          "description": "DEPRECATED: this setting is no longer used. To disable keyword search, set `search.defaultPatternType: standard` instead.",
           "type": "boolean",
           "default": true
         },

@@ -33,6 +33,13 @@ export function viewerSubjectFromSettings(
  * configured by the user.
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
+    // If keyword search is enabled, always use the precise search mode. Keyword search is not designed to
+    // work with smart search, and we plan to remove smart search.
+    const patternType = defaultPatternTypeFromSettings(settingsCascade)
+    if (patternType === SearchPatternType.keyword) {
+        return SearchMode.Precise
+    }
+
     switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
         case 'precise': {
             return SearchMode.Precise

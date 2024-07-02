@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type FC } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
@@ -11,7 +11,7 @@ import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sour
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, FeedbackPrompt, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../../auth'
 import {
@@ -19,7 +19,6 @@ import {
     NO_ACCESS_BATCH_CHANGES_WRITE,
     NO_ACCESS_SOURCEGRAPH_COM,
 } from '../../../../batches/utils'
-import { useHandleSubmitFeedback } from '../../../../hooks'
 import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
 import { SearchResultsCsvExportModal } from '../../export/SearchResultsCsvExportModal'
 import { AggregationUIMode, useAggregationUIMode } from '../aggregation'
@@ -160,23 +159,11 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
-    const location = useLocation()
-
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
         telemetryRecorder.recordEvent('search.resultsInfoBar.savedQueriesModal', 'close')
     }, [telemetryService, telemetryRecorder])
-
-    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
-
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch: location.pathname,
-        textPrefix: '[Source: search results] ',
-    })
-
-    const feedbackPromptInitialValue =
-        props.isSourcegraphDotCom && query !== undefined ? '<Feedback here>\n\nQuery: ' + query : undefined
 
     return (
         <aside
@@ -185,32 +172,10 @@ export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
             className={classNames(props.className, styles.searchResultsInfoBar)}
             data-testid="results-info-bar"
         >
-            {feedbackModalOpen ? (
-                <FeedbackPrompt
-                    onSubmit={handleSubmitFeedback}
-                    modal={true}
-                    openByDefault={true}
-                    authenticatedUser={
-                        props.authenticatedUser
-                            ? {
-                                  username: props.authenticatedUser.username || '',
-                                  email: props.authenticatedUser.emails.find(email => email.isPrimary)?.email || '',
-                              }
-                            : null
-                    }
-                    onClose={() => setFeedbackModalOpen(false)}
-                    initialValue={feedbackPromptInitialValue}
-                />
-            ) : null}
             <div className={styles.row}>
                 {props.stats}
 
                 <div className={styles.expander} />
-
-                <Button className={styles.feedbackButton} onClick={() => setFeedbackModalOpen(true)}>
-                    Send feedback
-                </Button>
-
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         authenticatedUser={props.authenticatedUser}
