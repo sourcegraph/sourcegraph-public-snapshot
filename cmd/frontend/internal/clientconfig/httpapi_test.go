@@ -74,15 +74,13 @@ func TestAPI(t *testing.T) {
 
 		autogold.Expect(int(200)).Equal(t, recorder.Code)
 		autogold.Expect(`{
-    "v1": {
-        "CodyEnabled": true,
-        "ChatEnabled": true,
-        "AutoCompleteEnabled": true,
-        "CommandsEnabled": true,
-        "AttributionEnabled": false,
-        "SmartContextWindowEnabled": true,
-        "ModelsAPIEnabled": false
-    }
+    "codyEnabled": true,
+    "chatEnabled": true,
+    "autoCompleteEnabled": true,
+    "customCommandsEnabled": true,
+    "attributionEnabled": false,
+    "smartContextWindowEnabled": true,
+    "modelsAPIEnabled": false
 }
 `).Equal(t, recorder.Body.String())
 	})

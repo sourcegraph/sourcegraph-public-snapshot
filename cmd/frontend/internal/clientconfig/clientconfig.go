@@ -13,7 +13,7 @@ import (
 )
 
 func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *actor.Actor) (*clientconfig.ClientConfig, error) {
-	c := clientconfig.ClientConfigV1{
+	c := clientconfig.ClientConfig{
 		// TODO(chrsmith): TODO(slimsag): Set this to `true` when and only when clients should use
 		// the new LLM models httpapi endpoint being added in e.g. https://github.com/sourcegraph/sourcegraph/pull/63507
 		ModelsAPIEnabled: false,
@@ -32,7 +32,7 @@ func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *
 	if features != nil { // nil -> Cody not enabled
 		c.ChatEnabled = features.Chat
 		c.AutoCompleteEnabled = features.AutoComplete
-		c.CommandsEnabled = features.Commands
+		c.CustomCommandsEnabled = features.Commands
 		c.AttributionEnabled = features.Attribution
 	}
 
@@ -43,5 +43,5 @@ func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *
 		c.SmartContextWindowEnabled = completionConfig.SmartContextWindow != "disabled"
 	}
 
-	return &clientconfig.ClientConfig{V1: &c}, nil
+	return &c, nil
 }
