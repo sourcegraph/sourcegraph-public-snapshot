@@ -30,6 +30,7 @@
     }
 
     a {
+        flex: 1;
         color: var(--text-muted);
         overflow: hidden;
         text-overflow: ellipsis;

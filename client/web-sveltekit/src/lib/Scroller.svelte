@@ -8,6 +8,7 @@
     import { afterUpdate, createEventDispatcher } from 'svelte'
 
     export let margin: number
+    export let viewport: HTMLElement | null = null
 
     export function capture(): Capture {
         return { scroll: scroller.scrollTop }
@@ -31,11 +32,10 @@
 
     const dispatch = createEventDispatcher<{ more: void }>()
 
-    let viewport: HTMLElement
     let scroller: HTMLElement
 
     function handleScroll() {
-        const remaining = scroller.scrollHeight - (scroller.scrollTop + viewport.clientHeight)
+        const remaining = scroller.scrollHeight - (scroller.scrollTop + (viewport?.clientHeight ?? 0))
 
         if (remaining < margin) {
             dispatch('more')
@@ -52,7 +52,7 @@
     })
 </script>
 
-<div class="viewport" bind:this={viewport}>
+<div class="viewport" bind:this={viewport} data-viewport>
     <div class="scroller" bind:this={scroller} on:scroll={handleScroll} data-scroller>
         <slot />
     </div>

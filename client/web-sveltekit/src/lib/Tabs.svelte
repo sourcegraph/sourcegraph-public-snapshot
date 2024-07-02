@@ -93,11 +93,13 @@
             display: flex;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
+            gap: 2rem;
 
             .actions {
                 flex-shrink: 0;
                 margin-left: auto;
                 margin-right: var(--tabs-horizontal-spacing);
+                min-width: 0;
             }
         }
     }

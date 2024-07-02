@@ -31,6 +31,7 @@
     $: selected = $treeState.selected === nodeID
     $: tabindex = $treeState.focused === nodeID ? 0 : -1
     $: children = expandable && expanded ? treeProvider.fetchChildren(entry) : null
+    $: disableScope = $treeState.disableScope
 
     let level = getContext<TreeNodeContext>('tree-node-nesting')?.level ?? 0
     setContext('tree-node-nesting', { level: level + 1 })
@@ -76,30 +77,34 @@
     {tabindex}
     data-treeitem
     data-node-id={nodeID}
+    class:disable-scope={disableScope}
     style="--tree-node-nested-level: {level}"
 >
-    <span bind:this={label} class="label" data-treeitem-label class:expandable>
+    <div bind:this={label} class="label" data-treeitem-label class:expandable>
         <Button variant="icon" on:click={handleScopeChange} data-scope-button>
             <Icon icon={ILucideFocus} inline aria-hidden="true" />
         </Button>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
-        {#if expandable}
-            <!-- We have to stop even propagation because the tree root listens for click events for
+        <div class="indented">
+            {#if expandable}
+                <!-- We have to stop even propagation because the tree root listens for click events for
                  selecting items. We don't want the item to be selected when the open/close button is pressed.
              -->
-            <Button
-                variant="icon"
-                on:click={event => {
-                    event.stopPropagation()
-                    toggleOpen()
-                }}
-                tabindex={-1}
-            >
-                <Icon icon={expanded ? ILucideChevronDown : ILucideChevronRight} inline />
-            </Button>
-        {/if}
-        <slot {entry} {expanded} toggle={toggleOpen} {label} />
-    </span>
+                <Button
+                    variant="icon"
+                    on:click={event => {
+                        event.stopPropagation()
+                        toggleOpen()
+                    }}
+                    tabindex={-1}
+                    aria-label="{expanded ? 'Collapse' : 'Expand'} subtree"
+                >
+                    <Icon icon={expanded ? ILucideChevronDown : ILucideChevronRight} inline aria-hidden="true" />
+                </Button>
+            {/if}
+            <slot {entry} {expanded} toggle={toggleOpen} {label} />
+        </div>
+    </div>
     {#if expanded && children}
         {#await children}
             <div class="loading">
@@ -123,67 +128,70 @@
     $shiftWidth: 1.25rem;
     $gap: 0.25rem;
 
-    [role='treeitem'] {
-        border-radius: var(--border-radius);
+    li[role='treeitem'] {
+        --indent-size: calc(var(--tree-node-nested-level) * #{$shiftWidth});
+
+        --scope-size: calc(var(--icon-inline-size) + #{$gap} - 1px);
+        &.disable-scope {
+            --scope-size: 0px;
+            :global([data-scope-button]) {
+                display: none;
+            }
+        }
 
         &[tabindex='0']:focus {
             box-shadow: none;
 
             > .label {
-                box-shadow: var(--focus-box-shadow);
+                box-shadow: var(--focus-shadow-inner);
             }
         }
-    }
 
-    .loading {
-        // Indent with two rem since loading represents next nested level
-        margin-left: calc(var(--tree-node-nested-level) * #{$shiftWidth} + 2 * var(--icon-inline-size) + 2 * #{$gap});
-        margin-top: 0.25rem;
-    }
+        .label {
+            display: flex;
+            gap: $gap;
+            padding: 0.2rem $gap;
+            align-items: center;
 
-    .label {
-        display: flex;
-        gap: $gap;
-        padding: 0.2rem $gap;
-        justify-content: space-between;
-        align-items: center;
+            // Change icon color based on selected item state
+            --icon-color: var(--tree-node-expand-icon-color);
+            color: var(--tree-node-label-color, var(--text-body));
 
-        // Change icon color based on selected item state
-        --icon-color: var(--tree-node-expand-icon-color);
-        color: var(--tree-node-label-color, var(--text-body));
-
-        li[data-treeitem][aria-selected='true'] > & {
-            --icon-color: currentColor;
-            --file-icon-color: currentColor;
-
-            color: var(--tree-node-label-color, var(--body-bg));
-        }
-
-        :global([data-scope-button]) {
-            visibility: hidden;
-            margin-right: calc(var(--tree-node-nested-level) * #{$shiftWidth});
-        }
-
-        &.expandable:hover,
-        &.expandable:focus {
             :global([data-scope-button]) {
-                visibility: visible;
+                visibility: hidden;
+            }
+
+            &.expandable:hover,
+            &.expandable:focus {
+                :global([data-scope-button]) {
+                    visibility: visible;
+                }
+            }
+
+            .indented {
+                display: inherit;
+                gap: inherit;
+                margin-left: var(--indent-size);
             }
         }
-    }
 
-    ul {
-        position: relative;
-        isolation: isolate;
-        &::before {
-            position: absolute;
-            content: '';
-            border-left: 1px solid var(--secondary);
-            height: 100%;
-            transform: translateX(
-                calc(var(--tree-node-nested-level) * #{$shiftWidth} + var(--icon-inline-size) * 1.5 + #{$gap} + 2px)
-            );
-            z-index: 1;
+        .loading {
+            // Indent with two rem since loading represents next nested level
+            margin-left: calc(var(--scope-size) + var(--indent-size) + 2 * #{$gap});
+            margin-top: 0.25rem;
+        }
+
+        ul {
+            position: relative;
+            isolation: isolate;
+            &::before {
+                position: absolute;
+                content: '';
+                border-left: 1px solid var(--secondary);
+                height: 100%;
+                transform: translateX(calc(#{$gap} + var(--scope-size) + var(--icon-inline-size) / 2 - 1px));
+                z-index: 1;
+            }
         }
     }
 </style>
