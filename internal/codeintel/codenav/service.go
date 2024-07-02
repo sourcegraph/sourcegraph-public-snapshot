@@ -1159,8 +1159,9 @@ func (s *Service) findSyntacticMatchesForCandidateFile(
 }
 
 type SearchBasedMatch struct {
-	Path  core.RepoRelPath
-	Range scip.Range
+	Path         core.RepoRelPath
+	Range        scip.Range
+	IsDefinition bool
 }
 
 type SyntacticMatch struct {
@@ -1219,10 +1220,13 @@ func (s *Service) SyntacticUsages(
 			UnderlyingError: errors.New("can't find syntactic occurrences for locals via search"),
 		}
 	}
-	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(
-		ctx, s.searchClient, trace,
-		args.Repo, args.Commit, symbolName, language,
-	)
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, searchErr := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
 	if searchErr != nil {
 		return SyntacticUsagesResult{}, nil, &SyntacticUsagesError{
 			Code:            SU_FailedToSearch,
@@ -1337,7 +1341,20 @@ func (s *Service) SearchBasedUsages(
 		}
 	}
 
-	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, s.searchClient, trace, args.Repo, args.Commit, symbolName, language)
+	searchCoords := searchArgs{
+		repo:       args.Repo.Name,
+		commit:     args.Commit,
+		identifier: symbolName,
+		language:   language,
+	}
+	candidateMatches, err := findCandidateOccurrencesViaSearch(ctx, trace, s.searchClient, searchCoords)
+	if err != nil {
+		return nil, err
+	}
+	candidateSymbols, err := symbolSearch(ctx, trace, s.searchClient, searchCoords)
+	if err != nil {
+		trace.Warn("Failed to run symbol search, will not mark any search-based usages as definitions", log.Error(err))
+	}
 
 	results := [][]SearchBasedMatch{}
 	for pair := candidateMatches.Oldest(); pair != nil; pair = pair.Next() {
@@ -1353,8 +1370,9 @@ func (s *Service) SearchBasedUsages(
 		matches := []SearchBasedMatch{}
 		for _, rg := range pair.Value.matches {
 			matches = append(matches, SearchBasedMatch{
-				Path:  pair.Key,
-				Range: rg,
+				Path:         pair.Key,
+				Range:        rg,
+				IsDefinition: candidateSymbols.Contains(pair.Key, rg),
 			})
 		}
 		results = append(results, matches)

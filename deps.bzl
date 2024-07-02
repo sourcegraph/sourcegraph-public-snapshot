@@ -6321,6 +6321,13 @@ def go_dependencies():
         version = "v0.2.0",
     )
     go_repository(
+        name = "com_github_wagslane_go_password_validator",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/wagslane/go-password-validator",
+        sum = "h1:vfxOPzGHkz5S146HDpavl0cw1DSVP061Ry2PX0/ON6I=",
+        version = "v0.3.0",
+    )
+    go_repository(
         name = "com_github_wk8_go_ordered_map_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/wk8/go-ordered-map/v2",
