@@ -156,17 +156,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				Ipv4Enabled:    pointers.Ptr(true),
 				PrivateNetwork: config.Network.Id(),
 				RequireSsl:     pointers.Ptr(true),
-				SslMode: func() *string {
-					// To allow connections to access publications, we disable
-					// the hard requirement for trusted client certificates for
-					// ease of integration. This option still requires encrypted
-					// connections, and is still fairly secure because traffic
-					// must still come from the attached private network.
-					if config.Spec.LogicalReplication != nil {
-						return pointers.Ptr("ENCRYPTED_ONLY")
-					}
-					return nil
-				}(),
 
 				EnablePrivatePathForGoogleCloudServices: pointers.Ptr(true),
 			},
