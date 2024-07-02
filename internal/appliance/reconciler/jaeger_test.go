@@ -5,6 +5,7 @@ func (suite *ApplianceTestSuite) TestDeployJaeger() {
 		name string
 	}{
 		{name: "jaeger/default"},
+		{name: "jaeger/with-replicas"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)

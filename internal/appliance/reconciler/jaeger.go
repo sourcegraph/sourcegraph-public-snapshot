@@ -39,7 +39,7 @@ func (r *Reconciler) reconcileJaegerDeployment(ctx context.Context, sg *config.S
 	name := "jaeger"
 	cfg := sg.Spec.Jaeger
 
-	defaultImage := config.GetDefaultImage(sg, name)
+	defaultImage := config.GetDefaultImage(sg, "jaeger-all-in-one")
 	ctr := container.NewContainer(name, cfg, config.ContainerConfig{
 		Image: defaultImage,
 		Resources: &corev1.ResourceRequirements{
@@ -54,6 +54,8 @@ func (r *Reconciler) reconcileJaegerDeployment(ctx context.Context, sg *config.S
 		},
 	})
 
+	ctr.Args = []string{"--memory.max-traces=20000"}
+
 	ctr.Ports = []corev1.ContainerPort{
 		{ContainerPort: 5775, Protocol: corev1.ProtocolUDP},
 		{ContainerPort: 6831, Protocol: corev1.ProtocolUDP},
@@ -66,10 +68,11 @@ func (r *Reconciler) reconcileJaegerDeployment(ctx context.Context, sg *config.S
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: "/",
-				Port: intstr.FromInt(16686),
+				Port: intstr.FromInt32(14269),
 			},
 		},
-		InitialDelaySeconds: 10,
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       0,
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
@@ -80,6 +83,8 @@ func (r *Reconciler) reconcileJaegerDeployment(ctx context.Context, sg *config.S
 	dep.Spec.Replicas = &cfg.Replicas
 	dep.Spec.Strategy.Type = appsv1.RecreateDeploymentStrategyType
 	dep.Spec.Template = podTemplate.Template
+	dep.Spec.Template.Annotations = map[string]string{"prometheus.io/scrape": "true",
+		"prometheus.io/port": "16686"}
 
 	return reconcileObject(ctx, r, cfg, &dep, &appsv1.Deployment{}, sg, owner)
 }
@@ -89,7 +94,7 @@ func (r *Reconciler) reconcileJaegerQueryService(ctx context.Context, sg *config
 	cfg := sg.Spec.Jaeger
 	svc := service.NewService(name, sg.Namespace, cfg)
 	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "query-http", Port: 16686, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(16686)},
+		{Name: "query-http", Port: 16686, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt32(16686)},
 	}
 	svc.Spec.Selector = map[string]string{
 		"app":                         "jaeger",
@@ -103,9 +108,9 @@ func (r *Reconciler) reconcileJaegerCollectorService(ctx context.Context, sg *co
 	cfg := sg.Spec.Jaeger
 	svc := service.NewService(name, sg.Namespace, cfg)
 	svc.Spec.Ports = []corev1.ServicePort{
-		{Name: "jaeger-collector-tchannel", Port: 14267, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(14267)},
-		{Name: "jaeger-collector-http", Port: 14268, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(14268)},
-		{Name: "jaeger-collector-grpc", Port: 14250, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(14250)},
+		{Name: "jaeger-collector-tchannel", Port: 14267, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt32(14267)},
+		{Name: "jaeger-collector-http", Port: 14268, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt32(14268)},
+		{Name: "jaeger-collector-grpc", Port: 14250, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt32(14250)},
 	}
 	svc.Spec.Selector = map[string]string{
 		"app":                         "jaeger",

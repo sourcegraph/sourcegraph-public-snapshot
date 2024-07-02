@@ -65,7 +65,6 @@ type FrontendSpec struct {
 type GitServerSpec struct {
 	StandardConfig
 
-	// Replicas defines the number of GitServer pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
