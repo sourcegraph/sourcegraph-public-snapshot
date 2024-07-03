@@ -5,42 +5,11 @@ package upgrades
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
-
-// This is just for testing purposes.
-func main() {
-	if len(os.Args) != 3 {
-		fmt.Println("Usage: program <targetVersion>")
-		os.Exit(1)
-	}
-
-	currentVersion := os.Args[1]
-	targetVersion := os.Args[2]
-	DetermineUpgradePolicy(currentVersion, targetVersion)
-}
-
-// TODO
-// func ValidateDB()
-
-// TODO
-// Get current Version
-// func GetCurrentVersion(ctx context.Context, obsvCtx *observation.Context) string {
-// 	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", "frontend")
-// 	if err != nil {
-// 		return errors.Errorf("failed to connect to frontend database: %s", err)
-// 	}
-// 	defer sqlDB.Close()
-
-// 	db := database.NewDB(obsvCtx.Logger, sqlDB)
-// 	upgradestore := upgradestore.New(db)
-
-// 	currentVersion := upgradestore.GetServiceVersion(ctx)
-// }
 
 // Takes a target Version and determines if the upgrade requires downtime or not.
 // Returns true if downtime is required and false if not, or on error.
