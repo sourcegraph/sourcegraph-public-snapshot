@@ -7,6 +7,7 @@ contents:
     - mailcap
 
     ## opentelemetry-collector packages
+    # Keep in sync with go.opentelemetry.io/collector version in go.mod, and package in wolfi-packages/opentelemetry-collector.yaml
     - opentelemetry-collector=0.92.0-r7@sourcegraph
 
 paths:
