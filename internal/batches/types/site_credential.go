@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,9 +25,9 @@ type SiteCredential struct {
 func (sc *SiteCredential) IsGitHubApp() bool { return sc.GitHubAppID != 0 }
 
 // Authenticator decrypts and creates the authenticator associated with the site credential.
-func (sc *SiteCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+func (sc *SiteCredential) Authenticator(ctx context.Context, opts ghauth.CreateAuthenticatorForCredentialOpts) (auth.Authenticator, error) {
 	if sc.IsGitHubApp() {
-		return sc.githubAppAuthenticator()
+		return ghauth.CreateAuthenticatorForCredential(ctx, sc.GitHubAppID, opts)
 	}
 
 	decrypted, err := sc.Credential.Decrypt(ctx)

@@ -4,15 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,9 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
-	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -48,15 +42,10 @@ type UserCredential struct {
 // IsGitHubApp returns true if the user credential is a GitHub App.
 func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID != 0 }
 
-type CredentialAuthenticatorOpts struct {
-	Repo           *types.Repo
-	GitHubAppStore ghstore.GitHubAppsStore
-}
-
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context, opts CredentialAuthenticatorOpts) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context, opts ghauth.CreateAuthenticatorForCredentialOpts) (auth.Authenticator, error) {
 	if uc.IsGitHubApp() {
-		return uc.githubAppAuthenticator(ctx, opts)
+		return ghauth.CreateAuthenticatorForCredential(ctx, uc.GitHubAppID, opts)
 	}
 
 	decrypted, err := uc.Credential.Decrypt(ctx)
@@ -70,43 +59,6 @@ func (uc *UserCredential) Authenticator(ctx context.Context, opts CredentialAuth
 	}
 
 	return a, nil
-}
-
-func (uc *UserCredential) githubAppAuthenticator(ctx context.Context, opts CredentialAuthenticatorOpts) (auth.Authenticator, error) {
-	var authenticator auth.Authenticator
-
-	ghApp, err := opts.GitHubAppStore.GetByID(ctx, uc.GitHubAppID)
-	if err != nil {
-		return nil, err
-	}
-
-	authenticator, err = ghauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
-	if err != nil {
-		return nil, err
-	}
-
-	if opts.Repo != nil {
-		baseURL, err := url.Parse(opts.Repo.ExternalRepo.ServiceID)
-		if err != nil {
-			return nil, err
-		}
-
-		md, ok := opts.Repo.Metadata.(*github.Repository)
-		if !ok {
-			return nil, errors.Newf("expected repo metadata to be a github.Repository, but got %T", opts.Repo.Metadata)
-		}
-
-		owner, _, err := github.SplitRepositoryNameWithOwner(md.NameWithOwner)
-		if err != nil {
-			return nil, err
-		}
-		installID, err := opts.GitHubAppStore.GetInstallID(ctx, ghApp.AppID, owner)
-		if err != nil {
-			return nil, err
-		}
-		authenticator = ghauth.NewInstallationAccessToken(baseURL, installID, authenticator, keyring.Default().GitHubAppKey)
-	}
-	return authenticator, nil
 }
 
 // SetAuthenticator encrypts and sets the authenticator within the user credential.
@@ -331,6 +283,13 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
 	authz := userCredentialsAuthzQueryConds(ctx)
 
+	var githubAppIDClause *sqlf.Query
+	if scope.GitHubAppID == 0 {
+		githubAppIDClause = sqlf.Sprintf("github_app_id IS NULL")
+	} else {
+		githubAppIDClause = sqlf.Sprintf("github_app_id = %d", scope.GitHubAppID)
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -338,6 +297,7 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
+		githubAppIDClause,
 		authz,
 	)
 
@@ -465,6 +425,7 @@ WHERE
 	user_id = %s AND
 	external_service_type = %s AND
 	external_service_id = %s AND
+	%s AND
 	%s -- authz query conds
 `
 
