@@ -20,20 +20,18 @@ var (
 	secretCommand = &cli.Command{
 		Name:  "secret",
 		Usage: "Manipulate secrets stored in memory and in file",
-		UsageText: `
-# List all secrets stored in your local configuration.
+		UsageText: `# List all secrets stored in your local configuration.
 sg secret list
 
-# Remove the secrets associated with buildkite (sg ci build) - supports autocompletion for
-# ease of use
+# Remove the secrets associated with buildkite (sg ci build) - (supports bash autocompletion).
 sg secret reset buildkite
 `,
 		Category: category.Env,
 		Subcommands: []*cli.Command{
 			{
 				Name:         "reset",
-				ArgsUsage:    "<...key>",
-				Usage:        "Remove a specific secret from secrets file",
+				ArgsUsage:    "key1 key2 ...",
+				Usage:        "Remove a individual secret(s) from secrets file (see 'list' for getting the keys)",
 				Action:       resetSecretExec,
 				BashComplete: completions.CompleteArgs(bashCompleteSecrets),
 			},
