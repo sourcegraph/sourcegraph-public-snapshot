@@ -1,6 +1,6 @@
 package:
   name: opentelemetry-collector
-  version: 0.103.1 # Keep in sync with go.opentelemetry.io/collector version in go.mod
+  version: 0.103.0 # Keep in sync with go.opentelemetry.io/collector version in go.mod
   epoch: 0
   description: "Vendor-agnostic implementation on how to receive, process and export telemetry data"
   target-architecture:
