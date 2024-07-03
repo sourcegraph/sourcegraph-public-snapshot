@@ -67,7 +67,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
 		logicalReplicationUser := role.NewRole(scope, id.TerraformID("user"), &role.RoleConfig{
 			Provider: config.AdminPostgreSQLProvider,
-			Name:     pointers.Stringf("publication-%s-user", p.Name),
+			Name:     pointers.Stringf("msp-publication-%s-user", p.Name),
 			Password: password.NewPassword(scope, id.TerraformID("user_password"), &password.PasswordConfig{
 				Length:  pointers.Float64(32),
 				Special: pointers.Ptr(false),
