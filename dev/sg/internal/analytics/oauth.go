@@ -34,7 +34,11 @@ As part of this, some action may be required to make this process work:
 This process will resume automatically.
 `
 
-func InitIdentity(ctx context.Context, out *std.Output, sec *secrets.Store) error {
+type secretStore interface {
+	GetExternal(context.Context, secrets.ExternalSecret, ...secrets.FallbackFunc) (string, error)
+}
+
+func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 	sgHome, err := root.GetSGHomePath()
 	if err != nil {
 		return err
