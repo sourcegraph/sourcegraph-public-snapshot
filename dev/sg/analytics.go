@@ -36,6 +36,9 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 		command.Action = func(cmd *cli.Context) (actionErr error) {
 			cmdFlags := make(map[string][]string)
 			for _, parent := range cmd.Lineage() {
+				if parent.Command == nil {
+					continue
+				}
 				cmdFlags[parent.Command.Name] = parent.LocalFlagNames()
 			}
 			cmd.Context = analytics.NewInvocation(cmd.Context, cmd.App.Version, map[string]any{
