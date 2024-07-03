@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	hashstructure "github.com/mitchellh/hashstructure/v2"
@@ -128,18 +129,18 @@ var sg = &cli.App{
 			Value:       false,
 			Destination: &disableOverwrite,
 		},
-		&cli.BoolFlag{
+		warnSkippedInDev(&cli.BoolFlag{
 			Name:    "skip-auto-update",
 			Usage:   "prevent sg from automatically updating itself",
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
 			Value:   BuildCommit == "dev", // Default to skip in dev
-		},
-		&cli.BoolFlag{
+		}),
+		warnSkippedInDev(&cli.BoolFlag{
 			Name:    "disable-analytics",
 			Usage:   "disable event logging (logged to '~/.sourcegraph/events')",
 			EnvVars: []string{"SG_DISABLE_ANALYTICS"},
 			Value:   BuildCommit == "dev", // Default to skip in dev
-		},
+		}),
 		&cli.BoolFlag{
 			Name:        "disable-output-detection",
 			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
@@ -177,6 +178,12 @@ var sg = &cli.App{
 
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+
+		// Print out a warning about flags which are disabled by default only in dev, but
+		// enabled otherwise.
+		if BuildCommit == "dev" {
+			printSkippedInDevWarning()
+		}
 
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
@@ -422,6 +429,24 @@ func watchConfig(ctx context.Context) (<-chan *sgconf.Config, error) {
 	}()
 
 	return output, err
+}
+
+var skippedInDevFlags = []cli.Flag{}
+
+// warnSkippedInDev registers a flag as having a different default value when sg is running in dev mode.
+func warnSkippedInDev(flag cli.Flag) cli.Flag {
+	skippedInDevFlags = append(skippedInDevFlags, flag)
+	return flag
+}
+
+// printSkippedInDevWarning reminds the user that sg is running in dev mode and certain flags have a different default value.
+func printSkippedInDevWarning() {
+	names := []string{}
+	for _, f := range skippedInDevFlags {
+		// Safe because it's not possible for a flag to not have name.
+		names = append(names, f.Names()[0])
+	}
+	std.Out.WriteWarningf("Running sg with a dev build, following flags have different default value unless explictly set: %s", strings.Join(names, ", "))
 }
 
 func exists(file string) bool {
