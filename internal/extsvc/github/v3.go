@@ -642,15 +642,15 @@ func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page
 // An empty sinceRepoID returns the first page of results.
 // This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
 // https://developer.github.com/v3/repos/#list-all-public-repositories
-func (c *V3Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, bool, error) {
+func (c *V3Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*PublicRepository, bool, error) {
 	path := "repositories"
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
-	return c.listRepositories(ctx, path)
+	return c.listPublicRepositories(ctx, path)
 }
 
-func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, bool, error) {
+func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*PublicRepository, bool, error) {
 	return c.getPublicRepositories(ctx, sinceRepoID)
 }
 
@@ -797,6 +797,19 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 			continue
 		}
 		repos = append(repos, convertRestRepo(restRepo))
+	}
+	return repos, respState.hasNextPage(), nil
+}
+
+func (c *V3Client) listPublicRepositories(ctx context.Context, requestURI string) ([]*PublicRepository, bool, error) {
+	var restPublicRepos []restPublicRepository
+	respState, err := c.get(ctx, requestURI, &restPublicRepos)
+	if err != nil {
+		return nil, false, err
+	}
+	repos := make([]*PublicRepository, 0, len(restPublicRepos))
+	for _, r := range restPublicRepos {
+		repos = append(repos, convertRestPublicRepo(r))
 	}
 	return repos, respState.hasNextPage(), nil
 }
