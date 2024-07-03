@@ -55,12 +55,8 @@ func TestIndexingWorker(t *testing.T) {
 	require.NoError(t, err)
 
 	gitserverClient := gitserver.NewMockClient()
-	uploadStore := testutils.NewMockUploadStore()
+	uploadStore := testutils.NewFakeUploadStore()
 
-	// Note that this method will read the environment variables,
-	// and the most important one - SCIP_SYNTAX_PATH - will be placed there
-	// by Bazel. If you want to run this test separately as part of `go test`,
-	// you need to handle the environment yourself.
 	config.Load()
 
 	// If we're running in Bazel test environment, resolve the path to CLI

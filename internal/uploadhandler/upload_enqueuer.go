@@ -8,6 +8,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"go.opentelemetry.io/otel/attribute"
 )
 
@@ -28,7 +29,8 @@ func NewUploadEnqueuer[T any](observationCtx *observation.Context, dbStore DBSto
 }
 
 type UploadResult struct {
-	UploadID int
+	UploadID       int
+	CompressedSize int64
 }
 
 func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T, uncompressedSize *int64, body io.Reader) (_ *UploadResult, err error) {
@@ -39,6 +41,7 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T
 	}()
 
 	var uploadID int
+	var compressedSize int64
 	if err := u.dbStore.WithTransaction(ctx, func(tx DBStore[T]) error {
 		id, err := tx.InsertUpload(ctx, Upload[T]{
 			State:            "uploading",
@@ -50,16 +53,16 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
+		trace.AddEvent("InsertUpload", attribute.Int("uploadID", id))
 
-		size, err := u.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
+		compressedSize, err = u.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
 		if err != nil {
-			return err
+			return errors.Newf("Failed to upload data to upload store (id=%d): %s", id, err)
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadSize", int(size)))
+		trace.AddEvent("uploadStore.Upload", attribute.Int64("gzippedUploadSize", compressedSize))
 
-		if err := tx.MarkQueued(ctx, id, &size); err != nil {
-			return err
+		if err := tx.MarkQueued(ctx, id, &compressedSize); err != nil {
+			return errors.Newf("Failed to mark upload (id=%d) as queued: %s", id, err)
 		}
 
 		uploadID = id
@@ -68,10 +71,10 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T
 		return nil, err
 	}
 
-	u.logger.Info(
+	trace.Info(
 		"enqueued upload",
 		sglog.Int("id", uploadID),
 	)
 
-	return &UploadResult{uploadID}, nil
+	return &UploadResult{uploadID, compressedSize}, nil
 }

@@ -36,15 +36,23 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("API address", config.ListenAddress))
 
 	name := "syntactic-code-intel-indexer"
-	sqlDB := initDB(observationCtx, name)
-	db := database.NewDB(logger, sqlDB)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, sqlDB)
+	frontendSqlDB, err := initDB(observationCtx, name)
+	if err != nil {
+		return errors.Wrap(err, "initializing frontend db")
+	}
+	db := database.NewDB(logger, frontendSqlDB)
+
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSqlDB)
 	if err != nil {
 		return errors.Wrap(err, "initializing worker store")
 	}
 
-	codeintelDB := codeintelshared.NewCodeIntelDB(logger, initCodeintelDB(observationCtx, name))
+	codeintelSqlDB, err := initCodeintelDB(observationCtx, name)
+	if err != nil {
+		return errors.Wrap(err, "initializing codeintel db")
+	}
+	codeintelDB := codeintelshared.NewCodeIntelDB(logger, codeintelSqlDB)
 
 	indexingWorker, err := NewIndexingWorker(ctx,
 		observationCtx,
@@ -56,7 +64,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating indexing worker")
 	}
 
 	// Initialize health server
@@ -70,7 +78,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	return goroutine.MonitorBackgroundRoutines(ctx, server, indexingWorker)
 }
 
-func initCodeintelDB(observationCtx *observation.Context, name string) *sql.DB {
+func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 	// This is an internal service, so we rely on the
 	// frontend to do authz checks for user requests.
 	// Authz checks are enforced by the DB layer
@@ -89,12 +97,13 @@ func initCodeintelDB(observationCtx *observation.Context, name string) *sql.DB {
 
 	if err != nil {
 		log.Scoped("init db ("+name+")").Fatal("Failed to connect to codeintel database", log.Error(err))
+		return nil, err
 	}
 
-	return sqlDB
+	return sqlDB, nil
 }
 
-func initDB(observationCtx *observation.Context, name string) *sql.DB {
+func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 	// This is an internal service, so we rely on the
 	// frontend to do authz checks for user requests.
 	// Authz checks are enforced by the DB layer
@@ -113,7 +122,8 @@ func initDB(observationCtx *observation.Context, name string) *sql.DB {
 
 	if err != nil {
 		log.Scoped("init db ("+name+")").Fatal("Failed to connect to frontend database", log.Error(err))
+		return nil, err
 	}
 
-	return sqlDB
+	return sqlDB, nil
 }

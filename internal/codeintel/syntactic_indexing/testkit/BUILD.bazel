@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "testkit",
     srcs = [
-        "no_op_upload_store.go",
+        "fake_upload_store.go",
         "testutils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/testkit",

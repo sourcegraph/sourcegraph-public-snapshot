@@ -81,8 +81,6 @@ func newSchedulerJob(
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			config := conf.Get().ExperimentalFeatures
 
-			observationCtx.Logger.Info("Scheduling!")
-
 			if config != nil && config.CodeintelSyntacticIndexingEnabled {
 				return scheduler.Schedule(observationCtx, ctx, time.Now())
 			} else {

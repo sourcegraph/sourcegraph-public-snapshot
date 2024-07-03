@@ -41,8 +41,6 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 
 	require.Equal(t, 0, initCount)
 
-	Queued := jobstore.Queued
-
 	commit1, commit2, commit3 := testutils.MakeCommit(1), testutils.MakeCommit(2), testutils.MakeCommit(3)
 
 	testutils.InsertSyntacticIndexingRecords(t, db,
@@ -55,7 +53,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 			Commit:         commit3,
 			RepositoryID:   4,
 			RepositoryName: "DELETED-org/repo",
-			State:          Queued,
+			State:          jobstore.Queued,
 			QueuedAt:       time.Now().Add(time.Second * -100),
 		},
 		jobstore.SyntacticIndexingJob{
@@ -63,7 +61,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 			Commit:         commit1,
 			RepositoryID:   1,
 			RepositoryName: "tangy/tacos",
-			State:          Queued,
+			State:          jobstore.Queued,
 			QueuedAt:       time.Now().Add(time.Second * -5),
 		},
 		jobstore.SyntacticIndexingJob{
@@ -71,7 +69,7 @@ func TestSyntacticIndexingStoreDequeue(t *testing.T) {
 			Commit:         commit2,
 			RepositoryID:   2,
 			RepositoryName: "salty/empanadas",
-			State:          Queued,
+			State:          jobstore.Queued,
 			QueuedAt:       time.Now().Add(time.Second * -2),
 		},
 		jobstore.SyntacticIndexingJob{
