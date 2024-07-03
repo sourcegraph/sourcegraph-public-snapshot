@@ -7,7 +7,7 @@ import (
 
 func getPrompt(messages []types.Message) (string, error) {
 	if len(messages) != 1 {
-		return "", errors.New("Expected to receive exactly one message with the prompt")
+		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d)", len(messages))
 	}
 
 	prompt := messages[0].Text

@@ -190,7 +190,11 @@ func (c *fireworksClient) makeRequest(ctx context.Context, feature types.Complet
 		// in the first and only message
 		prompt, promptErr := getPrompt(requestParams.Messages)
 		if promptErr != nil {
-			return nil, promptErr
+			requestParamsJSON, jsonErr := json.Marshal(requestParams)
+			if jsonErr != nil {
+				return nil, errors.Wrap(jsonErr, "failed to marshal requestParams to JSON")
+			}
+			return nil, errors.Wrapf(promptErr, "failed to get prompt. requestParams: %s", string(requestParamsJSON))
 		}
 
 		payload := fireworksRequest{

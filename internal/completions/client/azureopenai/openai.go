@@ -3,6 +3,7 @@ package azureopenai
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -606,7 +607,11 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 	}
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
-		return azopenai.CompletionsOptions{}, err
+		requestParamsJSON, jsonErr := json.Marshal(requestParams)
+		if jsonErr != nil {
+			return azopenai.CompletionsOptions{}, errors.Wrap(jsonErr, "failed to marshal requestParams to JSON")
+		}
+		return azopenai.CompletionsOptions{}, errors.Wrapf(err, "failed to get prompt. requestParams: %s", string(requestParamsJSON))
 	}
 	return azopenai.CompletionsOptions{
 		Prompt:         []string{prompt},
@@ -622,7 +627,7 @@ func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azo
 
 func getPrompt(messages []types.Message) (string, error) {
 	if len(messages) != 1 {
-		return "", errors.New("Expected to receive exactly one message with the prompt")
+		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d).", len(messages))
 	}
 
 	return messages[0].Text, nil
