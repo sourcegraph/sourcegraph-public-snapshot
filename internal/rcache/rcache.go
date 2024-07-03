@@ -21,13 +21,6 @@ import (
 // effectively resetting the cache at the same time the new code
 // is deployed.
 const dataVersion = "v2"
-const dataVersionToDelete = "v1"
-
-// DeleteOldCacheData deletes the rcache data in the given Redis instance
-// that's prefixed with dataVersionToDelete
-func DeleteOldCacheData(c redis.Conn) error {
-	return redispool.DeleteAllKeysWithPrefix(c, dataVersionToDelete)
-}
 
 // Cache implements httpcache.Cache
 type Cache struct {
