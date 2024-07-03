@@ -111,10 +111,10 @@ func getCredentialOptions() (*azidentity.DefaultAzureCredentialOptions, error) {
 
 }
 
-type GetCompletionsAPIClientFunc func(accessToken, endpoint string) (CompletionsClient, error)
+type GetCompletionsAPIClientFunc func(endpoint, accessToken string) (CompletionsClient, error)
 
-func NewClient(getClient GetCompletionsAPIClientFunc, accessToken, endpoint string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
-	client, err := getClient(accessToken, endpoint)
+func NewClient(getClient GetCompletionsAPIClientFunc, endpoint, accessToken string, tokenizer tokenusage.Manager) (types.CompletionsClient, error) {
+	client, err := getClient(endpoint, accessToken)
 	if err != nil {
 		return nil, err
 	}
