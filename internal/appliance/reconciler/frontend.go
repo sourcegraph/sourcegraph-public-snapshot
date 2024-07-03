@@ -5,7 +5,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/container"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/deployment"
-	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/ingress"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/pod"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/role"
 	"github.com/sourcegraph/sourcegraph/internal/k8s/resource/rolebinding"
@@ -48,9 +46,6 @@ func (r *Reconciler) reconcileFrontend(ctx context.Context, sg *config.Sourcegra
 	}
 	if err := r.reconcileFrontendRoleBinding(ctx, sg, owner); err != nil {
 		return errors.Wrap(err, "reconciling RoleBinding")
-	}
-	if err := r.reconcileFrontendIngress(ctx, sg, owner); err != nil {
-		return errors.Wrap(err, "reconciling Ingress")
 	}
 	return nil
 }
@@ -223,48 +218,6 @@ func (r *Reconciler) reconcileFrontendRoleBinding(ctx context.Context, sg *confi
 		},
 	}
 	return reconcileObject(ctx, r, sg.Spec.Frontend, &binding, &rbacv1.RoleBinding{}, sg, owner)
-}
-
-func (r *Reconciler) reconcileFrontendIngress(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {
-	name := "sourcegraph-frontend"
-	cfg := sg.Spec.Frontend
-	ingress := ingress.NewIngress(name, sg.Namespace)
-	if cfg.Ingress == nil {
-		return r.ensureObjectDeleted(ctx, &ingress)
-	}
-
-	ingress.SetAnnotations(cfg.Ingress.Annotations)
-
-	if cfg.Ingress.TLSSecret != "" {
-		ingress.Spec.TLS = []netv1.IngressTLS{{
-			Hosts:      []string{cfg.Ingress.Host},
-			SecretName: cfg.Ingress.TLSSecret,
-		}}
-	}
-
-	ingress.Spec.Rules = []netv1.IngressRule{{
-		Host: cfg.Ingress.Host,
-		IngressRuleValue: netv1.IngressRuleValue{
-			HTTP: &netv1.HTTPIngressRuleValue{
-				Paths: []netv1.HTTPIngressPath{{
-					Path:     "/",
-					PathType: pointers.Ptr(netv1.PathTypePrefix),
-					Backend: netv1.IngressBackend{
-						Service: &netv1.IngressServiceBackend{
-							Name: name,
-							Port: netv1.ServiceBackendPort{
-								Number: 30080,
-							},
-						},
-					},
-				}},
-			},
-		},
-	}}
-
-	ingress.Spec.IngressClassName = cfg.Ingress.IngressClassName
-
-	return reconcileObject(ctx, r, sg.Spec.Frontend, &ingress, &netv1.Ingress{}, sg, owner)
 }
 
 func frontendEnvVars(sg *config.Sourcegraph) []corev1.EnvVar {
