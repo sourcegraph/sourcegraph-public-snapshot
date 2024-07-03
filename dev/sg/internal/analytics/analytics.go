@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"path"
 	"sync"
 	"time"
 
@@ -32,9 +33,9 @@ type invocation struct {
 var store = sync.OnceValue(func() analyticsStore {
 	db, err := newDiskStore()
 	if err != nil {
-		std.Out.WriteWarningf("failed to create sg analytics store: %s", err)
+		std.Out.WriteWarningf("Failed to create sg analytics store: %s", err)
 	}
-	return analyticsStore{db}
+	return analyticsStore{db: db}
 })
 
 func newDiskStore() (*sql.DB, error) {
@@ -44,7 +45,7 @@ func newDiskStore() (*sql.DB, error) {
 	}
 
 	// this will create the file if it doesnt exist
-	db, err := sql.Open("sqlite", "file://"+sghome+"analytics.sqlite")
+	db, err := sql.Open("sqlite", "file://"+path.Join(sghome, "analytics.sqlite"))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func newDiskStore() (*sql.DB, error) {
 		event_uuid TEXT PRIMARY KEY,
 		-- invocation_uuid TEXT,
 		schema_version TEXT NOT NULL,
-		metadata_json TEXT,
+		metadata_json TEXT
 	)`)
 	if err != nil {
 		return nil, err
@@ -73,7 +74,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 
 	b, err := json.Marshal(meta)
 	if err != nil {
-		std.Out.WriteWarningf("invalid json generated for sg analytics metadata %v: %s", meta, err)
+		std.Out.WriteWarningf("Invalid json generated for sg analytics metadata %v: %s", meta, err)
 	}
 
 	meta["email"] = email()
@@ -81,7 +82,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 
 	_, err = s.db.Exec(`INSERT INTO analytics (event_uuid, schema_version, metadata_json) VALUES (?, ?, ?)`, uuid, schemaVersion, string(b))
 	if err != nil {
-		std.Out.WriteWarningf("failed to insert sg analytics event: %s", err)
+		std.Out.WriteWarningf("Failed to insert sg analytics event: %s", err)
 	}
 }
 
@@ -92,13 +93,13 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 
 	b, err := json.Marshal(meta)
 	if err != nil {
-		std.Out.WriteWarningf("invalid json generated for sg analytics metadata %v: %s", meta, err)
+		std.Out.WriteWarningf("Invalid json generated for sg analytics metadata %v: %s", meta, err)
 		return
 	}
 
 	_, err = s.db.Exec(`UPDATE analytics SET metadata_json = json_patch(metadata_json, ?) WHERE event_uuid = ?`, string(b), uuid)
 	if err != nil {
-		std.Out.WriteWarningf("failed to update sg analytics event: %s", err)
+		std.Out.WriteWarningf("Failed to update sg analytics event: %s", err)
 	}
 }
 
