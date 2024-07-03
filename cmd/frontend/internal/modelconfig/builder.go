@@ -254,6 +254,19 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		getModelWithRequirements := func(
 			wantCapability types.ModelCapability, wantCategories ...types.ModelCategory) *types.ModelRef {
 			for _, model := range mergedConfig.Models {
+				// Check if the model can be used for that purpose.
+				var hasCapability bool
+				for _, gotCapability := range model.Capabilities {
+					if gotCapability == wantCapability {
+						hasCapability = true
+						break
+					}
+				}
+				if !hasCapability {
+					return nil
+				}
+
+				// Check if the model has a matching category.
 				for _, wantCategory := range wantCategories {
 					if model.Category == wantCategory {
 						return &model.ModelRef
