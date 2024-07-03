@@ -52,15 +52,12 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 			defer func() {
 				if p := recover(); p != nil {
 					// Render a more elegant message
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
+					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s", sgBugReportTemplate)
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack("addAnalyticsHooks"))
 					actionErr = cli.Exit(message, 1)
 
 					// Log event
-					analytics.AddMeta(cmd.Context, map[string]any{
-						"panic": actionErr,
-					})
+					analytics.InvocationPanicked(cmd.Context, p)
 				}
 			}()
 			interrupt.Register(func() {

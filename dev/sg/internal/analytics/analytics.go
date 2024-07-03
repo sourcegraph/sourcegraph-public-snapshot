@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"path"
 	"sync"
 	"time"
@@ -162,6 +163,19 @@ func InvocationFailed(ctx context.Context, err error) {
 	store().AddMetadata(ctx, invc.uuid, map[string]any{
 		"failed":   true,
 		"error":    err.Error(),
+		"end_time": time.Now(),
+	})
+}
+
+func InvocationPanicked(ctx context.Context, err any) {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return
+	}
+
+	store().AddMetadata(ctx, invc.uuid, map[string]any{
+		"panicked": true,
+		"error":    fmt.Sprint(err),
 		"end_time": time.Now(),
 	})
 }
