@@ -9,6 +9,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/version",
+        "//lib/errors",
         "@com_github_masterminds_semver//:semver",
     ],
 )
