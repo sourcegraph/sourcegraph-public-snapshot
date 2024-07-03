@@ -37,6 +37,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/repoupdater",
+        "//internal/search/query",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
         "//internal/trace",

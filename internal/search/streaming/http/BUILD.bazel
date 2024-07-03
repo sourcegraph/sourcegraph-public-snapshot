@@ -15,6 +15,7 @@ go_library(
     tags = [TAG_PLATFORM_SEARCH],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/search/query",
         "//internal/search/streaming/api",
         "//lib/errors",
     ],
