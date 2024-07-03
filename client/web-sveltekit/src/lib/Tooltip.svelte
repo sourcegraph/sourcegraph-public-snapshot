@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts">
-    import { popover, portal, uniqueID } from './dom'
+    import { popover, uniqueID } from './dom'
 
     /**
      * The content of the tooltip.
@@ -23,16 +23,16 @@
 
     const id = uniqueID('tooltip')
 
-    let visible = false
     let wrapper: HTMLElement | null
     let target: Element | null
+    let popoverElement: HTMLElement | null
 
     function show() {
-        visible = true
+        popoverElement?.showPopover()
     }
 
     function hide() {
-        visible = false
+        popoverElement?.hidePopover()
     }
 
     $: options = {
@@ -67,7 +67,6 @@
     svelte-ignore a11y-no-static-element-interactions
 -->
 <div
-    class="wrapper"
     bind:this={wrapper}
     on:mouseenter={show}
     on:mouseleave={hide}
@@ -77,19 +76,25 @@
 >
     <slot />
 </div>
-{#if (alwaysVisible || visible) && target && tooltip}
-    <div role="tooltip" {id} use:popover={{ reference: target, options }} use:portal>
+{#if target && tooltip}
+    <div
+        class:always-visible={alwaysVisible}
+        bind:this={popoverElement}
+        popover="manual"
+        {id}
+        use:popover={{ reference: target, options }}
+    >
         <div class="content">{tooltip}</div>
         <div data-arrow />
     </div>
 {/if}
 
 <style lang="scss">
-    .wrapper {
+    [data-tooltip-root] {
         display: contents;
     }
 
-    [role='tooltip'] {
+    [popover] {
         --tooltip-font-size: 0.75rem; // 12px
         --tooltip-line-height: 1.02rem; // 16.32px / 16px, per Figma
         --tooltip-max-width: 256px;
@@ -103,9 +108,11 @@
         --tooltip-arrow-main: 8px solid var(--tooltip-bg);
 
         all: initial;
+        &:not(:popover-open):not(.always-visible) {
+            display: none;
+        }
         position: absolute;
         isolation: isolate;
-        z-index: 1;
         font-family: inherit;
         font-size: var(--tooltip-font-size);
         font-style: normal;
