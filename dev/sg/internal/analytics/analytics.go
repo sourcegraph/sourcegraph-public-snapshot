@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/run"
 
 	_ "modernc.org/sqlite"
 
@@ -24,7 +24,6 @@ type key int
 
 const (
 	invocationKey key = 0
-	// eventKey      key = 1
 )
 
 type invocation struct {
@@ -73,13 +72,13 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 		return
 	}
 
+	meta["identity"] = email()
+	meta["start_time"] = time.Now()
+
 	b, err := json.Marshal(meta)
 	if err != nil {
 		std.Out.WriteWarningf("Invalid json generated for sg analytics metadata %v: %s", meta, err)
 	}
-
-	meta["email"] = email()
-	meta["start_time"] = time.Now()
 
 	_, err = s.db.Exec(`INSERT INTO analytics (event_uuid, schema_version, metadata_json) VALUES (?, ?, ?)`, uuid, schemaVersion, string(b))
 	if err != nil {
@@ -105,11 +104,22 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 }
 
 var email = sync.OnceValue[string](func() string {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	// Loose attempt at getting identity - if we fail, just discard
-	identity, _ := run.Cmd(ctx, "git config user.email").StdOut().Run().String()
-	return identity
+	sgHome, err := root.GetSGHomePath()
+	if err != nil {
+		return "anonymous"
+	}
+
+	b, err := os.ReadFile(path.Join(sgHome, "whoami.json"))
+	if err != nil {
+		return "anonymous"
+	}
+	var whoami struct {
+		Email string
+	}
+	if err := json.Unmarshal(b, &whoami); err != nil {
+		return "anonymous"
+	}
+	return whoami.Email
 })
 
 func NewInvocation(ctx context.Context, version string, meta map[string]any) context.Context {

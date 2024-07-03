@@ -10,7 +10,6 @@ go_library(
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "@com_github_google_uuid//:uuid",
-        "@com_github_sourcegraph_run//:run",
         "@org_modernc_sqlite//:sqlite",
     ],
 )
