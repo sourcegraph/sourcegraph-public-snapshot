@@ -38,12 +38,12 @@ type AzureOpenAIProviderConfig struct {
 	Endpoint string `json:"endpoint"`
 
 	// The user field passed along to OpenAI-provided models.
-	User string
+	User string `json:"user"`
 	// Enables the use of the older completions API for select Azure OpenAI models. This is just an escape hatch
 	// for backwards compatibility, because not all Azure OpenAI models are available on the "newer" completions API.
 	//
 	// Moving forward, this information should be encoded in the ModelRef's APIVersionID instead.
-	UseDeprecatedCompletionsAPI bool
+	UseDeprecatedCompletionsAPI bool `json:"useDeprecatedCompletionsApi"`
 }
 
 // GenericProvider is the generic format that older Sourcegraph instances used.
