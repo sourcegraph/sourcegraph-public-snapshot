@@ -101,6 +101,7 @@ customization controls in your config element in the appliance.
 #### Jaeger
 
 Jaeger is a little special since the component is called `all-in-one` and not `jaeger`. It also requires an extra flag:
+
 ```bash
 go run ./internal/appliance/dev/compare-helm \
   -deploy-sourcegraph-helm-path ../../deploy-sourcegraph-helm \
@@ -130,7 +131,9 @@ This is not a requirement for the Bazel environment (`bazel test
 ## Useful Scripts
 
 ### Patch all test fixtures
+
 ```
 find internal/appliance/reconciler/testdata/sg -name '*.yaml'  | xargs sed -Ei '/pgsql:/i\  openTelemetry:\n    disabled: true\n'
 ```
+
 Example of appending a new element, openTelemetry , after pgsql
