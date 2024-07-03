@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -388,7 +389,9 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion)
+	// TODO(stefan): Remove defaultPatternType once we introduced "V4" in the backend.
+	defaultPatternType := searchquery.SearchTypeKeyword
+	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion, &defaultPatternType)
 	if err != nil {
 		return err
 	}
