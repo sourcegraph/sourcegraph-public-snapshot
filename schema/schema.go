@@ -680,7 +680,7 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// CompletionModelMaxTokens description: The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.
 	CompletionModelMaxTokens int `json:"completionModelMaxTokens,omitempty"`
-	// DisableClientConfigAPI description: Feature flag opt-out. Do not set this unless you know what you are doing. This will be removed in the future. Disables use of the new Cody client config API.
+	// DisableClientConfigAPI description: Should not be set. If set to true, disables the use of the new client config API. This new API has no user-facing effect, this opt-out is provided only as an escape hatch in case of issues.
 	DisableClientConfigAPI *bool `json:"disableClientConfigAPI,omitempty"`
 	// Enabled description: DEPRECATED. Use cody.enabled instead to turn Cody on/off.
 	Enabled *bool `json:"enabled,omitempty"`
