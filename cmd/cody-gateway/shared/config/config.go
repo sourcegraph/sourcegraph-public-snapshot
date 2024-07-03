@@ -26,6 +26,8 @@ type Config struct {
 
 	Port int
 
+	RedisEndpoint string
+
 	DiagnosticsSecret string
 
 	Dotcom struct {
@@ -385,6 +387,8 @@ func (c *Config) Load() {
 	c.SAMSClientConfig.ClientSecret = c.GetOptional("SAMS_CLIENT_SECRET", "SAMS OAuth client secret")
 
 	c.Environment = c.Get("CODY_GATEWAY_ENVIRONMENT", "dev", "Environment name.")
+
+	c.RedisEndpoint = c.Get("REDIS_ENDPOINT", "", "Redis endpoint to connect to for storing KV data.")
 }
 
 // loadFlaggingConfig loads the common set of flagging-related environment variables for
