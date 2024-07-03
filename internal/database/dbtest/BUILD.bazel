@@ -24,4 +24,5 @@ go_test(
     timeout = "short",
     srcs = ["dsn_test.go"],
     embed = [":dbtest"],
+    tags = ["requires-network"],
 )
