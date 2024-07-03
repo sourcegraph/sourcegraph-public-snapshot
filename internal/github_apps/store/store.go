@@ -70,7 +70,7 @@ type GitHubAppsStore interface {
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
 
 	// GetByDomain retrieves a GitHub App from the database by domain and base url
-	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
+	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error)
 
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
@@ -126,9 +126,18 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		domain = itypes.ReposGitHubAppDomain
 	}
 
+	// Backwards compatibility for apps that did not set the GitHubAppKind.
+	kind := app.Kind
+	if kind == "" {
+		kind = ghtypes.RepoSyncGitHubAppKind
+	} else if !kind.Valid() {
+		return -1, errors.New(fmt.Sprintf("The GitHubAppKind %s is not valid.", kind))
+	}
+
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
-	if domain == itypes.BatchesGitHubAppDomain {
-		existingGHApp, err := s.GetByDomain(ctx, domain, baseURL.String())
+	// User credentials are allowed to have multiple instances, so we ignore apps for that kind.
+	if domain == itypes.BatchesGitHubAppDomain && kind != ghtypes.UserCredentialGitHubAppKind {
+		existingGHApp, err := s.GetByDomain(ctx, domain, kind, baseURL.String())
 		// An error is expected if no existing app was found, but we double-check that
 		// we didn't get a different, unrelated error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
@@ -137,14 +146,6 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		if existingGHApp != nil {
 			return -1, errors.New("GitHub App already exists for this GitHub instance in the batches domain")
 		}
-	}
-
-	// Backwards compatibility for apps that did not set the GitHubAppKind.
-	kind := app.Kind
-	if kind == "" {
-		kind = ghtypes.RepoSyncGitHubAppKind
-	} else if !kind.Valid() {
-		return -1, errors.New(fmt.Sprintf("The GitHubAppKind %s is not valid.", kind))
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
@@ -178,6 +179,7 @@ func scanGitHubApp(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
 		&app.WebhookID,
 		&app.PrivateKey,
 		&app.EncryptionKey,
+		&app.Kind,
 		&app.Logo,
 		&app.CreatedAt,
 		&app.UpdatedAt)
@@ -347,6 +349,7 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.
 		webhook_id,
 		private_key,
 		encryption_key_id,
+		kind,
 		logo,
 		created_at,
 		updated_at
@@ -422,8 +425,8 @@ func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL st
 }
 
 // GetByDomain retrieves a GitHub App from the database by domain and base url
-func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`domain = %s AND %s`, domain, baseURLWhere(baseURL)))
+func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`domain = %s AND kind = %s AND %s`, domain, kind, baseURLWhere(baseURL)))
 }
 
 // List lists all GitHub Apps in the store

@@ -2,6 +2,8 @@ package types
 
 import (
 	"context"
+	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"time"
 
 	gogithub "github.com/google/go-github/v55/github"
@@ -49,6 +51,13 @@ func (s GitHubAppKind) Valid() bool {
 	default:
 		return false
 	}
+}
+
+func (s GitHubAppKind) Validate() (GitHubAppKind, error) {
+	if !s.Valid() {
+		return "", errors.New(fmt.Sprintf("Not a valid GitHubAppKind: %s", s))
+	}
+	return s, nil
 }
 
 // GitHubAppInstallation represents an installation of a GitHub App.

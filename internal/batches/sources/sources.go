@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"net/url"
 	"sort"
 	"strings"
@@ -197,7 +198,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 			}
 		}
 
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, ghtypes.SiteCredentialGitHubAppKind)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -351,7 +352,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 // App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
 // domain GitHub App has been configured, but no installation exists for the given
 // account, ErrNoGitHubAppInstallation is returned.
-func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
+func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string, kind ghtypes.GitHubAppKind) (ChangesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
@@ -371,7 +372,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, kind, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
