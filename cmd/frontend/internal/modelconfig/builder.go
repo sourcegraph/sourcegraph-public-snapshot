@@ -70,7 +70,10 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 	}
 
 	// We initialize the merged configuration data in-place.
-	var mergedConfig *types.ModelConfiguration
+	var (
+		mergedConfig *types.ModelConfiguration
+		err          error
+	)
 
 	// If the admin has explicitly disabled the Sourcegraph-supplied data, zero out the base config.
 	if sgModelConfig := siteConfig.SourcegraphModelConfig; sgModelConfig == nil {
@@ -91,7 +94,7 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 	} else {
 		// Apply any model filters from the base configuration. We start with copying the base config
 		// so we can just mutate it in-memory.
-		mergedConfig, err := deepCopy(baseConfig)
+		mergedConfig, err = deepCopy(baseConfig)
 		if err != nil {
 			return nil, errors.New("copying base config")
 		}
@@ -137,9 +140,9 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 
 		// Lookup the provider this configuration is for.
 		var providerToOverride *types.Provider
-		for i := range mergedConfig.Providers {
-			if mergedConfig.Providers[i].ID == providerOverride.ID {
-				providerToOverride = &mergedConfig.Providers[i]
+		for mergedProvIdx := range mergedConfig.Providers {
+			if mergedConfig.Providers[mergedProvIdx].ID == providerOverride.ID {
+				providerToOverride = &mergedConfig.Providers[mergedProvIdx]
 				break
 			}
 		}
@@ -246,7 +249,10 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 		mergedConfig.DefaultModels.CodeCompletion = siteConfig.DefaultModels.CodeCompletion
 		mergedConfig.DefaultModels.FastChat = siteConfig.DefaultModels.FastChat
 	} else {
-		getModelMatchingCategory := func(wantCategories ...types.ModelCategory) *types.ModelRef {
+		// getModelWithRequirements returns the the first model available with the specific capability and a matching
+		// category. Returns nil if no such model is found.
+		getModelWithRequirements := func(
+			wantCapability types.ModelCapability, wantCategories ...types.ModelCategory) *types.ModelRef {
 			for _, model := range mergedConfig.Models {
 				for _, wantCategory := range wantCategories {
 					if model.Category == wantCategory {
@@ -256,24 +262,31 @@ func applySiteConfig(baseConfig *types.ModelConfiguration, siteConfig *types.Sit
 			}
 			return nil
 		}
+
+		const (
+			accuracy = types.ModelCategoryAccuracy
+			balanced = types.ModelCategoryBalanced
+			speed    = types.ModelCategorySpeed
+		)
+
 		// Infer the default models to used based on category. This is probably not going to lead to great
 		// results. But :shrug: it's better than just crash looping because the config is under-specified.
 		if mergedConfig.DefaultModels.Chat == "" {
-			validModel := getModelMatchingCategory(types.ModelCategoryAccuracy, types.ModelCategoryBalanced)
+			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, accuracy, balanced)
 			if validModel == nil {
 				return nil, errors.New("no suitable model found for Chat")
 			}
 			mergedConfig.DefaultModels.Chat = *validModel
 		}
 		if mergedConfig.DefaultModels.FastChat == "" {
-			validModel := getModelMatchingCategory(types.ModelCategorySpeed, types.ModelCategoryBalanced)
+			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, speed, balanced)
 			if validModel == nil {
 				return nil, errors.New("no suitable model found for FastChat")
 			}
 			mergedConfig.DefaultModels.FastChat = *validModel
 		}
 		if mergedConfig.DefaultModels.CodeCompletion == "" {
-			validModel := getModelMatchingCategory(types.ModelCategorySpeed, types.ModelCategoryBalanced)
+			validModel := getModelWithRequirements(types.ModelCapabilityAutocomplete, speed, balanced)
 			if validModel == nil {
 				return nil, errors.New("no suitable model found for Chat")
 			}
