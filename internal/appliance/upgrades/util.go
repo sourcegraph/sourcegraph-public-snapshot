@@ -3,12 +3,12 @@ package upgrades
 // This file contains handler logic for appliances upgrades.
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Takes a target Version and determines if the upgrade requires downtime or not.
