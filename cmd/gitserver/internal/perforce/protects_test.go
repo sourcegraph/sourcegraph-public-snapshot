@@ -82,3 +82,39 @@ func TestParseP4Protects(t *testing.T) {
 
 	require.Equal(t, want, protects)
 }
+
+func TestParseP4BrokerProtects(t *testing.T) {
+	protectsOut := []byte(`{"data":"%7B%22depotFile%22%3A%22%2F%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%221%22%2C%22perm%22%3A%22write%22%2C%22user%22%3A%22%2A%22%7D%0A%7B%22depotFile%22%3A%22%2F%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%223%22%2C%22perm%22%3A%22read%22%2C%22user%22%3A%22petrilast%22%7D%0A%7B%22depotFile%22%3A%22%2F%2Ftestdepot%2F...%22%2C%22host%22%3A%22%2A%22%2C%22line%22%3A%224%22%2C%22perm%22%3A%22read%22%2C%22user%22%3A%22petrilast%22%7D","level":0}`)
+
+	protects, err := parseP4Protects(protectsOut)
+	require.NoError(t, err)
+
+	want := []*perforce.Protect{
+		{
+			Level:       "write",
+			EntityType:  "user",
+			EntityName:  "*",
+			Match:       "//...",
+			IsExclusion: false,
+			Host:        "*",
+		},
+		{
+			Level:       "read",
+			EntityType:  "user",
+			EntityName:  "petrilast",
+			Match:       "//...",
+			IsExclusion: false,
+			Host:        "*",
+		},
+		{
+			Level:       "read",
+			EntityType:  "user",
+			EntityName:  "petrilast",
+			Match:       "//testdepot/...",
+			IsExclusion: false,
+			Host:        "*",
+		},
+	}
+
+	require.Equal(t, want, protects)
+}
