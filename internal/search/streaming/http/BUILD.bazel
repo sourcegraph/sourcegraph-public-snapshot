@@ -31,6 +31,7 @@ go_test(
     embed = [":http"],
     tags = [TAG_PLATFORM_SEARCH],
     deps = [
+        "//internal/search/query",
         "//internal/search/streaming/api",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",

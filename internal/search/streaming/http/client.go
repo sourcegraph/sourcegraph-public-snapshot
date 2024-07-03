@@ -27,16 +27,23 @@ func NewRequest(baseURL string, query string) (*http.Request, error) {
 // NewRequestWithVersion returns an http.Request against the streaming API for
 // query with the specified version and patternType.
 func NewRequestWithVersion(baseURL, query string, version string, patternType *query.SearchType) (*http.Request, error) {
-	defaultPatternType := ""
-	if patternType != nil {
-		defaultPatternType = patternType.String()
-	}
-
-	u := fmt.Sprintf("%s/search/stream?q=%s&v=%s&t=%s", baseURL, url.QueryEscape(query), version, defaultPatternType)
+	u := fmt.Sprintf("%s/search/stream?q=%s", baseURL, url.QueryEscape(query))
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	if version != "" || patternType != nil {
+		q := req.URL.Query()
+		if version != "" {
+			q.Add("v", version)
+		}
+		if patternType != nil {
+			q.Add("t", patternType.String())
+		}
+		req.URL.RawQuery = q.Encode()
+	}
+
 	req.Header.Set("Accept", "text/event-stream")
 	return req, nil
 }
