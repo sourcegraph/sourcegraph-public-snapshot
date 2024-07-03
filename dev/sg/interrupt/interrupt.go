@@ -22,10 +22,12 @@ const (
 
 var (
 	hookTimeout = 2 * time.Second
-	hooksInit   sync.Once
-	hooks       map[int][]func()
-	mux         sync.Mutex
-	closed      chan struct{}
+	hooks       = map[int][]func(){
+		InterruptSequential: {},
+		InterruptConcurrent: {},
+	}
+	mux    sync.Mutex
+	closed chan struct{}
 )
 
 // Register adds a hook to be executed before program exit. The most recently added hooks
@@ -38,18 +40,7 @@ func Register(hook func()) {
 
 func register(hook func(), interrupt int) {
 	mux.Lock()
-
-	hooksInit.Do(func() {
-		hooks = map[int][]func(){}
-	})
-
-	var hookValues []func()
-	if v, ok := hooks[interrupt]; ok {
-		hookValues = append(v, hook)
-	} else {
-		hookValues = []func(){hook}
-	}
-	hooks[interrupt] = hookValues
+	hooks[interrupt] = append(hooks[interrupt], hook)
 	mux.Unlock()
 }
 

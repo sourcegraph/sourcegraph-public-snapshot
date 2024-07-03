@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/enterprise"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
@@ -185,9 +186,19 @@ var sg = &cli.App{
 			printSkippedInDevWarning()
 		}
 
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
+		if err != nil {
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+		}
+
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
+			analytics.BackgroundInitBigQueryConnection(cmd.Context, secretsStore)
+
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
 		}
@@ -216,14 +227,6 @@ var sg = &cli.App{
 		}
 		if configOverwriteFile == "" {
 			return errors.Newf("--overwrite must not be empty")
-		}
-
-		// Set up access to secrets
-		secretsStore, err := loadSecrets()
-		if err != nil {
-			std.Out.WriteWarningf("failed to open secrets: %s", err)
-		} else {
-			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
 		}
 
 		// We always try to set this, since we often want to watch files, start commands, etc...
