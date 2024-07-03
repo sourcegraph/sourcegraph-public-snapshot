@@ -28,9 +28,7 @@ WORKSPACE_DEPS = [
 rust_library(
     name = "scip_syntax_lib",
     srcs = glob(
-        [
-            "src/*.rs",
-        ],
+        ["src/**/*.rs"],
         allow_empty = False,
         exclude = ["src/main.rs"],
     ),
@@ -49,7 +47,11 @@ rust_library(
 rust_test(
     name = "unit_test",
     size = "small",
-    srcs = glob(["src/*.rs"]),
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+        exclude = ["src/main.rs"],
+    ),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
@@ -68,7 +70,11 @@ rust_test(
 rust_test(
     name = "integration_test",
     size = "small",
-    srcs = glob(["tests/*.rs"]),
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+        exclude = ["src/main.rs"],
+    ),
     compile_data = glob(
         [
             "testdata/**",

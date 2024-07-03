@@ -18,6 +18,8 @@ var NonActiveUserEvents = []string{
 	"ExternalAuthSignupFailed",
 	"ExternalAuthSignupSucceeded",
 	"CodyVSCodeExtension:CodySavedLogin:executed",
+	"cody.characters.flush",
+	"cody.characters",
 }
 
 // List of events that shouldn't be logged in local (Postgres) databases.

@@ -932,13 +932,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
-		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
-		AccessToken:                      completionsConfig.AccessToken,
-		ChatModel:                        completionsConfig.ChatModel,
-		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		SmartContextWindow:               completionsConfig.SmartContextWindow,
-		FastChatModel:                    completionsConfig.FastChatModel,
-		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
+		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
+		AccessToken:            completionsConfig.AccessToken,
+		ChatModel:              completionsConfig.ChatModel,
+		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
+		SmartContextWindow:     completionsConfig.SmartContextWindow,
+		FastChatModel:          completionsConfig.FastChatModel,
+		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
+		AzureUseDeprecatedCompletionsAPIForOldModels: completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
 		CompletionModel:                  completionsConfig.CompletionModel,
 		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
@@ -953,6 +954,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		PerCommunityUserCodeCompletionsMonthlyInteractionLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyInteractionLimit,
 		PerProUserChatDailyInteractionLimit:                    completionsConfig.PerProUserChatDailyInteractionLimit,
 		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
+		AzureCompletionModel:                                   completionsConfig.AzureCompletionModel,
+		AzureChatModel:                                         completionsConfig.AzureChatModel,
 	}
 
 	return computedConfig
@@ -1355,4 +1358,14 @@ func Branding() *schema.Branding {
 		br = &bcopy
 	}
 	return br
+}
+
+func SCIPBasedAPIsEnabled() bool {
+	siteConfig := SiteConfig()
+	expt := siteConfig.ExperimentalFeatures
+	if expt == nil || expt.ScipBasedAPIs == nil {
+		// NOTE(id: scip-based-apis-feature-flag): Keep this in sync with site.schema.json
+		return false
+	}
+	return *expt.ScipBasedAPIs
 }

@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => {
                 // instance.
                 '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|code-graph|batch-changes|settings)(/|$)':
                     {
-                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
+                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
                         changeOrigin: true,
                         secure: false,
                     },

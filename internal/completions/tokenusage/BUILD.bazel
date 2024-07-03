@@ -18,8 +18,6 @@ go_library(
         "//internal/updatecheck:__pkg__",
     ],
     deps = [
-        "//internal/completions/tokenizer",
-        "//internal/completions/types",
         "//internal/rcache",
         "//lib/errors",
     ],
@@ -35,8 +33,6 @@ go_test(
     ],
     deps = [
         ":tokenusage",
-        "//internal/completions/tokenizer",
-        "//internal/completions/types",
         "//internal/rcache",
     ],
 )

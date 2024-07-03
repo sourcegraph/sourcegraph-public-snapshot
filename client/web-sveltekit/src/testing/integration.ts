@@ -231,6 +231,16 @@ class Sourcegraph {
         this.graphqlMock.addFixtures(fixtures)
     }
 
+    public setWindowContext(context: Partial<Window['context']>): Promise<void> {
+        return this.page.addInitScript(context => {
+            if (!window.context) {
+                // @ts-expect-error - Unclear how to type this correctly
+                window.context = {}
+            }
+            Object.assign(window.context, context)
+        }, context)
+    }
+
     public signIn(userMock: UserMock = {}): void {
         this.mockTypes({
             Query: () => ({

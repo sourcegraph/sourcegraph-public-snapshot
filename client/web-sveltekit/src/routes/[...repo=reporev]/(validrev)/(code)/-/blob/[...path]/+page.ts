@@ -1,19 +1,31 @@
 import { BehaviorSubject, concatMap, from, map } from 'rxjs'
 
+import {
+    Occurrence,
+    Range,
+    Position,
+    SymbolRole,
+    nonOverlappingOccurrences,
+} from '@sourcegraph/shared/src/codeintel/scip'
 import { type BlameHunkData, fetchBlameHunksMemoized } from '@sourcegraph/web/src/repo/blame/shared'
+import type { CodeGraphData } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/occurrences'
 
 import { SourcegraphURL } from '$lib/common'
-import { getGraphQLClient, mapOrThrow } from '$lib/graphql'
+import { getGraphQLClient, mapOrThrow, type GraphQLClient } from '$lib/graphql'
+import { SymbolRole as GraphQLSymbolRole } from '$lib/graphql-types'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 import { assertNonNullable } from '$lib/utils'
 
 import type { PageLoad, PageLoadEvent } from './$types'
+import type { FileViewCodeGraphData } from './FileView.gql'
 import {
     BlobDiffViewCommitQuery,
     BlobFileViewBlobQuery,
+    BlobFileViewCodeGraphDataQuery,
     BlobFileViewCommitQuery_revisionOverride,
     BlobFileViewHighlightedFileQuery,
+    BlobViewCodeGraphDataNextPage,
 } from './page.gql'
 
 function loadDiffView({ params, url }: PageLoadEvent) {
@@ -37,6 +49,92 @@ function loadDiffView({ params, url }: PageLoadEvent) {
             })
             .then(mapOrThrow(result => result.data?.repository?.commit ?? null)),
     }
+}
+
+async function fetchCodeGraphData(
+    client: GraphQLClient,
+    repoName: string,
+    resolvedRevision: string,
+    path: string
+): Promise<CodeGraphData[]> {
+    async function fetchAllOccurrences(codeGraphDatum: FileViewCodeGraphData): Promise<FileViewCodeGraphData> {
+        while (codeGraphDatum.occurrences?.pageInfo?.hasNextPage) {
+            const response = await client.query(BlobViewCodeGraphDataNextPage, {
+                codeGraphDataID: codeGraphDatum.id,
+                after: codeGraphDatum.occurrences?.pageInfo?.endCursor ?? '',
+            })
+            if (response.error) {
+                throw new Error('failed to hydrate paginated occurrences', { cause: response.error })
+            }
+            if (response.data?.node?.__typename !== 'CodeGraphData') {
+                throw new Error('unexpected node')
+            }
+            codeGraphDatum.occurrences = {
+                nodes: [...codeGraphDatum.occurrences.nodes, ...(response.data.node.occurrences?.nodes ?? [])],
+                pageInfo: response.data.node.occurrences?.pageInfo ?? {
+                    __typename: 'PageInfo',
+                    hasNextPage: false,
+                    endCursor: null,
+                },
+            }
+        }
+        return codeGraphDatum
+    }
+
+    function translateRole(graphQLRole: GraphQLSymbolRole): SymbolRole {
+        switch (graphQLRole) {
+            case GraphQLSymbolRole.DEFINITION:
+                return SymbolRole.Definition
+            case GraphQLSymbolRole.REFERENCE:
+                // The REFERENCE role from the API is just the negation of the
+                // DEFINITION role, so simply do not set the definition bit.
+                return SymbolRole.Unspecified
+            case GraphQLSymbolRole.FORWARD_DEFINITION:
+                return SymbolRole.ForwardDefinition
+            default:
+                return SymbolRole.Unspecified
+        }
+    }
+
+    const response = await client.query(BlobFileViewCodeGraphDataQuery, {
+        repoName,
+        revspec: resolvedRevision,
+        path,
+    })
+    if (response.error) {
+        throw new Error('failed fetching code graph data', { cause: response.error })
+    }
+
+    const rawCodeGraphData = response.data?.repository?.commit?.blob?.codeGraphData
+    if (!rawCodeGraphData) {
+        return []
+    }
+    // Fetch any additional pages of occurrences
+    const hydratedCodeGraphData = await Promise.all([...rawCodeGraphData.map(fetchAllOccurrences)])
+
+    return hydratedCodeGraphData.map(({ provenance, toolInfo, commit, occurrences }) => {
+        const overlapping =
+            occurrences?.nodes?.map(
+                occ =>
+                    new Occurrence(
+                        new Range(
+                            new Position(occ.range.start.line, occ.range.start.character),
+                            new Position(occ.range.end.line, occ.range.end.character)
+                        ),
+                        undefined,
+                        occ.symbol ?? undefined,
+                        occ.roles?.map(translateRole).reduce((acc, role) => acc | role, 0)
+                    )
+            ) ?? []
+        const nonOverlapping = nonOverlappingOccurrences([...overlapping])
+        return {
+            provenance,
+            toolInfo,
+            commit,
+            occurrences: overlapping,
+            nonOverlappingOccurrences: nonOverlapping,
+        }
+    })
 }
 
 async function loadFileView({ parent, params, url }: PageLoadEvent) {
@@ -95,6 +193,13 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
                 })
             )
             .then(mapOrThrow(result => result.data?.repository?.commit?.blob?.highlight ?? null)),
+        codeGraphData: resolvedRevision.then(async resolvedRevision => {
+            if ((await parent()).settings.experimentalFeatures?.enablePreciseOccurrences ?? false) {
+                return fetchCodeGraphData(client, repoName, resolvedRevision, filePath)
+            } else {
+                return []
+            }
+        }),
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
