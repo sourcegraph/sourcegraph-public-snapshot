@@ -54,7 +54,7 @@ func Install(ctx context.Context, env map[string]string, verbose bool, cmds []In
 	}
 	installer := newInstallManager(cmds, std.Out, env, verbose)
 
-	installer.start(ctx)
+	installer.start()
 
 	installer.install(ctx, cmds)
 
@@ -83,7 +83,7 @@ func newInstallManager(cmds []Installer, out *std.Output, env map[string]string,
 }
 
 // starts all progress bars and counters but does not start installation
-func (installer *InstallManager) start(ctx context.Context) {
+func (installer *InstallManager) start() {
 	installer.Write("")
 	installer.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", installer.total))
 	installer.Write("")
