@@ -23,7 +23,6 @@ export const USER_CODY_USAGE = gql`
             codyCurrentPeriodChatUsage
             codyCurrentPeriodCodeUsage
             codyCurrentPeriodChatLimit
-            codyCurrentPeriodCodeLimit
             codySubscription {
                 status
                 plan
