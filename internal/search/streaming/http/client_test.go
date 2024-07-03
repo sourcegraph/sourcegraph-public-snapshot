@@ -137,7 +137,7 @@ func TestNewRequestWithVersion(t *testing.T) {
 		expectedQuery string
 	}{
 		{
-			name:          "No version, no pattern type",
+			name:          "No version, no patternType",
 			query:         "test",
 			version:       "",
 			patternType:   nil,

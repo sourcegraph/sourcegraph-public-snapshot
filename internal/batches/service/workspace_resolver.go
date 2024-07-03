@@ -389,7 +389,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	// TODO(stefan): Remove defaultPatternType once we introduced "V4" in the backend.
+	// TODO(stefan): Remove defaultPatternType once we introduce "V4" in the backend.
 	defaultPatternType := searchquery.SearchTypeKeyword
 	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion, &defaultPatternType)
 	if err != nil {
