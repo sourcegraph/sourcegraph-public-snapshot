@@ -197,7 +197,7 @@ var sg = &cli.App{
 		// setup
 		if !cmd.Bool("disable-analytics") {
 			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: " + err.Error())
 			}
 
 			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)

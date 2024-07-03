@@ -3,6 +3,7 @@ package analytics
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -23,15 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const setupNotice = `A one-time gsuite login is required to set up your identity for analytics.
-This can be opted out with the -disable-analytics flag, the SG_DISABLE_ANALYTICS env var or by writing '{"email": <your email or "anonymous">}' to ~/.sourcegraph/whoami.json.
+const setupNotice = `sg sends telemetry about its usage, errors and various timings for the dev-infra team in order to better understand how it's being used by everyone, which is essential to keep improving it.
 
-As part of this, some action may be required to make this process work:
-	1. Your computer may ask to receive incoming connections.
-		Please allow so the browser and sg can communicate.
-	2. Please accept the browser access request.
+➡️ A one-time GSuite login is required to setup your identity once for all. It will take less than a minute to complete. You can abort by pressing ctrl-c. This can be opted out with the --disable-analytics flag, the SG_DISABLE_ANALYTICS env var or by writing '{"email": <your email or "anonymous">}' to ~/.sourcegraph/whoami.json.
 
-This process will resume automatically.
+Press ENTER to open a browser window taking you through the OAuth process (you might see a dialog asking about receiving incoming connection, please accept it). Once complete, sg will resume automatically.
 `
 
 type secretStore interface {
@@ -74,6 +71,9 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 
 	t := tokenHandlerImpl{config: config}
 
+	out.WriteSuggestionf(setupNotice)
+	fmt.Scanln()
+
 	redirectUrl, waitForCode, waitForError, err := handleAuthResponse()
 	if err == nil {
 		t.SetRedirectURL(redirectUrl)
@@ -82,12 +82,9 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 	}
 
 	authURL := t.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
-
 	if err := t.OpenURL(authURL); err != nil {
 		return err
 	}
-
-	out.WriteNoticef(setupNotice)
 
 	err = <-waitForError
 	if err != nil {
