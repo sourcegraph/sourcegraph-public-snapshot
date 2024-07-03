@@ -245,6 +245,7 @@ func TestConvertCompletionsConfig(t *testing.T) {
 				AzureChatModel:       "gpt-3.5",
 				AzureCompletionModel: "gpt-4o",
 
+				User: "steve holt",
 				AzureUseDeprecatedCompletionsAPIForOldModels: true,
 			})
 			require.NotNil(t, compConfig)
@@ -268,6 +269,7 @@ func TestConvertCompletionsConfig(t *testing.T) {
 			require.NotNil(t, azureProviderConfig)
 			assert.Equal(t, "https://azure-openai.azure.com", azureProviderConfig.Endpoint)
 			assert.Equal(t, "azure-portal-api-key", azureProviderConfig.AccessToken)
+			assert.Equal(t, "steve holt", azureProviderConfig.User)
 			assert.True(t, azureProviderConfig.UseDeprecatedCompletionsAPI)
 
 			// ModelOverrides
