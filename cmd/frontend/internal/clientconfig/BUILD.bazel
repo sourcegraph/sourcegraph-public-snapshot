@@ -23,6 +23,7 @@ go_test(
     name = "clientconfig_test",
     srcs = ["httpapi_test.go"],
     embed = [":clientconfig"],
+    tags = ["requires-network"],
     deps = [
         "//internal/actor",
         "//internal/conf",
