@@ -149,6 +149,7 @@ func getProviderConfiguration(siteConfig *conftypes.CompletionsConfig) *types.Se
 			AccessToken: siteConfig.AccessToken,
 			Endpoint:    siteConfig.Endpoint,
 
+			User:                        siteConfig.User,
 			UseDeprecatedCompletionsAPI: siteConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
 		}
 	case conftypes.CompletionsProviderNameSourcegraph:

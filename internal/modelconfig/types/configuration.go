@@ -37,6 +37,8 @@ type AzureOpenAIProviderConfig struct {
 	// From the Azure OpenAI Service portal.
 	Endpoint string `json:"endpoint"`
 
+	// The user field passed along to OpenAI-provided models.
+	User string
 	// Enables the use of the older completions API for select Azure OpenAI models. This is just an escape hatch
 	// for backwards compatibility, because not all Azure OpenAI models are available on the "newer" completions API.
 	//
