@@ -4,12 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"net/http"
 	"reflect"
 	"testing"
-
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
@@ -29,6 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
