@@ -144,7 +144,7 @@ func (r *Reconciler) reconcileGrafanaConfigMap(ctx context.Context, sg *config.S
 	name := "grafana"
 	cm := configmap.NewConfigMap(name, sg.Namespace)
 	cm.Data = map[string]string{
-		"grafana.yml":     defaultConfig.String(),
+		"datasources.yml": defaultConfig.String(),
 		"extra_rules.yml": "",
 	}
 

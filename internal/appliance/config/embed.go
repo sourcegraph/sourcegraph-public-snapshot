@@ -7,7 +7,7 @@ import (
 var (
 	//go:embed postgres/*
 	//go:embed prometheus/default.yml.gotmpl
-	//go:embed grafana/datasources.yml.gotmpl
+	//go:embed grafana/default.yml.gotmpl
 	fs embed.FS
 
 	PgsqlConfig                     []byte
@@ -22,7 +22,7 @@ func init() {
 	CodeInsightsConfig = mustReadFile("postgres/codeinsights.conf")
 	PgsqlConfig = mustReadFile("postgres/pgsql.conf")
 	PrometheusDefaultConfigTemplate = mustReadFile("prometheus/default.yml.gotmpl")
-	GrafanaDefaultConfigTemplate = mustReadFile("grafana/datasources.yml.gotmpl")
+	GrafanaDefaultConfigTemplate = mustReadFile("grafana/default.yml.gotmpl")
 }
 
 func mustReadFile(name string) []byte {

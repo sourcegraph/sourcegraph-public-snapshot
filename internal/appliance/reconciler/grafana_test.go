@@ -5,6 +5,8 @@ func (suite *ApplianceTestSuite) TestDeployGrafana() {
 		name string
 	}{
 		{name: "grafana/default"},
+		{name: "grafana/with-replicas"},
+		{name: "grafana/with-existing-configmap"},
 	} {
 		suite.Run(tc.name, func() {
 			namespace := suite.createConfigMapAndAwaitReconciliation(tc.name)

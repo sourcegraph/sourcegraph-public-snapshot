@@ -10,4 +10,4 @@ datasources:
   - name: Jaeger
     type: Jaeger
     access: proxy
-    url: http://{{ default "jaeger-query" .Values.jaeger.query.name }}:16686/-/debug/jaeger
+    url: http://jaeger-query:16686/-/debug/jaeger
