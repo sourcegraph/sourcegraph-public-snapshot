@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"strconv"
 	"strings"
 
@@ -93,7 +94,7 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx, database.CredentialAuthenticatorOpts{
+	a, err := c.credential.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
 		Repo:           c.repo,
 		GitHubAppStore: c.ghStore,
 	})
@@ -117,14 +118,19 @@ func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
 }
 
 func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx, database.CredentialAuthenticatorOpts{
+	return c.credential.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
 		Repo:           c.repo,
 		GitHubAppStore: c.ghStore,
 	})
 }
 
+func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
+
+	repo    *types.Repo
+	ghStore ghstore.GitHubAppsStore
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
@@ -143,7 +149,10 @@ func (c *batchChangesSiteCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx)
+	a, err := c.credential.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+		Repo:           c.repo,
+		GitHubAppStore: c.ghStore,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "decrypting authenticator")
 	}
@@ -164,5 +173,10 @@ func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {
 }
 
 func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
+	return c.credential.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+		Repo:           c.repo,
+		GitHubAppStore: c.ghStore,
+	})
 }
+
+func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }

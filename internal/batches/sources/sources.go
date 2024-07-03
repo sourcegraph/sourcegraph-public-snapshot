@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -424,10 +425,7 @@ func withAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 // If no credential is found, the original source is returned and uses the external service
 // config.
 func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadSiteCredential(ctx, tx, store.GetSiteCredentialOpts{
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   repo.ExternalRepo.ServiceID,
-	})
+	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
 	}
@@ -503,7 +501,7 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx, database.CredentialAuthenticatorOpts{
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
 			Repo:           repo,
 			GitHubAppStore: s.GitHubAppsStore(),
 		})
@@ -513,13 +511,19 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 
 // loadSiteCredential attempts to find a site credential for the given repo.
 // When no credential is found, nil is returned.
-func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteCredentialOpts) (auth.Authenticator, error) {
-	cred, err := s.GetSiteCredential(ctx, opts)
+func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (auth.Authenticator, error) {
+	cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }

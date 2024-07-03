@@ -32,6 +32,7 @@ type GitHubAppAuthenticator struct {
 }
 
 var _ auth.Authenticator = (*GitHubAppAuthenticator)(nil)
+var _ auth.Authenticator = (*InstallationAuthenticator)(nil)
 
 // NewGitHubAppAuthenticator creates an Authenticator that can be used to authenticate requests
 // to the GitHub API as a GitHub App. It requires the GitHub App ID and RSA private key.
