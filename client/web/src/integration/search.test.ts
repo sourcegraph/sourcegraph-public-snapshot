@@ -352,7 +352,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
                     await driver.page.goto(
-                        driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=standard&case=yes&sm=0'
+                        driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=keyword&case=yes&sm=0'
                     )
                     const input = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
@@ -362,7 +362,7 @@ describe('Search', () => {
                         await input.focus()
                         await driver.page.keyboard.press(Key.Enter)
                     }
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&sm=0')
                 })
             })
         })
@@ -419,7 +419,7 @@ describe('Search', () => {
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)
                     }
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&sm=0')
                 })
             })
         })
