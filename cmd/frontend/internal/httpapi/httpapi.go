@@ -175,12 +175,11 @@ func NewHandler(
 	m.Path("/completions/stream").Methods("POST").Handler(handlers.NewChatCompletionsStreamHandler())
 	m.Path("/completions/code").Methods("POST").Handler(handlers.NewCodeCompletionsHandler())
 
-
-  // HTTP endpoints related to Cody client configuration.
+	// HTTP endpoints related to Cody client configuration.
 	clientConfigHandlers := clientconfig.NewHandlers(db, logger)
 	m.Path("/client-config").Methods("GET").HandlerFunc(clientConfigHandlers.GetClientConfigHandler)
 
-  // HTTP endpoints related to LLM model configuration.
+	// HTTP endpoints related to LLM model configuration.
 	modelConfigHandlers := modelconfig.NewHandlers(db, logger)
 	m.Path("/modelconfig/supported-models.json").Methods("GET").HandlerFunc(modelConfigHandlers.GetSupportedModelsHandler)
 
