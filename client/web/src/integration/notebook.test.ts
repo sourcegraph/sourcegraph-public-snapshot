@@ -6,6 +6,7 @@ import expect from 'expect'
 import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
@@ -88,6 +89,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     creator: { __typename: 'User', username: 'user1' },
     updater: { __typename: 'User', username: 'user1' },
     blocks,
+    patternType: SearchPatternType.standard,
 })
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {

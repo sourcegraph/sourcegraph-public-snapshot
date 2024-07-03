@@ -79,7 +79,7 @@ export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
-export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { SyntaxKind, Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 export { getModeFromPath } from '@sourcegraph/shared/src/languages'

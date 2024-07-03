@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
 )
@@ -136,7 +136,7 @@ func TestNewActor(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			now := time.Date(2024, 6, 3, 20, 3, 7, 0, time.FixedZone("PDT", -25200))
 			act := newActor(&Source{
-				concurrencyConfig: codygateway.ActorConcurrencyLimitConfig{
+				concurrencyConfig: codygatewayactor.ActorConcurrencyLimitConfig{
 					Percentage: 50,
 					Interval:   24 * time.Hour,
 				},

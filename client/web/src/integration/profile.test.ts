@@ -132,6 +132,7 @@ describe('User Different Settings Page', () => {
             ...commonWebGraphQlResults,
             UserExternalAccountsWithAccountData: () => ({
                 user: {
+                    id: 'u1',
                     __typename: 'User',
                     externalAccounts: {
                         __typename: 'ExternalAccountConnection',

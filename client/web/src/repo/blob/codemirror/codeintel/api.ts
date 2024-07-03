@@ -19,14 +19,10 @@ import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 import type { WebHoverOverlayProps } from '../../../../components/WebHoverOverlay'
 import { syntaxHighlight } from '../highlight'
-import {
-    contains,
-    interactiveOccurrenceAt,
-    positionAtCmPosition,
-    rangeToCmSelection,
-    closestOccurrenceByCharacter,
-} from '../occurrence-utils'
+import { contains, interactiveOccurrenceAt, positionAtCmPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isRegularEvent, locationToURL, positionToOffset } from '../utils'
+
+import { codeGraphData } from './occurrences'
 
 /**
  * Hover information received from a hover source.
@@ -147,7 +143,11 @@ export class CodeIntelAPIAdapter {
     }
 
     public getDefinition(state: EditorState, occurrence: Occurrence): Promise<Definition> {
-        const occurrences = state.facet(syntaxHighlight).occurrences
+        // Prefer precise occurrences, but fall back to syntax highlighting for locals
+        let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+        if (occurrences === undefined) {
+            occurrences = state.facet(syntaxHighlight).interactiveOccurrences
+        }
         const fromCache = this.definitionCache.get(occurrence)
         if (fromCache) {
             return fromCache
@@ -533,29 +533,15 @@ export function nextOccurrencePosition(
     direction: 'next' | 'previous' = 'next'
 ): number | null {
     const position = positionAtCmPosition(state.doc, from)
-    const table = state.facet(syntaxHighlight)
-    let occurrence = null
-    if (step === 'character') {
-        occurrence = closestOccurrenceByCharacter(
-            position.line,
-            table,
-            position,
-            direction === 'next'
-                ? occurrence => occurrence.range.start.isGreater(position)
-                : occurrence => occurrence.range.start.isSmaller(position)
-        )
-    } else {
-        const next = direction === 'next'
-        const start = position.line + (next ? 1 : -1)
-        const increment = next ? 1 : -1
 
-        for (let line = start; line >= 0 && line < table.lineIndex.length; line += increment) {
-            occurrence = closestOccurrenceByCharacter(line, table, position)
-            if (occurrence) {
-                break
-            }
-        }
+    // Use code graph data from the backend if it exists, otherwise
+    // fall back to syntax highlighting data
+    let occurrences = state.facet(codeGraphData).at(0)?.occurrenceIndex
+    if (occurrences === undefined) {
+        occurrences = state.facet(syntaxHighlight).interactiveOccurrences
     }
+
+    const occurrence = occurrences.next(position, step, direction)
     return occurrence ? positionToOffset(state.doc, occurrence.range.start) : null
 }
 

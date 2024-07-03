@@ -122,6 +122,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if err := r.reconcileGrafana(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile grafana: %w", err)
+	if err := r.reconcileJaeger(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile jaeger: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.

@@ -2033,30 +2033,6 @@ type Query {
     ): OrganizationInvitation!
 
     """
-    Search for users that opt-in to search autocomplete.
-    """
-    autocompleteMembersSearch(
-        """
-        The organization ID
-        """
-        organization: ID!
-        """
-        Return users whose usernames or display names match the query.
-        """
-        query: String!
-    ): [AutocompleteMemberSearchItem!]!
-
-    """
-    Get started organization summary
-    """
-    orgMembersSummary(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): OrgMembersSummary!
-
-    """
     Lists webhooks. Only available to site admins.
     If no kind is given, it returns all webhooks.
     If first is omitted, 20 items are returned
@@ -7138,49 +7114,6 @@ type OrganizationInvitation implements Node {
     """
     isVerifiedEmail: Boolean
 }
-"""
-Result user returned by invite members autocomplete search.
-"""
-type AutocompleteMemberSearchItem {
-    """
-    The unique ID for the user.
-    """
-    id: ID!
-    """
-    The user's username.
-    """
-    username: String!
-    """
-    The display name chosen by the user.
-    """
-    displayName: String
-    """
-    The URL of the user's avatar image.
-    """
-    avatarURL: String
-    """
-    If the user belongs to current Organization.
-    """
-    inOrg: Boolean
-}
-
-"""
-Result organization members count and pending invitations count.
-"""
-type OrgMembersSummary {
-    """
-    The unique ID for the Org.
-    """
-    id: ID!
-    """
-    Total number of members for the org.
-    """
-    membersCount: Int!
-    """
-    Total number of pending invites for the org.
-    """
-    invitesCount: Int!
-}
 
 """
 The recipient's possible responses to an invitation to join an organization as a member.
@@ -7562,6 +7495,11 @@ type CodyLLMConfiguration {
     Enable Cody clients to adjust context window based on the name of the chat model. If enabled, the chatModelMaxTokens value will be ignored.
     """
     smartContextWindow: String!
+    """
+    Disable Cody clients from using the new server-side config API. This is an escape-hatch for any issues
+    that may arise. This field will be removed in the future.
+    """
+    disableClientConfigAPI: Boolean!
     """
     Name of the model being used for fast chat.
     """

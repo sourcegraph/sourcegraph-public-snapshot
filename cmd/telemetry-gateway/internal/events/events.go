@@ -128,7 +128,8 @@ func NewPublishEventResult(event *telemetrygatewayv1.Event, err error, isRetryab
 	}
 }
 
-// Publish emits all events concurrently, up to 100 at a time for each call.
+// Publish emits all events concurrently, up to opts.ConcurrencyLimit at a time
+// for each call.
 func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) []PublishEventResult {
 	wg := pool.NewWithResults[PublishEventResult]().
 		WithMaxGoroutines(p.opts.ConcurrencyLimit) // limit each batch to some degree

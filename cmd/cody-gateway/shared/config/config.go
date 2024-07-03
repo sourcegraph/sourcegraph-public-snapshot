@@ -9,7 +9,7 @@ import (
 
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -69,8 +69,8 @@ type Config struct {
 
 	OpenTelemetry OpenTelemetryConfig
 
-	ActorConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
-	ActorRateLimitNotify        codygateway.ActorRateLimitNotifyConfig
+	ActorConcurrencyLimit       codygatewayactor.ActorConcurrencyLimitConfig
+	ActorRateLimitNotify        codygatewayactor.ActorRateLimitNotifyConfig
 	AutoFlushStreamingResponses bool
 	IdentifiersToLogFor         collections.Set[string]
 
@@ -311,6 +311,8 @@ func (c *Config) Load() {
 			google.Gemini15FlashLatest,
 			google.Gemini15ProLatest,
 			google.GeminiProLatest,
+			google.Gemini15Flash001,
+			google.Gemini15Pro001,
 			google.Gemini15Flash,
 			google.Gemini15Pro,
 			google.GeminiPro,

@@ -39,7 +39,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
-    __testing__isOpen: true,
 }
 
 describe('GlobalNavbar', () => {
@@ -68,8 +67,8 @@ describe('GlobalNavbar', () => {
             </MockedTestProvider>
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
-            codyItemType: 'dropdown',
-            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItemType: 'link',
+            codyItemLink: 'Cody /cody/chat',
         })
     })
 
@@ -82,7 +81,7 @@ describe('GlobalNavbar', () => {
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
             codyItemType: 'link',
-            codyItemLink: 'https://sourcegraph.com/cody',
+            codyItemLink: 'Cody https://sourcegraph.com/cody',
         })
     })
 
@@ -93,8 +92,8 @@ describe('GlobalNavbar', () => {
             </MockedTestProvider>
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
-            codyItemType: 'dropdown',
-            codyDropdownItems: ['Dashboard /cody/manage', 'Web Chat /cody/chat'],
+            codyItemType: 'link',
+            codyItemLink: 'Cody /cody/chat',
         })
     })
 
@@ -106,8 +105,8 @@ describe('GlobalNavbar', () => {
             </MockedTestProvider>
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
-            codyItemType: 'dropdown',
-            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItemType: 'link',
+            codyItemLink: 'Cody /cody/chat',
         })
     })
 
@@ -120,7 +119,7 @@ describe('GlobalNavbar', () => {
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
             codyItemType: 'link',
-            codyItemLink: '/cody/dashboard',
+            codyItemLink: 'Cody /cody/dashboard',
         })
     })
 
@@ -135,8 +134,8 @@ describe('GlobalNavbar', () => {
             </MockedTestProvider>
         )
         expect(describeNavBar(baseElement)).toEqual<NavBarTestDescription>({
-            codyItemType: 'dropdown',
-            codyDropdownItems: ['Dashboard /cody/dashboard', 'Web Chat /cody/chat'],
+            codyItemType: 'link',
+            codyItemLink: 'BrandLogo /cody/chat',
         })
     })
 
@@ -156,28 +155,16 @@ describe('GlobalNavbar', () => {
 })
 
 interface NavBarTestDescription {
-    codyItemType: 'none' | 'link' | 'dropdown'
+    codyItemType: 'none' | 'link'
     codyItemLink?: string
-    codyDropdownItems?: string[]
 }
 
 function describeNavBar(baseElement: HTMLElement): NavBarTestDescription {
-    const dropdownButton = baseElement.querySelector('button[aria-label="Show cody menu"]')
-    if (dropdownButton) {
-        const popover = baseElement.querySelector('[data-reach-menu-popover]')!
-        return {
-            codyItemType: 'dropdown',
-            codyDropdownItems: [...popover.querySelectorAll('a')].map(
-                item => `${item.textContent ?? ''} ${item.getAttribute('href') ?? ''}`
-            ),
-        }
-    }
-
     const item = baseElement.querySelector<HTMLAnchorElement>('a[href*="cody"]')
     return item
         ? {
               codyItemType: 'link',
-              codyItemLink: item?.getAttribute('href') ?? '',
+              codyItemLink: `${item.textContent} ${item.getAttribute('href') ?? ''}`,
           }
         : { codyItemType: 'none' }
 }

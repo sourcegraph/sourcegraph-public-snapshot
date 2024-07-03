@@ -129,7 +129,7 @@ resources:
       - apiGroups:
           - ""
         resources:
-          - configmap
+          - configmaps
         verbs:
           - get
       - nonResourceURLs:

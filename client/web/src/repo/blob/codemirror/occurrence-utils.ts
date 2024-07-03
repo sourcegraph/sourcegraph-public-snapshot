@@ -3,36 +3,8 @@ import { EditorSelection, type Text, type EditorState, type SelectionRange } fro
 import type { Range } from '@sourcegraph/extension-api-types'
 import { Occurrence, Position, Range as ScipRange, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
-import { CodeGraphData, codeGraphData } from './codeintel/occurrences'
-import { type HighlightIndex, syntaxHighlight } from './highlight'
-
-/**
- * Occurrences that are possibly interactive (i.e. they can have code intelligence).
- */
-const INTERACTIVE_OCCURRENCE_KINDS = new Set([
-    SyntaxKind.Identifier,
-    SyntaxKind.IdentifierBuiltin,
-    SyntaxKind.IdentifierConstant,
-    SyntaxKind.IdentifierMutableGlobal,
-    SyntaxKind.IdentifierParameter,
-    SyntaxKind.IdentifierLocal,
-    SyntaxKind.IdentifierShadowed,
-    SyntaxKind.IdentifierModule,
-    SyntaxKind.IdentifierFunction,
-    SyntaxKind.IdentifierFunctionDefinition,
-    SyntaxKind.IdentifierMacro,
-    SyntaxKind.IdentifierMacroDefinition,
-    SyntaxKind.IdentifierType,
-    SyntaxKind.IdentifierAttribute,
-])
-
-const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
-    if (!occurrence.kind) {
-        return false
-    }
-
-    return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
-}
+import { codeGraphData } from './codeintel/occurrences'
+import { syntaxHighlight } from './highlight'
 
 export function interactiveOccurrenceAt(state: EditorState, offset: number): Occurrence | undefined {
     const position = positionAtCmPosition(state.doc, offset)
@@ -40,60 +12,21 @@ export function interactiveOccurrenceAt(state: EditorState, offset: number): Occ
     // First we try to get an occurrence from the occurrences API
     const data = state.facet(codeGraphData)
     if (data.length > 0) {
-        return scipOccurrenceAtPosition(data, position)
+        // Arbitrarily choose the first set of code graph data
+        // because we have no good heuristics for selecting between
+        // multiple.
+        return data[0].occurrenceIndex.atPosition(position)
     }
 
     // Next we try to get an occurrence from syntax highlighting data.
-    const fromHighlighting = highlightingOccurrenceAtPosition(state, position)
-    if (fromHighlighting && isInteractiveOccurrence(fromHighlighting)) {
-        return fromHighlighting
+    const highlightingOccurrences = state.facet(syntaxHighlight).interactiveOccurrences
+    if (highlightingOccurrences.length > 0) {
+        return highlightingOccurrences.atPosition(position)
     }
 
     // If the syntax highlighting data is incomplete then we fallback to a
     // heursitic to infer the occurrence.
     return inferOccurrenceAtOffset(state, offset)
-}
-
-// Returns the occurrence at this position based on syntax highlighting data.
-// The highlighting data can come from Syntect (low-ish quality) or tree-sitter
-// (better quality). When we implement semantic highlighting in the future, the
-// highlighting data may come from precise indexers.
-function highlightingOccurrenceAtPosition(state: EditorState, position: Position): Occurrence | undefined {
-    const table = state.facet(syntaxHighlight)
-    for (
-        let index = table.lineIndex[position.line];
-        index !== undefined &&
-        index < table.occurrences.length &&
-        table.occurrences[index].range.start.line === position.line;
-        index++
-    ) {
-        const occurrence = table.occurrences[index]
-        if (occurrence.range.contains(position)) {
-            return occurrence
-        }
-    }
-    return undefined
-}
-
-// Returns the occurrence at this position based on data from the GraphQL occurrences API.
-function scipOccurrenceAtPosition(data: CodeGraphData[], position: Position): Occurrence | undefined {
-    for (const datum of data) {
-        // Binary search over the sorted, non-overlapping ranges.
-        const arr = datum.nonOverlappingOccurrences
-        let [low, high] = [0, arr.length]
-        while (low < high) {
-            const mid = Math.floor((low + high) / 2)
-            if (arr[mid].range.contains(position)) {
-                return arr[mid]
-            }
-            if (arr[mid].range.end.compare(position) < 0) {
-                low = mid + 1
-            } else {
-                high = mid
-            }
-        }
-    }
-    return undefined
 }
 
 // Returns the occurrence at this position based on CodeMirror's built-in
@@ -109,38 +42,6 @@ function inferOccurrenceAtOffset(state: EditorState, offset: number): Occurrence
         return undefined
     }
     return new Occurrence(cmSelectionToRange(state, identifier), SyntaxKind.Identifier)
-}
-
-// Returns the occurrence in the provided line number that is closest to the
-// provided position, compared by the character (not line). Returns undefined
-// when the line has no occurrences (for example, an empty string).
-export function closestOccurrenceByCharacter(
-    line: number,
-    table: HighlightIndex,
-    position: Position,
-    includeOccurrence?: (occurrence: Occurrence) => boolean
-): Occurrence | undefined {
-    const candidates: [Occurrence, number][] = []
-    let index = table.lineIndex[line] ?? -1
-    for (
-        ;
-        index >= 0 && index < table.occurrences.length && table.occurrences[index].range.start.line === line;
-        index++
-    ) {
-        const occurrence = table.occurrences[index]
-        if (!isInteractiveOccurrence(occurrence)) {
-            continue
-        }
-        if (includeOccurrence && !includeOccurrence(occurrence)) {
-            continue
-        }
-        candidates.push([occurrence, occurrence.range.characterDistance(position)])
-    }
-    candidates.sort(([, a], [, b]) => a - b)
-    if (candidates.length > 0) {
-        return candidates[0][0]
-    }
-    return undefined
 }
 
 function cmSelectionToRange(state: EditorState, selection: SelectionRange): ScipRange {
