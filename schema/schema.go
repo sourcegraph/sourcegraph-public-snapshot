@@ -796,16 +796,24 @@ type Dotcom struct {
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway   *CodyGateway   `json:"codyGateway,omitempty"`
 	CodyProConfig *CodyProConfig `json:"codyProConfig,omitempty"`
+	// EnterprisePortalEnableProxies description: Whether to enable Enterprise Portal auth proxies for site admins.
+	EnterprisePortalEnableProxies *bool `json:"enterprisePortal.enableProxies,omitempty"`
 	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
 	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// MinimumExternalAccountAgeExemptList description: A list of email addresses that are allowed to be exempted from the minimumExternalAccountAge requirement.
 	MinimumExternalAccountAgeExemptList []string `json:"minimumExternalAccountAgeExemptList,omitempty"`
-	// SamsClientID description: The clientID for SAMS instance.
+	// SamsClientID description: The clientID for SAMS production instance.
 	SamsClientID string `json:"sams.clientID,omitempty"`
-	// SamsClientSecret description: The clientSecret for SAMS instance.
+	// SamsClientSecret description: The clientSecret for SAMS production instance.
 	SamsClientSecret string `json:"sams.clientSecret,omitempty"`
-	// SamsServer description: The server URL for SAMS instance.
+	// SamsServer description: The server URL for SAMS production instance.
 	SamsServer string `json:"sams.server,omitempty"`
+	// SamsDevClientID description: The clientID for SAMS development instance.
+	SamsDevClientID string `json:"samsDev.clientID,omitempty"`
+	// SamsDevClientSecret description: The clientSecret for SAMS development instance.
+	SamsDevClientSecret string `json:"samsDev.clientSecret,omitempty"`
+	// SamsDevServer description: The server URL for SAMS development instance.
+	SamsDevServer string `json:"samsDev.server,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseCreationWebhook description: Slack webhook for when a license key is created.
