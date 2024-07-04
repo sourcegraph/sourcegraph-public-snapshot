@@ -105,7 +105,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 				externalServiceID:   cred.ExternalServiceID,
 				externalServiceType: cred.ExternalServiceType,
 			}
-			c.credsByIDType[t] = &batchChangesUserCredentialResolver{credential: cred}
+			c.credsByIDType[t] = &batchChangesUserCredentialResolver{credential: cred, ghStore: c.store.GitHubAppsStore()}
 		}
 		for _, cred := range siteCreds {
 			t := idType{
@@ -115,7 +115,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 			if _, ok := c.credsByIDType[t]; ok {
 				continue
 			}
-			c.credsByIDType[t] = &batchChangesSiteCredentialResolver{credential: cred}
+			c.credsByIDType[t] = &batchChangesSiteCredentialResolver{credential: cred, ghStore: c.store.GitHubAppsStore()}
 		}
 
 		if c.onlyWithoutCredential {

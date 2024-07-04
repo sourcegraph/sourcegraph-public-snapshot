@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,9 +43,9 @@ type UserCredential struct {
 func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID != 0 }
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context, opts ghauth.CreateAuthenticatorForCredentialOpts) (auth.Authenticator, error) {
 	if uc.IsGitHubApp() {
-		return uc.githubAppAuthenticator()
+		return ghauth.CreateAuthenticatorForCredential(ctx, uc.GitHubAppID, opts)
 	}
 
 	decrypted, err := uc.Credential.Decrypt(ctx)
@@ -60,16 +61,8 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 	return a, nil
 }
 
-func (uc *UserCredential) githubAppAuthenticator() (auth.Authenticator, error) {
-	return nil, errors.New("not implemented")
-}
-
 // SetAuthenticator encrypts and sets the authenticator within the user credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	if uc.IsGitHubApp() {
-		return nil
-	}
-
 	if uc.Credential == nil {
 		uc.Credential = NewUnencryptedCredential(nil)
 	}
