@@ -3,9 +3,10 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"strconv"
 	"strings"
+
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -124,7 +125,7 @@ func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
 
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
@@ -183,6 +184,6 @@ func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
 
 func (c *batchChangesSiteCredentialResolver) GitHubAppID() int { return c.credential.GitHubAppID }

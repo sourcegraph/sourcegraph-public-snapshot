@@ -12,6 +12,9 @@ func parseKind(s *string) (*ghtypes.GitHubAppKind, error) {
 		return nil, nil
 	}
 	switch strings.ToUpper(*s) {
+	case "SITE_CREDENTIAL":
+		kind := ghtypes.SiteCredentialGitHubAppKind
+		return &kind, nil
 	case "USER_CREDENTIAL":
 		kind := ghtypes.UserCredentialGitHubAppKind
 		return &kind, nil

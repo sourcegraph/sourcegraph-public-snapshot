@@ -135,8 +135,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	}
 
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
-	// User credentials are allowed to have multiple instances, so we ignore apps for that kind.
-	if domain == itypes.BatchesGitHubAppDomain && kind != ghtypes.UserCredentialGitHubAppKind {
+	if domain == itypes.BatchesGitHubAppDomain && kind == ghtypes.CommitSigningGitHubAppKind {
 		existingGHApp, err := s.GetByDomainAndKind(ctx, domain, kind, baseURL.String())
 		// An error is expected if no existing app was found, but we double-check that
 		// we didn't get a different, unrelated error
@@ -154,6 +153,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		RETURNING id`,
 		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	fmt.Println("inserted: ", id)
 	return id, err
 }
 
@@ -425,7 +425,7 @@ func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL st
 	return s.get(ctx, sqlf.Sprintf(`slug = %s AND %s`, slug, baseURLWhere(baseURL)))
 }
 
-// GetByDomain retrieves a GitHub App from the database by domain and base url
+// GetByDomainAndKind retrieves a GitHub App from the database by domain, kind and base url
 func (s *gitHubAppsStore) GetByDomainAndKind(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`domain = %s AND kind = %s AND %s`, domain, kind, baseURLWhere(baseURL)))
 }

@@ -3,14 +3,17 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
@@ -1860,6 +1863,8 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		username:               args.Username,
 		authenticationStrategy: as,
 		gitHubAppKind:          args.GitHubAppKind,
+		githubAppID:            args.GitHubAppID,
+		githubAppStore:         s.store.GitHubAppsStore(),
 	})
 	if err != nil {
 		return nil, err
@@ -1904,18 +1909,25 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 		return nil, ErrDuplicateCredential{}
 	}
 
+	fmt.Println("generateAuthenticatorForCredential ====>>>")
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
-		externalServiceType: args.ExternalServiceType,
-		externalServiceURL:  args.ExternalServiceURL,
-		credential:          args.Credential,
-		username:            args.Username,
+		externalServiceType:    args.ExternalServiceType,
+		externalServiceURL:     args.ExternalServiceURL,
+		credential:             args.Credential,
+		username:               args.Username,
+		gitHubAppKind:          args.GitHubAppKind,
+		githubAppID:            args.GitHubAppID,
+		authenticationStrategy: as,
+		githubAppStore:         s.store.GitHubAppsStore(),
 	})
+	fmt.Println("generateAuthenticatorForCredential returned err: ", err)
 	if err != nil {
 		return nil, err
 	}
 	cred := &btypes.SiteCredential{
 		ExternalServiceType: args.ExternalServiceType,
 		ExternalServiceID:   args.ExternalServiceURL,
+		GitHubAppID:         args.GitHubAppID,
 	}
 	if err := s.store.CreateSiteCredential(ctx, cred, a); err != nil {
 		return nil, err
@@ -1931,6 +1943,8 @@ type generateAuthenticatorForCredentialArgs struct {
 	username               *string
 	authenticationStrategy sources.AuthenticationStrategy
 	gitHubAppKind          ghtypes.GitHubAppKind
+	githubAppID            int
+	githubAppStore         ghstore.GitHubAppsStore
 }
 
 func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
@@ -1939,7 +1953,17 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	if err != nil {
 		return nil, err
 	}
-	if args.externalServiceType == extsvc.TypeBitbucketServer {
+
+	if args.authenticationStrategy == sources.AuthenticationStrategyGitHubApp {
+		fmt.Println("hehehehe")
+		auther, err := ghauth.CreateAuthenticatorForCredential(ctx, args.githubAppID, ghauth.CreateAuthenticatorForCredentialOpts{
+			GitHubAppStore: args.githubAppStore,
+		})
+		if err != nil {
+			return nil, err
+		}
+		a = auther
+	} else if args.externalServiceType == extsvc.TypeBitbucketServer {
 		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
 		username, err := s.FetchUsernameForBitbucketServerToken(ctx, args.externalServiceURL, args.externalServiceType, args.credential)
 		if err != nil {
@@ -1992,6 +2016,7 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	}
 
 	// Validate the newly created authenticator.
+	fmt.Println("username: ", *args.username)
 	if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
 		ExternalServiceID:   args.externalServiceURL,
 		ExternalServiceType: args.externalServiceType,
