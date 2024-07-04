@@ -1,7 +1,10 @@
 package codenav
 
 import (
+	"fmt"
 	"strings"
+
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -13,12 +16,15 @@ import (
 )
 
 // visibleUpload pairs an upload visible from the current target commit with the
-// current target path and position matched to the data within the underlying index.
+// current target path and a matcher to the data within the underlying index.
 type visibleUpload struct {
-	Upload                uploadsshared.CompletedUpload
-	TargetPath            core.RepoRelPath
-	TargetPosition        shared.Position
-	TargetPathWithoutRoot core.UploadRelPath
+	Upload        uploadsshared.CompletedUpload
+	TargetPath    core.RepoRelPath
+	TargetMatcher shared.Matcher
+}
+
+func (v *visibleUpload) TargetPathWithoutRoot() core.UploadRelPath {
+	return core.NewUploadRelPath(v.Upload, v.TargetPath)
 }
 
 type qualifiedMonikerSet struct {
@@ -71,6 +77,33 @@ type PositionalRequestArgs struct {
 	Path      core.RepoRelPath
 	Line      int
 	Character int
+}
+
+type OccurrenceRequestArgs struct {
+	RepositoryID api.RepoID
+	Path         core.RepoRelPath
+	Commit       api.CommitID
+	Limit        int
+	RawCursor    string
+	Matcher      shared.Matcher
+}
+
+func (args *OccurrenceRequestArgs) RequestArgs() RequestArgs {
+	return RequestArgs{
+		RepositoryID: args.RepositoryID,
+		Commit:       args.Commit,
+		Limit:        args.Limit,
+		RawCursor:    args.RawCursor,
+	}
+}
+
+func (args *OccurrenceRequestArgs) Attrs() []attribute.KeyValue {
+	return append(
+		[]attribute.KeyValue{
+			attribute.Int("repositoryID", int(args.RepositoryID)),
+			attribute.String("commit", string(args.Commit)),
+			attribute.Int("limit", args.Limit),
+		}, args.Matcher.Attrs()...)
 }
 
 func (args *PositionalRequestArgs) Attrs() []attribute.KeyValue {
@@ -132,10 +165,44 @@ type Cursor struct {
 }
 
 type CursorVisibleUpload struct {
-	UploadID              int             `json:"id"`
-	TargetPath            string          `json:"path"`
-	TargetPathWithoutRoot string          `json:"path_no_root"` // TODO - can store these differently?
-	TargetPosition        shared.Position `json:"pos"`          // TODO - inline
+	UploadID              int           `json:"id"`
+	TargetPath            string        `json:"path"`
+	TargetPathWithoutRoot string        `json:"path_no_root"` // TODO - can store these differently?
+	TargetMatcher         CursorMatcher `json:"mt"`
+}
+
+type CursorMatcher struct {
+	ExactSymbol string          `json:"sym"`
+	Start       shared.Position `json:"s"`
+	End         shared.Position `json:"e"`
+	HasEnd      bool            `json:"he"`
+}
+
+func (m CursorMatcher) ToShared() shared.Matcher {
+	if m.HasEnd {
+		return shared.NewSCIPBasedMatcher(scip.Range{m.Start.ToSCIP(), m.End.ToSCIP()}, m.ExactSymbol)
+	}
+	return shared.NewStartPositionMatcher(m.Start.ToSCIP())
+}
+
+func NewCursorMatcher(matcher shared.Matcher) CursorMatcher {
+	if sym, range_, ok := matcher.SymbolBased(); ok {
+		return CursorMatcher{
+			ExactSymbol: sym,
+			Start:       shared.NewPositionFromSCIP(range_.Start),
+			End:         shared.NewPositionFromSCIP(range_.End),
+			HasEnd:      true,
+		}
+	}
+	if pos, ok := matcher.PositionBased(); ok {
+		return CursorMatcher{
+			ExactSymbol: "",
+			Start:       shared.NewPositionFromSCIP(pos),
+			End:         shared.Position{},
+			HasEnd:      false,
+		}
+	}
+	panic(fmt.Sprintf("Unhandled case for matcher: %+v", matcher))
 }
 
 var exhaustedCursor = Cursor{Phase: "done"}

@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"strings"
 	"time"
 
@@ -28,16 +30,13 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      shared.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()

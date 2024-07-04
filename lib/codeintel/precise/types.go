@@ -119,14 +119,15 @@ type DocumentPathRangeID struct {
 // Loocation represents a range within a particular document relative to its
 // containing bundle.
 type LocationData struct {
-	// LocationData is currently used as an UploadRelPath elsewhere
+	// DocumentPath is currently used as an UploadRelPath elsewhere
 	// in the code, but not refactoring this because this type is used in a lot
 	// of places.
-	URI            string
+	DocumentPath   string
 	StartLine      int
 	StartCharacter int
 	EndLine        int
 	EndCharacter   int
+	Symbol         string
 }
 
 // MonikerLocations pairs a moniker scheme and identifier with the set of locations

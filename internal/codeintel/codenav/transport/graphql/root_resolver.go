@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -87,6 +89,23 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
+	reqState, err := r.makeRequestState(ctx, args, opts)
+	if err != nil || reqState == nil {
+		return
+	}
+
+	return newGitBlobLSIFDataResolver(
+		r.svc,
+		r.indexResolverFactory,
+		*reqState,
+		r.uploadLoaderFactory.Create(),
+		r.indexLoaderFactory.Create(),
+		r.locationResolverFactory.Create(),
+		r.operations,
+	), nil
+}
+
+func (r *rootResolver) makeRequestState(ctx context.Context, repo *types.Repo, opts shared.UploadMatchingOptions) (*codenav.RequestState, error) {
 	uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, opts)
 	if err != nil || len(uploads) == 0 {
 		return nil, err
@@ -97,23 +116,13 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		r.repoStore,
 		authz.DefaultSubRepoPermsChecker,
 		r.gitserverClient,
-		args.Repo,
-		args.Commit,
-		// OK to use Unchecked function based on contract of GraphQL API
-		core.NewRepoRelPathUnchecked(args.Path),
+		repo,
+		opts.Commit,
+		opts.Path,
 		r.maximumIndexesPerMonikerSearch,
 		r.hunkCache,
 	)
-
-	return newGitBlobLSIFDataResolver(
-		r.svc,
-		r.indexResolverFactory,
-		reqState,
-		r.uploadLoaderFactory.Create(),
-		r.indexLoaderFactory.Create(),
-		r.locationResolverFactory.Create(),
-		r.operations,
-	), nil
+	return &reqState, nil
 }
 
 func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.CodeGraphDataOpts) (_ *[]resolverstubs.CodeGraphDataResolver, err error) {
@@ -321,6 +330,49 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 
 func (r *rootResolver) MakeGitTreeTranslator(repo *sgtypes.Repo, baseCommit api.CommitID) codenav.GitTreeTranslator {
 	return codenav.NewGitTreeTranslator(r.gitserverClient, &codenav.TranslationBase{repo, baseCommit}, r.hunkCache)
+}
+
+// Pre-condition: 'args' must've been normalized before
+func (r *rootResolver) getPreciseUsages(ctx context.Context, svc CodeNavService, args *resolverstubs.UsagesForSymbolResolvedArgs) ([]usageResolver, error) {
+	remainingCount := int(args.RemainingCount)
+	cursor := args.Cursor.PreciseCursor
+
+	usagesCursor := args.Cursor
+	requestState, err := r.makeRequestState(ctx, &args.Repo, shared.UploadMatchingOptions{
+		RepositoryID:       int(args.Repo.ID),
+		Commit:             string(args.CommitID),
+		Path:               args.Path,
+		RootToPathMatching: shared.RootMustEnclosePath,
+	})
+	if err != nil || requestState == nil {
+		return nil, err
+	}
+
+	for {
+		requestArgs := codenav.PositionalRequestArgs{
+			RequestArgs: codenav.RequestArgs{
+				RepositoryID: int(args.Repo.ID),
+				Commit:       string(args.CommitID),
+				Limit:        remainingCount,
+				RawCursor:    encodeTraversalCursor(cursor),
+			},
+			Path:      args.Path,
+			Line:      int(args.Start.Line),
+			Character: int(args.Start.Character),
+		}
+		// Problems with these location APIs
+		// 1. It should take a range parameter, not a Position
+		// 2. It should return the SCIP symbol in the output
+		// 3. It should take
+
+		switch usagesCursor.PreciseCursorType {
+		case resolverstubs.DefinitionsCursor:
+			defLocs, nextCursor, err := svc.GetDefinitions(ctx, requestArgs, *requestState, args.Cursor.PreciseCursor)
+		case resolverstubs.ImplementationsCursor:
+		case resolverstubs.PrototypesCursor:
+		case resolverstubs.ReferencesCursor:
+		}
+	}
 }
 
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This

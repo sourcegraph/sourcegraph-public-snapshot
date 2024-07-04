@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"strings"
 	"time"
 
@@ -29,16 +30,13 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      codenav.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.implementations, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
@@ -86,16 +84,13 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        limit,
-			RawCursor:    rawCursor,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        limit,
+		RawCursor:    rawCursor,
+		Matcher:      codenav.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.prototypes, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()

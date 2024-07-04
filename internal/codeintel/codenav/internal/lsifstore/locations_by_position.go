@@ -77,7 +77,7 @@ outer:
 
 			locations = append(locations, shared.Location{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
@@ -114,32 +114,32 @@ SELECT
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
+	sid.upload_id = %d AND
 	sid.document_path = %s
 LIMIT 1
 `
 
 type extractedOccurrenceData struct {
-	definitions     []scip.Range
-	references      []scip.Range
-	implementations []scip.Range
-	prototypes      []scip.Range
+	definitions     []shared.UsageBuilder
+	references      []shared.UsageBuilder
+	implementations []shared.UsageBuilder
+	prototypes      []shared.UsageBuilder
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
+func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, occurrence).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
+func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, occurrence).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
+func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, occurrence).implementations
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []scip.Range {
+func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder {
 	return extractOccurrenceData(document, occurrence).prototypes
 }
 
@@ -147,16 +147,16 @@ func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []st
 	return extractOccurrenceData(document, occurrence).hoverText
 }
 
-func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) extractedOccurrenceData {
-	if occurrence.Symbol == "" {
+func extractOccurrenceData(document *scip.Document, lookupOccurrence *scip.Occurrence) extractedOccurrenceData {
+	if lookupOccurrence.Symbol == "" {
 		return extractedOccurrenceData{
-			hoverText: occurrence.OverrideDocumentation,
+			hoverText: lookupOccurrence.OverrideDocumentation,
 		}
 	}
 
 	var (
 		hoverText               []string
-		definitionSymbol        = occurrence.Symbol
+		definitionSymbol        = lookupOccurrence.Symbol
 		referencesBySymbol      = collections.NewSet[string]()
 		implementationsBySymbol = collections.NewSet[string]()
 		prototypeBySymbol       = collections.NewSet[string]()
@@ -166,10 +166,10 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// matches the given occurrence. This will give us additional symbol names that
 	// we should include in reference and implementation searches.
 
-	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbolHoverText(symbol)
+	if lookupSymbolInfo := scip.FindSymbol(document, lookupOccurrence.Symbol); lookupSymbolInfo != nil {
+		hoverText = symbolHoverText(lookupSymbolInfo)
 
-		for _, rel := range symbol.Relationships {
+		for _, rel := range lookupSymbolInfo.Relationships {
 			if rel.IsDefinition {
 				definitionSymbol = rel.Symbol
 			}
@@ -185,20 +185,20 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	for _, sym := range document.Symbols {
 		for _, rel := range sym.Relationships {
 			if rel.IsImplementation {
-				if rel.Symbol == occurrence.Symbol {
+				if rel.Symbol == lookupOccurrence.Symbol {
 					implementationsBySymbol.Add(sym.Symbol)
 				}
 			}
 		}
 	}
 
-	definitions := []scip.Range{}
-	references := []scip.Range{}
-	implementations := []scip.Range{}
-	prototypes := []scip.Range{}
+	definitions := []shared.UsageBuilder{}
+	references := []shared.UsageBuilder{}
+	implementations := []shared.UsageBuilder{}
+	prototypes := []shared.UsageBuilder{}
 
 	// Include original symbol names for reference search below
-	referencesBySymbol.Add(occurrence.Symbol)
+	referencesBySymbol.Add(lookupOccurrence.Symbol)
 
 	// For each occurrence that references one of the definition, reference, or
 	// implementation symbol names, extract and aggregate their source positions.
@@ -208,28 +208,28 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRangeUnchecked(occ.Range))
+			definitions = append(definitions, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
 		if !isDefinition && referencesBySymbol.Has(occ.Symbol) {
-			references = append(references, scip.NewRangeUnchecked(occ.Range))
+			references = append(references, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
 		if isDefinition && implementationsBySymbol.Has(occ.Symbol) && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRangeUnchecked(occ.Range))
+			implementations = append(implementations, shared.NewUsageBuilder(occ))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
 		if isDefinition && prototypeBySymbol.Has(occ.Symbol) {
-			prototypes = append(prototypes, scip.NewRangeUnchecked(occ.Range))
+			prototypes = append(prototypes, shared.NewUsageBuilder(occ))
 		}
 	}
 
 	// Override symbol documentation with occurrence documentation, if it exists
-	if len(occurrence.OverrideDocumentation) != 0 {
-		hoverText = occurrence.OverrideDocumentation
+	if len(lookupOccurrence.OverrideDocumentation) != 0 {
+		hoverText = lookupOccurrence.OverrideDocumentation
 	}
 
 	return extractedOccurrenceData{
@@ -258,20 +258,28 @@ func symbolHoverText(symbol *scip.SymbolInformation) []string {
 	return symbol.Documentation
 }
 
-func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
+// TODO(id: doc-N-traversals): Internally, these four methods all compute the same
+// exact raw data, and then they throw away most of the data. For example, the definition
+// extraction logic will waste cycles by getting information about implementations.
+//
+// Additionally, AFAICT, each function will do a separate read of the document
+// from the database and unmarshal it. This means that for the ref panel,
+// we will unmarshal the same Protobuf document at least four times. :facepalm:
+
+func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getDefinitionLocations, extractDefinitionRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractReferenceRanges, symbolExtractDefault, s.operations.getReferenceLocations, locationKey)
+func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getReferenceLocations, extractReferenceRanges, symbolExtractDefault)
 }
 
-func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractImplementations, s.operations.getImplementationLocations, locationKey)
+func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getImplementationLocations, extractImplementationRanges, symbolExtractImplementations)
 }
 
-func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractPrototypesRanges, symbolExtractPrototype, s.operations.getPrototypesLocations, locationKey)
+func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, key FindUsagesKey) (_ []shared.UsageBuilder, _ []string, err error) {
+	return s.extractRelatedUsagesAndSymbolNames(ctx, key, s.operations.getPrototypesLocations, extractPrototypesRanges, symbolExtractPrototype)
 }
 
 func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
@@ -315,60 +323,104 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 //
 //
 
-func (s *store) extractLocationsFromPosition(
+// TODO(id: doc-N-traversals): Since this API is used in a limited number of ways,
+// take some basic 'strategy' enums and implement the logic for extraction here
+// so we can avoid multiple document traversals.
+
+// extractRelatedUsagesAndSymbolNames uses findUsagesKey to identify a
+// position/range/symbol within a single SCIP Document and returns the usages
+// and a set of related symbols in that document associated with the findUsagesKey,
+// based on the extraction functions.
+func (s *store) extractRelatedUsagesAndSymbolNames(
 	ctx context.Context,
-	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []scip.Range,
-	extractSymbolNames func(document *scip.Document, symbolName string) []string,
+	findUsagesKey FindUsagesKey,
 	operation *observation.Operation,
-	locationKey LocationKey,
-) (_ []shared.Location, _ []string, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", locationKey.UploadID),
-		attribute.String("path", locationKey.Path.RawValue()),
-		attribute.Int("line", locationKey.Line),
-		attribute.Int("character", locationKey.Character),
-	}})
+	extractUsages func(document *scip.Document, occurrence *scip.Occurrence) []shared.UsageBuilder,
+	extractRelatedSymbolNames func(document *scip.Document, symbolName string) []string,
+) (_ []shared.UsageBuilder, _ []string, err error) {
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: append([]attribute.KeyValue{
+		attribute.Int("uploadID", findUsagesKey.UploadID),
+		attribute.String("path", findUsagesKey.Path.RawValue()),
+	}, findUsagesKey.Matcher.Attrs()...)})
 	defer endObservation(1, observation.Args{})
 
 	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		locationsDocumentQuery,
-		locationKey.UploadID,
-		locationKey.Path.RawValue(),
+		findUsagesKey.UploadID,
+		findUsagesKey.Path,
 	)))
 	if err != nil || !exists {
 		return nil, nil, err
 	}
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(locationKey.Line), int32(locationKey.Character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	occurrencesMatchingLookupKey, matchKind := findUsagesKey.IdentifyMatchingOccurrences(documentData.SCIPData.Occurrences)
 
-	var locations []shared.Location
-	var symbols []string
-	for _, occurrence := range occurrences {
-		if ranges := extractRanges(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path)...)
-		}
+	trace.AddEvent("IdentifyMatchingOccurrences",
+		attribute.Int("numDocumentOccurrences", len(documentData.SCIPData.Occurrences)),
+		attribute.Int("numMatchingOccurrences", len(occurrencesMatchingLookupKey)),
+		attribute.String("matchingKind", string(matchKind)))
 
-		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			symbols = append(symbols, extractSymbolNames(documentData.SCIPData, occurrence.Symbol)...)
+	if len(occurrencesMatchingLookupKey) == 0 {
+		return nil, nil, nil
+	}
+
+	// relatedUsages may contain different kinds of usages depending
+	// on the extraction functions
+	var relatedUsages []shared.UsageBuilder
+	relatedSymbols := collections.NewSet[string]()
+
+	for _, matchingOccurrence := range occurrencesMatchingLookupKey {
+		// TODO(id: doc-N-traversals): Optimize this to do a single pass instead of
+		// one pass per matching occurrence. Also, we shouldn't need one traversal
+		// for an occurrence and one for symbol names, just zero-or-one traversal for the
+		// occurrences and zero-or-one traversal over the symbol information.
+		//
+		// In practice, this loop will only go through 1 iteration in the vast majority
+		// of cases, since one source range will generally have a def/ref for a single symbol,
+		// so this doesn't need to be fixed urgently.
+		relatedUsages = append(relatedUsages,
+			extractUsages(documentData.SCIPData, matchingOccurrence)...)
+
+		// QUESTION(id: stronger-doc-canonicalization): Should we strip out occurrences
+		// with empty symbol names during canonicalization? Such occurrences will
+		// not be targetable by code navigation. This will require a DB migration.
+		//
+		// NOTE: For local symbols, we know that we will not need to perform any
+		// lookups in other documents. So skip the symbol extraction logic instead
+		// of having each caller do the skipping in extractRelatedSymbolNames.
+		if matchingOccurrence.Symbol != "" && !scip.IsLocalSymbol(matchingOccurrence.Symbol) {
+			relatedSymbols.Add(extractRelatedSymbolNames(documentData.SCIPData, matchingOccurrence.Symbol)...)
 		}
 	}
 
-	// We only need to deduplicate by the range, since all location objects share the same path and uploadID.
-	return collections.DeduplicateBy(locations, uniqueByRange), collections.Deduplicate(symbols), nil
-}
+	switch matchKind {
+	case SinglePositionBasedMatching:
+		// When using matching using a single position, we may get a set of overlapping
+		// occurrences, all for the same source range. In that case, we don't care about
+		// the symbol data, so we de-duplicate the objects purely based on source range.
+		//
+		// So if there are multiple symbols for the same range, then only one will be used.
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.RangeKey)
+	case RangeBasedMatching:
+		// When using range-based exact matching, we already know that the ranges for
+		// all the occurrences must be equal. So we don't need to deduplicate based on
+		// that. However, we need to maintain different objects for different symbol
+		// names and roles.
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.SymbolAndRoleKey)
+		//return collections.DeduplicateBy(relatedOccurrences, uniqueBySymbolNameAndRole), collections.Deduplicate(relatedSymbols), nil
+	case RangeAndSymbolBasedMatching:
+		relatedUsages = collections.DeduplicateBy(relatedUsages, shared.UsageBuilder.SymbolRoleKey)
+	}
 
-func uniqueByRange(l shared.Location) [4]int {
-	return [4]int{l.Range.Start.Line, l.Range.Start.Character, l.Range.End.Character}
+	return relatedUsages, collections.SortedSetValues(relatedSymbols), nil
 }
 
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, usageKind shared.UsageKind, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Usage, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
+		attribute.String("tableName", usageKind.TableName()),
 		attribute.Int("numUploadIDs", len(uploadIDs)),
 		attribute.IntSlice("uploadIDs", uploadIDs),
 		attribute.Int("numMonikers", len(monikers)),
@@ -397,7 +449,7 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
-	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
+	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(usageKind.TableName(), "s"))
 	query := sqlf.Sprintf(
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
@@ -425,7 +477,7 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		max = limit
 	}
 
-	locations := make([]shared.Location, 0, max)
+	locations := make([]shared.Usage, 0, max)
 outer:
 	for _, monikerLocations := range locationData {
 		for _, row := range monikerLocations.Locations {
@@ -434,10 +486,12 @@ outer:
 				continue
 			}
 
-			locations = append(locations, shared.Location{
+			locations = append(locations, shared.Usage{
 				UploadID: monikerLocations.UploadID,
-				Path:     core.NewUploadRelPathUnchecked(row.URI),
+				Path:     core.NewUploadRelPathUnchecked(row.DocumentPath),
 				Range:    shared.NewRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				Symbol:   row.Symbol,
+				Kind:     usageKind,
 			})
 
 			if len(locations) >= limit {
@@ -456,7 +510,8 @@ WITH RECURSIVE
 SELECT
 	ss.upload_id,
 	%s,
-	document_path
+	document_path,
+	msn.symbol_name
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
 JOIN matching_symbol_names msn ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id

@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"strings"
 	"time"
 
@@ -15,15 +16,14 @@ const DefaultDefinitionsPageSize = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
-			Limit:        DefaultDefinitionsPageSize,
-		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+	requestArgs := codenav.OccurrenceRequestArgs{
+		RepositoryID: r.requestState.RepositoryID,
+		Commit:       r.requestState.Commit,
+		Path:         r.requestState.Path,
+		Limit:        DefaultDefinitionsPageSize,
+		// Cursor is zero value as this API has historically not supported pagination.
+		RawCursor: "",
+		Matcher:   codenav.NewStartPositionMatcher(scip.Position{Line: args.Line, Character: args.Character}),
 	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{Attrs: requestArgs.Attrs()})
 	defer endObservation()

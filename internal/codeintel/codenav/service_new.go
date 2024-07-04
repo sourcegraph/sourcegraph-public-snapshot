@@ -17,90 +17,96 @@ import (
 
 func (s *Service) GetDefinitions(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
+		shared.UsageKindDefinition,  // tableName
 		false,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
+		LocationExtractorNamedFunc{shared.UsageKindDefinition, s.lsifstore.ExtractDefinitionLocationsFromPosition},
 	)
 }
 
 func (s *Service) GetReferences(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getReferences, // operation
-		"references",               // tableName
+		shared.UsageKindReference,  // tableName
 		true,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractReferenceLocationsFromPosition),
+		LocationExtractorNamedFunc{shared.UsageKindReference, s.lsifstore.ExtractReferenceLocationsFromPosition},
 	)
 }
 
 func (s *Service) GetImplementations(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getImplementations, // operation
-		"implementations",               // tableName
+		shared.UsageKindImplementation,  // tableName
 		true,                            // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractImplementationLocationsFromPosition),
+		LocationExtractorNamedFunc{shared.UsageKindImplementation, s.lsifstore.ExtractImplementationLocationsFromPosition},
 	)
 }
 
 func (s *Service) GetPrototypes(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
+) (_ []shared.UploadUsage, nextCursor Cursor, err error) {
 	return s.gatherLocations(
 		ctx, args, requestState, cursor,
 		s.operations.getPrototypes, // operation
-		"definitions",              // N.B.: we're looking for definitions of interfaces
+		shared.UsageKindSuper,      // N.B.: we're looking for definitions of interfaces
 		false,                      // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractPrototypeLocationsFromPosition),
+		LocationExtractorNamedFunc{shared.UsageKindSuper, s.lsifstore.ExtractPrototypeLocationsFromPosition},
 	)
 }
 
 type LocationExtractor interface {
-	// Extract converts a location key (a location within a particular index's text document) into a
-	// set of locations within _that specific document_ related to the symbol at that position, as well
+	// Extract converts a key (an object that can match a small part of a Document) into a
+	// set of Usages within _that specific document_ related to the symbol at that position, as well
 	// as the set of related symbol names that should be searched in other indexes for a complete result
 	// set.
 	//
 	// The relationship between symbols is implementation specific.
-	Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
+	//
+	// The return usages will all have Path == key.Path and UploadID == key.UploadID
+	Extract(ctx context.Context, key lsifstore.FindUsagesKey) ([]shared.Usage, []string, error)
 }
 
-type LocationExtractorFunc func(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
+type LocationExtractorNamedFunc struct {
+	Kind shared.UsageKind
+	Func func(context.Context, lsifstore.FindUsagesKey) ([]shared.UsageBuilder, []string, error)
+}
 
-func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error) {
-	return f(ctx, locationKey)
+func (f LocationExtractorNamedFunc) Extract(ctx context.Context, key lsifstore.FindUsagesKey) ([]shared.Usage, []string, error) {
+	builders, symbols, err := f.Func(ctx, key)
+	return shared.BuildUsages(builders, key.UploadID, key.Path, f.Kind), symbols, err
 }
 
 func (s *Service) gatherLocations(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 	operation *observation.Operation,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	extractor LocationExtractor,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
+) (allOccurrences []shared.UploadUsage, _ Cursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold,
 		observation.Args{Attrs: observation.MergeAttributes(args.Attrs(), requestState.Attrs()...)})
 	defer endObservation()
@@ -146,44 +152,45 @@ func (s *Service) gatherLocations(
 outer:
 	for cursor.Phase != "done" {
 		for _, gatherLocations := range []gatherLocationsFunc{s.gatherLocalLocations, s.gatherRemoteLocationsShim} {
-			trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
+			trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allOccurrences)))
 
-			if len(allLocations) >= args.Limit {
+			if len(allOccurrences) >= args.Limit {
 				// we've filled our page, exit with current results
 				break outer
 			}
 
-			var locations []shared.UploadLocation
+			var occurrences []shared.UploadUsage
 
 			// N.B.: cursor is purposefully re-assigned here
-			locations, cursor, err = gatherLocations(
+			occurrences, cursor, err = gatherLocations(
 				ctx,
 				trace,
-				args.RequestArgs,
+				args.RequestArgs(),
 				requestState,
-				tableName,
+				usageKind,
 				includeReferencingIndexes,
 				cursor,
-				args.Limit-len(allLocations), // remaining space in the page
+				args.Limit-len(allOccurrences), // remaining space in the page
 				extractor,
 				visibleUploads,
 			)
 			if err != nil {
 				return nil, Cursor{}, err
 			}
-			allLocations = append(allLocations, locations...)
+			allOccurrences = append(allOccurrences, occurrences...)
 		}
 	}
 
-	return allLocations, cursor, nil
+	return allOccurrences, cursor, nil
 }
 
 func (s *Service) getVisibleUploadsFromCursor(
 	ctx context.Context,
-	args PositionalRequestArgs,
+	args OccurrenceRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 ) ([]visibleUpload, Cursor, error) {
+
 	if cursor.VisibleUploads != nil {
 		visibleUploads := make([]visibleUpload, 0, len(cursor.VisibleUploads))
 		for _, u := range cursor.VisibleUploads {
@@ -194,17 +201,16 @@ func (s *Service) getVisibleUploadsFromCursor(
 
 			// OK to use Unchecked functions at ~serialization boundary for simplicity.
 			visibleUploads = append(visibleUploads, visibleUpload{
-				Upload:                upload,
-				TargetPath:            core.NewRepoRelPathUnchecked(u.TargetPath),
-				TargetPosition:        u.TargetPosition,
-				TargetPathWithoutRoot: core.NewUploadRelPathUnchecked(u.TargetPathWithoutRoot),
+				Upload:        upload,
+				TargetPath:    core.NewRepoRelPathUnchecked(u.TargetPath),
+				TargetMatcher: u.TargetMatcher.ToShared(),
 			})
 		}
 
 		return visibleUploads, cursor, nil
 	}
 
-	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	visibleUploads, err := s.getVisibleUploads(ctx, args.Matcher, requestState)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
@@ -212,10 +218,9 @@ func (s *Service) getVisibleUploadsFromCursor(
 	cursorVisibleUpload := make([]CursorVisibleUpload, 0, len(visibleUploads))
 	for i := range visibleUploads {
 		cursorVisibleUpload = append(cursorVisibleUpload, CursorVisibleUpload{
-			UploadID:              visibleUploads[i].Upload.ID,
-			TargetPath:            visibleUploads[i].TargetPath.RawValue(),
-			TargetPosition:        visibleUploads[i].TargetPosition,
-			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot.RawValue(),
+			UploadID:      visibleUploads[i].Upload.ID,
+			TargetPath:    visibleUploads[i].TargetPath.RawValue(),
+			TargetMatcher: NewCursorMatcher(visibleUploads[i].TargetMatcher),
 		})
 	}
 
@@ -228,13 +233,13 @@ type gatherLocationsFunc func(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
 	extractor LocationExtractor,
 	visibleUploads []visibleUpload,
-) ([]shared.UploadLocation, Cursor, error)
+) ([]shared.UploadUsage, Cursor, error)
 
 const skipPrefix = "lsif ."
 
@@ -243,13 +248,13 @@ func (s *Service) gatherLocalLocations(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	_ shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
 	extractor LocationExtractor,
 	visibleUploads []visibleUpload,
-) (allLocations []shared.UploadLocation, _ Cursor, _ error) {
+) (allLocations []shared.UploadUsage, _ Cursor, _ error) {
 	if cursor.Phase != "local" {
 		// not our turn
 		return nil, cursor, nil
@@ -287,19 +292,20 @@ func (s *Service) gatherLocalLocations(
 		// Gather response locations directly from the document containing the
 		// target position. This may also return relevant symbol names that we
 		// collect for a remote search.
-		locations, symbolNames, err := extractor.Extract(
+		usages, symbolNames, err := extractor.Extract(
 			ctx,
-			lsifstore.LocationKey{
-				UploadID:  visibleUpload.Upload.ID,
-				Path:      visibleUpload.TargetPathWithoutRoot,
-				Line:      visibleUpload.TargetPosition.Line,
-				Character: visibleUpload.TargetPosition.Character,
+			lsifstore.FindUsagesKey{
+				UploadID: visibleUpload.Upload.ID,
+				Path:     visibleUpload.TargetPathWithoutRoot(),
+				Matcher:  visibleUpload.TargetMatcher,
 			},
 		)
+		// Attach the upload ID, TargetPath and def/ref information here?
+
 		if err != nil {
 			return nil, Cursor{}, err
 		}
-		trace.AddEvent("ReadDocument", attribute.Int("numLocations", len(locations)), attribute.Int("numSymbolNames", len(symbolNames)))
+		trace.AddEvent("ReadDocument", attribute.Int("numLocations", len(usages)), attribute.Int("numSymbolNames", len(symbolNames)))
 
 		// remaining space in the page
 		pageLimit := limit - len(allLocations)
@@ -307,19 +313,19 @@ func (s *Service) gatherLocalLocations(
 		// Perform pagination on this level instead of in lsifstore; we bring back the
 		// raw SCIP document payload anyway, so there's no reason to hide behind the API
 		// that it's doing that amount of work.
-		totalCount := len(locations)
-		locations = pageSlice(locations, pageLimit, cursor.LocalLocationOffset)
+		totalCount := len(usages)
+		usages = pageSlice(usages, pageLimit, cursor.LocalLocationOffset)
 
 		// adjust cursor offset for next page
-		cursor = cursor.BumpLocalLocationOffset(len(locations), totalCount)
+		cursor = cursor.BumpLocalLocationOffset(len(usages), totalCount)
 
 		// consume locations
-		if len(locations) > 0 {
+		if len(usages) > 0 {
 			adjustedLocations, err := s.getUploadLocations(
 				ctx,
 				args,
 				requestState,
-				locations,
+				usages,
 				true,
 			)
 			if err != nil {
@@ -330,7 +336,7 @@ func (s *Service) gatherLocalLocations(
 			// Stash paths with non-empty locations in the cursor so we can prevent
 			// local and "remote" searches from returning duplicate sets of of target
 			// ranges.
-			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot.RawValue()
+			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot().RawValue()
 		}
 
 		// stash relevant symbol names in cursor
@@ -353,20 +359,20 @@ func (s *Service) gatherRemoteLocationsShim(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
 	_ LocationExtractor,
 	_ []visibleUpload,
-) ([]shared.UploadLocation, Cursor, error) {
+) ([]shared.UploadUsage, Cursor, error) {
 	return s.gatherRemoteLocations(
 		ctx,
 		trace,
 		args,
 		requestState,
 		cursor,
-		tableName,
+		usageKind,
 		includeReferencingIndexes,
 		limit,
 	)
@@ -378,10 +384,10 @@ func (s *Service) gatherRemoteLocations(
 	args RequestArgs,
 	requestState RequestState,
 	cursor Cursor,
-	tableName string,
+	usageKind shared.UsageKind,
 	includeReferencingIndexes bool,
 	limit int,
-) ([]shared.UploadLocation, Cursor, error) {
+) ([]shared.UploadUsage, Cursor, error) {
 	if cursor.Phase != "remote" {
 		// not our turn
 		return nil, cursor, nil
@@ -428,7 +434,7 @@ func (s *Service) gatherRemoteLocations(
 	}
 	locations, totalCount, err := s.lsifstore.GetMinimalBulkMonikerLocations(
 		ctx,
-		tableName,
+		usageKind,
 		cursor.UploadIDs,
 		cursor.SkipPathsByUploadID,
 		monikerArgs,
@@ -535,7 +541,7 @@ func (s *Service) prepareCandidateUploads(
 	}
 
 	// Hydrate upload records into the request state data loader. This must be called prior
-	// to the invocation of getUploadLocation, which will silently throw out records belonging
+	// to the invocation of getUploadUsage, which will silently throw out records belonging
 	// to uploads that have not yet fetched from the database. We've assumed that the data loader
 	// is consistently up-to-date with any extant upload identifier reference.
 	//
