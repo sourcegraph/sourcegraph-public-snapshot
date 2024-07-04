@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//dev/sg/internal/std",
         "//dev/sg/root",
+        "//lib/errors",
         "@com_github_google_uuid//:uuid",
         "@org_modernc_sqlite//:sqlite",
         "@org_modernc_sqlite//lib",
