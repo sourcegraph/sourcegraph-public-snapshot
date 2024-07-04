@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/accessrequest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
