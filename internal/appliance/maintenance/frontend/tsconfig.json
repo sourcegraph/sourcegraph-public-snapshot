@@ -1,25 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "target": "es2022",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "node",
     "resolveJsonModule": true,
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "strict": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "exclude": ["node_modules", "esbuild.cjs"],
+  "include": ["src", "types/**/*", ".storybook/**/*.ts", ".storybook/**/*.tsx"]
 }

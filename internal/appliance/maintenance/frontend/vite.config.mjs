@@ -1,5 +1,7 @@
 import react from '@vitejs/plugin-react'
+import { searchForWorkspaceRoot } from 'vite'
 import { defineConfig } from 'vite'
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 const devVersion = `v0.0.${Math.floor(Date.now() / 1000 - 1703122377)}`
 
@@ -11,6 +13,11 @@ export default defineConfig({
             '/api': {
                 target: 'http://127.0.0.1:8888',
             },
+        },
+    },
+    resolve: {
+        alias: {
+            '@sourcegraph/tsconfig': "xxxxxxxxxxxxxxxxxxxxxxx",
         },
     },
     plugins: [react()],
