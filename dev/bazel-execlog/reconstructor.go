@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"io"
 	"path"
+	"slices"
 
 	"google.golang.org/protobuf/encoding/protodelim"
 
@@ -100,6 +102,9 @@ func (slr *SpawnLogReconstructor) reconstructSpawn(s *proto.ExecLogEntry_Spawn) 
 		spawnInputs = append(spawnInputs, file)
 	}
 	se.Inputs = spawnInputs
+	slices.SortFunc(se.Inputs, func(a, b *proto.File) int {
+		return cmp.Compare(a.Path, b.Path)
+	})
 
 	// Handle outputs
 	var listedOutputs []string

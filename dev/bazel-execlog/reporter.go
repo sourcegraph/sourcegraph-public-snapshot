@@ -9,17 +9,23 @@ import (
 
 type DiffReporter struct {
 	path  cmp.Path
-	diffs []string
+	lines []string
 }
 
 func (r *DiffReporter) PushStep(ps cmp.PathStep) {
+	// fmt.Println("descending into", ps.String())
 	r.path = append(r.path, ps)
 }
 
 func (r *DiffReporter) Report(rs cmp.Result) {
 	if !rs.Equal() {
 		vx, vy := r.path.Last().Values()
-		r.diffs = append(r.diffs, fmt.Sprintf("%#v:\n\t-: %+v\n\t+: %+v\n", r.path, vx, vy))
+		// format based on type
+		r.lines = append(r.lines, "-"+strings.Repeat("  ", len(r.path))+r.path.Last().String()+": "+fmt.Sprintf("%+v", vx))
+		r.lines = append(r.lines, "+"+strings.Repeat("  ", len(r.path))+r.path.Last().String()+": "+fmt.Sprintf("%+v", vy))
+	} else if !rs.ByIgnore() {
+		vx, _ := r.path.Last().Values()
+		r.lines = append(r.lines, strings.Repeat("  ", len(r.path))+r.path.Last().String()+": "+fmt.Sprintf("%+v", vx))
 	}
 }
 
@@ -28,5 +34,5 @@ func (r *DiffReporter) PopStep() {
 }
 
 func (r *DiffReporter) String() string {
-	return strings.Join(r.diffs, "\n")
+	return strings.Join(r.lines, "\n")
 }

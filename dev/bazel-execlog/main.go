@@ -58,25 +58,28 @@ func main() {
 		newTargetSpawns[exec.TargetLabel] = append(newTargetSpawns[exec.TargetLabel], exec)
 	}
 
-	newOnly := newTargetSpawns.Minus(oldTargetSpawns)
-	oldOnly := oldTargetSpawns.Minus(newTargetSpawns)
+	// newOnly := newTargetSpawns.Minus(oldTargetSpawns)
+	// oldOnly := oldTargetSpawns.Minus(newTargetSpawns)
 
 	opts := cmpopts.IgnoreUnexported(proto.SpawnExec{}, proto.EnvironmentVariable{}, proto.Platform{}, proto.Platform_Property{}, proto.File{}, proto.Digest{}, proto.SpawnMetrics{}, durationpb.Duration{}, timestamppb.Timestamp{})
 
-	for _, v := range newOnly {
-		fmt.Println(cmp.Diff(v, nil, opts))
-	}
-	for _, v := range oldOnly {
-		fmt.Println(cmp.Diff(nil, v, opts))
-	}
+	// for _, v := range newOnly {
+	// 	fmt.Println(cmp.Diff(v, nil, opts))
+	// }
+	// for _, v := range oldOnly {
+	// 	fmt.Println(cmp.Diff(nil, v, opts))
+	// }
 
+	oldShared, newShared := oldTargetSpawns.Intersection(newTargetSpawns)
 	// cmp.Comparer(func(t1, t2 map[string][]*proto.SpawnExec) bool {
 	// 	return false
 	// })
 
 	// fmt.Println(len(oldTargetSpawns), len(newTargetSpawns))
 
-	// if diff := cmp.Diff(oldTargetSpawns, newTargetSpawns, cmpopts.IgnoreUnexported(proto.SpawnExec{}, proto.EnvironmentVariable{}, proto.Platform{}, proto.Platform_Property{}, proto.File{}, proto.Digest{}, proto.SpawnMetrics{}, durationpb.Duration{}, timestamppb.Timestamp{})); diff != "" {
-	// 	fmt.Println(diff)
-	// }
+	reporter := &DiffReporter{}
+	if diff := cmp.Diff(oldShared, newShared, opts, cmp.Reporter(reporter)); diff != "" {
+		// fmt.Println(diff)
+		fmt.Println(reporter.String())
+	}
 }
