@@ -63,19 +63,16 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
 
-	repoId := 20
-	repoName := "github.com/syntactic/usages"
-	repo := types.Repo{
-		ID:   api.RepoID(repoId),
-		Name: api.RepoName(repoName),
+	testRepo := types.Repo{
+		ID:   api.RepoID(20),
+		Name: api.RepoName("github.com/syntactic/usages"),
 	}
-
 	pathToRequestSymbol := "path/to/request/symbol.java"
 	pathToOccurrence := "path/to/occurrence.java"
-	commit := "deadbeef"
-	uploadID := 42
-	symbolRange := scip.NewRangeUnchecked([]int32{1, 0, 16})
-	symbolString := "scip-syntax . . . actualOccurrence#"
+	testCommit := "deadbeef"
+	testUploadId := 42
+	testSymbolRange := scip.NewRangeUnchecked([]int32{1, 0, 16})
+	testSymbolString := "scip-syntax . . . actualOccurrence#"
 	symbolFile := "\nactualOccurrence"
 	actualOccurrenceRange := result.Range{
 		Start: result.Location{0, 10, 1},
@@ -93,7 +90,7 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 	}
 	scipLocalRange, _ := scipFromResultRange(localRange)
 
-	mockRepoStore.GetReposSetByIDsFunc.SetDefaultReturn(map[api.RepoID]*types.Repo{api.RepoID(repoId): &repo}, nil)
+	mockRepoStore.GetReposSetByIDsFunc.SetDefaultReturn(map[api.RepoID]*types.Repo{testRepo.ID: &testRepo}, nil)
 
 	expectSearchQuery := func(expected string) {
 		mockSearchClient.PlanFunc.PushHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *int32) (*search.Inputs, error) {
@@ -118,35 +115,35 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 	})
 
 	mockGitserverClient.GetCommitFunc.SetDefaultReturn(&gitdomain.Commit{
-		ID: api.CommitID(commit),
+		ID: api.CommitID(testCommit),
 	}, nil)
 
 	syntacticUpload := shared.CompletedUpload{
-		ID:             uploadID,
-		Commit:         commit,
+		ID:             testUploadId,
+		Commit:         testCommit,
 		Root:           "",
-		RepositoryID:   repoId,
-		RepositoryName: repoName,
+		RepositoryID:   int(testRepo.ID),
+		RepositoryName: string(testRepo.Name),
 		Indexer:        shared.SyntacticIndexer,
 		IndexerVersion: "v1.0.0",
 	}
 
 	mockUploadSvc.InferClosestUploadsFunc.SetDefaultReturn([]shared.CompletedUpload{syntacticUpload}, nil)
 	mockLsifStore.SCIPDocumentFunc.SetDefaultHook(func(_ context.Context, requestedUploadID int, path core.UploadRelPath) (*scip.Document, error) {
-		if requestedUploadID == uploadID && path.RawValue() == pathToRequestSymbol {
+		if requestedUploadID == testUploadId && path.RawValue() == pathToRequestSymbol {
 			return &scip.Document{
 				RelativePath: pathToRequestSymbol,
 				Occurrences: []*scip.Occurrence{{
-					Range:  symbolRange.SCIPRange(),
-					Symbol: symbolString,
+					Range:  testSymbolRange.SCIPRange(),
+					Symbol: testSymbolString,
 				}},
 			}, nil
-		} else if requestedUploadID == uploadID && path.RawValue() == pathToOccurrence {
+		} else if requestedUploadID == testUploadId && path.RawValue() == pathToOccurrence {
 			return &scip.Document{
 				RelativePath: pathToOccurrence,
 				Occurrences: []*scip.Occurrence{{
 					Range:  scipActualOccurrenceRange.SCIPRange(),
-					Symbol: symbolString,
+					Symbol: testSymbolString,
 				}, {
 					Range:  scipLocalRange.SCIPRange(),
 					Symbol: "local 1",
@@ -169,10 +166,10 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 
 	expectSearchQuery(candidateOccurrenceQuery)
 	syntacticUsages, previousSyntacticSearch, err := svc.SyntacticUsages(context.Background(), UsagesForSymbolArgs{
-		Repo:        repo,
-		Commit:      api.CommitID(commit),
+		Repo:        testRepo,
+		Commit:      api.CommitID(testCommit),
 		Path:        core.NewRepoRelPathUnchecked(pathToRequestSymbol),
-		SymbolRange: symbolRange,
+		SymbolRange: testSymbolRange,
 	})
 
 	if err != nil {
@@ -183,8 +180,8 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 		t.Errorf("Expected a single syntactic usage result, but got %+v", syntacticUsages)
 	}
 	syntacticMatch := syntacticUsages.Matches[0]
-	if syntacticMatch.Occurrence.Symbol != symbolString {
-		t.Errorf("Expected symbol to be %q, but got %s", symbolString, syntacticUsages.Matches[0].Occurrence.Symbol)
+	if syntacticMatch.Occurrence.Symbol != testSymbolString {
+		t.Errorf("Expected symbol to be %q, but got %s", testSymbolString, syntacticUsages.Matches[0].Occurrence.Symbol)
 	}
 	if syntacticMatch.Range().CompareStrict(scipActualOccurrenceRange) != 0 {
 		t.Errorf("Expected syntactic range to be %q, but got %q", scipActualOccurrenceRange.String(), syntacticMatch.Range().String())
@@ -193,10 +190,10 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 	expectSearchQuery(candidateOccurrenceQuery)
 	expectSearchQuery(candidateSymbolQuery)
 	searchBasedUsagesPrev, searchErrs := svc.SearchBasedUsages(context.Background(), UsagesForSymbolArgs{
-		Repo:        repo,
-		Commit:      api.CommitID(commit),
+		Repo:        testRepo,
+		Commit:      api.CommitID(testCommit),
 		Path:        core.NewRepoRelPathUnchecked(pathToRequestSymbol),
-		SymbolRange: symbolRange,
+		SymbolRange: testSymbolRange,
 	}, previousSyntacticSearch)
 	if searchErrs != nil {
 		t.Fatal(err)
@@ -219,10 +216,10 @@ func TestSyntacticAndSearchBasedUsages(t *testing.T) {
 	expectSearchQuery(candidateOccurrenceQuery)
 	expectSearchQuery(candidateSymbolQuery)
 	searchBasedUsages, searchErrs := svc.SearchBasedUsages(context.Background(), UsagesForSymbolArgs{
-		Repo:        repo,
-		Commit:      api.CommitID(commit),
+		Repo:        testRepo,
+		Commit:      api.CommitID(testCommit),
 		Path:        core.NewRepoRelPathUnchecked(pathToRequestSymbol),
-		SymbolRange: symbolRange,
+		SymbolRange: testSymbolRange,
 	}, nil)
 	if searchErrs != nil {
 		t.Fatal(err)
