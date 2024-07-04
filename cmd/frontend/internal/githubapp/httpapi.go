@@ -6,12 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,21 +15,27 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const cacheTTLSeconds = 60 * 60 // 1 hour
@@ -127,10 +127,10 @@ type GitHubAppResponse struct {
 type gitHubAppStateDetails struct {
 	WebhookUUID string `json:"webhookUUID,omitempty"`
 	Domain      string `json:"domain"`
-	Kind        string `json:"kind"`
-	UserID      int32  `json:"user_id,omitempty"`
 	AppID       int    `json:"app_id,omitempty"`
 	BaseURL     string `json:"base_url,omitempty"`
+	Kind        string `json:"kind,omitempty"`
+	UserID      int32  `json:"user_id,omitempty"`
 }
 
 func (srv *gitHubAppServer) stateHandler(w http.ResponseWriter, r *http.Request) {
@@ -187,14 +187,8 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 	appName := r.URL.Query().Get("appName")
 	domain := r.URL.Query().Get("domain")
 	baseURL := r.URL.Query().Get("baseURL")
-	queryKind := r.URL.Query().Get("kind")
+	kind := r.URL.Query().Get("kind")
 	marshalledUserID := r.URL.Query().Get("userID")
-
-	kind, err := ghtypes.GitHubAppKind(queryKind).Validate()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid GitHubAppKind: %s", err.Error()), http.StatusBadRequest)
-		return
-	}
 
 	userID, err := unmarshalUserID(graphql.ID(marshalledUserID))
 	if err != nil {
@@ -218,11 +212,12 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
+
 	stateDetails, err := json.Marshal(gitHubAppStateDetails{
 		WebhookUUID: webhookUUID,
 		Domain:      domain,
 		BaseURL:     baseURL,
-		Kind:        string(kind),
+		Kind:        kind,
 		UserID:      userID,
 	})
 	if err != nil {
@@ -272,7 +267,6 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 		return
 	}
-	// Wait until we've validated the type of state before deleting it from the cache.
 	srv.cache.Delete(state)
 
 	webhookUUID, err := uuid.Parse(stateDetails.WebhookUUID)
@@ -300,19 +294,21 @@ func (srv *gitHubAppServer) redirectHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient)
+	kind, err := parseKind(&stateDetails.Kind)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Unable to parse kind: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	if stateDetails.Kind != "" {
-		kind, err := ghtypes.GitHubAppKind(stateDetails.Kind).Validate()
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid GitHubAppKind: %s", err.Error()), http.StatusBadRequest)
-			return
-		}
-		app.Kind = kind
+	if kind == nil {
+		http.Error(w, "invalid kind provided", http.StatusBadRequest)
+		return
+	}
+
+	app, err := createGitHubApp(u, *domain, httpcli.UncachedExternalClient, *kind)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
+		return
 	}
 
 	id, err := srv.db.GitHubApps().Create(r.Context(), app)
@@ -385,7 +381,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 
 	setupInfo, ok := srv.cache.Get(state)
 	if !ok {
-		redirectURL := generateRedirectURL(nil, nil, nil, nil, "", errors.New("Bad request, state query param does not match"))
+		redirectURL := generateRedirectURL(gitHubAppStateDetails{}, nil, nil, errors.New("Bad request, state query param does not match"))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
 	}
@@ -393,26 +389,27 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 	var stateDetails gitHubAppStateDetails
 	err := json.Unmarshal(setupInfo, &stateDetails)
 	if err != nil {
-		redirectURL := generateRedirectURL(nil, nil, nil, nil, "", errors.New("Bad request, invalid state"))
+		redirectURL := generateRedirectURL(gitHubAppStateDetails{}, nil, nil, errors.New("Bad request, invalid state"))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
 	}
 	// Wait until we've validated the type of state before deleting it from the cache.
 	srv.cache.Delete(state)
 
-	kind, err := ghtypes.GitHubAppKind(stateDetails.Kind).Validate()
+	kind, err := parseKind(&stateDetails.Kind)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unable to parse kind: %v", err), http.StatusBadRequest)
 		return
 	}
-	if kind == "" {
+
+	if kind == nil {
 		http.Error(w, "invalid kind provided", http.StatusBadRequest)
 		return
 	}
 
 	installationID, err := strconv.Atoi(instID)
 	if err != nil {
-		redirectURL := generateRedirectURL(&stateDetails.Domain, nil, &stateDetails.AppID, nil, "", errors.New("Bad request, could not parse installation ID"))
+		redirectURL := generateRedirectURL(stateDetails, nil, nil, errors.New("Bad request, could not parse installation ID"))
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
 	}
@@ -422,21 +419,21 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 		ctx := r.Context()
 		app, err := srv.db.GitHubApps().GetByID(ctx, stateDetails.AppID)
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, "", errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
+			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
 		}
 
-		auther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+		auther, err := ghauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, "", errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
+			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
 		}
 
 		baseURL, err := url.Parse(app.BaseURL)
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, "", errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
+			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
 		}
@@ -453,7 +450,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 
 		remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, "", errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
+			redirectURL := generateRedirectURL(stateDetails, &installationID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
 		}
@@ -468,12 +465,12 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 			AccountType:      remoteInstall.Account.GetType(),
 		})
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, app.Kind, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
+			redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
 			http.Redirect(w, r, redirectURL, http.StatusFound)
 			return
 		}
 
-		if kind == ghtypes.UserCredentialGitHubAppKind {
+		if *kind == ghtypes.UserCredentialGitHubAppKind {
 			observationCtx := observation.NewContext(log.NoOp())
 			bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 			svc := service.New(bstore)
@@ -482,7 +479,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 			// of whether the base URL ends with a trailing slash or not.
 			esu, err := url.JoinPath(stateDetails.BaseURL, "/")
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, kind, errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
+				redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
 				http.Redirect(w, r, redirectURL, http.StatusFound)
 				return
 			}
@@ -494,45 +491,16 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 				UserID:              stateDetails.UserID,
 				ExternalServiceType: extsvc.VariantGitHub.AsType(),
 				Username:            pointers.Ptr(installInfo.AccountLogin),
-				GitHubAppKind:       kind,
+				GitHubAppKind:       *kind,
 			})
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, "", errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
+				redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
 				http.Redirect(w, r, redirectURL, http.StatusFound)
 				return
 			}
 		}
 
-		if kind == ghtypes.SiteCredentialGitHubAppKind {
-			observationCtx := observation.NewContext(log.NoOp())
-			bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
-			svc := service.New(bstore)
-
-			// external service urls always end with a trailing slash. `url.JoinPath` ensures that's the case irrespective
-			// of whether the base URL ends with a trailing slash or not.
-			esu, err := url.JoinPath(stateDetails.BaseURL, "/")
-			if err != nil {
-				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, kind, errors.Newf("Unexpected error while creating site credential for github app: %s", err.Error()))
-				http.Redirect(w, r, redirectURL, http.StatusFound)
-				return
-			}
-
-			_, err = svc.CreateBatchChangesSiteCredential(r.Context(), sources.AuthenticationStrategyGitHubApp, service.CreateBatchChangesSiteCredentialArgs{
-				ExternalServiceURL:  esu,
-				ExternalServiceType: extsvc.VariantGitHub.AsType(),
-				Credential:          app.ClientID,
-				Username:            pointers.Ptr(installInfo.AccountLogin),
-				GitHubAppID:         app.ID,
-				GitHubAppKind:       kind,
-			})
-			if err != nil {
-				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, "", errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
-				http.Redirect(w, r, redirectURL, http.StatusFound)
-				return
-			}
-		}
-
-		redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, app.Kind, nil)
+		redirectURL := generateRedirectURL(stateDetails, &installationID, &app.Name, nil)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return
 	} else {
@@ -541,58 +509,70 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func generateRedirectURL(domain *string, installationID, appID *int, appName *string, appKind ghtypes.GitHubAppKind, creationErr error) string {
-	pathBatchChanges := "/site-admin/batch-changes"
-	pathGithubApps := "/site-admin/github-apps"
-	if appKind == ghtypes.UserCredentialGitHubAppKind {
-		// There is no github-apps area for user settings, so we redirect them to batch changes instead.
-		// Todo: Do we want to build out the github-apps page for users as well?
-		pathBatchChanges = "/user/settings/batch-changes/"
-		pathGithubApps = "/user/settings/batch-changes/"
-	}
-
+func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int, appName *string, creationErr error) string {
 	// If we got an error but didn't even get far enough to parse a domain for the new
 	// GitHub App, we still want to route the user back to somewhere useful, so we send
 	// them back to the main site admin GitHub Apps page.
-	if domain == nil && creationErr != nil {
-		return fmt.Sprintf("%s?success=false&error=%s", pathGithubApps, url.QueryEscape(creationErr.Error()))
-	}
-	// https://sourcegraph.test:3443/site-admin/batch-changes?success=true&app_name=Test%27s+6+Changes+GitHub+App&visible=1
-	// https://sourcegraph.test:3443/users/USER_NAME/settings/batch-changes
-	parsedDomain, err := parseDomain(domain)
-	if err != nil {
-		return fmt.Sprintf("%s?success=false&error=%s", pathGithubApps, url.QueryEscape(fmt.Sprintf("invalid domain: %s", *domain)))
+	if stateDetails.Domain == "" && creationErr != nil {
+		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", stateDetails.Kind, url.QueryEscape(creationErr.Error()))
 	}
 
+	parsedDomain, err := parseDomain(&stateDetails.Domain)
+	if err != nil {
+		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", stateDetails.Kind, url.QueryEscape(fmt.Sprintf("invalid domain: %s", stateDetails.Domain)))
+	}
+
+	if parsedDomain == nil {
+		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", stateDetails.Kind, "unable to parse domain")
+	}
+
+	kind, err := parseKind(&stateDetails.Kind)
+	if err != nil {
+		return fmt.Sprintf("/site-admin/github-apps?success=false&kind=%s&error=%s", stateDetails.Kind, url.QueryEscape(creationErr.Error()))
+	}
+
+	if kind == nil {
+		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", stateDetails.Kind, "unable to parse kind")
+	}
+
+	// 	ghAppPageUrl = "/user/settings/batch-changes"
+	// } else if *kind == types.UserCredentialGitHubAppKind && *parsedDomain == types.ReposGitHubAppDomain {
+	// 	ghAppPageUrl = "/user/settings/code-hosts"
 	switch *parsedDomain {
 	case types.ReposGitHubAppDomain:
+		ghAppPageUrl := "/site-admin/github-apps"
 		if creationErr != nil {
-			return fmt.Sprintf("%s?success=false&error=%s", pathGithubApps, url.QueryEscape(creationErr.Error()))
+			return fmt.Sprintf("%s?success=false&error=%s", ghAppPageUrl, url.QueryEscape(creationErr.Error()))
 		}
-		if installationID == nil || appID == nil {
-			return fmt.Sprintf("%s?success=false&error=%s", pathGithubApps, url.QueryEscape("missing installation ID or app ID"))
+		if installationID == nil || stateDetails.AppID == 0 {
+			return fmt.Sprintf("%s?success=false&error=%s", ghAppPageUrl, url.QueryEscape("missing installation ID or app ID"))
 		}
 
-		return fmt.Sprintf("%s/%s?installation_id=%d", pathGithubApps, MarshalGitHubAppID(int64(*appID)), *installationID)
+		return fmt.Sprintf("%s/%s?installation_id=%d", ghAppPageUrl, MarshalGitHubAppID(int64(stateDetails.AppID)), *installationID)
 	case types.BatchesGitHubAppDomain:
+		ghAppPageUrl := "/site-admin/batch-changes"
+		if *kind == ghtypes.UserCredentialGitHubAppKind {
+			ghAppPageUrl = "/user/settings/batch-changes"
+		}
+
 		if creationErr != nil {
-			return fmt.Sprintf("%s?success=false&error=%s", pathBatchChanges, url.QueryEscape(creationErr.Error()))
+			return fmt.Sprintf("%s?kind=%s&success=false&error=%s", ghAppPageUrl, *kind, url.QueryEscape(creationErr.Error()))
 		}
 
 		// This shouldn't really happen unless we also had an error, but we handle it just
 		// in case
 		if appName == nil {
-			return fmt.Sprintf("%s?success=true", pathBatchChanges)
+			return fmt.Sprintf("%s?kind=%s&success=true", ghAppPageUrl, *kind)
 		}
-		return fmt.Sprintf("%s?success=true&app_name=%s", pathBatchChanges, *appName)
+		return fmt.Sprintf("%s?kind=%s&success=true&app_name=%s", ghAppPageUrl, *kind, *appName)
 	default:
-		return fmt.Sprintf("%s?success=false&error=%s", pathGithubApps, url.QueryEscape(fmt.Sprintf("unsupported github apps domain: %v", parsedDomain)))
+		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", *kind, url.QueryEscape(fmt.Sprintf("unsupported github apps domain: %v", parsedDomain)))
 	}
 }
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
-func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client) (*ghtypes.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpClient *http.Client, kind ghtypes.GitHubAppKind) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
@@ -632,6 +612,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain, httpCli
 		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:        htmlURL.String(),
 		Domain:        domain,
+		Kind:          kind,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }
