@@ -3067,9 +3067,515 @@
       "!go": {
         "pointer": true
       }
+    },
+    "modelConfiguration": {
+      "$ref": "#/definitions/SiteModelConfiguration"
     }
   },
   "definitions": {
+    "SiteModelConfiguration": {
+      "type": "object",
+      "description": "BETA FEATURE, only enable if you know what you are doing. If set, Cody will use the new model configuration system and ignore the old 'completions' site configuration entirely.",
+      "properties": {
+        "sourcegraph": {
+          "$ref": "#/definitions/SourcegraphModelConfig"
+        },
+        "providerOverrides": {
+          "description": "Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/ProviderOverride"
+          }
+        },
+        "modelOverrides": {
+          "description": "Override, or add to, the list of models Cody is aware of and how they are configured to work",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/ModelOverride"
+          }
+        },
+        "defaultModels": {
+          "$ref": "#/definitions/DefaultModels"
+        }
+      }
+    },
+    "SourcegraphModelConfig": {
+      "description": "If null, Cody will not use Sourcegraph's servers for model discovery or LLM requests.",
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": {
+        "pollingInterval": "6h"
+      },
+      "properties": {
+        "endpoint": {
+          "description": "The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, a good default URL will be used.",
+          "type": "string",
+          "!go": {
+            "pointer": true
+          },
+          "default": null
+        },
+        "accessToken": {
+          "description": "The Cody gateway access token to use. If null, an access token will be automatically generated based on the product license.",
+          "type": "string",
+          "!go": {
+            "pointer": true
+          },
+          "default": null
+        },
+        "pollingInterval": {
+          "description": "The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'",
+          "type": "string",
+          "!go": {
+            "pointer": true
+          },
+          "default": "6h"
+        },
+        "modelFilters": {
+          "$ref": "#/definitions/ModelFilters"
+        }
+      }
+    },
+    "ModelFilters": {
+      "description": "Filters that allow you to constrain which models are available to users.",
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": null,
+      "properties": {
+        "statusFilter": {
+          "description": "Constrain models to just those in this list",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["experimental", "beta", "stable", "deprecated"]
+          },
+          "examples": [["beta"]],
+          "default": ["stable"]
+        },
+        "allow": {
+          "description": "Constrain models to only those in this allow list. Wildcards may be used here, but not regexp.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [[ "anthropic::*", "openai::2024-02-01::*" ]],
+          "default": ["*"]
+        },
+        "deny": {
+          "description": "Any models in this deny list will not be allowed. Wildcards may be used here, but not regexp.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [[ "*gpt*" ]],
+          "default": []
+        }
+      }
+    },
+    "ProviderOverride": {
+      "type": "object",
+      "required": ["id", "displayName"],
+      "properties": {
+        "id": {
+          "description": "provider ID",
+          "type": "string",
+          "examples": [["anthropic", "google", "acme-corp-custom"]]
+        },
+        "displayName": {
+          "description": "display name",
+          "type": "string",
+          "examples": [["Anthropic", "Google", "ACME Corp Custom"]]
+        },
+        "clientSideConfig": {
+          "$ref": "#/definitions/ClientSideProviderConfig"
+        },
+        "serverSideConfig": {
+          "$ref": "#/definitions/ServerSideProviderConfig"
+        },
+        "defaultModelConfig": {
+          "$ref": "#/definitions/DefaultModelConfig"
+        }
+      }
+    },
+    "ModelOverride": {
+      "type": "object",
+      "required": ["modelRef", "displayName", "modelName", "capabilities", "category", "status", "contextWindow"],
+      "properties": {
+        "modelRef": {
+          "description": "The qualified name of the model in '${ProviderID}::${APIVersionID}::${ModelID}' format",
+          "type": "string",
+          "examples": [["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]]
+        },
+        "displayName": {
+          "description": "display name",
+          "type": "string",
+          "examples": [["Claude 3 Sonnet", "GPT-4 Turbo"]]
+        },
+        "modelName": {
+          "description": "model name",
+          "type": "string",
+          "examples": [["claude-3-sonnet-20240229", "gpt-4-turbo"]]
+        },
+        "capabilities": {
+          "description": "Whether the model can be used for chat, just autocomplete, etc.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["autocomplete", "chat"]
+          },
+          "examples": [["chat", "autocomplete"]]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["accuracy", "balanced", "speed"],
+          "examples": [["balanced"]]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["experimental", "beta", "stable", "deprecated"],
+          "examples": [["stable"]]
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "pro", "enterprise"],
+          "default": ["free"]
+        },
+        "contextWindow": {
+          "$ref": "#/definitions/ContextWindow"
+        },
+        "clientSideConfig": {
+          "$ref": "#/definitions/ClientSideModelConfig"
+        },
+        "serverSideConfig": {
+          "$ref": "#/definitions/ServerSideModelConfig"
+        }
+      }
+    },
+    "ContextWindow": {
+      "description": "Context window for the model",
+      "type": "object",
+      "examples": [{
+        "maxInputTokens": 7000,
+        "maxOutputTokens": 4000
+      }],
+      "required": ["maxInputTokens", "maxOutputTokens"],
+      "properties": {
+        "maxInputTokens": {
+          "type": "integer",
+          "examples": [7000]
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "examples": [4000]
+        }
+      }
+    },
+    "DefaultModels": {
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": null,
+      "properties": {
+        "chat": {
+          "description": "The qualified name of the model to use for chat, in '${ProviderID}::${APIVersionID}::${ModelID}' format",
+          "type": "string",
+          "examples": [["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]]
+        },
+        "fastChat": {
+          "description": "The qualified name of the model to use for fast chat, in '${ProviderID}::${APIVersionID}::${ModelID}' format",
+          "type": "string",
+          "examples": [["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]]
+        },
+        "codeCompletion": {
+          "description": "The qualified name of the model to use for code completion, in '${ProviderID}::${APIVersionID}::${ModelID}' format",
+          "type": "string",
+          "examples": [["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]]
+        }
+      }
+    },
+    "DefaultModelConfig": {
+      "description": "The model configuration that is applied to every model for a given provider.",
+      "type": "object",
+      "required": ["capabilities", "category", "status", "contextWindow"],
+      "properties": {
+        "capabilities": {
+          "description": "Whether the model can be used for chat, just autocomplete, etc.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["autocomplete", "chat"]
+          },
+          "examples": [["chat", "autocomplete"]]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["accuracy", "balanced", "speed"],
+          "examples": [["balanced"]]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["experimental", "beta", "stable", "deprecated"],
+          "examples": [["stable"]]
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "pro", "enterprise"],
+          "default": ["free"]
+        },
+        "contextWindow": {
+          "$ref": "#/definitions/ContextWindow"
+        },
+        "clientSideConfig": {
+          "$ref": "#/definitions/ClientSideModelConfig"
+        },
+        "serverSideConfig": {
+          "$ref": "#/definitions/ServerSideModelConfig"
+        }
+      }
+    },
+    "ClientSideProviderConfig": {
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": null,
+      "properties": {}
+    },
+    "ServerSideProviderConfig": {
+      "type": "object",
+      "!go": {
+        "pointer": true,
+        "taggedUnionType": true
+      },
+      "default": null,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "sourcegraph"]
+        }
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigAWSBedrock"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigAzureOpenAI"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigAnthropicProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigFireworksProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigGoogleProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigOpenAIProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigSourcegraphProvider"
+        },
+        {
+          "$ref": "#/definitions/DoNotUsePhonyDiscriminantType"
+        }
+      ]
+    },
+    "ServerSideProviderConfigAWSBedrock": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint", "region"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "awsBedrock"
+        },
+        "accessToken": {
+          "description": "Leave empty to rely on instance role bindings or other AWS configurations in frontend service. <ACCESS_KEY_ID>:<SECRET_ACCESS_KEY> if directly configuring the credentials, or <ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN> if a session token is also required.",
+          "type": "string"
+        },
+        "endpoint": {
+          "description": "For Pay-as-you-go, set it to an AWS region code (e.g., us-west-2) when using a public Amazon Bedrock endpoint; For Provisioned Throughput, set it to the provisioned VPC endpoint for the bedrock-runtime API (e.g., 'https://vpce-0a10b2345cd67e89f-abc0defg.bedrock-runtime.us-west-2.vpce.amazonaws.com')",
+          "type": "string"
+        },
+        "region": {
+          "description": "Region to use when configuring API clients. (Since the 'frontend' binary's container won't be able to pick this up from the host OS's environment variables.)",
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigAzureOpenAI": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint", "user", "useDeprecatedCompletionsAPI"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "azureOpenAI"
+        },
+        "accessToken": {
+          "description": "As of 5.2.4 the access token can be left empty and it will rely on Environmental, Workload Identity or Managed Identity credentials configured for the frontend and worker services; Set it to <API_KEY> if directly configuring the credentials using the API key specified in the Azure portal",
+          "type": "string"
+        },
+        "endpoint": {
+          "description": "Endpoint from the Azure OpenAI Service portal",
+          "type": "string"
+        },
+        "user": {
+          "description": "The user field passed along to OpenAI-provided models.",
+          "type": "string"
+        },
+        "useDeprecatedCompletionsAPI": {
+          "description": "Enables the use of the older completions API for select Azure OpenAI models. This is just an escape hatch, for backwards compatibility, because not all Azure OpenAI models are available on the 'newer' completions API.",
+          "type": "boolean"
+        }
+      }
+    },
+    "ServerSideProviderConfigAnthropicProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "anthropic"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigFireworksProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "fireworks"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigGoogleProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "google"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigOpenAIProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openai"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigSourcegraphProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "sourcegraph"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ClientSideModelConfig": {
+      "type": "object",
+      "!go": {
+        "pointer": true
+      },
+      "default": null,
+      "properties": {}
+    },
+    "ServerSideModelConfig": {
+      "type": "object",
+      "!go": {
+        "pointer": true,
+        "taggedUnionType": true
+      },
+      "default": null,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["awsBedrockProvisionedThroughput"]
+        }
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ServerSideModelConfigAwsBedrockProvisionedThroughput"
+        },
+        {
+          "$ref": "#/definitions/DoNotUsePhonyDiscriminantType"
+        }
+      ]
+    },
+    "ServerSideModelConfigAwsBedrockProvisionedThroughput": {
+      "type": "object",
+      "required": ["type", "arn"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "awsBedrockProvisionedThroughput"
+        },
+        "arn": {
+          "description": "The 'provisioned throughput ARN' to use when sending requests to AWS Bedrock",
+          "type": "string"
+        }
+      }
+    },
+    "DoNotUsePhonyDiscriminantType": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "unused"
+        },
+        "doNotUseThisProperty": {
+          "description": "Do not use/set this property, it is useless. go-jsonschema has an issue where it does not support writing a tagged union unless it can find a field each of the union types do NOT have in common; this type merely exists to provide a field that is not in common with all other oneOf types. https://sourcegraph.com/github.com/sourcegraph/go-jsonschema/-/blob/compiler/generator_tagged_union_type.go?L47-49",
+          "type": "string"
+        }
+      }
+    },
     "BrandAssets": {
       "type": "object",
       "properties": {
