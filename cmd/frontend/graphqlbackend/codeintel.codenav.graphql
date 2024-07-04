@@ -526,29 +526,36 @@ input SymbolNameComparator {
 }
 
 """
-A range inside a particular blob.
+A range inside a particular blob, describing a usage of a symbol,
+which can be used to locate other usages of the same symbol.
+
+In general, a single range may correspond to multiple symbols.
+A caller can further drill down on a specific symbol using SymbolComparator.
 
 EXPERIMENTAL: This type may make backwards-incompatible changes in the future.
 """
 input RangeInput {
     """
-    Defaults to instance-wide search if the repo is not specified.
-    This field is necessary if SymbolComparator is a repository-local or
-    file-local symbol. It is mandatory for cross-repository symbols
-    due to implementation limitations.
+    The repository containing the initial usage for a symbol.
     """
+    # At the moment, this field is necessary to locate usages if SymbolComparator
+    # is a repository-local or file-local symbol.
+    #
+    # It is mandatory for precise cross-repository symbols due to implementation limitations;
+    # the storage for symbol names doesn't allow us to do arbitrary symbol matching
+    # cheaply. In the future, to allow instance-wide search using precise cross-repo
+    # symbols, we can make this field optional.
     repository: String!
 
     """
+    The revision containing the initial usage for the symbol.
+
     Defaults to HEAD of the default branch if not specified.
     """
     revision: String
 
     """
-    Defaults to repo-wide search if the path is not specified.
-    This field is necessary if SymbolComparator is a file-local symbol.
-    It is mandatory for repository-local and cross-repo symbols
-    due to implementation limitations.
+    The path containing the initial usage for the symbol.
     """
     path: String!
 
