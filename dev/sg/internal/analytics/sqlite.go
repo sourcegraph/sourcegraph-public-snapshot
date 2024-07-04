@@ -2,7 +2,8 @@ package analytics
 
 import (
 	"database/sql"
-	"errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
