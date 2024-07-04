@@ -26,7 +26,7 @@ func NewSyntacticindexingSchedulerJob() job.Job {
 }
 
 func (job *syntacticIndexingSchedulerJob) Description() string {
-	return ""
+	return "Scheduler job for codeintel syntactic indexing"
 }
 
 func (job *syntacticIndexingSchedulerJob) Config() []env.Config {
