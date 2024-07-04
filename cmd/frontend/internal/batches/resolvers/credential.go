@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"strconv"
 	"strings"
 
@@ -186,3 +186,5 @@ func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) 
 }
 
 func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+
+func (c *batchChangesSiteCredentialResolver) GitHubAppID() int { return c.credential.GitHubAppID }
