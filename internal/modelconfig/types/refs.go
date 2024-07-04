@@ -33,3 +33,13 @@ func (mref ModelRef) ProviderID() ProviderID {
 	}
 	return ProviderID(string(mref)[:firstSep])
 }
+
+// Assuming the ModelRef is valid, returns the APIVersionID.
+// Will return junk data if the ModelRef is invalid.
+func (mref ModelRef) APIVersionID() APIVersionID {
+	parts := strings.Split(string(mref), "::")
+	if len(parts) != 3 {
+		return "error-invalid-modelref"
+	}
+	return APIVersionID(parts[1])
+}
