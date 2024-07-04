@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/datastreamconnection"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/deliverypipeline"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqllogicalreplication"
@@ -372,31 +373,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL logical replication")
 			}
-			publications = replication.Publications
-
-			// Make output visible for configuration in consumer tools like
-			// Datastream
-			for _, pub := range replication.Publications {
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_name", pub.Name),
-					*pub.PublicationName,
-					fmt.Sprintf("Publication name of the %q PostgreSQL publication", pub.Name))
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_replicationslot", pub.Name),
-					*pub.ReplicationSlotName,
-					fmt.Sprintf("Replication slot name of the %q PostgreSQL publication", pub.Name))
-				locals.Add(fmt.Sprintf("postgresql_publication_%s_user", pub.Name),
-					*pub.User.Name(),
-					fmt.Sprintf("User for subscribing to the %q PostgreSQL publication", pub.Name))
-				gsmsecret.New(stack,
-					id.Group("postgresqllogicalreplication_output").
-						Group(pub.Name).
-						Group("user_password"),
-					gsmsecret.Config{
-						ProjectID: vars.ProjectID,
-						ID: fmt.Sprintf("POSTGRESQL_PUBLICATION_%s_USER_PASSWORD",
-							strings.ToUpper(pub.Name)),
-						Value: *pub.User.Password(),
-					})
-			}
+			publications = replication.Publications // for role grants
 		}
 		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), postgresqlroles.Config{
 			PostgreSQLProvider: pgRuntimeAdminProvider,
@@ -406,6 +383,20 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")
+		}
+
+		if len(publications) > 0 {
+			// Configure datastream connection resources for publications
+			_, err = datastreamconnection.New(stack, id.Group("publication_datastream"), datastreamconnection.Config{
+				VPC:                          privateNetwork(),
+				CloudSQL:                     sqlInstance,
+				CloudSQLClientServiceAccount: *vars.IAM.DatastreamToCloudSQLServiceAccount,
+				Publications:                 publications,
+				PublicationUserGrants:        pgRoles.PublicationUserGrants,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render datastream configuration")
+			}
 		}
 
 		// We need the workload superuser role to be granted before Cloud Run

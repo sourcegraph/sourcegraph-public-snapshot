@@ -27,11 +27,9 @@ type Config struct {
 }
 
 type PublicationOutput struct {
-	// The name of your publication. You'll need to provide this name when you
-	// create a stream in the Datastream stream creation wizard.
+	// The name of the publication in Postgres.
 	PublicationName *string
-	// The name of your replication slot. You'll need to provide this name when
-	// you create a stream in the Datastream stream creation wizard.
+	// The name of the replication slot in Postgres.
 	ReplicationSlotName *string
 	// User for subscribing to the publication.
 	User role.Role

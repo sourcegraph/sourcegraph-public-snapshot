@@ -848,6 +848,11 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 type EnvironmentResourcePostgreSQLLogicalReplicationSpec struct {
 	// Publications configure PostgreSQL logical replication publications for
 	// consumption in tools like GCP Datastream.
+	//
+	// Configuriing publications also configures all required Datastream
+	// connection resources and configuration to set up a Datastream "Stream"
+	// https://cloud.google.com/datastream/docs/create-a-stream, which must be
+	// set up separately.
 	Publications []EnvironmentResourcePostgreSQLLogicalReplicationPublicationsSpec `yaml:"publications,omitempty"`
 }
 

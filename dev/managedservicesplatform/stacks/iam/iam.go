@@ -34,6 +34,9 @@ type CrossStackOutput struct {
 	// IsFinalStageOfRollout is true for this environment.
 	CloudDeployExecutionServiceAccount *serviceaccount.Output
 	CloudDeployReleaserServiceAccount  *serviceaccount.Output
+	// DatastreamCloudSQLProxyServiceAccount is a service account for a proxy
+	// to Cloud SQL to allow Datastream to connect to Cloud SQL for replication.
+	DatastreamToCloudSQLServiceAccount *serviceaccount.Output
 }
 
 type Variables struct {
@@ -287,6 +290,19 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 			"Service Account ID for Cloud Deploy release creation - intended for workload identity federation in CI")
 	}
 
+	datastreamToCloudSQLServiceAccount := serviceaccount.New(stack,
+		id.Group("datastream-to-cloudsql"),
+		serviceaccount.Config{
+			ProjectID:   vars.ProjectID,
+			AccountID:   "datastream-to-cloudsql",
+			DisplayName: fmt.Sprintf("%s Datastream-to-Cloud-SQL service account", vars.Service.GetName()),
+			Roles: []serviceaccount.Role{{
+				ID:   resourceid.New("role_cloudsql_client"),
+				Role: "roles/cloudsql.client",
+			}},
+		},
+	)
+
 	// Collect outputs
 	locals.Add(OutputCloudRunServiceAccount, workloadServiceAccount.Email,
 		"Service Account email used as Cloud Run resource workload identity")
@@ -298,6 +314,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		OperatorAccessServiceAccount:       operatorAccessServiceAccount,
 		CloudDeployExecutionServiceAccount: cloudDeployExecutorServiceAccount,
 		CloudDeployReleaserServiceAccount:  cloudDeployReleaserServiceAccount,
+		DatastreamToCloudSQLServiceAccount: datastreamToCloudSQLServiceAccount,
 	}, nil
 }
 

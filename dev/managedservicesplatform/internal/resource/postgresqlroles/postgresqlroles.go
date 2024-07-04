@@ -18,6 +18,9 @@ type Output struct {
 	// WorkloadSuperuserGrant should be referenced as a dependency before
 	// WorkloadUser is used.
 	WorkloadSuperuserGrant cdktf.ITerraformDependable
+	// PublicationUserGrants should be referenced as a dependency before
+	// Publications[*].User is used.
+	PublicationUserGrants []cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -80,6 +83,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		})
 	}
 
+	var publicationUserGrants []cdktf.ITerraformDependable
 	if len(config.Publications) > 0 {
 		// Assign publication users permissions as required for GCP Datastream.
 		// https://cloud.google.com/datastream/docs/configure-cloudsql-psql#cloudsqlforpostgres-create-datastream-user
@@ -89,33 +93,36 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			id := id.Group(p.Name)
 
 			// Grant SELECT privileges to the publication's tables
-			_ = grant.NewGrant(scope, id.TerraformID("user_table_select_grant"), &grant.GrantConfig{
-				Provider:   config.PostgreSQLProvider,
-				Database:   &p.Database,
-				Role:       p.User.Name(),
-				Schema:     pointers.Ptr("public"),
-				ObjectType: pointers.Ptr("table"),
-				Objects:    pointers.Ptr(pointers.Slice(p.Tables)),
-				// Restricted privileges only
-				Privileges: pointers.Ptr(pointers.Slice([]string{
-					"SELECT",
-				})),
-			})
+			publicationUserGrants = append(publicationUserGrants,
+				grant.NewGrant(scope, id.TerraformID("user_table_select_grant"), &grant.GrantConfig{
+					Provider:   config.PostgreSQLProvider,
+					Database:   &p.Database,
+					Role:       p.User.Name(),
+					Schema:     pointers.Ptr("public"),
+					ObjectType: pointers.Ptr("table"),
+					Objects:    pointers.Ptr(pointers.Slice(p.Tables)),
+					// Restricted privileges only
+					Privileges: pointers.Ptr(pointers.Slice([]string{
+						"SELECT",
+					})),
+				}))
 			// Grant USAGE dabatases on the public schema
-			_ = grant.NewGrant(scope, id.TerraformID("user_schema_usage_grant"), &grant.GrantConfig{
-				Provider:   config.PostgreSQLProvider,
-				Database:   &p.Database,
-				Role:       p.User.Name(),
-				ObjectType: pointers.Ptr("schema"),
-				Schema:     pointers.Ptr("public"),
-				Privileges: pointers.Ptr(pointers.Slice([]string{
-					"USAGE",
-				})),
-			})
+			publicationUserGrants = append(publicationUserGrants,
+				grant.NewGrant(scope, id.TerraformID("user_schema_usage_grant"), &grant.GrantConfig{
+					Provider:   config.PostgreSQLProvider,
+					Database:   &p.Database,
+					Role:       p.User.Name(),
+					ObjectType: pointers.Ptr("schema"),
+					Schema:     pointers.Ptr("public"),
+					Privileges: pointers.Ptr(pointers.Slice([]string{
+						"USAGE",
+					})),
+				}))
 		}
 	}
 
 	return &Output{
 		WorkloadSuperuserGrant: workloadSuperuserGrant,
+		PublicationUserGrants:  publicationUserGrants,
 	}, nil
 }
