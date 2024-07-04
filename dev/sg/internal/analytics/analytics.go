@@ -75,7 +75,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 		return
 	}
 
-	meta["identity"] = getEmail()
+	meta["user_id"] = getEmail()
 	meta["start_time"] = time.Now()
 
 	b, err := json.Marshal(meta)
