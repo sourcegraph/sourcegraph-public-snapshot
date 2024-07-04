@@ -26,7 +26,7 @@ func NewSyntacticindexingSchedulerJob() job.Job {
 }
 
 func (job *syntacticIndexingSchedulerJob) Description() string {
-	return ""
+	return "Scheduler job for codeintel syntactic indexing"
 }
 
 func (job *syntacticIndexingSchedulerJob) Config() []env.Config {
@@ -84,7 +84,6 @@ func newSchedulerJob(
 			if config != nil && config.CodeintelSyntacticIndexingEnabled {
 				return scheduler.Schedule(observationCtx, ctx, time.Now())
 			} else {
-				observationCtx.Logger.Info("Syntactic indexing is disabled")
 				return nil
 			}
 		}),

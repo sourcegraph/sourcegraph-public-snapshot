@@ -64,7 +64,6 @@ type FrontendSpec struct {
 type GitServerSpec struct {
 	StandardConfig
 
-	// Replicas defines the number of Symbols pod replicas.
 	// Default: 1
 	Replicas int32 `json:"replicas,omitempty"`
 
@@ -89,6 +88,8 @@ type OtelCollectorSpec struct {
 
 type JaegerSpec struct {
 	StandardConfig
+
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // PGSQLSpec defines the desired state of the Postgres server.

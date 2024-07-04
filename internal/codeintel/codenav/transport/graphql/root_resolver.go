@@ -95,7 +95,7 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		authz.DefaultSubRepoPermsChecker,
 		r.gitserverClient,
 		args.Repo,
-		string(args.Commit),
+		args.Commit,
 		// OK to use Unchecked function based on contract of GraphQL API
 		core.NewRepoRelPathUnchecked(args.Path),
 		r.maximumIndexesPerMonikerSearch,
@@ -127,8 +127,8 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 			indexer = shared.SyntacticIndexer
 		}
 		uploads, err := r.svc.GetClosestCompletedUploadsForBlob(ctx, shared.UploadMatchingOptions{
-			RepositoryID:       int(opts.Repo.ID),
-			Commit:             string(opts.Commit),
+			RepositoryID:       opts.Repo.ID,
+			Commit:             opts.Commit,
 			Path:               opts.Path,
 			RootToPathMatching: shared.RootMustEnclosePath,
 			Indexer:            indexer,
@@ -232,7 +232,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 		Path:        args.Path,
 		SymbolRange: args.Range,
 	}
-	var previousSyntacticSearch *codenav.PreviousSyntacticSearch
+	var previousSyntacticSearch core.Option[codenav.PreviousSyntacticSearch]
 	if remainingCount > 0 && provsForSCIPData.Syntactic {
 		syntacticResult, prevSearch, err := r.svc.SyntacticUsages(ctx, usagesForSymbolArgs)
 		if err != nil {
@@ -252,7 +252,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
-			previousSyntacticSearch = prevSearch
+			previousSyntacticSearch = core.Some[codenav.PreviousSyntacticSearch](prevSearch)
 		}
 	}
 

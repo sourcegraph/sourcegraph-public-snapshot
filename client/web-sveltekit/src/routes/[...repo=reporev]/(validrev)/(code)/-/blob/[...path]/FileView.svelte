@@ -139,7 +139,7 @@
     }
 
     function handleCopy(): void {
-        TELEMETRY_RECORDER.recordEvent('repo.blob', 'copy')
+        TELEMETRY_RECORDER.recordEvent('blob.code', 'copy')
     }
 
     function onViewModeChange(event: CustomEvent<CodeViewMode>): void {

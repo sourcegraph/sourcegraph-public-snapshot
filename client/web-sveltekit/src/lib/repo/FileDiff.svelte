@@ -62,10 +62,14 @@
 
 <style lang="scss">
     .header {
+        position: sticky;
+        top: 0;
+        background-color: var(--body-bg);
+        padding: 0.25rem 0rem;
+
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.25rem 0rem;
     }
 
     .hunks {

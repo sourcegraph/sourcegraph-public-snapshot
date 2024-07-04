@@ -371,15 +371,32 @@ export const sizeToFit: Action<HTMLElement, { grow: () => boolean; shrink: () =>
         }
     }
 
-    const observer = new ResizeObserver(resize)
-    observer.observe(target)
+    // Resizing can (and probably will) trigger mutations, so do not trigger a
+    // new resize if there is a resize in progress.
+    let resizing = false
+    function resizeOnce() {
+        if (resizing) {
+            return
+        }
+        resizing = true
+        resize().then(() => {
+            resizing = false
+        })
+    }
+
+    const resizeObserver = new ResizeObserver(resizeOnce)
+    resizeObserver.observe(target)
+    const mutationObserver = new MutationObserver(resizeOnce)
+    mutationObserver.observe(target, { attributes: true, childList: true, characterData: true, subtree: true })
     return {
         update(params) {
             grow = params.grow
             shrink = params.shrink
+            resizeOnce()
         },
         destroy() {
-            observer.disconnect()
+            resizeObserver.disconnect()
+            mutationObserver.disconnect()
         },
     }
 }
