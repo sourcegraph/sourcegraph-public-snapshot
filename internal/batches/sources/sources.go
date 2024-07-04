@@ -113,7 +113,7 @@ type Sourcer interface {
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
 	// ForExternalService returns a ChangesetSource based on the provided external service opts.
 	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
+	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error)
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
@@ -228,13 +228,23 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
-	// Empty authenticators are not allowed.
+type ForExternalServiceOpts struct {
+	ExternalServiceID   string
+	ExternalServiceType string
+	GitHubAppAccount    string
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
+func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error) {
+	// Empty authenticators are not for non-GitHubApp authentication strategies.
 	if au == nil {
 		return nil, ErrMissingCredentials
 	}
 
-	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
+	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: opts.ExternalServiceType,
+		ExternalServiceID:   opts.ExternalServiceID,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
@@ -249,6 +259,9 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
+	}
+	if as == AuthenticationStrategyGitHubApp {
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, opts.GitHubAppAccount, opts.GitHubAppKind)
 	}
 	return css.WithAuthenticator(au)
 }

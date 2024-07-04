@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"strconv"
 	"strings"
 
@@ -69,6 +70,7 @@ func commentSSHKey(ssh auth.AuthenticatorWithSSH) string {
 }
 
 type batchChangesUserCredentialResolver struct {
+	ghastore   ghastore.GitHubAppsStore
 	credential *database.UserCredential
 }
 
