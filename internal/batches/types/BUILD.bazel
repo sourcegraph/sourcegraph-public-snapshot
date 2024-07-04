@@ -44,6 +44,7 @@ go_library(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitlab/webhooks",
+        "//internal/github_apps/auth",
         "//internal/gitserver/gitdomain",
         "//internal/perforce",
         "//internal/timeutil",
