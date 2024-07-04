@@ -1,0 +1,29 @@
+{
+  "private": true,
+  "description": "The Sourcegraph Appliance",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph/internal/appliance"
+  },
+  "engines": {
+    "node": "^v20.8.0",
+    "pnpm": "^8.9.2"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/icons-material": "^5.15.21",
+    "@mui/material": "^5.15.21",
+    "classnames": "^2.5.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "^6.24.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.23.0",
+    "esbuild-plugin-tsconfig-paths": "^1.0.1",
+    "typescript": "^5.2.2"
+  }
+}
