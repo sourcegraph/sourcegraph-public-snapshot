@@ -118,8 +118,8 @@ export const Progress: React.FC<{
                         ? `Installing...`
                         : `Upgrading...`
                     : action === 'install'
-                      ? `Installing version ${version}...`
-                      : `Upgrading to version ${version}...`}
+                    ? `Installing version ${version}...`
+                    : `Upgrading to version ${version}...`}
             </Typography>
             <ProgressBar value={progress} />
             {error && <Alert severity="error">{error}</Alert>}
