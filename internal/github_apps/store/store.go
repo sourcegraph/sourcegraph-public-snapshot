@@ -69,8 +69,8 @@ type GitHubAppsStore interface {
 	// GetBySlug retrieves a GitHub App from the database by slug and base url
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
 
-	// GetByDomain retrieves a GitHub App from the database by domain and base url
-	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error)
+	// GetByDomainAndKind retrieves a GitHub App from the database by domain and kind and base url
+	GetByDomainAndKind(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error)
 
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
@@ -137,7 +137,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
 	// User credentials are allowed to have multiple instances, so we ignore apps for that kind.
 	if domain == itypes.BatchesGitHubAppDomain && kind != ghtypes.UserCredentialGitHubAppKind {
-		existingGHApp, err := s.GetByDomain(ctx, domain, kind, baseURL.String())
+		existingGHApp, err := s.GetByDomainAndKind(ctx, domain, kind, baseURL.String())
 		// An error is expected if no existing app was found, but we double-check that
 		// we didn't get a different, unrelated error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
@@ -426,7 +426,7 @@ func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL st
 }
 
 // GetByDomain retrieves a GitHub App from the database by domain and base url
-func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error) {
+func (s *gitHubAppsStore) GetByDomainAndKind(ctx context.Context, domain itypes.GitHubAppDomain, kind ghtypes.GitHubAppKind, baseURL string) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`domain = %s AND kind = %s AND %s`, domain, kind, baseURLWhere(baseURL)))
 }
 

@@ -44,7 +44,7 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 		gstore := ghstore.GitHubAppsWith(c.store.Store)
 		domain := itypes.BatchesGitHubAppDomain
 		kind := ghtypes.CommitSigningGitHubAppKind
-		ghapp, err := gstore.GetByDomain(ctx, domain, kind, c.codeHost.ExternalServiceID)
+		ghapp, err := gstore.GetByDomainAndKind(ctx, domain, kind, c.codeHost.ExternalServiceID)
 		if err != nil {
 			if _, ok := err.(ghstore.ErrNoGitHubAppFound); ok {
 				return nil, nil

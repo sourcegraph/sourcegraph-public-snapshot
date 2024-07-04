@@ -386,7 +386,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, kind, baseURL.String())
+	app, err := tx.GitHubAppsStore().GetByDomainAndKind(ctx, types.BatchesGitHubAppDomain, kind, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}

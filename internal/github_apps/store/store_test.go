@@ -392,7 +392,7 @@ func TestGetByDomain(t *testing.T) {
 	require.NoError(t, err)
 
 	domain := types.ReposGitHubAppDomain
-	fetched, err := store.GetByDomain(ctx, domain, ghtypes.RepoSyncGitHubAppKind, "https://github.com/")
+	fetched, err := store.GetByDomainAndKind(ctx, domain, ghtypes.RepoSyncGitHubAppKind, "https://github.com/")
 	require.NoError(t, err)
 	require.Equal(t, repoApp.AppID, fetched.AppID)
 	require.Equal(t, repoApp.Name, fetched.Name)
@@ -407,7 +407,7 @@ func TestGetByDomain(t *testing.T) {
 	require.NotZero(t, fetched.UpdatedAt)
 
 	// does not exist
-	fetched, err = store.GetByDomain(ctx, domain, ghtypes.RepoSyncGitHubAppKind, "https://myCompany.github.com/")
+	fetched, err = store.GetByDomainAndKind(ctx, domain, ghtypes.RepoSyncGitHubAppKind, "https://myCompany.github.com/")
 	require.Nil(t, fetched)
 	require.Error(t, err)
 	notFoundErr, ok := err.(ErrNoGitHubAppFound)
@@ -415,7 +415,7 @@ func TestGetByDomain(t *testing.T) {
 	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND kind = REPO_SYNC AND trim(trailing '/' from base_url) = https://myCompany.github.com'")
 
 	domain = types.BatchesGitHubAppDomain
-	fetched, err = store.GetByDomain(ctx, domain, ghtypes.CommitSigningGitHubAppKind, "https://github.com/")
+	fetched, err = store.GetByDomainAndKind(ctx, domain, ghtypes.CommitSigningGitHubAppKind, "https://github.com/")
 	require.NoError(t, err)
 	require.Equal(t, batchesApp.AppID, fetched.AppID)
 }
