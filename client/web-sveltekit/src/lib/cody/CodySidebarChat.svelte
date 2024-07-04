@@ -3,7 +3,7 @@
     import { createElement } from 'react'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
-    import { CodySidebar_Repository } from './CodySidebar.gql'
+    import type { CodySidebar_Repository } from './CodySidebar.gql'
 
     import 'cody-web-experimental/dist/style.css'
     import { createLocalWritable } from '$lib/stores'

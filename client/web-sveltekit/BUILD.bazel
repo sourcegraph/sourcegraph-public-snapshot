@@ -64,6 +64,8 @@ BUILD_DEPS = [
     "//:node_modules/@reach/menu-button",
     "//:node_modules/@types/lodash",
     "//:node_modules/@types/node",
+    "//:node_modules/@types/react",
+    "//:node_modules/@types/react-dom",
     "//:node_modules/classnames",
     "//:node_modules/copy-to-clipboard",
     "//:node_modules/date-fns",
