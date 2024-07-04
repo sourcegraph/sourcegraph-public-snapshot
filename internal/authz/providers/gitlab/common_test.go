@@ -9,12 +9,10 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -340,36 +338,6 @@ func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr str
 		}
 	}
 	return pagedUsers, nextPageURL, nil
-}
-
-type mockAuthnProvider struct {
-	configID  providers.ConfigID
-	serviceID string
-}
-
-func (m mockAuthnProvider) ConfigID() providers.ConfigID {
-	return m.configID
-}
-
-func (m mockAuthnProvider) Config() schema.AuthProviders {
-	return schema.AuthProviders{
-		Gitlab: &schema.GitLabAuthProvider{
-			Type: m.configID.Type,
-			Url:  m.configID.ID,
-		},
-	}
-}
-
-func (m mockAuthnProvider) CachedInfo() *providers.Info {
-	return &providers.Info{ServiceID: m.serviceID}
-}
-
-func (m mockAuthnProvider) Refresh(ctx context.Context) error {
-	panic("should not be called")
-}
-
-func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	panic("should not be called")
 }
 
 func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) *extsvc.Account {

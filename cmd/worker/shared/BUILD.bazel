@@ -43,7 +43,6 @@ go_library(
         "//cmd/worker/internal/zoektrepos",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//internal/auth/userpasswd",
         "//internal/authz",
         "//internal/authz/subrepoperms",
         "//internal/codeintel/syntactic_indexing",

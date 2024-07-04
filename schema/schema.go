@@ -1279,15 +1279,6 @@ type ExportUsageTelemetry struct {
 	// TopicProjectName description: GCP project name containing the usage data pubsub topic
 	TopicProjectName string `json:"topicProjectName,omitempty"`
 }
-type ExternalIdentity struct {
-	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
-	AuthProviderID string `json:"authProviderID"`
-	// AuthProviderType description: The `type` field of the targeted authentication provider.
-	AuthProviderType string `json:"authProviderType"`
-	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
-	GitlabProvider string `json:"gitlabProvider"`
-	Type           string `json:"type"`
-}
 
 // FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 type FileFilters struct {
@@ -1599,7 +1590,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
+	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "username", this token should also have "sudo" scope.
 	Token string `json:"token"`
 	// TokenOauthExpiry description: The OAuth token expiry (Unix timestamp in seconds)
 	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
@@ -1713,7 +1704,6 @@ type Header struct {
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
 	Username *UsernameIdentity
-	External *ExternalIdentity
 }
 
 func (v IdentityProvider) MarshalJSON() ([]byte, error) {
@@ -1722,9 +1712,6 @@ func (v IdentityProvider) MarshalJSON() ([]byte, error) {
 	}
 	if v.Username != nil {
 		return json.Marshal(v.Username)
-	}
-	if v.External != nil {
-		return json.Marshal(v.External)
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
@@ -1736,14 +1723,12 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	case "external":
-		return json.Unmarshal(data, &v.External)
 	case "oauth":
 		return json.Unmarshal(data, &v.Oauth)
 	case "username":
 		return json.Unmarshal(data, &v.Username)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username"})
 }
 
 type ImportChangesets struct {
