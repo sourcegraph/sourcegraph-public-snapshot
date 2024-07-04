@@ -41,6 +41,18 @@ func validateProvider(p types.Provider) error {
 	// data here, as it isn't clear if that is even a good idea
 	// in the first place. (e.g. we may not know the exact format
 	// of some 3rd party provider's configuration knob.)
+
+	// But there are some cases which are just too error prone to let slide...
+	if ssCfg := p.ServerSideConfig; ssCfg != nil {
+		// If using the "GenericProvider", we need to know the actual shape of the HTTP request
+		// to send!
+		if genCfg := ssCfg.GenericProvider; genCfg != nil {
+			if genCfg.ServiceName == "" {
+				return errors.New("no service name set for generic provider")
+			}
+		}
+	}
+
 	return nil
 }
 

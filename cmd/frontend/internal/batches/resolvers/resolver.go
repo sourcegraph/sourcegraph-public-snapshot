@@ -340,7 +340,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
+	return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
 }
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
@@ -357,7 +357,7 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
 }
 
 func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
