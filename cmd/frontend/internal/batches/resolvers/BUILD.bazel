@@ -69,6 +69,7 @@ go_library(
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
         "//internal/featureflag",
+        "//internal/github_apps/auth",
         "//internal/github_apps/store",
         "//internal/github_apps/types",
         "//internal/gitserver",
