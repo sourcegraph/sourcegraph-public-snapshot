@@ -283,13 +283,6 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
 	authz := userCredentialsAuthzQueryConds(ctx)
 
-	var githubAppIDClause *sqlf.Query
-	if scope.GitHubAppID == 0 {
-		githubAppIDClause = sqlf.Sprintf("github_app_id IS NULL")
-	} else {
-		githubAppIDClause = sqlf.Sprintf("github_app_id = %d", scope.GitHubAppID)
-	}
-
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -297,7 +290,6 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		githubAppIDClause,
 		authz,
 	)
 
@@ -425,7 +417,6 @@ WHERE
 	user_id = %s AND
 	external_service_type = %s AND
 	external_service_id = %s AND
-	%s AND
 	%s -- authz query conds
 `
 
