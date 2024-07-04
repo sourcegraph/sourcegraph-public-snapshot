@@ -145,7 +145,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
-		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
+		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on, batchSpec.Version)
 		if err != nil {
 			errs = errors.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
 			continue
@@ -230,12 +230,12 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
 // resolveRepositoriesOn resolves a single on: entry in a batch spec.
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
+func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository, batchSpecVersion string) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn")
 	defer tr.EndWithErr(&err)
 
 	if on.RepositoriesMatchingQuery != "" {
-		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery, batchSpecVersion)
 		return revs, onlib.RepositoryRuleTypeQuery, err
 	}
 
@@ -313,7 +313,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 	}, nil
 }
 
-func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
+func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string, batchSpecVersion string) (_ []*RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositorySearch")
 	defer tr.EndWithErr(&err)
 
@@ -331,7 +331,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 			repoMap[path] = true
 		}
 	}
-	if err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
+	if err := wr.runSearch(ctx, query, batchSpecVersion, func(matches []streamhttp.EventMatch) {
 		for _, match := range matches {
 			switch m := match.(type) {
 			case *streamhttp.EventRepoMatch:
@@ -388,9 +388,19 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
-func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	// TODO(stefan): Remove defaultPatternType once we introduce "V4" in the backend.
-	defaultPatternType := searchquery.SearchTypeKeyword
+func determineDefaultPatternType(batchSpecVersion string) searchquery.SearchType {
+	switch batchSpecVersion {
+	case "v1":
+		return searchquery.SearchTypeStandard
+	case "v2":
+		return searchquery.SearchTypeKeyword
+	default:
+		return searchquery.SearchTypeStandard
+	}
+}
+
+func (wr *workspaceResolver) runSearch(ctx context.Context, query string, batchSpecVersion string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
+	defaultPatternType := determineDefaultPatternType(batchSpecVersion)
 	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion, &defaultPatternType)
 	if err != nil {
 		return err
@@ -486,12 +496,12 @@ const findDirectoriesInReposConcurrency = 10
 // The locations are paths relative to the root of the directory.
 // No "/" at the beginning.
 // A dot (".") represents the root directory.
-func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
 	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
-		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:all`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
+		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:all patterntype:keyword`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
 
 		results := []string{}
-		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
+		err := wr.runSearch(ctx, query, batchSpecVersion, func(matches []streamhttp.EventMatch) {
 			for _, match := range matches {
 				switch m := match.(type) {
 				case *streamhttp.EventPathMatch:
@@ -553,7 +563,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 }
 
 type directoryFinder interface {
-	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
+	FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
 }
 
 // findWorkspaces matches the given repos to the workspace configs and
@@ -626,7 +636,7 @@ func findWorkspaces(
 	workspacesByRepoRev := map[repoRevKey]repoWorkspaces{}
 	for idx, repoRevs := range matched {
 		conf := spec.Workspaces[idx]
-		repoRevDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocationOf, repoRevs...)
+		repoRevDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocationOf, spec.Version, repoRevs...)
 		if err != nil {
 			return nil, err
 		}

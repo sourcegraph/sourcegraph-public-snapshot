@@ -2,6 +2,7 @@ package batches
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/env"
@@ -11,6 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// LatestBatchSpecVersion is the current batch spec version.
+//
+// Changes:
+// v2: the default pattern type of on.repositoriesMatchingQuery changed from standard to keyword
+// <add descriptions of new versions here>
+const LatestBatchSpecVersion = "v2"
+
+var SupportedBatchSpecVersions = []string{"v1", "v2"}
 
 // Some general notes about the struct definitions below.
 //
@@ -29,6 +39,7 @@ import (
 //    pointers, which is ugly and inefficient.
 
 type BatchSpec struct {
+	Version           string                   `json:"version,omitempty" yaml:"version"`
 	Name              string                   `json:"name,omitempty" yaml:"name"`
 	Description       string                   `json:"description,omitempty" yaml:"description"`
 	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on"`
@@ -175,6 +186,11 @@ func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount mountpoint contains invalid characters", i+1)))
 			}
 		}
+	}
+
+	// For backward compatibility, we allow the version field to be omitted.
+	if spec.Version != "" && !slices.Contains(SupportedBatchSpecVersions, spec.Version) {
+		errs = errors.Append(errs, NewValidationError(errors.Newf("unsupported batch spec version %s. Supported versions are %s", spec.Version, strings.Join(SupportedBatchSpecVersions, ", "))))
 	}
 
 	return &spec, errs

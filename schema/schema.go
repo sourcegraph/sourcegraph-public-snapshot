@@ -309,6 +309,8 @@ type BatchSpec struct {
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Version description: The version of the batch spec schema. Defaults to v1.
+	Version string `json:"version,omitempty"`
 	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }

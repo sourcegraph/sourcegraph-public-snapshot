@@ -11,7 +11,7 @@ import (
 )
 
 func TestParseBatchSpec(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
+	t.Run("valid_without_version", func(t *testing.T) {
 		const spec = `
 name: hello-world
 description: Add Hello World to READMEs
@@ -34,6 +34,81 @@ changesetTemplate:
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
+	})
+
+	t.Run("valid with version v1", func(t *testing.T) {
+		const spec = `
+version: v1
+name: hello-world
+description: Add Hello World to READMEs
+on:
+  - repositoriesMatchingQuery: file:README.md
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+  fork: false
+`
+
+		_, err := ParseBatchSpec([]byte(spec))
+		if err != nil {
+			t.Fatalf("parsing valid spec returned error: %s", err)
+		}
+	})
+
+	t.Run("valid with version v2", func(t *testing.T) {
+		const spec = `
+version: v2
+name: hello-world
+description: Add Hello World to READMEs
+on:
+  - repositoriesMatchingQuery: file:README.md
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+  fork: false
+`
+
+		_, err := ParseBatchSpec([]byte(spec))
+		if err != nil {
+			t.Fatalf("parsing valid spec returned error: %s", err)
+		}
+	})
+
+	t.Run("invalid version", func(t *testing.T) {
+		const spec = `
+version: v99
+name: hello-world
+description: Add Hello World to READMEs
+on:
+  - repositoriesMatchingQuery: file:README.md
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+  fork: false
+`
+		_, err := ParseBatchSpec([]byte(spec))
+		assert.Equal(t, "unsupported batch spec version v99. Supported versions are v1, v2", err.Error())
 	})
 
 	t.Run("missing changesetTemplate", func(t *testing.T) {

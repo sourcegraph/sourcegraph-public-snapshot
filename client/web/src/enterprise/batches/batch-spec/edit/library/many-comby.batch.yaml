@@ -1,3 +1,4 @@
+version: v2
 name: many-comby
 description: |
   Apply many comby match patterns
