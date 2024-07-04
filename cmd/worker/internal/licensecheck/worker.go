@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 type licenseWorker struct{}
@@ -61,7 +62,7 @@ func (l *licenseChecksWrapper) Start() {
 		})
 	})
 	if !dotcom.SourcegraphDotComMode() {
-		StartLicenseCheck(context.Background(), l.logger, l.db)
+		StartLicenseCheck(context.Background(), l.logger, l.db, redispool.Store)
 	}
 }
 

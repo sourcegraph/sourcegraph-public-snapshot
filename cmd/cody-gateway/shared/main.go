@@ -154,7 +154,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		sources.Add(
 			dotcomuser.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
 				dotcomClient,
 				cfg.ActorConcurrencyLimit,
 				rs,
@@ -194,7 +194,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
+				rcache.NewWithTTL(redispool.Cache, fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(cfg.SourcesCacheTTL.Seconds())),
 				codyaccessv1.NewCodyAccessServiceClient(conn),
 				cfg.ActorConcurrencyLimit,
 			),

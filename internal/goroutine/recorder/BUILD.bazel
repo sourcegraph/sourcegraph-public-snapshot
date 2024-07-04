@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/rcache",
+        "//internal/redispool",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -28,6 +29,7 @@ go_test(
     ],
     deps = [
         "//internal/rcache",
+        "//internal/redispool",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",
