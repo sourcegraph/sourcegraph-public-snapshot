@@ -41,6 +41,10 @@
     "true-case-path": "^2.2.1"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-query": "^1.4.1",
+    "@connectrpc/connect-web": "^1.4.0",
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",

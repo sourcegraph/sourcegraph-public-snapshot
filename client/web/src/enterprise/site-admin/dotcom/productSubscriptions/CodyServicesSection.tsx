@@ -1,14 +1,16 @@
 import React, { useCallback, useState } from 'react'
 
+import type { ConnectError } from '@connectrpc/connect'
+import { createQueryOptions, defaultOptions } from '@connectrpc/connect-query'
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
-import { parseISO } from 'date-fns'
+import { QueryClient, UseQueryResult, useQuery } from '@tanstack/react-query'
 import type { GraphQLError } from 'graphql'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation } from '@sourcegraph/http-client'
 import { CodyGatewayRateLimitSource } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import {
     H3,
     ProductStatusBadge,
@@ -35,21 +37,15 @@ import type {
     Scalars,
     UpdateCodyGatewayConfigResult,
     UpdateCodyGatewayConfigVariables,
-    CodyGatewayRateLimitUsageDatapoint,
     CodyGatewayRateLimitFields,
-    DotComProductSubscriptionCodyGatewayCompletionsUsageResult,
-    DotComProductSubscriptionCodyGatewayCompletionsUsageVariables,
-    DotComProductSubscriptionCodyGatewayEmbeddingsUsageVariables,
-    DotComProductSubscriptionCodyGatewayEmbeddingsUsageResult,
 } from '../../../../graphql-operations'
 import { ChartContainer } from '../../../../site-admin/analytics/components/ChartContainer'
 
-import {
-    DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE,
-    DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE,
-    UPDATE_CODY_GATEWAY_CONFIG,
-} from './backend'
+import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
+import { enterprisePortalLocal } from './enterpriseportal'
+import { getCodyGatewayUsage } from './enterpriseportalgen/codyaccess-CodyAccessService_connectquery'
+import type { CodyGatewayUsage_UsageDatapoint, GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyaccess_pb'
 import { numberFormatter, prettyInterval } from './utils'
 
 import styles from './CodyServicesSection.module.scss'
@@ -74,6 +70,17 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     codyGatewayAccess,
     telemetryRecorder,
 }) => {
+    const codyGatewayUsageQuery = useQuery(
+        createQueryOptions(
+            getCodyGatewayUsage,
+            {
+                query: { value: productSubscriptionUUID, case: 'subscriptionId' },
+            },
+            { transport: enterprisePortalLocal }
+        ),
+        new QueryClient({ defaultOptions })
+    )
+
     const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
         useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
 
@@ -175,7 +182,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         />
                                     </tbody>
                                 </table>
-                                <RateLimitUsage mode="completions" productSubscriptionUUID={productSubscriptionUUID} />
+                                <RateLimitUsage mode="completions" usageQuery={codyGatewayUsageQuery} />
 
                                 <hr className="my-3" />
 
@@ -201,10 +208,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         />
                                     </tbody>
                                 </table>
-                                <EmbeddingsRateLimitUsage
-                                    mode="embeddings"
-                                    productSubscriptionUUID={productSubscriptionUUID}
-                                />
+                                <EmbeddingsRateLimitUsage mode="embeddings" usageQuery={codyGatewayUsageQuery} />
                             </>
                         )}
 
@@ -277,8 +281,8 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
     }
 }
 
-function generateSeries(data: CodyGatewayRateLimitUsageDatapoint[]): [string, CodyGatewayRateLimitUsageDatapoint[]][] {
-    const series: Record<string, CodyGatewayRateLimitUsageDatapoint[]> = {}
+function generateSeries(data: CodyGatewayUsage_UsageDatapoint[]): [string, CodyGatewayUsage_UsageDatapoint[]][] {
+    const series: Record<string, CodyGatewayUsage_UsageDatapoint[]> = {}
     for (const entry of data) {
         if (!series[entry.model]) {
             series[entry.model] = []
@@ -411,17 +415,12 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
 }
 
 interface RateLimitUsageProps {
-    productSubscriptionUUID: string
+    usageQuery: UseQueryResult<GetCodyGatewayUsageResponse, ConnectError>
     mode: 'completions' | 'embeddings'
 }
 
-const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productSubscriptionUUID }) => {
-    const { data, loading, error } = useQuery<
-        DotComProductSubscriptionCodyGatewayCompletionsUsageResult,
-        DotComProductSubscriptionCodyGatewayCompletionsUsageVariables
-    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE, { variables: { uuid: productSubscriptionUUID } })
-
-    if (loading && !data) {
+const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ usageQuery: { data, isLoading, error } }) => {
+    if (isLoading && !data) {
         return (
             <>
                 <H5 className="mb-2">Usage</H5>
@@ -439,8 +438,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
         )
     }
 
-    const { codyGatewayAccess } = data!.dotcom.productSubscription
-
+    const usage = data?.usage
     return (
         <>
             <H5 className="mb-2">Usage</H5>
@@ -450,28 +448,28 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                         width={width}
                         height={200}
                         series={[
-                            ...generateSeries(codyGatewayAccess.chatCompletionsRateLimit?.usage ?? []).map(
-                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                            ...generateSeries(usage?.chatCompletionsUsage ?? []).map(
+                                ([model, data]): Series<CodyGatewayUsage_UsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
-                                        return parseISO(datum.date)
+                                        return datum.time?.toDate() || new Date()
                                     },
                                     getYValue(datum) {
-                                        return Number(datum.count)
+                                        return Number(datum.usage)
                                     },
                                     id: 'chat-usage',
                                     name: 'Chat completions: ' + model,
                                     color: 'var(--purple)',
                                 })
                             ),
-                            ...generateSeries(codyGatewayAccess.codeCompletionsRateLimit?.usage ?? []).map(
-                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                            ...generateSeries(data?.usage?.codeCompletionsUsage ?? []).map(
+                                ([model, data]): Series<CodyGatewayUsage_UsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
-                                        return parseISO(datum.date)
+                                        return datum.time?.toDate() || new Date()
                                     },
                                     getYValue(datum) {
-                                        return Number(datum.count)
+                                        return Number(datum.usage)
                                     },
                                     id: 'code-completions-usage',
                                     name: 'Code completions: ' + model,
@@ -486,13 +484,10 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
     )
 }
 
-const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productSubscriptionUUID }) => {
-    const { data, loading, error } = useQuery<
-        DotComProductSubscriptionCodyGatewayEmbeddingsUsageResult,
-        DotComProductSubscriptionCodyGatewayEmbeddingsUsageVariables
-    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE, { variables: { uuid: productSubscriptionUUID } })
-
-    if (loading && !data) {
+const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({
+    usageQuery: { data, isLoading, error },
+}) => {
+    if (isLoading && !data) {
         return (
             <>
                 <H5 className="mb-2">Usage</H5>
@@ -510,8 +505,7 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
         )
     }
 
-    const { codyGatewayAccess } = data!.dotcom.productSubscription
-
+    const usage = data?.usage
     return (
         <>
             <H5 className="mb-2">Usage</H5>
@@ -521,16 +515,16 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                         width={width}
                         height={200}
                         series={[
-                            ...generateSeries(codyGatewayAccess.embeddingsRateLimit?.usage ?? []).map(
-                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                            ...generateSeries(usage?.embeddingsUsage ?? []).map(
+                                ([model, data]): Series<CodyGatewayUsage_UsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
-                                        return parseISO(datum.date)
+                                        return datum.time?.toDate() || new Date()
                                     },
                                     getYValue(datum) {
-                                        return Number(datum.count)
+                                        return Number(datum.usage)
                                     },
-                                    id: 'chat-usage',
+                                    id: 'embeddings-usage',
                                     name: 'Embedded tokens: ' + model,
                                     color: 'var(--purple)',
                                 })
