@@ -80,6 +80,7 @@ go_test(
         "//internal/api",
         "//internal/auth",
         "//internal/batches/reconciler",
+        "//internal/batches/sources",
         "//internal/batches/sources/testing",
         "//internal/batches/store",
         "//internal/batches/testing",
