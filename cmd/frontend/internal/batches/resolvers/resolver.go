@@ -1137,14 +1137,14 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		if err != nil {
 			return nil, err
 		}
-		return &batchChangesUserCredentialResolver{credential: cred, ghastore: r.db.GitHubApps()}, nil
+		return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
 	}
 
 	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		return nil, err
 	}
-	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
 }
 
 func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
