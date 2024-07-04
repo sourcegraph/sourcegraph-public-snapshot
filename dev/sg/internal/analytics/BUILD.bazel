@@ -1,8 +1,12 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "analytics",
-    srcs = ["analytics.go"],
+    srcs = [
+        "analytics.go",
+        "sqlite.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics",
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
@@ -11,5 +15,13 @@ go_library(
         "//dev/sg/root",
         "@com_github_google_uuid//:uuid",
         "@org_modernc_sqlite//:sqlite",
+        "@org_modernc_sqlite//lib",
     ],
+)
+
+go_test(
+    name = "analytics_test",
+    srcs = ["analytics_test.go"],
+    embed = [":analytics"],
+    deps = ["//dev/sg/root"],
 )
