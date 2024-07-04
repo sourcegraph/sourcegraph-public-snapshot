@@ -39,41 +39,24 @@ func (o Option[A]) Get() (A, bool) {
 }
 
 func (o Option[A]) Unwrap() A {
-	val, ok := o.Get()
-	if !ok {
-		panic("called Option.Unwrap on None")
+	if o.IsSome() {
+		return *o.value
 	}
-	return val
+	panic("called Option.Unwrap on None")
 }
 
 func (o Option[A]) UnwrapOr(defaultValue A) A {
-	val, ok := o.Get()
-	if !ok {
-		return defaultValue
-	}
-	return val
-}
-
-func (o Option[A]) UnwrapOrElse(defaultValue func() A) A {
-	val, ok := o.Get()
-	if !ok {
-		return defaultValue()
-	}
-	return val
-}
-
-func (o Option[A]) Or(other Option[A]) Option[A] {
 	if o.IsSome() {
-		return o
+		return o.Unwrap()
 	}
-	return other
+	return defaultValue
 }
 
-func (o Option[A]) OrElse(other func() Option[A]) Option[A] {
+func (o Option[A]) UnwrapOrElse(defaultFunc func() A) A {
 	if o.IsSome() {
-		return o
+		return o.Unwrap()
 	}
-	return other()
+	return defaultFunc()
 }
 
 func (o Option[A]) IsSome() bool {
