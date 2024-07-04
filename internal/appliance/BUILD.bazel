@@ -59,7 +59,6 @@ go_test(
         "auth_test.go",
         "versions_test.go",
     ],
-    data = glob(["testdata/**"]),
     embed = [":appliance"],
     deps = [
         "@com_github_golang_jwt_jwt_v5//:jwt",
