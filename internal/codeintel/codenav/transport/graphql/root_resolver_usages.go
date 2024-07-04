@@ -59,8 +59,12 @@ func NewSyntacticUsageResolver(usage codenav.SyntacticMatch, repository types.Re
 	}
 }
 func NewSearchBasedUsageResolver(usage codenav.SearchBasedMatch, repository types.Repo, revision api.CommitID) resolverstubs.UsageResolver {
-	// TODO: We can figure out if something is a definition via symbol search
-	kind := resolverstubs.UsageKindReference
+	var kind resolverstubs.SymbolUsageKind
+	if usage.IsDefinition {
+		kind = resolverstubs.UsageKindDefinition
+	} else {
+		kind = resolverstubs.UsageKindReference
+	}
 	return &usageResolver{
 		symbol:     nil,
 		provenance: resolverstubs.ProvenanceSearchBased,

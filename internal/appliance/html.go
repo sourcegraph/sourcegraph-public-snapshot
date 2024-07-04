@@ -7,11 +7,14 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/life4/genesis/slices"
+	passwordvalidator "github.com/wagslane/go-password-validator"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,10 +28,12 @@ func templatePath(name string) string {
 	return filepath.Join("web", "template", name+".gohtml")
 }
 
-func (a *Appliance) applianceHandler(w http.ResponseWriter, r *http.Request) {
-	if ok, _ := a.shouldSetupRun(context.Background()); ok {
-		http.Redirect(w, r, "/appliance/setup", http.StatusSeeOther)
-	}
+func (a *Appliance) applianceHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ok, _ := a.shouldSetupRun(context.Background()); ok {
+			http.Redirect(w, r, "/appliance/setup", http.StatusSeeOther)
+		}
+	})
 }
 
 func renderTemplate(name string, w io.Writer, data any) error {
@@ -39,27 +44,95 @@ func renderTemplate(name string, w io.Writer, data any) error {
 	return tmpl.Execute(w, data)
 }
 
-func (a *Appliance) getSetupHandler(w http.ResponseWriter, r *http.Request) {
-	versions, err := a.getVersions(r.Context())
-	if err != nil {
-		a.handleError(w, err, "getting versions")
-		return
-	}
-	versions, err = NMinorVersions(versions, a.latestSupportedVersion, 2)
-	if err != nil {
-		a.handleError(w, err, "filtering versions to 2 minor points")
-		return
-	}
+func (a *Appliance) getSetupHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		versions, err := a.getVersions(r.Context())
+		if err != nil {
+			a.handleError(w, err, "getting versions")
+			return
+		}
+		versions, err = NMinorVersions(versions, a.latestSupportedVersion, 2)
+		if err != nil {
+			a.handleError(w, err, "filtering versions to 2 minor points")
+			return
+		}
 
-	err = renderTemplate("setup", w, struct {
-		Versions []string
-	}{
-		Versions: versions,
+		err = renderTemplate("setup", w, struct {
+			Versions []string
+		}{
+			Versions: versions,
+		})
+		if err != nil {
+			a.handleError(w, err, "executing template")
+			return
+		}
 	})
-	if err != nil {
-		a.handleError(w, err, "executing template")
-		return
-	}
+}
+
+func (a *Appliance) getLoginHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if len(a.adminPasswordBcrypt) == 0 {
+			msg := fmt.Sprintf(
+				"You must set a password: please create a secret named '%s' with key '%s'.",
+				initialPasswordSecretName,
+				initialPasswordSecretPasswordKey,
+			)
+			a.redirectToErrorPage(w, r, msg, errors.New("no admin password set"), true)
+			return
+		}
+
+		if err := renderTemplate("landing", w, struct {
+			Flash string
+		}{
+			Flash: r.URL.Query().Get(queryKeyUserMessage),
+		}); err != nil {
+			a.handleError(w, err, "executing template")
+			return
+		}
+	})
+}
+
+func (a *Appliance) postLoginHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userSuppliedPassword := r.FormValue("password")
+		if err := bcrypt.CompareHashAndPassword(a.adminPasswordBcrypt, []byte(userSuppliedPassword)); err != nil {
+			if err == bcrypt.ErrMismatchedHashAndPassword {
+				a.redirectWithError(w, r, r.URL.Path, "Supplied password is incorrect.", err, true)
+				return
+			}
+
+			a.redirectToErrorPage(w, r, errMsgSomethingWentWrong, err, false)
+			return
+		}
+
+		if err := passwordvalidator.Validate(userSuppliedPassword, 60); err != nil {
+			msg := fmt.Sprintf(
+				"Please set a stronger password: delete the '%s' secret, and create a new secret named '%s' with key '%s'.",
+				dataSecretName,
+				initialPasswordSecretName,
+				initialPasswordSecretPasswordKey,
+			)
+			a.redirectToErrorPage(w, r, msg, err, true)
+			return
+		}
+
+		validUntil := time.Now().Add(time.Hour).UTC()
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			jwtClaimsValidUntilKey: validUntil.Format(time.RFC3339),
+		})
+		tokenStr, err := token.SignedString(a.jwtSecret)
+		if err != nil {
+			a.handleError(w, err, errMsgSomethingWentWrong)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:    authCookieName,
+			Value:   tokenStr,
+			Expires: validUntil,
+		})
+		http.Redirect(w, r, "/appliance", http.StatusFound)
+	})
 }
 
 func (a *Appliance) handleError(w http.ResponseWriter, err error, msg string) {
@@ -70,7 +143,7 @@ func (a *Appliance) handleError(w http.ResponseWriter, err error, msg string) {
 	// Don't leak details of internal errors to users - that's why we have
 	// logging above.
 	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintln(w, "Something went wrong - please contact support.")
+	fmt.Fprintln(w, errMsgSomethingWentWrong)
 }
 
 func (a *Appliance) getVersions(ctx context.Context) ([]string, error) {
@@ -83,49 +156,51 @@ func (a *Appliance) getVersions(ctx context.Context) ([]string, error) {
 	}), nil
 }
 
-func (a *Appliance) postSetupHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		a.logger.Error("failed to parse http form request", log.Error(err))
-		// Handle err
-	}
-
-	a.sourcegraph.Spec.RequestedVersion = r.FormValue("version")
-	if r.FormValue("external_database") == formValueOn {
-		a.sourcegraph.Spec.PGSQL.DatabaseConnection = &config.DatabaseConnectionSpec{
-			Host:     r.FormValue("pgsqlDBHost"),
-			Port:     r.FormValue("pgsqlDBPort"),
-			User:     r.FormValue("pgsqlDBUser"),
-			Password: r.FormValue("pgsqlDBPassword"),
-			Database: r.FormValue("pgsqlDBName"),
+func (a *Appliance) postSetupHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			a.logger.Error("failed to parse http form request", log.Error(err))
+			// Handle err
 		}
-		a.sourcegraph.Spec.CodeIntel.DatabaseConnection = &config.DatabaseConnectionSpec{
-			Host:     r.FormValue("codeintelDBHost"),
-			Port:     r.FormValue("codeintelDBPort"),
-			User:     r.FormValue("codeintelDBUser"),
-			Password: r.FormValue("codeintelDBPassword"),
-			Database: r.FormValue("codeintelDBName"),
+
+		a.sourcegraph.Spec.RequestedVersion = r.FormValue("version")
+		if r.FormValue("external_database") == formValueOn {
+			a.sourcegraph.Spec.PGSQL.DatabaseConnection = &config.DatabaseConnectionSpec{
+				Host:     r.FormValue("pgsqlDBHost"),
+				Port:     r.FormValue("pgsqlDBPort"),
+				User:     r.FormValue("pgsqlDBUser"),
+				Password: r.FormValue("pgsqlDBPassword"),
+				Database: r.FormValue("pgsqlDBName"),
+			}
+			a.sourcegraph.Spec.CodeIntel.DatabaseConnection = &config.DatabaseConnectionSpec{
+				Host:     r.FormValue("codeintelDBHost"),
+				Port:     r.FormValue("codeintelDBPort"),
+				User:     r.FormValue("codeintelDBUser"),
+				Password: r.FormValue("codeintelDBPassword"),
+				Database: r.FormValue("codeintelDBName"),
+			}
+			a.sourcegraph.Spec.CodeInsights.DatabaseConnection = &config.DatabaseConnectionSpec{
+				Host:     r.FormValue("codeinsightsDBHost"),
+				Port:     r.FormValue("codeinsightsDBPort"),
+				User:     r.FormValue("codeinsightsDBUser"),
+				Password: r.FormValue("codeinsightsDBPassword"),
+				Database: r.FormValue("codeinsightsDBName"),
+			}
 		}
-		a.sourcegraph.Spec.CodeInsights.DatabaseConnection = &config.DatabaseConnectionSpec{
-			Host:     r.FormValue("codeinsightsDBHost"),
-			Port:     r.FormValue("codeinsightsDBPort"),
-			User:     r.FormValue("codeinsightsDBUser"),
-			Password: r.FormValue("codeinsightsDBPassword"),
-			Database: r.FormValue("codeinsightsDBName"),
+		// TODO validate user input
+
+		if r.FormValue("dev_mode") == formValueOn {
+			a.sourcegraph.SetLocalDevMode()
 		}
-	}
-	// TODO validate user input
 
-	if r.FormValue("dev_mode") == formValueOn {
-		a.sourcegraph.SetLocalDevMode()
-	}
+		_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance")
+		if err != nil {
+			a.logger.Error("failed to create configMap sourcegraph-appliance", log.Error(err))
+			// Handle err
+		}
+		a.status = StatusInstalling
 
-	_, err = a.CreateConfigMap(r.Context(), "sourcegraph-appliance")
-	if err != nil {
-		a.logger.Error("failed to create configMap sourcegraph-appliance", log.Error(err))
-		// Handle err
-	}
-	a.status = StatusInstalling
-
-	http.Redirect(w, r, "/appliance", http.StatusSeeOther)
+		http.Redirect(w, r, "/appliance", http.StatusSeeOther)
+	})
 }

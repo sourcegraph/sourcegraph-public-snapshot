@@ -931,12 +931,15 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.SmartContextWindow = "enabled"
 	}
 
+	disableClientConfigAPI := completionsConfig.DisableClientConfigAPI != nil && *completionsConfig.DisableClientConfigAPI
+
 	computedConfig := &conftypes.CompletionsConfig{
 		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:            completionsConfig.AccessToken,
 		ChatModel:              completionsConfig.ChatModel,
 		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
 		SmartContextWindow:     completionsConfig.SmartContextWindow,
+		DisableClientConfigAPI: disableClientConfigAPI,
 		FastChatModel:          completionsConfig.FastChatModel,
 		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
 		AzureUseDeprecatedCompletionsAPIForOldModels: completionsConfig.AzureUseDeprecatedCompletionsAPIForOldModels,
@@ -1358,4 +1361,14 @@ func Branding() *schema.Branding {
 		br = &bcopy
 	}
 	return br
+}
+
+func SCIPBasedAPIsEnabled() bool {
+	siteConfig := SiteConfig()
+	expt := siteConfig.ExperimentalFeatures
+	if expt == nil || expt.ScipBasedAPIs == nil {
+		// NOTE(id: scip-based-apis-feature-flag): Keep this in sync with site.schema.json
+		return false
+	}
+	return *expt.ScipBasedAPIs
 }
