@@ -53,6 +53,14 @@ func validateProvider(p types.Provider) error {
 		}
 	}
 
+	// BUG: We should verify the at the provider contains _some_
+	// server-side config. Since otherwise the provider cannot actually
+	// be used. However, we don't expect the Provider data exposed from
+	// the embedded binary or Cody Gateway to actually contain that
+	// server-side config because it doesn't make sense. So part of the
+	// rendering of data needs to fall back to using the Sourcegraph
+	// instance and its access token, etc.
+
 	return nil
 }
 
