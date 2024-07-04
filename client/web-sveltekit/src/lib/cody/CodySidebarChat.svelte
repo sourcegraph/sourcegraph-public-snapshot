@@ -3,12 +3,12 @@
     import { createElement } from 'react'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
-    import type { CodySidebar_Repository } from './CodySidebar.gql'
+    import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
     import 'cody-web-experimental/dist/style.css'
     import { createLocalWritable } from '$lib/stores'
 
-    export let repository: CodySidebar_Repository
+    export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
 
     const chatIDs = createLocalWritable<Record<string, string>>('cody.context-to-chat-ids', {})
@@ -24,7 +24,7 @@
         root = null
     })
 
-    function render(repository: CodySidebar_Repository, filePath: string) {
+    function render(repository: CodySidebar_ResolvedRevision, filePath: string) {
         if (!root) {
             root = createRoot(container)
         }

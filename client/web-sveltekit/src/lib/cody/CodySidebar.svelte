@@ -7,9 +7,9 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, Badge, Button } from '$lib/wildcard'
 
-    import type { CodySidebar_Repository } from './CodySidebar.gql'
+    import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
-    export let repository: CodySidebar_Repository
+    export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
 
     const dispatch = createEventDispatcher<{ close: void }>()
