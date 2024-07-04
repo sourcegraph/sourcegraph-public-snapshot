@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // pure Go SQLite implementation
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -38,7 +38,7 @@ var store = sync.OnceValue(func() analyticsStore {
 	return analyticsStore{db: db}
 })
 
-func newDiskStore() (*sql.DB, error) {
+func newDiskStore() (Execer, error) {
 	sghome, err := root.GetSGHomePath()
 	if err != nil {
 		return nil, err
@@ -50,7 +50,10 @@ func newDiskStore() (*sql.DB, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS analytics (
+
+	rdb := retryableConn{db}
+
+	_, err = rdb.Exec(`CREATE TABLE IF NOT EXISTS analytics (
 		event_uuid TEXT PRIMARY KEY,
 		-- invocation_uuid TEXT,
 		schema_version TEXT NOT NULL,
@@ -60,11 +63,11 @@ func newDiskStore() (*sql.DB, error) {
 		return nil, err
 	}
 
-	return db, nil
+	return &rdb, nil
 }
 
 type analyticsStore struct {
-	db *sql.DB
+	db Execer
 }
 
 func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, version string, meta map[string]any) {
@@ -72,7 +75,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 		return
 	}
 
-	meta["identity"] = email()
+	meta["identity"] = getEmail()
 	meta["start_time"] = time.Now()
 
 	b, err := json.Marshal(meta)
@@ -103,7 +106,8 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 	}
 }
 
-var email = sync.OnceValue[string](func() string {
+// Dont invoke this function directly. Use the `getEmail` function instead.
+func emailfunc() string {
 	sgHome, err := root.GetSGHomePath()
 	if err != nil {
 		return "anonymous"
@@ -120,9 +124,12 @@ var email = sync.OnceValue[string](func() string {
 		return "anonymous"
 	}
 	return whoami.Email
-})
+}
+
+var getEmail = sync.OnceValue[string](emailfunc)
 
 func NewInvocation(ctx context.Context, version string, meta map[string]any) context.Context {
+	// v7 for sortable property (not vital as we also store timestamps, but no harm to have)
 	u, _ := uuid.NewV7()
 	invc := invocation{u}
 

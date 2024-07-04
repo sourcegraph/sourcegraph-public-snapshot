@@ -6,6 +6,7 @@ go_library(
     name = "analytics",
     srcs = [
         "analytics.go",
+        "sqlite.go",
         "oauth.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics",
@@ -52,4 +53,11 @@ go_mockgen(
         "//:mockgen.temp.yaml",
     ],
     deps = [":analytics"],
+)
+
+go_test(
+    name = "analytics_test",
+    srcs = ["analytics_test.go"],
+    embed = [":analytics"],
+    deps = ["//dev/sg/root"],
 )
