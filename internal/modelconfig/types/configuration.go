@@ -43,17 +43,31 @@ type AzureOpenAIProviderConfig struct {
 	// for backwards compatibility, because not all Azure OpenAI models are available on the "newer" completions API.
 	//
 	// Moving forward, this information should be encoded in the ModelRef's APIVersionID instead.
-	UseDeprecatedCompletionsAPI bool `json:"useDeprecatedCompletionsApi"`
+	UseDeprecatedCompletionsAPI bool
 }
 
-// GenericProvider is the generic format that older Sourcegraph instances used.
+// GenericServiceProvider is an enum for describing the API provider to use
+// for a GenericProviderConfig. These should generally be a subset of what
+// is available via site config, `conftypes.CompletionsProviderName`.
+type GenericServiceProvider string
+
+const (
+	GenericServiceProviderAnthropic GenericServiceProvider = "anthropic"
+	GenericServiceProviderFireworks GenericServiceProvider = "fireworks"
+	GenericServiceProviderGoogle    GenericServiceProvider = "google"
+	GenericServiceProviderOpenAI    GenericServiceProvider = "openai"
+)
+
+// GenericProvider just bundles the bare-bones information needed to describe a 3rd party API.
 //
-// Try to avoid using this where possible, and instead rely on the more specific
-// types like `AzureOpenAIProviderConfig`. Even if they only contain the same fields.
-// This allows us to more gracefully migrate customers forward as the API providers
-// and associated API clients evolve. e.g. giving us the possibility of providing
-// defaults for any missing configuration settings that get added later.
+// You should NEVER add new fields to this. Instead, if we wish to expose some provider-specific
+// configuration knob please introduce a new data type specific to that provider. (Rather than
+// adding a field to GenericProviderConfig that will not be applicable or ignored in some cases.)
 type GenericProviderConfig struct {
+	// ServiceName is the name of the LLM model provider or service that this generic provider
+	// config applies to.
+	ServiceName GenericServiceProvider `json:"serviceName"`
+
 	AccessToken string `json:"accessToken"`
 	Endpoint    string `json:"endpoint"`
 }

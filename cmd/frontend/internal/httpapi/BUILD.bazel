@@ -26,6 +26,7 @@ go_library(
         "//cmd/frontend/backend",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/clientconfig",
         "//cmd/frontend/internal/cody",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/httpapi/releasecache",
