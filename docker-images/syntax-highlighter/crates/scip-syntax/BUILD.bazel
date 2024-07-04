@@ -135,3 +135,16 @@ genrule(
     """,
     tags = ["requires-network"],
 )
+
+genrule(
+    name = "new_integration",
+    srcs = [
+        "@java_example_project//:tar",
+        "@scip_java//semanticdb-javac",
+        ":scip-syntax",
+    ],
+    outs = ["index.scip"],
+    cmd = """
+     $(location :scip-syntax) index tar --language=java --out=$@ $(location @java_example_project//:tar)
+     """,
+)

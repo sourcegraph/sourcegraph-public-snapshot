@@ -398,6 +398,70 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
+##############
+# JVM External
+##############
+# To update this version, copy-paste instructions from https://github.com/bazelbuild/rules_jvm_external/releases
+RULES_JVM_EXTERNAL_TAG = "6.1"
+
+RULES_JVM_EXTERNAL_SHA = "08ea921df02ffe9924123b0686dc04fd0ff875710bfadb7ad42badb931b0fd50"
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://github.com/bazelbuild/rules_jvm_external/releases/download/%s/rules_jvm_external-%s.tar.gz" % (RULES_JVM_EXTERNAL_TAG, RULES_JVM_EXTERNAL_TAG),
+)
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    artifacts = [
+        "com.google.protobuf:protobuf-java:3.15.6",  # Required dependency by scip-java.
+        "com.google.protobuf:protobuf-java-util:3.15.6",  # Required dependency by scip-java.
+        # These dependencies are only required for the tests
+        "com.google.guava:guava:31.0-jre",
+        "com.google.auto.value:auto-value:1.5.3",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+http_archive(
+    name = "scip_java",
+    integrity = "sha256-kDoznYI4pLtR3iJ3OKCJBEdldBnZZYPy0nWxXng/8bI=",
+    strip_prefix = "scip-java-0.10.0",
+    url = "https://github.com/sourcegraph/scip-java/archive/refs/tags/v0.10.0.zip",
+)
+
+# Example repos for testing in syntax-highlighter
+http_archive(
+    name = "java_example_project",
+    build_file_content = """
+genrule(
+  name = "tar",
+  visibility = ["//visibility:public"],
+  srcs = glob(["**/*"]),
+  outs = [
+    "repo.tar",
+  ],
+  cmd = "tar cf $@ --dereference external/java_example_project/*",
+)
+""",
+    integrity = "sha256-SrL0psuSoMz9yFhNCIN67dbXh6etqFKxrVf6Oo+UezY=",
+    strip_prefix = "spring-framework-206d81ee08db8ef2c990ef0a9390ee4e72556666",
+    url = "https://github.com/spring-projects/spring-framework/archive/206d81ee08db8ef2c990ef0a9390ee4e72556666.tar.gz",
+)
+
 load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
