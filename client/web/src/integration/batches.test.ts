@@ -1007,6 +1007,7 @@ describe('Batches', () => {
                                               id: '123',
                                               isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
+                                              isGitHubApp: false,
                                           }
                                         : null,
                                     requiresSSH: false,
@@ -1025,6 +1026,7 @@ describe('Batches', () => {
                             id: '123',
                             isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
+                            isGitHubApp: false,
                         },
                     }
                 },
