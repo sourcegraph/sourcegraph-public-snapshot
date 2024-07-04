@@ -65,6 +65,79 @@ func TestValidationMethods(t *testing.T) {
 				"didn't get expected validation error for mref %q", test.MRef)
 		}
 	})
+
+	t.Run("validateProvider", func(t *testing.T) {
+		tests := []struct {
+			P         types.Provider
+			WantError string // If "", expect nil error.
+		}{
+			// A Provider without any server-side config _should_ be an error,
+			// however since it doesn't make sense to serve model config from
+			// CodyGateway with server-side config, or embed it into the binary,
+			// we treat this as OK.
+			//
+			// The real fix here is to introduce new form of Provider that
+			// doesn't have that field. e.g. a "SourcegraphProvider", i.e. where
+			// the provider by definition an implementation detail specific to Sg
+			// and not for the local Sg instance's admin.
+			{
+				P: types.Provider{
+					ID:               types.ProviderID("foo"),
+					DisplayName:      "",
+					ClientSideConfig: nil,
+					ServerSideConfig: nil,
+				},
+				WantError: "",
+			},
+			{
+				P: types.Provider{
+					ID:               types.ProviderID("invalid-generic-provider-config"),
+					DisplayName:      "",
+					ClientSideConfig: nil,
+					ServerSideConfig: &types.ServerSideProviderConfig{
+						GenericProvider: &types.GenericProviderConfig{
+							ServiceName: "openai",
+							AccessToken: "access-token",
+							Endpoint:    "openai-compatible.joes-llm-depo.com",
+						},
+					},
+				},
+				WantError: "",
+			},
+
+			// Error cases.
+			{
+				P: types.Provider{
+					ID:               types.ProviderID("invalid-generic-provider-config"),
+					DisplayName:      "",
+					ClientSideConfig: nil,
+					ServerSideConfig: &types.ServerSideProviderConfig{
+						GenericProvider: &types.GenericProviderConfig{
+							AccessToken: "access-token",
+							Endpoint:    "openai-compatible.joes-llm-depo.com",
+						},
+					},
+				},
+				WantError: "no service name set for generic provider",
+			},
+			{
+				P: types.Provider{
+					ID:               types.ProviderID("invalid ID"),
+					DisplayName:      "",
+					ClientSideConfig: nil,
+					ServerSideConfig: nil,
+				},
+				WantError: "id format",
+			},
+		}
+		for i, test := range tests {
+			var gotErrStr string
+			if gotErr := validateProvider(test.P); gotErr != nil {
+				gotErrStr = gotErr.Error()
+			}
+			assert.Equal(t, test.WantError, gotErrStr, "test scenario %d", i)
+		}
+	})
 }
 
 // Confirm that the model data currently in the repo is well-formed and valid.

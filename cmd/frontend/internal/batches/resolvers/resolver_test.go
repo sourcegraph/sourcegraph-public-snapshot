@@ -1830,7 +1830,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	bstore := store.New(db, observation.TestContextTB(t), nil)
 
-	r := &Resolver{store: bstore}
+	r := &Resolver{store: bstore, db: db}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -2724,7 +2724,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := &Resolver{store: bstore}
+	r := &Resolver{store: bstore, db: db}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)

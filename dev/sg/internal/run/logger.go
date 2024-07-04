@@ -5,7 +5,6 @@ import (
 	"hash/fnv"
 	"io"
 	"strconv"
-	"sync"
 
 	"go.bobheadxi.dev/streamline/pipe"
 
@@ -42,12 +41,9 @@ func newOutputPipe(ctx context.Context, name string, out *output.Output, start <
 
 	w, stream := pipe.NewStream()
 	go func() {
-		var mux sync.Mutex
 		<-start
 		err := stream.Stream(func(line string) {
-			mux.Lock()
 			out.Writef(lineFormat, output.StyleBold, color, name, output.StyleReset, line)
-			mux.Unlock()
 		})
 		_ = w.CloseWithError(err)
 	}()
