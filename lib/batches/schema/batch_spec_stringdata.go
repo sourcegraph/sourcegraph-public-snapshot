@@ -12,7 +12,7 @@ const BatchSpecJSON = `{
   "additionalProperties": false,
   "required": ["name"],
   "properties": {
-    "version":{
+    "version": {
       "type": "string",
       "description": "The version of the batch spec schema. Defaults to v1."
     },
