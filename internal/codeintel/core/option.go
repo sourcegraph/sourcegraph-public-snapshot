@@ -31,6 +31,13 @@ func (o Option[A]) Compare(other Option[A], cmp func(A, A) int) int {
 	return cmp(v1, v2)
 }
 
+// Get returns the value if the Option isSome, otherwise it returns the zero value and false
+//
+// A common way of using this is to bind the value in an if condition like so:
+//
+//	if val, ok := opt.Get(); ok {
+//	   // do something with val
+//	}
 func (o Option[A]) Get() (A, bool) {
 	if o.value == nil {
 		return *new(A), false
