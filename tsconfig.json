@@ -29,6 +29,7 @@
     { "path": "client/observability-client" },
     { "path": "client/observability-server" },
     { "path": "client/cody-shared" },
-    { "path": "client/cody-ui" }
+    { "path": "client/cody-ui" },
+    { "path": "client/xxxxxxx" }
   ]
 }
