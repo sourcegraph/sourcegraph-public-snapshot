@@ -187,8 +187,14 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 	appName := r.URL.Query().Get("appName")
 	domain := r.URL.Query().Get("domain")
 	baseURL := r.URL.Query().Get("baseURL")
-	kind := r.URL.Query().Get("kind")
+	queryKind := r.URL.Query().Get("kind")
 	marshalledUserID := r.URL.Query().Get("userID")
+
+	kind, err := ghtypes.GitHubAppKind(queryKind).Validate()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid GitHubAppKind: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
 
 	userID, err := unmarshalUserID(graphql.ID(marshalledUserID))
 	if err != nil {
@@ -212,12 +218,11 @@ func (srv *gitHubAppServer) newAppStateHandler(w http.ResponseWriter, r *http.Re
 		http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	// todo: validate kind
 	stateDetails, err := json.Marshal(gitHubAppStateDetails{
 		WebhookUUID: webhookUUID,
 		Domain:      domain,
 		BaseURL:     baseURL,
-		Kind:        kind,
+		Kind:        string(kind),
 		UserID:      userID,
 	})
 	if err != nil {

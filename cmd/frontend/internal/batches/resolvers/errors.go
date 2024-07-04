@@ -36,7 +36,7 @@ func (e ErrBatchChangesDisabledForUser) Extensions() map[string]any {
 	return map[string]any{"code": "ErrBatchChangesDisabledForUser"}
 }
 
-type ErrBatchChangeInvalidName struct{}
+type ErrBatchChangeInvalidName struct{ error }
 
 func (e ErrBatchChangeInvalidName) Error() string {
 	return "The batch change name can only contain word characters, dots and dashes."

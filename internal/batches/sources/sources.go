@@ -237,7 +237,7 @@ type ForExternalServiceOpts struct {
 }
 
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error) {
-	// Empty authenticators are not for non-GitHubApp authentication strategies.
+	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrMissingCredentials
 	}
