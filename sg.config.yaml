@@ -510,6 +510,12 @@ commands:
     install: |
       pnpm install
       pnpm generate
+    env:
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+      # The SvelteKit app uses this environment variable to determine where
+      # to store the generated assets. We don't need to store them in a different
+      # place in standalone mode.
+      DEPLOY_TYPE: ""
 
   web-sveltekit-prod-watch:
     description: Builds the prod version of the SvelteKit web app and rebuilds on changes
@@ -1789,6 +1795,7 @@ commandsets:
       - caddy
     env:
       SK_PORT: 3080
+      SK_HOST: 127.0.0.1
 
   # For testing our OpenTelemetry stack
   otel:
