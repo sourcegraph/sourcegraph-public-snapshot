@@ -503,6 +503,35 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
+		if kind == ghtypes.SiteCredentialGitHubAppKind {
+			observationCtx := observation.NewContext(log.NoOp())
+			bstore := store.New(srv.db, observationCtx, keyring.Default().BatchChangesCredentialKey)
+			svc := service.New(bstore)
+
+			// external service urls always end with a trailing slash. `url.JoinPath` ensures that's the case irrespective
+			// of whether the base URL ends with a trailing slash or not.
+			esu, err := url.JoinPath(stateDetails.BaseURL, "/")
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, kind, errors.Newf("Unexpected error while creating site credential for github app: %s", err.Error()))
+				http.Redirect(w, r, redirectURL, http.StatusFound)
+				return
+			}
+
+			_, err = svc.CreateBatchChangesSiteCredential(r.Context(), sources.AuthenticationStrategyGitHubApp, service.CreateBatchChangesSiteCredentialArgs{
+				ExternalServiceURL:  esu,
+				ExternalServiceType: extsvc.VariantGitHub.AsType(),
+				Credential:          app.ClientID,
+				Username:            pointers.Ptr(installInfo.AccountLogin),
+				GitHubAppID:         app.ID,
+				GitHubAppKind:       kind,
+			})
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, "", errors.Newf("Unexpected error while creating user credential for github app: %s", err.Error()))
+				http.Redirect(w, r, redirectURL, http.StatusFound)
+				return
+			}
+		}
+
 		redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, app.Kind, nil)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 		return

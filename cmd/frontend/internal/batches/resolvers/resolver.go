@@ -1140,7 +1140,12 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
 	}
 
-	cred, err := svc.CreateBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username, sources.AuthenticationStrategyUserCredential)
+	cred, err := svc.CreateBatchChangesSiteCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesSiteCredentialArgs{
+		ExternalServiceURL:  args.ExternalServiceURL,
+		ExternalServiceType: extsvc.VariantGitHub.AsType(),
+		Credential:          args.Credential,
+		Username:            args.Username,
+	})
 	if err != nil {
 		return nil, err
 	}

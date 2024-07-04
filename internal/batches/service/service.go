@@ -1872,7 +1872,16 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 	return cred, nil
 }
 
-func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string, as sources.AuthenticationStrategy) (*btypes.SiteCredential, error) {
+type CreateBatchChangesSiteCredentialArgs struct {
+	ExternalServiceURL  string
+	ExternalServiceType string
+	Credential          string
+	Username            *string
+	GitHubAppID         int
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
+func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesSiteCredentialArgs) (*btypes.SiteCredential, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.store.DatabaseDB()); err != nil {
@@ -1885,8 +1894,8 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, external
 
 	// Throw error documented in schema.graphql.
 	existing, err := s.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceURL,
+		ExternalServiceType: args.ExternalServiceType,
+		ExternalServiceID:   args.ExternalServiceURL,
 	})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
@@ -1896,17 +1905,17 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, external
 	}
 
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
-		externalServiceType: externalServiceType,
-		externalServiceURL:  externalServiceURL,
-		credential:          credential,
-		username:            username,
+		externalServiceType: args.ExternalServiceType,
+		externalServiceURL:  args.ExternalServiceURL,
+		credential:          args.Credential,
+		username:            args.Username,
 	})
 	if err != nil {
 		return nil, err
 	}
 	cred := &btypes.SiteCredential{
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
+		ExternalServiceType: args.ExternalServiceType,
+		ExternalServiceID:   args.ExternalServiceURL,
 	}
 	if err := s.store.CreateSiteCredential(ctx, cred, a); err != nil {
 		return nil, err
