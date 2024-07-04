@@ -271,10 +271,10 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *ghtypes.GitHu
 	}
 
 	query := sqlf.Sprintf(`UPDATE github_apps
-             SET app_id = %s, name = %s, domain = %s, slug = %s, base_url = %s, app_url = %s, client_id = %s, client_secret = %s, webhook_id = %d, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
+             SET app_id = %s, name = %s, domain = %s, slug = %s, base_url = %s, app_url = %s, client_id = %s, client_secret = %s, webhook_id = %d, private_key = %s, encryption_key_id = %s, kind = %s, logo = %s, updated_at = NOW()
              WHERE id = %s
-			 RETURNING id, app_id, name, domain, slug, base_url, app_url, client_id, client_secret, webhook_id, private_key, encryption_key_id, logo, created_at, updated_at`,
-		app.AppID, app.Name, app.Domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, app.WebhookID, privateKey, keyID, app.Logo, id)
+			 RETURNING id, app_id, name, domain, slug, base_url, app_url, client_id, client_secret, webhook_id, private_key, encryption_key_id, kind, logo, created_at, updated_at`,
+		app.AppID, app.Name, app.Domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, app.WebhookID, privateKey, keyID, app.Kind, app.Logo, id)
 	app, ok, err := scanFirstGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
@@ -390,6 +390,7 @@ func (s *gitHubAppsStore) list(ctx context.Context, where *sqlf.Query) ([]*ghtyp
 		webhook_id,
 		private_key,
 		encryption_key_id,
+		kind,
 		logo,
 		created_at,
 		updated_at

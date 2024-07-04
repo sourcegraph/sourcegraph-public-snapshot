@@ -26,7 +26,6 @@ import (
 func newTestStore(t *testing.T) *gitHubAppsStore {
 	logger := logtest.Scoped(t)
 	return &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(t), sql.TxOptions{}))}
-
 }
 
 func TestCreateGitHubApp(t *testing.T) {
@@ -124,6 +123,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
+		Kind:         ghtypes.RepoSyncGitHubAppKind,
 	}
 
 	id, err := store.Create(ctx, app)
@@ -142,6 +142,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		ClientID:     "def456",
 		ClientSecret: "updated-secret",
 		PrivateKey:   "updated-private-key",
+		Kind:         ghtypes.RepoSyncGitHubAppKind,
 	}
 
 	fetched, err := store.Update(ctx, 1, updated)
@@ -368,6 +369,7 @@ func TestGetByDomain(t *testing.T) {
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
 		Logo:         "logo.png",
+		Kind:         ghtypes.RepoSyncGitHubAppKind,
 	}
 
 	batchesApp := &ghtypes.GitHubApp{
@@ -381,6 +383,7 @@ func TestGetByDomain(t *testing.T) {
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
 		Logo:         "logo.png",
+		Kind:         ghtypes.CommitSigningGitHubAppKind,
 	}
 
 	_, err := store.Create(ctx, repoApp)
@@ -409,10 +412,10 @@ func TestGetByDomain(t *testing.T) {
 	require.Error(t, err)
 	notFoundErr, ok := err.(ErrNoGitHubAppFound)
 	require.Equal(t, ok, true)
-	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND trim(trailing '/' from base_url) = https://myCompany.github.com'")
+	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND kind = REPO_SYNC AND trim(trailing '/' from base_url) = https://myCompany.github.com'")
 
 	domain = types.BatchesGitHubAppDomain
-	fetched, err = store.GetByDomain(ctx, domain, ghtypes.RepoSyncGitHubAppKind, "https://github.com/")
+	fetched, err = store.GetByDomain(ctx, domain, ghtypes.CommitSigningGitHubAppKind, "https://github.com/")
 	require.NoError(t, err)
 	require.Equal(t, batchesApp.AppID, fetched.AppID)
 }
@@ -448,6 +451,7 @@ func TestListGitHubApp(t *testing.T) {
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
 		Logo:         "logo.png",
+		Kind:         ghtypes.RepoSyncGitHubAppKind,
 	}
 
 	_, err := store.Create(ctx, repoApp)
@@ -873,6 +877,7 @@ func TestTrailingSlashesInBaseURL(t *testing.T) {
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
 		Logo:         "logo.png",
+		Kind:         ghtypes.RepoSyncGitHubAppKind,
 	}
 
 	id, err := store.Create(ctx, app)
