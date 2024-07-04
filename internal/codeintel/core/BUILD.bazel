@@ -6,9 +6,12 @@ go_library(
     srcs = [
         "option.go",
         "paths.go",
+        "paths.go",
+        "upload.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/core",
     visibility = ["//:__subpackages__"],
+    deps = ["//internal/api"],
 )
 
 go_test(
