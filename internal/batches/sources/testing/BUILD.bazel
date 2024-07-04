@@ -8,7 +8,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/batches/sources",
-        "//internal/batches/store",
         "//internal/batches/types",
         "//internal/extsvc/auth",
         "//internal/gitserver/protocol",
