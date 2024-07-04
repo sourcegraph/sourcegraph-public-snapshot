@@ -58,9 +58,19 @@ _private _method line_parser.debug(line, props)
 	_return props
 _endmethod
 
+$
 
+# Validate a method added to an examplar not defined in this file
+_method other_object.some_method()
+	_return 4
+_endmethod
+
+$
 # Mixins
 def_mixin(:my_mixin)
+$
+my_mixin.add_child(line_parser)
+$
 
 _abstract _method my_mixin.some_thing
 _endmethod

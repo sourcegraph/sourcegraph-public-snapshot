@@ -11,13 +11,7 @@
 (invoke
     receiver: (variable) @name
     (symbol) @descriptor.type @kind.class
-    (#eq? @name "def_slotted_exemplar")
-    (#transform! ":(.*)" "$1"))
-
-(invoke
-    receiver: (variable) @name
-    (symbol) @descriptor.type @kind.class
-    (#eq? @name "def_mixin")
+    (#any-of? @name "def_slotted_exemplar" "def_mixin")
     (#transform! ":(.*)" "$1"))
 
 (method
