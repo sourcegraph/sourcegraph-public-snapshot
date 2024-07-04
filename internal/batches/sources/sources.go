@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -424,10 +425,7 @@ func withAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 // If no credential is found, the original source is returned and uses the external service
 // config.
 func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadSiteCredential(ctx, tx, store.GetSiteCredentialOpts{
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   repo.ExternalRepo.ServiceID,
-	})
+	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
 	}
@@ -503,20 +501,29 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }
 
 // loadSiteCredential attempts to find a site credential for the given repo.
 // When no credential is found, nil is returned.
-func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteCredentialOpts) (auth.Authenticator, error) {
-	cred, err := s.GetSiteCredential(ctx, opts)
+func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (auth.Authenticator, error) {
+	cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticator(ctx, ghauth.CreateAuthenticatorForCredentialOpts{
+			Repo:           repo,
+			GitHubAppStore: s.GitHubAppsStore(),
+		})
 	}
 	return nil, nil
 }
@@ -524,12 +531,17 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
+	// @BolajiOlajide I found a bug in the existing credential validation (especially with GitHub) where a leading or trailing
+	// space in a PAT is ignored by GitHub and that credential is marked as valid.
+	// However, if stored in the database, the leading/trailing space is preserved and the PAT when used to push a commit
+	// will fail. The URL returned looks like `https://%20<TOKEN>@github.com/sourcegraph/sourcegraph.git` which is invalid.
+	trimmedToken := strings.TrimSpace(token)
 	switch extSvcType {
 	case extsvc.TypeGitHub:
-		u.User = url.User(token)
+		u.User = url.User(trimmedToken)
 
 	case extsvc.TypeGitLab:
-		u.User = url.UserPassword("git", token)
+		u.User = url.UserPassword("git", trimmedToken)
 
 	case extsvc.TypeBitbucketServer:
 		return errors.New("require username/token to push commits to BitbucketServer")

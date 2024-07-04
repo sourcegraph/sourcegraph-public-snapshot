@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -2824,122 +2823,6 @@ func TestRepos_Create(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 	})
-}
-
-func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(t))
-
-	reposToAdd := []types.Repo{
-		{
-			ID:    api.RepoID(1),
-			Name:  "github.com/foo/bar1",
-			Stars: 20,
-		},
-		{
-			ID:    api.RepoID(2),
-			Name:  "github.com/baz/bar2",
-			Stars: 30,
-		},
-		{
-			ID:      api.RepoID(3),
-			Name:    "github.com/baz/bar3",
-			Stars:   15,
-			Private: true,
-		},
-		{
-			ID:    api.RepoID(4),
-			Name:  "github.com/foo/bar4",
-			Stars: 1, // Not enough stars
-		},
-		{
-			ID:    api.RepoID(5),
-			Name:  "github.com/foo/bar5",
-			Stars: 400,
-			Blocked: &types.RepoBlock{
-				At:     time.Now().UTC().Unix(),
-				Reason: "Failed to index too many times.",
-			},
-		},
-	}
-
-	ctx := context.Background()
-	// Add an external service
-	_, err := db.ExecContext(
-		ctx,
-		`INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, r := range reposToAdd {
-		blocked, err := json.Marshal(r.Blocked)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO repo(id, name, stars, private, blocked) VALUES ($1, $2, $3, $4, NULLIF($5, 'null'::jsonb))`,
-			r.ID, r.Name, r.Stars, r.Private, blocked,
-		)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		cloned := int(r.ID) > 1
-		cloneStatus := types.CloneStatusCloned
-		if !cloned {
-			cloneStatus = types.CloneStatusNotCloned
-		}
-		if _, err := db.ExecContext(ctx, `UPDATE gitserver_repos SET clone_status = $2, shard_id = 'test' WHERE repo_id = $1;`, r.ID, cloneStatus); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	for _, tc := range []struct {
-		name string
-		opts ListSourcegraphDotComIndexableReposOptions
-		want []api.RepoID
-	}{
-		{
-			name: "no opts",
-			want: []api.RepoID{2, 1, 3},
-		},
-		{
-			name: "only uncloned",
-			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
-			want: []api.RepoID{1},
-		},
-	} {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			have := make([]api.RepoID, 0, len(repos))
-			for _, r := range repos {
-				have = append(have, r.ID)
-			}
-
-			if diff := cmp.Diff(tc.want, have, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("mismatch (-want +have):\n%s", diff)
-			}
-		})
-	}
 }
 
 func TestRepoNotFoundFulfillsNotFound(t *testing.T) {

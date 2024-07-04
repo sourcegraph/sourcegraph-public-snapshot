@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -27,8 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/diskusage"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/connection"
@@ -44,7 +41,6 @@ type JanitorConfig struct {
 	JanitorInterval time.Duration
 	ShardID         string
 
-	DesiredPercentFree             int
 	DisableDeleteReposOnWrongShard bool
 }
 
@@ -53,36 +49,6 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, fs gitse
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			logger.Info("Starting janitor run")
-			// On Sourcegraph.com, we clone repos lazily, meaning whatever github.com
-			// repo is visited will be cloned eventually. So over time, we would always
-			// accumulate terabytes of repos, of which many are probably not visited
-			// often. Thus, we have this special cleanup worker for Sourcegraph.com that
-			// will remove repos that have not been changed in a long time (thats the
-			// best metric we have here today) once our disks are running full.
-			// On customer instances, this worker is useless, because repos are always
-			// managed by an external service connection and they will be recloned
-			// ASAP.
-			if dotcom.SourcegraphDotComMode() {
-				func() {
-					logger := logger.Scoped("dotcom-repo-cleaner")
-					start := time.Now()
-					logger.Info("Starting dotcom repo cleaner")
-
-					usage, err := fs.DiskUsage()
-					if err != nil {
-						logger.Error("getting free disk space", log.Error(err))
-						return
-					}
-
-					toFree := howManyBytesToFree(logger, usage, cfg.DesiredPercentFree)
-
-					if err := freeUpSpace(ctx, logger, db, fs, cfg.ShardID, usage, cfg.DesiredPercentFree, toFree); err != nil {
-						logger.Error("error freeing up space", log.Error(err))
-					}
-
-					logger.Info("dotcom repo cleaner finished", log.Int64("toFree", toFree), log.Bool("failed", err != nil), log.String("duration", time.Since(start).String()))
-				}()
-			}
 
 			gitserverAddrs := connection.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
@@ -188,10 +154,6 @@ var (
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and re-cloned due to age",
-	})
-	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_repos_removed_disk_pressure",
-		Help: "number of repos removed due to not enough disk space",
 	})
 	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_janitor_running",
@@ -707,137 +669,6 @@ func checkRepoFlaggedForCorruption(gitDir common.GitDir) (bool, error) {
 	_ = os.Remove(p)
 
 	return true, nil
-}
-
-// howManyBytesToFree returns the number of bytes that should be freed to make sure
-// there is sufficient disk space free to satisfy s.DesiredPercentFree.
-func howManyBytesToFree(logger log.Logger, usage diskusage.DiskUsage, desiredPercentFree int) int64 {
-	actualFreeBytes := usage.Free()
-
-	// Free up space if necessary.
-	diskSizeBytes := usage.Size()
-	desiredFreeBytes := uint64(float64(desiredPercentFree) / 100.0 * float64(diskSizeBytes))
-	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
-	if howManyBytesToFree < 0 {
-		howManyBytesToFree = 0
-	}
-	const G = float64(1024 * 1024 * 1024)
-
-	logger.Debug(
-		"howManyBytesToFree",
-		log.Int("desired percent free", desiredPercentFree),
-		log.Float64("actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
-		log.Float64("amount to free in GiB", float64(howManyBytesToFree)/G),
-	)
-
-	return howManyBytesToFree
-}
-
-// freeUpSpace removes git directories under the fs, in order from least
-// recently to most recently used, until it has freed howManyBytesToFree.
-func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, fs gitserverfs.FS, shardID string, usage diskusage.DiskUsage, desiredPercentFree int, howManyBytesToFree int64) error {
-	if howManyBytesToFree <= 0 {
-		return nil
-	}
-
-	logger = logger.Scoped("freeUpSpace")
-
-	// Get the git directories and their mod times.
-	gitDirs, err := findGitDirs(fs)
-	if err != nil {
-		return errors.Wrap(err, "finding git dirs")
-	}
-	dirModTimes := make(map[common.GitDir]time.Time, len(gitDirs))
-	for _, d := range gitDirs {
-		mt, err := gitDirModTime(d)
-		if err != nil {
-			// If we get an error here, we move it to the end of the queue,
-			// since it's the janitor's job to clean/fix this.
-			logger.Warn("computing mod time of git dir failed", log.String("dir", string(d)), log.Error(err))
-			dirModTimes[d] = time.Now()
-			continue
-		}
-		dirModTimes[d] = mt
-	}
-
-	// Sort the repos from least to most recently used.
-	sort.Slice(gitDirs, func(i, j int) bool {
-		return dirModTimes[gitDirs[i]].Before(dirModTimes[gitDirs[j]])
-	})
-
-	// Remove repos until howManyBytesToFree is met or exceeded.
-	var spaceFreed int64
-	diskSizeBytes := usage.Size()
-	for _, d := range gitDirs {
-		if spaceFreed >= howManyBytesToFree {
-			return nil
-		}
-
-		// Fast-exit if the context has been canceled.
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		repoName := fs.ResolveRepoName(d)
-
-		delta, err := fs.DirSize(d.Path())
-		if err != nil {
-			logger.Warn("failed to get dir size", log.String("dir", string(d)), log.Error(err))
-			continue
-		}
-		if err := fs.RemoveRepo(repoName); err != nil {
-			logger.Warn("failed to remove least recently used repo", log.String("dir", string(d)), log.Error(err))
-			continue
-		}
-		// Set as not_cloned in the database.
-		if err := db.GitserverRepos().SetCloneStatus(ctx, repoName, types.CloneStatusNotCloned, shardID); err != nil {
-			logger.Warn("failed to update clone status", log.Error(err))
-		}
-		spaceFreed += delta
-		reposRemovedDiskPressure.Inc()
-
-		// Report the new disk usage situation after removing this repo.
-		usage, err := fs.DiskUsage()
-		if err != nil {
-			return errors.Wrap(err, "finding the amount of space free on disk")
-		}
-		actualFreeBytes := usage.Free()
-		G := float64(1024 * 1024 * 1024)
-
-		logger.Warn("removed least recently used repo",
-			log.String("repo", string(d)),
-			log.Duration("how old", time.Since(dirModTimes[d])),
-			log.Float64("free space in GiB", float64(actualFreeBytes)/G),
-			log.Float64("actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
-			log.Float64("desired percent of disk space free", float64(desiredPercentFree)),
-			log.Float64("space freed in GiB", float64(spaceFreed)/G),
-			log.Float64("how much space to free in GiB", float64(howManyBytesToFree)/G))
-	}
-
-	// Check.
-	if spaceFreed < howManyBytesToFree {
-		return errors.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
-	}
-	return nil
-}
-
-func gitDirModTime(d common.GitDir) (time.Time, error) {
-	head, err := os.Stat(d.Path("HEAD"))
-	if err != nil {
-		return time.Time{}, errors.Wrap(err, "getting repository modification time")
-	}
-	return head.ModTime(), nil
-}
-
-// findGitDirs collects the GitDirs of all repos in the FS.
-func findGitDirs(fs gitserverfs.FS) ([]common.GitDir, error) {
-	var dirs []common.GitDir
-	return dirs, fs.ForEachRepo(func(_ api.RepoName, dir common.GitDir) (done bool) {
-		dirs = append(dirs, dir)
-		return false
-	})
 }
 
 // gitIsNonBareBestEffort returns true if the repository is not a bare

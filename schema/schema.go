@@ -664,6 +664,12 @@ type CodyProConfig struct {
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
 	AccessToken string `json:"accessToken,omitempty"`
+	// AzureChatModel description: Optional: Specify the Azure OpenAI model name for chat completions. This is only needed when you want to count tokens associated with your azure model
+	AzureChatModel string `json:"azureChatModel,omitempty"`
+	// AzureCompletionModel description: Optional: Specify the Azure OpenAI model name for chat completions. This is only needed when you want to count tokens associated with your azure model
+	AzureCompletionModel string `json:"azureCompletionModel,omitempty"`
+	// AzureUseDeprecatedCompletionsAPIForOldModels description: Enables the use of the older completions API for select Azure OpenAI models.
+	AzureUseDeprecatedCompletionsAPIForOldModels bool `json:"azureUseDeprecatedCompletionsAPIForOldModels,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	//  NOTE: The Anthropic messages API does not support model names like claude-2 or claude-instant-1 where only the major version is specified as they are retired. We recommend using a specific model identifier as specified here https://docs.anthropic.com/claude/docs/models-overview#model-comparison
 	ChatModel string `json:"chatModel,omitempty"`
@@ -674,6 +680,8 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// CompletionModelMaxTokens description: The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.
 	CompletionModelMaxTokens int `json:"completionModelMaxTokens,omitempty"`
+	// DisableClientConfigAPI description: Should not be set. If set to true, disables the use of the new client config API. This new API has no user-facing effect, this opt-out is provided only as an escape hatch in case of issues.
+	DisableClientConfigAPI *bool `json:"disableClientConfigAPI,omitempty"`
 	// Enabled description: DEPRECATED. Use cody.enabled instead to turn Cody on/off.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/messages" for Sourcegraph, OpenAI, and Anthropic, respectively.
@@ -1029,6 +1037,8 @@ type ExperimentalFeatures struct {
 	RubyPackages string `json:"rubyPackages,omitempty"`
 	// RustPackages description: Allow adding Rust package code host connections
 	RustPackages string `json:"rustPackages,omitempty"`
+	// ScipBasedAPIs description: Enable usage of new CodeGraph and usagesForSymbol APIs
+	ScipBasedAPIs *bool `json:"scipBasedAPIs,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchIndexQueryContexts description: Enables indexing of revisions of repos matching any query defined in search contexts.
@@ -1103,6 +1113,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "rateLimitAnonymous")
 	delete(m, "rubyPackages")
 	delete(m, "rustPackages")
+	delete(m, "scipBasedAPIs")
 	delete(m, "search.index.branches")
 	delete(m, "search.index.query.contexts")
 	delete(m, "search.index.revisions")
@@ -1303,10 +1314,6 @@ type GitHubConnection struct {
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// CloudDefault description: Only used to override the cloud_default column from a config file specified by EXTSVC_CONFIG_FILE
-	CloudDefault bool `json:"cloudDefault,omitempty"`
-	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitHub service. Only valid on Sourcegraph.com. Only one service can have this flag set.
-	CloudGlobal bool `json:"cloudGlobal,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
 	//
 	// Supports excluding by name ({"name": "owner/name"}) or by ID ({"id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg=="}).
@@ -1420,10 +1427,6 @@ type GitLabConnection struct {
 	Authorization *GitLabAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// CloudDefault description: Only used to override the cloud_default column from a config file specified by EXTSVC_CONFIG_FILE
-	CloudDefault bool `json:"cloudDefault,omitempty"`
-	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitLab service. Only valid on Sourcegraph.com. Only one service can have this flag set.
-	CloudGlobal bool `json:"cloudGlobal,omitempty"`
 	// Exclude description: A list of projects to never mirror from this GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedGitLabProject `json:"exclude,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.
@@ -2444,9 +2447,9 @@ type Settings struct {
 	SearchContextLines *int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
-	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
+	// SearchDefaultMode description: DEPRECATED: this setting is no longer read when the default 'keyword' patterntype is enabled, which always uses the 'precise' mode. Smart search will be removed in a future release.
 	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
-	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
+	// SearchDefaultPatternType description: The default pattern type that search queries will be interpreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchDisplayLimit description: The number of results we send down during a search. Note: this is different to the count: in the query. The search will continue once we hit displayLimit and updated filters and statistics will continue to stream down. Defaults to 1500.
 	SearchDisplayLimit *int `json:"search.displayLimit,omitempty"`
@@ -2551,6 +2554,8 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
+	// EnablePreciseOccurrences description: Enable the new precise occurrences API, which can provide more accurate hovers for some languages.
+	EnablePreciseOccurrences bool `json:"enablePreciseOccurrences,omitempty"`
 	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
 	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
@@ -2571,7 +2576,7 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
-	// KeywordSearch description: Whether to enable the 'keyword search' language improvement
+	// KeywordSearch description: DEPRECATED: this setting is no longer used. To disable keyword search, set `search.defaultPatternType: standard` instead.
 	KeywordSearch bool `json:"keywordSearch,omitempty"`
 	// NewCodyWeb description: Enables new experimental Cody Web UI
 	NewCodyWeb *bool `json:"newCodyWeb,omitempty"`
@@ -2633,6 +2638,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
+	delete(m, "enablePreciseOccurrences")
 	delete(m, "enableSearchFilePrefetch")
 	delete(m, "enableSidebarFilePrefetch")
 	delete(m, "fuzzyFinder")

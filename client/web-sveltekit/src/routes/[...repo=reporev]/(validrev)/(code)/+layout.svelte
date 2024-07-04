@@ -41,6 +41,7 @@
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import CodySidebar from '$lib/cody/CodySidebar.svelte'
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
@@ -50,18 +51,21 @@
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
+    import { rightPanelOpen } from '$lib/repo/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
     import type { LastCommitFragment } from '$testing/graphql-type-mocks'
+
+    import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
     import { createFileTreeStore } from './fileTreeStore'
     import type { GitHistory_HistoryConnection, RepoPage_ReferencesLocationConnection } from './layout.gql'
     import ReferencePanel from './ReferencePanel.svelte'
-    import RepositoryRevPicker from './RepositoryRevPicker.svelte'
 
     export let data: LayoutData
 
@@ -177,6 +181,7 @@
             bottomPanel?.expand()
         }
     }
+    const sidebarButtonClass = getButtonClassName({ variant: 'secondary', outline: true, size: 'sm' })
 </script>
 
 <PanelGroup id="blob-page-panels" direction="horizontal">
@@ -193,74 +198,52 @@
     >
         <div class="sidebar" class:collapsed={isCollapsed}>
             <header>
-                <div class="sidebar-action-row">
-                    <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
-                        <Button
-                            variant="secondary"
-                            outline
-                            size="sm"
-                            on:click={toggleFileSidePanel}
-                            aria-label="{isCollapsed ? 'Open' : 'Close'} sidebar"
-                        >
-                            <Icon
-                                icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose}
-                                inline
-                                aria-hidden
-                            />
-                        </Button>
-                    </Tooltip>
-                    <RepositoryRevPicker
-                        repoURL={data.repoURL}
-                        revision={data.revision}
-                        resolvedRevision={data.resolvedRevision}
-                        getRepositoryBranches={data.getRepoBranches}
-                        getRepositoryCommits={data.getRepoCommits}
-                        getRepositoryTags={data.getRepoTags}
-                    />
-                </div>
+                <Tooltip tooltip="{isCollapsed ? 'Open' : 'Close'} sidebar">
+                    <button class="{sidebarButtonClass} collapse-button" on:click={toggleFileSidePanel}>
+                        <Icon icon={isCollapsed ? ILucidePanelLeftOpen : ILucidePanelLeftClose} inline aria-hidden />
+                    </button>
+                </Tooltip>
 
-                <div class="sidebar-action-row">
-                    <Button variant="secondary" outline size="sm">
-                        <svelte:fragment slot="custom" let:buttonClass>
-                            <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
-                                <button
-                                    class={`${buttonClass} search-files-button`}
-                                    on:click={() => openFuzzyFinder('files')}
-                                >
-                                    {#if isCollapsed}
-                                        <Icon icon={ILucideSquareSlash} inline aria-hidden />
-                                    {:else}
-                                        <span>Search files</span>
-                                        <KeyboardShortcut shortcut={filesHotkey} />
-                                    {/if}
-                                </button>
-                            </Tooltip>
-                        </svelte:fragment>
-                    </Button>
-                </div>
+                <RepositoryRevPicker
+                    repoURL={data.repoURL}
+                    revision={data.revision}
+                    resolvedRevision={data.resolvedRevision}
+                    getRepositoryBranches={data.getRepoBranches}
+                    getRepositoryCommits={data.getRepoCommits}
+                    getRepositoryTags={data.getRepoTags}
+                />
+
+                <Tooltip tooltip={isCollapsed ? 'Open search fuzzy finder' : ''}>
+                    <button class="{sidebarButtonClass} search-files-button" on:click={() => openFuzzyFinder('files')}>
+                        {#if isCollapsed}
+                            <Icon icon={ILucideSquareSlash} inline aria-hidden />
+                        {:else}
+                            <span>Search files</span>
+                            <KeyboardShortcut shortcut={filesHotkey} />
+                        {/if}
+                    </button>
+                </Tooltip>
             </header>
 
-            {#if !isCollapsed}
-                <div class="sidebar-file-tree">
-                    {#if $fileTreeStore}
-                        {#if isErrorLike($fileTreeStore)}
-                            <Alert variant="danger">
-                                Unable to fetch file tree data:
-                                {$fileTreeStore.message}
-                            </Alert>
-                        {:else}
-                            <FileTree
-                                {repoName}
-                                {revision}
-                                treeProvider={$fileTreeStore}
-                                selectedPath={data.filePath ?? ''}
-                            />
-                        {/if}
+            <div class="sidebar-file-tree">
+                {#if $fileTreeStore}
+                    {#if isErrorLike($fileTreeStore)}
+                        <Alert variant="danger">
+                            Unable to fetch file tree data:
+                            {$fileTreeStore.message}
+                        </Alert>
                     {:else}
-                        <LoadingSpinner center={false} />
+                        <FileTree
+                            {repoName}
+                            {revision}
+                            treeProvider={$fileTreeStore}
+                            selectedPath={data.filePath ?? ''}
+                        />
                     {/if}
-                </div>
-            {/if}
+                {:else}
+                    <LoadingSpinner center={false} />
+                {/if}
+            </div>
         </div>
     </Panel>
 
@@ -268,8 +251,22 @@
 
     <Panel id="blob-content-panels" order={2}>
         <PanelGroup id="content-panels" direction="vertical">
-            <Panel id="main-content-panel" order={1}>
-                <slot />
+            <Panel id="content-panel" order={1}>
+                <PanelGroup id="content-sidebar-panels">
+                    <Panel order={1} id="main-content-panel">
+                        <slot />
+                    </Panel>
+                    {#if $rightPanelOpen}
+                        <PanelResizeHandle id="right-sidebar-resize-handle" />
+                        <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
+                            <CodySidebar
+                                repository={data.resolvedRevision.repo}
+                                filePath={data.filePath}
+                                on:close={() => ($rightPanelOpen = false)}
+                            />
+                        </Panel>
+                    {/if}
+                </PanelGroup>
             </Panel>
             <PanelResizeHandle />
             <Panel
@@ -364,6 +361,7 @@
         isolation: isolate;
     }
 
+    :global([data-panel-resize-handle-id='right-sidebar-resize-handle']),
     :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
         &::before {
             // Even though side-panel shadow should be rendered over
@@ -377,86 +375,72 @@
         height: 100%;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
         background-color: var(--color-bg-1);
 
-        &.collapsed {
-            flex-direction: column;
-            align-items: center;
+        header {
+            display: grid;
+            grid-template-columns: min-content 1fr;
+            grid-template-areas:
+                'collapse-button rev-picker'
+                'search-files search-files';
+            gap: 0.375rem;
+            padding: 0.5rem;
 
-            header {
-                flex-wrap: nowrap;
+            .collapse-button {
+                grid-area: collapse-button;
             }
 
-            header,
-            .sidebar-action-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-                width: 100%;
+            :global([data-repo-rev-picker-trigger]) {
+                grid-area: rev-picker;
+                min-width: 0;
             }
 
-            // Hide action text and leave just icon for collapsed version
             .search-files-button {
-                display: block;
+                grid-area: search-files;
+
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.25rem;
 
                 span {
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    flex-grow: 1;
+                    flex-shrink: 1;
+                    text-align: left;
+                }
+            }
+        }
+
+        .sidebar-file-tree {
+            flex-grow: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 0.25rem 0 0.5rem 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        &.collapsed {
+            header {
+                grid-template-columns: min-content;
+                grid-template-areas:
+                    'collapse-button'
+                    'search-files';
+
+                :global([data-repo-rev-picker-trigger]) {
+                    display: none;
+                }
+
+                .search-files-button span {
                     display: none;
                 }
             }
-
-            :global([data-repo-rev-picker-trigger]),
             .sidebar-file-tree {
                 display: none;
             }
         }
-    }
-
-    header {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25rem;
-        align-items: center;
-        padding: 0.5rem 0.5rem;
-
-        .sidebar-action-row {
-            display: flex;
-            flex-basis: 100%;
-            align-items: center;
-            gap: 0.5rem;
-            min-width: 0;
-            flex-grow: 1;
-        }
-
-        :global([data-repo-rev-picker-trigger]) {
-            flex-grow: 1;
-        }
-
-        .search-files-button {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.25rem;
-            min-width: 0;
-            flex-grow: 1;
-
-            span {
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                overflow: hidden;
-                flex-grow: 1;
-                flex-shrink: 1;
-                text-align: left;
-            }
-        }
-    }
-
-    .sidebar-file-tree {
-        flex-grow: 1;
-        min-height: 0;
-        overflow: auto;
-        padding: 0.25rem 0 0.5rem 0;
-        border-top: 1px solid var(--border-color);
     }
 
     :global([data-panel-id='main-content-panel']) {
@@ -469,6 +453,11 @@
     :global([data-panel-id='bottom-actions-panel']) {
         min-height: 2.5625rem; // 41px which is bottom panel compact size
         box-shadow: var(--bottom-panel-shadow);
+    }
+
+    :global([data-panel-id='right-sidebar-panel']) {
+        z-index: 1;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     }
 
     .bottom-panel {

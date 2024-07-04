@@ -417,6 +417,9 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/enterprise-portal github.com/sourcegraph/sourcegraph/cmd/enterprise-portal
       # Ensure the "msp_iam" database exists (PostgreSQL has no "IF NOT EXISTS" option).
       createdb -h $PGHOST -p $PGPORT -U $PGUSER msp_iam || true
+      # HACK: Forcibly handle a migration that GORM doesn't seem to handle right
+      psql -h $PGHOST -p $PGPORT -U $PGUSER -d $PGDATABASE \
+        -c 'ALTER TABLE enterprise_portal_subscriptions ALTER COLUMN id TYPE uuid USING id::uuid;' || true
     checkBinary: .bin/enterprise-portal
     env:
       PORT: '6081'
@@ -507,6 +510,12 @@ commands:
     install: |
       pnpm install
       pnpm generate
+    env:
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
+      # The SvelteKit app uses this environment variable to determine where
+      # to store the generated assets. We don't need to store them in a different
+      # place in standalone mode.
+      DEPLOY_TYPE: ""
 
   web-sveltekit-prod-watch:
     description: Builds the prod version of the SvelteKit web app and rebuilds on changes
@@ -1795,6 +1804,7 @@ commandsets:
       - caddy
     env:
       SK_PORT: 3080
+      SK_HOST: 127.0.0.1
 
   # For testing our OpenTelemetry stack
   otel:
@@ -1867,8 +1877,7 @@ tests:
   bazel-web-integration:
     cmd: |
       export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
-      export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
-      bazel test //client/web/src/integration:integration-tests --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY --test_env=PERCY_TOKEN=$PERCY_TOKEN
+      bazel test //client/web/src/integration:integration-tests --test_env=HEADLESS=false --test_env=SOURCEGRAPH_BASE_URL="http://localhost:7080" --test_env=GH_TOKEN=$GH_TOKEN --test_env=DISPLAY=$DISPLAY
 
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest

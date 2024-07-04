@@ -569,6 +569,8 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
+
+	IsGitHubApp() bool
 }
 
 // Only GitHubApps are supported for commit signing for now.

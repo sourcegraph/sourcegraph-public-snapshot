@@ -34,7 +34,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.keyword,
     defaultPatternType: SearchPatternType.keyword,
-    searchMode: SearchMode.SmartSearch,
+    searchMode: SearchMode.Precise,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -141,7 +141,11 @@ export function showPatternTypeInQuery(
     return patternType !== defaultPatternType && !explicitPatternTypes.has(patternType)
 }
 
-const explicitPatternTypes = new Set([SearchPatternType.regexp, SearchPatternType.structural])
+const explicitPatternTypes = new Set([
+    SearchPatternType.regexp,
+    SearchPatternType.structural,
+    SearchPatternType.keyword,
+])
 
 /**
  * Update or initialize query state related data from settings

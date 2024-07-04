@@ -4,29 +4,28 @@ import { mdiClose, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ToolsIcon from 'mdi-react/ToolsIcon'
 import { NavLink, useLocation, useNavigate, useSearchParams, type RouteObject } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { LegacyToggles } from '@sourcegraph/branded'
 import { Toggles } from '@sourcegraph/branded/src/search-ui/input/toggles/Toggles'
 import type { SearchQueryState, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, ButtonLink, Icon, Link, Modal, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { BatchChangesIconNav } from '../../batches/icons'
 import { CodyLogo } from '../../cody/components/CodyLogo'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
-import { useKeywordSearch } from '../../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../../hooks'
 import { PageRoutes } from '../../routes.constants'
 import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
 import { setSearchCaseSensitivity, setSearchMode, setSearchPatternType, useNavbarQueryState } from '../../stores'
-import { InlineNavigationPanel } from '../GlobalNavbar'
+import { InlineNavigationPanel, linkForCodyNavItem } from '../GlobalNavbar'
 import { UserNavItem } from '../UserNavItem'
 
 import styles from './NewGlobalNavigationBar.module.scss'
@@ -49,7 +48,11 @@ interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
  * New experimental global navigation bar with inline search bar and
  * dynamic navigation items.
  */
-export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
+export const NewGlobalNavigationBar: FC<
+    NewGlobalNavigationBar & {
+        __testing__initialSideMenuOpen?: boolean
+    }
+> = props => {
     const {
         isSourcegraphDotCom,
         notebooksEnabled,
@@ -63,11 +66,12 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
         showFeedbackModal,
         telemetryService,
         telemetryRecorder,
+        __testing__initialSideMenuOpen,
     } = props
 
     const isLightTheme = useIsLightTheme()
     const [params] = useSearchParams()
-    const [isSideMenuOpen, setSideMenuOpen] = useState(false)
+    const [isSideMenuOpen, setSideMenuOpen] = useState(__testing__initialSideMenuOpen ?? false)
     const routeMatch = useRoutesMatch(props.routes)
 
     // Features enablement flags and conditions
@@ -146,7 +150,6 @@ export const NewGlobalNavigationBar: FC<NewGlobalNavigationBar> = props => {
                     showBatchChanges={showBatchChanges}
                     showCodeInsights={showCodeInsights}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
                     onClose={() => setSideMenuOpen(false)}
                 />
             )}
@@ -196,7 +199,6 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-    const showKeywordSearchToggle = useKeywordSearch()
 
     const {
         searchMode,
@@ -241,34 +243,20 @@ const NavigationSearchBox: FC<NavigationSearchBoxProps> = props => {
             onChange={setQueryState}
             onSubmit={submitSearchOnChange}
         >
-            {showKeywordSearchToggle ? (
-                <Toggles
-                    searchMode={searchMode}
-                    patternType={searchPatternType}
-                    defaultPatternType={defaultPatternType}
-                    caseSensitive={searchCaseSensitivity}
-                    navbarSearchQuery={queryState.query}
-                    structuralSearchDisabled={structuralSearchDisabled}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearchOnChange}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                />
-            ) : (
-                <LegacyToggles
-                    searchMode={searchMode}
-                    patternType={searchPatternType}
-                    caseSensitive={searchCaseSensitivity}
-                    navbarSearchQuery={queryState.query}
-                    structuralSearchDisabled={structuralSearchDisabled}
-                    setPatternType={setSearchPatternType}
-                    setCaseSensitivity={setSearchCaseSensitivity}
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearchOnChange}
-                />
-            )}
+            <Toggles
+                searchMode={searchMode}
+                patternType={searchPatternType}
+                defaultPatternType={defaultPatternType}
+                caseSensitive={searchCaseSensitivity}
+                navbarSearchQuery={queryState.query}
+                structuralSearchDisabled={structuralSearchDisabled}
+                setPatternType={setSearchPatternType}
+                setCaseSensitivity={setSearchCaseSensitivity}
+                setSearchMode={setSearchMode}
+                submitSearch={submitSearchOnChange}
+                telemetryService={telemetryService}
+                telemetryRecorder={telemetryRecorder}
+            />
         </LazyV2SearchInput>
     )
 }
@@ -311,7 +299,6 @@ interface SidebarNavigationProps {
     showBatchChanges: boolean
     showCodeInsights: boolean
     onClose: () => void
-    authenticatedUser: AuthenticatedUser | null
 }
 
 const SidebarNavigation: FC<SidebarNavigationProps> = props => {
@@ -323,7 +310,6 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
         showBatchChanges,
         showCodeInsights,
         isSourcegraphDotCom,
-        authenticatedUser,
         onClose,
     } = props
 
@@ -348,50 +334,18 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
 
             <nav className={styles.sidebarNavigationNav}>
                 <ul className={styles.sidebarNavigationList}>
-                    <li className={classNames(styles.navItem, styles.navItemNested)}>
-                        <Button
-                            as={Link}
-                            to={PageRoutes.Search}
-                            className={styles.navLink}
-                            onClick={handleNavigationClick}
-                        >
-                            <Icon as={MagnifyIcon} className={styles.icon} aria-hidden={true} /> Code Search
-                        </Button>
-
-                        <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
-                            {showSearchContext && (
-                                <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
-                                    Context
-                                </NavItemLink>
-                            )}
-                            {showSearchNotebook && (
-                                <NavItemLink url={PageRoutes.Notebooks} onClick={handleNavigationClick}>
-                                    Notebooks
-                                </NavItemLink>
-                            )}
-                            {showCodeMonitoring && (
-                                <NavItemLink url="/code-monitoring" onClick={handleNavigationClick}>
-                                    Code Monitoring
-                                </NavItemLink>
-                            )}
-                            {showSearchJobs && (
-                                <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
-                                    Search Jobs <ProductStatusBadge className="ml-2" status="beta" />
-                                </NavItemLink>
-                            )}
-                        </ul>
-                    </li>
-
-                    <NavItemLink url={PageRoutes.Cody} icon={CodyLogo} onClick={handleNavigationClick}>
-                        Cody
+                    <NavItemLink url={PageRoutes.Search} icon={MagnifyIcon} onClick={handleNavigationClick}>
+                        Code Search
                     </NavItemLink>
 
-                    {authenticatedUser && (
-                        <ul className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}>
-                            <NavItemLink url={PageRoutes.CodyChat} onClick={handleNavigationClick}>
-                                Web Chat
-                            </NavItemLink>
-                        </ul>
+                    {window.context?.codyEnabledOnInstance && (
+                        <NavItemLink
+                            url={linkForCodyNavItem(isSourcegraphDotCom)}
+                            icon={CodyLogo}
+                            onClick={handleNavigationClick}
+                        >
+                            Cody
+                        </NavItemLink>
                     )}
 
                     {showBatchChanges && (
@@ -404,6 +358,43 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
                         <NavItemLink url="/insights" icon={BarChartIcon} onClick={handleNavigationClick}>
                             Insights
                         </NavItemLink>
+                    )}
+
+                    {(showSearchContext ||
+                        showSearchNotebook ||
+                        showCodeMonitoring ||
+                        showBatchChanges ||
+                        showCodeInsights) && (
+                        <li className={classNames(styles.navItem, styles.navItemNested)}>
+                            <span className={styles.navGroupTitle}>
+                                <Icon as={ToolsIcon} className={styles.icon} aria-hidden={true} /> Tools
+                            </span>
+
+                            <ul
+                                className={classNames(styles.sidebarNavigationList, styles.sidebarNavigationListNested)}
+                            >
+                                {showSearchContext && (
+                                    <NavItemLink url={PageRoutes.Contexts} onClick={handleNavigationClick}>
+                                        Contexts
+                                    </NavItemLink>
+                                )}
+                                {showSearchNotebook && (
+                                    <NavItemLink url={PageRoutes.Notebooks} onClick={handleNavigationClick}>
+                                        Notebooks
+                                    </NavItemLink>
+                                )}
+                                {showCodeMonitoring && (
+                                    <NavItemLink url="/code-monitoring" onClick={handleNavigationClick}>
+                                        Code Monitoring
+                                    </NavItemLink>
+                                )}
+                                {showSearchJobs && (
+                                    <NavItemLink url={PageRoutes.SearchJobs} onClick={handleNavigationClick}>
+                                        Search Jobs
+                                    </NavItemLink>
+                                )}
+                            </ul>
+                        </li>
                     )}
 
                     {isSourcegraphDotCom && (

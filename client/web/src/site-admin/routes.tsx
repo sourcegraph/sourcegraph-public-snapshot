@@ -8,6 +8,7 @@ import { SHOW_BUSINESS_FEATURES } from '../enterprise/dotcom/productSubscription
 import { OwnAnalyticsPage } from '../enterprise/own/admin-ui/OwnAnalyticsPage'
 import type { SiteAdminRolesPageProps } from '../enterprise/rbac/SiteAdminRolesPage'
 import type { RoleAssignmentModalProps } from '../enterprise/site-admin/UserManagement/components/RoleAssignmentModal'
+import { GitHubAppKind } from '../graphql-operations'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -191,12 +192,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
         render: props => <AnalyticsSearchPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/code-intel',
         render: props => <AnalyticsCodeIntelPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/analytics/extensions',
@@ -209,7 +210,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/cody',
         render: props => <AnalyticsCodyPage {...props} />,
-        condition: ({ license }) => license.isCodyEnabled,
+        condition: () => window.context?.codyEnabledOnInstance,
     },
     {
         path: '/analytics/code-insights',
@@ -224,7 +225,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/notebooks',
         render: props => <AnalyticsNotebooksPage {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/configuration',
@@ -408,7 +409,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/batch-changes/github-apps/new',
-        render: () => <BatchChangesCreateGitHubAppPage />,
+        render: ({ authenticatedUser }) => (
+            <BatchChangesCreateGitHubAppPage
+                authenticatedUser={authenticatedUser}
+                kind={GitHubAppKind.COMMIT_SIGNING}
+            />
+        ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
@@ -457,13 +463,13 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/*',
         render: () => <NavigateToCodeGraph />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     // Code graph routes
     {
         path: '/code-graph/*',
         render: props => <AdminCodeIntelArea {...props} />,
-        condition: ({ license }) => license.isCodeSearchEnabled,
+        condition: () => window.context?.codeSearchEnabledOnInstance,
     },
     {
         path: '/lsif-uploads/:id',

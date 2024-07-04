@@ -42,3 +42,10 @@ export function isValidEmailAddress(emailAddress: string): boolean {
  * and keep in mind that the backend validation has the final say, validation in the web app is only for UX improvement.
  */
 const emailRegex = /^[^@]+@[^@]+\.[^@]+$/
+
+/**
+ * Whether the current user is unable to use Cody because they must verify their email address.
+ */
+export function currentUserRequiresEmailVerificationForCody(): boolean {
+    return window.context?.codyRequiresVerifiedEmail && !window.context?.currentUser?.hasVerifiedEmail
+}

@@ -8,6 +8,8 @@ env:
 # Temporary work-around to resolve a slow post task agent health check
 observability: false
 tasks:
+  - checkout:
+      update_strategy: rebase
   # Checks that BUILD files are formatted
   - buildifier:
       queue: aspect-small

@@ -8,6 +8,7 @@ import {
     type BatchChangesCredentialFields,
     type CheckBatchChangesCredentialResult,
     ExternalServiceKind,
+    type UserAreaUserFields,
 } from '../../../graphql-operations'
 
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
@@ -67,7 +68,7 @@ export const Overview: StoryFn = () => (
                         commitSigningConfiguration: null,
                     }}
                     refetchAll={() => {}}
-                    userID="123"
+                    user={{ id: '123' } as UserAreaUserFields}
                 />
             </MockedTestProvider>
         )}

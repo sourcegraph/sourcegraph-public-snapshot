@@ -169,16 +169,21 @@ func NewDefaultConfig() Sourcegraph {
 				Replicas: 1,
 			},
 
-			// Grafana and Jaeger are opt-in
+			// Grafana and Jaeger are opt-in, on by default
 			Grafana: GrafanaSpec{
 				StandardConfig: StandardConfig{
-					Disabled: true,
+					Disabled: false,
+					PersistentVolumeConfig: PersistentVolumeConfig{
+						StorageSize: "2Gi",
+					},
 				},
+				Replicas: 1,
 			},
 			Jaeger: JaegerSpec{
 				StandardConfig: StandardConfig{
 					Disabled: true,
 				},
+				Replicas: 1,
 			},
 		},
 	}

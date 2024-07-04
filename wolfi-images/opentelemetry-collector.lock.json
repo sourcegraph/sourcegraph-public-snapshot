@@ -204,60 +204,60 @@
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q15k7skG0C5SvxLvN3uoETs1Udd9w=",
+        "checksum": "Q1Q/Zy5ovYSu2p/vVLr6DgVA1e8AQ=",
         "control": {
-          "checksum": "sha1-5k7skG0C5SvxLvN3uoETs1Udd9w=",
-          "range": "bytes=700-1064"
+          "checksum": "sha1-Q/Zy5ovYSu2p/vVLr6DgVA1e8AQ=",
+          "range": "bytes=699-1062"
         },
         "data": {
-          "checksum": "sha256-45tH8phNvEY3Z9XXaBHNviH4vfoG4E8PFsu2M/LDMRc=",
-          "range": "bytes=1065-5924167"
+          "checksum": "sha256-H3jxsw8ytOeCIR4vq17voSVhdNokXk8C1g075txH6Bs=",
+          "range": "bytes=1063-5903754"
         },
         "name": "libcrypto3",
         "signature": {
-          "checksum": "sha1-5z9K2exWEl9OCHnv0JLws1YSyJc=",
-          "range": "bytes=0-699"
+          "checksum": "sha1-NIl2f5OI/wSZByI8Ds1ZUfbFWyw=",
+          "range": "bytes=0-698"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.1-r1.apk",
-        "version": "3.3.1-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libcrypto3-3.3.1-r3.apk",
+        "version": "3.3.1-r3"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1YHPNuN8ECvgfexdDInIcb8xsZ+4=",
+        "checksum": "Q13wGUXdZut9OOTdY5z2amUj9wXC0=",
         "control": {
-          "checksum": "sha1-YHPNuN8ECvgfexdDInIcb8xsZ+4=",
-          "range": "bytes=702-1073"
+          "checksum": "sha1-3wGUXdZut9OOTdY5z2amUj9wXC0=",
+          "range": "bytes=698-1068"
         },
         "data": {
-          "checksum": "sha256-zLu4HkXXRUtKAepPk1ijRG6kDY0FbUtKluFCbz4NL5s=",
-          "range": "bytes=1074-1197080"
+          "checksum": "sha256-mRda6+YGlOCczyIWKaHqXskTINoT1rgorHDHqAKAb7c=",
+          "range": "bytes=1069-1188955"
         },
         "name": "libssl3",
         "signature": {
-          "checksum": "sha1-9jomo+G8ixgf6HZyZaPwOGq+Mb8=",
-          "range": "bytes=0-701"
+          "checksum": "sha1-+UdRc4U3PKw4H9OiNurHKXa5BYk=",
+          "range": "bytes=0-697"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.1-r1.apk",
-        "version": "3.3.1-r1"
+        "url": "https://packages.wolfi.dev/os/x86_64/libssl3-3.3.1-r3.apk",
+        "version": "3.3.1-r3"
       },
       {
         "architecture": "x86_64",
-        "checksum": "Q1T0Wnzc742ViaBV3YvvE20lFhHWY=",
+        "checksum": "Q1p04MrHQPrXOzuV/uF290zjnltqI=",
         "control": {
-          "checksum": "sha1-T0Wnzc742ViaBV3YvvE20lFhHWY=",
-          "range": "bytes=701-1219"
+          "checksum": "sha1-p04MrHQPrXOzuV/uF290zjnltqI=",
+          "range": "bytes=704-1219"
         },
         "data": {
-          "checksum": "sha256-KlEKsw3y36AC2NnaKU/8vMb1NiRHwkOOSPi+PQaatFk=",
-          "range": "bytes=1220-2555813"
+          "checksum": "sha256-TsXeqhUGykAhjQUEAlMUSzDQBcWDkkDvReoeHCL1F6c=",
+          "range": "bytes=1220-2555814"
         },
         "name": "krb5-libs",
         "signature": {
-          "checksum": "sha1-LmtseIB7cVCHQwhmMfSaLS9k4X0=",
-          "range": "bytes=0-700"
+          "checksum": "sha1-cPyzS38QHuNlOCQb8IPlsl2PLHQ=",
+          "range": "bytes=0-703"
         },
-        "url": "https://packages.wolfi.dev/os/x86_64/krb5-libs-1.21.2-r3.apk",
-        "version": "1.21.2-r3"
+        "url": "https://packages.wolfi.dev/os/x86_64/krb5-libs-1.21.3-r0.apk",
+        "version": "1.21.3-r0"
       },
       {
         "architecture": "x86_64",

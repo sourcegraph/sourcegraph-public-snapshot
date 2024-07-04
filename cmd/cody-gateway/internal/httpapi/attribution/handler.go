@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway/codygatewayactor"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,7 +28,7 @@ func NewHandler(client graphql.Client, baseLogger log.Logger) http.Handler {
 		ctx := r.Context()
 		a := actor.FromContext(ctx)
 		logger := a.Logger(trace.Logger(ctx, baseLogger))
-		if got, want := a.GetSource(), codygateway.ActorSourceEnterpriseSubscription; got != want {
+		if got, want := a.GetSource(), codygatewayactor.ActorSourceEnterpriseSubscription; got != want {
 			response.JSONError(logger, w, http.StatusUnauthorized, errors.New("only available for enterprise product subscriptions"))
 			return
 		}

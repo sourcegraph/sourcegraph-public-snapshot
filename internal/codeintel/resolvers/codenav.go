@@ -53,8 +53,8 @@ func (a *GitBlobLSIFDataArgs) Options() shared.UploadMatchingOptions {
 		matching = shared.RootEnclosesPathOrPathEnclosesRoot
 	}
 	return shared.UploadMatchingOptions{
-		RepositoryID: int(a.Repo.ID),
-		Commit:       string(a.Commit),
+		RepositoryID: a.Repo.ID,
+		Commit:       a.Commit,
 		// OK to use Unchecked method since we expect a repo-root relative
 		// path from the GraphQL API arguments; upload root relative paths
 		// are largely an implementation detail.
@@ -617,6 +617,8 @@ type UsageConnectionResolver = PagedConnectionResolver[UsageResolver]
 
 type UsageResolver interface {
 	Symbol(context.Context) (SymbolInformationResolver, error)
+	Provenance(context.Context) (CodeGraphDataProvenance, error)
+	DataSource() *string
 	UsageRange(context.Context) (UsageRangeResolver, error)
 	SurroundingContent(_ context.Context, args *struct {
 		*SurroundingLines `json:"surroundingLines"`
@@ -627,8 +629,6 @@ type UsageResolver interface {
 type SymbolInformationResolver interface {
 	Name() (string, error)
 	Documentation() (*[]string, error)
-	Provenance() (CodeGraphDataProvenance, error)
-	DataSource() *string
 }
 
 type UsageRangeResolver interface {

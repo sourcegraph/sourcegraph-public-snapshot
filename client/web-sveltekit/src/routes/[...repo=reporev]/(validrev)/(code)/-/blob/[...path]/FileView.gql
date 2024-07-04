@@ -30,3 +30,38 @@ fragment FileViewCommit on GitCommit {
     canonicalURL
     abbreviatedOID
 }
+
+fragment FileViewCodeGraphData on CodeGraphData {
+    id
+    provenance
+    commit
+    toolInfo {
+        name
+        version
+    }
+
+    occurrences(first: 10000) {
+        nodes {
+            ...FileViewOccurrence
+        }
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+}
+
+fragment FileViewOccurrence on SCIPOccurrence {
+    symbol
+    range {
+        start {
+            line
+            character
+        }
+        end {
+            line
+            character
+        }
+    }
+    roles
+}

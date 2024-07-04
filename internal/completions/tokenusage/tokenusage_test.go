@@ -3,37 +3,9 @@ package tokenusage_test
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
-
-func TestTokenizeAndCalculateUsage(t *testing.T) {
-	rcache.SetupForTest(t)
-	mockCache := rcache.NewWithTTL("LLMUsage", 1800)
-	manager := tokenusage.NewManager()
-	messages := []types.Message{
-		{Speaker: "human", Text: "Hello"},
-		{Speaker: "user", Text: "Hi"},
-	}
-	err := manager.TokenizeAndCalculateUsage(messages, "output text", tokenizer.OpenAIModel+"/gpt-4", "feature1", tokenusage.OpenAI)
-	if err != nil {
-		t.Fatalf("TokenizeAndCalculateUsage returned an error: %v", err)
-	}
-
-	// Verify that token counts are updated in the cache
-	inputKey := "openai:openai/gpt-4:feature1:input"
-	outputKey := "openai:openai/gpt-4:feature1:output"
-
-	if val, exists, _ := mockCache.GetInt64(inputKey); !exists || val <= 0 {
-		t.Errorf("Expected input token count to be updated in cache, but key %s was not found or value is not positive", inputKey)
-	}
-
-	if val, exists, _ := mockCache.GetInt64(outputKey); !exists || val <= 0 {
-		t.Errorf("Expected output token count to be updated in cache, but key %s was not found or value is not positive", outputKey)
-	}
-}
 
 func TestGetAllTokenUsageData(t *testing.T) {
 	rcache.SetupForTest(t)

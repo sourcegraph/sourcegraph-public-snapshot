@@ -124,7 +124,7 @@ function searchBasedReferencesViaSCIPLocals(options: UseSearchBasedCodeIntelOpti
     if (view === null) {
         return
     }
-    const occurrences = view.state.facet(syntaxHighlight).occurrences
+    const occurrences = view.state.facet(syntaxHighlight).interactiveOccurrences
     const { path, repo, position, fileContent: content, commit: commitID } = options
     const lines = split(content)
     const scipPosition = new ScipPosition(position.line, position.character)
@@ -408,7 +408,6 @@ const cache = <Arguments extends unknown[], V>(
     return (...args) => {
         const key = stringify(args)
         if (lru.has(key)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return lru.get(key)!
         }
         const value = func(...args)

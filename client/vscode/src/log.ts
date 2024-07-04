@@ -3,7 +3,6 @@ import vscode from 'vscode'
 const outputChannel = vscode.window.createOutputChannel('Sourcegraph')
 
 export const log = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (what: string, error?: any): void => {
         outputChannel.appendLine(`ERROR ${errorMessage(what, error)}`)
     },
@@ -21,8 +20,6 @@ export const log = {
         outputChannel.appendLine(message)
     },
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function errorMessage(what: string, error?: any): string {
     const errorMessage =
         error instanceof Error
