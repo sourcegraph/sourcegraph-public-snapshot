@@ -193,7 +193,9 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 		appName := "TestApp"
 		domain := "batches"
 		baseURL := "https://ghe.example.org"
-		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s&baseURL=%s", webhookURN, appName, domain, baseURL), nil)
+		kind := ghtypes.CommitSigningGitHubAppKind
+		userID := "VXNlcjox"
+		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s&baseURL=%s&kind=%s&userID=%s", webhookURN, appName, domain, baseURL, kind, userID), nil)
 
 		t.Run("normal user", func(t *testing.T) {
 			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
@@ -217,7 +219,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 			mux.ServeHTTP(w, req)
 
 			if w.Code != http.StatusOK {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+				t.Fatalf("expected status code %d but got %d: %s", http.StatusOK, w.Code, w.Body)
 			}
 
 			var resp struct {
@@ -412,6 +414,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 
 			stateDeets, err := json.Marshal(gitHubAppStateDetails{
 				Domain: string(domain),
+				Kind:   string(ghtypes.CommitSigningGitHubAppKind),
 			})
 			require.NoError(t, err)
 			cache.Set(state, stateDeets)
@@ -420,7 +423,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 			mux.ServeHTTP(w, req)
 
 			if w.Code != http.StatusFound {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+				t.Fatalf("expected status code %d but got %d: %s", http.StatusOK, w.Code, w.Body)
 			}
 		})
 	})
