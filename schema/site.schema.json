@@ -3241,11 +3241,6 @@
           "enum": ["experimental", "beta", "stable", "deprecated"],
           "examples": [["stable"]]
         },
-        "tier": {
-          "type": "string",
-          "enum": ["free", "pro", "enterprise"],
-          "default": ["free"]
-        },
         "contextWindow": {
           "$ref": "#/definitions/ContextWindow"
         },
@@ -3323,11 +3318,6 @@
           "type": "string",
           "enum": ["experimental", "beta", "stable", "deprecated"],
           "examples": [["stable"]]
-        },
-        "tier": {
-          "type": "string",
-          "enum": ["free", "pro", "enterprise"],
-          "default": ["free"]
         },
         "contextWindow": {
           "$ref": "#/definitions/ContextWindow"
