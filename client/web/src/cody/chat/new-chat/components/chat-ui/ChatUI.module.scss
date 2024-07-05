@@ -37,8 +37,9 @@
     }
 
     code {
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         padding: 1px 3px;
-        border-radius: 4px;
+        border-radius: 0.25rem;
         font-family: var(--monaco-monospace-font);
         color: var(--vscode-textPreformat-foreground);
         background-color: var(--vscode-textPreformat-background);

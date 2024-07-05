@@ -45,6 +45,8 @@
 
     &-title {
         overflow: hidden;
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
         display: -webkit-box;
         line-clamp: 2;
         -webkit-line-clamp: 3;
