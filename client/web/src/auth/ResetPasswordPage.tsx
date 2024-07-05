@@ -228,7 +228,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 
 interface ResetPasswordPageProps extends TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'xhrHeaders' | 'sourcegraphDotComMode' | 'resetPasswordEnabled'>
+    context: Pick<SourcegraphContext, 'xhrHeaders' | 'resetPasswordEnabled'>
 }
 
 /**
@@ -280,11 +280,7 @@ export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> 
     return (
         <>
             <PageTitle title="Reset your password" />
-            <AuthPageWrapper
-                title="Reset your password"
-                sourcegraphDotComMode={props.context.sourcegraphDotComMode}
-                className={styles.wrapper}
-            >
+            <AuthPageWrapper title="Reset your password" className={styles.wrapper}>
                 {body}
             </AuthPageWrapper>
         </>
