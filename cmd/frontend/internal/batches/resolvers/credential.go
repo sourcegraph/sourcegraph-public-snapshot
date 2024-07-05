@@ -3,9 +3,10 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"strconv"
 	"strings"
+
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -16,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,7 +76,7 @@ type batchChangesUserCredentialResolver struct {
 	credential *database.UserCredential
 
 	repo    *types.Repo
-	ghStore ghstore.GitHubAppsStore
+	ghStore ghastore.GitHubAppsStore
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesUserCredentialResolver{}
@@ -124,13 +125,17 @@ func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
+
+func (c *batchChangesUserCredentialResolver) GitHubAppID() int {
+	return c.credential.GitHubAppID
+}
 
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
 
 	repo    *types.Repo
-	ghStore ghstore.GitHubAppsStore
+	ghStore ghastore.GitHubAppsStore
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
@@ -179,4 +184,6 @@ func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
+
+func (c *batchChangesSiteCredentialResolver) GitHubAppID() int { return c.credential.GitHubAppID }

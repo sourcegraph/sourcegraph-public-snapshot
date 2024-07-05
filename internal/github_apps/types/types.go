@@ -7,6 +7,7 @@ import (
 	gogithub "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GitHubApp represents a GitHub App.
@@ -49,6 +50,13 @@ func (s GitHubAppKind) Valid() bool {
 	default:
 		return false
 	}
+}
+
+func (s GitHubAppKind) Validate() (GitHubAppKind, error) {
+	if !s.Valid() {
+		return "", errors.Newf("Not a valid GitHubAppKind: %s", s)
+	}
+	return s, nil
 }
 
 // GitHubAppInstallation represents an installation of a GitHub App.
