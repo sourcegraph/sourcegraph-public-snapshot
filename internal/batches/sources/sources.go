@@ -95,7 +95,10 @@ type SourcerOpts struct {
 	GitHubAppKind          ghtypes.GitHubAppKind
 	AuthenticationStrategy AuthenticationStrategy
 
-	AsGitHubApp bool
+	// We sometimes create a sourcer for a changeset that without the use of a credential.
+	// An example is when we want to create a GitHubSource for a changeset that is to
+	// be signed by a GitHub app.
+	AsNonCredential bool
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -169,7 +172,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, err
 	}
 
-	if opts.AsGitHubApp {
+	if opts.AsNonCredential {
 		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, ch, targetRepo, repo, opts)
 	}
 
@@ -299,7 +302,7 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 		return nil, err
 	}
 
-	if opts.AsGitHubApp {
+	if opts.AsNonCredential {
 		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, nil, nil, nil, opts)
 	}
 	return css.WithAuthenticator(au)

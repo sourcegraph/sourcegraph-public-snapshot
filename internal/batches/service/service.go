@@ -1315,7 +1315,10 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authen
 		GitHubAppAccount:       pointers.Deref(args.Username, ""),
 		GitHubAppKind:          args.GitHubAppKind,
 		AuthenticationStrategy: as,
-		AsGitHubApp:            true,
+
+		// This is set to true because we want to validate the authenticator, not
+		// actually use it to create changesets.
+		AsNonCredential: true,
 	})
 	if err != nil {
 		return err
