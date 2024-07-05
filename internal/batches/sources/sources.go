@@ -3,13 +3,11 @@ package sources
 import (
 	"context"
 	"fmt"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"net/url"
 	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -19,8 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -69,12 +68,11 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 type AuthenticationStrategy string
 
 const (
-	// Authenticate using a traditional PAT configured by the user or site admin. This
-	// should be used for all code host interactions unless another authentication
+	// AuthenticationStrategyUserCredential is used to authenticate using a traditional PAT configured by
+	//the user or site admin. This should be used for all code host interactions unless another authentication
 	// strategy is explicitly required.
 	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
-	// Authenticate using a GitHub App. This should only be used for GitHub code hosts for
-	// commit signing interactions.
+	// AuthenticationStrategyGitHubApp is used to authenticate using a GitHub App.
 	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
 )
 
@@ -88,6 +86,16 @@ type SourcerStore interface {
 	UserCredentials() database.UserCredentialsStore
 	GitHubAppsStore() ghastore.GitHubAppsStore
 	GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error)
+}
+
+type SourcerOpts struct {
+	ExternalServiceID      string
+	ExternalServiceType    string
+	GitHubAppAccount       string
+	GitHubAppKind          ghtypes.GitHubAppKind
+	AuthenticationStrategy AuthenticationStrategy
+
+	ForCommitSigning bool
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -108,13 +116,13 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, repo *types.Repo, opts SourcerOpts) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
 	// ForExternalService returns a ChangesetSource based on the provided external service opts.
 	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error)
+	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts SourcerOpts) (ChangesetSource, error)
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
@@ -138,7 +146,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, repo *types.Repo, opts SourcerOpts) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -152,7 +160,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, errors.Wrap(err, "loading external service")
 	}
 
-	if as == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
+	if opts.AuthenticationStrategy == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
 
@@ -230,13 +238,6 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 		return nil, err
 	}
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
-}
-
-type ForExternalServiceOpts struct {
-	ExternalServiceID   string
-	ExternalServiceType string
-	GitHubAppAccount    string
-	GitHubAppKind       ghtypes.GitHubAppKind
 }
 
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error) {
@@ -399,7 +400,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, ErrNoGitHubAppInstallation
 	}
 
-	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+	appAuther, err := ghauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating GitHub App authenticator")
 	}
@@ -416,7 +417,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	// a GitHub App authenticated on behalf of a user, we should switch to using that
 	// access token here. See here for more details:
 	// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
+	installationAuther := ghauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
 
 	return css.WithAuthenticator(installationAuther)
 }
