@@ -17,7 +17,8 @@
     "classnames": "^2.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.1"
+    "react-router-dom": "^6.20.1",
+    "web-vitals": "2.1.4"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
@@ -27,9 +28,12 @@
     "@typescript-eslint/parser": "^6.14.0",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.55.0",
+    "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "tsconfig-to-swcconfig": "2.4.0",
     "typescript": "^5.3.3",
-    "vite": "^5.0.7"
+    "vite": "^5.0.7",
+    "vitest": "^1.6.0"
   }
 }

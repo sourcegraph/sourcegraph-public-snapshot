@@ -1,0 +1,112 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary", "js_run_devserver", "js_test")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
+load("@npm//maintenance:vite/package_json.bzl", "bin")
+
+npm_link_all_packages()
+
+RUNTIME_DEPS = [
+    "assets/cody.svg",
+    "assets/sourcegraph-reverse-logo.png",
+    "assets/sourcegraph.png",
+    "index.html",
+    "src/App.css",
+    "src/Frame.tsx",
+    "src/Home.tsx",
+    "src/Install.tsx",
+    "src/Login.tsx",
+    "src/Maintenance.tsx",
+    "src/OperatorDebugBar.tsx",
+    "src/OperatorStatus.tsx",
+    "src/Progress.tsx",
+    "src/Theme.tsx",
+    "src/WaitForAdmin.tsx",
+    "src/api.ts",
+    "src/debugBar.ts",
+    "src/index.css",
+    "src/main.tsx",
+    "src/reportWebVitals.ts",
+    ":node_modules/@emotion/react",
+    ":node_modules/@emotion/styled",
+    ":node_modules/@mui/icons-material",
+    ":node_modules/@mui/material",
+    ":node_modules/classnames",
+    ":node_modules/react",
+    ":node_modules/react-dom",
+    ":node_modules/react-router-dom",
+    ":node_modules/web-vitals",
+]
+
+DEV_DEPS = [
+    "vite.config.ts",
+    ":node_modules/@vitejs/plugin-react",
+    ":node_modules/vitest",
+]
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//visibility:public"],
+)
+
+tsconfig_to_swcconfig.t2s(
+    name = "write_swcrc",
+    srcs = ["tsconfig.json"],
+    args = [
+        "--filename",
+        "$(location tsconfig.json)",
+    ],
+    stdout = ".swcrc",
+    visibility = ["//maintenance:__subpackages__"],
+)
+
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//visibility:public"],
+    deps = [":node_modules/eslint-config-react-app"],
+)
+
+js_library(
+    name = "vite.config",
+    srcs = ["vite.config.ts"],
+    data = [
+        ":node_modules/@vitejs/plugin-react",
+        "//:node_modules/vitest",
+    ],
+    visibility = ["//maintenance:__subpackages__"],
+)
+
+bin.vite_binary(
+    name = "vite",
+    chdir = package_name(),
+    data = ["vite.config"],
+)
+
+# Fast developer round-trip under ibazel
+js_run_devserver(
+    name = "start",
+    args = ["."],
+    data = RUNTIME_DEPS + DEV_DEPS,
+    tool = ":vite",
+)
+
+# Create production release artifacts
+js_run_binary(
+    name = "build",
+    srcs = RUNTIME_DEPS,
+    args = ["build"],
+    mnemonic = "ViteBuild",
+    out_dirs = ["dist"],
+    tool = ":vite",
+)
+
+# Hosts the production-bundled application in a web server
+bin.vite_binary(
+    name = "preview",
+    args = ["preview"],
+    chdir = package_name(),
+    data = [":build"],
+)
+

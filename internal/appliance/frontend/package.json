@@ -1,0 +1,36 @@
+{
+    "// To install dependencies with Bazel-managed pnpm, run": "bazel run @pnpm//:pnpm -- --dir $PWD install",
+    "private": true,
+    "devDependencies": {
+      "eslint": "^8.55.0",
+      "jsdom": "^23.0.1",
+      "vitest": "^1.0.2"
+    },
+    "pnpm": {
+      "//packageExtensions": "Fix missing dependencies in npm packages, see https://pnpm.io/package_json#pnpmpackageextensions",
+      "packageExtensions": {
+        "@vitejs/plugin-vue": {
+          "peerDependencies": {
+            "vue": "*"
+          }
+        },
+        "@typescript-eslint/eslint-plugin": {
+          "peerDependencies": {
+            "eslint": "*"
+          }
+        },
+        "eslint-config-next": {
+          "peerDependencies": {
+            "next": "*"
+          }
+        },
+        "postcss-loader": {
+          "peerDependencies": {
+            "postcss-flexbugs-fixes": "*",
+            "postcss-preset-env": "*",
+            "postcss-normalize": "*"
+          }
+        }
+      }
+    }
+}

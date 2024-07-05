@@ -1,0 +1,24 @@
+# passes an argument `--skipLibCheck` to *every* spawn of the TypeScript compiler, tsc
+common --@aspect_rules_ts//ts:skipLibCheck=always
+
+# Required for rules_js
+build --enable_runfiles
+
+# Allow the Bazel server to check directory sources for changes.
+# Recommended when using copy_directory, see
+# https://github.com/aspect-build/bazel-lib/blob/main/docs/copy_directory.md
+startup --host_jvm_args=-DBAZEL_TRACK_SOURCE_DIRECTORIES=1
+
+###########################
+# Linting
+# Enable with --config=lint
+# This is demonstrated by the next.js example:
+# cd next.js; npm run lint
+build:lint --aspects=//:lint.bzl%eslint
+# Gather lint reports.
+# Note: --remote_download_regex is for RBE and was added in Bazel 7.
+build:lint --output_groups=rules_lint_report --remote_download_regex='.*aspect_rules_lint.report'
+# Cause build failures when there are lint warnings.
+# This is a simple configuration, but you probably want to report them as code review comments instead.
+# See https://github.com/aspect-build/rules_lint/blob/main/docs/linting.md#usage
+build:lint --aspects_parameters=fail_on_violation=true --keep_going

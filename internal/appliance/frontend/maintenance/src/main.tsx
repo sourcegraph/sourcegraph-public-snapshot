@@ -14,6 +14,8 @@ import { Progress } from './Progress.tsx'
 import { ThemeProvider } from './Theme.tsx'
 import { WaitForAdmin } from './WaitForAdmin.tsx'
 
+import reportWebVitals from './reportWebVitals';
+
 const router = createBrowserRouter([
     {
         path: '/',
@@ -54,3 +56,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </ThemeProvider>
     </React.StrictMode>
 )
+
+reportWebVitals(console.log)
