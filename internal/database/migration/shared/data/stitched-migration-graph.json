@@ -11303,8 +11303,8 @@
 			{
 				"ID": 1720165387,
 				"Name": "notebooks default to keyword search",
-				"UpQuery": "ALTER TABLE notebooks ALTER COLUMN pattern_type SET DEFAULT 'keyword';",
-				"DownQuery": "ALTER TABLE notebooks ALTER COLUMN pattern_type SET DEFAULT 'standard';",
+				"UpQuery": "ALTER TABLE IF EXISTS notebooks ALTER COLUMN pattern_type SET DEFAULT 'keyword';",
+				"DownQuery": "ALTER TABLE IF EXISTS notebooks ALTER COLUMN pattern_type SET DEFAULT 'standard';",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
