@@ -2,18 +2,18 @@ package webhooks
 
 import (
 	"context"
+	"strconv"
 
 	gh "github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks/resolvers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -53,20 +53,20 @@ func NewGitHubHandler() *GitHubHandler {
 }
 
 func (g *GitHubHandler) Register(router *webhooks.Router) {
-	router.Register(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handlePushEvent(ctx, db, payload)
+	router.Register(func(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, db, baseURL, payload)
 	}, extsvc.KindGitHub, "push")
 }
 
-func (g *GitHubHandler) handlePushEvent(ctx context.Context, db database.DB, payload any) error {
-	return handlePushEvent[*gh.PushEvent](ctx, db, g.logger, payload, gitHubCloneURLFromEvent)
+func (g *GitHubHandler) handlePushEvent(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+	return handlePushEvent[*gh.PushEvent](ctx, db, g.logger, extsvc.TypeGitHub, baseURL, payload, gitHubExternalIDFromEvent)
 }
 
-func gitHubCloneURLFromEvent(event *gh.PushEvent) (string, error) {
-	if event == nil || event.Repo == nil || event.Repo.CloneURL == nil {
-		return "", errors.New("URL for repository not found")
+func gitHubExternalIDFromEvent(event *gh.PushEvent) (string, error) {
+	if event == nil || event.GetRepo() == nil || event.GetRepo().GetID() == 0 {
+		return "", errors.New("external ID for repository not found")
 	}
-	return event.GetRepo().GetCloneURL(), nil
+	return event.GetRepo().GetNodeID(), nil
 }
 
 type GitLabHandler struct {
@@ -80,20 +80,23 @@ func NewGitLabHandler() *GitLabHandler {
 }
 
 func (g *GitLabHandler) Register(router *webhooks.Router) {
-	router.Register(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handlePushEvent(ctx, db, payload)
+	router.Register(func(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, db, baseURL, payload)
 	}, extsvc.KindGitLab, "push")
 }
 
-func (g *GitLabHandler) handlePushEvent(ctx context.Context, db database.DB, payload any) error {
-	return handlePushEvent[*gitlabwebhooks.PushEvent](ctx, db, g.logger, payload, gitLabCloneURLFromEvent)
+func (g *GitLabHandler) handlePushEvent(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+	return handlePushEvent[*gitlabwebhooks.PushEvent](ctx, db, g.logger, extsvc.TypeGitLab, baseURL, payload, gitlabExternalIDFromEvent)
 }
 
-func gitLabCloneURLFromEvent(event *gitlabwebhooks.PushEvent) (string, error) {
+func gitlabExternalIDFromEvent(event *gitlabwebhooks.PushEvent) (string, error) {
 	if event == nil {
 		return "", errors.New("nil PushEvent received")
 	}
-	return event.Repository.GitSSHURL, nil
+	if event.ProjectID == 0 {
+		return "", errors.New("project ID not found in PushEvent")
+	}
+	return strconv.Itoa(event.ProjectID), nil
 }
 
 type BitbucketServerHandler struct {
@@ -107,27 +110,23 @@ func NewBitbucketServerHandler() *BitbucketServerHandler {
 }
 
 func (g *BitbucketServerHandler) Register(router *webhooks.Router) {
-	router.Register(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handlePushEvent(ctx, db, payload)
+	router.Register(func(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, db, baseURL, payload)
 	}, extsvc.KindBitbucketServer, "repo:refs_changed")
 }
 
-func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, db database.DB, payload any) error {
-	return handlePushEvent[*bitbucketserver.PushEvent](ctx, db, g.logger, payload, bitbucketServerCloneURLFromEvent)
+func (g *BitbucketServerHandler) handlePushEvent(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+	return handlePushEvent[*bitbucketserver.PushEvent](ctx, db, g.logger, extsvc.TypeBitbucketServer, baseURL, payload, bitbucketServerExternalIDFromEvent)
 }
 
-func bitbucketServerCloneURLFromEvent(event *bitbucketserver.PushEvent) (string, error) {
+func bitbucketServerExternalIDFromEvent(event *bitbucketserver.PushEvent) (string, error) {
 	if event == nil {
 		return "", errors.New("nil PushEvent received")
 	}
-	for _, link := range event.Repository.Links.Clone {
-		// The ssh link is the closest to our repo name
-		if link.Name != "ssh" {
-			continue
-		}
-		return link.Href, nil
+	if event.Repository.ID == 0 {
+		return "", errors.New("repository ID not found in PushEvent")
 	}
-	return "", errors.New("no ssh URLs found")
+	return strconv.Itoa(event.Repository.ID), nil
 }
 
 type BitbucketCloudHandler struct {
@@ -141,58 +140,59 @@ func NewBitbucketCloudHandler() *BitbucketCloudHandler {
 }
 
 func (g *BitbucketCloudHandler) Register(router *webhooks.Router) {
-	router.Register(func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		return g.handlePushEvent(ctx, db, payload)
+	router.Register(func(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+		return g.handlePushEvent(ctx, db, baseURL, payload)
 	}, extsvc.KindBitbucketCloud, "repo:push")
 }
 
-func (g *BitbucketCloudHandler) handlePushEvent(ctx context.Context, db database.DB, payload any) error {
-	return handlePushEvent[*bitbucketcloud.PushEvent](ctx, db, g.logger, payload, bitbucketCloudCloneURLFromEvent)
+func (g *BitbucketCloudHandler) handlePushEvent(ctx context.Context, db database.DB, baseURL extsvc.CodeHostBaseURL, payload any) error {
+	return handlePushEvent[*bitbucketcloud.PushEvent](ctx, db, g.logger, extsvc.TypeBitbucketCloud, baseURL, payload, bitbucketCloudExternalIDFromEvent)
 }
 
-func bitbucketCloudCloneURLFromEvent(event *bitbucketcloud.PushEvent) (string, error) {
+func bitbucketCloudExternalIDFromEvent(event *bitbucketcloud.PushEvent) (string, error) {
 	if event == nil {
 		return "", errors.New("nil PushEvent received")
 	}
-	href := event.Repository.Links.HTML.Href
-	if href == "" {
-		return "", errors.New("clone url is empty")
-	}
-	return href, nil
+	return event.Repository.UUID, nil
 }
 
 // handlePushEvent takes a push payload and a function to extract the repo
 // clone URL from the event. It then uses the clone URL to find a repo and queues
 // a repo update.
-func handlePushEvent[T any](ctx context.Context, db database.DB, logger log.Logger, payload any, cloneURLGetter func(event T) (string, error)) error {
+func handlePushEvent[T any](ctx context.Context, db database.DB, logger log.Logger, externalServiceType string, externalServiceURL extsvc.CodeHostBaseURL, payload any, externalIDGetter func(event T) (string, error)) error {
 	event, ok := payload.(T)
 	if !ok {
 		return errors.Newf("incorrect event type: %T", payload)
 	}
 
-	cloneURL, err := cloneURLGetter(event)
+	externalID, err := externalIDGetter(event)
 	if err != nil {
-		return errors.Wrap(err, "getting clone URL from event")
+		return errors.Wrap(err, "getting external ID from event")
 	}
 
-	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
+	rs, err := db.Repos().List(ctx, database.ReposListOptions{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          externalID,
+				ServiceType: externalServiceType,
+				ServiceID:   externalServiceURL.String(),
+			},
+		},
+	})
 	if err != nil {
-		return errors.Wrap(err, "getting repo name from clone URL")
-	}
-	if repoName == "" {
-		return errors.New("could not determine repo from CloneURL")
+		return errors.Wrap(err, "handlePushEvent: ListRepos failed")
 	}
 
-	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repoName)
+	if len(rs) == 0 {
+		logger.Debug("push webhook received for unknown repo", log.String("repo", string(externalID)))
+		return nil
+	}
+
+	resp, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, rs[0].Name)
 	if err != nil {
-		// Repo not existing on Sourcegraph is fine
-		if errcode.IsNotFound(err) {
-			logger.Warn("push webhook received for unknown repo", log.String("repo", string(repoName)))
-			return nil
-		}
 		return errors.Wrap(err, "handlePushEvent: EnqueueRepoUpdate failed")
 	}
 
-	logger.Info("successfully updated", log.String("name", resp.Name))
+	logger.Debug("successfully updated repo from webhook", log.String("name", resp.Name))
 	return nil
 }

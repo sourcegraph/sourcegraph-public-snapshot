@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -191,8 +192,15 @@ func TestGitLabHandler(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return api.RepoName(repoName), nil
+	repositories.ListFunc.SetDefaultHook(func(ctx context.Context, rlo database.ReposListOptions) ([]*types.Repo, error) {
+		require.Equal(t, rlo.ExternalRepos, []api.ExternalRepoSpec{
+			{
+				ID:          "26057560",
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.sgdev.org/",
+			},
+		})
+		return []*types.Repo{{Name: api.RepoName(repoName)}}, nil
 	})
 	db.ReposFunc.SetDefaultReturn(repositories)
 
@@ -216,7 +224,10 @@ func TestGitLabHandler(t *testing.T) {
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+	baseURL, err := extsvc.NewCodeHostBaseURL("https://gitlab.sgdev.org")
+	require.NoError(t, err)
+
+	if err := handler.handlePushEvent(context.Background(), db, baseURL, &payload); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)
@@ -227,8 +238,15 @@ func TestBitbucketServerHandler(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return "bitbucket.sgdev.org/private/test-2020-06-01", nil
+	repositories.ListFunc.SetDefaultHook(func(ctx context.Context, rlo database.ReposListOptions) ([]*types.Repo, error) {
+		require.Equal(t, rlo.ExternalRepos, []api.ExternalRepoSpec{
+			{
+				ID:          "1",
+				ServiceType: "bitbucketServer",
+				ServiceID:   "https://bitbucket.sgdev.org/",
+			},
+		})
+		return []*types.Repo{{Name: api.RepoName(repoName)}}, nil
 	})
 	db.ReposFunc.SetDefaultReturn(repositories)
 
@@ -252,7 +270,10 @@ func TestBitbucketServerHandler(t *testing.T) {
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+	baseURL, err := extsvc.NewCodeHostBaseURL("https://bitbucket.sgdev.org")
+	require.NoError(t, err)
+
+	if err := handler.handlePushEvent(context.Background(), db, baseURL, &payload); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)
@@ -263,8 +284,15 @@ func TestBitbucketCloudHandler(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return "bitbucket.org/sourcegraph-testing/sourcegraph", nil
+	repositories.ListFunc.SetDefaultHook(func(ctx context.Context, rlo database.ReposListOptions) ([]*types.Repo, error) {
+		require.Equal(t, rlo.ExternalRepos, []api.ExternalRepoSpec{
+			{
+				ID:          "{f46afc56-15a7-4579-9429-1b9329ad4c09}",
+				ServiceType: "bitbucketCloud",
+				ServiceID:   "https://bitbucket.org/",
+			},
+		})
+		return []*types.Repo{{Name: api.RepoName(repoName)}}, nil
 	})
 	db.ReposFunc.SetDefaultReturn(repositories)
 
@@ -288,7 +316,10 @@ func TestBitbucketCloudHandler(t *testing.T) {
 	}
 	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
+	baseURL, err := extsvc.NewCodeHostBaseURL("https://bitbucket.org")
+	require.NoError(t, err)
+
+	if err := handler.handlePushEvent(context.Background(), db, baseURL, &payload); err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, repoName, updateQueued)

@@ -30,22 +30,27 @@ const (
 var _ graphqlbackend.WebhooksResolver = &webhooksResolver{}
 
 type webhooksResolver struct {
-	db database.DB
+	db  database.DB
+	svc backend.WebhookService
 }
 
 func NewWebhooksResolver(db database.DB) graphqlbackend.WebhooksResolver {
-	return &webhooksResolver{db: db}
+	return &webhooksResolver{
+		db:  db,
+		svc: backend.NewWebhookService(db, keyring.Default()),
+	}
 }
 
 func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbackend.CreateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
+
+	webhook, err := r.svc.CreateWebhook(ctx, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
+
 	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
@@ -58,8 +63,8 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	ws := backend.NewWebhookService(r.db, keyring.Default())
-	err = ws.DeleteWebhook(ctx, id)
+
+	err = r.svc.DeleteWebhook(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "delete webhook")
 	}
@@ -76,7 +81,6 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	ws := backend.NewWebhookService(r.db, keyring.Default())
 	var name string
 	if args.Name != nil {
 		name = *args.Name
@@ -90,7 +94,7 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 		codeHostURN = *args.CodeHostURN
 	}
 
-	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, args.Secret)
+	webhook, err := r.svc.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, args.Secret)
 	if err != nil {
 		return nil, errors.Wrap(err, "update webhook")
 	}
@@ -286,6 +290,7 @@ func (r *webhookResolver) CodeHostKind() string {
 
 func (r *webhookResolver) Secret(ctx context.Context) (*string, error) {
 	// Secret is optional
+	// TODO: Verify this is nil and not "" after creation from the webapp.
 	if r.hook.Secret == nil {
 		return nil, nil
 	}
