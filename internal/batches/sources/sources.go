@@ -199,7 +199,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 			}
 		}
 
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, ghtypes.SiteCredentialGitHubAppKind)
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, opts.GitHubAppKind)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
