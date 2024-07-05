@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "httpapi.go",
         "init.go",
+        "parser.go",
         "resolver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp",
