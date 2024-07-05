@@ -4,7 +4,7 @@ import { mdiWebhook } from '@mdi/js'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -22,7 +22,7 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
     }, [telemetryService, telemetryRecorder])
 
     return (
-        <Container>
+        <>
             <PageTitle title="Create incoming webhook" />
             <PageHeader
                 path={[
@@ -35,6 +35,6 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 className="mb-3"
             />
             <WebhookCreateUpdatePage />
-        </Container>
+        </>
     )
 }

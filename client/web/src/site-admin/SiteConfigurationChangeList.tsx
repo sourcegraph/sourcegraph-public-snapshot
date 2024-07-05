@@ -39,6 +39,9 @@ export const SiteConfigurationChangeList: FC = () => {
     >({
         query: SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY,
         variables: {},
+        options: {
+            fetchPolicy: 'network-only',
+        },
         getConnection: ({ data }) => data?.site?.configuration?.history || undefined,
     })
 

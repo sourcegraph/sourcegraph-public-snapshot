@@ -37,7 +37,6 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
             lastReplenishment: '2021-03-15T19:39:11Z',
             infinite: false,
         },
-        webhookURL: null,
         hasConnectionCheck: true,
         unrestricted: false,
         syncJobs: {

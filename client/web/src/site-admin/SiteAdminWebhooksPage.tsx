@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 
 import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -34,7 +35,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         telemetryRecorder.recordEvent('admin.webhooks', 'view')
     }, [telemetryService, telemetryRecorder])
 
-    const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
+    const { loading, hasNextPage, fetchMore, connection, refetchAll: refetchList, error } = useWebhooksConnection()
     const headerTotals = useWebhookPageHeader()
     return (
         <div className="site-admin-webhooks-page">
@@ -42,7 +43,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
             <PageHeader
                 path={[{ icon: mdiWebhook }, { to: '/site-admin/webhooks/incoming', text: 'Incoming webhooks' }]}
                 headingElement="h2"
-                description="All configured incoming webhooks"
+                description="Use incoming webhooks to notify Sourcegraph of code changes or changeset events."
                 className="mb-3"
                 actions={
                     <ButtonLink
@@ -57,7 +58,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
 
             <Container>
                 {!headerTotals.loading && (
-                    <div className={styles.grid}>
+                    <div className={classNames(styles.grid, 'mb-3')}>
                         <PerformanceGauge
                             count={headerTotals.totalErrors}
                             countClassName={headerTotals.totalErrors > 0 ? 'text-danger' : ''}
@@ -74,13 +75,13 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Webhooks">
-                        {connection?.nodes?.map(node => (
+                        {connection?.nodes?.map((node, index) => (
                             <WebhookNode
                                 key={node.id}
-                                name={node.name}
-                                id={node.id}
-                                codeHostKind={node.codeHostKind}
-                                codeHostURN={node.codeHostURN}
+                                webhook={node}
+                                afterDelete={refetchList}
+                                first={index === 0}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         ))}
                     </ConnectionList>

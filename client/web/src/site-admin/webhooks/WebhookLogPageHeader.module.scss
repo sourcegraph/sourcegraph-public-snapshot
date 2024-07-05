@@ -41,22 +41,6 @@
     }
 }
 
-.select-service {
-    > div {
-        // The .form-group container on <Select /> brings in a 1em bottom
-        // margin, so we need to override that.
-        margin-bottom: 0;
-    }
-
-    grid-column: 3 / 4;
-    align-self: end;
-
-    @media (--sm-breakpoint-down) {
-        grid-column: 1 / 2;
-        grid-row: 3 / 4;
-    }
-}
-
 .error-button {
     grid-column: 4 / 5;
     align-self: end;

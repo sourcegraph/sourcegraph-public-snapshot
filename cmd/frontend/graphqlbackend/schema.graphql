@@ -3282,6 +3282,12 @@ type ExternalService implements Node {
     kind: ExternalServiceKind!
 
     """
+    The normalized URL of the external service. For external services that have no
+    URL, this will be an alternative unique identifier.
+    """
+    url: String!
+
+    """
     The display name of the external service.
     """
     displayName: String!
@@ -3310,11 +3316,6 @@ type ExternalService implements Node {
     The number of repos synced by the external service.
     """
     repoCount: Int!
-
-    """
-    An optional URL that will be populated when webhooks have been configured for the external service.
-    """
-    webhookURL: String
 
     """
     This is an optional field that's populated when we ran into errors on the
@@ -3351,43 +3352,6 @@ type ExternalService implements Node {
     The last updater of this external service. Null if the user was deleted or created by a background routine.
     """
     lastUpdater: User
-
-    """
-    Returns recently received webhooks on this external service.
-
-    Only site admins may access this field.
-
-    DEPRECATED: Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice
-    """
-    webhookLogs(
-        """
-        Returns the first n webhook logs.
-        """
-        first: Int
-
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-
-        """
-        Only include webhook logs that resulted in errors.
-        """
-        onlyErrors: Boolean
-
-        """
-        Only include webhook logs on or after this time.
-        """
-        since: DateTime
-
-        """
-        Only include webhook logs on or before this time.
-        """
-        until: DateTime
-    ): WebhookLogConnection!
-        @deprecated(
-            reason: "Webhook logs linked directly to an external service will be removed. See https://sourcegraph.com/docs/admin/config/webhooks/incoming#deprecation-notice"
-        )
 
     """
     The list of recent sync jobs for this external service.

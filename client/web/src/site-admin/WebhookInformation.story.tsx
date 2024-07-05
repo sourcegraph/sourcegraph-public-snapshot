@@ -29,17 +29,17 @@ function createWebhook(): WebhookFields {
         name: 'webhook with name',
         secret: 'secret-secret',
         updatedAt: formatRFC3339(addMinutes(TIMESTAMP_MOCK, 5)),
-        url: 'sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',
+        url: 'https://sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',
         uuid: '1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',
         codeHostKind: ExternalServiceKind.GITHUB,
-        codeHostURN: 'github.com/repo1',
+        codeHostURN: 'https://github.com/',
         createdBy: {
             username: 'alice',
             url: 'users/alice',
         },
         updatedBy: {
-            username: 'alice',
-            url: 'users/alice',
+            username: 'bob',
+            url: 'users/bob',
         },
     }
 }
