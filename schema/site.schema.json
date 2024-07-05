@@ -3149,7 +3149,7 @@
       "default": null,
       "properties": {
         "statusFilter": {
-          "description": "Constrain models to just those in this list",
+          "description": "Constrain models to just those matching one of the supplied statuses",
           "type": "array",
           "items": {
             "type": "string",
