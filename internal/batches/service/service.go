@@ -1836,7 +1836,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 	}
 
 	if as == sources.AuthenticationStrategyGitHubApp && args.GitHubAppID == 0 {
-		return nil, errors.New("githubAppID must be specified")
+		return nil, errors.Newf("GithubAppID must be specified when authenticationStrategy is %s", as)
 	}
 
 	// Throw error documented in schema.graphql.
