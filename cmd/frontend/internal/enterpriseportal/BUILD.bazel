@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enterpriseportal",
+    srcs = [
+        "enterpriseportal_proxy.go",
+        "scopes.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterpriseportal",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/audit",
+        "//internal/auth",
+        "//internal/database",
+        "//lib/pointers",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//std",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//:sourcegraph-accounts-sdk-go",
+        "@com_github_sourcegraph_sourcegraph_accounts_sdk_go//scopes",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
