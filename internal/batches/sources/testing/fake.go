@@ -2,6 +2,7 @@ package testing
 
 import (
 	"context"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -24,7 +25,7 @@ type fakeSourcer struct {
 	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 

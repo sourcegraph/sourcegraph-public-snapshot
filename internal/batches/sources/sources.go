@@ -108,7 +108,7 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
@@ -138,7 +138,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -199,7 +199,10 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 			}
 		}
 
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, opts.GitHubAppKind)
+		if gitHubAppKind == "" {
+			return nil, errors.New("ForChangeset with AuthenticationStrategyGitHubApp must be called with a gitHubAppKind, but was called with empty string.")
+		}
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, gitHubAppKind)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
