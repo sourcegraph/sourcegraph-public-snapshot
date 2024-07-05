@@ -36,7 +36,11 @@ func (i invocation) GetStartTime() *time.Time {
 	if !ok {
 		return nil
 	}
-	t := v.(time.Time)
+	raw := v.(string)
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return nil
+	}
 	return &t
 }
 
@@ -45,7 +49,11 @@ func (i invocation) GetEndTime() *time.Time {
 	if !ok {
 		return nil
 	}
-	t := v.(time.Time)
+	raw := v.(string)
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return nil
+	}
 	return &t
 }
 
@@ -169,6 +177,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 		std.Out.WriteWarningf("Invalid json generated for sg analytics metadata %v: %s", meta, err)
 	}
 
+	println("💀 INSERTING")
 	_, err = s.db.Exec(`INSERT INTO analytics (event_uuid, schema_version, metadata_json) VALUES (?, ?, ?)`, uuid, schemaVersion, string(b))
 	if err != nil {
 		std.Out.WriteWarningf("Failed to insert sg analytics event: %s", err)
@@ -197,6 +206,8 @@ func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) {
 		return
 	}
 
+	println("💀 DELETING", uuid)
+
 	_, err := s.db.Exec(`DELETE FROM analytics WHERE event_uuid = ?`, uuid)
 	if err != nil {
 		std.Out.WriteWarningf("Failed to delete sg analytics event: %s", err)
@@ -208,7 +219,7 @@ func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error)
 		return nil, nil
 	}
 
-	res, err := s.db.Query(`SELECT * FROM analytics WHERE end_time IS NOT NULL`)
+	res, err := s.db.Query(`SELECT * FROM analytics WHERE json_extract(metadata_json, '$.end_time') IS NOT NULL LIMIT 10`)
 	if err != nil {
 		return nil, err
 	}

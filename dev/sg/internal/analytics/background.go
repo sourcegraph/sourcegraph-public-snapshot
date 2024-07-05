@@ -12,8 +12,10 @@ var (
 	bq *BigQueryClient
 )
 
-func BackgroundEventPublisher(ctx context.Context) {
+func BackgroundEventPublisher(ctx context.Context) func() {
+	done := make(chan struct{})
 	background.Run(ctx, func(ctx context.Context, bgOut *std.Output) {
+		println("💀 BG START")
 		var err error
 		bq, err = NewBigQueryClient(ctx, SGLocalDev, AnalyticsDatasetName, EventsTableName)
 		if err != nil {
@@ -21,10 +23,12 @@ func BackgroundEventPublisher(ctx context.Context) {
 			return
 		}
 
-		var store analyticsStore
-		done := make(chan struct{})
-		go processEvents(bgOut, store, done)
+		go processEvents(bgOut, store(), done)
 	})
+
+	return func() {
+		close(done)
+	}
 }
 
 func toEvents(items []invocation) []event {
@@ -37,34 +41,36 @@ func toEvents(items []invocation) []event {
 	return results
 }
 
-func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) error {
+func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) {
+	println("💀 PROCESS EVENTS")
 	ctx := context.Background()
-
-	tickRate := 10 * time.Millisecond
-	ticker := time.NewTicker(tickRate)
 
 	for {
 		select {
-		case <-ticker.C:
-			ticker.Stop()
+		case <-done:
+			return
+		default:
 			results, err := store.ListCompleted(ctx)
 			if err != nil {
 				bgOut.WriteWarningf("failed to list completed analytics events", err)
+				// TODO(burmudar): We sleep here for now, but we need to try about
+				// 3 times and stop and print out that we stopped because there is something big wrong
+				time.Sleep(time.Second)
 				continue
 			}
 
 			events := toEvents(results)
+			println("💀 EVENTS", len(events))
 			for _, ev := range events {
 				err := bq.InsertEvent(ctx, ev)
 				if err != nil {
+					println("💀💀💀💀", err)
+					panic(err)
 					bgOut.WriteWarningf("failed to insert analytics event", err)
+					continue
 				}
 				store.DeleteInvocation(ctx, ev.UUID)
 			}
-
-			ticker.Reset(tickRate)
-		case <-done:
-			return nil
 		}
 	}
 

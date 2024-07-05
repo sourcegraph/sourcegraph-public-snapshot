@@ -3,12 +3,9 @@ package analytics
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BigQueryClient struct {
@@ -87,106 +84,4 @@ func NewBigQueryClient(ctx context.Context, project, datasetName, tableName stri
 func (bq *BigQueryClient) InsertEvent(ctx context.Context, ev event) error {
 	ins := bq.Table.Inserter()
 	return ins.Put(ctx, ev)
-}
-
-func (bq *BigQueryClient) transact(ctx context.Context) (session string, commit, rollback func() error, _ error) {
-	q := bq.Query("SELECT 1;")
-	q.CreateSession = true
-	q.Location = "US"
-	job, err := q.Run(ctx)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery session: starting query: %w", err)
-	}
-	status, err := job.Wait(ctx)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery session: awaiting query: %w", err)
-	}
-	if err := status.Err(); err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery session: running query: %w", err)
-	}
-
-	session = job.LastStatus().Statistics.SessionInfo.SessionID
-
-	q = bq.Query("BEGIN TRANSACTION")
-	q.ConnectionProperties = append(q.ConnectionProperties, &bigquery.ConnectionProperty{
-		Key:   "session_id",
-		Value: session,
-	})
-	q.Location = "US"
-	job, err = q.Run(ctx)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery transaction: starting query: %w", err)
-	}
-	status, err = job.Wait(ctx)
-	if err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery transaction: awaiting query: %w", err)
-	}
-	if err := status.Err(); err != nil {
-		return "", nil, nil, fmt.Errorf("failed to start bigquery transaction: running query: %w", err)
-	}
-
-	quitSession := func() error {
-		q = bq.Query("CALL BQ.ABORT_SESSION()")
-		q.ConnectionProperties = append(q.ConnectionProperties, &bigquery.ConnectionProperty{
-			Key:   "session_id",
-			Value: session,
-		})
-		q.Location = "US"
-		job, err = q.Run(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to quit bigquery session: starting query")
-		}
-		status, err = job.Wait(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed to quit bigquery session: awaiting query")
-		}
-		if err := status.Err(); err != nil {
-			return errors.Wrap(err, "failed to quit bigquery session: running query")
-		}
-		return nil
-	}
-
-	return session, func() error {
-			defer quitSession()
-
-			q = bq.Query("COMMIT TRANSACTION")
-			q.ConnectionProperties = append(q.ConnectionProperties, &bigquery.ConnectionProperty{
-				Key:   "session_id",
-				Value: session,
-			})
-			q.Location = "US"
-			job, err = q.Run(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "failed to commit bigquery transaction: starting query")
-			}
-			status, err = job.Wait(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "failed to commit bigquery transaction: awaiting query")
-			}
-			if err := status.Err(); err != nil {
-				return errors.Wrapf(err, "failed to commit bigquery transaction: running query")
-			}
-			return nil
-		}, func() error {
-			defer quitSession()
-
-			q = bq.Query("ROLLBACK TRANSACTION")
-			q.ConnectionProperties = append(q.ConnectionProperties, &bigquery.ConnectionProperty{
-				Key:   "session_id",
-				Value: session,
-			})
-			q.Location = "US"
-			job, err = q.Run(ctx)
-			if err != nil {
-				return errors.Wrap(err, "failed to rollback bigquery transaction: starting query: %w")
-			}
-			status, err = job.Wait(ctx)
-			if err != nil {
-				return errors.Wrap(err, "failed to rollback bigquery transaction: awaiting query: %w")
-			}
-			if err := status.Err(); err != nil {
-				return errors.Wrap(err, "failed to rollback bigquery transaction: running query: %w")
-			}
-			return nil
-		}, nil
 }
