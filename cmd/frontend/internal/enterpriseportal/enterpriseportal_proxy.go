@@ -23,7 +23,7 @@ import (
 var (
 	EnterprisePortalProd  = mustParseURL("https://enterprise-portal.sourcegraph.com")
 	EnterprisePortalDev   = mustParseURL("https://enterprise-portal.sgdev.org")
-	EnterprisePortalLocal = mustParseURL("http://localhost:6081")
+	EnterprisePortalLocal = mustParseURL("http://127.0.0.1:6081")
 )
 
 type SiteAdminProxy struct {
