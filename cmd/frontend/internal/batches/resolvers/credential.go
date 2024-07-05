@@ -127,6 +127,10 @@ func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) 
 
 func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
 
+func (c *batchChangesUserCredentialResolver) GitHubAppID() int {
+	return c.credential.GitHubAppID
+}
+
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
 
