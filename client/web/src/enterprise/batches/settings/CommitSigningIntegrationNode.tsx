@@ -102,83 +102,84 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     const navigate = useNavigate()
 
-    const mainButtonRef = useRef<HTMLButtonElement>(null)
-    const handleClick = (event: React.MouseEvent) => {
-        if (mainButtonRef?.current) {
-            mainButtonRef.current.click();
-            alert('clicked')
-        }
-    };
-
+    // const mainButtonRef = useRef<HTMLButtonElement>(null)
+    // const handleClick = (event: React.MouseEvent) => {
+    //     if (mainButtonRef?.current) {
+    //         mainButtonRef.current.click();
+    //         alert('clicked')
+    //     }
+    // };
 
     return config ? (
         <>
             {removeModalOpen && (
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
-            <div className={styles.appDetailsControls} onClick={handleClick} role="button" tabIndex={0}>
-                <AppLogo src={config.logo} name={config.name} className={classNames(styles.appLogoLarge, 'mr-2')}/>
+            <Menu>
+                <MenuButton
+                    outline={true}
+                    aria-label="Repository action"
+                    className={styles.menuItems}
+                    // onClick={e => e.stopPropagation()}
+                    // ref={mainButtonRef}
+                >
+                    <div className={styles.appDetailsControls} role="button" tabIndex={0}>
+                        <AppLogo src={config.logo} name={config.name}
+                                 className={classNames(styles.appLogoLarge, 'mr-2')}/>
 
-                <div className={styles.appDetailsColumn}>
-                    <Text size="small" className="font-weight-bold mb-0">
-                        {config.name}
-                    </Text>
-                    <Text size="small" className="text-muted mb-0">
-                        AppID: {config.appID}
-                    </Text>
-                </div>
-                <div className={styles.appDetailsColumn}>
-                    <Menu>
-                        <MenuButton
-                            outline={true}
-                            aria-label="Repository action"
-                            className={styles.menuItems}
-                            onClick={e => e.stopPropagation()}
-                            ref={mainButtonRef}
-                        >
-                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
-                        </MenuButton>
-                        <MenuList position={Position.bottomEnd}>
-                            <MenuItem
-                                as={Button}
-                                onSelect={() => window.open(config?.appURL, "_blank")}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiGithub} className="mr-1" />
-                                View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
-                            </MenuItem>
-                            <MenuDivider />
-                            <MenuItem
-                                as={Button}
-                                disabled={loading}
-                                onSelect={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
-                                Refresh
-                            </MenuItem>
-                            <MenuItem
-                                as={Button}
-                                onSelect={() =>
-                                    navigate(`github-apps/${config.id}`)
-                                }
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
-                                Edit
-                            </MenuItem>
-                            <MenuItem
-                                as={Button}
-                                onSelect={() => setRemoveModalOpen(true)}
-                                className="p-2"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiTrashCan} className="mr-1" />
-                                Remove
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                </div>
-            </div>
+                        <div className={styles.appDetailsColumn}>
+                            <Text size="small" className="font-weight-bold mb-0">
+                                {config.name}
+                            </Text>
+                            <Text size="small" className="text-muted mb-0">
+                                AppID: {config.appID}
+                            </Text>
+                        </div>
+                        <div className={styles.appDetailsColumn}>
+                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true}/>
+                        </div>
+                    </div>
+                </MenuButton>
+                <MenuList position={Position.bottomEnd}>
+                    <MenuItem
+                        as={Button}
+                        onSelect={() => window.open(config?.appURL, '_blank')}
+                        className="p-2"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiGithub} className="mr-1"/>
+                        View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true}/>
+                    </MenuItem>
+                    <MenuDivider/>
+                    <MenuItem
+                        as={Button}
+                        disabled={loading}
+                        onSelect={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })}
+                        className="p-2"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
+                        Refresh
+                    </MenuItem>
+                    <MenuItem
+                        as={Button}
+                        onSelect={() =>
+                            navigate(`github-apps/${config.id}`)
+                        }
+                        className="p-2"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
+                        Edit
+                    </MenuItem>
+                    <MenuItem
+                        as={Button}
+                        onSelect={() => setRemoveModalOpen(true)}
+                        className="p-2"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiTrashCan} className="mr-1" />
+                        Remove
+                    </MenuItem>
+                </MenuList>
+            </Menu>
+
             {/* <div className="ml-auto"> */}
             {/*     <AnchorLink to={config.appURL} target="_blank" className="mr-3"> */}
             {/*         <small> */}
