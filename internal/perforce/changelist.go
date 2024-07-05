@@ -101,3 +101,14 @@ func (e *ChangelistNotFoundError) NotFound() bool { return true }
 func (e *ChangelistNotFoundError) Error() string {
 	return fmt.Sprintf("changelist ID not found. repo=%d, changelist id=%d", e.RepoID, e.ID)
 }
+
+type CommitNotFoundError struct {
+	RepoID    api.RepoID
+	CommitSHA string
+}
+
+func (e *CommitNotFoundError) NotFound() bool { return true }
+
+func (e *CommitNotFoundError) Error() string {
+	return fmt.Sprintf("commitSHA not found. repo=%d, commit SHA=%s", e.RepoID, e.CommitSHA)
+}

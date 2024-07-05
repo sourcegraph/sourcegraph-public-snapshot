@@ -515,15 +515,6 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// Converts a *Repo into a MinimalRepo
-func (r *Repo) ToMinimalRepo() MinimalRepo {
-	return MinimalRepo{
-		ID:    r.ID,
-		Name:  r.Name,
-		Stars: r.Stars,
-	}
-}
-
 // RepoIDName combines a repo name and ID into a single struct
 type RepoIDName struct {
 	ID   api.RepoID
@@ -535,6 +526,9 @@ type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName
 	Stars int
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
 }
 
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names
