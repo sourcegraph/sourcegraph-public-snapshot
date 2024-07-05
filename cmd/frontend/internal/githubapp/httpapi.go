@@ -562,9 +562,6 @@ func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int
 		return fmt.Sprintf("/site-admin/github-apps?kind=%s&success=false&error=%s", stateDetails.Kind, "unable to parse kind")
 	}
 
-	// 	ghAppPageUrl = "/user/settings/batch-changes"
-	// } else if *kind == types.UserCredentialGitHubAppKind && *parsedDomain == types.ReposGitHubAppDomain {
-	// 	ghAppPageUrl = "/user/settings/code-hosts"
 	switch *parsedDomain {
 	case types.ReposGitHubAppDomain:
 		ghAppPageUrl := "/site-admin/github-apps"
