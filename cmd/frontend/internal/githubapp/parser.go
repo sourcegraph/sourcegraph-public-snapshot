@@ -25,6 +25,6 @@ func parseKind(s *string) (*ghtypes.GitHubAppKind, error) {
 		kind := ghtypes.RepoSyncGitHubAppKind
 		return &kind, nil
 	default:
-		return nil, errors.Errorf("unknown kind %q", *s)
+		return nil, errors.Newf("unknown kind %q", *s)
 	}
 }
