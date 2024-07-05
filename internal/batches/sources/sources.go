@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"net/url"
 	"sort"
 	"strings"
@@ -107,13 +108,13 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
 	// ForExternalService returns a ChangesetSource based on the provided external service opts.
 	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
+	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error)
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
@@ -137,7 +138,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -198,7 +199,10 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 			}
 		}
 
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
+		if gitHubAppKind == "" {
+			return nil, errors.New("ForChangeset with AuthenticationStrategyGitHubApp must be called with a gitHubAppKind, but was called with empty string.")
+		}
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, gitHubAppKind)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -228,13 +232,23 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+type ForExternalServiceOpts struct {
+	ExternalServiceID   string
+	ExternalServiceType string
+	GitHubAppAccount    string
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
+func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrMissingCredentials
 	}
 
-	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
+	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: opts.ExternalServiceType,
+		ExternalServiceID:   opts.ExternalServiceID,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
@@ -249,6 +263,9 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
+	}
+	if as == AuthenticationStrategyGitHubApp {
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, opts.GitHubAppAccount, opts.GitHubAppKind)
 	}
 	return css.WithAuthenticator(au)
 }
@@ -352,7 +369,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 // App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
 // domain GitHub App has been configured, but no installation exists for the given
 // account, ErrNoGitHubAppInstallation is returned.
-func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
+func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string, kind ghtypes.GitHubAppKind) (ChangesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
@@ -372,7 +389,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	app, err := tx.GitHubAppsStore().GetByDomainAndKind(ctx, types.BatchesGitHubAppDomain, kind, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}

@@ -42,6 +42,7 @@ go_library(
         "//internal/extsvc/versions",
         "//internal/github_apps/auth",
         "//internal/github_apps/store",
+        "//internal/github_apps/types",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",

@@ -2,9 +2,9 @@ package testing
 
 import (
 	"context"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -25,7 +25,7 @@ type fakeSourcer struct {
 	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy, repo *types.Repo, gitHubAppKind ghtypes.GitHubAppKind) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -33,7 +33,7 @@ func (s *fakeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid 
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts sources.ForExternalServiceOpts, as sources.AuthenticationStrategy) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 

@@ -155,7 +155,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 		})
 
-		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential, githubRepo)
+		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential, githubRepo, "")
 		if err != nil {
 			t.Fatal(err)
 		}
