@@ -3571,7 +3571,7 @@ CREATE TABLE notebooks (
     namespace_user_id integer,
     namespace_org_id integer,
     updater_user_id integer,
-    pattern_type pattern_type DEFAULT 'standard'::pattern_type NOT NULL,
+    pattern_type pattern_type DEFAULT 'keyword'::pattern_type NOT NULL,
     CONSTRAINT blocks_is_array CHECK ((jsonb_typeof(blocks) = 'array'::text)),
     CONSTRAINT notebooks_has_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );

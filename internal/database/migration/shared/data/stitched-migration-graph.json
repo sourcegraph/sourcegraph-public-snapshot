@@ -11299,6 +11299,20 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1720165387,
+				"Name": "notebooks default to keyword search",
+				"UpQuery": "ALTER TABLE notebooks ALTER COLUMN pattern_type SET DEFAULT 'keyword';",
+				"DownQuery": "ALTER TABLE notebooks ALTER COLUMN pattern_type SET DEFAULT 'standard';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1719214941,
+					1719498128
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -11559,8 +11573,7 @@
 			"v5.4.0": {
 				"RootID": 1648051770,
 				"LeafIDs": [
-					1719214941,
-					1719498128
+					1720165387
 				],
 				"PreCreation": false
 			}
