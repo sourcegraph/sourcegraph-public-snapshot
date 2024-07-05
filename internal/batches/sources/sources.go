@@ -95,7 +95,7 @@ type SourcerOpts struct {
 	GitHubAppKind          ghtypes.GitHubAppKind
 	AuthenticationStrategy AuthenticationStrategy
 
-	ForCommitSigning bool
+	AsGitHubApp bool
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -146,7 +146,7 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, repo *types.Repo, opts SourcerOpts) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, targetRepo *types.Repo, opts SourcerOpts) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -169,48 +169,8 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, err
 	}
 
-	if as == AuthenticationStrategyGitHubApp {
-		cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting changeset spec")
-		}
-
-		var owner string
-		// We check if the changeset is meant to be pushed to a fork.
-		// If yes, then we try to figure out the user namespace and get a github app for the user namespace.
-		if cs.IsFork() {
-			// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
-			// e.g sourcegraph.
-			// if it isn't then we assume the changeset will be forked into the current user's namespace
-			forkNamespace := cs.GetForkNamespace()
-			if forkNamespace != nil {
-				owner = *forkNamespace
-			} else {
-				u, err := getCloneURL(targetRepo)
-				if err != nil {
-					return nil, errors.Wrap(err, "getting url for forked changeset")
-				}
-
-				owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
-				if err != nil {
-					return nil, errors.Wrap(err, "getting owner from repo name")
-				}
-			}
-		} else {
-			// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
-			// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
-			// so this is a safe type cast.
-			repoMetadata := repo.Metadata.(*github.Repository)
-			owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
-			if err != nil {
-				return nil, errors.Wrap(err, "getting owner from repo name")
-			}
-		}
-
-		if gitHubAppKind == "" {
-			return nil, errors.New("ForChangeset with AuthenticationStrategyGitHubApp must be called with a gitHubAppKind, but was called with empty string.")
-		}
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, gitHubAppKind)
+	if opts.AsGitHubApp {
+		return s.createChangesetSourceForCommitSigning(ctx, tx, css, extSvc, ch, targetRepo, repo, opts)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -223,6 +183,80 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	return withSiteAuthenticator(ctx, tx, css, repo)
+}
+
+// createChangesetSourceForCommitSigning creates a changeset source that is authenticated with the commit signing module.
+// Currently, we only support the use of GitHub apps for commit signing,
+func (s *sourcer) createChangesetSourceForCommitSigning(
+	ctx context.Context,
+	tx SourcerStore,
+	css ChangesetSource,
+	extSvc *types.ExternalService,
+	ch *btypes.Changeset,
+	targetRepo *types.Repo,
+	repo *types.Repo,
+	opts SourcerOpts,
+) (ChangesetSource, error) {
+	if opts.AuthenticationStrategy != AuthenticationStrategyGitHubApp {
+		return nil, errors.New("commit signing is only supported for GitHub apps")
+	}
+
+	var owner string
+	if ch != nil {
+		changesetOwner, err := getOwnerFromChangeset(ctx, tx, ch, targetRepo, repo)
+		if err != nil {
+			return nil, err
+		}
+		owner = changesetOwner
+	} else {
+		owner = opts.GitHubAppAccount
+	}
+
+	if opts.GitHubAppKind == "" {
+		return nil, errors.New("ForChangeset with AuthenticationStrategyGitHubApp must be called with a gitHubAppKind, but was called with empty string.")
+	}
+	return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner, opts.GitHubAppKind)
+}
+
+func getOwnerFromChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, targetRepo, repo *types.Repo) (string, error) {
+	cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
+	if err != nil {
+		return "", errors.Wrap(err, "getting changeset spec")
+	}
+
+	var owner string
+	// We check if the changeset is meant to be pushed to a fork.
+	// If yes, then we try to figure out the user namespace and get a GitHub app for the user namespace.
+	if cs.IsFork() {
+		// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
+		// e.g. Sourcegraph.
+		// if it isn't then we assume the changeset will be forked into the current user's namespace
+		forkNamespace := cs.GetForkNamespace()
+		if forkNamespace != nil {
+			owner = *forkNamespace
+		} else {
+			u, err := getCloneURL(targetRepo)
+			if err != nil {
+				return "", errors.Wrap(err, "getting url for forked changeset")
+			}
+
+			owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
+			if err != nil {
+				return "", errors.Wrap(err, "getting owner from repo name")
+			}
+		}
+	} else {
+		// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
+		// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
+		// so this is a safe type cast.
+		repoMetadata := repo.Metadata.(*github.Repository)
+		owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+		if err != nil {
+			return "", errors.Wrap(err, "getting owner from repo name")
+		}
+	}
+
+	return owner, nil
 }
 
 func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error) {
@@ -240,7 +274,7 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts ForExternalServiceOpts, as AuthenticationStrategy) (ChangesetSource, error) {
+func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts SourcerOpts) (ChangesetSource, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrMissingCredentials
@@ -265,8 +299,9 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	if err != nil {
 		return nil, err
 	}
-	if as == AuthenticationStrategyGitHubApp {
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, opts.GitHubAppAccount, opts.GitHubAppKind)
+
+	if opts.AsGitHubApp {
+		return s.createChangesetSourceForCommitSigning(ctx, tx, css, extSvc, nil, nil, nil, opts)
 	}
 	return css.WithAuthenticator(au)
 }
