@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
 import type { ConnectError } from '@connectrpc/connect'
-import { createQueryOptions, defaultOptions } from '@connectrpc/connect-query'
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
-import { QueryClient, UseQueryResult, useQuery } from '@tanstack/react-query'
+import type { UseQueryResult } from '@tanstack/react-query'
 import type { GraphQLError } from 'graphql'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -43,8 +42,7 @@ import { ChartContainer } from '../../../../site-admin/analytics/components/Char
 
 import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
-import { enterprisePortalLocal } from './enterpriseportal'
-import { getCodyGatewayUsage } from './enterpriseportalgen/codyaccess-CodyAccessService_connectquery'
+import { useGetCodyGatewayUsage } from './enterpriseportal'
 import type { CodyGatewayUsage_UsageDatapoint, GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyaccess_pb'
 import { numberFormatter, prettyInterval } from './utils'
 
@@ -70,16 +68,8 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     codyGatewayAccess,
     telemetryRecorder,
 }) => {
-    const codyGatewayUsageQuery = useQuery(
-        createQueryOptions(
-            getCodyGatewayUsage,
-            {
-                query: { value: productSubscriptionUUID, case: 'subscriptionId' },
-            },
-            { transport: enterprisePortalLocal }
-        ),
-        new QueryClient({ defaultOptions })
-    )
+    // TODO: Figure out strategy for what instance to target
+    const codyGatewayUsageQuery = useGetCodyGatewayUsage('local', productSubscriptionUUID)
 
     const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
         useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)

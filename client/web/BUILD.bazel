@@ -1056,7 +1056,7 @@ ts_project(
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/backend.ts",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportal.tsx",
+        "src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportal.ts",
         "src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen/codyaccess-CodyAccessService_connectquery.ts",
         "src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen/codyaccess_pb.ts",
         "src/enterprise/site-admin/dotcom/productSubscriptions/plandata.ts",
