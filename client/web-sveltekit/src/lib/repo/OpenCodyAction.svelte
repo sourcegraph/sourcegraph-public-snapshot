@@ -19,5 +19,6 @@
     button {
         all: unset;
         white-space: nowrap;
+        cursor: pointer;
     }
 </style>
