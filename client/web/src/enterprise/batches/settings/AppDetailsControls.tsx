@@ -29,22 +29,21 @@ interface AppDetailsControlsProps {
     refetch: () => void
 }
 
-export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
+export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({baseURL, config, refetch}) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
-    const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
+    const [refreshGitHubApp, {loading, error, data}] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     const navigate = useNavigate()
 
     return config ? (
         <>
             {removeModalOpen && (
-                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
+                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config}/>
             )}
             <Menu>
                 <MenuButton
                     outline={true}
                     aria-label="Repository action"
-                    className={styles.menuItems}
                 >
                     <div className={styles.appDetailsControls} role="button" tabIndex={0}>
                         <AppLogo src={config.logo} name={config.name}
@@ -116,7 +115,6 @@ export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps
     )
 }
 
-
 // The Alert banner has a 1rem bottom margin
 const ONE_REM_IN_PX = convertREMToPX(1)
 const APPROX_BANNER_HEIGHT_PX = 40
@@ -125,7 +123,7 @@ interface NodeAlertProps {
     variant: 'danger' | 'success'
 }
 
-const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({ children, variant }) => {
+const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({children, variant}) => {
     const ref = useRef<HTMLDivElement>(null)
     const style = useSpring({
         from: {
