@@ -3112,7 +3112,7 @@
       },
       "properties": {
         "endpoint": {
-          "description": "The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, a good default URL will be used.",
+          "description": "The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.",
           "type": "string",
           "!go": {
             "pointer": true
