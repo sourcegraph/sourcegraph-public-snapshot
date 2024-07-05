@@ -1,5 +1,11 @@
 // stylelint-disable custom-property-pattern
 
+:root {
+    // Turn off background color for picker popover element
+    // Which causes glitch effect in Cody Web
+    --vscode-sideBar-background: transparent;
+}
+
 .chat {
     --vscode-editor-background: var(--body-bg);
     --vscode-editor-foreground: var(--body-color);
