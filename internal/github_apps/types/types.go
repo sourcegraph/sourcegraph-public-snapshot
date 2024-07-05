@@ -2,13 +2,12 @@ package types
 
 import (
 	"context"
-	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"time"
 
 	gogithub "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GitHubApp represents a GitHub App.
@@ -55,7 +54,7 @@ func (s GitHubAppKind) Valid() bool {
 
 func (s GitHubAppKind) Validate() (GitHubAppKind, error) {
 	if !s.Valid() {
-		return "", errors.New(fmt.Sprintf("Not a valid GitHubAppKind: %s", s))
+		return "", errors.Newf("Not a valid GitHubAppKind: %s", s)
 	}
 	return s, nil
 }
