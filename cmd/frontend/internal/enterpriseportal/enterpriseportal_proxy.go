@@ -82,6 +82,17 @@ func NewSiteAdminProxy(
 			log.Error(err),
 			log.Strings("scopes", scopes.ToStrings(samsConfig.Scopes)))
 	}
+	return newSiteAdminProxy(logger, db, clientCredentials, pathPrefix, target)
+}
+
+// newSiteAdminProxy is used for testing the proxy, and accepts interfaces instead.
+func newSiteAdminProxy(
+	logger log.Logger,
+	db database.DB,
+	clientCredentials oauth2.TokenSource,
+	pathPrefix string,
+	target *url.URL,
+) *SiteAdminProxy {
 	return &SiteAdminProxy{
 		db: db,
 		proxy: &httputil.ReverseProxy{
@@ -122,8 +133,8 @@ func (p *SiteAdminProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// the shared credentials proxy.
 	act := actor.FromContext(r.Context())
 	if err := auth.CheckCurrentActorIsSiteAdmin(act, p.db); err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(err.Error()))
-		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	p.proxy.ServeHTTP(w, r)
