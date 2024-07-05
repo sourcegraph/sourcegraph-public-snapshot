@@ -1,20 +1,44 @@
-import React, { useState, useRef } from 'react'
+import React, {useRef, useState} from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
+import {
+    mdiCheckboxBlankCircleOutline,
+    mdiCheckCircleOutline,
+    mdiDotsHorizontal,
+    mdiGithub,
+    mdiOpenInNew,
+    mdiPencil,
+    mdiRefresh,
+    mdiTrashCan
+} from '@mdi/js'
 import classNames from 'classnames'
-import { animated, useSpring } from 'react-spring'
+import {animated, useSpring} from 'react-spring'
 
-import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
-import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import {convertREMToPX} from '@sourcegraph/shared/src/components/utils/size'
+import {
+    Alert,
+    Button,
+    ButtonLink,
+    H3,
+    Icon,
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Position,
+    Text
+} from '@sourcegraph/wildcard'
 
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { AppLogo } from '../../../components/gitHubApps/AppLogo'
-import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
-import type { BatchChangesCodeHostFields } from '../../../graphql-operations'
+import {defaultExternalServices} from '../../../components/externalServices/externalServices'
+import {AppLogo} from '../../../components/gitHubApps/AppLogo'
+import {RemoveGitHubAppModal} from '../../../components/gitHubApps/RemoveGitHubAppModal'
+import type {BatchChangesCodeHostFields} from '../../../graphql-operations'
 
-import { useRefreshGitHubApp } from './backend'
+import {useRefreshGitHubApp} from './backend'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
+import {useNavigate} from 'react-router-dom';
 
 interface CommitSigningIntegrationNodeProps {
     readOnly: boolean
@@ -76,13 +100,24 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
     const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
+    const navigate = useNavigate()
+
+    const mainButtonRef = useRef<HTMLButtonElement>(null)
+    const handleClick = (event: React.MouseEvent) => {
+        if (mainButtonRef?.current) {
+            mainButtonRef.current.click();
+            alert('clicked')
+        }
+    };
+
+
     return config ? (
         <>
             {removeModalOpen && (
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
-            <div className="d-flex align-items-center">
-                <AppLogo src={config.logo} name={config.name} className={classNames(styles.appLogoLarge, 'mr-2')} />
+            <div className={styles.appDetailsControls} onClick={handleClick} role="button" tabIndex={0}>
+                <AppLogo src={config.logo} name={config.name} className={classNames(styles.appLogoLarge, 'mr-2')}/>
 
                 <div className={styles.appDetailsColumn}>
                     <Text size="small" className="font-weight-bold mb-0">
@@ -92,39 +127,90 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         AppID: {config.appID}
                     </Text>
                 </div>
+                <div className={styles.appDetailsColumn}>
+                    <Menu>
+                        <MenuButton
+                            outline={true}
+                            aria-label="Repository action"
+                            className={styles.menuItems}
+                            onClick={e => e.stopPropagation()}
+                            ref={mainButtonRef}
+                        >
+                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
+                        </MenuButton>
+                        <MenuList position={Position.bottomEnd}>
+                            <MenuItem
+                                as={Button}
+                                onSelect={() => window.open(config?.appURL, "_blank")}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiGithub} className="mr-1" />
+                                View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
+                            </MenuItem>
+                            <MenuDivider />
+                            <MenuItem
+                                as={Button}
+                                disabled={loading}
+                                onSelect={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
+                                Refresh
+                            </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                onSelect={() =>
+                                    navigate(`github-apps/${config.id}`)
+                                }
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
+                                Edit
+                            </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                onSelect={() => setRemoveModalOpen(true)}
+                                className="p-2"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiTrashCan} className="mr-1" />
+                                Remove
+                            </MenuItem>
+                        </MenuList>
+                    </Menu>
+                </div>
             </div>
-            <div className="ml-auto">
-                <AnchorLink to={config.appURL} target="_blank" className="mr-3">
-                    <small>
-                        View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
-                    </small>
-                </AnchorLink>
-                <Button
-                    variant="warning"
-                    className="mr-2"
-                    size="sm"
-                    onClick={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })}
-                >
-                    {loading ? <LoadingSpinner inline={true} /> : 'Refresh'}
-                </Button>
-                <ButtonLink
-                    className="mr-2"
-                    aria-label="Edit"
-                    to={`github-apps/${config.id}`}
-                    variant="secondary"
-                    size="sm"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
-                </ButtonLink>
-                <Button
-                    aria-label="Remove GitHub App"
-                    onClick={() => setRemoveModalOpen(true)}
-                    variant="danger"
-                    size="sm"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
-                </Button>
-            </div>
+            {/* <div className="ml-auto"> */}
+            {/*     <AnchorLink to={config.appURL} target="_blank" className="mr-3"> */}
+            {/*         <small> */}
+            {/*             View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} /> */}
+            {/*         </small> */}
+            {/*     </AnchorLink> */}
+            {/*     <Button */}
+            {/*         variant="warning" */}
+            {/*         className="mr-2" */}
+            {/*         size="sm" */}
+            {/*         onClick={() => refreshGitHubApp({ variables: { gitHubApp: config.id } })} */}
+            {/*     > */}
+            {/*         {loading ? <LoadingSpinner inline={true} /> : 'Refresh'} */}
+            {/*     </Button> */}
+            {/*     <ButtonLink */}
+            {/*         className="mr-2" */}
+            {/*         aria-label="Edit" */}
+            {/*         to={`github-apps/${config.id}`} */}
+            {/*         variant="secondary" */}
+            {/*         size="sm" */}
+            {/*     > */}
+            {/*         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit */}
+            {/*     </ButtonLink> */}
+            {/*     <Button */}
+            {/*         aria-label="Remove GitHub App" */}
+            {/*         onClick={() => setRemoveModalOpen(true)} */}
+            {/*         variant="danger" */}
+            {/*         size="sm" */}
+            {/*     > */}
+            {/*         <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove */}
+            {/*     </Button> */}
+            {/* </div> */}
             {error && <NodeAlert variant="danger">{error.message}</NodeAlert>}
             {!loading && data && (
                 <NodeAlert variant="success">
