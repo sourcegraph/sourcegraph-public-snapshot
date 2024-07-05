@@ -2016,7 +2016,6 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	}
 
 	// Validate the newly created authenticator.
-	fmt.Println("username: ", *args.username)
 	if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
 		ExternalServiceID:   args.externalServiceURL,
 		ExternalServiceType: args.externalServiceType,
