@@ -15,7 +15,10 @@ export interface ChatExportResult {
         id: string
         chatModel?: string
         chatTitle?: string
-        interactions: unknown[]
+        interactions: {
+            humanMessage: { text: string }
+        }[]
+        lastInteractionTimestamp: string
     }
 }
 
