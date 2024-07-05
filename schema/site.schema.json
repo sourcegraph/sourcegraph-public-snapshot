@@ -3218,7 +3218,7 @@
           "examples": [["Claude 3 Sonnet", "GPT-4 Turbo"]]
         },
         "modelName": {
-          "description": "model name",
+          "description": "model name used when sending requests to the LLM provider's backend API.",
           "type": "string",
           "examples": [["claude-3-sonnet-20240229", "gpt-4-turbo"]]
         },
