@@ -36,6 +36,9 @@ const commands = {
     // To publish to the open-vsx registry
     openvsx_publish: 'npx --yes ovsx publish --no-dependencies -p $VSCODE_OPENVSX_TOKEN',
 }
+
+let encounteredError = false
+
 // Publish the extension with the correct extension name "sourcegraph"
 try {
     childProcess.execSync('pnpm build-inline-extensions && pnpm build', { stdio: 'inherit' })
@@ -73,7 +76,11 @@ try {
 } catch (error) {
     console.error('Failed to publish VSCE:', error)
     console.error('You may not run this script locally to publish the extension.')
+    encounteredError = true
 } finally {
     // Revert changes made to package.json
     fs.writeFileSync('package.json', originalPackageJson)
+    if (encounteredError) {
+        process.exit(1)
+    }
 }
