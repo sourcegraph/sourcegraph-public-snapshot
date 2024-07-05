@@ -170,7 +170,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	if opts.AsGitHubApp {
-		return s.createChangesetSourceForCommitSigning(ctx, tx, css, extSvc, ch, targetRepo, repo, opts)
+		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, ch, targetRepo, repo, opts)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -185,9 +185,8 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	return withSiteAuthenticator(ctx, tx, css, repo)
 }
 
-// createChangesetSourceForCommitSigning creates a changeset source that is authenticated with the commit signing module.
-// Currently, we only support the use of GitHub apps for commit signing,
-func (s *sourcer) createChangesetSourceForCommitSigning(
+// createChangesetSourceForGHApp creates a changeset source that is authenticated with a GitHub app.
+func (s *sourcer) createChangesetSourceForGHApp(
 	ctx context.Context,
 	tx SourcerStore,
 	css ChangesetSource,
@@ -301,7 +300,7 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	}
 
 	if opts.AsGitHubApp {
-		return s.createChangesetSourceForCommitSigning(ctx, tx, css, extSvc, nil, nil, nil, opts)
+		return s.createChangesetSourceForGHApp(ctx, tx, css, extSvc, nil, nil, nil, opts)
 	}
 	return css.WithAuthenticator(au)
 }
