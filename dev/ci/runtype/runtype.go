@@ -120,8 +120,9 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			},
 		}
 	case VsceReleaseBranch:
+		// TODO remove this
 		return &RunTypeMatcher{
-			Branch:      "vsce/release",
+			Branch:      "jh/debug/vsce-release",
 			BranchExact: true,
 		}
 	case WolfiBaseRebuild:

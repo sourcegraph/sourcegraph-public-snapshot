@@ -85,7 +85,8 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
+		bk.Cmd("echo '--- 🧨' && env"))
+	// bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
