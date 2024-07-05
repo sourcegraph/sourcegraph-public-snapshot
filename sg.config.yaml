@@ -364,13 +364,15 @@ commands:
         project: sourcegraph-local-dev
         name: SG_LOCAL_DEV_SAMS_CLIENT_SECRET
 
+      # Uses a separate Anthropic account, see 1Password
+      # https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=mr6paob2rlmxp7fgrx6gdr3l7e&h=team-sourcegraph.1password.com
+      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN:
+        project: sourcegraph-local-dev
+        name: SG_LOCAL_DEV_CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN
       # LLM Tokens
       #
       # 🚧 TODO(@jhchabran), Waiting on: https://sourcegraph.slack.com/archives/C01CSS3TC75/p1719502918899479
       #
-      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN:
-        project: sourcegraph-local-dev
-        name: SG_LOCAL_DEV_CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN
       # CODY_GATEWAY_OPENAI_ACCESS_TOKEN:
       #   project: sourcegraph-local-dev
       #   name: SG_LOCAL_DEV_CODY_GATEWAY_OPENAI_ACCESS_TOKEN
