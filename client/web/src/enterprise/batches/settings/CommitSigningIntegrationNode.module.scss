@@ -27,6 +27,7 @@
     align-items: flex-start;
     flex-shrink: 0;
     padding-left: 0.5rem;
+    padding-right: 0.5rem;
 }
 
 .app-details-stack-row {
@@ -64,4 +65,8 @@
 .menu-items {
     position: relative;
     z-index: 1;
+}
+
+.menu-list {
+    width: 200px;
 }

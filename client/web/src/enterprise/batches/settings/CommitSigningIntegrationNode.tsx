@@ -102,14 +102,6 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     const navigate = useNavigate()
 
-    // const mainButtonRef = useRef<HTMLButtonElement>(null)
-    // const handleClick = (event: React.MouseEvent) => {
-    //     if (mainButtonRef?.current) {
-    //         mainButtonRef.current.click();
-    //         alert('clicked')
-    //     }
-    // };
-
     return config ? (
         <>
             {removeModalOpen && (
@@ -120,8 +112,6 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                     outline={true}
                     aria-label="Repository action"
                     className={styles.menuItems}
-                    // onClick={e => e.stopPropagation()}
-                    // ref={mainButtonRef}
                 >
                     <div className={styles.appDetailsControls} role="button" tabIndex={0}>
                         <AppLogo src={config.logo} name={config.name}
@@ -140,7 +130,7 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         </div>
                     </div>
                 </MenuButton>
-                <MenuList position={Position.bottomEnd}>
+                <MenuList position={Position.bottomEnd} className={styles.menuList}>
                     <MenuItem
                         as={Button}
                         onSelect={() => window.open(config?.appURL, '_blank')}
