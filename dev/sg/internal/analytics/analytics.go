@@ -92,6 +92,14 @@ func (i invocation) IsFailed() bool {
 	return v.(bool)
 }
 
+func (i invocation) IsPanicked() bool {
+	v, ok := i.metadata["panicked"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
 func (i invocation) GetCommand() string {
 	v, ok := i.metadata["command"]
 	if !ok {

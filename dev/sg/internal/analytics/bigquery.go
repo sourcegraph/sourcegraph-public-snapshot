@@ -39,8 +39,9 @@ func (e event) Save() (map[string]bigquery.Value, string, error) {
 		"command":        e.Command,
 		"version":        e.Version,
 		"duration":       durationInterval.String(),
-		"flags_and_args": string(e.FlagsAndArgs),
 		"error":          e.Error,
+		"flags_and_args": string(e.FlagsAndArgs),
+		"metadata":       string(e.Metadata),
 	}
 
 	insertID := e.UUID
@@ -59,14 +60,29 @@ func NewEvent(i invocation) *event {
 	e.Duration = i.GetDuration()
 	e.Error = i.GetError()
 
-	var flagsAndArgs struct {
+	flagsAndArgs := struct {
 		Flags map[string]any `json:"flags"`
 		Args  []any          `json:"args"`
+	}{
+		Flags: i.GetFlags(),
+		Args:  i.GetArgs(),
 	}
-	flagsAndArgs.Flags = i.GetFlags()
-	flagsAndArgs.Args = i.GetArgs()
 
 	e.FlagsAndArgs, _ = json.Marshal(flagsAndArgs)
+
+	metadata := struct {
+		Success   bool `json:"success"`
+		Failed    bool `json:"failed"`
+		Cancelled bool `json:"cancelled"`
+		Panicked  bool `json:"panicked"`
+	}{
+		Success:   i.IsSuccess(),
+		Failed:    i.IsFailed(),
+		Cancelled: i.IsCancelled(),
+		Panicked:  i.IsPanicked(),
+	}
+
+	e.Metadata, _ = json.Marshal(metadata)
 
 	return &e
 }

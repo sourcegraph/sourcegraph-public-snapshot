@@ -15,7 +15,7 @@ var (
 )
 
 func BackgroundEventPublisher(ctx context.Context) {
-	done := make(chan struct{})
+	done = make(chan struct{})
 	background.Run(ctx, func(ctx context.Context, bgOut *std.Output) {
 		var err error
 		bq, err = NewBigQueryClient(ctx, SGLocalDev, AnalyticsDatasetName, EventsTableName)
@@ -77,10 +77,9 @@ func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) 
 					bgOut.WriteWarningf("failed to insert analytics event", err)
 					continue
 				}
+
 				store.DeleteInvocation(ctx, ev.UUID)
 			}
-			// all events have been processed, so we quit
-			return
 		}
 	}
 
