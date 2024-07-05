@@ -1,9 +1,9 @@
 import type { FC } from 'react'
-import { MouseEvent, useMemo } from 'react'
+import { type MouseEvent, useMemo } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { type ChatExportResult, getChatTitle } from 'cody-web-experimental'
+import type { ChatExportResult } from 'cody-web-experimental'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Icon, Text, Tooltip, Button } from '@sourcegraph/wildcard'
@@ -16,7 +16,7 @@ interface ChatHistoryListProps {
     className?: string
     onChatSelect: (chat: ChatExportResult) => void
     onChatDelete: (chat: ChatExportResult) => void
-    onChatCreate: () => void
+    onChatCreate: (force?: boolean) => void
 }
 
 export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
@@ -24,11 +24,19 @@ export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
 
     const sortedChats = useMemo(() => {
         try {
-            return [...chats].sort(
+            const sortedChats = [...chats].sort(
                 (chatA, chatB) =>
                     +safeTimestampToDate(chatB.transcript.lastInteractionTimestamp) -
                     +safeTimestampToDate(chatA.transcript.lastInteractionTimestamp)
             )
+
+            const mostRecentEmptyChat = sortedChats.find(chat => chat.transcript.interactions.length === 0)
+
+            if (mostRecentEmptyChat) {
+                return [mostRecentEmptyChat, ...sortedChats.filter(chat => chat.transcript.interactions.length > 0)]
+            }
+
+            return sortedChats
         } catch {
             return chats
         }
@@ -46,7 +54,7 @@ export const ChatHistoryList: FC<ChatHistoryListProps> = props => {
                 />
             ))}
             <footer className={styles.footer}>
-                <Button variant="primary" onClick={onChatCreate} className="w-100">
+                <Button variant="primary" onClick={() => onChatCreate()} className="w-100">
                     Start new chat
                     <Icon aria-label="Add chat" svgPath={mdiPlus} />
                 </Button>
@@ -87,13 +95,13 @@ const ChatHistoryItem: FC<ChatHistoryItemProps> = props => {
                         <Icon
                             aria-label="Delete chat"
                             svgPath={mdiDelete}
-                            // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
+
                             onClick={handleDelete}
                             className={styles.deleteButton}
                         />
                     </Tooltip>
                 </div>
-                <Text className="mb-0 truncate text-body">{title}</Text>
+                <Text className={styles.historyItemTitle}>{title}</Text>
             </button>
         </li>
     )
@@ -105,4 +113,18 @@ function safeTimestampToDate(timestamp: string = ''): Date {
     }
 
     return new Date(timestamp)
+}
+
+export function getChatTitle(chat: ChatExportResult): string {
+    if (chat.transcript.chatTitle) {
+        return chat.transcript.chatTitle
+    }
+
+    if (chat.transcript.interactions.length > 0) {
+        const firstQuestion = chat.transcript.interactions.find(interaction => interaction.humanMessage.text)
+
+        return firstQuestion?.humanMessage.text ?? ''
+    }
+
+    return 'New Cody Chat'
 }

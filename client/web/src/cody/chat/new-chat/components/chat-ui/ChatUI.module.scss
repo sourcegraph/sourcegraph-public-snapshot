@@ -10,7 +10,12 @@
     --vscode-inputOption-activeBackground: var(--search-input-token-filter);
     --vscode-inputOption-activeForeground: var(--body-color);
     --vscode-loading-dot-color: var(--body-color);
+    --vscode-textPreformat-foreground: var(--body-color);
+    --vscode-textPreformat-background: var(--secondary);
+    --vscode-sideBarSectionHeader-border: var(--border-color);
     --mention-color-opacity: 100%;
+
+    line-height: 1.55;
 
     h3 {
         font-size: inherit;
@@ -23,6 +28,27 @@
 
     a {
         color: var(--link-color) !important;
+    }
+
+    code {
+        padding: 1px 3px;
+        border-radius: 4px;
+        font-family: var(--monaco-monospace-font);
+        color: var(--vscode-textPreformat-foreground);
+        background-color: var(--vscode-textPreformat-background);
+    }
+
+    pre code {
+        padding: 0;
+    }
+
+    // Sourcegraph styles already add [hidden] display none
+    // and this breaks chat animation since there is no starting point
+    // with display:none element. Override this logic back to visibility: hidden;
+    // so chat animation would work again.
+    [hidden] {
+        visibility: hidden;
+        display: block !important;
     }
 }
 

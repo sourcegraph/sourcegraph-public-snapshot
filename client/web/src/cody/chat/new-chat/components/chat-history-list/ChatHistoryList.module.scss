@@ -42,6 +42,15 @@
         color: var(--icon-color);
         visibility: hidden;
     }
+
+    &-title {
+        overflow: hidden;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        margin-bottom: 0;
+    }
 }
 
 .footer {
