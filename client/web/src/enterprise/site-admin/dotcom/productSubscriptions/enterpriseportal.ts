@@ -19,32 +19,53 @@ import type { GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyacce
  */
 const queryClient = new QueryClient({ defaultOptions })
 
+/**
+ * Use proxy that routes to a locally running Enterprise Portal at localhost:6081
+ *
+ * See cmd/frontend/internal/enterpriseportal/enterpriseportal_proxy.go
+ */
 const enterprisePortalLocal = createConnectTransport({
     baseUrl: '/.api/enterpriseportal/local',
 })
 
+/**
+ * Use proxy that routes to the production Enterprise Portal at enterprise-portal.sourcegraph.com
+ *
+ * See cmd/frontend/internal/enterpriseportal/enterpriseportal_proxy.go
+ */
 const enterprisePortalDev = createConnectTransport({
     baseUrl: '/.api/enterpriseportal/dev',
 })
 
+/**
+ * Use proxy that routes to the dev Enterprise Portal at enterprise-portal.sgdev.org
+ *
+ * See cmd/frontend/internal/enterpriseportal/enterpriseportal_proxy.go
+ */
 const enterprisePortalProd = createConnectTransport({
     baseUrl: '/.api/enterpriseportal/prod',
 })
 
 /**
- * Environment describes the Enteprise Portal instance to target.
+ * Environment describes the Enteprise Portal instance to target. This can vary
+ * per-subscription, as we currently use an unified management UI in Sourcegraph.com
+ * as opposed to an Enterprise-Portal-specific UI, until:
+ * https://linear.app/sourcegraph/project/kr-p-enterprise-portal-user-interface-dadd5ff28bd8
  *
  * 'local' is only valid in local dev.
  */
-export type Environment = 'prod' | 'dev' | 'local'
+export type EnterprisePortalEnvironment =
+    | 'prod' // enterprisePortalProd
+    | 'dev' // enterprisePortalDev
+    | 'local' // enterprisePortalLocal
 
-const environments = new Map<Environment, Transport>([
+const environments = new Map<EnterprisePortalEnvironment, Transport>([
     ['prod', enterprisePortalProd],
     ['dev', enterprisePortalDev],
     ['local', enterprisePortalLocal],
 ])
 
-function mustGetEnvironment(env: Environment): Transport {
+function mustGetEnvironment(env: EnterprisePortalEnvironment): Transport {
     if (env === 'local' && window.context.deployType !== 'dev') {
         throw new Error(`Environment ${env} not allowed outside local dev`)
     }
@@ -58,10 +79,10 @@ function mustGetEnvironment(env: Environment): Transport {
 /**
  * Retrieves Cody Gateway usage for a given subscription.
  * @param env Enterprise Portal environment to target.
- * @param subscriptionUUID Subscription UUID
+ * @param subscriptionUUID Enterprise Subscription UUID.
  */
 export function useGetCodyGatewayUsage(
-    env: Environment,
+    env: EnterprisePortalEnvironment,
     subscriptionUUID: string
 ): UseQueryResult<GetCodyGatewayUsageResponse, ConnectError> {
     return useQuery(

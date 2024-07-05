@@ -42,13 +42,14 @@ import { ChartContainer } from '../../../../site-admin/analytics/components/Char
 
 import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
-import { useGetCodyGatewayUsage } from './enterpriseportal'
+import { useGetCodyGatewayUsage, type EnterprisePortalEnvironment } from './enterpriseportal'
 import type { CodyGatewayUsage_UsageDatapoint, GetCodyGatewayUsageResponse } from './enterpriseportalgen/codyaccess_pb'
 import { numberFormatter, prettyInterval } from './utils'
 
 import styles from './CodyServicesSection.module.scss'
 
 interface Props extends TelemetryV2Props {
+    enterprisePortalEnvironment: EnterprisePortalEnvironment
     productSubscriptionUUID: string
     productSubscriptionID: Scalars['ID']
     currentSourcegraphAccessToken: string | null
@@ -59,6 +60,7 @@ interface Props extends TelemetryV2Props {
 }
 
 export const CodyServicesSection: React.FunctionComponent<Props> = ({
+    enterprisePortalEnvironment,
     productSubscriptionUUID,
     productSubscriptionID,
     viewerCanAdminister,
@@ -69,7 +71,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     telemetryRecorder,
 }) => {
     // TODO: Figure out strategy for what instance to target
-    const codyGatewayUsageQuery = useGetCodyGatewayUsage('local', productSubscriptionUUID)
+    const codyGatewayUsageQuery = useGetCodyGatewayUsage(enterprisePortalEnvironment, productSubscriptionUUID)
 
     const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
         useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
