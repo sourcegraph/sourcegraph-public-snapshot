@@ -95,7 +95,6 @@ const ChatHistoryItem: FC<ChatHistoryItemProps> = props => {
                         <Icon
                             aria-label="Delete chat"
                             svgPath={mdiDelete}
-
                             onClick={handleDelete}
                             className={styles.deleteButton}
                         />
