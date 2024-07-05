@@ -39,43 +39,65 @@ func TestGenerateRedirectURL(t *testing.T) {
 		appID          int
 		creationErr    error
 		expectedURL    string
+		stateDetails   gitHubAppStateDetails
 	}{
 		{
 			name:           "repos domain",
-			domain:         &reposDomain,
 			installationID: 1,
-			appID:          2,
-			expectedURL:    "/site-admin/github-apps/R2l0SHViQXBwOjI=?installation_id=1",
+			expectedURL:    "/site-admin/github-apps/R2l0SHViQXBwOjE=?installation_id=1",
+			stateDetails: gitHubAppStateDetails{
+				Domain: reposDomain,
+				AppID:  1,
+				Kind:   string(ghtypes.RepoSyncGitHubAppKind),
+			},
 		},
 		{
 			name:           "batches domain",
-			domain:         &batchesDomain,
 			installationID: 1,
-			appID:          2,
-			expectedURL:    "/site-admin/batch-changes?success=true&app_name=my-cool-app",
+			expectedURL:    "/site-admin/batch-changes?kind=COMMIT_SIGNING&success=true&app_name=my-cool-app",
+			stateDetails: gitHubAppStateDetails{
+				Domain: batchesDomain,
+				AppID:  2,
+				Kind:   string(ghtypes.CommitSigningGitHubAppKind),
+			},
 		},
 		{
 			name:        "invalid domain",
 			domain:      &invalidDomain,
-			expectedURL: "/site-admin/github-apps?success=false&error=invalid+domain%3A+invalid",
+			expectedURL: "/site-admin/github-apps?kind=COMMIT_SIGNING&success=false&error=invalid+domain%3A+invalid",
+			stateDetails: gitHubAppStateDetails{
+				Domain: invalidDomain,
+				AppID:  1,
+				Kind:   string(ghtypes.CommitSigningGitHubAppKind),
+			},
 		},
 		{
 			name:        "repos creation error",
 			domain:      &reposDomain,
 			creationErr: creationErr,
 			expectedURL: "/site-admin/github-apps?success=false&error=uh+oh%21",
+			stateDetails: gitHubAppStateDetails{
+				Domain: reposDomain,
+				AppID:  1,
+				Kind:   string(ghtypes.CommitSigningGitHubAppKind),
+			},
 		},
 		{
 			name:        "batches creation error",
 			domain:      &batchesDomain,
 			creationErr: creationErr,
-			expectedURL: "/site-admin/batch-changes?success=false&error=uh+oh%21",
+			expectedURL: "/site-admin/batch-changes?kind=COMMIT_SIGNING&success=false&error=uh+oh%21",
+			stateDetails: gitHubAppStateDetails{
+				Domain: batchesDomain,
+				AppID:  1,
+				Kind:   string(ghtypes.CommitSigningGitHubAppKind),
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			url := generateRedirectURL(tc.domain, &tc.installationID, &tc.appID, &appName, "", tc.creationErr)
+			url := generateRedirectURL(tc.stateDetails, &tc.installationID, &appName, tc.creationErr)
 			require.Equal(t, tc.expectedURL, url)
 		})
 	}
@@ -324,6 +346,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 				WebhookUUID: webhookUUID.String(),
 				Domain:      string(domain),
 				BaseURL:     stateBaseURL,
+				Kind:        string(ghtypes.CommitSigningGitHubAppKind),
 			})
 			require.NoError(t, err)
 			cache.Set(state, stateDeets)
@@ -332,7 +355,7 @@ func TestGithubAppHTTPAPI(t *testing.T) {
 			mux.ServeHTTP(w, req)
 
 			if w.Code != http.StatusSeeOther {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+				t.Fatalf("expected status code %d but got %d: %s", http.StatusOK, w.Code, w.Body)
 			}
 		})
 	})
@@ -433,13 +456,15 @@ func TestCreateGitHubApp(t *testing.T) {
 	tests := []struct {
 		name          string
 		domain        types.GitHubAppDomain
+		gitHubAppKind ghtypes.GitHubAppKind
 		handlerAssert func(t *testing.T) http.HandlerFunc
 		expected      *ghtypes.GitHubApp
 		expectedErr   error
 	}{
 		{
-			name:   "success",
-			domain: types.BatchesGitHubAppDomain,
+			name:          "success",
+			domain:        types.BatchesGitHubAppDomain,
+			gitHubAppKind: ghtypes.SiteCredentialGitHubAppKind,
 			handlerAssert: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					assert.Equal(t, http.MethodPost, r.Method)
@@ -478,11 +503,13 @@ func TestCreateGitHubApp(t *testing.T) {
 				AppURL:        "http://my-github-app.com/app",
 				Domain:        types.BatchesGitHubAppDomain,
 				Logo:          "http://my-github-app.com/identicons/app/app/test/github-app",
+				Kind:          ghtypes.SiteCredentialGitHubAppKind,
 			},
 		},
 		{
-			name:   "unexpected status code",
-			domain: types.BatchesGitHubAppDomain,
+			name:          "unexpected status code",
+			domain:        types.BatchesGitHubAppDomain,
+			gitHubAppKind: ghtypes.SiteCredentialGitHubAppKind,
 			handlerAssert: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
@@ -491,8 +518,9 @@ func TestCreateGitHubApp(t *testing.T) {
 			expectedErr: errors.New("expected 201 statusCode, got: 200"),
 		},
 		{
-			name:   "server error",
-			domain: types.BatchesGitHubAppDomain,
+			name:          "server error",
+			domain:        types.BatchesGitHubAppDomain,
+			gitHubAppKind: ghtypes.SiteCredentialGitHubAppKind,
 			handlerAssert: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -501,8 +529,9 @@ func TestCreateGitHubApp(t *testing.T) {
 			expectedErr: errors.New("expected 201 statusCode, got: 500"),
 		},
 		{
-			name:   "invalid html url",
-			domain: types.BatchesGitHubAppDomain,
+			name:          "invalid html url",
+			domain:        types.BatchesGitHubAppDomain,
+			gitHubAppKind: ghtypes.SiteCredentialGitHubAppKind,
 			handlerAssert: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusCreated)
@@ -520,7 +549,7 @@ func TestCreateGitHubApp(t *testing.T) {
 			srv := httptest.NewServer(test.handlerAssert(t))
 			defer srv.Close()
 
-			app, err := createGitHubApp(srv.URL, test.domain, httpcli.TestExternalClient)
+			app, err := createGitHubApp(srv.URL, test.domain, httpcli.TestExternalClient, test.gitHubAppKind)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
