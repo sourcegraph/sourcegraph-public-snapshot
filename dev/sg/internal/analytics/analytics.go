@@ -27,7 +27,93 @@ const (
 )
 
 type invocation struct {
-	uuid uuid.UUID
+	uuid     uuid.UUID
+	metadata map[string]any
+}
+
+func (i invocation) GetStartTime() *time.Time {
+	v, ok := i.metadata["start_time"]
+	if !ok {
+		return nil
+	}
+	t := v.(time.Time)
+	return &t
+}
+
+func (i invocation) GetEndTime() *time.Time {
+	v, ok := i.metadata["end_time"]
+	if !ok {
+		return nil
+	}
+	t := v.(time.Time)
+	return &t
+}
+
+func (i invocation) GetDuration() time.Duration {
+	start := i.GetStartTime()
+	end := i.GetEndTime()
+
+	if start == nil || end == nil {
+		return 0
+	}
+
+	return end.Sub(*start)
+}
+
+func (i invocation) IsSuccess() bool {
+	v, ok := i.metadata["success"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) IsCancelled() bool {
+	v, ok := i.metadata["cancelled"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) IsFailed() bool {
+	v, ok := i.metadata["failed"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) GetCommand() string {
+	v, ok := i.metadata["command"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetVersion() string {
+	v, ok := i.metadata["version"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetError() string {
+	v, ok := i.metadata["error"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetUserID() string {
+	v, ok := i.metadata["user_id"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
 }
 
 var store = sync.OnceValue(func() analyticsStore {
@@ -106,6 +192,55 @@ func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta ma
 	}
 }
 
+func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) {
+	if s.db == nil {
+		return
+	}
+
+	_, err := s.db.Exec(`DELETE FROM analytics WHERE event_uuid = ?`, uuid)
+	if err != nil {
+		std.Out.WriteWarningf("Failed to delete sg analytics event: %s", err)
+	}
+}
+
+func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+
+	res, err := s.db.Query(`SELECT * FROM analytics WHERE end_time IS NOT NULL`)
+	if err != nil {
+		return nil, err
+	}
+
+	results := []invocation{}
+
+	for res.Next() {
+		invc := invocation{metadata: map[string]any{}}
+		var eventUUID string
+		var schemaVersion string
+		var metadata_json string
+		if err := res.Scan(&eventUUID, &schemaVersion, &metadata_json); err != nil {
+			return nil, err
+		}
+
+		invc.uuid, err = uuid.Parse(eventUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		err := json.Unmarshal([]byte(metadata_json), &invc.metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, invc)
+	}
+
+	return results, err
+
+}
+
 // Dont invoke this function directly. Use the `getEmail` function instead.
 func emailfunc() string {
 	sgHome, err := root.GetSGHomePath()
@@ -131,7 +266,7 @@ var getEmail = sync.OnceValue[string](emailfunc)
 func NewInvocation(ctx context.Context, version string, meta map[string]any) context.Context {
 	// v7 for sortable property (not vital as we also store timestamps, but no harm to have)
 	u, _ := uuid.NewV7()
-	invc := invocation{u}
+	invc := invocation{u, meta}
 
 	store().NewInvocation(ctx, u, version, meta)
 
