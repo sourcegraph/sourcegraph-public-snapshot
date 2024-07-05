@@ -3155,7 +3155,7 @@
             "type": "string",
             "enum": ["experimental", "beta", "stable", "deprecated"]
           },
-          "examples": [["beta"]],
+          "examples": [["beta", "stable"],
           "default": ["stable"]
         },
         "allow": {
