@@ -20,6 +20,7 @@ const credential: BatchChangesCredentialFields = {
     isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+    isGitHubApp: false,
 }
 
 export const View: StoryFn = () => (
