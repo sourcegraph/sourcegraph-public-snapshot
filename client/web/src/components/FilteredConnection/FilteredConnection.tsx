@@ -113,7 +113,11 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined, query: string, activeValues: FilteredConnectionArgs) => void
+    onUpdate?: (
+        value: C | ErrorLike | undefined,
+        query: string,
+        activeValues: Record<string, string | number | boolean | null>
+    ) => void
 
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
@@ -660,8 +664,15 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
     private buildArgs = buildFilterArgs
 }
 
-export const buildFilterArgs = (filters: Filter[], filterValues: FilterValues): FilteredConnectionArgs => {
-    let args: FilteredConnectionArgs = {}
+/**
+ * @template K The IDs of all filters ({@link Filter.id} values).
+ * @template A The type of option args ({@link Filter.options} {@link FilterOption.args} values).
+ */
+export function buildFilterArgs<
+    K extends string = string,
+    A extends Record<string, string | number | boolean | null> = Record<string, string | number | boolean | null>
+>(filters: Filter<K, A>[], filterValues: FilterValues<K>): A {
+    let args = {} as unknown as A
     for (const [filterID, value] of Object.entries(filterValues)) {
         if (value === undefined) {
             continue
@@ -683,8 +694,4 @@ export const resetFilteredConnectionURLQuery = (parameters: URLSearchParams): vo
     parameters.delete('visible')
     parameters.delete('first')
     parameters.delete('after')
-}
-
-export interface FilteredConnectionArgs {
-    [name: string]: string | number | boolean
 }
