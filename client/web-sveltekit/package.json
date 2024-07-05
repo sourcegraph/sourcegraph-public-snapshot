@@ -100,7 +100,8 @@
     "mermaid": "^10.9.1",
     "prismjs": "^1.29.0",
     "ts-key-enum": "^2.0.12",
-    "wonka": "^6.3.4"
+    "wonka": "^6.3.4",
+    "zod": "^3.23.8"
   },
   "msw": {
     "workerDirectory": "static"

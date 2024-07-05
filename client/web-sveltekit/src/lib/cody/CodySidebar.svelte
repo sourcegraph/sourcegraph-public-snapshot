@@ -1,3 +1,9 @@
+<script context="module" lang="ts">
+    import { uniqueID } from '$lib/dom'
+
+    export const CODY_SIDEBAR_ID = uniqueID('cody-sidebar')
+</script>
+
 <script lang="ts">
     import { createEventDispatcher } from 'svelte'
 
@@ -12,17 +18,24 @@
     export let repository: CodySidebar_ResolvedRevision
     export let filePath: string
 
+    const headingID = uniqueID('cody-sidebar-heading')
     const dispatch = createEventDispatcher<{ close: void }>()
 </script>
 
-<div class="root">
+<aside id={CODY_SIDEBAR_ID} aria-labelledby={headingID}>
     <div class="header">
-        <h3>
+        <h3 id={headingID}>
             <Icon icon={ISgCody} /> Cody
             <Badge variant="warning">Experimental</Badge>
         </h3>
         <Tooltip tooltip="Close Cody chat">
-            <Button variant="icon" aria-label="Close Cody" on:click={() => dispatch('close')}>
+            <Button
+                variant="icon"
+                aria-label="Close Cody"
+                on:click={() => dispatch('close')}
+                aria-controls={CODY_SIDEBAR_ID}
+                aria-expanded="true"
+            >
                 <Icon icon={ILucideX} inline aria-hidden />
             </Button>
         </Tooltip>
@@ -39,10 +52,10 @@
             <a href="/sign-in">Sign in</a> to use Cody.
         </Alert>
     {/if}
-</div>
+</aside>
 
 <style lang="scss">
-    .root {
+    aside {
         display: flex;
         flex-direction: column;
         height: 100%;

@@ -260,6 +260,13 @@ class Sourcegraph {
         })
     }
 
+    /**
+     * Mock the current window context to be in "dotcom mode" (sourcegraph.com).
+     */
+    public dotcomMode(): void {
+        this.setWindowContext({ sourcegraphDotComMode: true })
+    }
+
     public teardown(): void {
         this.graphqlMock.reset()
     }
