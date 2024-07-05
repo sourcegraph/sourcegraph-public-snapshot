@@ -3,70 +3,53 @@ package licensecheck
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
-type licenseWorker struct{}
+type licenseCheckJob struct{}
 
 // NewJob is the set of background jobs used for licensing enforcement and gating.
 // Note: This job should only run once for a given Sourcegraph instance.
 func NewJob() job.Job {
-	return &licenseWorker{}
+	return &licenseCheckJob{}
 }
 
-func (s *licenseWorker) Description() string {
+func (s *licenseCheckJob) Description() string {
 	return "License check job"
 }
 
-func (*licenseWorker) Config() []env.Config {
+func (*licenseCheckJob) Config() []env.Config {
 	return nil
 }
 
-func (s *licenseWorker) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *licenseCheckJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return []goroutine.BackgroundRoutine{
-		&licenseChecksWrapper{
-			logger: observationCtx.Logger,
-			db:     db,
-		},
-	}, nil
-}
-
-type licenseChecksWrapper struct {
-	logger log.Logger
-	db     database.DB
-}
-
-func (l *licenseChecksWrapper) Name() string {
-	return "LicenseChecks"
-}
-
-func (l *licenseChecksWrapper) Start() {
-	goroutine.Go(func() {
-		licensing.StartMaxUserCount(l.logger, &usersStore{
-			db: l.db,
-		})
-	})
-	if !dotcom.SourcegraphDotComMode() {
-		StartLicenseCheck(context.Background(), l.logger, l.db, redispool.Store)
+	routines := []goroutine.BackgroundRoutine{
+		newMaxUserCountRoutine(observationCtx.Logger, redispool.Store, &usersStore{
+			db: db,
+		}),
 	}
-}
 
-func (l *licenseChecksWrapper) Stop(context.Context) error { return nil }
+	if !dotcom.SourcegraphDotComMode() {
+		routines = append(
+			routines,
+			newLicenseChecker(context.Background(), observationCtx.Logger, db, redispool.Store),
+		)
+	}
+
+	return routines, nil
+}
 
 type usersStore struct {
 	db database.DB
