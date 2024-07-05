@@ -153,7 +153,6 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		RETURNING id`,
 		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, kind)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	fmt.Println("inserted: ", id)
 	return id, err
 }
 

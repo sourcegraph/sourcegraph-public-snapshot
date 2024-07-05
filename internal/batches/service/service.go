@@ -1909,7 +1909,6 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 		return nil, ErrDuplicateCredential{}
 	}
 
-	fmt.Println("generateAuthenticatorForCredential ====>>>")
 	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
 		externalServiceType:    args.ExternalServiceType,
 		externalServiceURL:     args.ExternalServiceURL,
@@ -1920,7 +1919,6 @@ func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sourc
 		authenticationStrategy: as,
 		githubAppStore:         s.store.GitHubAppsStore(),
 	})
-	fmt.Println("generateAuthenticatorForCredential returned err: ", err)
 	if err != nil {
 		return nil, err
 	}
@@ -1955,7 +1953,6 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 	}
 
 	if args.authenticationStrategy == sources.AuthenticationStrategyGitHubApp {
-		fmt.Println("hehehehe")
 		auther, err := ghauth.CreateAuthenticatorForCredential(ctx, args.githubAppID, ghauth.CreateAuthenticatorForCredentialOpts{
 			GitHubAppStore: args.githubAppStore,
 		})
