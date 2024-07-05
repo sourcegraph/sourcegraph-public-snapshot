@@ -305,6 +305,7 @@ func TestGitserverPushConfig(t *testing.T) {
 			wantErr:             ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
 		},
 	}
+	ctx := context.Background()
 	for _, tt := range tcs {
 		t.Run(tt.name, func(t *testing.T) {
 			sources := map[string]*types.SourceInfo{}
@@ -323,7 +324,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(ctx, repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

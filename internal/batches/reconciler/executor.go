@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
+
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/sourcegraph/log"
@@ -198,7 +199,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		return afterDone, errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(remoteRepo)
+	pushConf, err := css.GitserverPushConfig(ctx, remoteRepo)
 	if err != nil {
 		return afterDone, err
 	}

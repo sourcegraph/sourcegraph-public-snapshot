@@ -55,7 +55,8 @@ func TestGerritSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	pushConfig, err := s.GitserverPushConfig(repo)
+	ctx := context.Background()
+	pushConfig, err := s.GitserverPushConfig(ctx, repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@gerrit.sgdev.org/testrepo", pushConfig.RemoteURL)
