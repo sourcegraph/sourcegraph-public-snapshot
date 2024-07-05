@@ -175,7 +175,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				IsMainBranch: buildOptions.Branch == "main",
 			},
 			addVsceTests,
-			wait,
+			// wait,
 			addVsceReleaseSteps)
 
 	case runtype.BextNightly, runtype.BextManualNightly:
