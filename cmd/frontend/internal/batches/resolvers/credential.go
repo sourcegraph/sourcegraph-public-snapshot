@@ -138,10 +138,6 @@ type batchChangesSiteCredentialResolver struct {
 	ghStore ghastore.GitHubAppsStore
 }
 
-func (c *batchChangesUserCredentialResolver) GitHubAppID() int {
-	return c.credential.GitHubAppID
-}
-
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
 
 func (c *batchChangesSiteCredentialResolver) ID() graphql.ID {
