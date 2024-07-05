@@ -25,14 +25,14 @@ available at:
   $ echo -n 'http://' \
     && kubectl get service operator-ui \
           -o jsonpath='{.status.loadBalancer.ingress[0].ip}' \
-          --namespace {{ .Values.namespace }} && echo
+          --namespace {{ .Release.Namespace }} && echo
 
 If the result is simply `http://`, then it means the service
 is not fully provisioned yet. Either wait or monitor the
 output of this command:
 
   $ kubectl get service operator-ui \
-        --namespace {{ .Values.namespace }}
+        --namespace {{ .Release.Namespace }}
 
 The `EXTERNAL-IP` field will be either `<pending>` or an IP
 address.
@@ -45,7 +45,7 @@ password:
   $ echo -n 'Password: ' \
       && kubectl get secret operator-api \
              -o jsonpath='{.data.MAINTENANCE_PASSWORD}' \
-             --namespace {{ .Values.namespace }} \
+             --namespace {{ .Release.Namespace }} \
       | base64 -d && echo
 
 --------------------------------------------------------------

@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: operator-api
-  namespace: {{ .Values.namespace }}
   labels:
     app: operator-api
 spec:
@@ -22,8 +21,8 @@ spec:
           ports:
             - containerPort: 80
           env:
-            - - name: API_ENDPOINT
-                value: 'maintenance.{{ .Values.namespace }}.svc.cluster.local'
+            - name: API_ENDPOINT
+              value: 'maintenance.{{ .Release.Namespace }}.svc.cluster.local'
             - name: MAINTENANCE_PASSWORD
               valueFrom:
                 secretKeyRef:
