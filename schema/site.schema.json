@@ -3102,7 +3102,7 @@
       }
     },
     "SourcegraphModelConfig": {
-      "description": "If null, Cody will not use Sourcegraph's servers for model discovery or LLM requests.",
+      "description": "If null, Cody will not use Sourcegraph's servers for model discovery.",
       "type": "object",
       "!go": {
         "pointer": true
