@@ -542,6 +542,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, repo, SourcerOpts{
 				AuthenticationStrategy: AuthenticationStrategyGitHubApp,
 				GitHubAppKind:          ghatypes.SiteCredentialGitHubAppKind,
+				AsNonCredential:        true,
 			})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
@@ -608,6 +609,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, targetRepo, SourcerOpts{
 				AuthenticationStrategy: AuthenticationStrategyGitHubApp,
 				GitHubAppKind:          ghatypes.SiteCredentialGitHubAppKind,
+				AsNonCredential:        true,
 			})
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
