@@ -3,12 +3,21 @@ import { type MouseEvent, useMemo } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import type { ChatExportResult } from 'cody-web-experimental'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Icon, Text, Tooltip, Button } from '@sourcegraph/wildcard'
 
 import styles from './ChatHistoryList.module.scss'
+
+export interface ChatExportResult {
+    chatID: string
+    transcript: {
+        id: string
+        chatModel?: string
+        chatTitle?: string
+        interactions: unknown[]
+    }
+}
 
 interface ChatHistoryListProps {
     chats: ChatExportResult[]
