@@ -29,14 +29,17 @@ type event struct {
 }
 
 func (e event) Save() (map[string]bigquery.Value, string, error) {
+	durationInterval := &bigquery.IntervalValue{
+		Seconds: int32(e.Duration.Seconds()),
+	}
 	m := map[string]bigquery.Value{
 		"uuid":           e.UUID,
 		"user_id":        e.UserID,
 		"recorded_at":    e.RecordedAt,
 		"command":        e.Command,
 		"version":        e.Version,
+		"duration":       durationInterval.String(),
 		"flags_and_args": string(e.FlagsAndArgs),
-		"duration":       e.Duration,
 		"error":          e.Error,
 	}
 
@@ -53,9 +56,17 @@ func NewEvent(i invocation) *event {
 	}
 	e.Command = i.GetCommand()
 	e.Version = i.GetVersion()
-	//e.FlagsAndArgs = i.GetFlagsAndArgs()
 	e.Duration = i.GetDuration()
 	e.Error = i.GetError()
+
+	var flagsAndArgs struct {
+		Flags map[string]any `json:"flags"`
+		Args  []any          `json:"args"`
+	}
+	flagsAndArgs.Flags = i.GetFlags()
+	flagsAndArgs.Args = i.GetArgs()
+
+	e.FlagsAndArgs, _ = json.Marshal(flagsAndArgs)
 
 	return &e
 }

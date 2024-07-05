@@ -124,6 +124,22 @@ func (i invocation) GetUserID() string {
 	return v.(string)
 }
 
+func (i invocation) GetFlags() map[string]any {
+	v, ok := i.metadata["flags"]
+	if !ok {
+		return nil
+	}
+	return v.(map[string]any)
+}
+
+func (i invocation) GetArgs() []any {
+	v, ok := i.metadata["args"]
+	if !ok {
+		return nil
+	}
+	return v.([]any)
+}
+
 var store = sync.OnceValue(func() analyticsStore {
 	db, err := newDiskStore()
 	if err != nil {
@@ -170,6 +186,7 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 	}
 
 	meta["user_id"] = getEmail()
+	meta["version"] = version
 	meta["start_time"] = time.Now()
 
 	b, err := json.Marshal(meta)
@@ -177,7 +194,6 @@ func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, versi
 		std.Out.WriteWarningf("Invalid json generated for sg analytics metadata %v: %s", meta, err)
 	}
 
-	println("💀 INSERTING")
 	_, err = s.db.Exec(`INSERT INTO analytics (event_uuid, schema_version, metadata_json) VALUES (?, ?, ?)`, uuid, schemaVersion, string(b))
 	if err != nil {
 		std.Out.WriteWarningf("Failed to insert sg analytics event: %s", err)
@@ -205,8 +221,6 @@ func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) {
 	if s.db == nil {
 		return
 	}
-
-	println("💀 DELETING", uuid)
 
 	_, err := s.db.Exec(`DELETE FROM analytics WHERE event_uuid = ?`, uuid)
 	if err != nil {

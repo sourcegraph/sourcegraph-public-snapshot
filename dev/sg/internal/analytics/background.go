@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
@@ -9,26 +10,27 @@ import (
 )
 
 var (
-	bq *BigQueryClient
+	bq   *BigQueryClient
+	done chan struct{}
 )
 
-func BackgroundEventPublisher(ctx context.Context) func() {
+func BackgroundEventPublisher(ctx context.Context) {
 	done := make(chan struct{})
 	background.Run(ctx, func(ctx context.Context, bgOut *std.Output) {
-		println("💀 BG START")
 		var err error
 		bq, err = NewBigQueryClient(ctx, SGLocalDev, AnalyticsDatasetName, EventsTableName)
 		if err != nil {
 			bgOut.WriteWarningf("failed to create BigQuery client for analytics", err)
 			return
 		}
+		defer bq.Close()
 
-		go processEvents(bgOut, store(), done)
+		processEvents(bgOut, store(), done)
 	})
+}
 
-	return func() {
-		close(done)
-	}
+func StopBackgroundEventPublisher() {
+	close(done)
 }
 
 func toEvents(items []invocation) []event {
@@ -42,7 +44,6 @@ func toEvents(items []invocation) []event {
 }
 
 func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) {
-	println("💀 PROCESS EVENTS")
 	ctx := context.Background()
 
 	for {
@@ -59,18 +60,27 @@ func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) 
 				continue
 			}
 
+			if len(results) == 0 {
+				// No events to process - so we quit.
+				//
+				// Upon next start up there will be another event to publish
+				return
+			}
+
 			events := toEvents(results)
-			println("💀 EVENTS", len(events))
 			for _, ev := range events {
 				err := bq.InsertEvent(ctx, ev)
 				if err != nil {
-					println("💀💀💀💀", err)
-					panic(err)
+					if os.Getenv("SG_ANALYTICS_DEBUG") == "1" {
+						panic(err)
+					}
 					bgOut.WriteWarningf("failed to insert analytics event", err)
 					continue
 				}
 				store.DeleteInvocation(ctx, ev.UUID)
 			}
+			// all events have been processed, so we quit
+			return
 		}
 	}
 

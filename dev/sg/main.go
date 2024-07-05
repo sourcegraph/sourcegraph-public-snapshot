@@ -188,7 +188,7 @@ var sg = &cli.App{
 
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
-		if cmd.Bool("disable-analytics") {
+		if !cmd.Bool("disable-analytics") {
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
 		}
@@ -202,8 +202,8 @@ var sg = &cli.App{
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// start the analytics publisher
-		stop := analytics.BackgroundEventPublisher(cmd.Context)
-		interrupt.Register(stop)
+		analytics.BackgroundEventPublisher(cmd.Context)
+		interrupt.Register(analytics.StopBackgroundEventPublisher)
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
