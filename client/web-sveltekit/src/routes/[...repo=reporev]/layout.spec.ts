@@ -43,12 +43,6 @@ test.describe('cloned repository', () => {
 })
 
 test('clone in progress', async ({ sg, page }) => {
-    if (process.env.BAZEL_SKIP_TESTS?.includes('clone in progress')) {
-        // Some tests are working with `pnpm run test` but not in Bazel.
-        // To get CI working we are skipping these tests for now.
-        // https://github.com/sourcegraph/sourcegraph/pull/62560#issuecomment-2128313393
-        return
-    }
     sg.mockOperations({
         ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
@@ -71,10 +65,6 @@ test('clone in progress', async ({ sg, page }) => {
 })
 
 test('not cloned', async ({ sg, page }) => {
-    if (process.env.BAZEL_SKIP_TESTS?.includes('not cloned')) {
-        // This test is flaky on CI
-        return
-    }
     sg.mockOperations({
         ResolveRepoRevision: ({ repoName }) => ({
             repositoryRedirect: {
@@ -94,6 +84,19 @@ test('not cloned', async ({ sg, page }) => {
     await expect(page.getByRole('heading', { name: 'sourcegraph/sourcegraph' })).toBeVisible()
     // Shows queue message
     await expect(page.getByText('queued for cloning')).toBeVisible()
+})
+
+test('not found', async ({ sg, page }) => {
+    sg.mockOperations({
+        ResolveRepoRevision: () => ({
+            repositoryRedirect: null,
+        }),
+    })
+
+    await page.goto(`/${repoName}`)
+
+    // Shows not found error message
+    await expect(page.getByRole('heading', { name: 'Repository not found' })).toBeVisible()
 })
 
 test.describe('repo menu', () => {

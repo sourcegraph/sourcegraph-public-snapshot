@@ -15,8 +15,8 @@
 {:else if isRevisionNotFoundErrorLike($page.error)}
     <RevisionNotFoundError />
 {:else}
-    <HeroPage title="Error" icon={ILucideCircleX}>
+    <HeroPage title="Unexpected Error" icon={ILucideCircleX}>
         <!-- TODO: format error message with markdown -->
-        {$page.error?.message ?? 'Unknown Error'}
+        {$page.error?.message ?? '(no error message)'}
     </HeroPage>
 {/if}
