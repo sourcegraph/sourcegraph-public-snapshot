@@ -3336,6 +3336,7 @@
         "pointer": true
       },
       "default": null,
+      "description": "No client-side provider configuration is currently available.",
       "properties": {}
     },
     "ServerSideProviderConfig": {
@@ -3513,6 +3514,7 @@
         "pointer": true
       },
       "default": null,
+      "description": "No client-side model configuration is currently available.",
       "properties": {}
     },
     "ServerSideModelConfig": {
