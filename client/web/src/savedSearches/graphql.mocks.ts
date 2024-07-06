@@ -30,7 +30,7 @@ import {
 
 const SAVED_SEARCH_FIELDS: Pick<
     SavedSearchFields,
-    '__typename' | 'description' | 'query' | 'owner' | 'url' | 'viewerCanAdminister'
+    '__typename' | 'description' | 'query' | 'owner' | 'createdAt' | 'updatedAt' | 'url' | 'viewerCanAdminister'
 > = {
     __typename: 'SavedSearch',
     description: 'My description',
@@ -40,6 +40,8 @@ const SAVED_SEARCH_FIELDS: Pick<
         id: 'a',
         namespaceName: 'alice',
     },
+    createdAt: '2020-04-21T10:10:10Z',
+    updatedAt: '2020-04-21T10:10:10Z',
     url: '',
     viewerCanAdminister: true,
 }

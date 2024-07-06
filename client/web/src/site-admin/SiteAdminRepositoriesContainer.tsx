@@ -359,7 +359,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                         <FilterControl
                             filters={filters}
                             values={filterValues}
-                            onValueSelect={(filter: Filter, value: FilterOption['value'] | null) =>
+                            onValueSelect={(filter: Filter, value: FilterOption['value'] | undefined) =>
                                 setFilterValues(values => ({ ...values, [filter.id]: value }))
                             }
                         />

@@ -64823,6 +64823,13 @@ type MockSavedSearchStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *SavedSearchStoreListFunc
+	// MarshalToCursorFunc is an instance of a mock function object
+	// controlling the behavior of the method MarshalToCursor.
+	MarshalToCursorFunc *SavedSearchStoreMarshalToCursorFunc
+	// UnmarshalValuesFromCursorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UnmarshalValuesFromCursor.
+	UnmarshalValuesFromCursorFunc *SavedSearchStoreUnmarshalValuesFromCursorFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *SavedSearchStoreUpdateFunc
@@ -64869,6 +64876,16 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 		},
 		ListFunc: &SavedSearchStoreListFunc{
 			defaultHook: func(context.Context, database.SavedSearchListArgs, *database.PaginationArgs) (r0 []*types.SavedSearch, r1 error) {
+				return
+			},
+		},
+		MarshalToCursorFunc: &SavedSearchStoreMarshalToCursorFunc{
+			defaultHook: func(*types.SavedSearch, database.OrderBy) (r0 types.MultiCursor, r1 error) {
+				return
+			},
+		},
+		UnmarshalValuesFromCursorFunc: &SavedSearchStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: func(types.MultiCursor) (r0 []interface{}, r1 error) {
 				return
 			},
 		},
@@ -64929,6 +64946,16 @@ func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 				panic("unexpected invocation of MockSavedSearchStore.List")
 			},
 		},
+		MarshalToCursorFunc: &SavedSearchStoreMarshalToCursorFunc{
+			defaultHook: func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error) {
+				panic("unexpected invocation of MockSavedSearchStore.MarshalToCursor")
+			},
+		},
+		UnmarshalValuesFromCursorFunc: &SavedSearchStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: func(types.MultiCursor) ([]interface{}, error) {
+				panic("unexpected invocation of MockSavedSearchStore.UnmarshalValuesFromCursor")
+			},
+		},
 		UpdateFunc: &SavedSearchStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
 				panic("unexpected invocation of MockSavedSearchStore.Update")
@@ -64974,6 +65001,12 @@ func NewMockSavedSearchStoreFrom(i database.SavedSearchStore) *MockSavedSearchSt
 		},
 		ListFunc: &SavedSearchStoreListFunc{
 			defaultHook: i.List,
+		},
+		MarshalToCursorFunc: &SavedSearchStoreMarshalToCursorFunc{
+			defaultHook: i.MarshalToCursor,
+		},
+		UnmarshalValuesFromCursorFunc: &SavedSearchStoreUnmarshalValuesFromCursorFunc{
+			defaultHook: i.UnmarshalValuesFromCursor,
 		},
 		UpdateFunc: &SavedSearchStoreUpdateFunc{
 			defaultHook: i.Update,
@@ -65626,6 +65659,226 @@ func (c SavedSearchStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreMarshalToCursorFunc describes the behavior when the
+// MarshalToCursor method of the parent MockSavedSearchStore instance is
+// invoked.
+type SavedSearchStoreMarshalToCursorFunc struct {
+	defaultHook func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error)
+	hooks       []func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error)
+	history     []SavedSearchStoreMarshalToCursorFuncCall
+	mutex       sync.Mutex
+}
+
+// MarshalToCursor delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) MarshalToCursor(v0 *types.SavedSearch, v1 database.OrderBy) (types.MultiCursor, error) {
+	r0, r1 := m.MarshalToCursorFunc.nextHook()(v0, v1)
+	m.MarshalToCursorFunc.appendCall(SavedSearchStoreMarshalToCursorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MarshalToCursor
+// method of the parent MockSavedSearchStore instance is invoked and the
+// hook queue is empty.
+func (f *SavedSearchStoreMarshalToCursorFunc) SetDefaultHook(hook func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarshalToCursor method of the parent MockSavedSearchStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SavedSearchStoreMarshalToCursorFunc) PushHook(hook func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreMarshalToCursorFunc) SetDefaultReturn(r0 types.MultiCursor, r1 error) {
+	f.SetDefaultHook(func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreMarshalToCursorFunc) PushReturn(r0 types.MultiCursor, r1 error) {
+	f.PushHook(func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreMarshalToCursorFunc) nextHook() func(*types.SavedSearch, database.OrderBy) (types.MultiCursor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreMarshalToCursorFunc) appendCall(r0 SavedSearchStoreMarshalToCursorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SavedSearchStoreMarshalToCursorFuncCall
+// objects describing the invocations of this function.
+func (f *SavedSearchStoreMarshalToCursorFunc) History() []SavedSearchStoreMarshalToCursorFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreMarshalToCursorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreMarshalToCursorFuncCall is an object that describes an
+// invocation of method MarshalToCursor on an instance of
+// MockSavedSearchStore.
+type SavedSearchStoreMarshalToCursorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.SavedSearch
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.OrderBy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.MultiCursor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreMarshalToCursorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreMarshalToCursorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreUnmarshalValuesFromCursorFunc describes the behavior when
+// the UnmarshalValuesFromCursor method of the parent MockSavedSearchStore
+// instance is invoked.
+type SavedSearchStoreUnmarshalValuesFromCursorFunc struct {
+	defaultHook func(types.MultiCursor) ([]interface{}, error)
+	hooks       []func(types.MultiCursor) ([]interface{}, error)
+	history     []SavedSearchStoreUnmarshalValuesFromCursorFuncCall
+	mutex       sync.Mutex
+}
+
+// UnmarshalValuesFromCursor delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) UnmarshalValuesFromCursor(v0 types.MultiCursor) ([]interface{}, error) {
+	r0, r1 := m.UnmarshalValuesFromCursorFunc.nextHook()(v0)
+	m.UnmarshalValuesFromCursorFunc.appendCall(SavedSearchStoreUnmarshalValuesFromCursorFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UnmarshalValuesFromCursor method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) SetDefaultHook(hook func(types.MultiCursor) ([]interface{}, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UnmarshalValuesFromCursor method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) PushHook(hook func(types.MultiCursor) ([]interface{}, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) SetDefaultReturn(r0 []interface{}, r1 error) {
+	f.SetDefaultHook(func(types.MultiCursor) ([]interface{}, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) PushReturn(r0 []interface{}, r1 error) {
+	f.PushHook(func(types.MultiCursor) ([]interface{}, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) nextHook() func(types.MultiCursor) ([]interface{}, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) appendCall(r0 SavedSearchStoreUnmarshalValuesFromCursorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreUnmarshalValuesFromCursorFuncCall objects describing the
+// invocations of this function.
+func (f *SavedSearchStoreUnmarshalValuesFromCursorFunc) History() []SavedSearchStoreUnmarshalValuesFromCursorFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreUnmarshalValuesFromCursorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreUnmarshalValuesFromCursorFuncCall is an object that
+// describes an invocation of method UnmarshalValuesFromCursor on an
+// instance of MockSavedSearchStore.
+type SavedSearchStoreUnmarshalValuesFromCursorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 types.MultiCursor
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []interface{}
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreUnmarshalValuesFromCursorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreUnmarshalValuesFromCursorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -159,6 +159,16 @@ type SavedSearch implements Node {
     owner: Namespace!
 
     """
+    When the saved search was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the saved search was last updated.
+    """
+    updatedAt: DateTime!
+
+    """
     The URL of this saved search.
     """
     url: String!

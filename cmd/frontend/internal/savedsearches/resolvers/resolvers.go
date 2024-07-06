@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -108,6 +109,14 @@ func (r *savedSearchResolver) Owner(ctx context.Context) (*graphqlbackend.Namesp
 	return nil, errors.New("no owner")
 }
 
+func (r *savedSearchResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.s.CreatedAt}
+}
+
+func (r *savedSearchResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.s.UpdatedAt}
+}
+
 func (r *savedSearchResolver) URL() string {
 	return "/saved-searches/" + string(r.ID())
 }
@@ -160,93 +169,22 @@ func (r *Resolver) SavedSearches(ctx context.Context, args graphqlbackend.SavedS
 		}
 	}
 
-	// Don't expose SavedSearchesOrderByID option to the GraphQL API. This is not a security thing,
-	// it's just to avoid allowing clients to depend on our implementation details.
-	orderBy := database.SavedSearchesOrderByUpdatedAt
-	if args.OrderBy != graphqlbackend.SavedSearchesOrderByDescription {
+	var orderBy database.SavedSearchesOrderBy
+	switch args.OrderBy {
+	case graphqlbackend.SavedSearchesOrderByDescription:
 		orderBy = database.SavedSearchesOrderByDescription
+	case graphqlbackend.SavedSearchesOrderByUpdatedAt:
+		orderBy = database.SavedSearchesOrderByUpdatedAt
+	default:
+		// Don't expose SavedSearchesOrderByID option to the GraphQL API. This is not a security
+		// thing, it's just to avoid allowing clients to depend on our implementation details.
+		return nil, errors.New("invalid orderBy")
 	}
 
-	opts := graphqlutil.ConnectionResolverOptions{MaxPageSize: 1000}
+	opts := graphqlutil.ConnectionResolverOptions{}
 	opts.OrderBy, opts.Ascending = orderBy.ToOptions()
 
 	return graphqlutil.NewConnectionResolver(connectionStore, &args.ConnectionResolverArgs, &opts)
-}
-
-type savedSearchesConnectionStore struct {
-	db       database.DB
-	listArgs database.SavedSearchListArgs
-}
-
-func (s *savedSearchesConnectionStore) MarshalCursor(node graphqlbackend.SavedSearchResolver, orderBy database.OrderBy) (*string, error) {
-	// TODO!(sqs): will refactor to not use raw db column name strings before merging
-	var value string
-	var column string
-	if len(orderBy) > 0 {
-		column = orderBy[0].Field
-	} else {
-		column = "id"
-	}
-	switch column {
-	case "id":
-		value = string(node.ID())
-	case "description":
-		value = node.Description()
-	case "updated_at":
-		value = node.(*savedSearchResolver).s.UpdatedAt.Format(time.RFC3339)
-	default:
-		return nil, errors.New("unexpected orderBy")
-	}
-	return &value, nil
-}
-
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) ([]any, error) {
-	// TODO!(sqs): will refactor to not use raw db column name strings before merging
-	var cursorValue []any
-	var column string
-	if len(orderBy) > 0 {
-		column = orderBy[0].Field
-	} else {
-		column = "id"
-	}
-	switch column {
-	case "id":
-		nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
-		if err != nil {
-			return nil, err
-		}
-		cursorValue = []any{nodeID}
-	case "description":
-		cursorValue = []any{cursor}
-	case "updated_at":
-		updatedAt, err := time.Parse(time.RFC3339, cursor)
-		if err != nil {
-			return nil, err
-		}
-		cursorValue = []any{updatedAt}
-	default:
-		return nil, errors.New("unexpected orderBy")
-	}
-	return cursorValue, nil
-}
-
-func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (int32, error) {
-	count, err := s.db.SavedSearches().Count(ctx, s.listArgs)
-	return int32(count), err
-}
-
-func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, pgArgs *database.PaginationArgs) ([]graphqlbackend.SavedSearchResolver, error) {
-	dbResults, err := s.db.SavedSearches().List(ctx, s.listArgs, pgArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []graphqlbackend.SavedSearchResolver
-	for _, savedSearch := range dbResults {
-		results = append(results, &savedSearchResolver{db: s.db, s: *savedSearch})
-	}
-
-	return results, nil
 }
 
 func (r *Resolver) CreateSavedSearch(ctx context.Context, args *graphqlbackend.CreateSavedSearchArgs) (graphqlbackend.SavedSearchResolver, error) {

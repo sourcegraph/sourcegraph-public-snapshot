@@ -59,7 +59,7 @@ export interface FilterOption<
  * The values of all filters, keyed by the filter ID ({@link Filter.id}).
  * @template K The IDs of all filters ({@link Filter.id} values).
  */
-export type FilterValues<K extends string = string> = Record<K, FilterOption['value'] | null>
+export type FilterValues<K extends string = string> = Record<K, FilterOption['value'] | undefined>
 
 interface FilterControlProps {
     /** All filters. */

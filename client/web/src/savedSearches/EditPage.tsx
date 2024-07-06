@@ -131,7 +131,7 @@ const EditForm: FunctionComponent<
                 // Mutation error is read in useMutation call.
             }
         },
-        [savedSearch.id, savedSearch.owner, telemetryRecorder, updateSavedSearch]
+        [savedSearch.id, savedSearch.owner, telemetryRecorder, updateSavedSearch, navigate]
     )
 
     const [showTransferOwnershipModal, setShowTransferOwnershipModal] = useState(false)

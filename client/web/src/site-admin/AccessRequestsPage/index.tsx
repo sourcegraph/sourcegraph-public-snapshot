@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,44 +9,43 @@ import { pluralize } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Badge, Button, Card, Link, PageSwitcher, Select, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
-    type RejectAccessRequestResult,
-    type RejectAccessRequestVariables,
+    AccessRequestStatus,
+    type AccessRequestCreateUserResult,
+    type AccessRequestCreateUserVariables,
+    type AccessRequestNode,
     type ApproveAccessRequestResult,
     type ApproveAccessRequestVariables,
     type DoesUsernameExistResult,
     type DoesUsernameExistVariables,
-    type AccessRequestCreateUserResult,
-    type AccessRequestCreateUserVariables,
+    type GetAccessRequestsResult,
+    type GetAccessRequestsVariables,
     type HasLicenseSeatsResult,
     type HasLicenseSeatsVariables,
-    AccessRequestStatus,
-    type AccessRequestNode,
-    type GetAccessRequestsVariables,
-    type GetAccessRequestsResult,
+    type RejectAccessRequestResult,
+    type RejectAccessRequestVariables,
 } from '../../graphql-operations'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
-import { type IColumn, Table } from '../UserManagement/components/Table'
+import { Table, type IColumn } from '../UserManagement/components/Table'
 
 import {
-    APPROVE_ACCESS_REQUEST,
     ACCESS_REQUEST_CREATE_USER,
+    APPROVE_ACCESS_REQUEST,
     DOES_USERNAME_EXIST,
     GET_ACCESS_REQUESTS_LIST,
-    REJECT_ACCESS_REQUEST,
     HAS_LICENSE_SEATS,
+    REJECT_ACCESS_REQUEST,
 } from './queries'
 
 import styles from './index.module.scss'
 
 /**
  * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
- *
  * @param name user's name / full name
  * @param randomize whether to add a random suffix to the username to avoid collisions
  * @returns username
@@ -210,7 +209,6 @@ export const AccessRequestsPage: React.FunctionComponent<Props> = ({ telemetryRe
         options: {
             fetchPolicy: 'cache-first',
             pageSize: FIRST_COUNT,
-            useURL: true,
         },
     })
 

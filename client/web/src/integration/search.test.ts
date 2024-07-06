@@ -614,6 +614,8 @@ describe('Search', () => {
                                 description: 'Demo',
                                 id: 'U2F2ZWRTZWFyY2g6NQ==',
                                 owner: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                createdAt: '2020-04-21T10:10:10Z',
+                                updatedAt: '2020-04-21T10:10:10Z',
                                 query: 'context:global Batch Change patternType:literal',
                                 url: '/saved-searches/U2F2ZWRTZWFyY2g6NQ==',
                                 viewerCanAdminister: true,

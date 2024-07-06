@@ -44,7 +44,7 @@ export interface ConnectionFormProps {
      */
     filters?: Filter[]
 
-    onFilterSelect?: (filter: Filter, value: FilterOption['value'] | null) => void
+    onFilterSelect?: (filter: Filter, value: FilterOption['value'] | undefined) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement

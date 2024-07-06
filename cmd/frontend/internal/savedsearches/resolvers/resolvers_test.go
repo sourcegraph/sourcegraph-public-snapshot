@@ -9,17 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSavedSearches(t *testing.T) {
@@ -526,41 +521,6 @@ func TestDeleteSavedSearch(t *testing.T) {
 
 	mockrequire.Called(t, ss.DeleteFunc)
 }
-
-func TestSavedSearchesConnectionStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
-
-	user, err := db.Users().Create(ctx, database.NewUser{
-		Email:           "test@sourcegraph.com",
-		Username:        "test",
-		EmailIsVerified: true,
-	})
-	require.NoError(t, err)
-
-	for range 10 {
-		_, err := db.SavedSearches().Create(ctx, &types.SavedSearch{
-			Description: "Test Search",
-			Query:       "r:src-cli",
-			Owner:       types.NamespaceUser(user.ID),
-		})
-		require.NoError(t, err)
-	}
-
-	owner := types.NamespaceUser(user.ID)
-	connectionStore := &savedSearchesConnectionStore{
-		db:       db,
-		listArgs: database.SavedSearchListArgs{Owner: &owner},
-	}
-
-	graphqlutil.TestConnectionResolverStoreSuite(t, connectionStore)
-}
-
-var dummyConnectionResolverArgs = graphqlutil.ConnectionResolverArgs{First: pointers.Ptr[int32](1)}
 
 func newTestResolver(t *testing.T, db database.DB) *Resolver {
 	t.Helper()

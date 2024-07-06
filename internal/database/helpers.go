@@ -96,6 +96,11 @@ func (o OrderBy) SQL(ascending bool) *sqlf.Query {
 }
 
 // OrderByOption represents ordering in SQL by one column.
+//
+// The direction (ascending or descending) is not set here. It is set in (PaginationArgs).Ascending.
+// This is because we use [PostgreSQL composite
+// types](https://www.postgresql.org/docs/current/rowtypes.html) to support before/after pagination
+// cursors based on multiple columns.
 type OrderByOption struct {
 	Field string
 	Nulls OrderByNulls
@@ -150,7 +155,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	orderByColumns := orderBy.Columns()
 
 	if len(p.After) > 0 {
-		// For order by stars, id this'll generate SQL of the following form:
+		// For "order by stars, id" this'll generate SQL of the following form:
 		// WHERE (stars, id) (<|>) (%s, %s)
 		// ORDER BY stars (ASC|DESC), id (ASC|DESC)
 		columnsStr := strings.Join(orderByColumns, ", ")
@@ -182,7 +187,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	}
 
 	if len(conditions) > 0 {
-		queryArgs.Where = sqlf.Sprintf("%v", sqlf.Join(conditions, "AND "))
+		queryArgs.Where = sqlf.Join(conditions, "AND ")
 	}
 
 	if p.First != nil {

@@ -650,7 +650,7 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
-    private onDidSelectFilterValue = (filter: Filter, value: FilterOption['value'] | null): void => {
+    private onDidSelectFilterValue = (filter: Filter, value: FilterOption['value'] | undefined): void => {
         if (this.props.filters === undefined) {
             return
         }

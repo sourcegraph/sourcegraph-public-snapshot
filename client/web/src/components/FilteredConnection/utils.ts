@@ -19,8 +19,11 @@ export const hasDisplayName = (value: unknown): value is { displayName: Scalars[
     hasProperty('displayName')(value) &&
     typeof value.displayName === 'string'
 
-export const getFilterFromURL = (searchParameters: URLSearchParams, filters: Filter[] | undefined): FilterValues => {
-    const values: FilterValues = {}
+export function getFilterFromURL<K extends string>(
+    searchParameters: URLSearchParams,
+    filters: Filter<K>[] | undefined
+): FilterValues<K> {
+    const values = {} as FilterValues<K>
     if (filters === undefined) {
         return values
     }
@@ -87,6 +90,8 @@ export const getUrlQuery = ({
 
     if (query) {
         searchParameters.set(QUERY_KEY, query)
+    } else {
+        searchParameters.delete(QUERY_KEY)
     }
 
     if (!!first && first.actual !== first.default) {

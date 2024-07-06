@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -21,6 +23,8 @@ type SavedSearchStore interface {
 	GetByID(context.Context, int32) (*types.SavedSearch, error)
 	List(context.Context, SavedSearchListArgs, *PaginationArgs) ([]*types.SavedSearch, error)
 	Count(context.Context, SavedSearchListArgs) (int, error)
+	MarshalToCursor(*types.SavedSearch, OrderBy) (types.MultiCursor, error)
+	UnmarshalValuesFromCursor(types.MultiCursor) ([]any, error)
 	WithTransact(context.Context, func(SavedSearchStore) error) error
 	With(basestore.ShareableStore) SavedSearchStore
 	basestore.ShareableStore
@@ -150,24 +154,24 @@ type SavedSearchListArgs struct {
 type SavedSearchesOrderBy uint8
 
 const (
-	SavedSearchesOrderByID SavedSearchesOrderBy = iota
+	SavedSearchesOrderByUpdatedAt SavedSearchesOrderBy = iota // default
 	SavedSearchesOrderByDescription
-	SavedSearchesOrderByUpdatedAt
+	SavedSearchesOrderByID
 )
 
 func (v SavedSearchesOrderBy) ToOptions() (orderBy OrderBy, ascending bool) {
 	switch v {
-	case SavedSearchesOrderByID:
-		orderBy = []OrderByOption{{Field: "id"}}
-		ascending = true
-	case SavedSearchesOrderByDescription:
-		orderBy = []OrderByOption{{Field: "description"}}
-		ascending = true
 	case SavedSearchesOrderByUpdatedAt:
 		orderBy = []OrderByOption{{Field: "updated_at"}}
 		ascending = false
+	case SavedSearchesOrderByDescription:
+		orderBy = []OrderByOption{{Field: "description"}}
+		ascending = true
+	case SavedSearchesOrderByID:
+		orderBy = []OrderByOption{{Field: "id"}}
+		ascending = true
 	default:
-		panic("unexpected SavedSearchesOrderBy value")
+		panic("invalid SavedSearchesOrderBy value")
 	}
 	return orderBy, ascending
 }
@@ -264,4 +268,53 @@ func (s *savedSearchStore) Count(ctx context.Context, args SavedSearchListArgs) 
 	query := sqlf.Sprintf(`SELECT COUNT(*) FROM saved_searches WHERE (%v)`, sqlf.Join(where, ") AND ("))
 	count, _, err = basestore.ScanFirstInt(s.Query(ctx, query))
 	return count, err
+}
+
+// MarshalToCursor creates a cursor from the given item. It is used for pagination; see
+// ConnectionResolverStore.
+func (s *savedSearchStore) MarshalToCursor(item *types.SavedSearch, orderBy OrderBy) (types.MultiCursor, error) {
+	var cursors types.MultiCursor
+	for _, o := range orderBy {
+		c := types.Cursor{Column: o.Field}
+		switch o.Field {
+		case "id":
+			c.Value = strconv.FormatInt(int64(item.ID), 10)
+		case "description":
+			c.Value = item.Description
+		case "updated_at":
+			c.Value = strconv.FormatInt(item.UpdatedAt.UnixNano(), 10)
+		default:
+			return nil, errors.New("unexpected orderBy column")
+		}
+		cursors = append(cursors, &c)
+	}
+	return cursors, nil
+}
+
+// UnmarshalValuesFromCursor extracts the DB values from the cursor into a slice, with values at a
+// given index corresponding to the cursor's field at that index. It is used for pagination; see
+// ConnectionResolverStore.
+func (s *savedSearchStore) UnmarshalValuesFromCursor(cursor types.MultiCursor) ([]any, error) {
+	values := make([]any, len(cursor))
+	for i, c := range cursor {
+		switch c.Column {
+		case "id":
+			id, err := strconv.ParseInt(c.Value, 10, 32)
+			if err != nil {
+				return nil, errors.Wrap(err, "ParseInt(id)")
+			}
+			values[i] = int32(id)
+		case "description":
+			values[i] = c.Value
+		case "updated_at":
+			updatedAt, err := strconv.ParseInt(c.Value, 10, 64)
+			if err != nil {
+				return nil, errors.Wrap(err, "ParseInt(updated_at)")
+			}
+			values[i] = time.Unix(0, updatedAt)
+		default:
+			return nil, errors.New("unexpected orderBy column")
+		}
+	}
+	return values, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -39,6 +40,7 @@ func TestSavedSearchesCreate(t *testing.T) {
 	}
 	want := input
 	want.ID = got.ID
+	normalizeSavedSearch(got, &want)
 	if !reflect.DeepEqual(*got, want) {
 		t.Errorf("got %+v, want %+v", *got, want)
 	}
@@ -79,6 +81,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	}
 	want := update
 	want.Owner = types.NamespaceUser(user.ID)
+	normalizeSavedSearch(got, &want)
 	if !reflect.DeepEqual(*got, want) {
 		t.Errorf("got %+v, want %+v", *got, want)
 	}
@@ -215,6 +218,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		}
 		want := input
 		want.ID = got.ID
+		normalizeSavedSearch(got, &want)
 		if diff := cmp.Diff(want, *got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -290,6 +294,8 @@ func TestSavedSearches_ListCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		normalizeSavedSearch(got...)
+		normalizeSavedSearch(want...)
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -338,4 +344,11 @@ func TestSavedSearches_ListCount(t *testing.T) {
 		orderBy, ascending := SavedSearchesOrderByUpdatedAt.ToOptions()
 		testListCount(t, SavedSearchListArgs{}, &PaginationArgs{OrderBy: orderBy, Ascending: ascending}, []*types.SavedSearch{fixture3, fixture2, fixture1})
 	})
+}
+
+func normalizeSavedSearch(savedSearches ...*types.SavedSearch) {
+	for _, savedSearch := range savedSearches {
+		savedSearch.CreatedAt = time.Time{}
+		savedSearch.UpdatedAt = time.Time{}
+	}
 }

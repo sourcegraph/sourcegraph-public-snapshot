@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FunctionComponent, type MutableRefObject } from 'react'
+import { useEffect, useMemo, type FunctionComponent, type MutableRefObject } from 'react'
 
 import { mdiLink, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
@@ -24,8 +24,10 @@ import {
 import { buildFilterArgs, type Filter, type FilterValues } from '../components/FilteredConnection'
 import {
     usePageSwitcherPagination,
+    type PaginatedConnectionQueryArguments,
     type PaginationKeys,
 } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
+import { useUrlSearchParamsForConnectionState } from '../components/FilteredConnection/hooks/useUrlSearchParamsForConnectionState'
 import { ConnectionContainer, ConnectionForm } from '../components/FilteredConnection/ui'
 import {
     SavedSearchesOrderBy,
@@ -100,15 +102,6 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
     }, [telemetryRecorder])
 
     const location = useLocation()
-    const ownerFromURL = new URLSearchParams(location.search).get('owner')
-
-    const [query, setQuery] = useState('')
-    const [filterValues, setFilterValues] = useState<
-        FilterValues<Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>>
-    >({
-        orderBy: 'updated-at-desc',
-        owner: ownerFromURL ?? 'all',
-    })
 
     const { namespaces, loading: namespacesLoading, error: namespacesError } = useAffiliatedNamespaces()
     const filters = useMemo<
@@ -163,21 +156,33 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
         [namespaces]
     )
 
-    const debouncedQuery = useDebounce(query, 300)
-    const args = buildFilterArgs(filters, filterValues)
+    type ConnectionStateParams = PaginatedConnectionQueryArguments & {
+        orderBy: string
+        owner: string
+        query?: string
+    }
+    const connectionState = useUrlSearchParamsForConnectionState<
+        ConnectionStateParams,
+        Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>
+    >(filters)
+
+    const debouncedQuery = useDebounce(connectionState.value.query, 300)
+    const args = buildFilterArgs(filters, connectionState.value)
     const {
         connection,
         loading: listLoading,
         error: listError,
         ...paginationProps
-    } = usePageSwitcherPagination<SavedSearchesResult, Partial<SavedSearchesVariables>, SavedSearchFields>({
+    } = usePageSwitcherPagination<
+        SavedSearchesResult,
+        Partial<SavedSearchesVariables>,
+        SavedSearchFields,
+        ConnectionStateParams
+    >({
         query: savedSearchesQuery,
         variables: { ...args, query: debouncedQuery },
         getConnection: ({ data }) => data?.savedSearches || undefined,
-        options: {
-            useURL: true,
-            pageSize: 1, // TODO!(sqs): will fix before merging
-        },
+        state: connectionState,
     })
 
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
@@ -196,14 +201,18 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                         inputClassName="mw-30"
                         inputPlaceholder="Find a saved search..."
                         inputAriaLabel=""
-                        inputValue={query}
+                        inputValue={connectionState.value.query ?? ''}
                         onInputChange={event => {
-                            setQuery(event.target.value)
+                            connectionState.setValue({ query: event.target.value })
                         }}
                         autoFocus={false}
                         filters={filters}
-                        onFilterSelect={(filter, value) => setFilterValues(prev => ({ ...prev, [filter.id]: value }))}
-                        filterValues={filterValues}
+                        onFilterSelect={(filter, value) => connectionState.setValue({ [filter.id]: value })}
+                        filterValues={
+                            connectionState.value as FilterValues<
+                                Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>
+                            >
+                        }
                         compact={false}
                         formClassName="flex-gap-4 mb-4"
                     />
@@ -232,7 +241,12 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                     )}
                 </ConnectionContainer>
             </Container>
-            <PageSwitcher {...paginationProps} className="mt-4" totalCount={connection?.totalCount ?? null} />
+            <PageSwitcher
+                {...paginationProps}
+                className="mt-4"
+                totalCount={connection?.totalCount ?? null}
+                totalLabel="saved searches"
+            />
         </>
     )
 }

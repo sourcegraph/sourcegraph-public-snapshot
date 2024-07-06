@@ -13,6 +13,8 @@ const savedSearchFragment = gql`
                 displayName
             }
         }
+        createdAt
+        updatedAt
         url
         viewerCanAdminister
     }

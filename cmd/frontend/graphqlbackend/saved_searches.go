@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func (s *schemaResolver) SavedSearches(ctx context.Context, args SavedSearchesArgs) (*SavedSearchConnectionResolver, error) {
@@ -40,6 +41,8 @@ type SavedSearchResolver interface {
 	Description() string
 	Query() string
 	Owner(context.Context) (*NamespaceResolver, error)
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 	URL() string
 	ViewerCanAdminister(context.Context) (bool, error)
 }

@@ -7,9 +7,9 @@ type MultiCursor []*Cursor
 // A Cursor for efficient index based pagination through large result sets.
 type Cursor struct {
 	// Columns contains the relevant columns for cursor-based pagination (e.g. "name")
-	Column string
+	Column string `json:"c"`
 	// Value contains the relevant value for cursor-based pagination (e.g. "Zaphod").
-	Value string
+	Value string `json:"v"`
 	// Direction contains the comparison for cursor-based pagination, all possible values are: next, prev.
-	Direction string
+	Direction string `json:"d"`
 }
