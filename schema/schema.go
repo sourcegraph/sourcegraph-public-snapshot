@@ -594,8 +594,12 @@ type ChangesetTemplate struct {
 	// Title description: The title of the changeset.
 	Title string `json:"title"`
 }
+
+// ClientSideModelConfig description: No client-side model configuration is currently available.
 type ClientSideModelConfig struct {
 }
+
+// ClientSideProviderConfig description: No client-side provider configuration is currently available.
 type ClientSideProviderConfig struct {
 }
 
@@ -764,7 +768,6 @@ type DefaultModelConfig struct {
 	ContextWindow    ContextWindow          `json:"contextWindow"`
 	ServerSideConfig *ServerSideModelConfig `json:"serverSideConfig,omitempty"`
 	Status           string                 `json:"status"`
-	Tier             string                 `json:"tier,omitempty"`
 }
 type DefaultModels struct {
 	// Chat description: The qualified name of the model to use for chat, in '${ProviderID}::${APIVersionID}::${ModelID}' format
@@ -1699,7 +1702,7 @@ type ModelFilters struct {
 	Allow []string `json:"allow,omitempty"`
 	// Deny description: Any models in this deny list will not be allowed. Wildcards may be used here, but not regexp.
 	Deny []string `json:"deny,omitempty"`
-	// StatusFilter description: Constrain models to just those in this list
+	// StatusFilter description: Constrain models to just those matching one of the supplied statuses
 	StatusFilter []string `json:"statusFilter,omitempty"`
 }
 type ModelOverride struct {
@@ -1710,13 +1713,12 @@ type ModelOverride struct {
 	ContextWindow    ContextWindow          `json:"contextWindow"`
 	// DisplayName description: display name
 	DisplayName string `json:"displayName"`
-	// ModelName description: model name
+	// ModelName description: model name used when sending requests to the LLM provider's backend API.
 	ModelName string `json:"modelName"`
 	// ModelRef description: The qualified name of the model in '${ProviderID}::${APIVersionID}::${ModelID}' format
 	ModelRef         string                 `json:"modelRef"`
 	ServerSideConfig *ServerSideModelConfig `json:"serverSideConfig,omitempty"`
 	Status           string                 `json:"status"`
-	Tier             string                 `json:"tier,omitempty"`
 }
 type Mount struct {
 	// Mountpoint description: The path in the container to mount the path on the local machine to.
@@ -3401,11 +3403,11 @@ type SiteModelConfiguration struct {
 	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
 }
 
-// SourcegraphModelConfig description: If null, Cody will not use Sourcegraph's servers for model discovery or LLM requests.
+// SourcegraphModelConfig description: If null, Cody will not use Sourcegraph's servers for model discovery.
 type SourcegraphModelConfig struct {
 	// AccessToken description: The Cody gateway access token to use. If null, an access token will be automatically generated based on the product license.
 	AccessToken *string `json:"accessToken,omitempty"`
-	// Endpoint description: The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, a good default URL will be used.
+	// Endpoint description: The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.
 	Endpoint     *string       `json:"endpoint,omitempty"`
 	ModelFilters *ModelFilters `json:"modelFilters,omitempty"`
 	// PollingInterval description: The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'
