@@ -3,16 +3,16 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
-import { Frame } from './Frame.tsx'
-import { Home } from './Home.tsx'
+import { Frame } from './Frame'
+import { Home } from './Home'
 
 import './index.css'
 
-import { Install } from './Install.tsx'
-import { Maintenance } from './Maintenance.tsx'
-import { Progress } from './Progress.tsx'
-import { ThemeProvider } from './Theme.tsx'
-import { WaitForAdmin } from './WaitForAdmin.tsx'
+import { Install } from './Install'
+import { Maintenance } from './Maintenance'
+import { Progress } from './Progress'
+import { ThemeProvider } from './Theme'
+import { WaitForAdmin } from './WaitForAdmin'
 
 import reportWebVitals from './reportWebVitals';
 
