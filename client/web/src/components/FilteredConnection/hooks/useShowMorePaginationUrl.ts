@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { getUrlQuery, type GetUrlQueryParameters } from '../utils'
+import { urlSearchParamsForFilteredConnection } from '../utils'
 
-interface UseShowMorePaginationURLParameters extends Pick<GetUrlQueryParameters, 'first' | 'visibleResultCount'> {
+interface UseShowMorePaginationURLParameters
+    extends Pick<Parameters<typeof urlSearchParamsForFilteredConnection>[0], 'first' | 'visibleResultCount'> {
     enabled?: boolean
 }
 
@@ -21,7 +22,7 @@ export const useShowMorePaginationUrl = ({
 }: UseShowMorePaginationURLParameters): void => {
     const location = useLocation()
     const navigate = useNavigate()
-    const searchFragment = getUrlQuery({
+    const searchFragment = urlSearchParamsForFilteredConnection({
         first,
         visibleResultCount,
         search: location.search,

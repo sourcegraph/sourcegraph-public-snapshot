@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { QUERY_KEY } from '../constants'
 import type { Filter, FilterValues } from '../FilterControl'
-import { getFilterFromURL, getUrlQuery } from '../utils'
+import { getFilterFromURL, parseQueryInt, urlSearchParamsForFilteredConnection } from '../utils'
 
 import type { PaginatedConnectionQueryArguments } from './usePageSwitcherPagination'
 
@@ -13,7 +13,12 @@ import type { PaginatedConnectionQueryArguments } from './usePageSwitcherPaginat
  */
 export interface UseConnectionStateResult<TState extends PaginatedConnectionQueryArguments> {
     value: TState
-    setValue: (value: Partial<TState>) => void
+
+    /**
+     * Update the {@link UseConnectionStateResult.value} value with the given partial state value.
+     * The final value is equivalent to `{...prevValue, ...updates}`.
+     */
+    updateValue: (updates: Partial<TState>) => void
 }
 
 /**
@@ -31,52 +36,40 @@ export function useUrlSearchParamsForConnectionState<
         return {
             ...getFilterFromURL(params, filters),
             query: params.get(QUERY_KEY) ?? '',
-            first: parseNumber(params, 'first'),
-            last: parseNumber(params, 'last'),
+            first: parseQueryInt(params, 'first'),
+            last: parseQueryInt(params, 'last'),
             after: params.get('after'),
             before: params.get('before'),
         } as unknown as TState
     }, [location.search, filters])
 
-    const setValue = useCallback(
+    const updateValue = useCallback(
         (update: Partial<TState>) => {
-            // Always clear pagination-related keys because updates of them implicitly overwrite the others.
-            const search1 = new URLSearchParams(location.search)
-            search1.delete('after')
-            search1.delete('before')
-            search1.delete('first')
-            search1.delete('last')
-            if (update.after) {
-                search1.set('after', update.after)
-            } else if (update.before) {
-                search1.set('before', update.before)
-            } else if (update.last) {
-                search1.set('last', update.last.toString())
-            } else if (update.first) {
-                search1.set('first', update.first.toString())
-            }
-
-            const search = getUrlQuery({
+            const params = urlSearchParamsForFilteredConnection({
+                pagination: {
+                    first: update.first,
+                    last: update.last,
+                    after: update.after,
+                    before: update.before,
+                },
                 filters,
                 filterValues: { ...value, ...update } as FilterValues<K>,
                 query: 'query' in update ? (update.query as string) : '',
-                search: search1.toString(),
+                search: location.search,
             })
             navigate(
                 {
-                    search,
+                    search: params.toString(),
                     hash: location.hash,
                 },
-                { replace: true }
+                {
+                    replace: true,
+                    state: location.state, // Preserve flash messages.
+                }
             )
         },
-        [filters, value, location.search, location.hash, navigate]
+        [filters, value, location.search, location.hash, location.state, navigate]
     )
 
-    return { value, setValue }
-}
-
-function parseNumber(params: URLSearchParams, name: string): number | null {
-    const str = params.get(name)
-    return str === null ? null : Number.parseInt(str, 10)
+    return { value, updateValue }
 }

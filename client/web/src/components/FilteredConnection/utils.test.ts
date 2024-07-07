@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import type { Filter } from './FilterControl'
-import { getFilterFromURL, getUrlQuery } from './utils'
+import { getFilterFromURL, urlSearchParamsForFilteredConnection } from './utils'
 
 describe('getFilterFromURL', () => {
     test('correct filter values from URL parameters', () => {
@@ -56,10 +56,10 @@ describe('getFilterFromURL', () => {
     })
 })
 
-describe('getUrlQuery', () => {
+describe('urlSearchParamsForFilteredConnection', () => {
     test('generate correct URL query string', () => {
         expect(
-            getUrlQuery({
+            urlSearchParamsForFilteredConnection({
                 first: { actual: 20, default: 10 },
                 query: 'test query',
                 filterValues: { status: 'open', type: 'issue' },
@@ -91,7 +91,7 @@ describe('getUrlQuery', () => {
 
     test('omit default values', () => {
         expect(
-            getUrlQuery({
+            urlSearchParamsForFilteredConnection({
                 first: { actual: 10, default: 10 },
                 query: '',
                 filterValues: { status: 'all' },
@@ -114,7 +114,7 @@ describe('getUrlQuery', () => {
 
     test('undefined query clears query in URL', () => {
         expect(
-            getUrlQuery({
+            urlSearchParamsForFilteredConnection({
                 query: undefined,
                 search: 'query=foo',
             })
@@ -122,6 +122,6 @@ describe('getUrlQuery', () => {
     })
 
     test('handle empty input', () => {
-        expect(getUrlQuery({ search: '' })).toBe('')
+        expect(urlSearchParamsForFilteredConnection({ search: '' })).toBe('')
     })
 })

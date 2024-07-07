@@ -33,7 +33,7 @@ import { QUERY_KEY } from './constants'
 import type { Filter, FilterOption, FilterValues } from './FilterControl'
 import { ConnectionContainer, ConnectionError, ConnectionForm, ConnectionLoading } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
-import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
+import { getFilterFromURL, hasID, parseQueryInt, urlSearchParamsForFilteredConnection } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -384,17 +384,16 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
                             const { location, navigate } = this.props
-                            const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
-                            const searchFragmentParams = new URLSearchParams(searchFragment)
-                            searchFragmentParams.sort()
+                            const newParams = this.urlQuery({ visibleResultCount: previousPage.length })
+                            newParams.sort()
 
                             const oldParams = new URLSearchParams(location.search)
                             oldParams.sort()
 
-                            if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+                            if (!isEqual(Array.from(newParams), Array.from(oldParams))) {
                                 navigate(
                                     {
-                                        search: searchFragment,
+                                        search: newParams.toString(),
                                         hash: location.hash,
                                     },
                                     {
@@ -516,7 +515,7 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
         query?: string
         filterValues?: FilterValues
         visibleResultCount?: number
-    }): string {
+    }): URLSearchParams {
         if (!first) {
             first = this.state.first
         }
@@ -527,13 +526,11 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
             filterValues = this.state.activeFilterValues
         }
 
-        return getUrlQuery({
+        return urlSearchParamsForFilteredConnection({
             query,
-            first: {
-                actual: first,
-                // Always set through `defaultProps`
-                default: this.props.defaultFirst!,
-            },
+            pagination: { first },
+            // Always set through `defaultProps`
+            pageSize: this.props.defaultFirst!,
             filterValues,
             visibleResultCount,
             search: this.props.location.search,

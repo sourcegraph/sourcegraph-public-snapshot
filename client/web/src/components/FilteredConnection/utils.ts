@@ -8,16 +8,21 @@ import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { Filter, FilterValues } from './FilterControl'
+import type { PaginatedConnectionQueryArguments } from './hooks/usePageSwitcherPagination'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
-    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
+export function hasID(value: unknown): value is { id: Scalars['ID'] } {
+    return typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
+}
 
-export const hasDisplayName = (value: unknown): value is { displayName: Scalars['String'] } =>
-    typeof value === 'object' &&
-    value !== null &&
-    hasProperty('displayName')(value) &&
-    typeof value.displayName === 'string'
+export function hasDisplayName(value: unknown): value is { displayName: Scalars['String'] } {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        hasProperty('displayName')(value) &&
+        typeof value.displayName === 'string'
+    )
+}
 
 export function getFilterFromURL<K extends string>(
     searchParameters: URLSearchParams,
@@ -42,7 +47,7 @@ export function getFilterFromURL<K extends string>(
     return values
 }
 
-export const parseQueryInt = (searchParameters: URLSearchParams, name: string): number | null => {
+export function parseQueryInt(searchParameters: URLSearchParams, name: string): number | null {
     const valueString = searchParameters.get(name)
     if (valueString === null) {
         return null
@@ -63,71 +68,79 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
         ? connection.pageInfo.hasNextPage
         : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
 
-export interface GetUrlQueryParameters {
-    first?: {
-        actual: number
-        default: number
-    }
-    query?: string
-    filterValues?: FilterValues
-    filters?: Filter[]
-    visibleResultCount?: number
-    search: Location['search']
-}
-
 /**
- * Determines the URL search parameters for a connection.
+ * Determines the URL search parameters for a connection. All of the parameters that may be used in
+ * a filtered connection are handled here: search query, filters (where the URL querystring params
+ * differ from the actual args that are passed as GraphQL variables), connection pagination params
+ * like `first` and `after`, etc.
  */
-export const getUrlQuery = ({
-    first,
+export function urlSearchParamsForFilteredConnection({
+    pagination,
+    pageSize,
     query,
     filterValues,
     visibleResultCount,
     filters,
     search,
-}: GetUrlQueryParameters): string => {
-    const searchParameters = new URLSearchParams(search)
+}: {
+    pagination?: PaginatedConnectionQueryArguments
+    pageSize?: number
+    query?: string
+    filterValues?: FilterValues
+    filters?: Filter[]
+    visibleResultCount?: number
+    search: Location['search']
+}): URLSearchParams {
+    const params = new URLSearchParams(search)
 
-    if (query) {
-        searchParameters.set(QUERY_KEY, query)
-    } else {
-        searchParameters.delete(QUERY_KEY)
-    }
+    setOrDeleteSearchParam(params, QUERY_KEY, query)
 
-    if (!!first && first.actual !== first.default) {
-        searchParameters.set('first', String(first.actual))
+    if (pagination) {
+        // Omit ?first= if it's the default page size value because it's just noise in the URL.
+        const first = pageSize !== undefined && pagination.first === pageSize ? null : pagination.first
+        setOrDeleteSearchParam(params, 'first', first)
+        setOrDeleteSearchParam(params, 'last', pagination.last)
+        setOrDeleteSearchParam(params, 'before', pagination.before)
+        setOrDeleteSearchParam(params, 'after', pagination.after)
     }
 
     if (filterValues && filters) {
         for (const filter of filters) {
             const value = filterValues[filter.id]
-            if (value === undefined || value === null) {
-                continue
-            }
-            if (value !== filter.options[0].value) {
-                searchParameters.set(filter.id, value)
+            const defaultValue = filter.options[0].value
+            if (value !== undefined && value !== null && value !== defaultValue) {
+                params.set(filter.id, value)
             } else {
-                searchParameters.delete(filter.id)
+                params.delete(filter.id)
             }
         }
     }
 
-    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first?.actual) {
-        searchParameters.set('visible', String(visibleResultCount))
+    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== pagination?.first) {
+        params.set('visible', String(visibleResultCount))
+    } else {
+        params.delete('visible')
     }
 
-    return searchParameters.toString()
+    return params
 }
 
-interface AsGraphQLResultParameters<TResult> {
-    data?: TResult
-    errors: readonly GraphQLError[]
+function setOrDeleteSearchParam(
+    params: URLSearchParams,
+    name: string,
+    value: string | number | null | undefined
+): void {
+    if (value !== null && value !== undefined && value !== '' && value !== 0) {
+        params.set(name, value.toString())
+    } else {
+        params.delete(name)
+    }
 }
 
 /**
  * Map non-conforming GraphQL responses to a GraphQLResult.
  */
-export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
+export function asGraphQLResult<T>({ data, errors }: { data?: T; errors: readonly GraphQLError[] }): GraphQLResult<T> {
     if (!data) {
         return { data: null, errors }
     }

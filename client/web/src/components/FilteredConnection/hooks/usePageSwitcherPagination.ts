@@ -113,7 +113,7 @@ export const usePageSwitcherPagination = <
     const defaultState = useMemo<UseConnectionStateResult<TState>>(
         () => ({
             value: connectionState,
-            setValue: updateConnectionState,
+            updateValue: updateConnectionState,
         }),
         [connectionState, updateConnectionState]
     )
@@ -158,7 +158,8 @@ export const usePageSwitcherPagination = <
     const updatePagination = useCallback(
         async (nextPageArgs: PaginatedConnectionQueryArguments): Promise<void> => {
             // Omit ?first= because it is not user-modifiable, so it's just noise in the URL.
-            state.setValue({ ...nextPageArgs, first: null } as Partial<TState>)
+            state.updateValue({ ...nextPageArgs, first: null } as Partial<TState>)
+            state.updateValue(nextPageArgs as Partial<PaginatedConnectionQueryArguments>)
 
             await refetch(nextPageArgs as Partial<TVariables>)
         },

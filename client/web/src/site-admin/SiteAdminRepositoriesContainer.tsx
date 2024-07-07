@@ -15,7 +15,7 @@ import {
     type FilterValues,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { getFilterFromURL, urlSearchParamsForFilteredConnection } from '../components/FilteredConnection/utils'
 import {
     RepositoryOrderBy,
     type ExternalServiceIDsAndNamesResult,
@@ -213,22 +213,21 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
     )
 
     useEffect(() => {
-        const searchFragment = getUrlQuery({
+        const newParams = urlSearchParamsForFilteredConnection({
             query: searchQuery,
             filters,
             filterValues,
             search: location.search,
         })
-        const searchFragmentParams = new URLSearchParams(searchFragment)
-        searchFragmentParams.sort()
+        newParams.sort()
 
         const oldParams = new URLSearchParams(location.search)
         oldParams.sort()
 
-        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+        if (!isEqual(Array.from(newParams), Array.from(oldParams))) {
             navigate(
                 {
-                    search: searchFragment,
+                    search: newParams.toString(),
                     hash: location.hash,
                 },
                 {

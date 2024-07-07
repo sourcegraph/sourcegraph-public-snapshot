@@ -39,7 +39,7 @@ import {
 } from '../components/FilteredConnection'
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../components/FilteredConnection/ui'
-import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { getFilterFromURL, urlSearchParamsForFilteredConnection } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
 import type {
     ExternalServiceKindsResult,
@@ -227,22 +227,21 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
     const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
-        const searchFragment = getUrlQuery({
+        const newParams = urlSearchParamsForFilteredConnection({
             query: searchValue,
             filters,
             filterValues,
             search: location.search,
         })
-        const searchFragmentParams = new URLSearchParams(searchFragment)
-        searchFragmentParams.sort()
+        newParams.sort()
 
         const oldParams = new URLSearchParams(location.search)
         oldParams.sort()
 
-        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+        if (!isEqual(Array.from(newParams), Array.from(oldParams))) {
             navigate(
                 {
-                    search: searchFragment,
+                    search: newParams.toString(),
                     hash: location.hash,
                 },
                 {
