@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { urlSearchParamsForFilteredConnection } from '../utils'
 
 interface UseShowMorePaginationURLParameters
-    extends Pick<Parameters<typeof urlSearchParamsForFilteredConnection>[0], 'first' | 'visibleResultCount'> {
+    extends Pick<Parameters<typeof urlSearchParamsForFilteredConnection>[0], 'visibleResultCount'> {
+    first?: { actual: number; default: number }
     enabled?: boolean
 }
 
@@ -23,16 +24,17 @@ export const useShowMorePaginationUrl = ({
     const location = useLocation()
     const navigate = useNavigate()
     const searchFragment = urlSearchParamsForFilteredConnection({
-        first,
+        pagination: { first: first?.actual },
+        pageSize: first?.default,
         visibleResultCount,
         search: location.search,
-    })
+    }).toString()
 
     useEffect(() => {
         if (enabled && searchFragment && location.search !== `?${searchFragment}`) {
             navigate(
                 {
-                    search: searchFragment,
+                    search: searchFragment.toString(),
                     hash: location.hash,
                 },
                 { replace: true }

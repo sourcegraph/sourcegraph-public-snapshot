@@ -6,7 +6,7 @@ import { QUERY_KEY } from '../constants'
 import type { Filter, FilterValues } from '../FilterControl'
 import { getFilterFromURL, parseQueryInt, urlSearchParamsForFilteredConnection } from '../utils'
 
-import type { PaginatedConnectionQueryArguments } from './usePageSwitcherPagination'
+import { DEFAULT_PAGE_SIZE, type PaginatedConnectionQueryArguments } from './usePageSwitcherPagination'
 
 /**
  * The value and a setter for the value of a GraphQL connection's params.
@@ -15,10 +15,11 @@ export interface UseConnectionStateResult<TState extends PaginatedConnectionQuer
     value: TState
 
     /**
-     * Update the {@link UseConnectionStateResult.value} value with the given partial state value.
-     * The final value is equivalent to `{...prevValue, ...updates}`.
+     * Set the {@link UseConnectionStateResult.value} value in a callback that receives the current
+     * value as an argument. Usually callers to {@link UseConnectionStateResult.setValue} will
+     * want to merge values (like `updateValue(prev => ({...prev, ...newValue}))`).
      */
-    updateValue: (updates: Partial<TState>) => void
+    setValue: (valueFunc: (current: TState) => TState) => void
 }
 
 /**
@@ -27,34 +28,48 @@ export interface UseConnectionStateResult<TState extends PaginatedConnectionQuer
 export function useUrlSearchParamsForConnectionState<
     TState extends PaginatedConnectionQueryArguments,
     K extends keyof TState & string
->(filters: Filter<K>[]): UseConnectionStateResult<TState> {
+>(filters?: Filter<K>[], pageSize?: number): UseConnectionStateResult<TState> {
     const location = useLocation()
     const navigate = useNavigate()
 
+    pageSize = pageSize ?? DEFAULT_PAGE_SIZE
+
     const value = useMemo<TState>(() => {
         const params = new URLSearchParams(location.search)
+
+        // The `first` and `last` params are omitted from the URL if they equal the default pageSize
+        // to make the URL cleaner, so we need to resolve the actual value.
+        const first =
+            parseQueryInt(params, 'first') ??
+            (params.has('after') || (!params.has('before') && !params.has('last')) ? pageSize : null)
+        const last =
+            parseQueryInt(params, 'last') ??
+            (params.has('before') && !params.has('after') && !params.has('last') ? pageSize : null)
+
         return {
-            ...getFilterFromURL(params, filters),
+            ...(filters ? getFilterFromURL(params, filters) : undefined),
             query: params.get(QUERY_KEY) ?? '',
-            first: parseQueryInt(params, 'first'),
-            last: parseQueryInt(params, 'last'),
+            first,
+            last,
             after: params.get('after'),
             before: params.get('before'),
         } as unknown as TState
-    }, [location.search, filters])
+    }, [location.search, pageSize, filters])
 
-    const updateValue = useCallback(
-        (update: Partial<TState>) => {
+    const setValue = useCallback(
+        (valueFunc: (current: TState) => TState) => {
+            const newValue = valueFunc(value)
             const params = urlSearchParamsForFilteredConnection({
                 pagination: {
-                    first: update.first,
-                    last: update.last,
-                    after: update.after,
-                    before: update.before,
+                    first: newValue.first,
+                    last: newValue.last,
+                    after: newValue.after,
+                    before: newValue.before,
                 },
+                pageSize,
                 filters,
-                filterValues: { ...value, ...update } as FilterValues<K>,
-                query: 'query' in update ? (update.query as string) : '',
+                filterValues: newValue as FilterValues<K>,
+                query: 'query' in newValue ? (newValue.query as string) : '',
                 search: location.search,
             })
             navigate(
@@ -68,8 +83,8 @@ export function useUrlSearchParamsForConnectionState<
                 }
             )
         },
-        [filters, value, location.search, location.hash, location.state, navigate]
+        [filters, pageSize, value, location.search, location.hash, location.state, navigate]
     )
 
-    return { value, updateValue }
+    return { value, setValue }
 }

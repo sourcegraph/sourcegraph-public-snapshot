@@ -78,7 +78,7 @@ interface UsePaginatedConnectionParameters<
     state?: UseConnectionStateResult<TState>
 }
 
-const DEFAULT_PAGE_SIZE = 3 // TODO!(sqs): was 20
+export const DEFAULT_PAGE_SIZE = 3 // TODO!(sqs): was 20
 
 /**
  * Request a GraphQL connection query and handle pagination options.
@@ -106,28 +106,25 @@ export const usePageSwitcherPagination = <
 > => {
     const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
 
-    const [connectionState, setConnectionStateFull] = useState<TState>({} as TState)
-    const updateConnectionState = useCallback((value: Partial<TState>) => {
-        setConnectionStateFull(prev => ({ ...prev, first: null, last: null, after: null, before: null, ...value }))
-    }, [])
-    const defaultState = useMemo<UseConnectionStateResult<TState>>(
-        () => ({
-            value: connectionState,
-            updateValue: updateConnectionState,
-        }),
-        [connectionState, updateConnectionState]
-    )
-    state ||= defaultState
-
-    const paginationVariables: PaginatedConnectionQueryArguments = {
-        first: state.value.first ?? (state.value.after || (!state.value.before && !state.value.last) ? pageSize : null),
-        last: state.value.last ?? (state.value.before ? pageSize : null),
-        after: state.value.after,
-        before: state.value.before,
+    {
+        // If no `state` arg is supplied (such as from `useUrlSearchParamsForConnectionState` that
+        // stores the state in the URL), just use React hooks for storing state.
+        const [connectionState, setConnectionState] = useState<TState>({} as TState)
+        const defaultState = useMemo<UseConnectionStateResult<TState>>(
+            () => ({ value: connectionState, setValue: setConnectionState }),
+            [connectionState, setConnectionState]
+        )
+        state ||= defaultState
     }
+
     const queryVariables = {
         ...variables,
-        ...paginationVariables,
+
+        // Pagination
+        first: state.value.first,
+        last: state.value.last,
+        after: state.value.after,
+        before: state.value.before,
     } as TVariables
 
     const {
@@ -157,10 +154,7 @@ export const usePageSwitcherPagination = <
 
     const updatePagination = useCallback(
         async (nextPageArgs: PaginatedConnectionQueryArguments): Promise<void> => {
-            // Omit ?first= because it is not user-modifiable, so it's just noise in the URL.
-            state.updateValue({ ...nextPageArgs, first: null } as Partial<TState>)
-            state.updateValue(nextPageArgs as Partial<PaginatedConnectionQueryArguments>)
-
+            state.setValue(prev => ({ ...prev, ...nextPageArgs }))
             await refetch(nextPageArgs as Partial<TVariables>)
         },
         [refetch, state]

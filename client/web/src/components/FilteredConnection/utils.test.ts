@@ -60,7 +60,8 @@ describe('urlSearchParamsForFilteredConnection', () => {
     test('generate correct URL query string', () => {
         expect(
             urlSearchParamsForFilteredConnection({
-                first: { actual: 20, default: 10 },
+                pagination: { first: 20 },
+                pageSize: 10,
                 query: 'test query',
                 filterValues: { status: 'open', type: 'issue' },
                 visibleResultCount: 30,
@@ -85,14 +86,15 @@ describe('urlSearchParamsForFilteredConnection', () => {
                     },
                 ],
                 search: '?existing=param',
-            })
+            }).toString()
         ).toBe('existing=param&query=test+query&first=20&status=open&type=issue&visible=30')
     })
 
     test('omit default values', () => {
         expect(
             urlSearchParamsForFilteredConnection({
-                first: { actual: 10, default: 10 },
+                pagination: { first: 10 },
+                pageSize: 10,
                 query: '',
                 filterValues: { status: 'all' },
                 visibleResultCount: 10,
@@ -108,8 +110,60 @@ describe('urlSearchParamsForFilteredConnection', () => {
                     },
                 ],
                 search: '',
-            })
+            }).toString()
         ).toBe('')
+    })
+
+    test('omit first/last only when implicit', () => {
+        // Implicit `first`.
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { first: 10 },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('')
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { first: 10, after: 'A' },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('after=A')
+
+        // Implicit `last`.
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { last: 10, before: 'B' },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('before=B')
+
+        // Non-implicit `first`.
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { first: 10, before: 'B' },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('first=10&before=B')
+
+        // Non-implicit `last`.
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { last: 10 },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('last=10')
+        expect(
+            urlSearchParamsForFilteredConnection({
+                pagination: { first: 10, last: 10 },
+                pageSize: 10,
+                search: '',
+            }).toString()
+        ).toBe('first=10&last=10')
     })
 
     test('undefined query clears query in URL', () => {
@@ -117,11 +171,11 @@ describe('urlSearchParamsForFilteredConnection', () => {
             urlSearchParamsForFilteredConnection({
                 query: undefined,
                 search: 'query=foo',
-            })
+            }).toString()
         ).toBe('')
     })
 
     test('handle empty input', () => {
-        expect(urlSearchParamsForFilteredConnection({ search: '' })).toBe('')
+        expect(urlSearchParamsForFilteredConnection({ search: '' }).toString()).toBe('')
     })
 })

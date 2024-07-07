@@ -96,10 +96,22 @@ export function urlSearchParamsForFilteredConnection({
     setOrDeleteSearchParam(params, QUERY_KEY, query)
 
     if (pagination) {
-        // Omit ?first= if it's the default page size value because it's just noise in the URL.
-        const first = pageSize !== undefined && pagination.first === pageSize ? null : pagination.first
-        setOrDeleteSearchParam(params, 'first', first)
-        setOrDeleteSearchParam(params, 'last', pagination.last)
+        // Omit `first` or `last` if their value is the default page size and if they are implicit
+        // because it's just noise in the URL.
+        const firstIfNonDefault =
+            pageSize !== undefined && pagination.first === pageSize && !pagination.before && !pagination.last
+                ? null
+                : pagination.first
+        const lastIfNonDefault =
+            pageSize !== undefined &&
+            pagination.last === pageSize &&
+            pagination.before &&
+            !pagination.after &&
+            !pagination.first
+                ? null
+                : pagination.last
+        setOrDeleteSearchParam(params, 'first', firstIfNonDefault)
+        setOrDeleteSearchParam(params, 'last', lastIfNonDefault)
         setOrDeleteSearchParam(params, 'before', pagination.before)
         setOrDeleteSearchParam(params, 'after', pagination.after)
     }

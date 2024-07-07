@@ -203,11 +203,13 @@ export const ListPage: FunctionComponent<TelemetryV2Props> = ({ telemetryRecorde
                         inputAriaLabel=""
                         inputValue={connectionState.value.query ?? ''}
                         onInputChange={event => {
-                            connectionState.updateValue({ query: event.target.value })
+                            connectionState.setValue(prev => ({ ...prev, query: event.target.value }))
                         }}
                         autoFocus={false}
                         filters={filters}
-                        onFilterSelect={(filter, value) => connectionState.updateValue({ [filter.id]: value })}
+                        onFilterSelect={(filter, value) =>
+                            connectionState.setValue(prev => ({ ...prev, [filter.id]: value }))
+                        }
                         filterValues={
                             connectionState.value as FilterValues<
                                 Exclude<keyof SavedSearchesVariables, PaginationKeys | 'query'>
