@@ -6,6 +6,7 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { Container } from '@sourcegraph/wildcard'
 
+import { useUrlSearchParamsForConnectionState } from '../../../../components/FilteredConnection/hooks/connectionState'
 import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -127,6 +128,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         [changesetFilters, batchChangeID, onlyArchived]
     )
 
+    const connectionState = useUrlSearchParamsForConnectionState()
     const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangeChangesetsResult,
         BatchChangeChangesetsVariables,
@@ -135,12 +137,10 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         query: CHANGESETS,
         variables: {
             ...queryArguments,
-            first: BATCH_COUNT,
-            after: null,
             onlyClosable: null,
         },
         options: {
-            useURL: true,
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-and-network',
             pollInterval: 5000,
         },
@@ -155,6 +155,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             }
             return data.node.changesets
         },
+        state: connectionState,
     })
 
     useEffect(() => {

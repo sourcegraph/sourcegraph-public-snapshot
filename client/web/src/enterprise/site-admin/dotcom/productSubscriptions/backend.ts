@@ -5,17 +5,17 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import {
-    type UseShowMorePaginationResult,
     useShowMorePagination,
+    type UseShowMorePaginationResult,
 } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
-    ProductLicensesResult,
+    DotComProductLicensesResult,
+    DotComProductLicensesVariables,
     ProductLicenseFields,
+    ProductLicensesResult,
     ProductLicensesVariables,
     ProductSubscriptionsDotComResult,
     ProductSubscriptionsDotComVariables,
-    DotComProductLicensesResult,
-    DotComProductLicensesVariables,
 } from '../../../../graphql-operations'
 
 const siteAdminProductSubscriptionFragment = gql`
@@ -219,14 +219,11 @@ export const PRODUCT_LICENSES = gql`
 `
 
 export const useProductSubscriptionLicensesConnection = (
-    subscriptionUUID: string,
-    first: number
+    subscriptionUUID: string
 ): UseShowMorePaginationResult<ProductLicensesResult, ProductLicenseFields> =>
     useShowMorePagination<ProductLicensesResult, ProductLicensesVariables, ProductLicenseFields>({
         query: PRODUCT_LICENSES,
         variables: {
-            first: first ?? 20,
-            after: null,
             subscriptionUUID,
         },
         getConnection: result => {
@@ -239,7 +236,7 @@ export const useProductSubscriptionLicensesConnection = (
     })
 
 export function queryProductSubscriptions(args: {
-    first?: number
+    first?: number | null
     query?: string
 }): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
     return queryGraphQL<ProductSubscriptionsDotComResult>(
@@ -287,14 +284,11 @@ const QUERY_PRODUCT_LICENSES = gql`
 `
 
 export const useQueryProductLicensesConnection = (
-    licenseKeySubstring: string,
-    first: number
+    licenseKeySubstring: string
 ): UseShowMorePaginationResult<DotComProductLicensesResult, ProductLicenseFields> =>
     useShowMorePagination<DotComProductLicensesResult, DotComProductLicensesVariables, ProductLicenseFields>({
         query: QUERY_PRODUCT_LICENSES,
         variables: {
-            first: first ?? 20,
-            after: null,
             licenseKeySubstring,
         },
         getConnection: result => {

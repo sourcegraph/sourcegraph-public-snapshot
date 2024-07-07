@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type FC } from 'react'
 import { mdiDelete, mdiPencil, mdiWebhook } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { type TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -56,7 +56,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
         fetchMore,
         connection,
         error: webhookLogsError,
-    } = useWebhookLogsConnection(id, 20, onlyErrors)
+    } = useWebhookLogsConnection(id, onlyErrors)
     const { loading: webhookLoading, data: webhookData, error: webhookError } = useWebhookQuery(id)
 
     useEffect(() => {

@@ -7,24 +7,22 @@ import {
     type UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
-    ExecutorSecretFields,
-    Scalars,
-    UserExecutorSecretsResult,
-    UserExecutorSecretsVariables,
-    ExecutorSecretScope,
-    DeleteExecutorSecretResult,
-    DeleteExecutorSecretVariables,
-    GlobalExecutorSecretsResult,
-    GlobalExecutorSecretsVariables,
     CreateExecutorSecretResult,
     CreateExecutorSecretVariables,
-    UpdateExecutorSecretResult,
-    UpdateExecutorSecretVariables,
-    OrgExecutorSecretsResult,
-    OrgExecutorSecretsVariables,
+    DeleteExecutorSecretResult,
+    DeleteExecutorSecretVariables,
     ExecutorSecretAccessLogFields,
     ExecutorSecretAccessLogsResult,
     ExecutorSecretAccessLogsVariables,
+    ExecutorSecretFields,
+    ExecutorSecretScope,
+    OrgExecutorSecretsResult,
+    OrgExecutorSecretsVariables,
+    Scalars,
+    UpdateExecutorSecretResult,
+    UpdateExecutorSecretVariables,
+    UserExecutorSecretsResult,
+    UserExecutorSecretsVariables,
 } from '../../../graphql-operations'
 
 const EXECUTOR_SECRET_FIELDS = gql`
@@ -127,8 +125,6 @@ export const userExecutorSecretsConnectionFactory = (
         variables: {
             user,
             scope,
-            after: null,
-            first: 15,
         },
         options: {
             fetchPolicy: 'network-only',
@@ -173,8 +169,6 @@ export const orgExecutorSecretsConnectionFactory = (
         variables: {
             org,
             scope,
-            after: null,
-            first: 15,
         },
         options: {
             fetchPolicy: 'network-only',
@@ -202,29 +196,6 @@ export const GLOBAL_EXECUTOR_SECRETS = gql`
 
     ${EXECUTOR_SECRET_CONNECTION_FIELDS}
 `
-
-export const globalExecutorSecretsConnectionFactory = (
-    scope: ExecutorSecretScope
-): UseShowMorePaginationResult<GlobalExecutorSecretsResult, ExecutorSecretFields> =>
-    // Scope has to be injected dynamically.
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useShowMorePagination<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
-        query: GLOBAL_EXECUTOR_SECRETS,
-        variables: {
-            after: null,
-            first: 15,
-            scope,
-        },
-        options: {
-            useURL: true,
-            fetchPolicy: 'network-only',
-        },
-        getConnection: result => {
-            const { executorSecrets } = dataOrThrowErrors(result)
-
-            return executorSecrets
-        },
-    })
 
 export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
     query ExecutorSecretAccessLogs($secret: ID!, $first: Int, $after: String) {
@@ -273,8 +244,6 @@ export const useExecutorSecretAccessLogsConnection = (
         query: EXECUTOR_SECRET_ACCESS_LOGS,
         variables: {
             secret,
-            first: 15,
-            after: null,
         },
         options: {
             fetchPolicy: 'network-only',

@@ -82,7 +82,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
         RepositoryPopoverFields
     >({
         query: REPOSITORIES_FOR_POPOVER,
-        variables: { first: BATCH_COUNT, after: null, query },
+        variables: { query },
         getConnection: ({ data, errors }) => {
             if (!data?.repositories) {
                 throw createAggregateError(errors)
@@ -90,6 +90,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
             return data.repositories
         },
         options: {
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-first',
         },
     })

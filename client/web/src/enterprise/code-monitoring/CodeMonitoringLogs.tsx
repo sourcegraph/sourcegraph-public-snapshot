@@ -125,7 +125,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<
         CodeMonitorWithEvents
     >({
         query: CODE_MONITOR_EVENTS,
-        variables: { first: pageSize, after: null, triggerEventsFirst: runPageSize, triggerEventsAfter: null },
+        variables: { triggerEventsFirst: runPageSize, triggerEventsAfter: null },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
 
@@ -134,6 +134,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<
             }
             return data.currentUser.monitors
         },
+        options: { pageSize },
     })
 
     const monitors: CodeMonitorWithEvents[] = useMemo(() => connection?.nodes ?? [], [connection])

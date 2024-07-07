@@ -101,7 +101,6 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         query: SYMBOLS_QUERY,
         variables: {
             query,
-            first: BATCH_COUNT,
             repo: repoID,
             revision,
             // `includePatterns` expects regexes, so first escape the path.
@@ -124,6 +123,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         },
         options: {
             fetchPolicy: 'cache-first',
+            pageSize: BATCH_COUNT,
         },
     })
 

@@ -47,8 +47,6 @@ export const ExternalServicesPage: FC<Props> = ({
     const repoID = searchParameters.get('repoID') || null
 
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
-        first: null,
-        after: null,
         repo: repoID,
     })
 

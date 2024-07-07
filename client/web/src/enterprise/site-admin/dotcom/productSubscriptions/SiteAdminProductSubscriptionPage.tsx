@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -7,7 +7,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -21,10 +21,10 @@ import {
 import { PageTitle } from '../../../../components/PageTitle'
 import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
 import type {
-    DotComProductSubscriptionResult,
-    DotComProductSubscriptionVariables,
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    DotComProductSubscriptionVariables,
 } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
@@ -39,7 +39,7 @@ import { CodyServicesSection } from './CodyServicesSection'
 import type { EnterprisePortalEnvironment } from './enterpriseportal'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
-import { accessTokenPath, errorForPath, enterprisePortalID } from './utils'
+import { accessTokenPath, enterprisePortalID, errorForPath } from './utils'
 
 interface Props extends TelemetryV2Props {}
 
@@ -267,10 +267,8 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<ProductSubs
     toggleShowGenerate,
     telemetryRecorder,
 }) => {
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
-        subscriptionUUID,
-        20
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } =
+        useProductSubscriptionLicensesConnection(subscriptionUUID)
 
     useEffect(() => {
         setRefetch(refetchAll)

@@ -88,11 +88,9 @@ const useBulkOperationsListConnection = (
         query: BULK_OPERATIONS,
         variables: {
             batchChange: batchChangeID,
-            after: null,
-            first: BATCH_COUNT,
         },
         options: {
-            useURL: true,
+            pageSize: BATCH_COUNT,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {

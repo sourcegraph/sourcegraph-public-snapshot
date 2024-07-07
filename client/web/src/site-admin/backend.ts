@@ -23,6 +23,8 @@ import type {
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
+    DeleteWebhookResult,
+    DeleteWebhookVariables,
     ExternalServiceKind,
     FeatureFlagFields,
     FeatureFlagsResult,
@@ -63,8 +65,6 @@ import type {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
-    DeleteWebhookResult,
-    DeleteWebhookVariables,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -74,7 +74,7 @@ import { WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
  * Fetches all organizations.
  */
 export function fetchAllOrganizations(args: {
-    first?: number
+    first?: number | null
     query?: string
 }): Observable<OrganizationsConnectionFields> {
     return requestGraphQL<OrganizationsResult, OrganizationsVariables>(
@@ -165,15 +165,15 @@ export const REPOSITORIES_QUERY = gql`
         $last: Int
         $after: String
         $before: String
-        $query: String
-        $indexed: Boolean
-        $notIndexed: Boolean
-        $failedFetch: Boolean
-        $corrupted: Boolean
-        $cloneStatus: CloneStatus
-        $orderBy: RepositoryOrderBy
-        $descending: Boolean
-        $externalService: ID
+        $query: String = ""
+        $indexed: Boolean = true
+        $notIndexed: Boolean = true
+        $failedFetch: Boolean = false
+        $corrupted: Boolean = false
+        $cloneStatus: CloneStatus = null
+        $orderBy: RepositoryOrderBy = REPOSITORY_NAME
+        $descending: Boolean = false
+        $externalService: ID = null
     ) {
         repositories(
             first: $first
@@ -799,7 +799,7 @@ export const STATUS_AND_REPO_STATS = gql`
     }
 `
 
-export function queryAccessTokens(args: { first?: number }): Observable<SiteAdminAccessTokenConnectionFields> {
+export function queryAccessTokens(args: { first?: number | null }): Observable<SiteAdminAccessTokenConnectionFields> {
     return requestGraphQL<SiteAdminAccessTokensResult, SiteAdminAccessTokensVariables>(
         gql`
             query SiteAdminAccessTokens($first: Int) {
@@ -930,14 +930,11 @@ export const useWebhookQuery = (id: string): QueryResult<WebhookByIdResult, Webh
 
 export const useWebhookLogsConnection = (
     webhookID: string,
-    first: number,
     onlyErrors: boolean
 ): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
-            first: first ?? 20,
-            after: null,
             onlyErrors,
             onlyUnmatched: false,
             webhookID,
@@ -1001,8 +998,8 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
-        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
+    query Packages($kind: PackageRepoReferenceKind = null, $query: String = "", $first: Int, $after: String) {
+        packageRepoReferences(kind: $kind, name: $query, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
             }

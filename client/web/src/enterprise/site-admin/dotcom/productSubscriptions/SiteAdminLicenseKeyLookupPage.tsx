@@ -36,10 +36,7 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
 
     const [search, setSearch] = useState<string>(searchParams.get(SEARCH_PARAM_KEY) ?? '')
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(
-        search,
-        20
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(search)
 
     useEffect(() => {
         const query = search?.trim() ?? ''

@@ -16,6 +16,7 @@ import type { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../../../batches/utils'
+import { useUrlSearchParamsForConnectionState } from '../../../components/FilteredConnection/hooks/connectionState'
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -117,6 +118,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         { onCompleted: onUsageCheckCompleted }
     )
 
+    const connectionState = useUrlSearchParamsForConnectionState()
     const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangesByNamespaceResult | BatchChangesResult,
         BatchChangesByNamespaceVariables | BatchChangesVariables,
@@ -124,13 +126,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     >({
         query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
         variables: {
-            namespaceID,
+            ...(namespaceID ? { namespaceID } : undefined),
             states: selectedFilters,
-            first: BATCH_CHANGES_PER_PAGE_COUNT,
-            after: null,
             viewerCanAdminister: null,
         },
-        options: { useURL: true },
+        options: { pageSize: BATCH_CHANGES_PER_PAGE_COUNT },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
             if (!namespaceID) {
@@ -145,6 +145,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
 
             return data.node.batchChanges
         },
+        state: connectionState,
     })
 
     useEffect(() => {

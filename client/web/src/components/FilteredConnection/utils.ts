@@ -8,19 +8,27 @@ import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import type { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { Filter, FilterValues } from './FilterControl'
+import type { PaginatedConnectionQueryArguments } from './hooks/usePageSwitcherPagination'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
-    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
+export function hasID(value: unknown): value is { id: Scalars['ID'] } {
+    return typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
+}
 
-export const hasDisplayName = (value: unknown): value is { displayName: Scalars['String'] } =>
-    typeof value === 'object' &&
-    value !== null &&
-    hasProperty('displayName')(value) &&
-    typeof value.displayName === 'string'
+export function hasDisplayName(value: unknown): value is { displayName: Scalars['String'] } {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        hasProperty('displayName')(value) &&
+        typeof value.displayName === 'string'
+    )
+}
 
-export const getFilterFromURL = (searchParameters: URLSearchParams, filters: Filter[] | undefined): FilterValues => {
-    const values: FilterValues = {}
+export function getFilterFromURL<K extends string>(
+    searchParameters: URLSearchParams,
+    filters: Filter<K>[] | undefined
+): FilterValues<K> {
+    const values: FilterValues<K> = {}
     if (filters === undefined) {
         return values
     }
@@ -39,7 +47,7 @@ export const getFilterFromURL = (searchParameters: URLSearchParams, filters: Fil
     return values
 }
 
-export const parseQueryInt = (searchParameters: URLSearchParams, name: string): number | null => {
+export function parseQueryInt(searchParameters: URLSearchParams, name: string): number | null {
     const valueString = searchParameters.get(name)
     if (valueString === null) {
         return null
@@ -60,57 +68,83 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
         ? connection.pageInfo.hasNextPage
         : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
 
-export interface GetUrlQueryParameters {
-    first?: {
-        actual: number
-        default: number
-    }
+/**
+ * Determines the URL search parameters for a connection. All of the parameters that may be used in
+ * a filtered connection are handled here: search query, filters (where the URL querystring params
+ * differ from the actual args that are passed as GraphQL variables), connection pagination params
+ * like `first` and `after`, etc.
+ */
+export function urlSearchParamsForFilteredConnection({
+    pagination,
+    pageSize,
+    query,
+    filterValues,
+    filters,
+    search,
+}: {
+    pagination?: PaginatedConnectionQueryArguments
+    pageSize?: number
     query?: string
     filterValues?: FilterValues
     filters?: Filter[]
     search: Location['search']
-}
+}): URLSearchParams {
+    const params = new URLSearchParams(search)
 
-/**
- * Determines the URL search parameters for a connection.
- */
-export const getUrlQuery = ({ first, query, filterValues, filters, search }: GetUrlQueryParameters): string => {
-    const searchParameters = new URLSearchParams(search)
+    setOrDeleteSearchParam(params, QUERY_KEY, query)
 
-    if (query) {
-        searchParameters.set(QUERY_KEY, query)
-    }
-
-    if (!!first && first.actual !== first.default) {
-        searchParameters.set('first', String(first.actual))
+    if (pagination) {
+        // Omit `first` or `last` if their value is the default page size and if they are implicit
+        // because it's just noise in the URL.
+        const firstIfNonDefault =
+            pageSize !== undefined && pagination.first === pageSize && !pagination.before && !pagination.last
+                ? null
+                : pagination.first
+        const lastIfNonDefault =
+            pageSize !== undefined &&
+            pagination.last === pageSize &&
+            pagination.before &&
+            !pagination.after &&
+            !pagination.first
+                ? null
+                : pagination.last
+        setOrDeleteSearchParam(params, 'first', firstIfNonDefault)
+        setOrDeleteSearchParam(params, 'last', lastIfNonDefault)
+        setOrDeleteSearchParam(params, 'before', pagination.before)
+        setOrDeleteSearchParam(params, 'after', pagination.after)
     }
 
     if (filterValues && filters) {
         for (const filter of filters) {
             const value = filterValues[filter.id]
-            if (value === undefined || value === null) {
-                continue
-            }
-            if (value !== filter.options[0].value) {
-                searchParameters.set(filter.id, value)
+            const defaultValue = filter.options[0].value
+            if (value !== undefined && value !== null && value !== defaultValue) {
+                params.set(filter.id, value)
             } else {
-                searchParameters.delete(filter.id)
+                params.delete(filter.id)
             }
         }
     }
 
-    return searchParameters.toString()
+    return params
 }
 
-interface AsGraphQLResultParameters<TResult> {
-    data?: TResult
-    errors: readonly GraphQLError[]
+function setOrDeleteSearchParam(
+    params: URLSearchParams,
+    name: string,
+    value: string | number | null | undefined
+): void {
+    if (value !== null && value !== undefined && value !== '' && value !== 0) {
+        params.set(name, value.toString())
+    } else {
+        params.delete(name)
+    }
 }
 
 /**
  * Map non-conforming GraphQL responses to a GraphQLResult.
  */
-export const asGraphQLResult = <T>({ data, errors }: AsGraphQLResultParameters<T>): GraphQLResult<T> => {
+export function asGraphQLResult<T>({ data, errors }: { data?: T; errors: readonly GraphQLError[] }): GraphQLResult<T> {
     if (!data) {
         return { data: null, errors }
     }

@@ -150,7 +150,6 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,
-            first: BATCH_COUNT,
             repo,
             type,
             withBehindAhead: false,
@@ -163,6 +162,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
         },
         options: {
             fetchPolicy: 'cache-first',
+            pageSize: BATCH_COUNT,
         },
     })
 
