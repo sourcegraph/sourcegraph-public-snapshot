@@ -26,10 +26,6 @@ type RepoCommitsChangelistsStore interface {
 	// given changelist ID.
 	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
 
-	// GetChangelistForRepoCommit will return the matching row from the table for the given repo ID and the
-	// commit SHA
-	GetChangelistForRepoCommit(ctx context.Context, repoID api.RepoID, commitSHA string) (*types.RepoCommit, error)
-
 	// GetRepoCommitChangelistBatch bulk loads repo commits for given repo ids and changelistIds
 	GetRepoCommitChangelistBatch(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
 }
@@ -188,29 +184,4 @@ func (s *repoCommitsChangelistsStore) GetRepoCommitChangelistBatch(ctx context.C
 	}
 
 	return res, nil
-}
-
-var getRepoChangeListForCommitFmtStr = `
-SELECT
-	id,
-	repo_id,
-	commit_sha,
-	perforce_changelist_id
-FROM
-	repo_commits_changelists
-WHERE
-	repo_id = %s
-	AND commit_sha = %s;
-`
-
-func (s *repoCommitsChangelistsStore) GetChangelistForRepoCommit(ctx context.Context, repoID api.RepoID, commitSHA string) (*types.RepoCommit, error) {
-	q := sqlf.Sprintf(getRepoChangeListForCommitFmtStr, repoID, dbutil.CommitBytea(commitSHA))
-
-	repoCommit, err := scanRepoCommitRow(s.QueryRow(ctx, q))
-	if err == sql.ErrNoRows {
-		return nil, &perforce.CommitNotFoundError{RepoID: repoID, CommitSHA: commitSHA}
-	} else if err != nil {
-		return nil, err
-	}
-	return repoCommit, nil
 }

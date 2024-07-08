@@ -37,7 +37,6 @@ func TestRepoCommitsChangelists(t *testing.T) {
 	commitSHA2 := "4b6152a804c4c177f5fe0dfd61e71cacb64d64dd"
 	commitSHA3 := "e9c83398bbd4c4e9481fd20f100a7e49d68d7510"
 	commitSHA4 := "aac83398bbd4c4e9481fd20f100a7e49d68d7510"
-	commitSHA_NonMatching := "dfabbd4e70ff311939cf48fdf90d340f07758d37"
 
 	dataForRepo1 := []types.PerforceChangelist{
 		{
@@ -205,34 +204,6 @@ func TestRepoCommitsChangelists(t *testing.T) {
 			got, err := s.GetRepoCommitChangelistBatch(ctx, RepoChangelistIDs{RepoID: 3})
 			require.NoError(t, err)
 			require.Len(t, got[3], 0)
-		})
-	})
-
-	t.Run("GetChangelistForRepoCommit", func(t *testing.T) {
-		t.Run("existing row", func(t *testing.T) {
-			gotRow, err := s.GetChangelistForRepoCommit(ctx, 1, commitSHA1)
-			require.NoError(t, err)
-			if diff := cmp.Diff(&types.RepoCommit{
-				ID:                   1,
-				RepoID:               api.RepoID(1),
-				CommitSHA:            dbutil.CommitBytea(commitSHA1),
-				PerforceChangelistID: 123,
-			}, gotRow); diff != "" {
-				t.Errorf("mismatched row, (-want, +got)\n%s", diff)
-			}
-		})
-
-		t.Run("non existing row", func(t *testing.T) {
-			_, err := s.GetChangelistForRepoCommit(ctx, 2, commitSHA_NonMatching)
-			require.Error(t, err)
-
-			var notFoundError *perforce.CommitNotFoundError
-			if errors.As(err, &notFoundError) {
-				require.Equal(t, api.RepoID(2), notFoundError.RepoID)
-				require.Equal(t, commitSHA_NonMatching, notFoundError.CommitSHA)
-			} else {
-				t.Fatalf("wrong error type, want CommitNotFoundError, got %T", err)
-			}
 		})
 	})
 }

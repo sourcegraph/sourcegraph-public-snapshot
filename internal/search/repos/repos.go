@@ -348,7 +348,7 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 	tr.AddEvent("completed rev association")
 
 	tr.AddEvent("starting remapping for perforce")
-	associatedRepoRevs = r.resolvePerforceChangeListIds(ctx, associatedRepoRevs)
+	associatedRepoRevs = r.resolvePerforceChangeListIdsToCommitSHAs(ctx, associatedRepoRevs)
 	tr.AddEvent("completed remapping for perforce")
 
 	return dbResolved{
@@ -472,7 +472,7 @@ func (r *Resolver) associateReposWithRevs(
 
 // resolvePerforceChangeListIds re-writes resolved refs for perforce repos
 // to use the sha of the changelist instead of the changelist id
-func (r *Resolver) resolvePerforceChangeListIds(
+func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 	ctx context.Context,
 	repoRevs []RepoRevSpecs,
 ) []RepoRevSpecs {

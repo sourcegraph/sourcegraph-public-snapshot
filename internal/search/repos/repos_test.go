@@ -466,6 +466,10 @@ func TestResolverIterator_Perforce(t *testing.T) {
 			ID:    r.ID,
 			Name:  r.Name,
 			Stars: r.Stars,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "my-external-id",
+				ServiceType: "perforce",
+			},
 		}})
 	}
 
