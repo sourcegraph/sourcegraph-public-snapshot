@@ -54,7 +54,7 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
             )}
             <Menu>
                 <MenuButton outline={true} aria-label="Repository action">
-                    <div className={styles.appDetailsControls} role="button" tabIndex={0}>
+                    <div className={styles.gitHubAppControls} role="button" tabIndex={0}>
                         <AppLogo
                             src={config.logo}
                             name={config.name}

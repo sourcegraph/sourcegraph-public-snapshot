@@ -20,7 +20,8 @@
     height: 2.125rem;
 }
 
-.app-details-controls {
+.git-hub-app-controls {
+    // stylelint-disable-next-line property-no-unknown
     composes: d-flex align-items-center from global;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
     border-radius: 0.25rem;
