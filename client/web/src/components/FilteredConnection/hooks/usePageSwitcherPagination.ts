@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
 
 import type { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { useQuery, type GraphQLResult } from '@sourcegraph/http-client'
 
 import { asGraphQLResult } from '../utils'
 
@@ -59,9 +59,11 @@ interface UsePaginatedConnectionConfig<TResult> {
     pollInterval?: number
 }
 
+export type PaginationKeys = 'first' | 'last' | 'before' | 'after'
+
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
     query: string
-    variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
+    variables: Omit<TVariables, PaginationKeys>
     getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TNode> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
 }
@@ -71,7 +73,6 @@ const DEFAULT_PAGE_SIZE = 20
 /**
  * Request a GraphQL connection query and handle pagination options.
  * Valid queries should follow the connection specification at https://relay.dev/graphql/connections.htm
- *
  * @param query The GraphQL connection query
  * @param variables The GraphQL connection variables
  * @param getConnection A function that filters and returns the relevant data from the connection response.

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { ChatHistory, CodyWebChatProvider } from 'cody-web-experimental'
+import { CodyWebHistory, CodyWebChatProvider } from 'cody-web-experimental'
 import { Navigate } from 'react-router-dom'
 
 import { Badge, ButtonLink, PageHeader, Text } from '@sourcegraph/wildcard'
@@ -31,12 +31,8 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
             <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
 
             <div className={styles.chatContainer}>
-                <CodyWebChatProvider
-                    accessToken=""
-                    serverEndpoint={window.location.origin}
-                    initialContext={{ repositories: [] }}
-                >
-                    <ChatHistory>
+                <CodyWebChatProvider accessToken="" serverEndpoint={window.location.origin}>
+                    <CodyWebHistory>
                         {history => (
                             <div className={styles.chatHistory}>
                                 {history.loading && (
@@ -59,7 +55,7 @@ export const NewCodyChatPage: FC<NewCodyChatPageProps> = props => {
                                 )}
                             </div>
                         )}
-                    </ChatHistory>
+                    </CodyWebHistory>
                     <ChatUi className={styles.chat} />
                 </CodyWebChatProvider>
             </div>

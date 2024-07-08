@@ -23,8 +23,14 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -34,6 +40,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1118,7 +1125,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	ctx, _, endObservation := s.operations.enqueueChangesetSync.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// Check for existence of changeset so we don't swallow that error.
+	// Check for existence of changeset, so we don't swallow that error.
 	changeset, err := s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
 	if err != nil {
 		return err
@@ -1215,10 +1222,10 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 
 // CheckNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.
-// If the userID is non-zero that will be checked. Otherwise the org ID will be
+// If the userID is non-zero that will be checked. Otherwise, the org ID will be
 // checked.
 // If the current user is an admin, true will be returned.
-// Otherwise it checks whether the current user _is_ the namespace user or has
+// Otherwise, it checks whether the current user _is_ the namespace user or has
 // access to the namespace org.
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
@@ -1241,7 +1248,7 @@ var ErrNoNamespace = errors.New("no namespace given")
 // FetchUsernameForBitbucketServerToken fetches the username associated with a
 // Bitbucket server token.
 //
-// We need the username in order to use the token as the password in a HTTP
+// We need the username in order to use the token as the password in an HTTP
 // BasicAuth username/password pair used by gitserver to push commits.
 //
 // In order to not require from users to type in their BitbucketServer username
@@ -1255,9 +1262,10 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	defer endObservation(1, observation.Args{})
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, store.GetExternalServiceIDsOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceID,
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, sources.SourcerOpts{
+		ExternalServiceType:    externalServiceType,
+		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		ExternalServiceID:      externalServiceID,
 	})
 	if err != nil {
 		return "", err
@@ -1283,20 +1291,34 @@ type usernameSource interface {
 
 var _ usernameSource = &sources.BitbucketServerSource{}
 
+type ValidateAuthenticatorArgs struct {
+	ExternalServiceID   string
+	ExternalServiceType string
+	Username            *string
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a extsvcauth.Authenticator) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authenticator, as sources.AuthenticationStrategy, args ValidateAuthenticatorArgs) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if Mocks.ValidateAuthenticator != nil {
-		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
+		return Mocks.ValidateAuthenticator(ctx, args.ExternalServiceID, args.ExternalServiceType, a)
 	}
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, a, store.GetExternalServiceIDsOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceID,
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, sources.SourcerOpts{
+		ExternalServiceType:    args.ExternalServiceType,
+		ExternalServiceID:      args.ExternalServiceID,
+		GitHubAppAccount:       pointers.Deref(args.Username, ""),
+		GitHubAppKind:          args.GitHubAppKind,
+		AuthenticationStrategy: as,
+
+		// This is set to true because we want to validate the authenticator, not
+		// actually use it to create changesets.
+		AsNonCredential: true,
 	})
 	if err != nil {
 		return err
@@ -1797,4 +1819,212 @@ func (s *Service) GetChangesetsByIDs(ctx context.Context, batchChange int64, ids
 
 func (s *Service) enqueueBatchChangeWebhook(ctx context.Context, eventType string, id graphql.ID) {
 	webhooks.EnqueueBatchChange(ctx, s.logger, s.store, eventType, id)
+}
+
+type CreateBatchChangesUserCredentialArgs struct {
+	ExternalServiceURL  string
+	ExternalServiceType string
+	UserID              int32
+	Credential          string
+	Username            *string
+	GitHubAppID         int
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
+func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
+	// 🚨 SECURITY: Check that the requesting user can create the credential.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), args.UserID); err != nil {
+		return nil, err
+	}
+
+	if as == "" {
+		return nil, errors.New("authentication strategy must be specified")
+	}
+
+	if as == sources.AuthenticationStrategyGitHubApp && args.GitHubAppID == 0 {
+		return nil, errors.Newf("GithubAppID must be specified when authenticationStrategy is %s", as)
+	}
+
+	// Throw error documented in schema.graphql.
+	userCredentialScope := database.UserCredentialScope{
+		Domain:              database.UserCredentialDomainBatches,
+		ExternalServiceID:   args.ExternalServiceURL,
+		ExternalServiceType: args.ExternalServiceType,
+		UserID:              args.UserID,
+		GitHubAppID:         args.GitHubAppID,
+	}
+	existing, err := s.store.UserCredentials().GetByScope(ctx, userCredentialScope)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	}
+	if existing != nil {
+		return nil, ErrDuplicateCredential{}
+	}
+
+	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
+		externalServiceType:    args.ExternalServiceType,
+		externalServiceURL:     args.ExternalServiceURL,
+		credential:             args.Credential,
+		username:               args.Username,
+		authenticationStrategy: as,
+		gitHubAppKind:          args.GitHubAppKind,
+		githubAppID:            args.GitHubAppID,
+		githubAppStore:         s.store.GitHubAppsStore(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	cred, err := s.store.UserCredentials().Create(ctx, userCredentialScope, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
+type CreateBatchChangesSiteCredentialArgs struct {
+	ExternalServiceURL  string
+	ExternalServiceType string
+	Credential          string
+	Username            *string
+	GitHubAppID         int
+	GitHubAppKind       ghtypes.GitHubAppKind
+}
+
+func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesSiteCredentialArgs) (*btypes.SiteCredential, error) {
+	// 🚨 SECURITY: Check that a site credential can only be created
+	// by a site-admin.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	if as == "" {
+		return nil, errors.New("authentication strategy must be specified")
+	}
+
+	// Throw error documented in schema.graphql.
+	existing, err := s.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+		ExternalServiceType: args.ExternalServiceType,
+		ExternalServiceID:   args.ExternalServiceURL,
+	})
+	if err != nil && err != store.ErrNoResults {
+		return nil, err
+	}
+	if existing != nil {
+		return nil, ErrDuplicateCredential{}
+	}
+
+	a, err := s.generateAuthenticatorForCredential(ctx, generateAuthenticatorForCredentialArgs{
+		externalServiceType:    args.ExternalServiceType,
+		externalServiceURL:     args.ExternalServiceURL,
+		credential:             args.Credential,
+		username:               args.Username,
+		gitHubAppKind:          args.GitHubAppKind,
+		githubAppID:            args.GitHubAppID,
+		authenticationStrategy: as,
+		githubAppStore:         s.store.GitHubAppsStore(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	cred := &btypes.SiteCredential{
+		ExternalServiceType: args.ExternalServiceType,
+		ExternalServiceID:   args.ExternalServiceURL,
+		GitHubAppID:         args.GitHubAppID,
+	}
+	if err := s.store.CreateSiteCredential(ctx, cred, a); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
+type generateAuthenticatorForCredentialArgs struct {
+	externalServiceType    string
+	externalServiceURL     string
+	credential             string
+	username               *string
+	authenticationStrategy sources.AuthenticationStrategy
+	gitHubAppKind          ghtypes.GitHubAppKind
+	githubAppID            int
+	githubAppStore         ghstore.GitHubAppsStore
+}
+
+func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args generateAuthenticatorForCredentialArgs) (extsvcauth.Authenticator, error) {
+	var a extsvcauth.Authenticator
+	keypair, err := encryption.GenerateRSAKey()
+	if err != nil {
+		return nil, err
+	}
+
+	if args.authenticationStrategy == sources.AuthenticationStrategyGitHubApp {
+		auther, err := ghauth.CreateAuthenticatorForCredential(ctx, args.githubAppID, ghauth.CreateAuthenticatorForCredentialOpts{
+			GitHubAppStore: args.githubAppStore,
+		})
+		if err != nil {
+			return nil, err
+		}
+		a = auther
+	} else if args.externalServiceType == extsvc.TypeBitbucketServer {
+		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason.
+		username, err := s.FetchUsernameForBitbucketServerToken(ctx, args.externalServiceURL, args.externalServiceType, args.credential)
+		if err != nil {
+			if bitbucketserver.IsUnauthorized(err) {
+				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+			}
+			return nil, err
+		}
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: args.credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if args.externalServiceType == extsvc.TypeBitbucketCloud {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if args.externalServiceType == extsvc.TypeAzureDevOps {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if args.externalServiceType == extsvc.TypeGerrit {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else if args.externalServiceType == extsvc.TypePerforce {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *args.username, Password: args.credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else {
+		a = &extsvcauth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: args.credential},
+			PrivateKey:       keypair.PrivateKey,
+			PublicKey:        keypair.PublicKey,
+			Passphrase:       keypair.Passphrase,
+		}
+	}
+
+	// Validate the newly created authenticator.
+	if err := s.ValidateAuthenticator(ctx, a, args.authenticationStrategy, ValidateAuthenticatorArgs{
+		ExternalServiceID:   args.externalServiceURL,
+		ExternalServiceType: args.externalServiceType,
+		Username:            args.username,
+		GitHubAppKind:       args.gitHubAppKind,
+	}); err != nil {
+		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	}
+	return a, nil
 }
