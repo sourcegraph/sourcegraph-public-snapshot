@@ -28,7 +28,8 @@ type event struct {
 	Metadata     json.RawMessage `json:"metadata,omitempty"`
 }
 
-// Save implements the bigquery.ValueSaver interface.
+// Save implements the bigquery.ValueSaver interface which allows it
+// to be used on Table.Inserter()
 func (e event) Save() (map[string]bigquery.Value, string, error) {
 	durationInterval := &bigquery.IntervalValue{
 		Seconds: int32(e.Duration.Seconds()),
