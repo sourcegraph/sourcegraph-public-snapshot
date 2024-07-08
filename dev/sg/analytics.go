@@ -64,12 +64,12 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 
 					// Log event
 					err := analytics.InvocationPanicked(cmd.Context, p)
-					maybeLog("failed to persist analytics event: %s", err)
+					maybeLog("failed to persist analytics panic event: %s", err)
 				}
 			}()
 			interrupt.Register(func() {
 				err := analytics.InvocationCancelled(cmd.Context)
-				maybeLog("failed to persist analytics event: %s", err)
+				maybeLog("failed to persist analytics cancel event: %s", err)
 			})
 
 			// Call the underlying action
@@ -78,10 +78,10 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 			// Capture analytics post-run
 			if actionErr != nil {
 				err := analytics.InvocationFailed(cmd.Context, actionErr)
-				maybeLog("failed to persist analytics event: %s", err)
+				maybeLog("failed to persist analytics cancel event: %s", err)
 			} else {
 				err := analytics.InvocationSucceeded(cmd.Context)
-				maybeLog("failed to persist analytics event: %s", err)
+				maybeLog("failed to persist analytics success event: %s", err)
 			}
 
 			return actionErr
@@ -90,7 +90,7 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 }
 
 func maybeLog(fmt string, err error) {
-	if err != nil {
+	if err == nil {
 		return
 	}
 	std.Out.WriteWarningf(fmt, err)

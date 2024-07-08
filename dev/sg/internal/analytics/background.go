@@ -25,7 +25,7 @@ func BackgroundEventPublisher(ctx context.Context) {
 		}
 		defer bq.Close()
 
-		processEvents(bgOut, store(), done)
+		processEvents(ctx, bgOut, store(), done)
 	})
 }
 
@@ -34,7 +34,7 @@ func StopBackgroundEventPublisher() {
 }
 
 func toEvents(items []invocation) []event {
-	results := []event{}
+	results := make([]event, 0, len(items))
 	for _, i := range items {
 		ev := NewEvent(i)
 		results = append(results, *ev)
@@ -43,9 +43,7 @@ func toEvents(items []invocation) []event {
 	return results
 }
 
-func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) {
-	ctx := context.Background()
-
+func processEvents(ctx context.Context, bgOut *std.Output, store analyticsStore, done chan struct{}) {
 	for {
 		select {
 		case <-done:
@@ -74,11 +72,14 @@ func processEvents(bgOut *std.Output, store analyticsStore, done chan struct{}) 
 					if os.Getenv("SG_ANALYTICS_DEBUG") == "1" {
 						panic(err)
 					}
-					bgOut.WriteWarningf("failed to insert analytics event", err)
+					bgOut.WriteWarningf("failed to insert analytics event into bigquery: %v", err)
 					continue
 				}
 
-				store.DeleteInvocation(ctx, ev.UUID)
+				err = store.DeleteInvocation(ctx, ev.UUID)
+				if err != nil {
+					bgOut.WriteWarningf("failed to delete analytics event: %v", err)
+				}
 			}
 		}
 	}
