@@ -183,5 +183,5 @@ func (s *repoCommitsChangelistsStore) GetRepoCommitChangelistBatch(ctx context.C
 		}
 	}
 
-	return res, nil
+	return res, rows.Err()
 }
