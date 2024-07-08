@@ -28,6 +28,7 @@ const credential = {
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
     isGitHubApp: false,
+    gitHubApp: null,
 }
 
 export const NoSsh: StoryFn = () => (
@@ -43,7 +44,6 @@ export const NoSsh: StoryFn = () => (
                     externalServiceURL: 'https://github.com/',
                     supportsCommitSigning: false,
                     commitSigningConfiguration: null,
-                    gitHubApp: null,
                 }}
                 credential={credential}
                 afterDelete={noop}
@@ -68,7 +68,6 @@ export const RequiresSsh: StoryFn = () => (
                     externalServiceURL: 'https://github.com/',
                     supportsCommitSigning: false,
                     commitSigningConfiguration: null,
-                    gitHubApp: null,
                 }}
                 credential={credential}
                 afterDelete={noop}

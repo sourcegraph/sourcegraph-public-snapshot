@@ -23,7 +23,7 @@ import {
 
 import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
-import type { GitHubAppByIDFields } from '../../../graphql-operations'
+import { GitHubAppByIDFields, GitHubAppKind } from '../../../graphql-operations'
 
 import { useRefreshGitHubApp } from './backend'
 
@@ -33,9 +33,15 @@ interface GitHubAppControlsProps {
     baseURL: string
     config: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null
     refetch: () => void
+    gitHubAppKind?: GitHubAppKind
 }
 
-export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> = ({ baseURL, config, refetch }) => {
+export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> = ({
+    baseURL,
+    config,
+    refetch,
+    gitHubAppKind,
+}) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
     const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
@@ -83,10 +89,15 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
                         <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
                         Refresh
                     </MenuItem>
-                    <MenuItem as={Button} onSelect={() => navigate(`github-apps/${config.id}`)} className="p-2">
-                        <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
-                        Edit
-                    </MenuItem>
+                    {
+                        // Once we have a GitHubApps page for users, we can drop this check. Currently, we only have that for site-admins.
+                        gitHubAppKind !== GitHubAppKind.USER_CREDENTIAL && (
+                            <MenuItem as={Button} onSelect={() => navigate(`github-apps/${config.id}`)} className="p-2">
+                                <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
+                                Edit
+                            </MenuItem>
+                        )
+                    }
                     <MenuItem as={Button} onSelect={() => setRemoveModalOpen(true)} className="p-2">
                         <Icon aria-hidden={true} svgPath={mdiTrashCan} className="mr-1" />
                         Remove

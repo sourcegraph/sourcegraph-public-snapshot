@@ -36,6 +36,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
     isGitHubApp: false,
+    gitHubApp: null,
 })
 
 export const Overview: StoryFn = () => (
@@ -69,7 +70,6 @@ export const Overview: StoryFn = () => (
                         requiresUsername: false,
                         supportsCommitSigning: false,
                         commitSigningConfiguration: null,
-                        gitHubApp: null,
                     }}
                     refetchAll={() => {}}
                     user={{ id: '123' } as UserAreaUserFields}

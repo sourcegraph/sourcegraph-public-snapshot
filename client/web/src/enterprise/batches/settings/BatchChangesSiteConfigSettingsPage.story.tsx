@@ -78,7 +78,6 @@ export const Overview: StoryFn = () => (
                                         baseURL: 'https://github.com/',
                                         logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                     },
-                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -89,7 +88,6 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: true,
                                     commitSigningConfiguration: null,
-                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -100,7 +98,6 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
-                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -111,7 +108,6 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
-                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -122,7 +118,6 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: true,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
-                                    gitHubApp: null,
                                 }
                             ),
                         ],
@@ -162,6 +157,7 @@ export const ConfigAdded: StoryFn = () => (
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                     isGitHubApp: false,
+                                    gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITHUB,
                                 externalServiceURL: 'https://github.com/',
@@ -177,7 +173,6 @@ export const ConfigAdded: StoryFn = () => (
                                     baseURL: 'https://github.com/',
                                     logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                 },
-                                gitHubApp: null,
                             },
                             {
                                 __typename: 'BatchChangesCodeHost',
@@ -187,6 +182,8 @@ export const ConfigAdded: StoryFn = () => (
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                     isGitHubApp: false,
+
+                                    gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITLAB,
                                 externalServiceURL: 'https://gitlab.com/',
@@ -194,7 +191,6 @@ export const ConfigAdded: StoryFn = () => (
                                 requiresUsername: false,
                                 supportsCommitSigning: false,
                                 commitSigningConfiguration: null,
-                                gitHubApp: null,
                             },
                             {
                                 __typename: 'BatchChangesCodeHost',
@@ -204,6 +200,7 @@ export const ConfigAdded: StoryFn = () => (
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                     isGitHubApp: false,
+                                    gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
@@ -211,7 +208,6 @@ export const ConfigAdded: StoryFn = () => (
                                 requiresUsername: false,
                                 supportsCommitSigning: false,
                                 commitSigningConfiguration: null,
-                                gitHubApp: null,
                             },
                             {
                                 __typename: 'BatchChangesCodeHost',
@@ -221,6 +217,7 @@ export const ConfigAdded: StoryFn = () => (
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                     isGitHubApp: false,
+                                    gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
                                 externalServiceURL: 'https://bitbucket.org/',
@@ -228,7 +225,6 @@ export const ConfigAdded: StoryFn = () => (
                                 requiresUsername: true,
                                 supportsCommitSigning: false,
                                 commitSigningConfiguration: null,
-                                gitHubApp: null,
                             }
                         ),
                     ])

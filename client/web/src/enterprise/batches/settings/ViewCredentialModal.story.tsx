@@ -21,6 +21,7 @@ const credential: BatchChangesCredentialFields = {
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
     isGitHubApp: false,
+    gitHubApp: null,
 }
 
 export const View: StoryFn = () => (
@@ -36,7 +37,6 @@ export const View: StoryFn = () => (
                     requiresUsername: false,
                     supportsCommitSigning: false,
                     commitSigningConfiguration: null,
-                    gitHubApp: null,
                 }}
                 credential={credential}
                 onClose={noop}

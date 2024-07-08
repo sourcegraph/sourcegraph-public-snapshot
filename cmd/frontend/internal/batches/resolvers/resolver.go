@@ -339,7 +339,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
+	return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps(), db: r.db, logger: r.logger}, nil
 }
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
@@ -356,7 +356,7 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
+	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps(), db: r.db, logger: r.logger}, nil
 }
 
 func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
@@ -1136,7 +1136,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		if err != nil {
 			return nil, err
 		}
-		return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
+		return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps(), db: r.db, logger: r.logger}, nil
 	}
 
 	cred, err := svc.CreateBatchChangesSiteCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesSiteCredentialArgs{
@@ -1148,7 +1148,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	if err != nil {
 		return nil, err
 	}
-	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps()}, nil
+	return &batchChangesSiteCredentialResolver{credential: cred, ghStore: r.db.GitHubApps(), db: r.db, logger: r.logger}, nil
 }
 
 func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {

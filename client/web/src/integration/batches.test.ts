@@ -1008,13 +1008,13 @@ describe('Batches', () => {
                                               isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
                                               isGitHubApp: false,
+                                              gitHubApp: null,
                                           }
                                         : null,
                                     requiresSSH: false,
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
-                                    gitHubApp: null,
                                 },
                             ],
                         },
@@ -1028,6 +1028,7 @@ describe('Batches', () => {
                             isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                             isGitHubApp: false,
+                            gitHubApp: null,
                         },
                     }
                 },

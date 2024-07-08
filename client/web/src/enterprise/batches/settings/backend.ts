@@ -27,6 +27,14 @@ export const CREDENTIAL_FIELDS_FRAGMENT = gql`
         sshPublicKey
         isSiteCredential
         isGitHubApp
+        gitHubApp {
+            id
+            appID
+            name
+            appURL
+            baseURL
+            logo
+        }
     }
 `
 
@@ -92,16 +100,6 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
             ...BatchChangesCredentialFields
         }
         commitSigningConfiguration {
-            ... on GitHubApp {
-                id
-                appID
-                name
-                appURL
-                baseURL
-                logo
-            }
-        }
-        gitHubApp {
             ... on GitHubApp {
                 id
                 appID

@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"strconv"
 	"strings"
 
@@ -77,6 +79,9 @@ type batchChangesUserCredentialResolver struct {
 
 	repo    *types.Repo
 	ghStore ghastore.GitHubAppsStore
+
+	db     database.DB
+	logger log.Logger
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesUserCredentialResolver{}
@@ -136,6 +141,28 @@ type batchChangesSiteCredentialResolver struct {
 
 	repo    *types.Repo
 	ghStore ghastore.GitHubAppsStore
+
+	db     database.DB
+	logger log.Logger
+}
+
+func (c *batchChangesUserCredentialResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
+	if !c.IsGitHubApp() {
+		return nil, nil
+	}
+	switch c.credential.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		ghapp, err := c.ghStore.GetByID(ctx, c.GitHubAppID())
+		if err != nil {
+			if _, ok := err.(ghastore.ErrNoGitHubAppFound); ok {
+				return nil, nil
+			} else {
+				return nil, err
+			}
+		}
+		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
+	}
+	return nil, nil
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
@@ -187,3 +214,22 @@ func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) 
 func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
 
 func (c *batchChangesSiteCredentialResolver) GitHubAppID() int { return c.credential.GitHubAppID }
+
+func (c *batchChangesSiteCredentialResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
+	if !c.IsGitHubApp() {
+		return nil, nil
+	}
+	switch c.credential.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		ghapp, err := c.ghStore.GetByID(ctx, c.GitHubAppID())
+		if err != nil {
+			if _, ok := err.(ghastore.ErrNoGitHubAppFound); ok {
+				return nil, nil
+			} else {
+				return nil, err
+			}
+		}
+		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
+	}
+	return nil, nil
+}

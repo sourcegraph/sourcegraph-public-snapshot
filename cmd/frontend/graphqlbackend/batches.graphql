@@ -3496,11 +3496,6 @@ type BatchChangesCodeHost {
     commitSigningConfiguration: CommitSigningConfiguration
 
     """
-    The according GitHubApp, if it has been configured as a credential.
-    """
-    gitHubApp: GitHubApp
-
-    """
     If true, some of the repositories on this code host require
     an SSH key to be configured.
     """
@@ -3567,6 +3562,11 @@ type BatchChangesCredential implements Node {
     Whether the credential is tied to a GitHub App installation.
     """
     isGitHubApp: Boolean!
+
+    """
+    If the field isGitHubApp is true, this field contains the details of the GitHubApp.
+    """
+    gitHubApp: GitHubApp
 }
 
 """

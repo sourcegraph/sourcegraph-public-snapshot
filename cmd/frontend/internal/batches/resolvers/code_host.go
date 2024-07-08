@@ -61,26 +61,6 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 	return nil, nil
 }
 
-func (c *batchChangesCodeHostResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
-	if c.Credential() == nil {
-		return nil, nil
-	}
-	switch c.codeHost.ExternalServiceType {
-	case extsvc.TypeGitHub:
-		gstore := ghstore.GitHubAppsWith(c.store.Store)
-		ghapp, err := gstore.GetByID(ctx, c.credential.GitHubAppID())
-		if err != nil {
-			if _, ok := err.(ghstore.ErrNoGitHubAppFound); ok {
-				return nil, nil
-			} else {
-				return nil, err
-			}
-		}
-		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
-	}
-	return nil, nil
-}
-
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }

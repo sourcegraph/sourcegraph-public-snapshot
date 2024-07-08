@@ -96,7 +96,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     }
 
     const gitHubApp: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null =
-        gitHubAppKind === GitHubAppKind.COMMIT_SIGNING ? node.commitSigningConfiguration : node.gitHubApp
+        gitHubAppKind === GitHubAppKind.COMMIT_SIGNING
+            ? node.commitSigningConfiguration
+            : node.credential?.isGitHubApp
+            ? node.credential.gitHubApp
+            : null
 
     return (
         <>
@@ -151,6 +155,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                     baseURL={node.externalServiceURL}
                                     config={gitHubApp}
                                     refetch={refetchAll}
+                                    gitHubAppKind={gitHubAppKind}
                                 />
                             ) : (
                                 <>
