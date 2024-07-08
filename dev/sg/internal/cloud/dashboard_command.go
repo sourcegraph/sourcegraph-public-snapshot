@@ -56,6 +56,7 @@ func showCloudEphemeralOps(ctx *cli.Context) error {
 		name = currentBranch
 	}
 	name = sanitizeInstanceName(name)
+	name = name[:min(30, len(name))]
 
 	cloudEmoji := "☁️"
 	pending := std.Out.Pending(output.Linef(cloudEmoji, output.StylePending, "Getting details of ephemeral instance %q", name))

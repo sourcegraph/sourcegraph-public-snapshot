@@ -1,6 +1,11 @@
+"""
+This module contains all the dependencies needed for linters defined in dev/linters
+"""
+
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 def linter_dependencies():
+    """Defines all the dependencies for linters"""
     go_repository(
         name = "com_github_timakin_bodyclose",
         build_file_proto_mode = "disable_global",
@@ -39,6 +44,14 @@ def linter_dependencies():
         importpath = "github.com/gordonklaus/ineffassign",
         version = "v0.0.0-20230107090616-13ace0543b28",
         sum = "h1:9alfqbrhuD+9fLZ4iaAVwhlp5PEhmnBt7yvK2Oy5C1U=",
+    )
+
+    go_repository(
+        name = "com_github_gaijinentertainment_go_exhaustruct_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GaijinEntertainment/go-exhaustruct/v3",
+        version = "v3.3.0",
+        sum = "h1:/fTUt5vmbkAcMBt4YQiuC23cV0kEsN1MVMNqeOW43cU=",
     )
 
     go_repository(
