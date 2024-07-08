@@ -1125,7 +1125,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	ctx, _, endObservation := s.operations.enqueueChangesetSync.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// Check for existence of changeset so we don't swallow that error.
+	// Check for existence of changeset, so we don't swallow that error.
 	changeset, err := s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
 	if err != nil {
 		return err
@@ -1222,10 +1222,10 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 
 // CheckNamespaceAccess checks whether the current user in the ctx has access
 // to either the user ID or the org ID as a namespace.
-// If the userID is non-zero that will be checked. Otherwise the org ID will be
+// If the userID is non-zero that will be checked. Otherwise, the org ID will be
 // checked.
 // If the current user is an admin, true will be returned.
-// Otherwise it checks whether the current user _is_ the namespace user or has
+// Otherwise, it checks whether the current user _is_ the namespace user or has
 // access to the namespace org.
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
@@ -1248,7 +1248,7 @@ var ErrNoNamespace = errors.New("no namespace given")
 // FetchUsernameForBitbucketServerToken fetches the username associated with a
 // Bitbucket server token.
 //
-// We need the username in order to use the token as the password in a HTTP
+// We need the username in order to use the token as the password in an HTTP
 // BasicAuth username/password pair used by gitserver to push commits.
 //
 // In order to not require from users to type in their BitbucketServer username
@@ -1262,10 +1262,11 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	defer endObservation(1, observation.Args{})
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, sources.ForExternalServiceOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceID,
-	}, sources.AuthenticationStrategyUserCredential)
+	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, sources.SourcerOpts{
+		ExternalServiceType:    externalServiceType,
+		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		ExternalServiceID:      externalServiceID,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -1308,12 +1309,17 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authen
 	}
 
 	// Get a changeset source for the external service and use the given authenticator.
-	css, err := s.sourcer.ForExternalService(ctx, s.store, a, sources.ForExternalServiceOpts{
-		ExternalServiceType: args.ExternalServiceType,
-		ExternalServiceID:   args.ExternalServiceID,
-		GitHubAppAccount:    pointers.Deref(args.Username, ""),
-		GitHubAppKind:       args.GitHubAppKind,
-	}, as)
+	css, err := s.sourcer.ForExternalService(ctx, s.store, a, sources.SourcerOpts{
+		ExternalServiceType:    args.ExternalServiceType,
+		ExternalServiceID:      args.ExternalServiceID,
+		GitHubAppAccount:       pointers.Deref(args.Username, ""),
+		GitHubAppKind:          args.GitHubAppKind,
+		AuthenticationStrategy: as,
+
+		// This is set to true because we want to validate the authenticator, not
+		// actually use it to create changesets.
+		AsNonCredential: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -1960,7 +1966,7 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 		}
 		a = auther
 	} else if args.externalServiceType == extsvc.TypeBitbucketServer {
-		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
+		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason.
 		username, err := s.FetchUsernameForBitbucketServerToken(ctx, args.externalServiceURL, args.externalServiceType, args.credential)
 		if err != nil {
 			if bitbucketserver.IsUnauthorized(err) {
