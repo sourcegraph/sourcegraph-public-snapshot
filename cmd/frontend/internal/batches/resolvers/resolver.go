@@ -1141,7 +1141,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 
 	cred, err := svc.CreateBatchChangesSiteCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesSiteCredentialArgs{
 		ExternalServiceURL:  args.ExternalServiceURL,
-		ExternalServiceType: extsvc.VariantGitHub.AsType(),
+		ExternalServiceType: extsvc.KindToType(kind),
 		Credential:          args.Credential,
 		Username:            args.Username,
 	})
