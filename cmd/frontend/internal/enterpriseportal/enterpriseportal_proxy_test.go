@@ -88,7 +88,12 @@ func TestSiteAdminProxy(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			proxy := newSiteAdminProxy(logtest.Scoped(t), db, mockClientCredentials{}, "/.api/prefix", mustParseURL(target.URL))
+			proxy := newSiteAdminProxy(
+				logtest.Scoped(t),
+				db,
+				mockClientCredentials{},
+				"/.api/prefix",
+				mustParseURL(target.URL))
 
 			recorder := httptest.NewRecorder()
 			req := httptest.NewRequest(

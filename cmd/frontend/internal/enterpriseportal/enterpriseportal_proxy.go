@@ -83,7 +83,13 @@ func NewSiteAdminProxy(
 			log.Error(err),
 			log.Strings("scopes", scopes.ToStrings(samsConfig.Scopes)))
 	}
-	return newSiteAdminProxy(logger, db, clientCredentials, pathPrefix, target)
+	return newSiteAdminProxy(
+		logger,
+		db,
+		clientCredentials,
+		pathPrefix,
+		target,
+	)
 }
 
 // newSiteAdminProxy is used for testing the proxy, and accepts interfaces instead.
@@ -94,6 +100,13 @@ func newSiteAdminProxy(
 	pathPrefix string,
 	target *url.URL,
 ) *SiteAdminProxy {
+	transport := httpcli.UncachedExternalClient.Transport
+
+	// We support targeting a local instance in dev.
+	if target.Hostname() == "127.0.0.1" {
+		transport = httpcli.InternalClient.Transport
+	}
+
 	return &SiteAdminProxy{
 		db: db,
 		proxy: &httputil.ReverseProxy{
@@ -109,7 +122,7 @@ func newSiteAdminProxy(
 			},
 			Transport: &oauth2.Transport{
 				Source: clientCredentials, // authenticate with SAMS client credentials
-				Base:   httpcli.UncachedExternalClient.Transport,
+				Base:   transport,
 			},
 
 			ErrorLog: std.NewLogger(logger, log.LevelWarn),
