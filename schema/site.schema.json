@@ -3374,7 +3374,16 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph"]
+          "enum": [
+            "awsBedrock",
+            "azureOpenAI",
+            "anthropic",
+            "fireworks",
+            "google",
+            "openai",
+            "openaicompatible",
+            "sourcegraph"
+          ]
         }
       },
       "oneOf": [
