@@ -26,6 +26,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Test helpers
@@ -33,13 +34,9 @@ import (
 type ApplianceTestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	cancelCtx context.CancelFunc
-
-	testEnv     *envtest.Environment
-	ctrlMgrDone chan struct{}
-
-	k8sClient *kubernetes.Clientset
+	ctx            context.Context
+	k8sClient      *kubernetes.Clientset
+	envtestCleanup func() error
 }
 
 func TestApplianceTestSuite(t *testing.T) {
@@ -47,30 +44,38 @@ func TestApplianceTestSuite(t *testing.T) {
 }
 
 func (suite *ApplianceTestSuite) SetupSuite() {
-	suite.ctx, suite.cancelCtx = context.WithCancel(context.Background())
-	suite.setupEnvtest()
+	suite.ctx = context.Background()
+	var err error
+	suite.k8sClient, suite.envtestCleanup, err = setupEnvtest(suite.ctx)
+	suite.Require().NoError(err)
 }
 
 func (suite *ApplianceTestSuite) TearDownSuite() {
-	t := suite.T()
-	suite.cancelCtx()
-	require.NoError(t, suite.testEnv.Stop())
-	<-suite.ctrlMgrDone
+	suite.Require().NoError(suite.envtestCleanup())
 }
 
-func (suite *ApplianceTestSuite) setupEnvtest() {
-	t := suite.T()
+func setupEnvtest(ctx context.Context) (*kubernetes.Clientset, func() error, error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	logger := stdr.New(stdlog.New(os.Stderr, "", stdlog.LstdFlags))
 
-	suite.testEnv = &envtest.Environment{
-		AttachControlPlaneOutput: true,
-		BinaryAssetsDirectory:    suite.kubebuilderAssetPath(),
+	kubeBuilderAssets, err := kubebuilderAssetPath()
+	if err != nil {
+		cancel()
+		return nil, nil, err
 	}
-	apiServerCfg := suite.testEnv.ControlPlane.GetAPIServer()
+	testEnv := &envtest.Environment{
+		AttachControlPlaneOutput: true,
+		BinaryAssetsDirectory:    kubeBuilderAssets,
+	}
+	apiServerCfg := testEnv.ControlPlane.GetAPIServer()
 	apiServerCfg.Configure().Set("bind-address", "127.0.0.1")
 	apiServerCfg.Configure().Set("advertise-address", "127.0.0.1")
-	cfg, err := suite.testEnv.Start()
-	require.NoError(t, err)
+	cfg, err := testEnv.Start()
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
 
 	// If we had CRDs, this is where we'd add them to the scheme
 
@@ -84,49 +89,78 @@ func (suite *ApplianceTestSuite) setupEnvtest() {
 		// don't need it, so we disable it altogether.
 		Metrics: metricsserver.Options{BindAddress: "0"},
 	})
-	require.NoError(t, err)
-	suite.k8sClient, err = kubernetes.NewForConfig(cfg)
-	require.NoError(t, err)
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
+	k8sClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		cancel()
+		return nil, nil, err
+	}
 
 	reconciler := &Reconciler{
 		Client:   ctrlMgr.GetClient(),
 		Scheme:   ctrlMgr.GetScheme(),
 		Recorder: ctrlMgr.GetEventRecorderFor("appliance"),
 	}
-	require.NoError(t, reconciler.SetupWithManager(ctrlMgr))
+
+	// TODO invert this dependency
+	if err := reconciler.SetupWithManager(ctrlMgr); err != nil {
+		cancel()
+		return nil, nil, err
+	}
 
 	// Start controller manager async. We'll stop it with context cancellation
 	// later.
-	suite.ctrlMgrDone = make(chan struct{})
+	ctrlMgrDone := make(chan error, 1)
 	go func() {
-		require.NoError(t, ctrlMgr.Start(suite.ctx))
-		close(suite.ctrlMgrDone)
+		if err := ctrlMgr.Start(ctx); err != nil {
+			ctrlMgrDone <- err
+			return
+		}
+		close(ctrlMgrDone)
 	}()
+
+	cleanup := func() error {
+		cancel()
+		if err := testEnv.Stop(); err != nil {
+			return err
+		}
+		return <-ctrlMgrDone
+	}
+
+	return k8sClient, cleanup, nil
 }
 
-func (suite *ApplianceTestSuite) kubebuilderAssetPath() string {
+func kubebuilderAssetPath() (string, error) {
 	if os.Getenv("BAZEL_TEST") == "" {
-		return suite.kubebuilderAssetPathLocalDev()
+		return kubebuilderAssetPathLocalDev()
 	}
 
 	assetPaths := strings.Split(os.Getenv("KUBEBUILDER_ASSET_PATHS"), " ")
-	suite.Require().Greater(len(assetPaths), 0)
+	if len(assetPaths) == 0 {
+		return "", errors.New("expected KUBEBUILDER_ASSET_PATHS to not be empty")
+	}
 	arbAssetPath, err := runfiles.Rlocation(assetPaths[0])
-	suite.Require().NoError(err)
-	return filepath.Dir(arbAssetPath)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Dir(arbAssetPath), nil
 }
 
 // In the hermetic bazel environment, we skip setup-envtest, handling the assets
 // directly in a hermetic and cachable way.
 // If we're using `go test`, which can be convenient for local dev, we fall back
 // on expecting setup-envtest to be present on the developer machine.
-func (suite *ApplianceTestSuite) kubebuilderAssetPathLocalDev() string {
+func kubebuilderAssetPathLocalDev() (string, error) {
 	setupEnvTestCmd := exec.Command("setup-envtest", "use", "1.28.0", "--bin-dir", "/tmp/envtest", "-p", "path")
 	var envtestOut bytes.Buffer
 	setupEnvTestCmd.Stdout = &envtestOut
-	err := setupEnvTestCmd.Run()
-	suite.Require().NoError(err, "Did you remember to `go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest`?")
-	return strings.TrimSpace(envtestOut.String())
+	if err := setupEnvTestCmd.Run(); err != nil {
+		return "", errors.Wrap(err, "error running setup-envtest - did you remember to `go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest`?")
+	}
+	return strings.TrimSpace(envtestOut.String()), nil
 }
 
 func (suite *ApplianceTestSuite) createConfigMapAndAwaitReconciliation(fixtureFileName string) string {
