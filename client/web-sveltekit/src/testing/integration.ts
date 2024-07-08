@@ -76,7 +76,7 @@ const IS_BAZEL = process.env.BAZEL === '1'
 
 const SCHEMA_DIR = `${IS_BAZEL ? '' : '../../'}cmd/frontend/graphqlbackend`
 
-const ASSETS_DIR = process.env.ASSETS_DIR || './build/_sk/'
+const ASSETS_DIR = process.env.ASSETS_DIR || './build'
 
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
