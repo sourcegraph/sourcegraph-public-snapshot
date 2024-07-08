@@ -151,9 +151,8 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 			if errcode.IsNotFound(err) {
 				recordHybridFinalState("git-diff-not-found")
 				logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
-			} else if err != nil {
-				recordHybridFinalState("git-diff-error")
 			}
+			recordHybridFinalState("git-diff-error")
 
 			return nil, false, err
 		}

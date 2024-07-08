@@ -20,10 +20,6 @@ type Request struct {
 	// RepoID is the Sourcegraph repository id of the repo to search.
 	RepoID api.RepoID
 
-	// URL specifies the repository's Git remote URL (for gitserver). It is optional. See
-	// (gitserver.ExecRequest).URL for documentation on what it is used for.
-	URL string
-
 	// Commit is which commit to search. It is required to be resolved,
 	// not a ref like HEAD or master. eg
 	// "599cba5e7b6137d46ddf58fb1765f5d928e69604"
@@ -173,7 +169,6 @@ func (r *Request) ToProto() *proto.SearchRequest {
 		CommitOid: string(r.Commit),
 		Branch:    r.Branch,
 		Indexed:   r.Indexed,
-		Url:       r.URL,
 		PatternInfo: &proto.PatternInfo{
 			Query:                        r.PatternInfo.Query.ToProto(),
 			IsStructural:                 r.PatternInfo.IsStructuralPat,
@@ -199,7 +194,6 @@ func (r *Request) FromProto(req *proto.SearchRequest) {
 	*r = Request{
 		Repo:   api.RepoName(req.Repo),
 		RepoID: api.RepoID(req.RepoId),
-		URL:    req.Url,
 		Commit: api.CommitID(req.CommitOid),
 		Branch: req.Branch,
 		PatternInfo: PatternInfo{

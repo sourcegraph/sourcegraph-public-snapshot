@@ -17,7 +17,6 @@ func TestRequestProtoRoundtrip(t *testing.T) {
 	r1 := protocol.Request{
 		Repo:   "sourcegraph/zoekt",
 		RepoID: 42,
-		URL:    "github.com/sourcegraph/zoekt",
 		Commit: "abcdef",
 		Branch: "HEAD",
 		PatternInfo: protocol.PatternInfo{

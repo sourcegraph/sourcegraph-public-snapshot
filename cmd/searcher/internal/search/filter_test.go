@@ -16,7 +16,7 @@ func TestNewFilter(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.NewFileReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("foo/"))), nil)
 
-	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
+	ig, err := NewFilterFactory(gitserverClient)(context.Background(), "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,7 @@ func TestMissingIgnoreFile(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.NewFileReaderFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
-	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
+	ig, err := NewFilterFactory(gitserverClient)(context.Background(), "", "")
 	if err != nil {
 		t.Error(err)
 	}

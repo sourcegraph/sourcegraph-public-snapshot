@@ -40,8 +40,8 @@ const (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *Store
-	Log   log.Logger
+	Store  *Store
+	Logger log.Logger
 
 	Indexed zoekt.Streamer
 
@@ -68,7 +68,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	tr, ctx = trace.New(ctx, "search",
 		p.Repo.Attr(),
 		p.Commit.Attr(),
-		attribute.String("url", p.URL),
 		attribute.String("query", p.Query.String()),
 		attribute.StringSlice("languages", p.IncludeLangs),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
@@ -101,7 +100,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			attribute.Int("matches.len", sender.SentCount()),
 			attribute.Bool("limitHit", sender.LimitHit()),
 		)
-		s.Log.Debug("search request",
+		s.Logger.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 			log.String("query", p.String()),
@@ -124,7 +123,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		if p.Indexed {
 			// Execute the new structural search path that directly calls Zoekt.
 			// TODO use limit in indexed structural search
-			return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
+			return structuralSearchWithZoekt(ctx, s.Logger, s.Indexed, p, sender)
 		}
 
 		zipPath, zf, err := s.getZipFile(ctx, tr, p, nil)
@@ -132,7 +131,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			return errors.Wrap(err, "failed to get archive")
 		}
 		defer zf.Close()
-		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
+		return filteredStructuralSearch(ctx, s.Logger, zipPath, zf, &p.PatternInfo, p.Repo, sender, int32(p.NumContextLines))
 	}
 
 	// Process the query before fetching from store in case it's invalid.
@@ -149,7 +148,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	var paths []string
 	if !s.DisableHybridSearch {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
+		logger := logWithTrace(ctx, s.Logger).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 		)

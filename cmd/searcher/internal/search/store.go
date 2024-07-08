@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -53,9 +52,6 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
-	// GitserverClient is the client to interact with gitserver.
-	GitserverClient gitserver.Client
-
 	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
 	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
@@ -69,7 +65,7 @@ type Store struct {
 	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
-	FilterTar func(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
+	FilterTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -85,8 +81,8 @@ type Store struct {
 	// request.
 	BackgroundTimeout time.Duration
 
-	// Log is the Logger to use.
-	Log log.Logger
+	// Logger is the Logger to use.
+	Logger log.Logger
 
 	// ObservationCtx is used to configure observability in diskcache.
 	ObservationCtx *observation.Context
@@ -123,7 +119,7 @@ func (s *Store) Start() {
 		_ = os.MkdirAll(s.Path, 0o700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 
-		logger := s.Log
+		logger := s.Logger
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
 		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)
@@ -160,7 +156,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
-	filter := newSearchableFilter(&conf.Get().SiteConfiguration)
+	filter := newSearchableFilter(conf.Get().SiteConfiguration.SearchLargeFiles)
 
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.New()
@@ -200,7 +196,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 			}
 		}
 		if err != nil {
-			s.Log.Error("failed to fetch archive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Duration("duration", time.Since(start)), log.Error(err))
+			s.Logger.Error("failed to fetch archive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Duration("duration", time.Since(start)), log.Error(err))
 		}
 		resC <- result{path, err, cacheHit}
 	}()
@@ -273,12 +269,10 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}
 
-	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
-	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, s.GitserverClient, repo, commit)
-		if err != nil {
-			return nil, errors.Errorf("error while calling FilterTar: %w", err)
-		}
+	filter.CommitIgnore, err = s.FilterTar(ctx, repo, commit)
+	if err != nil {
+		r.Close()
+		return nil, errors.Errorf("error while calling FilterTar: %w", err)
 	}
 
 	pr, pw := io.Pipe()
@@ -421,7 +415,7 @@ func (s *Store) watchAndEvict() {
 
 		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
 		if err != nil {
-			s.Log.Error("failed to Evict", log.Error(err))
+			s.Logger.Error("failed to Evict", log.Error(err))
 			continue
 		}
 		metricCacheSizeBytes.Set(float64(stats.CacheSize))

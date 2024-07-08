@@ -18,10 +18,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -137,24 +135,22 @@ func TestPrepareZip_errHeader(t *testing.T) {
 }
 
 func TestSearchLargeFiles(t *testing.T) {
-	filter := newSearchableFilter(&schema.SiteConfiguration{
-		SearchLargeFiles: []string{
-			"foo",
-			"foo.*",
-			"foo_*",
-			"*.foo",
-			"bar.baz",
-			"**/*.bam",
-			"qu?.foo",
-			"!qux.*",
-			"**/quu?.foo",
-			"!**/quux.foo",
-			"!quuux.foo",
-			"quuu?.foo",
-			"\\!foo.baz",
-			"!!foo.bam",
-			"\\!!baz.foo",
-		},
+	filter := newSearchableFilter([]string{
+		"foo",
+		"foo.*",
+		"foo_*",
+		"*.foo",
+		"bar.baz",
+		"**/*.bam",
+		"qu?.foo",
+		"!qux.*",
+		"**/quu?.foo",
+		"!**/quux.foo",
+		"!quuux.foo",
+		"quuu?.foo",
+		"\\!foo.baz",
+		"!!foo.bam",
+		"\\!!baz.foo",
 	})
 	tests := []struct {
 		name   string
@@ -213,7 +209,7 @@ func TestSymlink(t *testing.T) {
 	}
 	zw := zip.NewWriter(f)
 
-	filter := newSearchableFilter(&schema.SiteConfiguration{})
+	filter := newSearchableFilter([]string{})
 	filter.CommitIgnore = func(hdr *tar.Header) bool {
 		return false
 	}
@@ -299,10 +295,13 @@ func tarArchive(dir string) (*tar.Reader, error) {
 func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
-		GitserverClient: gitserver.NewTestClient(t),
-		Path:            d,
-		Log:             logtest.Scoped(t),
-
+		FilterTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
+			return func(hdr *tar.Header) bool {
+				return false
+			}, nil
+		},
+		Path:           d,
+		Logger:         logtest.Scoped(t),
 		ObservationCtx: observation.TestContextTB(t),
 	}
 }

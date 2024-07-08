@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/protocol"
 )
@@ -463,11 +462,10 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	GitserverClient: gitserver.NewClient("test"),
-	FetchTar:        fetchTarFromGithub,
-	Path:            "/tmp/search_test/store",
-	Log:             observation.TestContext.Logger,
-	ObservationCtx:  &observation.TestContext,
+	FetchTar:       fetchTarFromGithub,
+	Path:           "/tmp/search_test/store",
+	Logger:         observation.TestContext.Logger,
+	ObservationCtx: &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {

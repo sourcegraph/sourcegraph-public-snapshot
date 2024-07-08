@@ -130,13 +130,11 @@ Hello world example in go`, typeFile},
 
 		Store:   s,
 		Indexed: backend.ZoektDial(zoektURL),
-		Log:     logtest.Scoped(t),
+		Logger:  logtest.Scoped(t),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
-		Service: service,
-	})
+	proto.RegisterSearcherServiceServer(grpcServer, search.NewGRPCServer(service, false))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
@@ -325,7 +323,6 @@ changed.go
 			req := protocol.Request{
 				Repo:         "foo",
 				RepoID:       123,
-				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  tc.Pattern,
 				FetchTimeout: fetchTimeoutForCI(t),
