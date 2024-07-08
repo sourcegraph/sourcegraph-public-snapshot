@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,6 +28,7 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	GitHubAppID         int
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 
@@ -37,22 +39,15 @@ type UserCredential struct {
 	Credential *EncryptableCredential
 }
 
-type EncryptableCredential = encryption.Encryptable
-
-func NewEmptyCredential() *EncryptableCredential {
-	return NewUnencryptedCredential(nil)
-}
-
-func NewUnencryptedCredential(value []byte) *EncryptableCredential {
-	return encryption.NewUnencrypted(string(value))
-}
-
-func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
-	return encryption.NewEncrypted(cipher, keyID, key)
-}
+// IsGitHubApp returns true if the user credential is a GitHub App.
+func (uc *UserCredential) IsGitHubApp() bool { return uc.GitHubAppID > 0 }
 
 // Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context, opts ghauth.CreateAuthenticatorForCredentialOpts) (auth.Authenticator, error) {
+	if uc.IsGitHubApp() {
+		return ghauth.CreateAuthenticatorForCredential(ctx, uc.GitHubAppID, opts)
+	}
+
 	decrypted, err := uc.Credential.Decrypt(ctx)
 	if err != nil {
 		return nil, err
@@ -79,6 +74,20 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 
 	uc.Credential.Set(raw)
 	return nil
+}
+
+type EncryptableCredential = encryption.Encryptable
+
+func NewEmptyCredential() *EncryptableCredential {
+	return NewUnencryptedCredential(nil)
+}
+
+func NewUnencryptedCredential(value []byte) *EncryptableCredential {
+	return encryption.NewUnencrypted(string(value))
+}
+
+func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
+	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
 const (
@@ -151,6 +160,7 @@ type UserCredentialScope struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	GitHubAppID         int
 }
 
 // Create creates a new user credential based on the given scope and
@@ -176,6 +186,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.ExternalServiceID,
 		encryptedCredential, // N.B.: is already a []byte
 		keyID,
+		dbutil.NewNullInt(scope.GitHubAppID),
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -207,6 +218,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.ExternalServiceID,
 		[]byte(encryptedCredential),
 		keyID,
+		dbutil.NewNullInt(credential.GitHubAppID),
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
@@ -388,6 +400,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("github_app_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("ssh_migration_applied"),
@@ -425,11 +438,13 @@ INSERT INTO
 		external_service_id,
 		credential,
 		encryption_key_id,
+	    github_app_id,
 		created_at,
 		updated_at,
 		ssh_migration_applied
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -452,6 +467,7 @@ SET
 	external_service_id = %s,
 	credential = %s,
 	encryption_key_id = %s,
+	github_app_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
 WHERE
@@ -479,6 +495,7 @@ func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scann
 		&cred.ExternalServiceID,
 		&credential,
 		&keyID,
+		&dbutil.NullInt{N: &cred.GitHubAppID},
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,

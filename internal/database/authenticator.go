@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,6 +25,7 @@ const (
 	AuthenticatorTypeOAuthBearerTokenWithSSH            AuthenticatorType = "OAuthBearerTokenWithSSH"
 	AuthenticatorTypeBitbucketServerSudoableOAuthClient AuthenticatorType = "BitbucketSudoableOAuthClient"
 	AuthenticatorTypeGitLabSudoableToken                AuthenticatorType = "GitLabSudoableToken"
+	AuthenticatorTypeGitHubApp                          AuthenticatorType = "GitHubApp"
 )
 
 // NullAuthenticator represents an authenticator that may be null. It implements
@@ -83,6 +85,9 @@ func MarshalAuthenticator(a auth.Authenticator) (string, error) {
 		t = AuthenticatorTypeBitbucketServerSudoableOAuthClient
 	case *gitlab.SudoableToken:
 		t = AuthenticatorTypeGitLabSudoableToken
+	case *ghauth.InstallationAuthenticator:
+	case *ghauth.GitHubAppAuthenticator:
+		t = AuthenticatorTypeGitHubApp
 	default:
 		return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
 	}

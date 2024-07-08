@@ -156,6 +156,7 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                    isGitHubApp: false,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITHUB,
                                 externalServiceURL: 'https://github.com/',
@@ -179,6 +180,7 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                    isGitHubApp: false,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITLAB,
                                 externalServiceURL: 'https://gitlab.com/',
@@ -194,6 +196,7 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                    isGitHubApp: false,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
@@ -209,6 +212,7 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                    isGitHubApp: false,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
                                 externalServiceURL: 'https://bitbucket.org/',

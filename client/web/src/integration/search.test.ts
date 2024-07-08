@@ -352,7 +352,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
                     await driver.page.goto(
-                        driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=standard&case=yes&sm=1'
+                        driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=keyword&case=yes&sm=0'
                     )
                     const input = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
@@ -362,7 +362,7 @@ describe('Search', () => {
                         await input.focus()
                         await driver.page.keyboard.press(Key.Enter)
                     }
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=1')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&sm=0')
                 })
             })
         })
@@ -392,7 +392,7 @@ describe('Search', () => {
                     await driver.page.click('.test-structural-search-toggle')
                     await editor.focus()
                     await driver.page.keyboard.press(Key.Enter)
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=1')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural&sm=0')
                 })
 
                 test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -419,7 +419,7 @@ describe('Search', () => {
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)
                     }
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&sm=0')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=keyword&sm=0')
                 })
             })
         })

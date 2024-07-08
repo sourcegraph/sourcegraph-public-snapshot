@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"reflect"
 	"strconv"
 	"testing"
@@ -106,7 +107,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		assert.Len(t, summary.failedEvents, 1)
 	})
 
-	t.Run("some failed, ignore unretriable errors", func(t *testing.T) {
+	t.Run("some failed, ignore unretriable errors and context cancelled", func(t *testing.T) {
 		results := []events.PublishEventResult{{
 			EventID:      "retriable",
 			PublishError: errors.New("oh no"),
@@ -117,6 +118,10 @@ func TestSummarizeFailedEvents(t *testing.T) {
 			EventID:      "unretriable",
 			PublishError: errors.New("unretriable error"),
 			Retryable:    false,
+		}, {
+			EventID:      "cancelled",
+			PublishError: errors.Wrap(context.Canceled, "cancel"),
+			Retryable:    true,
 		}}
 
 		summary := summarizePublishEventsResults(results, summarizePublishEventsResultsOpts{
@@ -127,9 +132,12 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		// non-retriable pretends to succeed
 		autogold.Expect([]string{"ok", "unretriable"}).Equal(t, summary.succeededEvents)
 		assert.Len(t, summary.succeededEvents, 2)
-		assert.Len(t, summary.errorFields, 2)  // both errors are included in error logs
-		assert.Len(t, summary.failedEvents, 1) // only retryable is marked as failed
-		assert.Len(t, summary.failedEvents, 1)
+		assert.Len(t, summary.errorFields, 3, "error fields")   // all errors are included in error logs
+		assert.Len(t, summary.failedEvents, 2, "failed events") // only retryable is marked as failed
+
+		// context error is a string, not an error
+		assert.Nil(t, summary.errorFields[2].Interface)
+		autogold.Expect("cancel: context canceled").Equal(t, summary.errorFields[2].String)
 	})
 
 	t.Run("all succeeded", func(t *testing.T) {

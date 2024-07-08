@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -58,8 +57,7 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
-	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
-	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
+	mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncAllowAny())
 
 	mockRequest := PositionalRequestArgs{
 		RequestArgs: RequestArgs{
@@ -148,8 +146,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
-	// Update this when TODO(id: check-path-multiple-uploads-api) is addressed.
-	mockLsifStore.SCIPDocumentFunc.SetDefaultReturn(&scip.Document{}, nil)
+	mockLsifStore.FindDocumentIDsFunc.SetDefaultHook(findDocumentIDsFuncAllowAny())
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := PositionalRequestArgs{

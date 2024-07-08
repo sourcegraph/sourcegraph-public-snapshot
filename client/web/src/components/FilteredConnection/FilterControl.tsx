@@ -6,42 +6,69 @@ import { RadioButtons } from '../RadioButtons'
 
 import styles from './FilterControl.module.scss'
 
-export interface FilteredConnectionFilterValue {
-    value: string
-    label: string
-    tooltip?: string
-    args: { [name: string]: string | number | boolean }
-}
-
 /**
  * A filter to display next to the search input field.
+ * @template K The IDs of all filters ({@link Filter.id} values).
+ * @template A The type of option args ({@link Filter.options} {@link FilterOption.args} values).
  */
-export interface FilteredConnectionFilter {
+export interface Filter<
+    K extends string = string,
+    A extends Record<string, string | number | boolean | null> = Record<string, string | number | boolean | null>
+> {
     /** The UI label for the filter. */
     label: string
 
-    /** "radio" or "select" */
-    type: string
+    /** The UI form control to use when displaying this filter. */
+    type: 'radio' | 'select'
 
     /**
-     * The URL string for this filter (conventionally the label, lowercased and without spaces and punctuation).
+     * The URL query parameter name for this filter (conventionally the label, lowercased and
+     * without spaces and punctuation).
      */
-    id: string
+    id: K
 
     /** An optional tooltip to display for this filter. */
     tooltip?: string
 
-    values: FilteredConnectionFilterValue[]
+    /**
+     * All of the possible values for this filter that the user can select.
+     */
+    options: FilterOption<A>[]
 }
+
+/**
+ * An option that the user can select for a filter ({@link Filter}).
+ * @template A The type of option args ({@link Filter.options} {@link FilterOption.args} values).
+ */
+export interface FilterOption<
+    A extends Record<string, string | number | boolean | null> = Record<string, string | number | boolean | null>
+> {
+    /**
+     * The value (corresponding to the key in {@link Filter.id}) if this option is chosen. For
+     * example, if a filter has {@link Filter.id} of `sort` and the user selects a
+     * {@link FilterOption} with {@link FilterOption.value} of `asc`, then the URL query string
+     * would be `sort=asc`.
+     */
+    value: string
+    label: string
+    tooltip?: string
+    args: A
+}
+
+/**
+ * The values of all filters, keyed by the filter ID ({@link Filter.id}).
+ * @template K The IDs of all filters ({@link Filter.id} values).
+ */
+export type FilterValues<K extends string = string> = Record<K, FilterOption['value'] | null>
 
 interface FilterControlProps {
     /** All filters. */
-    filters: FilteredConnectionFilter[]
+    filters: Filter[]
 
     /** Called when a filter is selected. */
-    onValueSelect: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onValueSelect: (filter: Filter, value: FilterOption['value']) => void
 
-    values: Map<string, FilteredConnectionFilterValue>
+    values: FilterValues
 }
 
 export const FilterControl: React.FunctionComponent<React.PropsWithChildren<FilterControlProps>> = ({
@@ -51,12 +78,12 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
     children,
 }) => {
     const onChange = useCallback(
-        (filter: FilteredConnectionFilter, id: string) => {
-            const value = filter.values.find(value => value.value === id)
+        (filter: Filter, id: string) => {
+            const value = filter.options.find(opt => opt.value === id)
             if (value === undefined) {
                 return
             }
-            onValueSelect(filter, value)
+            onValueSelect(filter, value.value)
         },
         [onValueSelect]
     )
@@ -70,8 +97,8 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                             key={filter.id}
                             name={filter.id}
                             className="d-inline-flex flex-row"
-                            selected={values.get(filter.id)?.value}
-                            nodes={filter.values.map(({ value, label, tooltip }) => ({
+                            selected={values[filter.id] ?? undefined}
+                            nodes={filter.options.map(({ value, label, tooltip }) => ({
                                 tooltip,
                                 label,
                                 id: value,
@@ -94,12 +121,12 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                                     id=""
                                     name={filter.id}
                                     onChange={event => onChange(filter, event.currentTarget.value)}
-                                    value={values.get(filter.id)?.value}
+                                    value={values[filter.id] ?? undefined}
                                     className="mb-0"
                                     isCustomStyle={true}
                                 >
-                                    {filter.values.map(value => (
-                                        <option key={value.value} value={value.value} label={value.label} />
+                                    {filter.options.map(opt => (
+                                        <option key={opt.value} value={opt.value} label={opt.label} />
                                     ))}
                                 </Select>
                             </div>

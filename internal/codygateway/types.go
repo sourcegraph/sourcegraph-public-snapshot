@@ -1,8 +1,6 @@
 package codygateway
 
 import (
-	"time"
-
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 )
 
@@ -65,23 +63,6 @@ type EmbeddingsResponse struct {
 	Model string `json:"model"`
 	// ModelDimensions is the dimensionality of the embeddings model used.
 	ModelDimensions int `json:"dimensions"`
-}
-
-// ActorConcurrencyLimitConfig is the configuration for the concurrent requests
-// limit of an actor.
-type ActorConcurrencyLimitConfig struct {
-	// Percentage is the percentage of the daily rate limit to be used to compute the
-	// concurrency limit.
-	Percentage float32
-	// Interval is the time interval of the limit bucket.
-	Interval time.Duration
-}
-
-// ActorRateLimitNotifyConfig is the configuration for the rate limit
-// notifications of an actor.
-type ActorRateLimitNotifyConfig struct {
-	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
-	SlackWebhookURL string
 }
 
 // AttributionRequest is request for attribution search.

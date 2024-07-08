@@ -1,6 +1,8 @@
 import hotkeys, { type HotkeysEvent, type KeyHandler } from 'hotkeys-js'
 import { onDestroy } from 'svelte'
 
+import { dev } from '$app/environment'
+
 import { isLinuxPlatform, isMacPlatform, isWindowsPlatform } from './common'
 
 const LINUX_KEYNAME_MAP: Record<string, string> = {
@@ -14,6 +16,12 @@ const MAC_KEYNAME_MAP: Record<string, string> = {
     shift: '⇧',
     alt: '⌥',
     cmd: '⌘',
+}
+
+// By default, hotkeys-js ignores input fields. Unfortunately this filter can only be set globally, and will apply to all hotkeys.
+// We work around this by always checking input fields, and then applying a custom filter in the wrappedHandler function.
+hotkeys.filter = function (_) {
+    return true
 }
 
 /**
@@ -171,8 +179,47 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
     bind: (options: HotkeyOptions) => void
     unregister: () => void
 } {
+    const hotkey = createHotkey({ keys, handler, allowDefault, ignoreInputFields })
+
+    onDestroy(hotkey.enable())
+
+    return {
+        /**
+         * Use this function to change the shortcut and handler of a function. A use case for this may be when
+         * a user changes their hotkey maps.
+         */
+        bind: hotkey.bind,
+        /**
+         * Use this function if you want to dynamically unregister a hotkey. You don't have to clean up after yourself:
+         * The hotkey will be automatically removed when the lifecycle of a component ends (`onDestroy` hook).
+         */
+        unregister: hotkey.disable,
+    }
+}
+
+interface Hotkey {
+    /**
+     * Changes the configuration of the hotkey.
+     */
+    bind: (options: HotkeyOptions) => void
+    /**
+     * Starts listening for keyboard events. Returns a function to disable the hotkey.
+     */
+    enable: () => () => void
+    /**
+     * Stops listening for keyboard events.
+     */
+    disable: () => void
+}
+
+/**
+ * Creates a global keyboard shortcut. Needs to be called during
+ */
+export function createHotkey({ keys, handler, allowDefault, ignoreInputFields }: HotkeySetupOptions): Hotkey {
+    let enabled = false
     let currentKey = evaluateKey(keys)
     if (
+        dev &&
         hotkeys
             .getAllKeyCodes()
             .map(k => k.shortcut)
@@ -180,49 +227,42 @@ export function registerHotkey({ keys, handler, allowDefault, ignoreInputFields 
     ) {
         // Instead of printing an error, we can also use hotkey's "single" option, which will automatically unregister any
         // existing hotkey with the same key and scope.
-        console.error(`The hotkey "${currentKey}" has already been registered by another Hotkey component.`)
+        console.warn(`The hotkey "${currentKey}" has already been registered by another Hotkey component.`)
     }
     let wrappedHandler = wrapHandler(handler, allowDefault, ignoreInputFields)
 
-    // By default, hotkeys-js ignores input fields. Unfortunately this filter can only be set globally, and will apply to all hotkeys.
-    // We work around this by always checking input fields, and then applying a custom filter in the wrappedHandler function.
-    hotkeys.filter = function (_) {
-        return true
-    }
-
-    onDestroy(() => {
-        if (currentKey && wrappedHandler) {
-            hotkeys.unbind(currentKey, wrappedHandler)
-        }
-    })
-
-    if (currentKey) {
-        hotkeys(currentKey, wrappedHandler)
-    }
-
-    return {
+    const hotkey: Hotkey = {
         /**
          * Use this function to change the shortcut and handler of a function. A use case for this may be when
          * a user changes their hotkey maps.
          */
         bind({ keys: bindKeys, handler: bindHandler }: HotkeyOptions) {
-            if (currentKey) {
-                hotkeys.unbind(currentKey, wrappedHandler)
+            const wasEnabled = enabled
+            if (wasEnabled) {
+                hotkey.disable()
             }
             currentKey = evaluateKey(bindKeys)
             wrappedHandler = wrapHandler(bindHandler, allowDefault, ignoreInputFields)
-            hotkeys(currentKey, wrappedHandler)
+            if (wasEnabled) {
+                hotkey.enable()
+            }
         },
-        /**
-         * Use this function if you want to dynamically unregister a hotkey. You don't have to clean up after yourself:
-         * The hotkey will be automatically removed when the lifecycle of a component ends (`onDestroy` hook).
-         */
-        unregister() {
-            if (currentKey) {
+        enable() {
+            if (!enabled) {
+                hotkeys(currentKey, wrappedHandler)
+                enabled = true
+            }
+            return hotkey.disable
+        },
+        disable() {
+            if (enabled) {
                 hotkeys.unbind(currentKey, wrappedHandler)
+                enabled = false
             }
         },
     }
+
+    return hotkey
 }
 
 export const exportedForTesting = {
