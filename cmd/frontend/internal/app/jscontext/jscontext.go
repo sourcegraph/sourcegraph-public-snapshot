@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,10 +33,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/notebooks"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -239,6 +242,7 @@ type JSContext struct {
 	CodeMonitoringEnabled    bool `json:"codeMonitoringEnabled"`
 	SearchAggregationEnabled bool `json:"searchAggregationEnabled"`
 	OwnEnabled               bool `json:"ownEnabled"`
+	SearchJobsEnabled        bool `json:"searchJobsEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
@@ -446,13 +450,13 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		// This used to be hardcoded configuration on the frontend.
 		// https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@ec5cc97a11c3f78743388b85b9ae0f1bc5d43932/-/blob/client/web/src/enterprise/EnterpriseWebApp.tsx?L63-71
-		CodeIntelligenceEnabled: true,
-		SearchContextsEnabled:   true,
-		NotebooksEnabled:        true,
-		// Code monitoring should be disabled on DotCom.
-		CodeMonitoringEnabled:    !isDotComMode,
+		CodeIntelligenceEnabled:  true,
+		SearchContextsEnabled:    true,
+		NotebooksEnabled:         notebooks.IsEnabled(),
+		CodeMonitoringEnabled:    codemonitors.IsEnabled(),
 		SearchAggregationEnabled: true,
-		OwnEnabled:               true,
+		OwnEnabled:               own.IsEnabled(),
+		SearchJobsEnabled:        exhaustive.IsEnabled(conf.Get()),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
@@ -495,9 +499,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		context.SearchContextsEnabled = false
 		context.OwnEnabled = false
 		context.NotebooksEnabled = false
-
-		// experimental features
-		context.ExperimentalFeatures.SearchJobs = pointers.Ptr(false)
+		context.SearchJobsEnabled = false
 	}
 
 	// If the license a Sourcegraph instance is running under does not support Cody features,

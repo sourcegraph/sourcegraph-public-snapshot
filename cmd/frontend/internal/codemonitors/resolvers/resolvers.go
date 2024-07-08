@@ -33,13 +33,23 @@ type Resolver struct {
 	db     database.DB
 }
 
-func (r *Resolver) Now() time.Time {
+func (r *Resolver) now() time.Time {
 	return r.db.CodeMonitors().Now()
+}
+
+func (r *Resolver) isEnabled() error {
+	if !codemonitors.IsEnabled() {
+		return errors.New("code monitoring is not enabled")
+	}
+	return nil
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
 		MonitorKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			if err := r.isEnabled(); err != nil {
+				return nil, err
+			}
 			return r.MonitorByID(ctx, id)
 		},
 		// TODO: These kinds are currently not implemented, but need a node resolver.
@@ -59,6 +69,10 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	// Request one extra to determine if there are more pages
 	newArgs := *args
 	newArgs.First += 1
@@ -103,6 +117,10 @@ func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbac
 }
 
 func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToEdit(ctx, id)
 	if err != nil {
 		return nil, err
@@ -122,6 +140,10 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 }
 
 func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (_ graphqlbackend.MonitorResolver, err error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
 		return nil, err
 	}
@@ -187,6 +209,10 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 }
 
 func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
@@ -204,6 +230,10 @@ func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.T
 }
 
 func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
@@ -221,6 +251,10 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 }
 
 func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToEdit(ctx, args.Monitor.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateCodeMonitor: %w", err)
@@ -366,6 +400,10 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -383,6 +421,10 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
@@ -398,6 +440,10 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 }
 
 func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
@@ -411,6 +457,10 @@ func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlba
 }
 
 func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestSlackWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.isEnabled(); err != nil {
+		return nil, err
+	}
+
 	err := r.isAllowedToCreate(ctx, args.Namespace)
 	if err != nil {
 		return nil, err
@@ -683,9 +733,6 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 // - she is a member of the organization which is the owner of the monitor
 // - she is a site-admin
 func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) error {
-	if dotcom.SourcegraphDotComMode() {
-		return errors.New("Code Monitors are disabled on sourcegraph.com")
-	}
 	var ownerInt32 int32
 	err := relay.UnmarshalSpec(owner, &ownerInt32)
 	if err != nil {

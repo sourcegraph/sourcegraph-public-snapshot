@@ -9,7 +9,6 @@ import { codyRoutes } from './cody/codyRoutes'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { LegacyRoute, type LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
-import { isSearchJobsEnabled } from './search-jobs/utility'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
@@ -150,8 +149,8 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalCodeMonitoringArea {...props} />}
-                condition={({ isSourcegraphDotCom }) =>
-                    !isSourcegraphDotCom && window.context?.codeSearchEnabledOnInstance
+                condition={({ isSourcegraphDotCom, codeMonitoringEnabled }) =>
+                    !isSourcegraphDotCom && codeMonitoringEnabled
                 }
             />
         ),
@@ -178,7 +177,7 @@ export const routes: RouteObject[] = [
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}
-                condition={isSearchJobsEnabled}
+                condition={({ searchJobsEnabled }) => searchJobsEnabled}
             />
         ),
     },
@@ -229,7 +228,7 @@ export const routes: RouteObject[] = [
                 render={props => (
                     <GlobalNotebooksArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />
                 )}
-                condition={() => window.context?.codeSearchEnabledOnInstance}
+                condition={({ notebooksEnabled }) => notebooksEnabled}
             />
         ),
     },
@@ -246,6 +245,7 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <TeamsArea {...props} telemetryRecorder={props.platformContext.telemetryRecorder} />}
+                condition={({ isSourcegraphDotCom, ownEnabled }) => !isSourcegraphDotCom && ownEnabled}
             />
         ),
     },

@@ -3,12 +3,17 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func NewBackgroundJobs(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
+	if !codemonitors.IsEnabled() {
+		return nil
+	}
+
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs"), observationCtx)
 
 	codeMonitorsStore := db.CodeMonitors()

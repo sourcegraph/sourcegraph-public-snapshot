@@ -3,17 +3,22 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codemonitors",
-    srcs = ["search.go"],
+    srcs = [
+        "conf.go",
+        "search.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors",
     tags = [TAG_SEARCHSUITE],
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
+        "//internal/licensing",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/commit",

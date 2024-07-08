@@ -22,7 +22,6 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { DeveloperSettingsGlobalNavItem } from '../../devsettings/DeveloperSettingsGlobalNavItem'
 import { useRoutesMatch } from '../../hooks'
 import { PageRoutes } from '../../routes.constants'
-import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { LazyV2SearchInput } from '../../search/input/LazyV2SearchInput'
 import { setSearchCaseSensitivity, setSearchMode, setSearchPatternType, useNavbarQueryState } from '../../stores'
 import { InlineNavigationPanel, linkForCodyNavItem } from '../GlobalNavbar'
@@ -38,6 +37,7 @@ interface NewGlobalNavigationBar extends TelemetryProps, TelemetryV2Props {
     codeMonitoringEnabled: boolean
     batchChangesEnabled: boolean
     codeInsightsEnabled: boolean
+    searchJobsEnabled: boolean
     showSearchBox: boolean
     selectedSearchContextSpec?: string
     showFeedbackModal: () => void
@@ -67,6 +67,7 @@ export const NewGlobalNavigationBar: FC<
         telemetryService,
         telemetryRecorder,
         __testing__initialSideMenuOpen,
+        searchJobsEnabled,
     } = props
 
     const isLightTheme = useIsLightTheme()
@@ -77,7 +78,7 @@ export const NewGlobalNavigationBar: FC<
     // Features enablement flags and conditions
     const isLicensed = !!window.context?.licenseInfo
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showSearchJobs = isSearchJobsEnabled()
+    const showSearchJobs = searchJobsEnabled && !isSourcegraphDotCom
     const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom
     const showBatchChanges = batchChangesEnabled && isLicensed && !isSourcegraphDotCom

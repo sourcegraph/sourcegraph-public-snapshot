@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "own",
     srcs = [
+        "conf.go",
         "ownref.go",
         "service.go",
     ],
@@ -15,9 +16,11 @@ go_library(
         "//internal/auth/providers",
         "//internal/collections",
         "//internal/database",
+        "//internal/dotcom",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/gitserver",
+        "//internal/licensing",
         "//internal/own/codeowners",
         "//internal/types",
         "//lib/errors",

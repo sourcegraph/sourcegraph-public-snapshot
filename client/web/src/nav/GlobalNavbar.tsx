@@ -35,6 +35,7 @@ import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { DeveloperSettingsGlobalNavItem } from '../devsettings/DeveloperSettingsGlobalNavItem'
+import type { SearchJobsProps } from '../enterprise/search-jobs'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
@@ -42,7 +43,6 @@ import type { NotebookProps } from '../notebooks'
 import { OnboardingChecklist } from '../onboarding'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { PageRoutes } from '../routes.constants'
-import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useDeveloperSettings, useNavbarQueryState } from '../stores'
@@ -64,6 +64,7 @@ export interface GlobalNavbarProps
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
+        SearchJobsProps,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
@@ -132,6 +133,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     codeMonitoringEnabled,
     notebooksEnabled,
     ownEnabled,
+    searchJobsEnabled,
     showFeedbackModal,
     ...props
 }) => {
@@ -148,7 +150,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
     const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
     const showSearchNotebook = notebooksEnabled && !isSourcegraphDotCom && !disableCodeSearchFeatures
-    const showSearchJobs = isSearchJobsEnabled() && !disableCodeSearchFeatures
+    const showSearchJobs = searchJobsEnabled && !disableCodeSearchFeatures
     const showBatchChanges =
         props.batchChangesEnabled && isLicensed && !isSourcegraphDotCom && !disableCodeSearchFeatures
 

@@ -307,6 +307,7 @@ go_library(
         "//internal/markdown",
         "//internal/observation",
         "//internal/oobmigration",
+        "//internal/own",
         "//internal/perforce",
         "//internal/ratelimit",
         "//internal/rbac",

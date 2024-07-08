@@ -22,6 +22,7 @@ go_library(
         "//internal/observation",
         "//internal/search",
         "//internal/search/client",
+        "//internal/search/exhaustive",
         "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
         "//internal/search/exhaustive/uploadstore",
@@ -54,7 +55,6 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/conf",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/endpoint",
@@ -73,7 +73,6 @@ go_test(
         "//internal/uploadstore/mocks",
         "//lib/errors",
         "//lib/iterator",
-        "//schema",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_zoekt//:zoekt",
