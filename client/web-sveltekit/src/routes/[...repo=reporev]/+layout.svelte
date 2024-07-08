@@ -185,6 +185,10 @@
 <slot />
 
 <style lang="scss">
+    :root {
+        --repo-header-height: 2rem;
+    }
+
     .search-header {
         width: 100%;
         z-index: 1;

@@ -131,6 +131,7 @@
         border-bottom: 1px solid var(--border-color);
         z-index: 1;
         gap: 1rem;
+        height: var(--repo-header-height);
     }
 
     h2 {
