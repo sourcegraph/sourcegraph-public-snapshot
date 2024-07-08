@@ -71,16 +71,11 @@ func NewEvent(i invocation) *event {
 
 	e.FlagsAndArgs, _ = json.Marshal(flagsAndArgs)
 
-	metadata := struct {
-		Success   bool `json:"success"`
-		Failed    bool `json:"failed"`
-		Cancelled bool `json:"cancelled"`
-		Panicked  bool `json:"panicked"`
-	}{
-		Success:   i.IsSuccess(),
-		Failed:    i.IsFailed(),
-		Cancelled: i.IsCancelled(),
-		Panicked:  i.IsPanicked(),
+	metadata := map[string]any{
+		"success":   i.IsSuccess(),
+		"failed":    i.IsFailed(),
+		"cancelled": i.IsCancelled(),
+		"panicked":  i.IsPanicked(),
 	}
 
 	e.Metadata, _ = json.Marshal(metadata)

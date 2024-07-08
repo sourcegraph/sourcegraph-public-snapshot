@@ -89,7 +89,7 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 	}
 }
 
-func maybeLog(fmt string, err error) {
+func maybeLog(fmt string, err error) { //nolint:unparam
 	if err == nil {
 		return
 	}
