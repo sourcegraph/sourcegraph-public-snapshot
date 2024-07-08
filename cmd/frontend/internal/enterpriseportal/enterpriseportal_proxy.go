@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -108,6 +109,7 @@ func newSiteAdminProxy(
 			},
 			Transport: &oauth2.Transport{
 				Source: clientCredentials, // authenticate with SAMS client credentials
+				Base:   httpcli.UncachedExternalClient.Transport,
 			},
 
 			ErrorLog: std.NewLogger(logger, log.LevelWarn),

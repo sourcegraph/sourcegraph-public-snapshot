@@ -14,6 +14,7 @@ go_library(
         "//internal/audit",
         "//internal/auth",
         "//internal/database",
+        "//internal/httpcli",
         "//lib/pointers",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//std",
