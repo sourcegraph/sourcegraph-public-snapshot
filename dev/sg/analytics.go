@@ -41,12 +41,18 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 				}
 				cmdFlags[parent.Command.Name] = parent.LocalFlagNames()
 			}
-			cmd.Context = analytics.NewInvocation(cmd.Context, cmd.App.Version, map[string]any{
+
+			cmdCtx, err := analytics.NewInvocation(cmd.Context, cmd.App.Version, map[string]any{
 				"command": fullCommand,
 				"flags":   cmdFlags,
 				"args":    cmd.Args().Slice(),
 				"nargs":   cmd.NArg(),
 			})
+			if err != nil {
+				std.Out.WriteWarningf("Failed to create analytics event: %s", err)
+				return
+			}
+			cmd.Context = cmdCtx
 
 			// Make sure analytics are persisted before exit (interrupts or panics)
 			defer func() {
@@ -57,11 +63,13 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 					actionErr = cli.Exit(message, 1)
 
 					// Log event
-					analytics.InvocationPanicked(cmd.Context, p)
+					err := analytics.InvocationPanicked(cmd.Context, p)
+					maybeLog("failed to persist analytics event: %s", err)
 				}
 			}()
 			interrupt.Register(func() {
-				analytics.InvocationCancelled(cmd.Context)
+				err := analytics.InvocationCancelled(cmd.Context)
+				maybeLog("failed to persist analytics event: %s", err)
 			})
 
 			// Call the underlying action
@@ -69,14 +77,23 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 
 			// Capture analytics post-run
 			if actionErr != nil {
-				analytics.InvocationFailed(cmd.Context, actionErr)
+				err := analytics.InvocationFailed(cmd.Context, actionErr)
+				maybeLog("failed to persist analytics event: %s", err)
 			} else {
-				analytics.InvocationSucceeded(cmd.Context)
+				err := analytics.InvocationSucceeded(cmd.Context)
+				maybeLog("failed to persist analytics event: %s", err)
 			}
 
 			return actionErr
 		}
 	}
+}
+
+func maybeLog(fmt string, err error) {
+	if err != nil {
+		return
+	}
+	std.Out.WriteWarningf(fmt, err)
 }
 
 // getRelevantStack generates a stacktrace that encapsulates the relevant parts of a
