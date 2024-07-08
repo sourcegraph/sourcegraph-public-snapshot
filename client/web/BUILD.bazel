@@ -591,6 +591,7 @@ ts_project(
         "src/enterprise/batches/repo/backend.ts",
         "src/enterprise/batches/repo/testData.ts",
         "src/enterprise/batches/settings/AddCredentialModal.tsx",
+        "src/enterprise/batches/settings/AppDetailsControls.tsx",
         "src/enterprise/batches/settings/BatchChangesCreateGitHubAppPage.tsx",
         "src/enterprise/batches/settings/BatchChangesSettingsArea.tsx",
         "src/enterprise/batches/settings/BatchChangesSiteConfigSettingsPage.tsx",
