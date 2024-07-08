@@ -496,7 +496,7 @@ func TestResolverIterator_Perforce(t *testing.T) {
 
 	gsClient := gitserver.NewMockClient()
 	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec == "bad_commit" {
+		if spec == "bad_commit" || spec == "changelist/bad_commit" {
 			return "", &gitdomain.BadCommitError{}
 		}
 		// All repos have the revision except foo/bar5
@@ -590,7 +590,7 @@ func TestResolverIterator_Perforce(t *testing.T) {
 		{
 			name: "with perforce changelist id rev",
 			opts: search.RepoOptions{
-				RepoFilters: toParsedRepoFilters(fmt.Sprintf("foo/bar[0-4]@%d", data[2].ChangelistID)),
+				RepoFilters: toParsedRepoFilters(fmt.Sprintf("foo/bar[0-4]@changelist/%d", data[2].ChangelistID)),
 			},
 			pages: []Resolved{
 				{
@@ -618,7 +618,7 @@ func TestResolverIterator_Perforce(t *testing.T) {
 		{
 			name: "single perforce changelist id rev",
 			opts: search.RepoOptions{
-				RepoFilters: toParsedRepoFilters(fmt.Sprintf("foo/bar3@%d", data[2].ChangelistID)),
+				RepoFilters: toParsedRepoFilters(fmt.Sprintf("foo/bar3@changelist/%d", data[2].ChangelistID)),
 			},
 			pages: []Resolved{
 				{
@@ -631,6 +631,15 @@ func TestResolverIterator_Perforce(t *testing.T) {
 			opts: search.RepoOptions{
 				Limit:       3,
 				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@bad_commit"),
+			},
+			err:   &gitdomain.BadCommitError{},
+			pages: nil,
+		},
+		{
+			name: "with bad changelist id",
+			opts: search.RepoOptions{
+				Limit:       3,
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@changelist/bad_commit"),
 			},
 			err:   &gitdomain.BadCommitError{},
 			pages: nil,

@@ -470,6 +470,28 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
+var changelistRegex = regexp.MustCompile(`^changelist/(\d+)$`)
+
+func extractChangelistNumber(revSpec string) (int64, error) {
+	if len(revSpec) > 0 && strings.HasPrefix(revSpec, "changelist/") {
+		matches := changelistRegex.FindStringSubmatch(revSpec)
+		if matches == nil {
+			return 0, fmt.Errorf("invalid changelist format: %s", revSpec)
+		}
+
+		numberStr := matches[1]
+		number, err := strconv.ParseInt(numberStr, 10, 0)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse changelist number: %v", err)
+		}
+
+		return number, nil
+	} else {
+		return 0, fmt.Errorf("not a valid changelist reference: ")
+	}
+
+}
+
 // resolvePerforceChangeListIds re-writes resolved refs for perforce repos
 // to use the sha of the changelist instead of the changelist id
 func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
@@ -490,12 +512,10 @@ func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 				RepoID: repoRev.Repo.ID,
 			}
 			for _, rev := range repoRev.Revs {
-				if len(rev.RevSpec) > 0 {
-					// We assume that if a repo is a perforce repo and the revs looks like changelist ids
-					// then we want to map those to underlying shas
-					if changeListId, err := strconv.ParseInt(rev.RevSpec, 10, 0); err == nil {
-						repoToMap.ChangelistIDs = append(repoToMap.ChangelistIDs, changeListId)
-					}
+				// We assume that if a repo is a perforce repo and the revs looks like changelist ids
+				// then we want to map those to underlying shas
+				if changelistNumber, err := extractChangelistNumber(rev.RevSpec); err == nil {
+					repoToMap.ChangelistIDs = append(repoToMap.ChangelistIDs, changelistNumber)
 				}
 			}
 			if len(repoToMap.ChangelistIDs) > 0 {
@@ -522,11 +542,9 @@ func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 			len(repoRev.Revs) > 0 {
 			for j := range repoRev.Revs {
 				rev := &repoRev.Revs[j]
-				if len(rev.RevSpec) > 0 {
-					if changeListId, err := strconv.ParseInt(rev.RevSpec, 10, 0); err == nil {
-						if commit, ok := subMap[changeListId]; ok {
-							rev.RevSpec = string(commit.CommitSHA)
-						}
+				if changelistNumber, err := extractChangelistNumber(rev.RevSpec); err == nil {
+					if commit, ok := subMap[changelistNumber]; ok {
+						rev.RevSpec = string(commit.CommitSHA)
 					}
 				}
 			}
