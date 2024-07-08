@@ -3075,6 +3075,9 @@
   "definitions": {
     "SiteModelConfiguration": {
       "type": "object",
+      "!go": {
+        "pointer": true
+      },
       "description": "BETA FEATURE, only enable if you know what you are doing. If set, Cody will use the new model configuration system and ignore the old 'completions' site configuration entirely.",
       "properties": {
         "sourcegraph": {
@@ -3096,6 +3099,25 @@
             "$ref": "#/definitions/ModelOverride"
           }
         },
+        "modelOverridesRecommendedSettings": {
+          "description": "Override, or add to, the list of models Cody is aware of - but let Sourcegraph configure how the model should work. Only available for select models.\n\nSpecifying the same model both here and in 'modelOverrides' is not allowed.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string",
+            "enum": [
+              "bigcode::v1::starcoder2-3b",
+              "bigcode::v1::starcoder2-7b",
+              "bigcode::v1::starcoder2-15b",
+              "mistral::v1::mistral-7b",
+              "mistral::v1::mistral-7b-instruct",
+              "mistral::v1::mixtral-8x7b",
+              "mistral::v1::mixtral-8x22b",
+              "mistral::v1::mixtral-8x7b-instruct",
+              "mistral::v1::mixtral-8x22b-instruct"
+            ]
+          }
+        },
         "defaultModels": {
           "$ref": "#/definitions/DefaultModels"
         }
@@ -3103,7 +3125,7 @@
     },
     "SourcegraphModelConfig": {
       "description": "If null, Cody will not use Sourcegraph's servers for model discovery.",
-      "type": "object",
+      "type": ["object", "null"],
       "!go": {
         "pointer": true
       },
@@ -3155,7 +3177,7 @@
             "type": "string",
             "enum": ["experimental", "beta", "stable", "deprecated"]
           },
-          "examples": [["beta", "stable"]],
+          "examples": ["beta", "stable"],
           "default": ["stable"]
         },
         "allow": {
@@ -3164,7 +3186,7 @@
           "items": {
             "type": "string"
           },
-          "examples": [["anthropic::*", "openai::2024-02-01::*"]],
+          "examples": ["anthropic::*", "openai::2024-02-01::*"],
           "default": ["*"]
         },
         "deny": {
@@ -3185,12 +3207,12 @@
         "id": {
           "description": "provider ID",
           "type": "string",
-          "examples": [["anthropic", "google", "acme-corp-custom"]]
+          "examples": ["anthropic", "google", "acme-corp-custom"]
         },
         "displayName": {
           "description": "display name",
           "type": "string",
-          "examples": [["Anthropic", "Google", "ACME Corp Custom"]]
+          "examples": ["Anthropic", "Google", "ACME Corp Custom"]
         },
         "clientSideConfig": {
           "$ref": "#/definitions/ClientSideProviderConfig"
@@ -3210,17 +3232,17 @@
         "modelRef": {
           "description": "The qualified name of the model in '${ProviderID}::${APIVersionID}::${ModelID}' format",
           "type": "string",
-          "examples": [["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]]
+          "examples": ["anthropic::2023-06-01::claude-3-sonnet", "openai::2024-02-01::gpt-4-turbo"]
         },
         "displayName": {
           "description": "display name",
           "type": "string",
-          "examples": [["Claude 3 Sonnet", "GPT-4 Turbo"]]
+          "examples": ["Claude 3 Sonnet", "GPT-4 Turbo"]
         },
         "modelName": {
           "description": "model name used when sending requests to the LLM provider's backend API.",
           "type": "string",
-          "examples": [["claude-3-sonnet-20240229", "gpt-4-turbo"]]
+          "examples": ["claude-3-sonnet-20240229", "gpt-4-turbo"]
         },
         "capabilities": {
           "description": "Whether the model can be used for chat, just autocomplete, etc.",
@@ -3234,12 +3256,12 @@
         "category": {
           "type": "string",
           "enum": ["accuracy", "balanced", "speed"],
-          "examples": [["balanced"]]
+          "examples": ["balanced"]
         },
         "status": {
           "type": "string",
           "enum": ["experimental", "beta", "stable", "deprecated"],
-          "examples": [["stable"]]
+          "examples": ["stable"]
         },
         "contextWindow": {
           "$ref": "#/definitions/ContextWindow"
@@ -3352,7 +3374,16 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "sourcegraph"]
+          "enum": [
+            "awsBedrock",
+            "azureOpenAI",
+            "anthropic",
+            "fireworks",
+            "google",
+            "openai",
+            "openaicompatible",
+            "sourcegraph"
+          ]
         }
       },
       "oneOf": [
@@ -3373,6 +3404,9 @@
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAIProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigOpenAICompatibleProvider"
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigSourcegraphProvider"
@@ -3485,6 +3519,22 @@
         "type": {
           "type": "string",
           "const": "openai"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigOpenAICompatibleProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openaicompatible"
         },
         "accessToken": {
           "type": "string"
