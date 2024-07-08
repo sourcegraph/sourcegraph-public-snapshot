@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -473,7 +474,7 @@ func (r *Resolver) associateReposWithRevs(
 var changelistRegex = regexp.MustCompile(`^changelist/(\d+)$`)
 
 func extractChangelistNumber(revSpec string) (int64, error) {
-	if len(revSpec) > 0 && strings.HasPrefix(revSpec, "changelist/") {
+	if len(revSpec) > 0 {
 		matches := changelistRegex.FindStringSubmatch(revSpec)
 		if matches == nil {
 			return 0, errors.Newf("invalid changelist format: %s", revSpec)
@@ -506,7 +507,7 @@ func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 
 	reposToMap := []database.RepoChangelistIDs{}
 	for _, repoRev := range repoRevs {
-		if repoRev.Repo.ExternalRepo.ServiceType == "perforce" && len(repoRev.Revs) > 0 {
+		if repoRev.Repo.ExternalRepo.ServiceType == extsvc.TypePerforce && len(repoRev.Revs) > 0 {
 			repoToMap := database.RepoChangelistIDs{
 				RepoID: repoRev.Repo.ID,
 			}
