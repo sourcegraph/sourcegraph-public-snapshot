@@ -1,4 +1,4 @@
-version: v2
+version: 2
 name: sprintf-to-itoa
 description: |
   This batch change uses [Comby](https://comby.dev) to replace `fmt.Sprintf` calls

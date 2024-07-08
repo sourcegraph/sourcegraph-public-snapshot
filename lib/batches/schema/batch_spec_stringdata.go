@@ -13,8 +13,9 @@ const BatchSpecJSON = `{
   "required": ["name"],
   "properties": {
     "version": {
-      "type": "string",
-      "description": "The version of the batch spec schema. Defaults to v1."
+      "type": "number",
+      "description": "The version of the batch spec schema. Defaults to 1.",
+      "enum": [1, 2]
     },
     "name": {
       "type": "string",

@@ -421,15 +421,14 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Clie
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
 	ctx := actor.WithActor(context.Background(), actor.FromUser(u.ID))
-	// Append "" to test an undefined version.
-	for _, version := range append(batcheslib.SupportedBatchSpecVersions, "") {
+	for _, version := range []int{0, 1, 2} { // Test all versions
 		spec.Version = version
 		have, err := wr.ResolveWorkspacesForBatchSpec(ctx, spec)
 		if err != nil {
-			t.Fatalf("version: %s, unexpected error: %s", version, err)
+			t.Fatalf("version: %d, unexpected error: %s", version, err)
 		}
 		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatalf("version: %s, returned workspaces wrong. (-want +got):\n%s", version, diff)
+			t.Fatalf("version: %d, returned workspaces wrong. (-want +got):\n%s", version, diff)
 		}
 	}
 }
@@ -697,6 +696,6 @@ type mockDirectoryFinder struct {
 	results map[repoRevKey][]string
 }
 
-func (m *mockDirectoryFinder) FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+func (m *mockDirectoryFinder) FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion int, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
 	return m.results, nil
 }
