@@ -489,7 +489,6 @@ func extractChangelistNumber(revSpec string) (int64, error) {
 	} else {
 		return 0, fmt.Errorf("not a valid changelist reference: ")
 	}
-
 }
 
 // resolvePerforceChangeListIds re-writes resolved refs for perforce repos
