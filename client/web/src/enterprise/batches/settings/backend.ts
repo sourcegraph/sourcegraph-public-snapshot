@@ -101,6 +101,16 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
                 logo
             }
         }
+        gitHubApp {
+            ... on GitHubApp {
+                id
+                appID
+                name
+                appURL
+                baseURL
+                logo
+            }
+        }
     }
 
     ${CREDENTIAL_FIELDS_FRAGMENT}

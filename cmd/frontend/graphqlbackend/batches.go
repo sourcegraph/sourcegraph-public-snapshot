@@ -560,6 +560,7 @@ type BatchChangesCodeHostResolver interface {
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 	CommitSigningConfiguration(context.Context) (CommitSigningConfigResolver, error)
+	GitHubApp(context.Context) (GitHubAppResolver, error)
 }
 
 type BatchChangesCredentialResolver interface {

@@ -12,7 +12,7 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import type {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
-    CheckBatchChangesCredentialVariables,
+    CheckBatchChangesCredentialVariables, GitHubAppByIDFields,
     UserAreaUserFields,
 } from '../../../graphql-operations'
 
@@ -76,7 +76,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         refetchAll()
     }, [refetchAll, buttonReference])
 
-    const isEnabled = node.credential !== null && (user === null || !node.credential.isSiteCredential)
+    const isEnabled = node.credential !== null && (user === null || !node.credential.isSiteCredential) && (node.credential.isGitHubApp && node.gitHubApp)
 
     const headingAriaLabel = `Sourcegraph ${
         isEnabled ? 'has credentials configured' : 'does not have credentials configured'
@@ -91,7 +91,21 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         logger.error(checkCredError.message)
     }
 
-    node.credential?.isGitHubApp
+    const t: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> = node.commitSigningConfiguration ? {
+        id: node.commitSigningConfiguration?.id,
+        name: node.commitSigningConfiguration?.name,
+        appURL: node.commitSigningConfiguration?.appURL,
+        logo: node.commitSigningConfiguration?.logo,
+        appID: node.commitSigningConfiguration?.appID,
+    } : (
+        node.credential?.isGitHubApp ? {
+            id: node.gitHubApp?.id,
+            name: node.gitHubApp?.name,
+            appURL: node.gitHubApp?.appURL,
+            logo: node.gitHubApp?.logo,
+            appID: node.gitHubApp?.appID,
+        } : null
+    )
 
     return (
         <>
@@ -142,7 +156,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
                             node.credential?.isGitHubApp ? (
-                                    <AppDetailsControls baseURL={node.externalServiceURL} config={node.credential} refetch={() => alert('refetch')} />
+                                    <AppDetailsControls baseURL={node.externalServiceURL} config={t} refetch={refetchAll} />
                                 ) : (
                                 <>
                                     <CheckButton

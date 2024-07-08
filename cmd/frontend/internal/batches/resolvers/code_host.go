@@ -61,6 +61,25 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 	return nil, nil
 }
 
+func (c *batchChangesCodeHostResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
+	switch c.codeHost.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		gstore := ghstore.GitHubAppsWith(c.store.Store)
+		domain := itypes.BatchesGitHubAppDomain
+		kind := ghtypes.UserCredentialGitHubAppKind // todo: do we need to make this variable to also get batch site credentials?
+		ghapp, err := gstore.GetByDomainAndKind(ctx, domain, kind, c.codeHost.ExternalServiceID)
+		if err != nil {
+			if _, ok := err.(ghstore.ErrNoGitHubAppFound); ok {
+				return nil, nil
+			} else {
+				return nil, err
+			}
+		}
+		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
+	}
+	return nil, nil
+}
+
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }

@@ -3495,6 +3495,8 @@ type BatchChangesCodeHost {
     """
     commitSigningConfiguration: CommitSigningConfiguration
 
+    gitHubApp: GitHubApp
+
     """
     If true, some of the repositories on this code host require
     an SSH key to be configured.

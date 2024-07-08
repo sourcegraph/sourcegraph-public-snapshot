@@ -1,4 +1,4 @@
-import type {BatchChangesCodeHostFields} from '../../../graphql-operations';
+import type {GitHubAppByIDFields} from '../../../graphql-operations';
 import React, {useRef, useState} from 'react';
 import {useRefreshGitHubApp} from './backend';
 import {useNavigate} from 'react-router-dom';
@@ -7,7 +7,8 @@ import {
     Alert,
     Button,
     ButtonLink,
-    Icon, Link,
+    Icon,
+    Link,
     Menu,
     MenuButton,
     MenuDivider,
@@ -25,7 +26,8 @@ import {animated, useSpring} from 'react-spring';
 
 interface AppDetailsControlsProps {
     baseURL: string
-    config: BatchChangesCodeHostFields['commitSigningConfiguration']
+    // config: BatchChangesCodeHostFields['commitSigningConfiguration']
+    config: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'>
     refetch: () => void
 }
 
