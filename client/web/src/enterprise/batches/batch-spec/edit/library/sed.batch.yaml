@@ -1,4 +1,4 @@
-version: v2
+version: 2
 name: apply-regex-sed
 description: Apply a regex using sed
 

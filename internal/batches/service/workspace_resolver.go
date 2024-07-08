@@ -230,7 +230,7 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
 // resolveRepositoriesOn resolves a single on: entry in a batch spec.
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository, batchSpecVersion string) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
+func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository, batchSpecVersion int) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn")
 	defer tr.EndWithErr(&err)
 
@@ -313,7 +313,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 	}, nil
 }
 
-func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string, batchSpecVersion string) (_ []*RepoRevision, err error) {
+func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string, batchSpecVersion int) (_ []*RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositorySearch")
 	defer tr.EndWithErr(&err)
 
@@ -388,18 +388,14 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
-func determineDefaultPatternType(batchSpecVersion string) searchquery.SearchType {
-	switch batchSpecVersion {
-	case "v1":
-		return searchquery.SearchTypeStandard
-	case "v2":
-		return searchquery.SearchTypeKeyword
-	default:
+func determineDefaultPatternType(batchSpecVersion int) searchquery.SearchType {
+	if batchSpecVersion <= 1 {
 		return searchquery.SearchTypeStandard
 	}
+	return searchquery.SearchTypeKeyword
 }
 
-func (wr *workspaceResolver) runSearch(ctx context.Context, query string, batchSpecVersion string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
+func (wr *workspaceResolver) runSearch(ctx context.Context, query string, batchSpecVersion int, onMatches func(matches []streamhttp.EventMatch)) (err error) {
 	defaultPatternType := determineDefaultPatternType(batchSpecVersion)
 	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion, &defaultPatternType)
 	if err != nil {
@@ -496,7 +492,7 @@ const findDirectoriesInReposConcurrency = 10
 // The locations are paths relative to the root of the directory.
 // No "/" at the beginning.
 // A dot (".") represents the root directory.
-func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion int, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
 	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
 		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:all patterntype:keyword`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
 
@@ -563,7 +559,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 }
 
 type directoryFinder interface {
-	FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
+	FindDirectoriesInRepos(ctx context.Context, fileName string, batchSpecVersion int, repos ...*RepoRevision) (map[repoRevKey][]string, error)
 }
 
 // findWorkspaces matches the given repos to the workspace configs and

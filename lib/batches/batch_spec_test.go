@@ -38,7 +38,7 @@ changesetTemplate:
 
 	t.Run("valid with version v1", func(t *testing.T) {
 		const spec = `
-version: v1
+version: 1
 name: hello-world
 description: Add Hello World to READMEs
 on:
@@ -64,7 +64,7 @@ changesetTemplate:
 
 	t.Run("valid with version v2", func(t *testing.T) {
 		const spec = `
-version: v2
+version: 2
 name: hello-world
 description: Add Hello World to READMEs
 on:
@@ -90,7 +90,7 @@ changesetTemplate:
 
 	t.Run("invalid version", func(t *testing.T) {
 		const spec = `
-version: v99
+version: 99
 name: hello-world
 description: Add Hello World to READMEs
 on:
@@ -108,7 +108,7 @@ changesetTemplate:
   fork: false
 `
 		_, err := ParseBatchSpec([]byte(spec))
-		assert.Equal(t, "unsupported batch spec version v99. Supported versions are v1, v2", err.Error())
+		assert.Equal(t, "version: version must be one of the following: 1, 2", err.Error())
 	})
 
 	t.Run("missing changesetTemplate", func(t *testing.T) {
