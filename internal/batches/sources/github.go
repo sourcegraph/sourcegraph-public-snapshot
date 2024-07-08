@@ -78,8 +78,8 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 	}, nil
 }
 
-func (s GitHubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.au)
+func (s GitHubSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.au)
 }
 
 func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

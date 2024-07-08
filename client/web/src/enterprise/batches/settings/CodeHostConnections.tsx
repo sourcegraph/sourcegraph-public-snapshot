@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -20,8 +20,8 @@ import {
     type BatchChangesCodeHostFields,
     GitHubAppKind,
     type GlobalBatchChangesCodeHostsResult,
-    type UserBatchChangesCodeHostsResult,
     type UserAreaUserFields,
+    type UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
@@ -33,7 +33,14 @@ export interface GlobalCodeHostConnectionsProps {
 
 export const GlobalCodeHostConnections: React.FunctionComponent<
     React.PropsWithChildren<GlobalCodeHostConnectionsProps>
-> = props => <CodeHostConnections user={null} connectionResult={useGlobalBatchChangesCodeHostConnection()} {...props} />
+> = props => (
+    <CodeHostConnections
+        user={null}
+        connectionResult={useGlobalBatchChangesCodeHostConnection()}
+        gitHubAppKind={GitHubAppKind.SITE_CREDENTIAL}
+        {...props}
+    />
+)
 
 export interface UserCodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
     user: UserAreaUserFields
@@ -46,6 +53,7 @@ export const UserCodeHostConnections: React.FunctionComponent<
         connectionResult={useUserBatchChangesCodeHostConnection(user.id)}
         headerLine={headerLine}
         user={user}
+        gitHubAppKind={GitHubAppKind.USER_CREDENTIAL}
     />
 )
 
@@ -55,20 +63,21 @@ interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
         GlobalBatchChangesCodeHostsResult | UserBatchChangesCodeHostsResult,
         BatchChangesCodeHostFields
     >
+    gitHubAppKind: GitHubAppKind
 }
 
 const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({
     user,
     headerLine,
     connectionResult,
+    gitHubAppKind,
 }) => {
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     const location = useLocation()
-    const kind = new URLSearchParams(location.search).get('kind')
     const success = new URLSearchParams(location.search).get('success') === 'true'
     const appName = new URLSearchParams(location.search).get('app_name')
     const setupError = new URLSearchParams(location.search).get('error')
-    const shouldShowError = !success && setupError && kind !== GitHubAppKind.COMMIT_SIGNING
+    const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     return (
         <Container className="mb-3">
             <H3>Code host tokens</H3>
@@ -93,6 +102,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             node={node}
                             refetchAll={refetchAll}
                             user={user}
+                            gitHubAppKind={gitHubAppKind}
                         />
                     ))}
                 </ConnectionList>

@@ -97,7 +97,7 @@ func NewMockChangesetSource() *MockChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
+			defaultHook: func(context.Context, *types.Repo) (r0 *protocol.PushConfig, r1 error) {
 				return
 			},
 		},
@@ -159,7 +159,7 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(*types.Repo) (*protocol.PushConfig, error) {
+			defaultHook: func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 				panic("unexpected invocation of MockChangesetSource.GitserverPushConfig")
 			},
 		},
@@ -680,24 +680,24 @@ func (c ChangesetSourceCreateCommentFuncCall) Results() []interface{} {
 // GitserverPushConfig method of the parent MockChangesetSource instance is
 // invoked.
 type ChangesetSourceGitserverPushConfigFunc struct {
-	defaultHook func(*types.Repo) (*protocol.PushConfig, error)
-	hooks       []func(*types.Repo) (*protocol.PushConfig, error)
+	defaultHook func(context.Context, *types.Repo) (*protocol.PushConfig, error)
+	hooks       []func(context.Context, *types.Repo) (*protocol.PushConfig, error)
 	history     []ChangesetSourceGitserverPushConfigFuncCall
 	mutex       sync.Mutex
 }
 
 // GitserverPushConfig delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockChangesetSource) GitserverPushConfig(v0 *types.Repo) (*protocol.PushConfig, error) {
-	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0)
-	m.GitserverPushConfigFunc.appendCall(ChangesetSourceGitserverPushConfigFuncCall{v0, r0, r1})
+func (m *MockChangesetSource) GitserverPushConfig(v0 context.Context, v1 *types.Repo) (*protocol.PushConfig, error) {
+	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0, v1)
+	m.GitserverPushConfigFunc.appendCall(ChangesetSourceGitserverPushConfigFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GitserverPushConfig
 // method of the parent MockChangesetSource instance is invoked and the hook
 // queue is empty.
-func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
+func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*protocol.PushConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -706,7 +706,7 @@ func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(*types
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
+func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Context, *types.Repo) (*protocol.PushConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -715,19 +715,19 @@ func (f *ChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*types.Repo)
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ChangesetSourceGitserverPushConfigFunc) SetDefaultReturn(r0 *protocol.PushConfig, r1 error) {
-	f.SetDefaultHook(func(*types.Repo) (*protocol.PushConfig, error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ChangesetSourceGitserverPushConfigFunc) PushReturn(r0 *protocol.PushConfig, r1 error) {
-	f.PushHook(func(*types.Repo) (*protocol.PushConfig, error) {
+	f.PushHook(func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ChangesetSourceGitserverPushConfigFunc) nextHook() func(*types.Repo) (*protocol.PushConfig, error) {
+func (f *ChangesetSourceGitserverPushConfigFunc) nextHook() func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -763,7 +763,10 @@ func (f *ChangesetSourceGitserverPushConfigFunc) History() []ChangesetSourceGits
 type ChangesetSourceGitserverPushConfigFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 *types.Repo
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.PushConfig
@@ -775,7 +778,7 @@ type ChangesetSourceGitserverPushConfigFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1502,7 +1505,7 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
+			defaultHook: func(context.Context, *types.Repo) (r0 *protocol.PushConfig, r1 error) {
 				return
 			},
 		},
@@ -1570,7 +1573,7 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
-			defaultHook: func(*types.Repo) (*protocol.PushConfig, error) {
+			defaultHook: func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 				panic("unexpected invocation of MockForkableChangesetSource.GitserverPushConfig")
 			},
 		},
@@ -2219,24 +2222,24 @@ func (c ForkableChangesetSourceGetForkFuncCall) Results() []interface{} {
 // when the GitserverPushConfig method of the parent
 // MockForkableChangesetSource instance is invoked.
 type ForkableChangesetSourceGitserverPushConfigFunc struct {
-	defaultHook func(*types.Repo) (*protocol.PushConfig, error)
-	hooks       []func(*types.Repo) (*protocol.PushConfig, error)
+	defaultHook func(context.Context, *types.Repo) (*protocol.PushConfig, error)
+	hooks       []func(context.Context, *types.Repo) (*protocol.PushConfig, error)
 	history     []ForkableChangesetSourceGitserverPushConfigFuncCall
 	mutex       sync.Mutex
 }
 
 // GitserverPushConfig delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GitserverPushConfig(v0 *types.Repo) (*protocol.PushConfig, error) {
-	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0)
-	m.GitserverPushConfigFunc.appendCall(ForkableChangesetSourceGitserverPushConfigFuncCall{v0, r0, r1})
+func (m *MockForkableChangesetSource) GitserverPushConfig(v0 context.Context, v1 *types.Repo) (*protocol.PushConfig, error) {
+	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0, v1)
+	m.GitserverPushConfigFunc.appendCall(ForkableChangesetSourceGitserverPushConfigFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GitserverPushConfig
 // method of the parent MockForkableChangesetSource instance is invoked and
 // the hook queue is empty.
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*protocol.PushConfig, error)) {
 	f.defaultHook = hook
 }
 
@@ -2245,7 +2248,7 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook fun
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*types.Repo) (*protocol.PushConfig, error)) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Context, *types.Repo) (*protocol.PushConfig, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2254,19 +2257,19 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(*typ
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultReturn(r0 *protocol.PushConfig, r1 error) {
-	f.SetDefaultHook(func(*types.Repo) (*protocol.PushConfig, error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushReturn(r0 *protocol.PushConfig, r1 error) {
-	f.PushHook(func(*types.Repo) (*protocol.PushConfig, error) {
+	f.PushHook(func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 		return r0, r1
 	})
 }
 
-func (f *ForkableChangesetSourceGitserverPushConfigFunc) nextHook() func(*types.Repo) (*protocol.PushConfig, error) {
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) nextHook() func(context.Context, *types.Repo) (*protocol.PushConfig, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2303,7 +2306,10 @@ func (f *ForkableChangesetSourceGitserverPushConfigFunc) History() []ForkableCha
 type ForkableChangesetSourceGitserverPushConfigFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 *types.Repo
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.PushConfig
@@ -2315,7 +2321,7 @@ type ForkableChangesetSourceGitserverPushConfigFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

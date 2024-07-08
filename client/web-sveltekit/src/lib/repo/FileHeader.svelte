@@ -2,6 +2,7 @@
     import { writable } from 'svelte/store'
 
     import { resolveRoute } from '$app/paths'
+    import { encodeURIPathComponent } from '$lib/common'
     import { sizeToFit } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
@@ -23,7 +24,7 @@
             index < all.length - 1 || type === 'tree' ? TREE_ROUTE_ID : BLOB_ROUTE_ID,
             {
                 repo: revision ? `${repoName}@${revision}` : repoName,
-                path: all.slice(0, index + 1).join('/'),
+                path: encodeURIPathComponent(all.slice(0, index + 1).join('/')),
             }
         ),
     ])

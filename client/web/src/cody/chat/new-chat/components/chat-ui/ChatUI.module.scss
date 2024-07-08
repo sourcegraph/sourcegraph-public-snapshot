@@ -57,6 +57,13 @@
         visibility: hidden;
         display: block !important;
     }
+
+    // Target all possible animated elements (radix accordions)
+    // and disable animation since there are flashes with exit
+    // animations.
+    :global(.tw-transition-all) {
+        animation: none !important;
+    }
 }
 
 [data-floating-ui-portal] {
