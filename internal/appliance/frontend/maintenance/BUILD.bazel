@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary", "js_run_devserver", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary", "js_run_devserver")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//maintenance:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
@@ -109,4 +109,3 @@ bin.vite_binary(
     chdir = package_name(),
     data = [":build"],
 )
-
