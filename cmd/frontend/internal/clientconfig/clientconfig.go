@@ -14,9 +14,10 @@ import (
 
 func GetForActor(ctx context.Context, logger log.Logger, db database.DB, actor *actor.Actor) (*clientconfig.ClientConfig, error) {
 	c := clientconfig.ClientConfig{
-		// TODO(chrsmith): TODO(slimsag): Set this to `true` when and only when clients should use
-		// the new LLM models httpapi endpoint being added in e.g. https://github.com/sourcegraph/sourcegraph/pull/63507
-		ModelsAPIEnabled: false,
+		// If the site config has "modelConfiguration" specified / non-null, then the site admin
+		// has opted into the new model configuration system, wants to use the new /.api/supported-llms
+		// endpoint for models, etc.
+		ModelsAPIEnabled: conf.Get().SiteConfig().ModelConfiguration != nil,
 	}
 
 	// 🚨 SECURITY: This code lets site admins restrict who has access to Cody at all via RBAC.
