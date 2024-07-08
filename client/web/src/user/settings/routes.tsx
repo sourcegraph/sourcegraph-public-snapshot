@@ -11,7 +11,6 @@ import { Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges } from '../../batches/utils'
-import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
 import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
 import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
 import type { UserSettingsAreaUserFields } from '../../graphql-operations'
@@ -118,22 +117,6 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             'BatchChangesSettingsArea'
         ),
         condition: shouldRenderBatchChangesPage,
-    },
-    {
-        path: 'subscriptions/:subscriptionUUID',
-        render: lazyComponent(
-            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
-            'UserSubscriptionsProductSubscriptionPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
-    },
-    {
-        path: 'subscriptions',
-        render: lazyComponent(
-            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
-            'UserSubscriptionsProductSubscriptionsPage'
-        ),
-        condition: () => SHOW_BUSINESS_FEATURES,
     },
 ]
 
