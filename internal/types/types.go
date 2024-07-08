@@ -521,7 +521,7 @@ type RepoIDName struct {
 	Name api.RepoName
 }
 
-// MinimalRepo represents a source code repository name, its ID and number of stars.
+// MinimalRepo represents a source code repository name, its ID, number of stars and service type.
 type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName

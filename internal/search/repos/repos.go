@@ -474,22 +474,18 @@ func (r *Resolver) associateReposWithRevs(
 var changelistRegex = regexp.MustCompile(`^changelist/(\d+)$`)
 
 func extractChangelistNumber(revSpec string) (int64, error) {
-	if len(revSpec) > 0 {
-		matches := changelistRegex.FindStringSubmatch(revSpec)
-		if matches == nil {
-			return 0, errors.Newf("invalid changelist format: %s", revSpec)
-		}
-
-		numberStr := matches[1]
-		number, err := strconv.ParseInt(numberStr, 10, 0)
-		if err != nil {
-			return 0, errors.Newf("failed to parse changelist number: %v", err)
-		}
-
-		return number, nil
-	} else {
-		return 0, errors.Newf("not a valid changelist reference: ")
+	matches := changelistRegex.FindStringSubmatch(revSpec)
+	if matches == nil {
+		return 0, errors.Newf("invalid changelist format: %s", revSpec)
 	}
+
+	numberStr := matches[1]
+	number, err := strconv.ParseInt(numberStr, 10, 0)
+	if err != nil {
+		return 0, errors.Newf("failed to parse changelist number: %v", err)
+	}
+
+	return number, nil
 }
 
 // resolvePerforceChangeListIds re-writes resolved refs for perforce repos
