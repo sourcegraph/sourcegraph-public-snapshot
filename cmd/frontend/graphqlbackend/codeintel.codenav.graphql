@@ -452,8 +452,9 @@ extend type Query {
     by a source range.
     Ordering and uniqueness guarantees:
     1. The usages returned will already be de-duplicated.
-    2. Results for a single file are contiguous.
+    2. Results are first grouped by provenance in the order precise, syntactic, then search-based.
     3. Results for a single repository are contiguous.
+    4. Results for a single file are contiguous.
     Related: See `codeGraphData` on GitBlob.
 
     EXPERIMENTAL: This API may make backwards-incompatible changes in the future.
@@ -699,7 +700,19 @@ type Usage {
     """
     Information about the symbol itself.
     """
-    symbol: SymbolInformation!
+    symbol: SymbolInformation
+
+    """
+    Coarse-grained information about the data source.
+    """
+    provenance: CodeGraphDataProvenance!
+
+    """
+    Opaque fine-grained information describing the data source.
+    Provided only for debugging.
+    This field should be ignored when checking structural equality.
+    """
+    dataSource: String
 
     """
     Information about where this usage is located.
@@ -891,18 +904,6 @@ type SymbolInformation {
     is no appropriate hover documentation to display.
     """
     documentation: [String!]
-
-    """
-    Coarse-grained information about the data source.
-    """
-    provenance: CodeGraphDataProvenance!
-
-    """
-    Opaque fine-grained information describing the data source.
-    Provided only for debugging.
-    This field should be ignored when checking structural equality.
-    """
-    dataSource: String
 }
 
 """

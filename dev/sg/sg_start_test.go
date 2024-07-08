@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -121,8 +122,14 @@ func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 func expectOutput(t *testing.T, buf *outputtest.Buffer, want []string) {
 	t.Helper()
 
+	// TODO: DINF-104, find out why we need this sleep. Basically, when running in tests,
+	// for some reason, even though cmds.start() returned, it hasn't finished writing
+	// the outputs in rare cases (6 out out 100 runs on my machine).
+	time.Sleep(300 * time.Millisecond)
 	have := buf.Lines()
 
+	// TODO: See DINF-104, without this, we can see the cmd output printed out after
+	// the exit message. For now, and to prevent flakes, we'll keep the sort.
 	sort.Strings(want)
 	sort.Strings(have)
 	if !cmp.Equal(want, have) {

@@ -1,6 +1,7 @@
 import { memoize } from 'lodash'
 import { writable, type Writable } from 'svelte/store'
 
+import { createLocalWritable } from '$lib/stores'
 import { createEmptySingleSelectTreeState, type TreeState } from '$lib/TreeView'
 
 /**
@@ -11,3 +12,5 @@ export const getSidebarFileTreeStateForRepo = memoize(
     (_repoName: string): Writable<TreeState> => writable<TreeState>(createEmptySingleSelectTreeState()),
     repoName => repoName
 )
+
+export const rightPanelOpen = createLocalWritable<boolean>('repo.right-panel.open', false)

@@ -14,7 +14,7 @@ go_library(
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//internal/actor",
-        "//internal/codygateway",
+        "//internal/codygateway/codygatewayevents",
         "//internal/goroutine",
         "//internal/trace",
         "//lib/errors",

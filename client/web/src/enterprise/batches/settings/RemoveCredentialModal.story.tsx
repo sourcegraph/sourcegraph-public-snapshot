@@ -27,6 +27,7 @@ const credential = {
     isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+    isGitHubApp: false,
 }
 
 export const NoSsh: StoryFn = () => (

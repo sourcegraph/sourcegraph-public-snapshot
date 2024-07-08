@@ -26,6 +26,7 @@ go_library(
         "//cmd/cody-gateway/internal/response",
         "//cmd/cody-gateway/shared/config",
         "//internal/codygateway",
+        "//internal/codygateway/codygatewayevents",
         "//internal/collections",
         "//internal/completions/client/anthropic",
         "//internal/completions/client/fireworks",

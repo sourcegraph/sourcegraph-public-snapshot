@@ -72,18 +72,25 @@ export default defineConfig(({ mode }) => {
             },
         },
         server: {
+            // When running behind caddy we have to listen to a different host.
+            host: process.env.SK_HOST || 'localhost',
             // Allow setting the port via env variables to make it easier to integrate with
             // our existing caddy setup (which proxies requests to a specific port).
             port: process.env.SK_PORT ? +process.env.SK_PORT : undefined,
-            strictPort: !!process.env.SV_PORT,
+            strictPort: !!process.env.SK_PORT,
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
-                '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|code-graph|batch-changes|settings)(/|$)':
+                '^(/sign-(in|out)|/.assets|/-|/.api|/.auth|/search/stream|/users|/notebooks|/insights|/batch-changes)|/-/(raw|compare|own|code-graph|batch-changes|settings)(/|$)':
                     {
-                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
+                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
                         changeOrigin: true,
                         secure: false,
+                        headers: {
+                            // This needs to be set to make the cody sidebar work, which doesn't use the web graphql client work.
+                            // todo(fkling): Figure out how the React app makes this work without this header.
+                            'X-Requested-With': 'Sourcegraph',
+                        },
                     },
             },
         },

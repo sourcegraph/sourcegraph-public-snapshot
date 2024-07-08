@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/tokenizer"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,33 +31,6 @@ const (
 	AwsBedrock  Provider = "awsbedrock"
 	Anthropic   Provider = "anthropic"
 )
-
-func (m *Manager) TokenizeAndCalculateUsage(inputMessages []types.Message, outputText, model, feature string, provider Provider) error {
-	tokenizer, err := tokenizer.NewCL100kBaseTokenizer()
-	if err != nil {
-		return errors.Newf("failed to create tokenizer: %w", err)
-	}
-
-	numInputTokens, err := tokenizer.NumTokenizeFromMessages(inputMessages)
-	if err != nil {
-		return errors.Newf("failed to tokenize input text: %w", err)
-	}
-
-	outputTokens, err := tokenizer.Tokenize(outputText)
-	if err != nil {
-		return errors.Newf("failed to tokenize output text: %w", err)
-	}
-
-	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)
-
-	if err := m.updateTokenCounts(baseKey+"input", int64(numInputTokens)); err != nil {
-		return errors.Newf("failed to update input token counts: %w", err)
-	}
-	if err := m.updateTokenCounts(baseKey+"output", int64(len(outputTokens))); err != nil {
-		return errors.Newf("failed to update output token counts: %w", err)
-	}
-	return nil
-}
 
 func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {
 	baseKey := fmt.Sprintf("%s:%s:%s:", provider, model, feature)

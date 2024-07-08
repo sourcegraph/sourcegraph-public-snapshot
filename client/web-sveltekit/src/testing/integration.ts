@@ -76,7 +76,7 @@ const IS_BAZEL = process.env.BAZEL === '1'
 
 const SCHEMA_DIR = `${IS_BAZEL ? '' : '../../'}cmd/frontend/graphqlbackend`
 
-const ASSETS_DIR = process.env.ASSETS_DIR || './build/_sk/'
+const ASSETS_DIR = process.env.ASSETS_DIR || './build'
 
 const typeDefs = glob
     .sync('**/*.graphql', { cwd: SCHEMA_DIR })
@@ -229,6 +229,16 @@ class Sourcegraph {
         // @ts-expect-error - Unclear how to type this correctly. ObjectMock is missing string index signature
         // which is required by addFixtures
         this.graphqlMock.addFixtures(fixtures)
+    }
+
+    public setWindowContext(context: Partial<Window['context']>): Promise<void> {
+        return this.page.addInitScript(context => {
+            if (!window.context) {
+                // @ts-expect-error - Unclear how to type this correctly
+                window.context = {}
+            }
+            Object.assign(window.context, context)
+        }, context)
     }
 
     public signIn(userMock: UserMock = {}): void {

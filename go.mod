@@ -271,6 +271,7 @@ require (
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-redsync/redsync/v4 v4.13.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/go-github/v48 v48.2.0
 	github.com/google/go-github/v55 v55.0.0
@@ -289,8 +290,8 @@ require (
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/nxadm/tail v1.4.11
 	github.com/oschwald/maxminddb-golang v1.12.0
-	github.com/pkoukk/tiktoken-go v0.1.6
-	github.com/pkoukk/tiktoken-go-loader v0.0.1
+	github.com/pkoukk/tiktoken-go v0.1.7
+	github.com/pkoukk/tiktoken-go-loader v0.0.2-0.20240522064338-c17e8bc0f699
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5
 	github.com/redis/go-redis/v9 v9.5.3
@@ -302,7 +303,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/nobl9 v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/opsgenie v0.0.0-20240513203650-e2b1273f1c1a
-	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20240513203650-e2b1273f1c1a
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20240617210115-f286e77e83e8
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/sentry v0.0.0-20240513203650-e2b1273f1c1a
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/slack v0.0.0-20240513203650-e2b1273f1c1a
@@ -315,6 +316,7 @@ require (
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-00010101000000-000000000000
 	github.com/vektah/gqlparser/v2 v2.4.5
 	github.com/vvakame/gcplogurl v0.2.0
+	github.com/wagslane/go-password-validator v0.3.0
 	go.opentelemetry.io/collector/config/confighttp v0.92.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.92.0
 	go.opentelemetry.io/collector/config/configtls v0.92.0
@@ -382,7 +384,6 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/uuid/v5 v5.0.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.20.1 // indirect

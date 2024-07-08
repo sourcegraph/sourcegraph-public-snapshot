@@ -180,10 +180,10 @@ export class Occurrence {
 // non-overlapping occurrences.  The most narrow occurrence "wins", meaning that
 // when two ranges overlap, we pick the syntax kind of the occurrence with the
 // shortest distance between start/end.
-export function nonOverlappingOccurrences(occurrences: Occurrence[]): Occurrence[] {
+export function nonOverlappingOccurrences(occurrences: readonly Occurrence[]): Occurrence[] {
     // NOTE: we can't guarantee that the occurrences are sorted from the server
     // or after splitting multiline occurrences into single-line occurrences.
-    const stack: Occurrence[] = occurrences.sort((a, b) => a.range.compare(b.range)).reverse()
+    const stack: Occurrence[] = [...occurrences].sort((a, b) => a.range.compare(b.range)).reverse()
     const result: Occurrence[] = []
     const pushResult = (occ: Occurrence): void => {
         if (!occ.range.isZeroWidth()) {

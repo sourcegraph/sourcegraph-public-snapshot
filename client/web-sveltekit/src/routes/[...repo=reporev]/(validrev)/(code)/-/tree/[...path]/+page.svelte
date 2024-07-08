@@ -10,6 +10,7 @@
     import Readme from '$lib/repo/Readme.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
 
     import { getRepositoryPageContext } from '../../../../../context'
 
@@ -37,6 +38,7 @@
 <FileHeader type="tree" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
+        <OpenCodyAction />
     </svelte:fragment>
 </FileHeader>
 
