@@ -116,6 +116,7 @@ BUILD_DEPS = [
     ":node_modules/hotkeys-js",
     ":node_modules/mermaid",
     ":node_modules/prismjs",
+    ":node_modules/re2js",
     ":node_modules/sass",
     ":node_modules/signale",
     ":node_modules/svelte",
