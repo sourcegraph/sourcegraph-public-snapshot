@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//cmd/repo-updater/internal/gitserver",
-        "//cmd/repo-updater/internal/phabricator",
         "//cmd/repo-updater/internal/purge",
         "//cmd/repo-updater/internal/repoupdater",
         "//cmd/repo-updater/internal/scheduler",
