@@ -80,9 +80,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         refetchAll()
     }, [refetchAll, buttonReference])
 
-    const isEnabled =
-        node.credential !== null &&
-        (user === null || !node.credential.isSiteCredential)
+    const isEnabled = node.credential !== null && (user === null || !node.credential.isSiteCredential)
 
     const headingAriaLabel = `Sourcegraph ${
         isEnabled ? 'has credentials configured' : 'does not have credentials configured'

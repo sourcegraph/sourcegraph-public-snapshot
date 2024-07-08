@@ -3495,6 +3495,9 @@ type BatchChangesCodeHost {
     """
     commitSigningConfiguration: CommitSigningConfiguration
 
+    """
+    The according GitHubApp, if it has been configured as a credential.
+    """
     gitHubApp: GitHubApp
 
     """
