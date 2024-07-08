@@ -3096,6 +3096,25 @@
             "$ref": "#/definitions/ModelOverride"
           }
         },
+        "modelOverridesRecommendedSettings": {
+          "description": "Override, or add to, the list of models Cody is aware of - but let Sourcegraph configure how the model should work. Only available for select models.\n\nSpecifying the same model both here and in 'modelOverrides' is not allowed.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string",
+            "enum": [
+              "bigcode::v1::starcoder2-3b",
+              "bigcode::v1::starcoder2-7b",
+              "bigcode::v1::starcoder2-15b",
+              "mistral::v1::mistral-7b",
+              "mistral::v1::mistral-7b-instruct",
+              "mistral::v1::mixtral-8x7b",
+              "mistral::v1::mixtral-8x22b",
+              "mistral::v1::mixtral-8x7b-instruct",
+              "mistral::v1::mixtral-8x22b-instruct"
+            ]
+          }
+        },
         "defaultModels": {
           "$ref": "#/definitions/DefaultModels"
         }

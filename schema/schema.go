@@ -3398,6 +3398,10 @@ type SiteModelConfiguration struct {
 	DefaultModels *DefaultModels `json:"defaultModels,omitempty"`
 	// ModelOverrides description: Override, or add to, the list of models Cody is aware of and how they are configured to work
 	ModelOverrides []*ModelOverride `json:"modelOverrides,omitempty"`
+	// ModelOverridesRecommendedSettings description: Override, or add to, the list of models Cody is aware of - but let Sourcegraph configure how the model should work. Only available for select models.
+	//
+	// Specifying the same model both here and in 'modelOverrides' is not allowed.
+	ModelOverridesRecommendedSettings []string `json:"modelOverridesRecommendedSettings,omitempty"`
 	// ProviderOverrides description: Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.
 	ProviderOverrides []*ProviderOverride     `json:"providerOverrides,omitempty"`
 	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
