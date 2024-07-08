@@ -17,6 +17,7 @@ go_library(
         "//internal/database",
         "//internal/dotcom",
         "//internal/endpoint",
+        "//internal/extsvc",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
