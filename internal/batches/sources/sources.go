@@ -363,7 +363,7 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
 		}
-	case *ghaauth.InstallationAuthenticator:
+	case *ghauth.InstallationAuthenticator:
 		if av.NeedsRefresh() {
 			if err := av.Refresh(ctx, httpcli.ExternalClient); err != nil {
 				return nil, err
