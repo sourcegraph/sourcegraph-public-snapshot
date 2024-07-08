@@ -1,14 +1,16 @@
 import React from 'react'
 
-import {mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline} from '@mdi/js'
+import { mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import {H3, Icon, Text} from '@sourcegraph/wildcard'
 
-import {defaultExternalServices} from '../../../components/externalServices/externalServices'
-import type {BatchChangesCodeHostFields} from '../../../graphql-operations'
+import { H3, Icon, Text } from '@sourcegraph/wildcard'
+
+import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import type { BatchChangesCodeHostFields } from '../../../graphql-operations'
+
+import { AppDetailsControls } from './AppDetailsControls'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
-import {AppDetailsControls} from './AppDetailsControls';
 
 interface CommitSigningIntegrationNodeProps {
     readOnly: boolean

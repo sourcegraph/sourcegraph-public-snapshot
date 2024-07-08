@@ -1,34 +1,37 @@
 import React, { useCallback, useRef, useState } from 'react'
 
 import type { ApolloError } from '@apollo/client'
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiEye, mdiPlus } from '@mdi/js'
+import { mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline, mdiDelete, mdiEye, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import type {
+import {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
-    CheckBatchChangesCredentialVariables, GitHubAppByIDFields,
+    CheckBatchChangesCredentialVariables,
+    GitHubAppByIDFields,
+    GitHubAppKind,
     UserAreaUserFields,
 } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import { AppDetailsControls } from './AppDetailsControls'
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CheckButton } from './CheckButton'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
 import styles from './CodeHostConnectionNode.module.scss'
-import {AppDetailsControls} from './AppDetailsControls';
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
     refetchAll: () => void
     user: UserAreaUserFields | null
+    kind: GitHubAppKind
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
@@ -37,6 +40,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     node,
     refetchAll,
     user,
+    kind,
 }) => {
     const [checkCredError, setCheckCredError] = useState<ApolloError | undefined>()
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
@@ -76,7 +80,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         refetchAll()
     }, [refetchAll, buttonReference])
 
-    const isEnabled = node.credential !== null && (user === null || !node.credential.isSiteCredential) && (node.credential.isGitHubApp && node.gitHubApp)
+    const isEnabled =
+        node.credential !== null &&
+        (user === null || !node.credential.isSiteCredential) &&
+        node.credential.isGitHubApp &&
+        node.gitHubApp
 
     const headingAriaLabel = `Sourcegraph ${
         isEnabled ? 'has credentials configured' : 'does not have credentials configured'
@@ -91,21 +99,8 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         logger.error(checkCredError.message)
     }
 
-    const t: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> = node.commitSigningConfiguration ? {
-        id: node.commitSigningConfiguration?.id,
-        name: node.commitSigningConfiguration?.name,
-        appURL: node.commitSigningConfiguration?.appURL,
-        logo: node.commitSigningConfiguration?.logo,
-        appID: node.commitSigningConfiguration?.appID,
-    } : (
-        node.credential?.isGitHubApp ? {
-            id: node.gitHubApp?.id,
-            name: node.gitHubApp?.name,
-            appURL: node.gitHubApp?.appURL,
-            logo: node.gitHubApp?.logo,
-            appID: node.gitHubApp?.appID,
-        } : null
-    )
+    const gitHubApp: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null =
+        kind === GitHubAppKind.COMMIT_SIGNING ? node.commitSigningConfiguration : node.gitHubApp
 
     return (
         <>
@@ -155,9 +150,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
-                            node.credential?.isGitHubApp ? (
-                                    <AppDetailsControls baseURL={node.externalServiceURL} config={t} refetch={refetchAll} />
-                                ) : (
+                            gitHubApp ? (
+                                <AppDetailsControls
+                                    baseURL={node.externalServiceURL}
+                                    config={gitHubApp}
+                                    refetch={refetchAll}
+                                />
+                            ) : (
                                 <>
                                     <CheckButton
                                         label={`Check credentials for ${codeHostDisplayName}`}

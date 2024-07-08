@@ -65,9 +65,7 @@ func (c *batchChangesCodeHostResolver) GitHubApp(ctx context.Context) (graphqlba
 	switch c.codeHost.ExternalServiceType {
 	case extsvc.TypeGitHub:
 		gstore := ghstore.GitHubAppsWith(c.store.Store)
-		domain := itypes.BatchesGitHubAppDomain
-		kind := ghtypes.UserCredentialGitHubAppKind // todo: do we need to make this variable to also get batch site credentials?
-		ghapp, err := gstore.GetByDomainAndKind(ctx, domain, kind, c.codeHost.ExternalServiceID)
+		ghapp, err := gstore.GetByID(ctx, c.credential.GitHubAppID())
 		if err != nil {
 			if _, ok := err.(ghstore.ErrNoGitHubAppFound); ok {
 				return nil, nil

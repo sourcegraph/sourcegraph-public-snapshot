@@ -1,8 +1,11 @@
-import type {GitHubAppByIDFields} from '../../../graphql-operations';
-import React, {useRef, useState} from 'react';
-import {useRefreshGitHubApp} from './backend';
-import {useNavigate} from 'react-router-dom';
-import {RemoveGitHubAppModal} from '../../../components/gitHubApps/RemoveGitHubAppModal';
+import React, { useRef, useState } from 'react'
+
+import { mdiDotsHorizontal, mdiGithub, mdiOpenInNew, mdiPencil, mdiRefresh, mdiTrashCan } from '@mdi/js'
+import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
+import { animated, useSpring } from 'react-spring'
+
+import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import {
     Alert,
     Button,
@@ -15,14 +18,16 @@ import {
     MenuItem,
     MenuList,
     Position,
-    Text
-} from '@sourcegraph/wildcard';
-import styles from './CommitSigningIntegrationNode.module.scss';
-import {AppLogo} from '../../../components/gitHubApps/AppLogo';
-import classNames from 'classnames';
-import {mdiDotsHorizontal, mdiGithub, mdiOpenInNew, mdiPencil, mdiRefresh, mdiTrashCan} from '@mdi/js';
-import {convertREMToPX} from '@sourcegraph/shared/src/components/utils/size';
-import {animated, useSpring} from 'react-spring';
+    Text,
+} from '@sourcegraph/wildcard'
+
+import { AppLogo } from '../../../components/gitHubApps/AppLogo'
+import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
+import type { GitHubAppByIDFields } from '../../../graphql-operations'
+
+import { useRefreshGitHubApp } from './backend'
+
+import styles from './CommitSigningIntegrationNode.module.scss'
 
 interface AppDetailsControlsProps {
     baseURL: string
@@ -31,25 +36,25 @@ interface AppDetailsControlsProps {
     refetch: () => void
 }
 
-export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({baseURL, config, refetch}) => {
+export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
-    const [refreshGitHubApp, {loading, error, data}] = useRefreshGitHubApp()
+    const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     const navigate = useNavigate()
 
     return config ? (
         <>
             {removeModalOpen && (
-                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config}/>
+                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
             <Menu>
-                <MenuButton
-                    outline={true}
-                    aria-label="Repository action"
-                >
+                <MenuButton outline={true} aria-label="Repository action">
                     <div className={styles.appDetailsControls} role="button" tabIndex={0}>
-                        <AppLogo src={config.logo} name={config.name}
-                                 className={classNames(styles.appLogoLarge, 'mr-2')}/>
+                        <AppLogo
+                            src={config.logo}
+                            name={config.name}
+                            className={classNames(styles.appLogoLarge, 'mr-2')}
+                        />
 
                         <div className={styles.appDetailsColumn}>
                             <Text size="small" className="font-weight-bold mb-0">
@@ -60,20 +65,16 @@ export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps
                             </Text>
                         </div>
                         <div className={styles.appDetailsColumn}>
-                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true}/>
+                            <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
                         </div>
                     </div>
                 </MenuButton>
                 <MenuList position={Position.bottomEnd} className={styles.menuList}>
-                    <MenuItem
-                        as={Button}
-                        onSelect={() => window.open(config?.appURL, '_blank')}
-                        className="p-2"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiGithub} className="mr-1"/>
-                        View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true}/>
+                    <MenuItem as={Button} onSelect={() => window.open(config?.appURL, '_blank')} className="p-2">
+                        <Icon aria-hidden={true} svgPath={mdiGithub} className="mr-1" />
+                        View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </MenuItem>
-                    <MenuDivider/>
+                    <MenuDivider />
                     <MenuItem
                         as={Button}
                         disabled={loading}
@@ -83,21 +84,11 @@ export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps
                         <Icon aria-hidden={true} svgPath={mdiRefresh} className="mr-1" />
                         Refresh
                     </MenuItem>
-                    <MenuItem
-                        as={Button}
-                        onSelect={() =>
-                            navigate(`github-apps/${config.id}`)
-                        }
-                        className="p-2"
-                    >
+                    <MenuItem as={Button} onSelect={() => navigate(`github-apps/${config.id}`)} className="p-2">
                         <Icon aria-hidden={true} svgPath={mdiPencil} className="mr-1" />
                         Edit
                     </MenuItem>
-                    <MenuItem
-                        as={Button}
-                        onSelect={() => setRemoveModalOpen(true)}
-                        className="p-2"
-                    >
+                    <MenuItem as={Button} onSelect={() => setRemoveModalOpen(true)} className="p-2">
                         <Icon aria-hidden={true} svgPath={mdiTrashCan} className="mr-1" />
                         Remove
                     </MenuItem>
@@ -125,7 +116,7 @@ interface NodeAlertProps {
     variant: 'danger' | 'success'
 }
 
-const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({children, variant}) => {
+const NodeAlert: React.FunctionComponent<React.PropsWithChildren<NodeAlertProps>> = ({ children, variant }) => {
     const ref = useRef<HTMLDivElement>(null)
     const style = useSpring({
         from: {
