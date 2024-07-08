@@ -1317,8 +1317,9 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authen
 		AuthenticationStrategy: as,
 
 		// This is set to true because we want to validate the authenticator, not
-		// actually use it to create changesets.
-		AsNonCredential: true,
+		// actually use it to create changesets. This is only valid for GitHub Apps credential.
+		// TODO: Figure out a better name for this field.
+		AsNonCredential: as == sources.AuthenticationStrategyGitHubApp,
 	})
 	if err != nil {
 		return err
