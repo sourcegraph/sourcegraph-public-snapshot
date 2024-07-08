@@ -14,7 +14,7 @@ import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
-import { SearchMode } from './searchQueryState'
+import { SearchMode } from './types'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance.

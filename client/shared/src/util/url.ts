@@ -8,7 +8,7 @@ import type { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
 import { appendContextFilter, omitFilter } from '../search/query/transformer'
-import { SearchMode } from '../search/searchQueryState'
+import { SearchMode } from '../search/types'
 
 export interface RepoSpec {
     /**
