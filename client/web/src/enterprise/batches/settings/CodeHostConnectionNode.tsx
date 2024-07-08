@@ -82,9 +82,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
 
     const isEnabled =
         node.credential !== null &&
-        (user === null || !node.credential.isSiteCredential) &&
-        node.credential.isGitHubApp &&
-        node.gitHubApp
+        (user === null || !node.credential.isSiteCredential)
 
     const headingAriaLabel = `Sourcegraph ${
         isEnabled ? 'has credentials configured' : 'does not have credentials configured'

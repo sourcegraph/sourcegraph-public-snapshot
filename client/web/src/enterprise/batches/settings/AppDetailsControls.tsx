@@ -31,7 +31,6 @@ import styles from './CommitSigningIntegrationNode.module.scss'
 
 interface AppDetailsControlsProps {
     baseURL: string
-    // config: BatchChangesCodeHostFields['commitSigningConfiguration']
     config: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'>
     refetch: () => void
 }
