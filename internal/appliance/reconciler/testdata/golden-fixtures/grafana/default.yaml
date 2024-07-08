@@ -3,7 +3,7 @@ resources:
     kind: StatefulSet
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c7ada10d28d26c809f8b7e71aabb5a65420c3c2f306a364d3b9b966189d84a05
+        appliance.sourcegraph.com/configHash: b3fe796be87f65da527bbd9e3d2fbe7aea6b6fec1c87043e79450e7378513d93
       creationTimestamp: "2024-04-19T00:00:00Z"
       generation: 1
       labels:
@@ -131,7 +131,7 @@ resources:
     kind: ConfigMap
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c7ada10d28d26c809f8b7e71aabb5a65420c3c2f306a364d3b9b966189d84a05
+        appliance.sourcegraph.com/configHash: b3fe796be87f65da527bbd9e3d2fbe7aea6b6fec1c87043e79450e7378513d93
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -222,7 +222,7 @@ resources:
     kind: ServiceAccount
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c7ada10d28d26c809f8b7e71aabb5a65420c3c2f306a364d3b9b966189d84a05
+        appliance.sourcegraph.com/configHash: b3fe796be87f65da527bbd9e3d2fbe7aea6b6fec1c87043e79450e7378513d93
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         deploy: sourcegraph
@@ -241,7 +241,7 @@ resources:
     kind: Service
     metadata:
       annotations:
-        appliance.sourcegraph.com/configHash: c7ada10d28d26c809f8b7e71aabb5a65420c3c2f306a364d3b9b966189d84a05
+        appliance.sourcegraph.com/configHash: b3fe796be87f65da527bbd9e3d2fbe7aea6b6fec1c87043e79450e7378513d93
       creationTimestamp: "2024-04-19T00:00:00Z"
       labels:
         app: grafana

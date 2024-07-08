@@ -10,7 +10,6 @@ go_library(
         "//internal/batches/sources",
         "//internal/batches/types",
         "//internal/extsvc/auth",
-        "//internal/github_apps/types",
         "//internal/gitserver/protocol",
         "//internal/types",
         "//lib/errors",

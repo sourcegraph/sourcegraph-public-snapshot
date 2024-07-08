@@ -25,6 +25,7 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiamcustomrole",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//projectiammember",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//secretmanagersecretiammember",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//serviceaccountiammember",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta//googleprojectserviceidentity",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta//provider",
         "@org_golang_x_exp//maps",

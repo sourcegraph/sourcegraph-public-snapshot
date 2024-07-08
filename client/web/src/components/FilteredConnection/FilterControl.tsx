@@ -8,8 +8,13 @@ import styles from './FilterControl.module.scss'
 
 /**
  * A filter to display next to the search input field.
+ * @template K The IDs of all filters ({@link Filter.id} values).
+ * @template A The type of option args ({@link Filter.options} {@link FilterOption.args} values).
  */
-export interface Filter {
+export interface Filter<
+    K extends string = string,
+    A extends Record<string, string | number | boolean | null> = Record<string, string | number | boolean | null>
+> {
     /** The UI label for the filter. */
     label: string
 
@@ -20,7 +25,7 @@ export interface Filter {
      * The URL query parameter name for this filter (conventionally the label, lowercased and
      * without spaces and punctuation).
      */
-    id: string
+    id: K
 
     /** An optional tooltip to display for this filter. */
     tooltip?: string
@@ -28,13 +33,16 @@ export interface Filter {
     /**
      * All of the possible values for this filter that the user can select.
      */
-    options: FilterOption[]
+    options: FilterOption<A>[]
 }
 
 /**
  * An option that the user can select for a filter ({@link Filter}).
+ * @template A The type of option args ({@link Filter.options} {@link FilterOption.args} values).
  */
-export interface FilterOption {
+export interface FilterOption<
+    A extends Record<string, string | number | boolean | null> = Record<string, string | number | boolean | null>
+> {
     /**
      * The value (corresponding to the key in {@link Filter.id}) if this option is chosen. For
      * example, if a filter has {@link Filter.id} of `sort` and the user selects a
@@ -44,13 +52,14 @@ export interface FilterOption {
     value: string
     label: string
     tooltip?: string
-    args: { [name: string]: string | number | boolean }
+    args: A
 }
 
 /**
  * The values of all filters, keyed by the filter ID ({@link Filter.id}).
+ * @template K The IDs of all filters ({@link Filter.id} values).
  */
-export interface FilterValues extends Record<string, FilterOption['value'] | null> {}
+export type FilterValues<K extends string = string> = Record<K, FilterOption['value'] | null>
 
 interface FilterControlProps {
     /** All filters. */
