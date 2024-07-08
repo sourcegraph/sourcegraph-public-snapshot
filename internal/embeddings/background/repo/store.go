@@ -338,7 +338,7 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		%s, %s, %s, %s,
 	    %s, %s
 	)
-	ON CONFLICT (job_id) DO UPDATE
+	ON CONFLICT ON CONSTRAINT repo_embedding_job_stats_pkey DO UPDATE
 	SET
 		is_incremental = %s,
 		code_files_total = %s,

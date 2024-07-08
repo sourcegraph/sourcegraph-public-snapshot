@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -67,7 +68,7 @@ func (s *redisKeyValueStore) Set(ctx context.Context, namespace, key string, val
 	q := sqlf.Sprintf(`
 	INSERT INTO redis_key_value (namespace, key, value)
 	VALUES (%s, %s, %s)
-	ON CONFLICT (namespace, key) DO UPDATE SET value = EXCLUDED.value
+	ON CONFLICT ON CONSTRAINT redis_key_value_pkey DO UPDATE SET value = EXCLUDED.value
 	`, namespace, key, value)
 	return s.Exec(ctx, q)
 }

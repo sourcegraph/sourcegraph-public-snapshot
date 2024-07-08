@@ -425,7 +425,7 @@ INSERT INTO user_repo_permissions
 	(user_id, user_external_account_id, repo_id, created_at, updated_at, source)
 VALUES
 	%s
-ON CONFLICT (user_id, user_external_account_id, repo_id)
+ON CONFLICT (user_id, user_external_account_id, repo_id, tenant_id)
 DO UPDATE SET
 	updated_at = excluded.updated_at,
 	source = excluded.source
@@ -509,8 +509,7 @@ INSERT INTO user_permissions
 	(user_id, permission, object_type, object_ids_ints, updated_at)
 VALUES
 	%s
-ON CONFLICT ON CONSTRAINT
-	user_permissions_perm_object_unique
+ON CONFLICT (user_id, permission, object_type, tenant_id)
 DO UPDATE SET
 	object_ids_ints = CASE
 		-- When the user is part of "addedUserIDs"
@@ -569,8 +568,7 @@ func (s *permsStore) legacySetRepoPermissionsUnrestricted(ctx context.Context, i
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids_ints, updated_at, synced_at, unrestricted)
 SELECT unnest(%s::int[]), 'read', '{}'::int[], NOW(), NOW(), %s
-ON CONFLICT ON CONSTRAINT
-  repo_permissions_perm_unique
+ON CONFLICT (repo_id, permission, tenant_id)
 DO UPDATE SET
    updated_at = NOW(),
    unrestricted = %s;
@@ -674,8 +672,7 @@ INSERT INTO repo_pending_permissions
   (repo_id, permission, user_ids_ints, updated_at)
 VALUES
   (%s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-  repo_pending_permissions_perm_unique
+ON CONFLICT (repo_id, permission, tenant_id)
 DO UPDATE SET
   user_ids_ints = excluded.user_ids_ints,
   updated_at = excluded.updated_at
@@ -873,8 +870,7 @@ INSERT INTO user_pending_permissions
 	(
 		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, %s::TIMESTAMPTZ
 	)
-ON CONFLICT ON CONSTRAINT
-	user_pending_permissions_service_perm_object_unique
+ON CONFLICT (service_type, service_id, permission, object_type, bind_id, tenant_id)
 DO UPDATE SET
 	updated_at = excluded.updated_at
 RETURNING id
@@ -1106,8 +1102,7 @@ INSERT INTO repo_permissions
 	(repo_id, permission, user_ids_ints, updated_at)
 VALUES
 	%s
-ON CONFLICT ON CONSTRAINT
-	repo_permissions_perm_unique
+ON CONFLICT (repo_id, permission, tenant_id)
 DO UPDATE SET
 	user_ids_ints = CASE
 		-- When the repository is part of "addedRepoIDs"

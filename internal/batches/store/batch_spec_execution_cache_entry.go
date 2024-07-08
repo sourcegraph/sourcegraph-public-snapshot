@@ -83,7 +83,7 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 var createBatchSpecExecutionCacheEntryQueryFmtstr = `
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
-ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique
+ON CONFLICT (user_id, key, tenant_id)
 DO UPDATE SET
 	value = EXCLUDED.value,
 	version = EXCLUDED.version,

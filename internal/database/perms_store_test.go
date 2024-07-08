@@ -565,19 +565,19 @@ func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.
 
 	defaultErrMessage := "setup test related entities before actual test"
 	if len(users) > 0 {
-		usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(maps.Values(users), ","))
+		usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT ON CONSTRAINT users_pkey DO NOTHING`, sqlf.Join(maps.Values(users), ","))
 		if err := s.execute(context.Background(), usersQuery); err != nil {
 			t.Fatal(defaultErrMessage, err)
 		}
 	}
 	if len(externalAccounts) > 0 {
-		externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
+		externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT ON CONSTRAINT user_external_accounts_pkey DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
 		if err := s.execute(context.Background(), externalAccountsQuery); err != nil {
 			t.Fatal(defaultErrMessage, err)
 		}
 	}
 	if len(repos) > 0 {
-		reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
+		reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT ON CONSTRAINT repo_pkey DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
 		if err := s.execute(context.Background(), reposQuery); err != nil {
 			t.Fatal(defaultErrMessage, err)
 		}

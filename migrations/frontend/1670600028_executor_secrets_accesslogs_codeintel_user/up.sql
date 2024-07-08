@@ -27,7 +27,7 @@ BEGIN
             err_details text;
         BEGIN
             INSERT INTO executor_secret_access_logs
-            SELECT * FROM executor_secret_access_logs_machineuser_bak_1670600028;
+            SELECT id, executor_secret_id, user_id, created_at, machine_user FROM executor_secret_access_logs_machineuser_bak_1670600028;
         EXCEPTION WHEN unique_violation THEN
             GET STACKED DIAGNOSTICS err_details = PG_EXCEPTION_DETAIL;
             RAISE unique_violation

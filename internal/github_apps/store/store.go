@@ -294,7 +294,7 @@ func (s *gitHubAppsStore) Install(ctx context.Context, ghai ghtypes.GitHubAppIns
 	query := sqlf.Sprintf(`
 		INSERT INTO github_app_installs (%s)
     	VALUES (%s, %s, %s, %s, %s, %s, %s)
-		ON CONFLICT (app_id, installation_id)
+		ON CONFLICT (app_id, installation_id, tenant_id)
 		DO UPDATE SET
 		(%s) = (%s, %s, %s, %s, %s, %s, %s)
 		WHERE github_app_installs.app_id = excluded.app_id AND github_app_installs.installation_id = excluded.installation_id

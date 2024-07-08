@@ -105,6 +105,8 @@ func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		predicate = sqlf.Sprintf("namespace_org_id IS NOT NULL")
 	}
 
+	conflictTarget = append(conflictTarget, sqlf.Sprintf("tenant_id"))
+
 	return sqlf.Sprintf(
 		upsertBatchChangeQueryFmtstr,
 		sqlf.Join(batchChangeInsertColumns, ", "),

@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -163,11 +164,14 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 	if maxTimeToWait != -1 {
 		maxWaitTime = int32(maxTimeToWait.Seconds())
 	}
+
+	tenantPrefix := fmt.Sprintf("tnt_%d:", tenant.ID)
+
 	result, err := invokeScriptWithRetries(
 		ctx,
 		getTokensScript,
 		connection,
-		keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey,
+		tenantPrefix+keys.BucketKey, tenantPrefix+keys.LastReplenishmentTimestampKey, tenantPrefix+keys.RateKey, tenantPrefix+keys.ReplenishmentIntervalSecondsKey, tenantPrefix+keys.BurstKey,
 		requestTime.Unix(),
 		maxWaitTime,
 		int32(fallbackRateLimit),
@@ -266,7 +270,9 @@ func (r *globalRateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuot
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	_, err := setReplenishmentScript.DoContext(ctx, connection, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey, bucketQuota, bucketReplenishInterval.Seconds(), defaultBurst)
+	tenantPrefix := fmt.Sprintf("tnt_%d:", tenant.ID)
+
+	_, err := setReplenishmentScript.DoContext(ctx, connection, tenantPrefix+keys.RateKey, tenantPrefix+keys.ReplenishmentIntervalSecondsKey, tenantPrefix+keys.BurstKey, bucketQuota, bucketReplenishInterval.Seconds(), defaultBurst)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", r.bucketName)
 }
 
@@ -379,7 +385,7 @@ type GlobalLimiterInfo struct {
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
-	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), tokenBucketGlobalPrefix)
+	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), fmt.Sprintf("tnt_%d:%s", tenant.ID, tokenBucketGlobalPrefix))
 }
 
 func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {

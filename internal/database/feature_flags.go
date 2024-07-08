@@ -293,7 +293,7 @@ func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 		-- clause targeting two different unique constraints. Since
 		-- this just exists for convenience and an override can also
 		-- be explicitly updated, it should be okay.
-		ON CONFLICT (namespace_user_id, flag_name)
+		ON CONFLICT (namespace_user_id, flag_name, tenant_id)
 		DO UPDATE SET
 			flag_value = EXCLUDED.flag_value,
 			updated_at = now(),

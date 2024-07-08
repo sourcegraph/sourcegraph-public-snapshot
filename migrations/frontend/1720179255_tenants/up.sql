@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS tenants (
     updated_at timestamptz NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO tenants (id, name, slug, created_at, updated_at) VALUES (1, 'default', 'default', NOW(), NOW());
+INSERT INTO tenants (id, name, slug, created_at, updated_at) VALUES (1, 'default', 'default', NOW(), NOW()) ON CONFLICT (id) DO NOTHING;
+SET app.current_tenant = 1;
 
 -- Temporary function to deduplicate the above queries for each table:
 CREATE OR REPLACE FUNCTION migrate_table(table_name text)
@@ -213,9 +214,11 @@ DROP FUNCTION migrate_table(text);
 -- and the id number will still be taken by another tenant, those are still globally
 -- unique.
 alter table out_of_band_migrations alter column id drop default;
+ALTER TABLE out_of_band_migrations_errors DROP CONSTRAINT out_of_band_migrations_errors_migration_id_fkey;
 ALTER TABLE out_of_band_migrations DROP CONSTRAINT out_of_band_migrations_pkey;
 -- also need to make the id, tenant_id unique, instead of just id.
 ALTER TABLE out_of_band_migrations ADD PRIMARY KEY (id, tenant_id);
+ALTER TABLE out_of_band_migrations_errors ADD CONSTRAINT out_of_band_migrations_errors_migration_id_fkey FOREIGN KEY (migration_id, tenant_id) REFERENCES out_of_band_migrations(id, tenant_id) ON DELETE CASCADE;
 
 -- Need to make unique constraints respect tenant_id.
 
@@ -230,72 +233,135 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Existing unique constraints.
 SELECT migrate_index('access_requests_email_key', 'access_requests', 'email');
-
 SELECT migrate_index('access_tokens_value_sha256_key', 'access_tokens', 'value_sha256');
-
 SELECT migrate_index('batch_spec_execution_cache_entries_user_id_key_unique', 'batch_spec_execution_cache_entries', 'user_id', 'key');
-
 SELECT migrate_index('batch_spec_resolution_jobs_batch_spec_id_unique', 'batch_spec_resolution_jobs', 'batch_spec_id');
-
 SELECT migrate_index('changeset_events_changeset_id_kind_key_unique', 'changeset_events', 'changeset_id', 'kind', 'key');
-
 SELECT migrate_index('changesets_repo_external_id_unique', 'changesets', 'repo_id', 'external_id');
-
 SELECT migrate_index('code_hosts_url_key', 'code_hosts', 'url');
-
 SELECT migrate_index('codeintel_autoindexing_exceptions_repository_id_key', 'codeintel_autoindexing_exceptions', 'repository_id');
-
 SELECT migrate_index('codeintel_ranking_progress_graph_key_key', 'codeintel_ranking_progress', 'graph_key');
-
 SELECT migrate_index('codeowners_repo_id_key', 'codeowners', 'repo_id');
-
 SELECT migrate_index('executor_heartbeats_hostname_key', 'executor_heartbeats', 'hostname');
-
 SELECT migrate_index('executor_job_tokens_job_id_queue_repo_id_key', 'executor_job_tokens', 'job_id', 'queue', 'repo_id');
-
 SELECT migrate_index('executor_job_tokens_value_sha256_key', 'executor_job_tokens', 'value_sha256');
-
 SELECT migrate_index('external_service_repos_repo_id_external_service_id_unique', 'external_service_repos', 'repo_id', 'external_service_id');
-
 SELECT migrate_index('feature_flag_overrides_unique_org_flag', 'feature_flag_overrides', 'namespace_org_id', 'flag_name');
-
 SELECT migrate_index('feature_flag_overrides_unique_user_flag', 'feature_flag_overrides', 'namespace_user_id', 'flag_name');
-
 SELECT migrate_index('unique_app_install', 'github_app_installs', 'app_id', 'installation_id');
-
 SELECT migrate_index('lsif_index_configuration_repository_id_key', 'lsif_index_configuration', 'repository_id');
-
 SELECT migrate_index('lsif_retention_configuration_repository_id_key', 'lsif_retention_configuration', 'repository_id');
-
 SELECT migrate_index('lsif_uploads_reference_counts_upload_id_key', 'lsif_uploads_reference_counts', 'upload_id');
-
 SELECT migrate_index('org_members_org_id_user_id_key', 'org_members', 'org_id', 'user_id');
-
 SELECT migrate_index('phabricator_repos_repo_name_key', 'phabricator_repos', 'repo_name');
-
 SELECT migrate_index('repo_name_unique', 'repo', 'name');
-
 SELECT migrate_index('repo_pending_permissions_perm_unique', 'repo_pending_permissions', 'repo_id', 'permission');
-
 SELECT migrate_index('repo_permissions_perm_unique', 'repo_permissions', 'repo_id', 'permission');
-
 SELECT migrate_index('search_context_repos_unique', 'search_context_repos', 'repo_id', 'search_context_id', 'revision');
-
 SELECT migrate_index('temporary_settings_user_id_key', 'temporary_settings', 'user_id');
-
 SELECT migrate_index('user_credentials_domain_user_id_external_service_type_exter_key', 'user_credentials', 'domain', 'user_id', 'external_service_type', 'external_service_id');
-
 SELECT migrate_index('user_emails_no_duplicates_per_user', 'user_emails', 'user_id', 'email');
-
 SELECT migrate_index('user_pending_permissions_service_perm_object_unique', 'user_pending_permissions', 'service_type', 'service_id', 'permission', 'object_type', 'bind_id');
-
 SELECT migrate_index('user_permissions_perm_object_unique', 'user_permissions', 'user_id', 'permission', 'object_type');
-
 SELECT migrate_index('user_public_repos_user_id_repo_id_key', 'user_public_repos', 'user_id', 'repo_id');
-
 SELECT migrate_index('webhooks_uuid_key', 'webhooks', 'uuid');
 
-DROP FUNCTION migrate_index(text, text, text);
+DROP FUNCTION migrate_index(text, text, VARIADIC text[]);
+
+-- Existing unique indexes.
+
+
+-- TODO: Weird argument ordering.
+CREATE OR REPLACE FUNCTION migrate_index(index_name text, where_conds text, table_name text, VARIADIC fields text[])
+RETURNS void AS $$
+BEGIN
+    EXECUTE format('
+        DROP INDEX IF EXISTS %I;
+        CREATE UNIQUE INDEX IF NOT EXISTS %I ON %I (%s, tenant_id) %s;',
+        index_name, index_name, table_name, array_to_string(ARRAY(SELECT format('%I', field) FROM unnest(fields) AS field), ', '), where_conds
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT migrate_index('assigned_owners_file_path_owner', '', 'assigned_owners', 'file_path_id', 'owner_user_id');
+SELECT migrate_index('assigned_teams_file_path_owner', '', 'assigned_teams', 'file_path_id', 'owner_team_id');
+SELECT migrate_index('batch_changes_unique_org_id', 'WHERE namespace_org_id IS NOT NULL', 'batch_changes', 'name', 'namespace_org_id');
+SELECT migrate_index('batch_changes_unique_user_id', 'WHERE namespace_user_id IS NOT NULL', 'batch_changes', 'name', 'namespace_user_id');
+SELECT migrate_index('batch_changes_site_credentials_unique', '', 'batch_changes_site_credentials', 'external_service_type', 'external_service_id');
+SELECT migrate_index('batch_spec_workspace_files_batch_spec_id_filename_path', '', 'batch_spec_workspace_files', 'batch_spec_id', 'filename', 'path');
+SELECT migrate_index('batch_specs_unique_rand_id', '', 'batch_specs', 'rand_id');
+SELECT migrate_index('cached_available_indexers_repository_id', '', 'cached_available_indexers', 'repository_id');
+SELECT migrate_index('changeset_specs_unique_rand_id', '', 'changeset_specs', 'rand_id');
+SELECT migrate_index('codeintel_autoindex_queue_repository_id_commit', '', 'codeintel_autoindex_queue', 'repository_id', 'rev');
+SELECT migrate_index('codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini', '', 'codeintel_initial_path_ranks_processed', 'graph_key', 'codeintel_initial_path_ranks_id');
+SELECT migrate_index('codeintel_langugage_support_requests_user_id_language', '', 'codeintel_langugage_support_requests', 'user_id', 'language_id');
+SELECT migrate_index('codeintel_path_ranks_graph_key_repository_id', '', 'codeintel_path_ranks', 'graph_key', 'repository_id');
+SELECT migrate_index('codeintel_ranking_exports_graph_key_upload_id', '', 'codeintel_ranking_exports', 'graph_key', 'upload_id');
+SELECT migrate_index('codeintel_ranking_path_counts_inputs_graph_key_unique_definitio', 'WHERE NOT processed', 'codeintel_ranking_path_counts_inputs', 'graph_key', 'definition_id');
+SELECT migrate_index('codeintel_ranking_references_processed_graph_key_codeintel_rank', '', 'codeintel_ranking_references_processed', 'graph_key', 'codeintel_ranking_reference_id');
+SELECT migrate_index('commit_authors_email_name', '', 'commit_authors', 'email', 'name');
+SELECT migrate_index('critical_and_site_config_unique', '', 'critical_and_site_config', 'id', 'type');
+SELECT migrate_index('event_logs_export_allowlist_event_name_idx', '', 'event_logs_export_allowlist', 'event_name');
+SELECT migrate_index('executor_secrets_unique_key_global', 'WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL', 'executor_secrets', 'key', 'scope');
+SELECT migrate_index('executor_secrets_unique_key_namespace_org', 'WHERE namespace_org_id IS NOT NULL', 'executor_secrets', 'key', 'namespace_org_id', 'scope');
+SELECT migrate_index('executor_secrets_unique_key_namespace_user', 'WHERE namespace_user_id IS NOT NULL', 'executor_secrets', 'key', 'namespace_user_id', 'scope');
+SELECT migrate_index('kind_cloud_default', 'WHERE cloud_default = true AND deleted_at IS NULL', 'external_services', 'kind', 'cloud_default');
+SELECT migrate_index('github_apps_app_id_slug_base_url_unique', '', 'github_apps', 'app_id', 'slug', 'base_url');
+SELECT migrate_index('lsif_dependency_repos_unique_scheme_name', '', 'lsif_dependency_repos', 'scheme', 'name');
+SELECT migrate_index('lsif_uploads_repository_id_commit_root_indexer', 'WHERE state = ''completed''::text', 'lsif_uploads', 'repository_id', 'commit', 'root', 'indexer');
+SELECT migrate_index('lsif_uploads_vulnerability_scan_upload_id', '', 'lsif_uploads_vulnerability_scan', 'upload_id');
+SELECT migrate_index('unique_resource_permission', '', 'namespace_permissions', 'namespace', 'resource_id', 'user_id');
+SELECT migrate_index('orgs_name', 'WHERE deleted_at IS NULL', 'orgs', 'name');
+SELECT migrate_index('own_aggregate_recent_contribution_file_author', '', 'own_aggregate_recent_contribution', 'changed_file_path_id', 'commit_author_id');
+SELECT migrate_index('own_aggregate_recent_view_viewer', '', 'own_aggregate_recent_view', 'viewed_file_path_id', 'viewer_id');
+SELECT migrate_index('own_signal_configurations_name_uidx', '', 'own_signal_configurations', 'name');
+SELECT migrate_index('package_repo_filters_unique_matcher_per_scheme', '', 'package_repo_filters', 'scheme', 'matcher');
+SELECT migrate_index('package_repo_versions_unique_version_per_package', '', 'package_repo_versions', 'package_id', 'version');
+SELECT migrate_index('permission_sync_jobs_unique', 'WHERE state = ''queued''::text', 'permission_sync_jobs', 'priority', 'user_id', 'repository_id', 'cancel', 'process_after');
+SELECT migrate_index('permissions_unique_namespace_action', '', 'permissions', 'namespace', 'action');
+SELECT migrate_index('product_licenses_license_check_token_idx', '', 'product_licenses', 'license_check_token');
+SELECT migrate_index('registry_extension_releases_version', 'WHERE release_version IS NOT NULL', 'registry_extension_releases', 'registry_extension_id', 'release_version');
+SELECT migrate_index('registry_extensions_publisher_name', 'WHERE deleted_at IS NULL', 'registry_extensions', 'publisher_user_id', 'publisher_org_id', 'name');
+SELECT migrate_index('registry_extensions_uuid', '', 'registry_extensions', 'uuid');
+SELECT migrate_index('repo_external_unique_idx', '', 'repo', 'external_service_type', 'external_service_id', 'external_id');
+SELECT migrate_index('repo_id_perforce_changelist_id_unique', '', 'repo_commits_changelists', 'repo_id', 'perforce_changelist_id');
+SELECT migrate_index('repo_paths_index_absolute_path', '', 'repo_paths', 'repo_id', 'absolute_path');
+SELECT migrate_index('unique_role_name', '', 'roles', 'name');
+SELECT migrate_index('search_contexts_name_namespace_org_id_unique', 'WHERE namespace_org_id IS NOT NULL', 'search_contexts', 'name', 'namespace_org_id');
+SELECT migrate_index('search_contexts_name_namespace_user_id_unique', 'WHERE namespace_user_id IS NOT NULL', 'search_contexts', 'name', 'namespace_user_id');
+SELECT migrate_index('search_contexts_name_without_namespace_unique', 'WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL', 'search_contexts', 'name');
+SELECT migrate_index('sub_repo_permissions_repo_id_user_id_version_uindex', '', 'sub_repo_permissions', 'repo_id', 'user_id', 'version');
+SELECT migrate_index('teams_name', '', 'teams', 'name');
+SELECT migrate_index('user_emails_user_id_is_primary_idx', 'WHERE is_primary = true', 'user_emails', 'user_id', 'is_primary');
+SELECT migrate_index('user_external_accounts_account', 'WHERE deleted_at IS NULL', 'user_external_accounts', 'service_type', 'service_id', 'client_id', 'account_id');
+SELECT migrate_index('user_external_accounts_user_id_scim_service_type', 'WHERE service_type = ''scim''::text AND deleted_at IS NULL', 'user_external_accounts', 'user_id', 'service_type');
+SELECT migrate_index('user_repo_permissions_perms_unique_idx', '', 'user_repo_permissions', 'user_id', 'user_external_account_id', 'repo_id');
+SELECT migrate_index('users_billing_customer_id', 'WHERE deleted_at IS NULL', 'users', 'billing_customer_id');
+SELECT migrate_index('users_username', 'WHERE deleted_at IS NULL', 'users', 'username');
+SELECT migrate_index('vulnerabilities_source_id', '', 'vulnerabilities', 'source_id');
+SELECT migrate_index('vulnerability_affected_packages_vulnerability_id_package_name', '', 'vulnerability_affected_packages', 'vulnerability_id', 'package_name');
+SELECT migrate_index('vulnerability_affected_symbols_vulnerability_affected_package_i', '', 'vulnerability_affected_symbols', 'vulnerability_affected_package_id', 'path');
+SELECT migrate_index('vulnerability_matches_upload_id_vulnerability_affected_package_', '', 'vulnerability_matches', 'upload_id', 'vulnerability_affected_package_id');
+
+
+ALTER TABLE syntactic_scip_last_index_scan DROP CONSTRAINT syntactic_scip_last_index_scan_pkey;
+ALTER TABLE syntactic_scip_last_index_scan ADD PRIMARY KEY (repository_id, tenant_id);
+
+ALTER TABLE lsif_last_index_scan DROP CONSTRAINT lsif_last_index_scan_pkey;
+ALTER TABLE lsif_last_index_scan ADD PRIMARY KEY (repository_id, tenant_id);
+
+ALTER TABLE names DROP CONSTRAINT names_pkey;
+ALTER TABLE names ADD PRIMARY KEY (name, tenant_id);
+
+ALTER TABLE user_emails DROP CONSTRAINT user_emails_unique_verified_email;
+ALTER TABLE user_emails ADD CONSTRAINT user_emails_unique_verified_email EXCLUDE USING btree(email WITH =, tenant_id WITH =) WHERE (verified_at IS NOT NULL);
+
+DROP FUNCTION migrate_index(text, text, text, VARIADIC text[]);
 
 -- TODO: event_logs_export_allowlist has default values inserted, but not per tenant.
+-- todo: for each tenant we have to create system roles:
+-- INSERT INTO "public"."roles"("created_at", "system", "name", "tenant_id") VALUES('2023-01-04 17:29:41.195966+01', 'TRUE', 'USER', 2) RETURNING "id", "created_at", "system", "name", "tenant_id";
+-- INSERT INTO "public"."roles"("created_at", "system", "name", "tenant_id") VALUES('2023-01-04 17:29:41.195966+01', 'TRUE', 'SITE_ADMINISTRATOR', 2) RETURNING "id", "created_at", "system", "name", "tenant_id";
+-- DISABLE_CODE_INSIGHTS: true always needs to be set, too.

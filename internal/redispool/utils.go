@@ -1,6 +1,12 @@
 package redispool
 
-import "github.com/gomodule/redigo/redis"
+import (
+	"fmt"
+
+	"github.com/gomodule/redigo/redis"
+
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
+)
 
 // The number of keys to delete per batch.
 // The maximum number of keys that can be unpacked
@@ -28,6 +34,6 @@ until cursor == '0'
 return result
 `
 
-	_, err := c.Do("EVAL", script, 0, prefix+":*", deleteBatchSize)
+	_, err := c.Do("EVAL", script, 0, fmt.Sprintf("tnt_%d:", tenant.ID)+prefix+":*", deleteBatchSize)
 	return err
 }

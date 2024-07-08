@@ -40,6 +40,7 @@ var batchSpecWorkspaceFileConflictTarget = []*sqlf.Query{
 	sqlf.Sprintf("batch_spec_id"),
 	sqlf.Sprintf("filename"),
 	sqlf.Sprintf("path"),
+	sqlf.Sprintf("tenant_id"),
 }
 
 // UpsertBatchSpecWorkspaceFile creates a new BatchSpecWorkspaceFile, if it does not exist already, or updates the existing

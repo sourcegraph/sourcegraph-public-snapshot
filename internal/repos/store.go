@@ -408,7 +408,7 @@ INSERT INTO external_service_repos (
 	clone_url
 )
 VALUES (%s, %s, %s)
-ON CONFLICT (external_service_id, repo_id)
+ON CONFLICT (repo_id, external_service_id, tenant_id)
 DO UPDATE SET
 	clone_url = excluded.clone_url
 WHERE

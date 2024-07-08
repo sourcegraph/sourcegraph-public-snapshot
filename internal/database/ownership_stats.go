@@ -109,7 +109,7 @@ const codeownerQueryFmtstr = `
 const codeownerUpsertCountsFmtstr = `
 	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, updated_at)
 	VALUES (%s, %s, %s, %s)
-	ON CONFLICT (file_path_id, owner_id)
+	ON CONFLICT ON CONSTRAINT codeowners_individual_stats_pkey
 	DO UPDATE SET
 		tree_owned_files_count = EXCLUDED.tree_owned_files_count,
 		updated_at = EXCLUDED.updated_at
@@ -162,7 +162,7 @@ const aggregateCountsUpdateFmtstr = `
 		tree_any_ownership_files_count,
 		last_updated_at)
 	VALUES (%s, %s, %s, %s, %s)
-	ON CONFLICT (file_path_id)
+	ON CONFLICT ON CONSTRAINT ownership_path_stats_pkey
 	DO UPDATE SET
 	tree_codeowned_files_count = EXCLUDED.tree_codeowned_files_count,
 	tree_assigned_ownership_files_count = EXCLUDED.tree_assigned_ownership_files_count,

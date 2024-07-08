@@ -76,7 +76,7 @@ repositories AS (
 )
 INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
 SELECT r.id, %s::timestamp FROM repositories r
-ON CONFLICT (repository_id) DO UPDATE
+ON CONFLICT ON CONSTRAINT lsif_last_retention_scan_pkey DO UPDATE
 SET last_retention_scan_at = %s
 RETURNING repository_id
 `
@@ -489,7 +489,7 @@ func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int
 const setRepositoryAsDirtyQuery = `
 INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
 VALUES (%s, 1, 0)
-ON CONFLICT (repository_id) DO UPDATE SET
+ON CONFLICT ON CONSTRAINT lsif_dirty_repositories_pkey DO UPDATE SET
     dirty_token = lsif_dirty_repositories.dirty_token + 1,
     set_dirty_at = CASE
         WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()

@@ -62,7 +62,7 @@ const commitAuthorInsertFmtstr = `
 	need_to_insert (id) AS (
 		INSERT INTO commit_authors (name, email)
 		VALUES (%s, %s)
-		ON CONFLICT (name, email) DO NOTHING
+		ON CONFLICT (email, name, tenant_id) DO NOTHING
 		RETURNING id
 	)
 	SELECT id FROM already_exists

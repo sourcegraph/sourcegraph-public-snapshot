@@ -582,7 +582,7 @@ func (s *store) CreatePackageRepoFilter(ctx context.Context, input shared.Minima
 const createPackageRepoFilter = `
 INSERT INTO package_repo_filters (behaviour, scheme, matcher)
 VALUES (%s, %s, %s)
-ON CONFLICT (scheme, matcher)
+ON CONFLICT (scheme, matcher, tenant_id)
 DO UPDATE
 	SET deleted_at = NULL,
 	updated_at = now(),

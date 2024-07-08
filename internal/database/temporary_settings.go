@@ -52,7 +52,7 @@ func (f *temporarySettingsStore) OverwriteTemporarySettings(ctx context.Context,
 	const overwriteTemporarySettingsQuery = `
 		INSERT INTO temporary_settings (user_id, contents)
 		VALUES (%s, %s)
-		ON CONFLICT (user_id) DO UPDATE SET
+		ON CONFLICT (user_id, tenant_id) DO UPDATE SET
 			contents = %s,
 			updated_at = now();
 	`
@@ -64,7 +64,7 @@ func (f *temporarySettingsStore) EditTemporarySettings(ctx context.Context, user
 	const editTemporarySettingsQuery = `
 		INSERT INTO temporary_settings AS t (user_id, contents)
 			VALUES (%s, %s)
-			ON CONFLICT (user_id) DO UPDATE SET
+			ON CONFLICT (user_id, tenant_id) DO UPDATE SET
 				contents = t.contents || %s,
 				updated_at = now();
 	`

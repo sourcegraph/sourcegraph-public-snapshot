@@ -258,8 +258,7 @@ changed AS (
     updated_at,
     metadata
   FROM batch
-  ON CONFLICT ON CONSTRAINT
-    changeset_events_changeset_id_kind_key_unique
+  ON CONFLICT (changeset_id, kind, key, tenant_id)
   DO UPDATE
   SET
     metadata   = excluded.metadata,

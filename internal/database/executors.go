@@ -248,7 +248,7 @@ INSERT INTO executor_heartbeats (
 	last_seen_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (hostname) DO UPDATE
+ON CONFLICT (hostname, tenant_id) DO UPDATE
 SET
 	queue_name = EXCLUDED.queue_name,
 	queue_names = EXCLUDED.queue_names,

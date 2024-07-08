@@ -169,7 +169,7 @@ func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (
 
 // Add adds new user email. When added, it is always unverified.
 func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
-	query := sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code) VALUES(%s, %s, %s) ON CONFLICT ON CONSTRAINT user_emails_no_duplicates_per_user DO NOTHING", userID, email, verificationCode)
+	query := sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code) VALUES(%s, %s, %s) ON CONFLICT (user_id, email, tenant_id) DO NOTHING", userID, email, verificationCode)
 	result, err := s.ExecResult(ctx, query)
 	if err != nil {
 		return err

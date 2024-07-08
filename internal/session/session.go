@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -100,6 +101,7 @@ func NewRedisStore(secureCookie func() bool) sessions.Store {
 	if err != nil {
 		waitForRedis(rstore)
 	}
+	rstore.SetKeyPrefix(fmt.Sprintf("tnt_%d:session_", tenant.ID))
 	store = rstore
 	options = rstore.Options
 

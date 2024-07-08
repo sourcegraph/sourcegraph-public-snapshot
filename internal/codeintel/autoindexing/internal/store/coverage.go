@@ -126,7 +126,7 @@ func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, n
 const setConfigurationSummaryQuery = `
 INSERT INTO cached_available_indexers (repository_id, num_events, available_indexers)
 VALUES (%s, %s, %s)
-ON CONFLICT(repository_id) DO UPDATE
+ON CONFLICT (repository_id, tenant_id) DO UPDATE
 SET
 	num_events = EXCLUDED.num_events,
 	available_indexers = EXCLUDED.available_indexers

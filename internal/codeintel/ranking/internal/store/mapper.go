@@ -245,7 +245,7 @@ ins AS (
 		rx.count,
 		false
 	FROM referenced_definitions rx
-	ON CONFLICT (graph_key, definition_id) WHERE NOT processed DO UPDATE SET count = target.count + EXCLUDED.count
+	ON CONFLICT (graph_key, definition_id, tenant_id) WHERE NOT processed DO UPDATE SET count = target.count + EXCLUDED.count
 	RETURNING 1
 ),
 set_progress AS (

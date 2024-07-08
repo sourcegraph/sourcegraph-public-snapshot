@@ -29,7 +29,7 @@ const pathInsertFmtstr = `
 			WHERE repo_id = %s
 			AND absolute_path = %s
 		)
-		ON CONFLICT (repo_id, absolute_path) DO NOTHING
+		ON CONFLICT (repo_id, absolute_path, tenant_id) DO NOTHING
 		RETURNING id
 	)
 	SELECT id FROM already_exists

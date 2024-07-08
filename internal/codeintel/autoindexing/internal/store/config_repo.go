@@ -59,7 +59,7 @@ func (s *store) SetRepositoryExceptions(ctx context.Context, repositoryID int, c
 const setRepositoryExceptionsQuery = `
 INSERT INTO codeintel_autoindexing_exceptions (repository_id, disable_scheduling, disable_inference)
 VALUES (%s, %s, %s)
-ON CONFLICT (repository_id) DO UPDATE SET
+ON CONFLICT (repository_id, tenant_id) DO UPDATE SET
 	disable_scheduling = %s,
 	disable_inference = %s
 `
@@ -95,7 +95,7 @@ func (s *store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repo
 const updateIndexConfigurationByRepositoryIDQuery = `
 INSERT INTO lsif_index_configuration (repository_id, data)
 VALUES (%s, %s)
-ON CONFLICT (repository_id) DO UPDATE
+ON CONFLICT (repository_id, tenant_id) DO UPDATE
 SET data = %s
 `
 
