@@ -600,6 +600,7 @@ ts_project(
         "src/enterprise/batches/settings/CodeHostSshPublicKey.tsx",
         "src/enterprise/batches/settings/CommitSigningIntegrationNode.tsx",
         "src/enterprise/batches/settings/CommitSigningIntegrations.tsx",
+        "src/enterprise/batches/settings/GitHubAppControls.tsx",
         "src/enterprise/batches/settings/ModalHeader.tsx",
         "src/enterprise/batches/settings/RemoveCredentialModal.tsx",
         "src/enterprise/batches/settings/RolloutWindowsConfiguration.tsx",
