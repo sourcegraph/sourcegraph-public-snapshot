@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -158,7 +159,7 @@ WITH inserted AS (
 	INSERT INTO
 		code_hosts (kind, url, api_rate_limit_quota, api_rate_limit_interval_seconds, git_rate_limit_quota, git_rate_limit_interval_seconds)
 	VALUES (%s, %s, %s, %s, %s, %s)
-	ON CONFLICT(url) DO NOTHING
+	ON CONFLICT(url, tenant_id) DO NOTHING
 	RETURNING
 		%s
 )

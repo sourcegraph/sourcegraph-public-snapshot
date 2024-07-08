@@ -2,9 +2,12 @@ package redispool
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 // KeyValue is a key value store modeled after the most common usage we have
@@ -151,7 +154,7 @@ func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
 //	  WithPrefix(prefix string) KeyValue
 //	}
 func RedisKeyValue(pool *redis.Pool) KeyValue {
-	return &redisKeyValue{pool: pool}
+	return &redisKeyValue{pool: pool, prefix: fmt.Sprintf("tnt_%d:", tenant.ID)}
 }
 
 func (r redisKeyValue) Get(key string) Value {

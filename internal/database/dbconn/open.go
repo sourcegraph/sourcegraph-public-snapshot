@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -220,11 +221,21 @@ func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 }
 
 func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if !strings.HasPrefix(query, "ROLLBACK") {
+		_, err := n.execerContext.ExecContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", tenant.ID), nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set tenant")
+		}
+	}
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.execerContext.ExecContext(ctx, query, args)
 }
 
 func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	_, err := n.queryerContext.QueryContext(ctx, fmt.Sprintf("SET app.current_tenant = '%d'", tenant.ID), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to set tenant")
+	}
 	ctx, query = instrumentQuery(ctx, query, len(args))
 	return n.queryerContext.QueryContext(ctx, query, args)
 }

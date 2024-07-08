@@ -4,7 +4,7 @@ env:
   GITSERVER_MEMORY_OBSERVATION_ENABLED: 'true'
   PGPORT: 5432
   PGHOST: localhost
-  PGUSER: sourcegraph
+  PGUSER: sourcegraph_rls
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
