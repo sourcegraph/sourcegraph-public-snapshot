@@ -319,7 +319,7 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -361,6 +361,16 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		}
 	case *auth.BasicAuth:
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
+			return nil, err
+		}
+	case *ghaauth.InstallationAuthenticator:
+		if av.NeedsRefresh() {
+			if err := av.Refresh(ctx, httpcli.ExternalClient); err != nil {
+				return nil, err
+			}
+		}
+		t := av.GetToken()
+		if err := setGitHubAppInstallationToken(cloneURL, extSvcType, t.Token); err != nil {
 			return nil, err
 		}
 	default:
@@ -602,7 +612,7 @@ func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
 		return errors.New("require username/token to push commits to BitbucketServer")
 
 	default:
-		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
+		return errors.Newf("setOAuthTokenAuth: invalid external service type %q", extSvcType)
 	}
 	return nil
 }
@@ -618,6 +628,16 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 
 	default:
 		panic(fmt.Sprintf("setBasicAuth: invalid external service type %q", extSvcType))
+	}
+	return nil
+}
+
+func setGitHubAppInstallationToken(u *vcs.URL, extSvcType, token string) error {
+	switch extSvcType {
+	case extsvc.TypeGitHub:
+		u.User = url.UserPassword("x-access-token", token)
+	default:
+		return errors.Newf("setGitHubAppInstallationToken: invalid external service type %q", extSvcType)
 	}
 	return nil
 }
