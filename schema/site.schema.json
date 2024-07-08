@@ -3374,7 +3374,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "sourcegraph"]
+          "enum": ["awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph"]
         }
       },
       "oneOf": [
@@ -3395,6 +3395,9 @@
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigOpenAIProvider"
+        },
+        {
+          "$ref": "#/definitions/ServerSideProviderConfigOpenAICompatibleProvider"
         },
         {
           "$ref": "#/definitions/ServerSideProviderConfigSourcegraphProvider"
@@ -3507,6 +3510,22 @@
         "type": {
           "type": "string",
           "const": "openai"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerSideProviderConfigOpenAICompatibleProvider": {
+      "type": "object",
+      "required": ["type", "accessToken", "endpoint"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openaicompatible"
         },
         "accessToken": {
           "type": "string"

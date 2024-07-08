@@ -2492,14 +2492,15 @@ type ServerSideModelConfigAwsBedrockProvisionedThroughput struct {
 	Type string `json:"type"`
 }
 type ServerSideProviderConfig struct {
-	AwsBedrock  *ServerSideProviderConfigAWSBedrock
-	AzureOpenAI *ServerSideProviderConfigAzureOpenAI
-	Anthropic   *ServerSideProviderConfigAnthropicProvider
-	Fireworks   *ServerSideProviderConfigFireworksProvider
-	Google      *ServerSideProviderConfigGoogleProvider
-	Openai      *ServerSideProviderConfigOpenAIProvider
-	Sourcegraph *ServerSideProviderConfigSourcegraphProvider
-	Unused      *DoNotUsePhonyDiscriminantType
+	AwsBedrock       *ServerSideProviderConfigAWSBedrock
+	AzureOpenAI      *ServerSideProviderConfigAzureOpenAI
+	Anthropic        *ServerSideProviderConfigAnthropicProvider
+	Fireworks        *ServerSideProviderConfigFireworksProvider
+	Google           *ServerSideProviderConfigGoogleProvider
+	Openai           *ServerSideProviderConfigOpenAIProvider
+	Openaicompatible *ServerSideProviderConfigOpenAICompatibleProvider
+	Sourcegraph      *ServerSideProviderConfigSourcegraphProvider
+	Unused           *DoNotUsePhonyDiscriminantType
 }
 
 func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
@@ -2520,6 +2521,9 @@ func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openai != nil {
 		return json.Marshal(v.Openai)
+	}
+	if v.Openaicompatible != nil {
+		return json.Marshal(v.Openaicompatible)
 	}
 	if v.Sourcegraph != nil {
 		return json.Marshal(v.Sourcegraph)
@@ -2549,12 +2553,14 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Google)
 	case "openai":
 		return json.Unmarshal(data, &v.Openai)
+	case "openaicompatible":
+		return json.Unmarshal(data, &v.Openaicompatible)
 	case "sourcegraph":
 		return json.Unmarshal(data, &v.Sourcegraph)
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "sourcegraph", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph", "unused"})
 }
 
 type ServerSideProviderConfigAWSBedrock struct {
@@ -2588,6 +2594,11 @@ type ServerSideProviderConfigFireworksProvider struct {
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigGoogleProvider struct {
+	AccessToken string `json:"accessToken"`
+	Endpoint    string `json:"endpoint"`
+	Type        string `json:"type"`
+}
+type ServerSideProviderConfigOpenAICompatibleProvider struct {
 	AccessToken string `json:"accessToken"`
 	Endpoint    string `json:"endpoint"`
 	Type        string `json:"type"`
