@@ -36,6 +36,7 @@ export const View: StoryFn = () => (
                     requiresUsername: false,
                     supportsCommitSigning: false,
                     commitSigningConfiguration: null,
+                    gitHubApp: null,
                 }}
                 credential={credential}
                 onClose={noop}

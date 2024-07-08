@@ -29,13 +29,13 @@ import { useRefreshGitHubApp } from './backend'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 
-interface AppDetailsControlsProps {
+interface GitHubAppControlsProps {
     baseURL: string
     config: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null
     refetch: () => void
 }
 
-export const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
+export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
     const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`

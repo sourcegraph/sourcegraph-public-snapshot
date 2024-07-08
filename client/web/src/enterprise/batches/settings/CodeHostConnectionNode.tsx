@@ -19,9 +19,9 @@ import {
 } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
-import { AppDetailsControls } from './AppDetailsControls'
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CheckButton } from './CheckButton'
+import { GitHubAppControls } from './GitHubAppControls'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -31,7 +31,7 @@ export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
     refetchAll: () => void
     user: UserAreaUserFields | null
-    kind: GitHubAppKind
+    gitHubAppKind: GitHubAppKind
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
@@ -40,7 +40,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     node,
     refetchAll,
     user,
-    kind,
+    gitHubAppKind,
 }) => {
     const [checkCredError, setCheckCredError] = useState<ApolloError | undefined>()
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
@@ -96,7 +96,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     }
 
     const gitHubApp: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null =
-        kind === GitHubAppKind.COMMIT_SIGNING ? node.commitSigningConfiguration : node.gitHubApp
+        gitHubAppKind === GitHubAppKind.COMMIT_SIGNING ? node.commitSigningConfiguration : node.gitHubApp
 
     return (
         <>
@@ -147,7 +147,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
                             gitHubApp ? (
-                                <AppDetailsControls
+                                <GitHubAppControls
                                     baseURL={node.externalServiceURL}
                                     config={gitHubApp}
                                     refetch={refetchAll}

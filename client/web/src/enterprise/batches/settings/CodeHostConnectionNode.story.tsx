@@ -8,6 +8,7 @@ import {
     type BatchChangesCredentialFields,
     type CheckBatchChangesCredentialResult,
     ExternalServiceKind,
+    GitHubAppKind,
     type UserAreaUserFields,
 } from '../../../graphql-operations'
 
@@ -59,6 +60,7 @@ export const Overview: StoryFn = () => (
             >
                 <CodeHostConnectionNode
                     {...props}
+                    gitHubAppKind={GitHubAppKind.SITE_CREDENTIAL}
                     node={{
                         credential: sshCredential(false),
                         externalServiceKind: ExternalServiceKind.GITHUB,
@@ -67,6 +69,7 @@ export const Overview: StoryFn = () => (
                         requiresUsername: false,
                         supportsCommitSigning: false,
                         commitSigningConfiguration: null,
+                        gitHubApp: null,
                     }}
                     refetchAll={() => {}}
                     user={{ id: '123' } as UserAreaUserFields}

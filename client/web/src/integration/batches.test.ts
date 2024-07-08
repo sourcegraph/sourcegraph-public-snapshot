@@ -1014,6 +1014,7 @@ describe('Batches', () => {
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                             ],
                         },

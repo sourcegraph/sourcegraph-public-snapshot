@@ -83,6 +83,7 @@ export const Overview: StoryFn = () => (
                                         baseURL: 'https://github.com/',
                                         logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                     },
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -93,6 +94,7 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: true,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -103,6 +105,7 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -113,6 +116,7 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -123,6 +127,7 @@ export const Overview: StoryFn = () => (
                                     requiresUsername: true,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 }
                             ),
                         },
@@ -174,6 +179,7 @@ export const ConfigAdded: StoryFn = () => (
                                         baseURL: 'https://github.com/',
                                         logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                     },
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -184,6 +190,7 @@ export const ConfigAdded: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -194,6 +201,7 @@ export const ConfigAdded: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -204,6 +212,7 @@ export const ConfigAdded: StoryFn = () => (
                                     requiresUsername: true,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 }
                             ),
                         },
@@ -257,6 +266,7 @@ export const RolloutWindowsConfigurationStory: StoryFn = () => (
                                         baseURL: 'https://github.com/',
                                         logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                     },
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -267,6 +277,7 @@ export const RolloutWindowsConfigurationStory: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -277,6 +288,7 @@ export const RolloutWindowsConfigurationStory: StoryFn = () => (
                                     requiresUsername: false,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 },
                                 {
                                     __typename: 'BatchChangesCodeHost',
@@ -287,6 +299,7 @@ export const RolloutWindowsConfigurationStory: StoryFn = () => (
                                     requiresUsername: true,
                                     supportsCommitSigning: false,
                                     commitSigningConfiguration: null,
+                                    gitHubApp: null,
                                 }
                             ),
                         },

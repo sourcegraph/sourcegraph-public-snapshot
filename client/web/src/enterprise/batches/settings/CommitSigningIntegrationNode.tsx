@@ -8,7 +8,7 @@ import { H3, Icon, Text } from '@sourcegraph/wildcard'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import type { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
-import { AppDetailsControls } from './AppDetailsControls'
+import { GitHubAppControls } from './GitHubAppControls'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 
@@ -51,7 +51,7 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
                 {readOnly ? (
                     <ReadOnlyAppDetails config={node.commitSigningConfiguration} />
                 ) : (
-                    <AppDetailsControls
+                    <GitHubAppControls
                         baseURL={node.externalServiceURL}
                         config={node.commitSigningConfiguration}
                         refetch={refetch}

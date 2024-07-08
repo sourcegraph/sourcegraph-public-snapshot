@@ -37,7 +37,7 @@ export const GlobalCodeHostConnections: React.FunctionComponent<
     <CodeHostConnections
         user={null}
         connectionResult={useGlobalBatchChangesCodeHostConnection()}
-        kind={GitHubAppKind.SITE_CREDENTIAL}
+        gitHubAppKind={GitHubAppKind.SITE_CREDENTIAL}
         {...props}
     />
 )
@@ -53,7 +53,7 @@ export const UserCodeHostConnections: React.FunctionComponent<
         connectionResult={useUserBatchChangesCodeHostConnection(user.id)}
         headerLine={headerLine}
         user={user}
-        kind={GitHubAppKind.SITE_CREDENTIAL}
+        gitHubAppKind={GitHubAppKind.USER_CREDENTIAL}
     />
 )
 
@@ -63,21 +63,21 @@ interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
         GlobalBatchChangesCodeHostsResult | UserBatchChangesCodeHostsResult,
         BatchChangesCodeHostFields
     >
-    kind: GitHubAppKind
+    gitHubAppKind: GitHubAppKind
 }
 
 const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({
     user,
     headerLine,
     connectionResult,
-    kind,
+    gitHubAppKind,
 }) => {
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     const location = useLocation()
     const success = new URLSearchParams(location.search).get('success') === 'true'
     const appName = new URLSearchParams(location.search).get('app_name')
     const setupError = new URLSearchParams(location.search).get('error')
-    const shouldShowError = !success && setupError && kind !== GitHubAppKind.COMMIT_SIGNING
+    const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     return (
         <Container className="mb-3">
             <H3>Code host tokens</H3>
@@ -102,7 +102,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             node={node}
                             refetchAll={refetchAll}
                             user={user}
-                            kind={kind}
+                            gitHubAppKind={gitHubAppKind}
                         />
                     ))}
                 </ConnectionList>
