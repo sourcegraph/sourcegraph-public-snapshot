@@ -482,7 +482,7 @@ func extractChangelistNumber(revSpec string) (int64, error) {
 	numberStr := matches[1]
 	number, err := strconv.ParseInt(numberStr, 10, 0)
 	if err != nil {
-		return 0, errors.Newf("failed to parse changelist number: %v", err)
+		return 0, errors.Newf("failed to parse changelist number: %w", err)
 	}
 
 	return number, nil
