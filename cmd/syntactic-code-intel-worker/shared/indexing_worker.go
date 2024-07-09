@@ -134,7 +134,8 @@ func (i indexingHandler) HandleImpl(ctx context.Context, logger log.Logger, reco
 		return SyntacticIndexingResult{}, errors.Newf("Failed to start scip-syntax process: %s", err)
 	}
 
-	if _, err := io.Copy(cmdStdinPipe, tarStream); err != nil {
+	tarStreamSizeBytes, err := io.Copy(cmdStdinPipe, tarStream)
+	if err != nil {
 		return SyntacticIndexingResult{}, errors.Newf("Failed to stream tar contents into scip-syntax's STDIN: %s", err)
 	}
 
@@ -146,7 +147,9 @@ func (i indexingHandler) HandleImpl(ctx context.Context, logger log.Logger, reco
 	logger.Debug("Syntactic indexing finished",
 		log.Int("repository_id", int(record.RepositoryID)),
 		log.String("commit", string(record.Commit)),
-		log.String("output", tempLocation))
+		log.Int64("repository_archive_bytes", tarStreamSizeBytes),
+		log.String("output", tempLocation),
+	)
 
 	f, err := os.Open(tempLocation)
 	if err != nil {
