@@ -11,7 +11,7 @@ import (
 	"github.com/fatih/color"
 	sitter "github.com/smacker/go-tree-sitter"
 
-	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

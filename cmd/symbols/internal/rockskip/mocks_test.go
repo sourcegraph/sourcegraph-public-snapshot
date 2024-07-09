@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/go-ctags"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"

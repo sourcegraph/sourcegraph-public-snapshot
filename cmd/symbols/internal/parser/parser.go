@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/std"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"

@@ -12,11 +12,11 @@ go_library(
         "server.go",
         "status.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/rockskip",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/rockskip",
     tags = [TAG_PLATFORM_SEARCH],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//cmd/symbols:__subpackages__"],
     deps = [
-        "//cmd/symbols/fetcher",
+        "//cmd/symbols/internal/fetcher",
         "//internal/actor",
         "//internal/api",
         "//internal/database",
@@ -59,7 +59,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/symbols/fetcher",
+        "//cmd/symbols/internal/fetcher",
         "//internal/api",
         "//internal/byteutils",
         "//internal/database/dbtest",

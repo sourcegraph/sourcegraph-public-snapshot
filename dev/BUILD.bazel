@@ -63,7 +63,6 @@ write_source_files(
         "//cmd/gitserver/internal/integration_tests:generate_mocks",
         "//cmd/gitserver/internal/vcssyncer:generate_mocks",
         "//cmd/gitserver/internal:generate_mocks",
-        "//cmd/symbols/fetcher:generate_mocks",
         "//cmd/symbols/internal/api:generate_mocks",
         "//cmd/worker/internal/telemetry:generate_mocks",
         "//dev/team:generate_mocks",
@@ -127,5 +126,6 @@ write_source_files(
         "//cmd/cody-gateway/internal/actor/productsubscription/productsubscriptiontest:generate_mocks",
         "//cmd/enterprise-portal/internal/subscriptionsservice:generate_mocks",
         "//dev/sg/internal/analytics:generate_mocks",
+        "//cmd/symbols/internal/fetcher:generate_mocks",
     ],
 )
