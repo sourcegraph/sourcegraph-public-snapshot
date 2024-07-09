@@ -72,6 +72,12 @@
         --vscode-editor-font-size: var(--code-font-size);
         --mention-color-opacity: 100%;
 
+            // LLM picker tokens
+        --vscode-quickInput-background: var(--dropdown-bg);
+        --vscode-dropdown-border: var(--border-color);
+        --vscode-dropdown-foreground: var(--body-color);
+        --vscode-foreground: var(--body-color);
+
         line-height: 1.55;
         flex: 1;
         min-height: 0;
