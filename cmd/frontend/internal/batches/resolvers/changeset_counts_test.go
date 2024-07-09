@@ -190,7 +190,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 
 		src, err := sourcer.ForChangeset(ctx, bstore, c, githubRepo, sources.SourcerOpts{
-			AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+			AuthenticationStrategy: types.SourceAuthenticationStrategyUserCredential,
 		})
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)

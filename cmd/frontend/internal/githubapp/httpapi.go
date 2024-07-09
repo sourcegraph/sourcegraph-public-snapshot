@@ -507,7 +507,7 @@ func handleCredentialCreation(ctx context.Context, db database.DB, stateDetails 
 	if *kind == ghtypes.UserCredentialGitHubAppKind {
 		if _, err = svc.CreateBatchChangesUserCredential(
 			ctx,
-			sources.AuthenticationStrategyGitHubApp,
+			types.SourceAuthenticationStrategyGitHubApp,
 			service.CreateBatchChangesUserCredentialArgs{
 				ExternalServiceURL:  esu,
 				ExternalServiceType: extsvc.VariantGitHub.AsType(),
@@ -521,7 +521,7 @@ func handleCredentialCreation(ctx context.Context, db database.DB, stateDetails 
 	} else {
 		if _, err := svc.CreateBatchChangesSiteCredential(
 			ctx,
-			sources.AuthenticationStrategyGitHubApp,
+			types.SourceAuthenticationStrategyGitHubApp,
 			service.CreateBatchChangesSiteCredentialArgs{
 				ExternalServiceURL:  esu,
 				ExternalServiceType: extsvc.VariantGitHub.AsType(),

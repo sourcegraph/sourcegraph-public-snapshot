@@ -595,7 +595,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
 	css, err := sourcer.ForChangeset(ctx, s, ch, repo, sources.SourcerOpts{
-		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		AuthenticationStrategy: types.SourceAuthenticationStrategyUserCredential,
 	})
 	if err != nil {
 		switch err {
@@ -654,10 +654,14 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
+
 		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, e.remote, sources.SourcerOpts{
-			AuthenticationStrategy: sources.AuthenticationStrategyGitHubApp,
-			GitHubAppKind:          ghtypes.CommitSigningGitHubAppKind,
-			AsNonCredential:        true,
+			AuthenticationStrategy: types.SourceAuthenticationStrategyGitHubApp,
+
+			// If the authentication strategy for the original Push is not GitHub App, we want to make use
+			// of a commit signing GitHub app to sign the commit.
+			AsNonCredential: opts.Push.AuthenticationStrategy != types.SourceAuthenticationStrategyGitHubApp,
+			GitHubAppKind:   ghtypes.CommitSigningGitHubAppKind,
 		})
 		if err != nil {
 			switch err {

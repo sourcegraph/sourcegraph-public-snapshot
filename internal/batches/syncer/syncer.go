@@ -498,7 +498,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 	srcer := sources.NewSourcer(s.httpFactory)
 	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, repo, sources.SourcerOpts{
-		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		AuthenticationStrategy: types.SourceAuthenticationStrategyUserCredential,
 	})
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {

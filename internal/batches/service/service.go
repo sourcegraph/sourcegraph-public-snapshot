@@ -1264,7 +1264,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 	// Get a changeset source for the external service and use the given authenticator.
 	css, err := s.sourcer.ForExternalService(ctx, s.store, &extsvcauth.OAuthBearerToken{Token: token}, sources.SourcerOpts{
 		ExternalServiceType:    externalServiceType,
-		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+		AuthenticationStrategy: types.SourceAuthenticationStrategyUserCredential,
 		ExternalServiceID:      externalServiceID,
 	})
 	if err != nil {
@@ -1300,7 +1300,7 @@ type ValidateAuthenticatorArgs struct {
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authenticator, as sources.AuthenticationStrategy, args ValidateAuthenticatorArgs) (err error) {
+func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authenticator, as types.SourceAuthenticationStrategy, args ValidateAuthenticatorArgs) (err error) {
 	ctx, _, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -1319,7 +1319,7 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, a extsvcauth.Authen
 		// This is set to true because we want to validate the authenticator, not
 		// actually use it to create changesets. This is only valid for GitHub Apps credential.
 		// TODO: Figure out a better name for this field.
-		AsNonCredential: as == sources.AuthenticationStrategyGitHubApp,
+		AsNonCredential: as == types.SourceAuthenticationStrategyGitHubApp,
 	})
 	if err != nil {
 		return err
@@ -1832,7 +1832,7 @@ type CreateBatchChangesUserCredentialArgs struct {
 	GitHubAppKind       ghtypes.GitHubAppKind
 }
 
-func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
+func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as types.SourceAuthenticationStrategy, args CreateBatchChangesUserCredentialArgs) (*database.UserCredential, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), args.UserID); err != nil {
 		return nil, err
@@ -1842,7 +1842,7 @@ func (s *Service) CreateBatchChangesUserCredential(ctx context.Context, as sourc
 		return nil, errors.New("authentication strategy must be specified")
 	}
 
-	if as == sources.AuthenticationStrategyGitHubApp && args.GitHubAppID == 0 {
+	if as == types.SourceAuthenticationStrategyGitHubApp && args.GitHubAppID == 0 {
 		return nil, errors.Newf("GithubAppID must be specified when authenticationStrategy is %s", as)
 	}
 
@@ -1892,7 +1892,7 @@ type CreateBatchChangesSiteCredentialArgs struct {
 	GitHubAppKind       ghtypes.GitHubAppKind
 }
 
-func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as sources.AuthenticationStrategy, args CreateBatchChangesSiteCredentialArgs) (*btypes.SiteCredential, error) {
+func (s *Service) CreateBatchChangesSiteCredential(ctx context.Context, as types.SourceAuthenticationStrategy, args CreateBatchChangesSiteCredentialArgs) (*btypes.SiteCredential, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.store.DatabaseDB()); err != nil {
@@ -1945,7 +1945,7 @@ type generateAuthenticatorForCredentialArgs struct {
 	externalServiceURL     string
 	credential             string
 	username               *string
-	authenticationStrategy sources.AuthenticationStrategy
+	authenticationStrategy types.SourceAuthenticationStrategy
 	gitHubAppKind          ghtypes.GitHubAppKind
 	githubAppID            int
 	githubAppStore         ghstore.GitHubAppsStore
@@ -1958,7 +1958,7 @@ func (s *Service) generateAuthenticatorForCredential(ctx context.Context, args g
 		return nil, err
 	}
 
-	if args.authenticationStrategy == sources.AuthenticationStrategyGitHubApp {
+	if args.authenticationStrategy == types.SourceAuthenticationStrategyGitHubApp {
 		auther, err := ghauth.CreateAuthenticatorForCredential(ctx, args.githubAppID, ghauth.CreateAuthenticatorForCredentialOpts{
 			GitHubAppStore: args.githubAppStore,
 		})

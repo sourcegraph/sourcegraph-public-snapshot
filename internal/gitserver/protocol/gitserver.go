@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -385,6 +386,10 @@ type PushConfig struct {
 	// Passphrase is the passphrase to decrypt the private key. It is required
 	// when passing PrivateKey.
 	Passphrase string
+
+	// AuthenticationStrategy is the authentication strategy used to generate the
+	// credential for the push operation
+	AuthenticationStrategy types.SourceAuthenticationStrategy
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {

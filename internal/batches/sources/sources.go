@@ -63,19 +63,6 @@ func (e ErrNoPushCredentials) Error() string {
 // doesn't support SSH pushes.
 var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
-// AuthenticationStrategy defines the possible types of authentication strategy that can
-// be used to authenticate a ChangesetSource for a changeset.
-type AuthenticationStrategy string
-
-const (
-	// AuthenticationStrategyUserCredential is used to authenticate using a traditional PAT configured by
-	//the user or site admin. This should be used for all code host interactions unless another authentication
-	// strategy is explicitly required.
-	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
-	// AuthenticationStrategyGitHubApp is used to authenticate using a GitHub App.
-	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
-)
-
 type SourcerStore interface {
 	DatabaseDB() database.DB
 	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
@@ -93,7 +80,7 @@ type SourcerOpts struct {
 	ExternalServiceType    string
 	GitHubAppAccount       string
 	GitHubAppKind          ghtypes.GitHubAppKind
-	AuthenticationStrategy AuthenticationStrategy
+	AuthenticationStrategy types.SourceAuthenticationStrategy
 
 	// We sometimes create a sourcer for a changeset that without the use of a credential.
 	// An example is when we want to create a GitHubSource for a changeset that is to
@@ -163,7 +150,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, errors.Wrap(err, "loading external service")
 	}
 
-	if opts.AuthenticationStrategy == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
+	if opts.AuthenticationStrategy == types.SourceAuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
 
@@ -199,7 +186,7 @@ func (s *sourcer) createChangesetSourceForGHApp(
 	repo *types.Repo,
 	opts SourcerOpts,
 ) (ChangesetSource, error) {
-	if opts.AuthenticationStrategy != AuthenticationStrategyGitHubApp {
+	if opts.AuthenticationStrategy != types.SourceAuthenticationStrategyGitHubApp {
 		return nil, errors.New("commit signing is only supported for GitHub apps")
 	}
 
@@ -330,6 +317,8 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 		return nil, errors.Wrap(err, "getting clone URL")
 	}
 
+	as := types.SourceAuthenticationStrategyUserCredential
+
 	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
 	if cloneURL.IsSSH() {
 		sshA, ok := au.(auth.AuthenticatorWithSSH)
@@ -338,9 +327,10 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 		}
 		privateKey, passphrase := sshA.SSHPrivateKey()
 		return &protocol.PushConfig{
-			RemoteURL:  cloneURL.String(),
-			PrivateKey: privateKey,
-			Passphrase: passphrase,
+			RemoteURL:              cloneURL.String(),
+			PrivateKey:             privateKey,
+			Passphrase:             passphrase,
+			AuthenticationStrategy: as,
 		}, nil
 	}
 
@@ -370,6 +360,7 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 			}
 		}
 		t := av.GetToken()
+		as = types.SourceAuthenticationStrategyGitHubApp
 		if err := setGitHubAppInstallationToken(cloneURL, extSvcType, t.Token); err != nil {
 			return nil, err
 		}
@@ -377,7 +368,7 @@ func GitserverPushConfig(ctx context.Context, repo *types.Repo, au auth.Authenti
 		return nil, ErrNoPushCredentials{CredentialsType: fmt.Sprintf("%T", au)}
 	}
 
-	return &protocol.PushConfig{RemoteURL: cloneURL.String()}, nil
+	return &protocol.PushConfig{RemoteURL: cloneURL.String(), AuthenticationStrategy: as}, nil
 }
 
 // ToDraftChangesetSource returns a DraftChangesetSource, if the underlying

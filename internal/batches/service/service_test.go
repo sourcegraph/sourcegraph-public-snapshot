@@ -1187,7 +1187,7 @@ index e5af166..d44c3fc 100644
 			if err := svc.ValidateAuthenticator(
 				ctx,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
-				sources.AuthenticationStrategyUserCredential,
+				types.SourceAuthenticationStrategyUserCredential,
 				validateArgs,
 			); err != nil {
 				t.Fatal(err)
@@ -1206,7 +1206,7 @@ index e5af166..d44c3fc 100644
 			if err := svc.ValidateAuthenticator(
 				ctx,
 				&extsvcauth.OAuthBearerToken{Token: "test123"},
-				sources.AuthenticationStrategyUserCredential,
+				types.SourceAuthenticationStrategyUserCredential,
 				validateArgs,
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")

@@ -1126,7 +1126,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 	svc := service.New(r.store)
 
 	if userID != 0 {
-		cred, err := svc.CreateBatchChangesUserCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesUserCredentialArgs{
+		cred, err := svc.CreateBatchChangesUserCredential(ctx, types.SourceAuthenticationStrategyUserCredential, service.CreateBatchChangesUserCredentialArgs{
 			ExternalServiceURL:  args.ExternalServiceURL,
 			ExternalServiceType: extsvc.KindToType(kind),
 			UserID:              userID,
@@ -1139,7 +1139,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		return &batchChangesUserCredentialResolver{credential: cred, ghStore: r.db.GitHubApps(), db: r.db, logger: r.logger}, nil
 	}
 
-	cred, err := svc.CreateBatchChangesSiteCredential(ctx, sources.AuthenticationStrategyUserCredential, service.CreateBatchChangesSiteCredentialArgs{
+	cred, err := svc.CreateBatchChangesSiteCredential(ctx, types.SourceAuthenticationStrategyUserCredential, service.CreateBatchChangesSiteCredentialArgs{
 		ExternalServiceURL:  args.ExternalServiceURL,
 		ExternalServiceType: extsvc.KindToType(kind),
 		Credential:          args.Credential,
@@ -1950,9 +1950,9 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		ExternalServiceID:   cred.ExternalServiceURL(),
 		ExternalServiceType: extsvc.KindToType(cred.ExternalServiceKind()),
 	}
-	as := sources.AuthenticationStrategyUserCredential
+	as := types.SourceAuthenticationStrategyUserCredential
 	if cred.IsGitHubApp() {
-		as = sources.AuthenticationStrategyGitHubApp
+		as = types.SourceAuthenticationStrategyGitHubApp
 
 		ghApp, err := r.db.GitHubApps().GetByID(ctx, cred.GitHubAppID())
 		if err != nil {

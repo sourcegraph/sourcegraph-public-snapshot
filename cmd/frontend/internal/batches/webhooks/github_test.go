@@ -156,7 +156,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		})
 
 		src, err := sourcer.ForChangeset(ctx, s, changeset, githubRepo, sources.SourcerOpts{
-			AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+			AuthenticationStrategy: types.SourceAuthenticationStrategyUserCredential,
 		})
 		if err != nil {
 			t.Fatal(err)
