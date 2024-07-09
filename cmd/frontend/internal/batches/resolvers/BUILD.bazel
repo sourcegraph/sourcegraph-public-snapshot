@@ -53,7 +53,6 @@ go_library(
         "//internal/batches/rewirer",
         "//internal/batches/search",
         "//internal/batches/service",
-        "//internal/batches/sources",
         "//internal/batches/state",
         "//internal/batches/store",
         "//internal/batches/syncer",

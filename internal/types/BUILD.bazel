@@ -14,6 +14,7 @@ go_library(
         "outbound_webhooks.go",
         "saved_searches.go",
         "secret.go",
+        "sources.go",
         "types.go",
         "webhook_logs.go",
     ],

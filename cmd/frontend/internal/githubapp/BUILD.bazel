@@ -19,7 +19,6 @@ go_library(
         "//cmd/frontend/internal/repos/webhooks/resolvers",
         "//internal/auth",
         "//internal/batches/service",
-        "//internal/batches/sources",
         "//internal/batches/store",
         "//internal/codeintel",
         "//internal/conf/conftypes",
