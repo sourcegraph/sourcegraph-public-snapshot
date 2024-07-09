@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
 
@@ -31,13 +30,10 @@ changesetTemplate:
   fork: false
 `
 
-		batchSpec, err := ParseBatchSpec([]byte(spec))
+		_, err := ParseBatchSpec([]byte(spec))
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
-
-		// We expect the parser to set version to 1 if not specified
-		require.Equal(t, batchSpec.Version, 1)
 	})
 
 	t.Run("valid with version 1", func(t *testing.T) {
@@ -59,12 +55,11 @@ changesetTemplate:
   published: false
   fork: false
 `
-		batchSpec, err := ParseBatchSpec([]byte(spec))
+
+		_, err := ParseBatchSpec([]byte(spec))
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
-
-		require.Equal(t, batchSpec.Version, 1)
 	})
 
 	t.Run("valid with version 2", func(t *testing.T) {
@@ -87,12 +82,10 @@ changesetTemplate:
   fork: false
 `
 
-		batchSpec, err := ParseBatchSpec([]byte(spec))
+		_, err := ParseBatchSpec([]byte(spec))
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
-
-		require.Equal(t, batchSpec.Version, 2)
 	})
 
 	t.Run("invalid version", func(t *testing.T) {

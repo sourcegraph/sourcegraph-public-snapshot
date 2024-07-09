@@ -178,11 +178,6 @@ func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 		}
 	}
 
-	// Default to version 1 if not set.
-	if spec.Version == 0 {
-		spec.Version = 1
-	}
-
 	return &spec, errs
 }
 
