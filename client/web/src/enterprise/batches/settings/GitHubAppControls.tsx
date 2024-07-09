@@ -141,9 +141,10 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
             )}
             {!checkCredLoading && (checkCredResult || checkCredErr) && (
                 <>
-                    <br/>
+                    <br />
                     <NodeAlert variant={checkCredErr ? 'danger' : 'success'}>
-                        <span className="font-weight-bold">{config.name}</span> is {checkCredErr ? 'not' : ''} accessible.
+                        <span className="font-weight-bold">{config.name}</span> is {checkCredErr ? 'not' : ''}{' '}
+                        accessible.
                     </NodeAlert>
                 </>
             )}
