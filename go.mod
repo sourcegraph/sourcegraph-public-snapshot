@@ -456,6 +456,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tetratelabs/wazero v1.3.0 // indirect
+	github.com/tmaxmax/go-sse v0.8.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
