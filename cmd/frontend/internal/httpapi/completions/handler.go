@@ -185,12 +185,14 @@ func newCompletionsHandler(
 			// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 			modelConfig, err := modelconfig.Get().Get()
 			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to load model configuration", log.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			requestModelRef := modelconfigSDK.ModelRef(requestParams.Model) // a verified modelref at this point
 			modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
 			if err != nil {
+				trace.Logger(ctx, logger).Info("UseExperimentalModelConfiguration - failed to create model config info", log.Error(err))
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
