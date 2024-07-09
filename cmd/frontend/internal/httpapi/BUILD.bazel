@@ -73,7 +73,6 @@ go_library(
         "//schema",
         "@com_github_derision_test_glock//:glock",
         "@com_github_gorilla_mux//:mux",
-        "@com_github_gorilla_schema//:schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//errors",
         "@com_github_masterminds_semver//:semver",
