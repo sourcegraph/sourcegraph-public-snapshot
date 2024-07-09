@@ -98,7 +98,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     const gitHubApp: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null =
         gitHubAppKind === GitHubAppKind.COMMIT_SIGNING
             ? node.commitSigningConfiguration
-            : (node.credential?.gitHubApp ?? null);
+            : node.credential?.gitHubApp ?? null
 
     return (
         <>
