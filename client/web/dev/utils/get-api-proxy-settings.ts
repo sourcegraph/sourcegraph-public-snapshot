@@ -85,9 +85,6 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
 const jsContextChanges = `
     // Changes to remote 'window.context' required for local development.
     Object.assign(window.context, {
-        // Only username/password auth-provider provider is supported with the standalone server.
-        authProviders: window.context.authProviders.filter(provider => provider.isBuiltin),
-
         // Sync externalURL with the development environment config.
         externalURL: '${HTTPS_WEB_SERVER_URL}',
 
