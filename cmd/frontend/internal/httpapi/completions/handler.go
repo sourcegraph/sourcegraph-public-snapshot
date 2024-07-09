@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	modelconfigtypes "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -141,7 +143,9 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		// TODO(slimsag): self-hosted-models: Note we are disabling Cody Gateway if "modelConfiguration" is in use currently.
+		// this logic only handles Cody Enterprise with Self-hosted models
+		isProviderCodyGateway := conf.Get().SiteConfig().ModelConfiguration == nil && completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
@@ -176,12 +180,29 @@ func newCompletionsHandler(
 			}
 		}
 
+		var modelConfigInfo *types.ModelConfigInfo
+		if conf.Get().SiteConfig().ModelConfiguration != nil {
+			// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
+			modelConfig, err := modelconfig.Get().Get()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			requestModelRef := modelconfigtypes.ModelRef(requestParams.Model) // a verified modelref at this point
+			modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
 		completionClient, err := client.Get(
 			logger,
 			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
 			accessToken,
+			modelConfigInfo,
 		)
 		l := trace.Logger(ctx, logger)
 		if err != nil {

@@ -174,7 +174,7 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 			},
 		}
 	} else if v := cfg.Openaicompatible; v != nil {
-		// TODO(slimsag): self-hosted-llm: map this to OpenAICompatibleProviderConfig in the future
+		// TODO(slimsag): self-hosted-models: map this to OpenAICompatibleProviderConfig in the future
 		return &types.ServerSideProviderConfig{
 			GenericProvider: &types.GenericProviderConfig{
 				ServiceName: types.GenericServiceProviderOpenAI,
@@ -274,7 +274,7 @@ var recommendedSettings = map[types.ModelRef]types.ModelOverride{
 }
 
 func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-llm: tune these further based on testing
+	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,
@@ -293,7 +293,7 @@ func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) type
 }
 
 func recommendedSettingsMistral(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-llm: tune these further based on testing
+	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,

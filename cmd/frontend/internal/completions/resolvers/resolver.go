@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +54,24 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		chatModel = completionsConfig.ChatModel
 	}
 
+	var modelConfigInfo *types.ModelConfigInfo
+	if conf.Get().SiteConfig().ModelConfiguration != nil {
+		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
+		modelConfig, err := modelconfig.Get().Get()
+		if err != nil {
+			return "", err
+		}
+		// Request doesn't specify a particular model at all, so use default.
+		requestModelRef := modelConfig.DefaultModels.Chat
+		if args.Fast {
+			requestModelRef = modelConfig.DefaultModels.FastChat
+		}
+		modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	ctx, done := completions.Trace(ctx, "resolver", chatModel, int(args.Input.MaxTokensToSample)).
 		WithErrorP(&err).
 		Build()
@@ -64,6 +83,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		completionsConfig.Endpoint,
 		completionsConfig.Provider,
 		completionsConfig.AccessToken,
+		modelConfigInfo,
 	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")

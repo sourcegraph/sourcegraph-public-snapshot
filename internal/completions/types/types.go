@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	modelconfigtypes "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,6 +50,46 @@ type CodyCompletionRequestParameters struct {
 	// When Fast is true, then it is used as a hint to prefer a model
 	// that is faster (but probably "dumber").
 	Fast bool
+}
+
+// ModelConfigInfo is all the configuration information about the LLM Model and
+// the Provider we are using to resolve the request.
+type ModelConfigInfo struct {
+	Provider modelconfigtypes.Provider
+	Model    modelconfigtypes.Model
+}
+
+// Builds ModelConfigInfo for a given modelRef by looking up information in the provided modelConfig.
+func NewModelConfigInfo(
+	modelConfig *modelconfigtypes.ModelConfiguration,
+	modelRef modelconfigtypes.ModelRef,
+) (*ModelConfigInfo, error) {
+	var model *modelconfigtypes.Model
+	for _, m := range modelConfig.Models {
+		if m.ModelRef == modelRef {
+			model = &m
+			break
+		}
+	}
+	if model == nil {
+		return nil, fmt.Errorf("model %q not found in model configuration", modelRef)
+	}
+
+	wantProviderID := modelRef.ProviderID()
+	var provider *modelconfigtypes.Provider
+	for _, p := range modelConfig.Providers {
+		if p.ID == wantProviderID {
+			provider = &p
+			break
+		}
+	}
+	if provider == nil {
+		return nil, fmt.Errorf("model provider %q not found in model configuration", wantProviderID)
+	}
+	return &ModelConfigInfo{
+		Provider: *provider,
+		Model:    *model,
+	}, nil
 }
 
 type CompletionRequestParameters struct {
