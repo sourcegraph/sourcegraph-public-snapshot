@@ -70,7 +70,6 @@ func TestIndexingWorker(t *testing.T) {
 	// correctly. Otherwise we will rely on default value, so no need to handle
 	// else branch.
 	if os.Getenv("BAZEL_TEST") != "" {
-		fmt.Println("we're here")
 		config.CliPath, _ = runfiles.Rlocation(os.Getenv("SCIP_SYNTAX_PATH"))
 	}
 
