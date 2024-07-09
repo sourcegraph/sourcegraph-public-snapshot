@@ -48,13 +48,22 @@ func (c *client) Complete(
 		}
 	})()
 
+	var req *http.Request
 	if request.Feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, request.Parameters, false)
+		req, err = c.makeCompletionRequest(ctx, request.Parameters, false)
 	} else {
-		resp, err = c.makeRequest(ctx, request.Parameters, false)
+		req, err = c.makeChatRequest(ctx, request.Parameters, false)
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	resp, err = c.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, types.NewErrStatusNotOK("OpenAI", resp)
 	}
 	defer resp.Body.Close()
 
@@ -97,14 +106,24 @@ func (c *client) Stream(
 			resp.Body.Close()
 		}
 	})()
+
+	var req *http.Request
 	if request.Feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, request.Parameters, true)
+		req, err = c.makeCompletionRequest(ctx, request.Parameters, true)
 	} else {
-		resp, err = c.makeRequest(ctx, request.Parameters, true)
+		req, err = c.makeChatRequest(ctx, request.Parameters, true)
 	}
 	if err != nil {
 		return err
 	}
+	resp, err = c.cli.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return types.NewErrStatusNotOK("OpenAI", resp)
+	}
+	defer resp.Body.Close()
 
 	dec := NewDecoder(resp.Body)
 	var content string
@@ -168,12 +187,11 @@ func (c *client) Stream(
 	return nil
 }
 
-// makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *client) makeRequest(
+func (c *client) makeChatRequest(
 	ctx context.Context,
 	requestParams types.CompletionRequestParameters,
 	stream bool,
-) (*http.Response, error) {
+) (*http.Request, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -234,25 +252,14 @@ func (c *client) makeRequest(
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("OpenAI", resp)
-	}
-
-	return resp, nil
+	return req, nil
 }
 
-// makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
 func (c *client) makeCompletionRequest(
 	ctx context.Context,
 	requestParams types.CompletionRequestParameters,
 	stream bool,
-) (*http.Response, error) {
+) (*http.Request, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -299,17 +306,7 @@ func (c *client) makeCompletionRequest(
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("OpenAI", resp)
-	}
-
-	return resp, nil
+	return req, nil
 }
 
 func getPrompt(messages []types.Message) (string, error) {
