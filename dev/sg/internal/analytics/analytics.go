@@ -284,6 +284,9 @@ func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error)
 
 // Dont invoke this function directly. Use the `getEmail` function instead.
 func emailfunc() string {
+	if os.Getenv("CI") == "true" {
+		return "ci@sourcegraph.com"
+	}
 	sgHome, err := root.GetSGHomePath()
 	if err != nil {
 		return "anonymous"

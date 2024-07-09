@@ -24,8 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const CIIdentity = "ci@sourcegraph.com"
-
 const setupNotice = `sg sends telemetry about its usage, errors and various timings for the dev-infra team in order to better understand how it's being used by everyone, which is essential to keep improving it.
 
 ➡️ A one-time GSuite login is required to setup your identity once for all. It will take less than a minute to complete. You can abort by pressing ctrl-c. This can be opted out with the --disable-analytics flag,
@@ -48,7 +46,7 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 
 	// In CI we do not have to prompt for an identity
 	if os.Getenv("CI") == "true" {
-		return writeIdentity(whoamiPath, CIIdentity)
+		return nil
 	}
 
 	if content, err := os.ReadFile(whoamiPath); err == nil {
