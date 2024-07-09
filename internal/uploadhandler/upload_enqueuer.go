@@ -33,7 +33,11 @@ type UploadResult struct {
 	CompressedSize int64
 }
 
-func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T, uncompressedSize *int64, body io.Reader) (_ *UploadResult, err error) {
+func (u *UploadEnqueuer[T]) EnqueueSinglePayload(
+	ctx context.Context,
+	metadata T,
+	uncompressedSize *int64,
+	body io.Reader) (_ UploadResult, err error) {
 
 	ctx, trace, endObservation := u.operations.enqueueSinglePayload.With(ctx, &err, observation.Args{})
 	defer func() {
@@ -53,7 +57,7 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("InsertUpload", attribute.Int("uploadID", id))
+		trace.AddEvent("insertUpload", attribute.Int("uploadID", id))
 
 		compressedSize, err = u.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
 		if err != nil {
@@ -68,13 +72,13 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(ctx context.Context, metadata T
 		uploadID = id
 		return nil
 	}); err != nil {
-		return nil, err
+		return UploadResult{}, err
 	}
 
 	trace.Info(
-		"enqueued upload",
+		"enqueueUpload",
 		sglog.Int("id", uploadID),
 	)
 
-	return &UploadResult{uploadID, compressedSize}, nil
+	return UploadResult{uploadID, compressedSize}, nil
 }
