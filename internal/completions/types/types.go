@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	modelconfigtypes "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -55,16 +55,16 @@ type CodyCompletionRequestParameters struct {
 // ModelConfigInfo is all the configuration information about the LLM Model and
 // the Provider we are using to resolve the request.
 type ModelConfigInfo struct {
-	Provider modelconfigtypes.Provider
-	Model    modelconfigtypes.Model
+	Provider modelconfigSDK.Provider
+	Model    modelconfigSDK.Model
 }
 
 // Builds ModelConfigInfo for a given modelRef by looking up information in the provided modelConfig.
 func NewModelConfigInfo(
-	modelConfig *modelconfigtypes.ModelConfiguration,
-	modelRef modelconfigtypes.ModelRef,
+	modelConfig *modelconfigSDK.ModelConfiguration,
+	modelRef modelconfigSDK.ModelRef,
 ) (*ModelConfigInfo, error) {
-	var model *modelconfigtypes.Model
+	var model *modelconfigSDK.Model
 	for _, m := range modelConfig.Models {
 		if m.ModelRef == modelRef {
 			model = &m
@@ -76,7 +76,7 @@ func NewModelConfigInfo(
 	}
 
 	wantProviderID := modelRef.ProviderID()
-	var provider *modelconfigtypes.Provider
+	var provider *modelconfigSDK.Provider
 	for _, p := range modelConfig.Providers {
 		if p.ID == wantProviderID {
 			provider = &p

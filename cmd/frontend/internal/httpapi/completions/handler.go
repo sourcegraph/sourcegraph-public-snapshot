@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	modelconfigtypes "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
@@ -188,7 +188,7 @@ func newCompletionsHandler(
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			requestModelRef := modelconfigtypes.ModelRef(requestParams.Model) // a verified modelref at this point
+			requestModelRef := modelconfigSDK.ModelRef(requestParams.Model) // a verified modelref at this point
 			modelConfigInfo, err = types.NewModelConfigInfo(modelConfig, requestModelRef)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

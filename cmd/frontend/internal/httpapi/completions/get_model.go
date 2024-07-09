@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig"
-	modelconfigtypes "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
+	modelconfigSDK "github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
@@ -30,7 +30,7 @@ func getCodeCompletionModelFn() getModelFn {
 		if modelConfig := conf.Get().SiteConfig().ModelConfiguration; modelConfig != nil {
 			// Using new "modelConfiguration" site config.
 			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
-			if err := modelconfig.ValidateModelRef(modelconfigtypes.ModelRef(requestParams.Model)); err != nil {
+			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
 				_ = err // TODO(slimsag): self-hosted-models: log the error
 				// We don't have a valid modelRef, so use whatever model we have instead.
 				modelConfig, err := frontendmodelconfig.Get().Get()
@@ -64,7 +64,7 @@ func getChatModelFn(db database.DB) getModelFn {
 		if modelConfig := conf.Get().SiteConfig().ModelConfiguration; modelConfig != nil {
 			// Using new "modelConfiguration" site config.
 			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
-			if err := modelconfig.ValidateModelRef(modelconfigtypes.ModelRef(requestParams.Model)); err != nil {
+			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
 				_ = err // TODO(slimsag): self-hosted-models: log the error
 				// We don't have a valid modelRef, so use whatever model we have instead.
 				modelConfig, err := frontendmodelconfig.Get().Get()
