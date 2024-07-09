@@ -26,7 +26,8 @@ import (
 
 const setupNotice = `sg sends telemetry about its usage, errors and various timings for the dev-infra team in order to better understand how it's being used by everyone, which is essential to keep improving it.
 
-➡️ A one-time GSuite login is required to setup your identity once for all. It will take less than a minute to complete. You can abort by pressing ctrl-c. This can be opted out with the --disable-analytics flag, the SG_DISABLE_ANALYTICS env var or by writing '{"email": <your email or "anonymous">}' to ~/.sourcegraph/whoami.json.
+➡️ A one-time GSuite login is required to setup your identity once for all. It will take less than a minute to complete. You can abort by pressing ctrl-c. This can be opted out with the --disable-analytics flag,
+the SG_DISABLE_ANALYTICS env var or by writing '{"email": <your email or "anonymous">}' to ~/.sourcegraph/whoami.json.
 
 Press ENTER to open a browser window taking you through the OAuth process (you might see a dialog asking about receiving incoming connection, please accept it). Once complete, sg will resume automatically.
 `
