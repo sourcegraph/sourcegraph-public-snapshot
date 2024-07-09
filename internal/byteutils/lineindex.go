@@ -56,7 +56,7 @@ func NewLineIndex[T ~string | ~[]byte](content T) LineIndex {
 // - content[LineIndex[N]:LineIndex[N+1]] is the contents of line N
 type LineIndex []uint32
 
-// Line returns a range that can be used to slice the indexed content to obtain
+// LineRange returns a range that can be used to slice the indexed content to obtain
 // the line for the given number. The range is guaranteed to be a valid slice
 // into the content if the content is unchanged. If the line number refers to a
 // line that does not exist, a zero-length range will be returned pointing to
@@ -64,11 +64,11 @@ type LineIndex []uint32
 //
 // lineNumber is 0-indexed, and the returned range includes the terminating
 // newline (if it exists). Equivalent to Lines(lineNumber, lineNumber + 1).
-func (l LineIndex) Line(lineNumber int) (int, int) {
-	return l.Lines(lineNumber, lineNumber+1)
+func (l LineIndex) LineRange(lineNumber int) (int, int) {
+	return l.LinesRange(lineNumber, lineNumber+1)
 }
 
-// Lines returns a range that can be used to slice the indexed content to
+// LinesRange returns a range that can be used to slice the indexed content to
 // obtain the lines for the given half-open range. The range is guaranteed to
 // be a valid slice into the content if the content is unchanged. If the
 // requested range of lines does not exist, it will be truncated to return the
@@ -76,7 +76,7 @@ func (l LineIndex) Line(lineNumber int) (int, int) {
 //
 // line numbers are 0-indexed, and the returned range includes the terminating
 // newline (if it exists).
-func (l LineIndex) Lines(startLine, endLine int) (int, int) {
+func (l LineIndex) LinesRange(startLine, endLine int) (int, int) {
 	startLine = min(max(0, startLine), len(l)-1)
 	endLine = min(max(startLine, endLine), len(l)-1)
 	return int(l[startLine]), int(l[endLine])

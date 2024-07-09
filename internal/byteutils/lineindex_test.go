@@ -37,7 +37,7 @@ var testCases = []struct {
 func TestNewlineIndex(t *testing.T) {
 	lineIndexGetLines := func(contents string, startLine, endLine int) string {
 		index := NewLineIndex(contents)
-		start, end := index.Lines(startLine, endLine)
+		start, end := index.LinesRange(startLine, endLine)
 		return contents[start:end]
 	}
 
@@ -105,7 +105,7 @@ func FuzzNewlineIndex(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, contents string, startLine, endLine int) {
 		index := NewLineIndex(contents)
-		start, end := index.Lines(startLine, endLine)
+		start, end := index.LinesRange(startLine, endLine)
 		got := contents[start:end]
 		want := naiveGetLines(contents, startLine, endLine)
 		if want != got {
