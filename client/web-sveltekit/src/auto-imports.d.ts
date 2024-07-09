@@ -44,6 +44,7 @@ declare global {
   const ILucideFileCode: typeof import('~icons/lucide/file-code')['default']
   const ILucideFileJson: typeof import('~icons/lucide/file-json')['default']
   const ILucideFileSearch2: typeof import('~icons/lucide/file-search2')['default']
+  const ILucideFileStack: typeof import('~icons/lucide/file-stack')['default']
   const ILucideFileTerminal: typeof import('~icons/lucide/file-terminal')['default']
   const ILucideFileText: typeof import('~icons/lucide/file-text')['default']
   const ILucideFocus: typeof import('~icons/lucide/focus')['default']

@@ -62,7 +62,6 @@
         },
         '.cm-gutterElement': {
             lineHeight: '1.54',
-            minWidth: '40px !important',
 
             '&:hover': {
                 color: 'var(--text-body)',
@@ -156,6 +155,7 @@
     } from '$lib/web'
 
     import BlameDecoration from './blame/BlameDecoration.svelte'
+    import { ReblameMarker } from './blame/reblame'
     import { SearchPanel, keyboardShortcut } from './codemirror/inline-search'
     import { type Range, staticHighlights } from './codemirror/static-highlights'
     import {
@@ -280,6 +280,7 @@
                       },
                   }
               },
+              createReblameMarker: (...args) => new ReblameMarker(...args),
           })
         : null
     $: blameDataExtension = blameDataFacet(blameData)

@@ -49,7 +49,7 @@ export { defaultSearchModeFromSettings, defaultPatternTypeFromSettings } from '@
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
 
-export { parseBrowserRepoURL } from '@sourcegraph/web/src/util/url'
+export { parseBrowserRepoURL, getURLToFileCommit } from '@sourcegraph/web/src/util/url'
 export type { EditorSettings, EditorReplacements } from '@sourcegraph/web/src/open-in-editor/editor-settings'
 export { type Editor, getEditor, supportedEditors } from '@sourcegraph/web/src/open-in-editor/editors'
 export {
