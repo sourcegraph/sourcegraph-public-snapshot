@@ -124,7 +124,7 @@ func newSiteAdminProxy(
 				// Do not pass along tokens or cookies - we add new auth via
 				// the SAMS client credentials oauth2 transport.
 				req.Header.Del("authorization")
-				req.Header.Del("Cookie")
+				req.Header.Del("cookie")
 			},
 			Transport: &oauth2.Transport{
 				Source: clientCredentials, // authenticate with SAMS client credentials
