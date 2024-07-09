@@ -53,7 +53,7 @@ func TestValidationMethods(t *testing.T) {
 
 		for _, test := range tests {
 			ref := types.ModelRef(test.MRef)
-			gotErr := validateModelRef(ref)
+			gotErr := ValidateModelRef(ref)
 
 			var gotErrText string
 			if gotErr != nil {

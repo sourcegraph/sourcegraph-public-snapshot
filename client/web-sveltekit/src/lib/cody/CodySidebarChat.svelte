@@ -1,11 +1,14 @@
 <script lang="ts">
-    import { CodyWebChat, CodyWebChatProvider } from 'cody-web-experimental'
     import { createElement } from 'react'
+
+    import { CodyWebChat, CodyWebChatProvider } from 'cody-web-experimental'
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy } from 'svelte'
+
     import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
 
     import 'cody-web-experimental/dist/style.css'
+
     import { createLocalWritable } from '$lib/stores'
 
     export let repository: CodySidebar_ResolvedRevision
@@ -71,6 +74,12 @@
         --vscode-editor-font-family: var(--code-font-family);
         --vscode-editor-font-size: var(--code-font-size);
         --mention-color-opacity: 100%;
+
+        // LLM picker tokens
+        --vscode-quickInput-background: var(--dropdown-bg);
+        --vscode-dropdown-border: var(--border-color);
+        --vscode-dropdown-foreground: var(--body-color);
+        --vscode-foreground: var(--body-color);
 
         line-height: 1.55;
         flex: 1;
