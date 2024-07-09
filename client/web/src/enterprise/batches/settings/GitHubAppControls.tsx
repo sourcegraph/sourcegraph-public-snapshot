@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react'
 
-import { mdiDotsHorizontal, mdiGithub, mdiOpenInNew, mdiPencil, mdiRefresh, mdiTrashCan } from '@mdi/js'
+import { mdiConnection, mdiDotsHorizontal, mdiGithub, mdiOpenInNew, mdiPencil, mdiRefresh, mdiTrashCan } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 import { animated, useSpring } from 'react-spring'
 
+import { useLazyQuery } from '@sourcegraph/http-client'
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import {
     Alert,
@@ -23,9 +24,14 @@ import {
 
 import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
-import { GitHubAppByIDFields, GitHubAppKind } from '../../../graphql-operations'
+import {
+    type CheckBatchChangesCredentialResult,
+    type CheckBatchChangesCredentialVariables,
+    type GitHubAppByIDFields,
+    GitHubAppKind,
+} from '../../../graphql-operations'
 
-import { useRefreshGitHubApp } from './backend'
+import { useRefreshGitHubApp, CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 
@@ -34,6 +40,12 @@ interface GitHubAppControlsProps {
     config: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null
     refetch: () => void
     gitHubAppKind?: GitHubAppKind
+
+    /**
+     * If the GitHub app is used as a credential, we need the credential ID, so we can use that
+     * to check if the GitHub app connection is still active.
+     * */
+    credentialID?: string
 }
 
 export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> = ({
@@ -41,11 +53,17 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
     config,
     refetch,
     gitHubAppKind,
+    credentialID,
 }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
     const [refreshGitHubApp, { loading, error, data }] = useRefreshGitHubApp()
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     const navigate = useNavigate()
+
+    const [checkCredFn, { data: checkCredResult, loading: checkCredLoading, error: checkCredErr }] = useLazyQuery<
+        CheckBatchChangesCredentialResult,
+        CheckBatchChangesCredentialVariables
+    >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
 
     return config ? (
         <>
@@ -80,6 +98,17 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
                         View on GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </MenuItem>
                     <MenuDivider />
+                    {credentialID && (
+                        <MenuItem
+                            as={Button}
+                            disabled={checkCredLoading}
+                            onSelect={() => checkCredFn({ variables: { id: credentialID } })}
+                            className="p-2"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
+                            Check
+                        </MenuItem>
+                    )}
                     <MenuItem
                         as={Button}
                         disabled={loading}
@@ -107,7 +136,14 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
             {error && <NodeAlert variant="danger">{error.message}</NodeAlert>}
             {!loading && data && (
                 <NodeAlert variant="success">
-                    Installations for <span className="font-weight-bold">"{config.name}"</span> successfully refreshed.
+                    Installations for <span className="font-weight-bold">"{config.name}"</span> successfully
+                    refreshed.
+                </NodeAlert>
+            )}
+            {!checkCredLoading && (checkCredResult || checkCredErr) && (
+                <NodeAlert variant={checkCredErr ? 'danger' : 'success'}>
+                    <span className="font-weight-bold">"{config.name}"</span> is {checkCredErr ? 'not' : ''}{' '}
+                    accessible.
                 </NodeAlert>
             )}
         </>
