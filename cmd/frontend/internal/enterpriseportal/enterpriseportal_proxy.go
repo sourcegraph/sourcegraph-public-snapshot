@@ -111,12 +111,18 @@ func newSiteAdminProxy(
 		db: db,
 		proxy: &httputil.ReverseProxy{
 			Director: func(req *http.Request) {
+				// We must set the Host header to the target host, otherwise
+				// Cloudflare might block us.
+				req.Host = target.Host
+
+				// Rewrite the URL to point to the target.
 				req.URL.Scheme = target.Scheme
 				req.URL.Host = target.Host
 				req.URL.Path = strings.TrimPrefix(req.URL.Path, pathPrefix)
 				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, pathPrefix)
 
-				// Do not pass along tokens or cookies
+				// Do not pass along tokens or cookies - we add new auth via
+				// the SAMS client credentials oauth2 transport.
 				req.Header.Del("authorization")
 				req.Header.Del("Cookie")
 			},
