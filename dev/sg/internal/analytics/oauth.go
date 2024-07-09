@@ -44,6 +44,11 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 
 	whoamiPath := path.Join(sgHome, "whoami.json")
 
+	// In CI who do not have to prompt for an identity
+	if os.Getenv("CI") == "true" {
+		return writeIdentity(whoamiPath, "ci@sourcegraph.com")
+	}
+
 	if content, err := os.ReadFile(whoamiPath); err == nil {
 		var whoami struct {
 			Email string
@@ -112,12 +117,22 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 		return err
 	}
 
+	return writeIdentity(whoamiPath, whoami.Email)
+}
+
+func writeIdentity(path, email string) error {
+	whoami := struct {
+		Email string `json:"email"`
+	}{
+		Email: email,
+	}
+
 	b, err := json.Marshal(whoami)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(whoamiPath, b, 0o600)
+	return os.WriteFile(path, b, 0o600)
 }
 
 type tokenHandlerImpl struct {
