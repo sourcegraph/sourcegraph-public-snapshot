@@ -15,18 +15,18 @@ import (
 // This function is responsible for converting the schema.SiteConfiguration that admins write
 // into our internal data type.
 func maybeGetSiteModelConfiguration(logger log.Logger, siteConfig schema.SiteConfiguration) (*types.SiteModelConfiguration, error) {
-	// If "modelConfiguration" is specified, then we respect that and only that. If it is not specified,
-	// then we respect the older "completions" configuration.
+	// If "modelConfiguration" is specified, then we respect that and only that.
 	modelConfig := siteConfig.ModelConfiguration
-	if modelConfig == nil {
-		if compConfig := conf.GetCompletionsConfig(siteConfig); compConfig != nil {
-			logger.Info("converting completions configuration data", log.String("apiProvider", string(compConfig.Provider)))
-			return convertCompletionsConfig(compConfig)
-		}
-		return nil, nil
+	if modelConfig != nil {
+		return convertModelConfiguration(modelConfig), nil
 	}
-	return convertModelConfiguration(modelConfig), nil
 
+	// Otherwise we fallback to legacy "completions" config
+	if compConfig := conf.GetCompletionsConfig(siteConfig); compConfig != nil {
+		logger.Info("converting completions configuration data", log.String("apiProvider", string(compConfig.Provider)))
+		return convertCompletionsConfig(compConfig)
+	}
+	return nil, nil
 }
 
 // Performs no validation, assumes the config is valid.
