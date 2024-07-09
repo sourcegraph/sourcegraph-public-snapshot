@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path"
 	"testing"
@@ -56,6 +57,31 @@ func TestInitIdentity(t *testing.T) {
 
 		if err := InitIdentity(context.Background(), std.NewOutput(os.Stderr, false), secretStore); err == nil {
 			t.Fatal("expected error when attempting to fetch external secrets when whoami.json email is empty but got none")
+		}
+	})
+
+	t.Run("ci@sourcegraph.com when CI=true", func(t *testing.T) {
+		os.Setenv("CI", "true")
+		t.Cleanup(func() {
+			os.Unsetenv("CI")
+		})
+		if err := InitIdentity(context.Background(), std.NewOutput(os.Stderr, false), secretStore); err != nil {
+			t.Fatal("expected error when attempting to fetch external secrets when whoami.json is missing but got none")
+		}
+		fd, err := os.Open(path.Join(sghome, "whoami.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var whoami struct {
+			Email string `json:"email"`
+		}
+		if err := json.NewDecoder(fd).Decode(&whoami); err != nil {
+			t.Fatalf("failed to decode ci whoami json: %v", err)
+		}
+
+		if whoami.Email != CIIdentity {
+			t.Errorf("expected idenity to be %q got %q", CIIdentity, whoami.Email)
 		}
 	})
 
