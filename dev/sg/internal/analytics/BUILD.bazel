@@ -6,6 +6,8 @@ go_library(
     name = "analytics",
     srcs = [
         "analytics.go",
+        "background.go",
+        "bigquery.go",
         "sqlite.go",
         "oauth.go",
     ],
@@ -13,15 +15,15 @@ go_library(
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
-        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/background",
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//lib/errors",
         "@com_github_google_uuid//:uuid",
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_run//:run",
+        "@com_google_cloud_go_bigquery//:bigquery",
         "@org_modernc_sqlite//:sqlite",
+        "@org_modernc_sqlite//lib",
+
 
         "@org_golang_google_api//oauth2/v2:oauth2",
         "@org_golang_google_protobuf//encoding/protojson",

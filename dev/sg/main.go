@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/enterprise"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/release"
@@ -211,6 +212,10 @@ var sg = &cli.App{
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
+
+		// start the analytics publisher
+		analytics.BackgroundEventPublisher(cmd.Context)
+		interrupt.Register(analytics.StopBackgroundEventPublisher)
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
