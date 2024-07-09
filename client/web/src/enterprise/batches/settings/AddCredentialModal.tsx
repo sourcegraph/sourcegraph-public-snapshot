@@ -154,7 +154,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     )
 
     const isTokenSection = step === 'add-token'
-    const isGitHubKind = externalServiceKind === ExternalServiceKind.GITHUB
+    const isExternalServiceKindGitHub = externalServiceKind === ExternalServiceKind.GITHUB
 
     // addCredentialModalStepRuler
     return (
@@ -165,7 +165,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                {isGitHubKind && isTokenSection && (
+                {isExternalServiceKindGitHub && isTokenSection && (
                     <Select
                         id="credential-kind"
                         selectSize="sm"
