@@ -272,7 +272,7 @@
                     class:active={$queryState.caseSensitive}
                     on:click={() => queryState.setCaseSensitive(caseSensitive => !caseSensitive)}
                 >
-                    <Icon icon={ILucideCaseSensitive} inline aria-hidden />
+                    <Icon icon={IMdiFormatLetterCase} inline aria-hidden />
                 </button>
             </Tooltip>
             <Tooltip tooltip="{regularExpressionEnabled ? 'Disable' : 'Enable'} regular expression">
@@ -282,7 +282,7 @@
                     class:active={regularExpressionEnabled}
                     on:click={() => setOrUnsetPatternType(SearchPatternType.regexp)}
                 >
-                    <Icon icon={ILucideRegex} inline aria-hidden />
+                    <Icon icon={IMdiRegex} inline aria-hidden />
                 </button>
             </Tooltip>
             {#if structuralEnabled}

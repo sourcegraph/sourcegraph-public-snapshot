@@ -1660,6 +1660,9 @@ importers:
       '@iconify-json/lucide':
         specifier: ^1.1.188
         version: 1.1.188
+      '@iconify-json/mdi':
+        specifier: ^1.1.67
+        version: 1.1.67
       '@iconify-json/ph':
         specifier: ^1.1.13
         version: 1.1.13
@@ -5552,6 +5555,12 @@ packages:
 
   /@iconify-json/lucide@1.1.188:
     resolution: {integrity: sha512-yJNoU7vX11OvdeSKBiAvmbk/etAq2HPCZQkZX1U687NZhn8dTfx1PfyNhPxtJilrd288XGDKK+NQgygcZ+Ho4g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/mdi@1.1.67:
+    resolution: {integrity: sha512-00nllHES8hyACwIfgySlQgAE6MKgpr2wsKfpifMiZWZ9aXC5l4Jb0lR3lJSWwXgOW6kzAOdzC3T+2VOfBBZ13A==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true
