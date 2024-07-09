@@ -17,7 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, modelConfigInfo *types.ModelConfigInfo, tokenManager tokenusage.Manager) types.CompletionsClient {
+func NewClient(
+	cli httpcli.Doer,
+	modelConfigInfo *types.ModelConfigInfo,
+	tokenManager tokenusage.Manager,
+) types.CompletionsClient {
 	return &client{
 		cli:             cli,
 		modelConfigInfo: modelConfigInfo,
@@ -72,7 +76,7 @@ func (c *client) Complete(
 		response.Usage.CompletionTokens,
 		tokenizer.OpenAIModel+"/"+string(modelID),
 		string(feature),
-		tokenusage.OpenAI)
+		tokenusage.OpenAICompatible)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
 	}
@@ -157,7 +161,13 @@ func (c *client) Stream(
 		return dec.Err()
 	}
 	modelID := c.modelConfigInfo.Model.ModelRef.ModelID()
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(promptTokens, completionTokens, tokenizer.OpenAIModel+"/"+string(modelID), string(feature), tokenusage.OpenAI)
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
+		promptTokens,
+		completionTokens,
+		tokenizer.OpenAIModel+"/"+string(modelID),
+		string(feature),
+		tokenusage.OpenAICompatible,
+	)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
@@ -165,7 +175,11 @@ func (c *client) Stream(
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *client) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *client) makeRequest(
+	ctx context.Context,
+	requestParams types.CompletionRequestParameters,
+	stream bool,
+) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -240,7 +254,11 @@ func (c *client) makeRequest(ctx context.Context, requestParams types.Completion
 }
 
 // makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
-func (c *client) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *client) makeCompletionRequest(
+	ctx context.Context,
+	requestParams types.CompletionRequestParameters,
+	stream bool,
+) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
