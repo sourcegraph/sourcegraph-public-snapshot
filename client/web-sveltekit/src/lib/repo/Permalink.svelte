@@ -3,14 +3,36 @@
     Renders a permalink to the current page with the given Git commit ID.
 -->
 <script lang="ts">
+    import { goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import { createHotkey } from '$lib/Hotkey'
     import Icon from '$lib/Icon.svelte'
     import { replaceRevisionInURL } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
+    import { parseBrowserRepoURL } from '$lib/web'
 
     export let commitID: string
 
+    const hotkey = createHotkey({
+        keys: { key: 'y' },
+        ignoreInputFields: true,
+        handler: () => {
+            const {revision} = parseBrowserRepoURL($page.url.pathname)
+            // Only navigate if necessary. We don't want to add unnecessary history entries.
+            if (revision !== commitID) {
+                goto(href, { noScroll: true, keepFocus: true }).catch(() => {
+                    // TODO: log error with Sentry
+                })
+            }
+        },
+    })
+
     $: href = commitID ? replaceRevisionInURL($page.url.toString(), commitID) : ''
+    $: if (href) {
+        hotkey.enable()
+    } else {
+        hotkey.disable()
+    }
 </script>
 
 {#if href}
