@@ -566,7 +566,6 @@ type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	IsGitHubApp() bool
 	GitHubAppID() int
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime

@@ -62,6 +62,7 @@ BUILD_DEPS = [
     "//:node_modules/@mdi/js",
     "//:node_modules/@reach/combobox",
     "//:node_modules/@reach/menu-button",
+    "//:node_modules/@sourcegraph/cody-context-filters-test-dataset",
     "//:node_modules/@types/lodash",
     "//:node_modules/@types/node",
     "//:node_modules/@types/react",
@@ -115,6 +116,7 @@ BUILD_DEPS = [
     ":node_modules/hotkeys-js",
     ":node_modules/mermaid",
     ":node_modules/prismjs",
+    ":node_modules/re2js",
     ":node_modules/sass",
     ":node_modules/signale",
     ":node_modules/svelte",
@@ -124,6 +126,7 @@ BUILD_DEPS = [
     ":node_modules/vite",
     ":node_modules/vite-plugin-inspect",
     ":node_modules/wonka",
+    ":node_modules/zod",
 ] + glob([
     "dev/**/*.cjs",
     "dev/**/*.ts",

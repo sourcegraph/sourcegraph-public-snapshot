@@ -29,6 +29,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for Google as an LLM provider for Cody, with the following models available through Cody Gateway: Gemini Pro (`gemini-pro-latest`), Gemini 1.5 Flash (`gemini-1.5-flash-latest`), and Gemini 1.5 Pro (`gemini-1.5-pro-latest`). [#63053](https://github.com/sourcegraph/sourcegraph/pull/63053)
 - Added syntax highlighting for the Magik programming language. [#62919](https://github.com/sourcegraph/sourcegraph/pull/62919)
 - Added syntax highlighting for the Hack programming language. [#62770](https://github.com/sourcegraph/sourcegraph/pull/62770)
+- Batch Changes: The new (optional) field "version" of batch specs determines how the spec is processed. This allows us to introduce new features while maintaining backward compatability. [#63613](https://github.com/sourcegraph/sourcegraph/pull/63613)
+- Batch Changes: A new version `2` is introduced. Batch specs specifying `version: 2` will use keyword search as the default pattern type to determine repos/workspaces. Batch specs with `version: 1` or without version field keep using pattern type "standard". [#63613](https://github.com/sourcegraph/sourcegraph/pull/63613)
 
 ### Changed
 

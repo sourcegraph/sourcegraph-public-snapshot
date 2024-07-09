@@ -20,7 +20,6 @@ const credential: BatchChangesCredentialFields = {
     isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-    isGitHubApp: false,
     gitHubApp: null,
 }
 

@@ -1951,7 +1951,7 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		ExternalServiceType: extsvc.KindToType(cred.ExternalServiceKind()),
 	}
 	as := sources.AuthenticationStrategyUserCredential
-	if cred.IsGitHubApp() {
+	if cred.GitHubAppID() > 0 {
 		as = sources.AuthenticationStrategyGitHubApp
 
 		ghApp, err := r.db.GitHubApps().GetByID(ctx, cred.GitHubAppID())

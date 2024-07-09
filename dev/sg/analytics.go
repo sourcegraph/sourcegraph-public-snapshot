@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -36,30 +34,42 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 		// Wrap action with analytics
 		wrappedAction := command.Action
 		command.Action = func(cmd *cli.Context) (actionErr error) {
-			var span *analytics.Span
-			cmd.Context, span = analytics.StartSpan(cmd.Context, fullCommand, "action",
-				trace.WithAttributes(
-					attribute.StringSlice("flags", cmd.FlagNames()),
-					attribute.Int("args", cmd.NArg()),
-				))
-			defer span.End()
+			cmdFlags := make(map[string][]string)
+			for _, parent := range cmd.Lineage() {
+				if parent.Command == nil {
+					continue
+				}
+				cmdFlags[parent.Command.Name] = parent.LocalFlagNames()
+			}
+
+			cmdCtx, err := analytics.NewInvocation(cmd.Context, cmd.App.Version, map[string]any{
+				"command": fullCommand,
+				"flags":   cmdFlags,
+				"args":    cmd.Args().Slice(),
+				"nargs":   cmd.NArg(),
+			})
+			if err != nil {
+				std.Out.WriteWarningf("Failed to create analytics event: %s", err)
+				return
+			}
+			cmd.Context = cmdCtx
 
 			// Make sure analytics are persisted before exit (interrupts or panics)
 			defer func() {
 				if p := recover(); p != nil {
 					// Render a more elegant message
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
+					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s", sgBugReportTemplate)
 					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack("addAnalyticsHooks"))
 					actionErr = cli.Exit(message, 1)
 
 					// Log event
-					span.RecordError("panic", actionErr)
+					err := analytics.InvocationPanicked(cmd.Context, p)
+					maybeLog("failed to persist analytics panic event: %s", err)
 				}
 			}()
 			interrupt.Register(func() {
-				span.Cancelled()
-				span.End()
+				err := analytics.InvocationCancelled(cmd.Context)
+				maybeLog("failed to persist analytics cancel event: %s", err)
 			})
 
 			// Call the underlying action
@@ -67,14 +77,23 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 
 			// Capture analytics post-run
 			if actionErr != nil {
-				span.RecordError("error", actionErr)
+				err := analytics.InvocationFailed(cmd.Context, actionErr)
+				maybeLog("failed to persist analytics cancel event: %s", err)
 			} else {
-				span.Succeeded()
+				err := analytics.InvocationSucceeded(cmd.Context)
+				maybeLog("failed to persist analytics success event: %s", err)
 			}
 
 			return actionErr
 		}
 	}
+}
+
+func maybeLog(fmt string, err error) { //nolint:unparam
+	if err == nil {
+		return
+	}
+	std.Out.WriteWarningf(fmt, err)
 }
 
 // getRelevantStack generates a stacktrace that encapsulates the relevant parts of a

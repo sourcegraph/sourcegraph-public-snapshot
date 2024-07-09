@@ -1,34 +1,59 @@
+load("//dev:go_mockgen.bzl", "go_mockgen")
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "analytics",
     srcs = [
         "analytics.go",
-        "context.go",
-        "spans.go",
-        "tracer.go",
+        "background.go",
+        "bigquery.go",
+        "oauth.go",
+        "sqlite.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics",
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
+        "//dev/sg/internal/background",
+        "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//lib/errors",
+        "@com_github_google_uuid//:uuid",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_run//:run",
-        "@io_opentelemetry_go_otel//:otel",
-        "@io_opentelemetry_go_otel//attribute",
-        "@io_opentelemetry_go_otel//codes",
-        "@io_opentelemetry_go_otel//semconv/v1.4.0:v1_4_0",
-        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace//:otlptrace",
-        "@io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc//:otlptracegrpc",
-        "@io_opentelemetry_go_otel_sdk//resource",
-        "@io_opentelemetry_go_otel_sdk//trace",
-        "@io_opentelemetry_go_otel_trace//:trace",
-        "@io_opentelemetry_go_otel_trace//noop",
-        "@io_opentelemetry_go_proto_otlp//collector/trace/v1:trace",
-        "@io_opentelemetry_go_proto_otlp//trace/v1:trace",
-        "@org_golang_google_protobuf//encoding/protojson",
+        "@com_google_cloud_go_bigquery//:bigquery",
+        "@org_golang_google_api//oauth2/v2:oauth2",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+        "@org_modernc_sqlite//:sqlite",
+        "@org_modernc_sqlite//lib",
     ],
+)
+
+go_test(
+    name = "analytics_test",
+    srcs = [
+        "analytics_test.go",
+        "mocks_test.go",
+        "oauth_test.go",
+    ],
+    embed = [":analytics"],
+    tags = [TAG_INFRA_DEVINFRA],
+    deps = [
+        "//dev/sg/internal/secrets",
+        "//dev/sg/internal/std",
+        "//dev/sg/root",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":analytics"],
 )

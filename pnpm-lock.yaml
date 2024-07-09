@@ -1594,8 +1594,8 @@ importers:
         specifier: ^4.2.3
         version: 4.2.3(graphql@15.4.0)
       cody-web-experimental:
-        specifier: ^0.1.4
-        version: 0.1.4
+        specifier: ^0.2.1
+        version: 0.2.1
       copy-to-clipboard:
         specifier: ^3.3.1
         version: 3.3.1
@@ -1614,12 +1614,18 @@ importers:
       prismjs:
         specifier: ^1.29.0
         version: 1.29.0
+      re2js:
+        specifier: ^0.4.1
+        version: 0.4.1
       ts-key-enum:
         specifier: ^2.0.12
         version: 2.0.12
       wonka:
         specifier: ^6.3.4
         version: 6.3.4
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
       '@faker-js/faker':
         specifier: ^8.0.2
@@ -14537,10 +14543,6 @@ packages:
 
   /codemirror@5.65.9:
     resolution: {integrity: sha512-19Jox5sAKpusTDgqgKB5dawPpQcY+ipQK7xoEI+MVucEF9qqFaXpeqY1KaoyGBso/wHQoDa4HMMxMjdsS3Zzzw==}
-    dev: false
-
-  /cody-web-experimental@0.1.4:
-    resolution: {integrity: sha512-5WE+ZWfbNhXJxvJeCFfyJPHNaPZKEdJAGoFa7sSXoxdeUEN62YGIs5DmpCOEmSCzX0cQm+35GWRWoV28HI/0jg==}
     dev: false
 
   /cody-web-experimental@0.2.1:
@@ -27882,6 +27884,10 @@ packages:
 
   /zen-observable@0.8.15:
     resolution: {integrity: sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==}
+
+  /zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
 
   /zone.js@0.11.6:
     resolution: {integrity: sha512-umJqFtKyZlPli669gB1gOrRE9hxUUGkZr7mo878z+NEBJZZixJkKeVYfnoLa7g25SseUDc92OZrMKKHySyJrFg==}

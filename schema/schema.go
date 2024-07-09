@@ -309,6 +309,8 @@ type BatchSpec struct {
 	Steps []*Step `json:"steps,omitempty"`
 	// TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 	TransformChanges *TransformChanges `json:"transformChanges,omitempty"`
+	// Version description: The version of the batch spec schema. Defaults to 1.
+	Version float64 `json:"version,omitempty"`
 	// Workspaces description: Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
@@ -2492,14 +2494,15 @@ type ServerSideModelConfigAwsBedrockProvisionedThroughput struct {
 	Type string `json:"type"`
 }
 type ServerSideProviderConfig struct {
-	AwsBedrock  *ServerSideProviderConfigAWSBedrock
-	AzureOpenAI *ServerSideProviderConfigAzureOpenAI
-	Anthropic   *ServerSideProviderConfigAnthropicProvider
-	Fireworks   *ServerSideProviderConfigFireworksProvider
-	Google      *ServerSideProviderConfigGoogleProvider
-	Openai      *ServerSideProviderConfigOpenAIProvider
-	Sourcegraph *ServerSideProviderConfigSourcegraphProvider
-	Unused      *DoNotUsePhonyDiscriminantType
+	AwsBedrock       *ServerSideProviderConfigAWSBedrock
+	AzureOpenAI      *ServerSideProviderConfigAzureOpenAI
+	Anthropic        *ServerSideProviderConfigAnthropicProvider
+	Fireworks        *ServerSideProviderConfigFireworksProvider
+	Google           *ServerSideProviderConfigGoogleProvider
+	Openai           *ServerSideProviderConfigOpenAIProvider
+	Openaicompatible *ServerSideProviderConfigOpenAICompatibleProvider
+	Sourcegraph      *ServerSideProviderConfigSourcegraphProvider
+	Unused           *DoNotUsePhonyDiscriminantType
 }
 
 func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
@@ -2520,6 +2523,9 @@ func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openai != nil {
 		return json.Marshal(v.Openai)
+	}
+	if v.Openaicompatible != nil {
+		return json.Marshal(v.Openaicompatible)
 	}
 	if v.Sourcegraph != nil {
 		return json.Marshal(v.Sourcegraph)
@@ -2549,12 +2555,14 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Google)
 	case "openai":
 		return json.Unmarshal(data, &v.Openai)
+	case "openaicompatible":
+		return json.Unmarshal(data, &v.Openaicompatible)
 	case "sourcegraph":
 		return json.Unmarshal(data, &v.Sourcegraph)
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "sourcegraph", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph", "unused"})
 }
 
 type ServerSideProviderConfigAWSBedrock struct {
@@ -2588,6 +2596,11 @@ type ServerSideProviderConfigFireworksProvider struct {
 	Type        string `json:"type"`
 }
 type ServerSideProviderConfigGoogleProvider struct {
+	AccessToken string `json:"accessToken"`
+	Endpoint    string `json:"endpoint"`
+	Type        string `json:"type"`
+}
+type ServerSideProviderConfigOpenAICompatibleProvider struct {
 	AccessToken string `json:"accessToken"`
 	Endpoint    string `json:"endpoint"`
 	Type        string `json:"type"`
@@ -3398,6 +3411,10 @@ type SiteModelConfiguration struct {
 	DefaultModels *DefaultModels `json:"defaultModels,omitempty"`
 	// ModelOverrides description: Override, or add to, the list of models Cody is aware of and how they are configured to work
 	ModelOverrides []*ModelOverride `json:"modelOverrides,omitempty"`
+	// ModelOverridesRecommendedSettings description: Override, or add to, the list of models Cody is aware of - but let Sourcegraph configure how the model should work. Only available for select models.
+	//
+	// Specifying the same model both here and in 'modelOverrides' is not allowed.
+	ModelOverridesRecommendedSettings []string `json:"modelOverridesRecommendedSettings,omitempty"`
 	// ProviderOverrides description: Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.
 	ProviderOverrides []*ProviderOverride     `json:"providerOverrides,omitempty"`
 	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`

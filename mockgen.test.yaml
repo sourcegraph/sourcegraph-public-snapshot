@@ -442,3 +442,8 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice
       interfaces:
         - StoreV1
+- filename: dev/sg/internal/analytics/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics
+  package: analytics
+  interfaces:
+    - secretStore

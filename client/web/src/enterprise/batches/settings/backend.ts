@@ -26,7 +26,6 @@ export const CREDENTIAL_FIELDS_FRAGMENT = gql`
         id
         sshPublicKey
         isSiteCredential
-        isGitHubApp
         gitHubApp {
             id
             appID

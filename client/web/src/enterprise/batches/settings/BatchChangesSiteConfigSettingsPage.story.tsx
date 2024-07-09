@@ -156,7 +156,6 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                    isGitHubApp: false,
                                     gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITHUB,
@@ -181,8 +180,6 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                    isGitHubApp: false,
-
                                     gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.GITLAB,
@@ -199,7 +196,6 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                    isGitHubApp: false,
                                     gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
@@ -216,7 +212,6 @@ export const ConfigAdded: StoryFn = () => (
                                     isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                    isGitHubApp: false,
                                     gitHubApp: null,
                                 },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
