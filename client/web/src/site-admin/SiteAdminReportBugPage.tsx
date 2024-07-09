@@ -39,7 +39,7 @@ import { fetchAllConfigAndSettings } from './backend'
  */
 interface JSONSchema {
     $id: string
-    definitions?: Record<string, { type: string }>
+    definitions?: Record<string, { type: string | string[] }>
 }
 
 const externalServices: Record<ExternalServiceKind, JSONSchema> = {
