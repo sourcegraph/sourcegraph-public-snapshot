@@ -534,7 +534,7 @@ func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 	for i := range repoRevs {
 		repoRev := &repoRevs[i]
 		if subMap, ok := changelistIDsToCommits[repoRev.Repo.ID]; ok &&
-			repoRev.Repo.ExternalRepo.ServiceType == "perforce" &&
+			repoRev.Repo.ExternalRepo.ServiceType == extsvc.TypePerforce &&
 			len(repoRev.Revs) > 0 {
 			for j := range repoRev.Revs {
 				rev := &repoRev.Revs[j]

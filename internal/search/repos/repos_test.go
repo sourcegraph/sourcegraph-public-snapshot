@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -454,7 +455,7 @@ func TestResolverIterator_Perforce(t *testing.T) {
 			Stars: i * 100,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "my-external-id",
-				ServiceType: "perforce",
+				ServiceType: extsvc.TypePerforce,
 			},
 		}
 
@@ -468,7 +469,7 @@ func TestResolverIterator_Perforce(t *testing.T) {
 			Stars: r.Stars,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "my-external-id",
-				ServiceType: "perforce",
+				ServiceType: extsvc.TypePerforce,
 			},
 		}})
 	}
