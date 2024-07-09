@@ -35,7 +35,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		log.String("path to scip-syntax CLI", config.IndexingWorkerConfig.CliPath),
 		log.String("API address", config.ListenAddress))
 
-	name := "syntactic-code-intel-indexer"
+	name := "syntactic-codeintel-worker"
 
 	frontendSqlDB, err := initDB(observationCtx, name)
 	if err != nil {
@@ -64,7 +64,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	)
 
 	if err != nil {
-		return errors.Wrap(err, "creating indexing worker")
+		return errors.Wrap(err, "creating syntactic codeintel indexing worker")
 	}
 
 	// Initialize health server

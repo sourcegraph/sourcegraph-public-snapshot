@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -127,6 +126,7 @@ func TestIndexingWorker(t *testing.T) {
 	require.True(t, ok)
 	require.NoError(t, err)
 	require.Equal(t, string(uploadsshared.StateQueued), upload.State)
+	require.Equal(t, upload.UncompressedSize, result.UncompressedSize)
 }
 
 func readGzippedSCIPIndex(t *testing.T, reader io.Reader) (*scip.Index, error) {

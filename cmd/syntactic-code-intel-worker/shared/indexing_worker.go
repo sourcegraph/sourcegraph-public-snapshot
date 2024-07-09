@@ -53,7 +53,7 @@ func NewIndexingWorker(ctx context.Context,
 	return dbworker.NewWorker(ctx, jobStore.DBWorkerStore(), handler, workerutil.WorkerOptions{
 		Name:                 name,
 		Interval:             config.PollInterval,
-		HeartbeatInterval:    10 * time.Second, // TODO: extract into config as well?
+		HeartbeatInterval:    10 * time.Second,
 		Metrics:              workerutil.NewMetrics(observationCtx, name),
 		NumHandlers:          config.Concurrency,
 		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
@@ -187,11 +187,13 @@ func (i indexingHandler) HandleImpl(ctx context.Context, logger log.Logger, reco
 
 func createUploadMetadata(repositoryId api.RepoID, commit api.CommitID) uploads.UploadMetadata {
 	return uploads.UploadMetadata{
-		RepositoryID:   int(repositoryId),
-		Commit:         string(commit),
-		Root:           "",
-		Indexer:        "scip-syntax",
-		IndexerVersion: "1.0.0",
+		RepositoryID: int(repositoryId),
+		Commit:       string(commit),
+		Root:         "",
+		Indexer:      "scip-syntax",
+		// NOTE(id: scip-syntax-version) For the time being, this version needs to be in sync with
+		// the one used in /docker-images/syntax-highlighter/crates/scip-syntax/Cargo.toml
+		IndexerVersion: "0.1.0",
 		ContentType:    "application/x-protobuf+scip",
 	}
 }

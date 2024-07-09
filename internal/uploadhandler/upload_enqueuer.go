@@ -37,7 +37,7 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(
 	ctx context.Context,
 	metadata T,
 	uncompressedSize *int64,
-	body io.Reader) (_ UploadResult, err error) {
+	compressedBody io.Reader) (_ UploadResult, err error) {
 
 	ctx, trace, endObservation := u.operations.enqueueSinglePayload.With(ctx, &err, observation.Args{})
 	defer func() {
@@ -45,7 +45,7 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(
 	}()
 
 	var uploadID int
-	var compressedSize int64
+	var uploadedSize int64
 	if err := u.dbStore.WithTransaction(ctx, func(tx DBStore[T]) error {
 		id, err := tx.InsertUpload(ctx, Upload[T]{
 			State:            "uploading",
@@ -59,13 +59,13 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(
 		}
 		trace.AddEvent("insertUpload", attribute.Int("uploadID", id))
 
-		compressedSize, err = u.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
+		uploadedSize, err = u.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), compressedBody)
 		if err != nil {
 			return errors.Newf("Failed to upload data to upload store (id=%d): %s", id, err)
 		}
-		trace.AddEvent("uploadStore.Upload", attribute.Int64("gzippedUploadSize", compressedSize))
+		trace.AddEvent("uploadStore.Upload", attribute.Int64("gzippedUploadSize", uploadedSize))
 
-		if err := tx.MarkQueued(ctx, id, &compressedSize); err != nil {
+		if err := tx.MarkQueued(ctx, id, &uploadedSize); err != nil {
 			return errors.Newf("Failed to mark upload (id=%d) as queued: %s", id, err)
 		}
 
@@ -80,5 +80,5 @@ func (u *UploadEnqueuer[T]) EnqueueSinglePayload(
 		sglog.Int("id", uploadID),
 	)
 
-	return UploadResult{uploadID, compressedSize}, nil
+	return UploadResult{uploadID, uploadedSize}, nil
 }
