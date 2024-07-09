@@ -67,7 +67,6 @@ go_library(
         "//dev/sg/internal/generate/proto",
         "//dev/sg/internal/images",
         "//dev/sg/internal/migration",
-        "//dev/sg/internal/open",
         "//dev/sg/internal/release",
         "//dev/sg/internal/repo",
         "//dev/sg/internal/rfc",
