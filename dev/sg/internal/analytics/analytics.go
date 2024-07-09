@@ -1,116 +1,378 @@
 package analytics
 
 import (
-	"bufio"
 	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"os"
+	"path"
+	"sync"
+	"time"
 
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
-	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/google/uuid"
 
+	_ "modernc.org/sqlite" // pure Go SQLite implementation
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	sgAnalyticsVersionResourceKey = "sg.analytics_version"
-	// Increment to make breaking changes to spans and discard old spans
-	sgAnalyticsVersion = "v1.1"
-)
+var ErrDBNotInitialized = errors.New("analytics database not initialized")
+
+const schemaVersion = "1"
+
+type key int
 
 const (
-	honeycombEndpoint  = "grpc://api.honeycomb.io:443"
-	otlpEndpointEnvKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	invocationKey key = 0
 )
 
-// Submit pushes all persisted events to Honeycomb if OTEL_EXPORTER_OTLP_ENDPOINT is not
-// set.
-func Submit(ctx context.Context, honeycombToken string) error {
-	spans, err := Load()
+type invocation struct {
+	uuid     uuid.UUID
+	metadata map[string]any
+}
+
+func (i invocation) GetStartTime() *time.Time {
+	v, ok := i.metadata["start_time"]
+	if !ok {
+		return nil
+	}
+	raw := v.(string)
+	t, err := time.Parse(time.RFC3339, raw)
 	if err != nil {
-		return err
+		return nil
 	}
-	if len(spans) == 0 {
-		return errors.New("no spans to submit")
+	return &t
+}
+
+func (i invocation) GetEndTime() *time.Time {
+	v, ok := i.metadata["end_time"]
+	if !ok {
+		return nil
+	}
+	raw := v.(string)
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return nil
+	}
+	return &t
+}
+
+func (i invocation) GetDuration() time.Duration {
+	start := i.GetStartTime()
+	end := i.GetEndTime()
+
+	if start == nil || end == nil {
+		return 0
 	}
 
-	// if endpoint is not set, point to Honeycomb
-	var otlpOptions []otlptracegrpc.Option
-	if _, exists := os.LookupEnv(otlpEndpointEnvKey); !exists {
-		os.Setenv(otlpEndpointEnvKey, honeycombEndpoint)
-		otlpOptions = append(otlpOptions, otlptracegrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team": honeycombToken,
-		}))
+	return end.Sub(*start)
+}
+
+func (i invocation) IsSuccess() bool {
+	v, ok := i.metadata["success"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) IsCancelled() bool {
+	v, ok := i.metadata["cancelled"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) IsFailed() bool {
+	v, ok := i.metadata["failed"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) IsPanicked() bool {
+	v, ok := i.metadata["panicked"]
+	if !ok {
+		return false
+	}
+	return v.(bool)
+}
+
+func (i invocation) GetCommand() string {
+	v, ok := i.metadata["command"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetVersion() string {
+	v, ok := i.metadata["version"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetError() string {
+	v, ok := i.metadata["error"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetUserID() string {
+	v, ok := i.metadata["user_id"]
+	if !ok {
+		return ""
+	}
+	return v.(string)
+}
+
+func (i invocation) GetFlags() map[string]any {
+	v, ok := i.metadata["flags"]
+	if !ok {
+		return nil
+	}
+	return v.(map[string]any)
+}
+
+func (i invocation) GetArgs() []any {
+	v, ok := i.metadata["args"]
+	if !ok {
+		return nil
+	}
+	return v.([]any)
+}
+
+var store = sync.OnceValue(func() analyticsStore {
+	db, err := newDiskStore()
+	if err != nil {
+		std.Out.WriteWarningf("Failed to create sg analytics store: %s", err)
+	}
+	return analyticsStore{db: db}
+})
+
+func newDiskStore() (Execer, error) {
+	sghome, err := root.GetSGHomePath()
+	if err != nil {
+		return nil, err
 	}
 
-	// Set up a trace exporter
-	client := otlptracegrpc.NewClient(otlpOptions...)
-	if err := client.Start(ctx); err != nil {
-		return errors.Wrap(err, "failed to initialize export client")
+	// this will create the file if it doesnt exist
+	db, err := sql.Open("sqlite", "file://"+path.Join(sghome, "analytics.sqlite"))
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+
+	rdb := retryableConn{db}
+
+	_, err = rdb.Exec(`CREATE TABLE IF NOT EXISTS analytics (
+		event_uuid TEXT PRIMARY KEY,
+		-- invocation_uuid TEXT,
+		schema_version TEXT NOT NULL,
+		metadata_json TEXT
+	)`)
+	if err != nil {
+		return nil, err
 	}
 
-	// send spans and shut down
-	if err := client.UploadTraces(ctx, spans); err != nil {
-		return errors.Wrap(err, "failed to export spans")
+	return &rdb, nil
+}
+
+type analyticsStore struct {
+	db Execer
+}
+
+func (s analyticsStore) NewInvocation(ctx context.Context, uuid uuid.UUID, version string, meta map[string]any) error {
+	if s.db == nil {
+		return ErrDBNotInitialized
 	}
-	if err := client.Stop(ctx); err != nil {
-		return errors.Wrap(err, "failed to flush span exporter")
+
+	meta["user_id"] = getEmail()
+	meta["version"] = version
+	meta["start_time"] = time.Now()
+
+	b, err := json.Marshal(meta)
+	if err != nil {
+		return errors.Wrapf(err, "failed to JSON marshal metadata %v")
+	}
+
+	_, err = s.db.Exec(`INSERT INTO analytics (event_uuid, schema_version, metadata_json) VALUES (?, ?, ?)`, uuid, schemaVersion, string(b))
+	if err != nil {
+		return errors.Wrapf(err, "failed to insert sg analytics event")
 	}
 
 	return nil
 }
 
-// Persist stores all events in context to disk.
-func Persist(ctx context.Context) error {
-	store := getStore(ctx)
-	if store == nil {
-		return nil
+func (s analyticsStore) AddMetadata(ctx context.Context, uuid uuid.UUID, meta map[string]any) error {
+	if s.db == nil {
+		return ErrDBNotInitialized
 	}
-	return store.Persist(ctx)
-}
 
-// Reset deletes all persisted events.
-func Reset() error {
-	p, err := spansPath()
+	b, err := json.Marshal(meta)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to JSON marshal metadata %v")
 	}
 
-	if _, err := os.Stat(p); os.IsNotExist(err) {
-		// don't have to remove something that doesn't exist
-		return nil
+	_, err = s.db.Exec(`UPDATE analytics SET metadata_json = json_patch(metadata_json, ?) WHERE event_uuid = ?`, string(b), uuid)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update sg analytics event")
 	}
-	return os.Remove(p)
+
+	return nil
 }
 
-// Load retrieves all persisted events.
-func Load() (spans []*tracepb.ResourceSpans, errs error) {
-	p, err := spansPath()
+func (s analyticsStore) DeleteInvocation(ctx context.Context, uuid string) error {
+	if s.db == nil {
+		return ErrDBNotInitialized
+	}
+
+	_, err := s.db.Exec(`DELETE FROM analytics WHERE event_uuid = ?`, uuid)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete sg analytics event")
+	}
+
+	return nil
+}
+
+func (s analyticsStore) ListCompleted(ctx context.Context) ([]invocation, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+
+	res, err := s.db.Query(`SELECT * FROM analytics WHERE json_extract(metadata_json, '$.end_time') IS NOT NULL LIMIT 10`)
 	if err != nil {
 		return nil, err
 	}
 
-	file, err := os.Open(p)
+	results := []invocation{}
+
+	for res.Next() {
+		invc := invocation{metadata: map[string]any{}}
+		var eventUUID string
+		var schemaVersion string
+		var metadata_json string
+		if err := res.Scan(&eventUUID, &schemaVersion, &metadata_json); err != nil {
+			return nil, err
+		}
+
+		invc.uuid, err = uuid.Parse(eventUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		err := json.Unmarshal([]byte(metadata_json), &invc.metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, invc)
+	}
+
+	return results, err
+
+}
+
+// Dont invoke this function directly. Use the `getEmail` function instead.
+func emailfunc() string {
+	sgHome, err := root.GetSGHomePath()
 	if err != nil {
+		return "anonymous"
+	}
+
+	b, err := os.ReadFile(path.Join(sgHome, "whoami.json"))
+	if err != nil {
+		return "anonymous"
+	}
+	var whoami struct {
+		Email string
+	}
+	if err := json.Unmarshal(b, &whoami); err != nil {
+		return "anonymous"
+	}
+	return whoami.Email
+}
+
+var getEmail = sync.OnceValue[string](emailfunc)
+
+func NewInvocation(ctx context.Context, version string, meta map[string]any) (context.Context, error) {
+	// v7 for sortable property (not vital as we also store timestamps, but no harm to have)
+	u, _ := uuid.NewV7()
+	invc := invocation{u, meta}
+
+	if err := store().NewInvocation(ctx, u, version, meta); err != nil && !errors.Is(err, ErrDBNotInitialized) {
 		return nil, err
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		var req coltracepb.ExportTraceServiceRequest
-		if err := protojson.Unmarshal(scanner.Bytes(), &req); err != nil {
-			errs = errors.Append(errs, err)
-			continue // drop malformed data
-		}
+	return context.WithValue(ctx, invocationKey, invc), nil
+}
 
-		for _, s := range req.GetResourceSpans() {
-			if !isValidVersion(s) {
-				continue
-			}
-			spans = append(spans, s)
-		}
+func AddMeta(ctx context.Context, meta map[string]any) error {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return nil
 	}
-	return
+
+	return store().AddMetadata(ctx, invc.uuid, meta)
+}
+
+func InvocationSucceeded(ctx context.Context) error {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return nil
+	}
+
+	return store().AddMetadata(ctx, invc.uuid, map[string]any{
+		"success":  true,
+		"end_time": time.Now(),
+	})
+
+}
+
+func InvocationCancelled(ctx context.Context) error {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return nil
+	}
+
+	return store().AddMetadata(ctx, invc.uuid, map[string]any{
+		"cancelled": true,
+		"end_time":  time.Now(),
+	})
+
+}
+
+func InvocationFailed(ctx context.Context, err error) error {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return nil
+	}
+
+	return store().AddMetadata(ctx, invc.uuid, map[string]any{
+		"failed":   true,
+		"error":    err.Error(),
+		"end_time": time.Now(),
+	})
+}
+
+func InvocationPanicked(ctx context.Context, err any) error {
+	invc, ok := ctx.Value(invocationKey).(invocation)
+	if !ok {
+		return nil
+	}
+
+	return store().AddMetadata(ctx, invc.uuid, map[string]any{
+		"panicked": true,
+		"error":    fmt.Sprint(err),
+		"end_time": time.Now(),
+	})
 }
