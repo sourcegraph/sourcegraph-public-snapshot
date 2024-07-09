@@ -92,7 +92,18 @@ type indexingHandler struct {
 
 var _ workerutil.Handler[*jobstore.SyntacticIndexingJob] = &indexingHandler{}
 
+type SyntacticIndexingResult struct {
+	UploadID         int
+	UncompressedSize int64
+}
+
 func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *jobstore.SyntacticIndexingJob) error {
+	_, err := i.HandleImpl(ctx, logger, record)
+
+	return err
+}
+
+func (i indexingHandler) HandleImpl(ctx context.Context, logger log.Logger, record *jobstore.SyntacticIndexingJob) (SyntacticIndexingResult, error) {
 	logger.Debug("Syntactic indexing worker handling record",
 		log.Int("id", record.ID),
 		log.String("repository name", record.RepositoryName),
@@ -104,7 +115,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 		gitserver.ArchiveOptions{Treeish: string(record.Commit), Format: gitserver.ArchiveFormatTar},
 	)
 	if err != nil {
-		return errors.Newf("Failed to request TAR archive stream from Gitserver: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to request TAR archive stream from Gitserver: %s", err)
 	}
 
 	tempLocation := path.Join(os.TempDir(), fmt.Sprintf("syntactic-index-job_%d-repo_%d-commit_%s.scip", record.ID, record.RepositoryID, record.Commit))
@@ -116,19 +127,19 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 
 	cmdStdinPipe, err := command.StdinPipe()
 	if err != nil {
-		return errors.Newf("Failed to connect to STDIN of scip-syntax process: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to connect to STDIN of scip-syntax process: %s", err)
 	}
 
 	if err = command.Start(); err != nil {
-		return errors.Newf("Failed to start scip-syntax process: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to start scip-syntax process: %s", err)
 	}
 
 	if _, err := io.Copy(cmdStdinPipe, tarStream); err != nil {
-		return errors.Newf("Failed to stream tar contents into scip-syntax's STDIN: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to stream tar contents into scip-syntax's STDIN: %s", err)
 	}
 
 	if err = command.Wait(); err != nil {
-		return errors.Newf("scip-syntax didn't exit successfully: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("scip-syntax didn't exit successfully: %s", err)
 	}
 
 	// TODO: once the CLI can output metrics, we should log them here
@@ -139,7 +150,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 
 	f, err := os.Open(tempLocation)
 	if err != nil {
-		return errors.Newf("Failed to open SCIP index file in [%s]: %s ", tempLocation, err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to open SCIP index file in [%s]: %s ", tempLocation, err)
 	}
 	defer func() {
 		f.Close()
@@ -147,7 +158,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 
 	fi, err := f.Stat()
 	if err != nil {
-		return errors.Newf("Failed to read (stat) SCIP index file information [%s]: %s ", tempLocation, err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to read (stat) SCIP index file information [%s]: %s ", tempLocation, err)
 	}
 
 	fileSize := fi.Size()
@@ -160,7 +171,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 	)
 
 	if err != nil {
-		return errors.Newf("Failed to enqueue upload of SCIP index: %s", err)
+		return SyntacticIndexingResult{}, errors.Newf("Failed to enqueue upload of SCIP index: %s", err)
 	}
 
 	logger.Info("Successfully queued upload",
@@ -171,7 +182,7 @@ func (i indexingHandler) Handle(ctx context.Context, logger log.Logger, record *
 		log.String("commit", string(record.Commit)),
 	)
 
-	return nil
+	return SyntacticIndexingResult{UploadID: uploadResult.UploadID, UncompressedSize: fileSize}, nil
 }
 
 func createUploadMetadata(repositoryId api.RepoID, commit api.CommitID) uploads.UploadMetadata {

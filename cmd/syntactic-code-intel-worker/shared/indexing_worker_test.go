@@ -15,9 +15,12 @@ import (
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	testutils "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/testkit"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -45,8 +48,9 @@ func TestIndexingWorker(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
+	codeintelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewCodeintelDB(t))
 
-	context := context.Background()
+	ctx := context.Background()
 	observationCtx := observation.TestContextTB(t)
 
 	config := IndexingWorkerConfig{}
@@ -56,6 +60,9 @@ func TestIndexingWorker(t *testing.T) {
 
 	gitserverClient := gitserver.NewMockClient()
 	uploadStore := testutils.NewFakeUploadStore()
+
+	uploadsService := uploads.NewService(observationCtx, db, codeintelDB, gitserverClient)
+	uploadsDBStore := uploadsService.UploadHandlerStore()
 
 	config.Load()
 
@@ -68,7 +75,7 @@ func TestIndexingWorker(t *testing.T) {
 	}
 
 	indexingWorker, err := NewIndexingHandler(
-		context,
+		ctx,
 		observationCtx,
 		jobStore,
 		config,
@@ -99,16 +106,16 @@ func TestIndexingWorker(t *testing.T) {
 	// record itself is inserted
 	testutils.InsertSyntacticIndexingRecords(t, db, job)
 
-	err = indexingWorker.Handle(context, logger, &job)
+	result, err := indexingWorker.HandleImpl(ctx, logger, &job)
 	require.NoError(t, err)
 
-	allFilesIterator, err := uploadStore.List(context, "")
+	allFilesIterator, err := uploadStore.List(ctx, "")
 	require.NoError(t, err)
 	allFiles, err := iterator.Collect(allFilesIterator)
 	require.NoError(t, err)
 	require.Len(t, allFiles, 1)
 
-	uploadedContents, err := uploadStore.Get(context, allFiles[0])
+	uploadedContents, err := uploadStore.Get(ctx, allFiles[0])
 	require.NoError(t, err)
 
 	index, err := readGzippedSCIPIndex(t, uploadedContents)
@@ -116,6 +123,11 @@ func TestIndexingWorker(t *testing.T) {
 
 	require.Equal(t, index.Metadata.ToolInfo.Name, "scip-syntax")
 	require.Equal(t, index.Documents[0].RelativePath, "/test/my/file.java")
+
+	upload, ok, err := uploadsDBStore.GetUploadByID(ctx, result.UploadID)
+	require.True(t, ok)
+	require.NoError(t, err)
+	require.Equal(t, string(uploadsshared.StateQueued), upload.State)
 }
 
 func readGzippedSCIPIndex(t *testing.T, reader io.Reader) (*scip.Index, error) {
