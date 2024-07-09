@@ -77,6 +77,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const success = new URLSearchParams(location.search).get('success') === 'true'
     const appName = new URLSearchParams(location.search).get('app_name')
     const setupError = new URLSearchParams(location.search).get('error')
+    const gitHubAppKindFromUrl = new URLSearchParams(location.search).get('kind')
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     return (
         <Container className="mb-3">
@@ -85,13 +86,13 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                {success && (
+                {success && gitHubAppKindFromUrl !== GitHubAppKind.COMMIT_SIGNING && (
                     <DismissibleAlert
                         className="mb-3"
                         variant="success"
-                        partialStorageKey="batch-changes-github-app-integration-success"
+                        partialStorageKey={`batch-changes-github-app-integration-success-${appName}`}
                     >
-                        GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
+                        GitHub App {appName?.length ? `"${appName}" ` : ''} successfully connected.
                     </DismissibleAlert>
                 )}
                 {shouldShowError && <GitHubAppFailureAlert error={setupError} />}
