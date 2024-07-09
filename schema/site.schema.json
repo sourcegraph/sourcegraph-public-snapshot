@@ -2152,15 +2152,36 @@
       "properties": {
         "sams.server": {
           "type": "string",
-          "description": "The server URL for SAMS instance."
+          "description": "The server URL for SAMS production instance."
         },
         "sams.clientID": {
           "type": "string",
-          "description": "The clientID for SAMS instance."
+          "description": "The clientID for SAMS production instance."
         },
         "sams.clientSecret": {
           "type": "string",
-          "description": "The clientSecret for SAMS instance."
+          "description": "The clientSecret for SAMS production instance."
+        },
+        "samsDev.server": {
+          "type": "string",
+          "description": "The server URL for SAMS development instance.",
+          "default": "https://accounts.sgdev.org"
+        },
+        "samsDev.clientID": {
+          "type": "string",
+          "description": "The clientID for SAMS development instance."
+        },
+        "samsDev.clientSecret": {
+          "type": "string",
+          "description": "The clientSecret for SAMS development instance."
+        },
+        "enterprisePortal.enableProxies": {
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          },
+          "description": "Whether to enable Enterprise Portal auth proxies for site admins."
         },
         "minimumExternalAccountAge": {
           "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",

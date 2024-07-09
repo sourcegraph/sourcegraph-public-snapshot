@@ -19,10 +19,12 @@ import (
 
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
+	samssdk "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterpriseportal"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
@@ -46,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Handlers struct {
@@ -198,7 +201,7 @@ func NewHandler(
 		// Register additional endpoints specific to DOTCOM.
 		dotcomConf := conf.Get().Dotcom
 		if dotcomConf == nil {
-			logger.Error("dotcom configuration is missing, refusing to register /ssc/ APIs")
+			logger.Error("dotcom configuration is missing, refusing to register '/ssc/' and '/enterpriseportal/' APIs")
 		} else {
 			samsClient := sams.NewClient(
 				dotcomConf.SamsServer,
@@ -255,6 +258,60 @@ func NewHandler(
 				SAMSOAuthContext: samsOAuthConfig,
 			}
 			m.PathPrefix("/ssc/proxy/").Handler(&sscBackendProxy)
+
+			// Enterprise Portal proxies - see enterpriseportal.NewSiteAdminProxy
+			// docstring for more details.
+			if pointers.Deref(dotcomConf.EnterprisePortalEnableProxies, true) {
+				m.PathPrefix("/enterpriseportal/prod/").Handler(
+					enterpriseportal.NewSiteAdminProxy(
+						logger.Scoped("enterpriseportalproxy.prod"),
+						db,
+						enterpriseportal.SAMSConfig{
+							ClientID:     dotcomConf.SamsClientID,
+							ClientSecret: dotcomConf.SamsClientSecret,
+							Scopes:       enterpriseportal.ReadScopes(), // WIP: enable write access to prod later
+							ConnConfig: samssdk.ConnConfig{
+								ExternalURL: dotcomConf.SamsServer,
+							},
+						},
+						"/.api/enterpriseportal/prod",
+						enterpriseportal.EnterprisePortalProd))
+				m.PathPrefix("/enterpriseportal/dev/").Handler(
+					enterpriseportal.NewSiteAdminProxy(
+						logger.Scoped("enterpriseportalproxy.dev"),
+						db,
+						enterpriseportal.SAMSConfig{
+							ClientID:     dotcomConf.SamsDevClientID,
+							ClientSecret: dotcomConf.SamsDevClientSecret,
+							Scopes:       append(enterpriseportal.ReadScopes(), enterpriseportal.WriteScopes()...),
+							ConnConfig: samssdk.ConnConfig{
+								ExternalURL: func() string {
+									if dotcomConf.SamsDevServer == "" {
+										return "https://accounts.sgdev.org"
+									}
+									return dotcomConf.SamsDevServer
+								}(),
+							},
+						},
+						"/.api/enterpriseportal/dev",
+						enterpriseportal.EnterprisePortalDev))
+				if env.InsecureDev {
+					m.PathPrefix("/enterpriseportal/local/").Handler(
+						enterpriseportal.NewSiteAdminProxy(
+							logger.Scoped("enterpriseportalproxy.local"),
+							db,
+							enterpriseportal.SAMSConfig{
+								ClientID:     dotcomConf.SamsDevClientID,
+								ClientSecret: dotcomConf.SamsDevClientSecret,
+								Scopes:       append(enterpriseportal.ReadScopes(), enterpriseportal.WriteScopes()...),
+								ConnConfig: samssdk.ConnConfig{
+									ExternalURL: "https://accounts.sgdev.org",
+								},
+							},
+							"/.api/enterpriseportal/local",
+							enterpriseportal.EnterprisePortalLocal))
+				}
+			}
 		}
 	}
 
