@@ -53,8 +53,8 @@ func (s Subscription) TableName() string {
 	return "enterprise_portal_subscriptions"
 }
 
-// tableColumns must match s.scan() values.
-func (Subscription) tableColumns() []string {
+// subscriptionTableColumns must match s.scan() values.
+func subscriptionTableColumns() []string {
 	return []string{
 		"id",
 		"instance_domain",
@@ -67,8 +67,9 @@ func (Subscription) tableColumns() []string {
 	}
 }
 
-// scanRow matches s.columns() values.
-func (s *Subscription) scanRow(row pgx.Row) error {
+// scanSubscription matches s.columns() values.
+func scanSubscription(row pgx.Row) (*Subscription, error) {
+	var s Subscription
 	err := row.Scan(
 		&s.ID,
 		&s.InstanceDomain,
@@ -80,7 +81,7 @@ func (s *Subscription) scanRow(row pgx.Row) error {
 		&s.SalesforceOpportunityID,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.CreatedAt = s.CreatedAt.UTC()
@@ -89,7 +90,7 @@ func (s *Subscription) scanRow(row pgx.Row) error {
 		s.ArchivedAt = pointers.Ptr(s.ArchivedAt.UTC())
 	}
 
-	return nil
+	return &s, nil
 }
 
 // Store is the storage layer for product subscriptions.
@@ -150,7 +151,7 @@ SELECT
 FROM enterprise_portal_subscriptions
 WHERE %s
 %s`,
-		strings.Join(Subscription{}.tableColumns(), ", "),
+		strings.Join(subscriptionTableColumns(), ", "),
 		where, limit,
 	)
 	rows, err := s.db.Query(ctx, query, namedArgs)
@@ -161,11 +162,11 @@ WHERE %s
 
 	var subscriptions []*Subscription
 	for rows.Next() {
-		var subscription Subscription
-		if err = subscription.scanRow(rows); err != nil {
+		sub, err := scanSubscription(rows)
+		if err != nil {
 			return nil, errors.Wrap(err, "scan row")
 		}
-		subscriptions = append(subscriptions, &subscription)
+		subscriptions = append(subscriptions, sub)
 	}
 	return subscriptions, rows.Err()
 }
@@ -219,19 +220,18 @@ func (s *Store) Upsert(ctx context.Context, subscriptionID string, opts UpsertSu
 // Get returns a subscription record with the given subscription ID. It returns
 // pgx.ErrNoRows if no such subscription exists.
 func (s *Store) Get(ctx context.Context, subscriptionID string) (*Subscription, error) {
-	var subscription Subscription
 	query := fmt.Sprintf(`SELECT
 		%s
 	FROM
 		enterprise_portal_subscriptions
 	WHERE
 		id = @id`,
-		strings.Join(subscription.tableColumns(), ", "))
+		strings.Join(subscriptionTableColumns(), ", "))
 	namedArgs := pgx.NamedArgs{"id": subscriptionID}
 
-	err := subscription.scanRow(s.db.QueryRow(ctx, query, namedArgs))
+	sub, err := scanSubscription(s.db.QueryRow(ctx, query, namedArgs))
 	if err != nil {
 		return nil, err
 	}
-	return &subscription, nil
+	return sub, nil
 }
