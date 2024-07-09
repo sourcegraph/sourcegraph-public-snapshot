@@ -28,10 +28,7 @@ export const KeywordSearchCtaSection: React.FC<KeywordSearchCtaSection> = ({ cla
             contentClassName={classNames('flex-grow-1 d-flex justify-content-between p-4', styles.card)}
         >
             <div>
-                <H2 className="d-flex align-items-center">
-                    New keyword search
-                    <ProductStatusBadge status="beta" className="ml-2" />
-                </H2>
+                <H2 className="d-flex align-items-center">New keyword search</H2>
                 <div className="d-flex d-flex-column">
                     <div>
                         <KeywordSearchStarsIcon aria-hidden={true} />
