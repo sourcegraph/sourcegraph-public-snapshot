@@ -13,6 +13,8 @@ func NewLineIndex[T ~string | ~[]byte](content T) LineIndex {
 	}
 
 	// PERF: count the newlines in advance to allocate the index slice exactly
+	// Explicitly case on the type rather than casting because the generics
+	// seem to break the optimization that allows the allocation to be elided.
 	var newlineCount int
 	switch v := any(content).(type) {
 	case string:

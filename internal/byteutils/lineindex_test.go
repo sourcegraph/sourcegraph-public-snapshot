@@ -77,6 +77,26 @@ func TestNewlineIndex(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("string allocs", func(t *testing.T) {
+		contents := strings.Repeat("testline\n", 1000)
+		allocs := testing.AllocsPerRun(10, func() {
+			_ = NewLineIndex(contents)
+		})
+		if allocs != 1 {
+			t.Fatalf("expected one alloc got %f", allocs)
+		}
+	})
+
+	t.Run("byte allocs", func(t *testing.T) {
+		contents := bytes.Repeat([]byte("testline\n"), 1000)
+		allocs := testing.AllocsPerRun(10, func() {
+			_ = NewLineIndex(contents)
+		})
+		if allocs != 1 {
+			t.Fatalf("expected one alloc, got %f", allocs)
+		}
+	})
 }
 
 func FuzzNewlineIndex(f *testing.F) {
