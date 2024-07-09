@@ -49,7 +49,7 @@ func Init(
 		return errors.New("embedded model data is missing or corrupt")
 	}
 
-	siteModelConfig, err := getSiteModelConfigurationOrNil(logger, initialSiteConfig)
+	siteModelConfig, err := maybeGetSiteModelConfiguration(logger, initialSiteConfig)
 	if err != nil {
 		logger.Error("error loading LLM model configuration data via site config", log.Error(err))
 		return errors.Wrap(err, "loading LLM configuration info")
@@ -78,9 +78,7 @@ func Init(
 
 		latestSiteConfig := conf.Get().SiteConfiguration
 
-		// TODO(chrsmith): Load the newer form of LLM model configuration data. For now, we just
-		// load the older-stype completions configuration data if available.
-		latestSiteModelConfiguration, err := getSiteModelConfigurationOrNil(logger, latestSiteConfig)
+		latestSiteModelConfiguration, err := maybeGetSiteModelConfiguration(logger, latestSiteConfig)
 		if err != nil {
 			// BUG: If the site configuration data is somehow bad, we silently ignore
 			// the changes. This is bad, because there is no signal to the Sourcegraph

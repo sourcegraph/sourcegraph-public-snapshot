@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// getSiteModelConfigurationOrNil returns the SiteModelConfiguration, or nil if there is none.
+// maybeGetSiteModelConfiguration returns the SiteModelConfiguration, or nil if there is none.
 //
 // This function is responsible for converting the schema.SiteConfiguration that admins write
 // into our internal data type.
-func getSiteModelConfigurationOrNil(logger log.Logger, siteConfig schema.SiteConfiguration) (*types.SiteModelConfiguration, error) {
+func maybeGetSiteModelConfiguration(logger log.Logger, siteConfig schema.SiteConfiguration) (*types.SiteModelConfiguration, error) {
 	// If "modelConfiguration" is specified, then we respect that and only that. If it is not specified,
 	// then we respect the older "completions" configuration.
 	modelConfig := siteConfig.ModelConfiguration
