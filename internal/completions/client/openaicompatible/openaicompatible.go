@@ -40,9 +40,6 @@ func (c *client) Complete(
 	logger log.Logger,
 	request types.CompletionRequest,
 ) (*types.CompletionResponse, error) {
-	feature := request.Feature
-	requestParams := request.Parameters
-
 	var resp *http.Response
 	var err error
 	defer (func() {
@@ -51,10 +48,10 @@ func (c *client) Complete(
 		}
 	})()
 
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, false)
+	if request.Feature == types.CompletionsFeatureCode {
+		resp, err = c.makeCompletionRequest(ctx, request.Parameters, false)
 	} else {
-		resp, err = c.makeRequest(ctx, requestParams, false)
+		resp, err = c.makeRequest(ctx, request.Parameters, false)
 	}
 	if err != nil {
 		return nil, err
@@ -75,7 +72,7 @@ func (c *client) Complete(
 		response.Usage.PromptTokens,
 		response.Usage.CompletionTokens,
 		tokenizer.OpenAIModel+"/"+string(modelID),
-		string(feature),
+		string(request.Feature),
 		tokenusage.OpenAICompatible)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w ", log.Error(err))
@@ -92,9 +89,6 @@ func (c *client) Stream(
 	request types.CompletionRequest,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	feature := request.Feature
-	requestParams := request.Parameters
-
 	var resp *http.Response
 	var err error
 
@@ -103,10 +97,10 @@ func (c *client) Stream(
 			resp.Body.Close()
 		}
 	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
+	if request.Feature == types.CompletionsFeatureCode {
+		resp, err = c.makeCompletionRequest(ctx, request.Parameters, true)
 	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
+		resp, err = c.makeRequest(ctx, request.Parameters, true)
 	}
 	if err != nil {
 		return err
@@ -142,7 +136,7 @@ func (c *client) Stream(
 		}
 
 		if len(event.Choices) > 0 {
-			if feature == types.CompletionsFeatureCode {
+			if request.Feature == types.CompletionsFeatureCode {
 				content += event.Choices[0].Text
 			} else {
 				content += event.Choices[0].Delta.Content
