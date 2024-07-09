@@ -184,7 +184,7 @@ var sg = &cli.App{
 		if BuildCommit == "dev" {
 			printSkippedInDevWarning()
 		}
-		
+
 		// Set up access to secrets
 		secretsStore, err := loadSecrets()
 		if err != nil {
