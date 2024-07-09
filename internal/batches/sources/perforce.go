@@ -114,6 +114,10 @@ func (s PerforceSource) CreateChangeset(ctx context.Context, cs *Changeset) (boo
 	return false, s.LoadChangeset(ctx, cs)
 }
 
+func (s PerforceSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 // Perforce does not support draft changelists
 func (s PerforceSource) CreateDraftChangeset(_ context.Context, _ *Changeset) (bool, error) {

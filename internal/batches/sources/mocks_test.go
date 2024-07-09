@@ -36,6 +36,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/batches/sources) used for
 // unit testing.
 type MockChangesetSource struct {
+	// AuthenticationStrategyFunc is an instance of a mock function object
+	// controlling the behavior of the method AuthenticationStrategy.
+	AuthenticationStrategyFunc *ChangesetSourceAuthenticationStrategyFunc
 	// BuildCommitOptsFunc is an instance of a mock function object
 	// controlling the behavior of the method BuildCommitOpts.
 	BuildCommitOptsFunc *ChangesetSourceBuildCommitOptsFunc
@@ -76,6 +79,11 @@ type MockChangesetSource struct {
 // overwritten.
 func NewMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		AuthenticationStrategyFunc: &ChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: func() (r0 AuthenticationStrategy) {
+				return
+			},
+		},
 		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
 			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
 				return
@@ -138,6 +146,11 @@ func NewMockChangesetSource() *MockChangesetSource {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		AuthenticationStrategyFunc: &ChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: func() AuthenticationStrategy {
+				panic("unexpected invocation of MockChangesetSource.AuthenticationStrategy")
+			},
+		},
 		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
 			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 				panic("unexpected invocation of MockChangesetSource.BuildCommitOpts")
@@ -201,6 +214,9 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 // overwritten.
 func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 	return &MockChangesetSource{
+		AuthenticationStrategyFunc: &ChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: i.AuthenticationStrategy,
+		},
 		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
 			defaultHook: i.BuildCommitOpts,
 		},
@@ -235,6 +251,109 @@ func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ChangesetSourceAuthenticationStrategyFunc describes the behavior when the
+// AuthenticationStrategy method of the parent MockChangesetSource instance
+// is invoked.
+type ChangesetSourceAuthenticationStrategyFunc struct {
+	defaultHook func() AuthenticationStrategy
+	hooks       []func() AuthenticationStrategy
+	history     []ChangesetSourceAuthenticationStrategyFuncCall
+	mutex       sync.Mutex
+}
+
+// AuthenticationStrategy delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockChangesetSource) AuthenticationStrategy() AuthenticationStrategy {
+	r0 := m.AuthenticationStrategyFunc.nextHook()()
+	m.AuthenticationStrategyFunc.appendCall(ChangesetSourceAuthenticationStrategyFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// AuthenticationStrategy method of the parent MockChangesetSource instance
+// is invoked and the hook queue is empty.
+func (f *ChangesetSourceAuthenticationStrategyFunc) SetDefaultHook(hook func() AuthenticationStrategy) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthenticationStrategy method of the parent MockChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ChangesetSourceAuthenticationStrategyFunc) PushHook(hook func() AuthenticationStrategy) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ChangesetSourceAuthenticationStrategyFunc) SetDefaultReturn(r0 AuthenticationStrategy) {
+	f.SetDefaultHook(func() AuthenticationStrategy {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ChangesetSourceAuthenticationStrategyFunc) PushReturn(r0 AuthenticationStrategy) {
+	f.PushHook(func() AuthenticationStrategy {
+		return r0
+	})
+}
+
+func (f *ChangesetSourceAuthenticationStrategyFunc) nextHook() func() AuthenticationStrategy {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ChangesetSourceAuthenticationStrategyFunc) appendCall(r0 ChangesetSourceAuthenticationStrategyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ChangesetSourceAuthenticationStrategyFuncCall objects describing the
+// invocations of this function.
+func (f *ChangesetSourceAuthenticationStrategyFunc) History() []ChangesetSourceAuthenticationStrategyFuncCall {
+	f.mutex.Lock()
+	history := make([]ChangesetSourceAuthenticationStrategyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ChangesetSourceAuthenticationStrategyFuncCall is an object that describes
+// an invocation of method AuthenticationStrategy on an instance of
+// MockChangesetSource.
+type ChangesetSourceAuthenticationStrategyFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AuthenticationStrategy
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ChangesetSourceAuthenticationStrategyFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ChangesetSourceAuthenticationStrategyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ChangesetSourceBuildCommitOptsFunc describes the behavior when the
@@ -1436,6 +1555,9 @@ func (c ChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/batches/sources) used for
 // unit testing.
 type MockForkableChangesetSource struct {
+	// AuthenticationStrategyFunc is an instance of a mock function object
+	// controlling the behavior of the method AuthenticationStrategy.
+	AuthenticationStrategyFunc *ForkableChangesetSourceAuthenticationStrategyFunc
 	// BuildCommitOptsFunc is an instance of a mock function object
 	// controlling the behavior of the method BuildCommitOpts.
 	BuildCommitOptsFunc *ForkableChangesetSourceBuildCommitOptsFunc
@@ -1479,6 +1601,11 @@ type MockForkableChangesetSource struct {
 // results, unless overwritten.
 func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		AuthenticationStrategyFunc: &ForkableChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: func() (r0 AuthenticationStrategy) {
+				return
+			},
+		},
 		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
 			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
 				return
@@ -1547,6 +1674,11 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 // unless overwritten.
 func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		AuthenticationStrategyFunc: &ForkableChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: func() AuthenticationStrategy {
+				panic("unexpected invocation of MockForkableChangesetSource.AuthenticationStrategy")
+			},
+		},
 		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
 			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 				panic("unexpected invocation of MockForkableChangesetSource.BuildCommitOpts")
@@ -1615,6 +1747,9 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 // implementation, unless overwritten.
 func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		AuthenticationStrategyFunc: &ForkableChangesetSourceAuthenticationStrategyFunc{
+			defaultHook: i.AuthenticationStrategy,
+		},
 		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
 			defaultHook: i.BuildCommitOpts,
 		},
@@ -1652,6 +1787,109 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ForkableChangesetSourceAuthenticationStrategyFunc describes the behavior
+// when the AuthenticationStrategy method of the parent
+// MockForkableChangesetSource instance is invoked.
+type ForkableChangesetSourceAuthenticationStrategyFunc struct {
+	defaultHook func() AuthenticationStrategy
+	hooks       []func() AuthenticationStrategy
+	history     []ForkableChangesetSourceAuthenticationStrategyFuncCall
+	mutex       sync.Mutex
+}
+
+// AuthenticationStrategy delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) AuthenticationStrategy() AuthenticationStrategy {
+	r0 := m.AuthenticationStrategyFunc.nextHook()()
+	m.AuthenticationStrategyFunc.appendCall(ForkableChangesetSourceAuthenticationStrategyFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// AuthenticationStrategy method of the parent MockForkableChangesetSource
+// instance is invoked and the hook queue is empty.
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) SetDefaultHook(hook func() AuthenticationStrategy) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AuthenticationStrategy method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) PushHook(hook func() AuthenticationStrategy) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) SetDefaultReturn(r0 AuthenticationStrategy) {
+	f.SetDefaultHook(func() AuthenticationStrategy {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) PushReturn(r0 AuthenticationStrategy) {
+	f.PushHook(func() AuthenticationStrategy {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) nextHook() func() AuthenticationStrategy {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) appendCall(r0 ForkableChangesetSourceAuthenticationStrategyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceAuthenticationStrategyFuncCall objects describing
+// the invocations of this function.
+func (f *ForkableChangesetSourceAuthenticationStrategyFunc) History() []ForkableChangesetSourceAuthenticationStrategyFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceAuthenticationStrategyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceAuthenticationStrategyFuncCall is an object that
+// describes an invocation of method AuthenticationStrategy on an instance
+// of MockForkableChangesetSource.
+type ForkableChangesetSourceAuthenticationStrategyFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AuthenticationStrategy
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceAuthenticationStrategyFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceAuthenticationStrategyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ForkableChangesetSourceBuildCommitOptsFunc describes the behavior when

@@ -66,6 +66,10 @@ func (s GerritSource) GitserverPushConfig(ctx context.Context, repo *types.Repo)
 	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
 }
 
+func (s GerritSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.

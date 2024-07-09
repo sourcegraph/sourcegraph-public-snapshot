@@ -54,6 +54,10 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 	return &BitbucketCloudSource{client: client}, nil
 }
 
+func (s BitbucketCloudSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
 func (s BitbucketCloudSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
