@@ -52,7 +52,7 @@ func Init(
 	siteModelConfig, err := getSiteModelConfigurationOrNil(logger, initialSiteConfig)
 	if err != nil {
 		logger.Error("error loading LLM model configuration data via site config", log.Error(err))
-		return errors.Wrap(err, "converting completions config")
+		return errors.Wrap(err, "loading LLM configuration info")
 	}
 
 	// Now build the initial view of the Sourcegraph instance's model configuration using this data.
