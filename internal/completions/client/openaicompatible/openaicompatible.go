@@ -18,20 +18,20 @@ import (
 )
 
 func NewClient(cli httpcli.Doer, modelConfigInfo *types.ModelConfigInfo, tokenManager tokenusage.Manager) types.CompletionsClient {
-	return &openAIChatCompletionStreamClient{
+	return &client{
 		cli:             cli,
 		modelConfigInfo: modelConfigInfo,
 		tokenManager:    tokenManager,
 	}
 }
 
-type openAIChatCompletionStreamClient struct {
+type client struct {
 	cli             httpcli.Doer
 	modelConfigInfo *types.ModelConfigInfo
 	tokenManager    tokenusage.Manager
 }
 
-func (c *openAIChatCompletionStreamClient) Complete(
+func (c *client) Complete(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest,
@@ -81,7 +81,7 @@ func (c *openAIChatCompletionStreamClient) Complete(
 	}, nil
 }
 
-func (c *openAIChatCompletionStreamClient) Stream(
+func (c *client) Stream(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest,
@@ -163,7 +163,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 }
 
 // makeRequest formats the request and calls the chat/completions endpoint for code_completion requests
-func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *client) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
@@ -238,7 +238,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 }
 
 // makeCompletionRequest formats the request and calls the completions endpoint for code_completion requests
-func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func (c *client) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
