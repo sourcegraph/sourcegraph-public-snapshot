@@ -1,3 +1,4 @@
+version: 2
 name: apply-regex-sed
 description: Apply a regex using sed
 
@@ -20,4 +21,3 @@ changesetTemplate:
   branch: batch-changes/regex
   commit:
     message: batch changes -  apply regex
-

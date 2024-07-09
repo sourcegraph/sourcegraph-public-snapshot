@@ -1,2 +1,3 @@
+version: 2
 name: my-batch-change
 # Add your own description, query, steps, changesetTemplate, etc.

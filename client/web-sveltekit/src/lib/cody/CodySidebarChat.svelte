@@ -65,9 +65,16 @@
         --vscode-inputOption-activeBackground: var(--search-input-token-filter);
         --vscode-inputOption-activeForeground: var(--body-color);
         --vscode-loading-dot-color: var(--body-color);
+        --vscode-textPreformat-foreground: var(--body-color);
+        --vscode-textPreformat-background: var(--secondary);
+        --vscode-sideBarSectionHeader-border: var(--border-color);
+        --vscode-editor-font-family: var(--code-font-family);
+        --vscode-editor-font-size: var(--code-font-size);
         --mention-color-opacity: 100%;
 
-        height: 100%;
+        line-height: 1.55;
+        flex: 1;
+        min-height: 0;
 
         :global(h3) {
             font-size: inherit;
@@ -81,6 +88,44 @@
         :global(a) {
             color: var(--link-color) !important;
         }
+
+        :global(code) {
+            padding: 1px 3px;
+            border-radius: 0.25rem;
+            color: var(--vscode-textPreformat-foreground);
+            background-color: var(--vscode-textPreformat-background);
+        }
+
+        :global(pre) {
+            // Controls cody snippets (i.e. 'pre code' blocks)
+            --code-foreground: var(--body-color);
+            --code-background: transparent;
+
+            border-top-right-radius: 2px;
+            border-top-left-radius: 2px;
+
+            :global(code) {
+                // Overwrite the code styles set above
+                padding: initial;
+                background-color: inherit;
+            }
+        }
+
+        // Sourcegraph styles already add [hidden] display none
+        // and this breaks chat animation since there is no starting point
+        // with display:none element. Override this logic back to visibility: hidden;
+        // so chat animation would work again.
+        :global([hidden]) {
+            visibility: hidden;
+            display: block !important;
+        }
+
+        // Target all possible animated elements (radix accordions)
+        // and disable animation since there are flashes with exit
+        // animations.
+        :global(.tw-transition-all) {
+            animation: none !important;
+        }
     }
 
     :global([data-floating-ui-portal]) {
@@ -89,5 +134,8 @@
         --vscode-list-activeSelectionBackground: var(--primary);
         --vscode-foreground: var(--body-color);
         --vscode-widget-shadow: rgba(36, 41, 54, 0.2);
+        // Turn off background color for picker popover element
+        // Which causes glitch effect in Cody Web
+        --vscode-sideBar-background: transparent;
     }
 </style>
