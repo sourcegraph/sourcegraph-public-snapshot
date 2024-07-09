@@ -26,8 +26,8 @@ type RepoCommitsChangelistsStore interface {
 	// given changelist ID.
 	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
 
-	// GetRepoCommitChangelistBatch bulk loads repo commits for given repo ids and changelistIds
-	GetRepoCommitChangelistBatch(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
+	// BatchGetRepoCommitChangelist bulk loads repo commits for given repo ids and changelistIds
+	BatchGetRepoCommitChangelist(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
 }
 
 type repoCommitsChangelistsStore struct {
@@ -140,7 +140,7 @@ WHERE
 	%s;
 `
 
-func (s *repoCommitsChangelistsStore) GetRepoCommitChangelistBatch(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+func (s *repoCommitsChangelistsStore) BatchGetRepoCommitChangelist(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
 	res := make(map[api.RepoID]map[int64]*types.RepoCommit, len(rcs))
 	for _, rc := range rcs {
 		res[rc.RepoID] = make(map[int64]*types.RepoCommit, len(rc.ChangelistIDs))

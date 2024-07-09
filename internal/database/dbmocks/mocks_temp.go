@@ -57924,6 +57924,10 @@ func (c RecentViewSignalStoreListFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockRepoCommitsChangelistsStore struct {
+	// BatchGetRepoCommitChangelistFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// BatchGetRepoCommitChangelist.
+	BatchGetRepoCommitChangelistFunc *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc
 	// BatchInsertCommitSHAsWithPerforceChangelistIDFunc is an instance of a
 	// mock function object controlling the behavior of the method
 	// BatchInsertCommitSHAsWithPerforceChangelistID.
@@ -57934,10 +57938,6 @@ type MockRepoCommitsChangelistsStore struct {
 	// GetRepoCommitChangelistFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRepoCommitChangelist.
 	GetRepoCommitChangelistFunc *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc
-	// GetRepoCommitChangelistBatchFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetRepoCommitChangelistBatch.
-	GetRepoCommitChangelistBatchFunc *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc
 }
 
 // NewMockRepoCommitsChangelistsStore creates a new mock of the
@@ -57945,6 +57945,11 @@ type MockRepoCommitsChangelistsStore struct {
 // all results, unless overwritten.
 func NewMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 	return &MockRepoCommitsChangelistsStore{
+		BatchGetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, ...database.RepoChangelistIDs) (r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
+				return
+			},
+		},
 		BatchInsertCommitSHAsWithPerforceChangelistIDFunc: &RepoCommitsChangelistsStoreBatchInsertCommitSHAsWithPerforceChangelistIDFunc{
 			defaultHook: func(context.Context, api.RepoID, []types.PerforceChangelist) (r0 error) {
 				return
@@ -57960,11 +57965,6 @@ func NewMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 				return
 			},
 		},
-		GetRepoCommitChangelistBatchFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc{
-			defaultHook: func(context.Context, ...database.RepoChangelistIDs) (r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
-				return
-			},
-		},
 	}
 }
 
@@ -57973,6 +57973,11 @@ func NewMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 // unless overwritten.
 func NewStrictMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 	return &MockRepoCommitsChangelistsStore{
+		BatchGetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+				panic("unexpected invocation of MockRepoCommitsChangelistsStore.BatchGetRepoCommitChangelist")
+			},
+		},
 		BatchInsertCommitSHAsWithPerforceChangelistIDFunc: &RepoCommitsChangelistsStoreBatchInsertCommitSHAsWithPerforceChangelistIDFunc{
 			defaultHook: func(context.Context, api.RepoID, []types.PerforceChangelist) error {
 				panic("unexpected invocation of MockRepoCommitsChangelistsStore.BatchInsertCommitSHAsWithPerforceChangelistID")
@@ -57988,11 +57993,6 @@ func NewStrictMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore
 				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetRepoCommitChangelist")
 			},
 		},
-		GetRepoCommitChangelistBatchFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc{
-			defaultHook: func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
-				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetRepoCommitChangelistBatch")
-			},
-		},
 	}
 }
 
@@ -58001,6 +58001,9 @@ func NewStrictMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore
 // given implementation, unless overwritten.
 func NewMockRepoCommitsChangelistsStoreFrom(i database.RepoCommitsChangelistsStore) *MockRepoCommitsChangelistsStore {
 	return &MockRepoCommitsChangelistsStore{
+		BatchGetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc{
+			defaultHook: i.BatchGetRepoCommitChangelist,
+		},
 		BatchInsertCommitSHAsWithPerforceChangelistIDFunc: &RepoCommitsChangelistsStoreBatchInsertCommitSHAsWithPerforceChangelistIDFunc{
 			defaultHook: i.BatchInsertCommitSHAsWithPerforceChangelistID,
 		},
@@ -58010,10 +58013,128 @@ func NewMockRepoCommitsChangelistsStoreFrom(i database.RepoCommitsChangelistsSto
 		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
 			defaultHook: i.GetRepoCommitChangelist,
 		},
-		GetRepoCommitChangelistBatchFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc{
-			defaultHook: i.GetRepoCommitChangelistBatch,
-		},
 	}
+}
+
+// RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc describes the
+// behavior when the BatchGetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance is invoked.
+type RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc struct {
+	defaultHook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
+	hooks       []func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
+	history     []RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall
+	mutex       sync.Mutex
+}
+
+// BatchGetRepoCommitChangelist delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoCommitsChangelistsStore) BatchGetRepoCommitChangelist(v0 context.Context, v1 ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+	r0, r1 := m.BatchGetRepoCommitChangelistFunc.nextHook()(v0, v1...)
+	m.BatchGetRepoCommitChangelistFunc.appendCall(RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// BatchGetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) SetDefaultHook(hook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BatchGetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance invokes the hook at the front of
+// the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) PushHook(hook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) SetDefaultReturn(r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) PushReturn(r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
+	f.PushHook(func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) nextHook() func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) appendCall(r0 RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall objects
+// describing the invocations of this function.
+func (f *RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFunc) History() []RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall is an
+// object that describes an invocation of method
+// BatchGetRepoCommitChangelist on an instance of
+// MockRepoCommitsChangelistsStore.
+type RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []database.RepoChangelistIDs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[api.RepoID]map[int64]*types.RepoCommit
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoCommitsChangelistsStoreBatchGetRepoCommitChangelistFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // RepoCommitsChangelistsStoreBatchInsertCommitSHAsWithPerforceChangelistIDFunc
@@ -58357,127 +58478,6 @@ func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall) Args() []int
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc describes the
-// behavior when the GetRepoCommitChangelistBatch method of the parent
-// MockRepoCommitsChangelistsStore instance is invoked.
-type RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc struct {
-	defaultHook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
-	hooks       []func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
-	history     []RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepoCommitChangelistBatch delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockRepoCommitsChangelistsStore) GetRepoCommitChangelistBatch(v0 context.Context, v1 ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
-	r0, r1 := m.GetRepoCommitChangelistBatchFunc.nextHook()(v0, v1...)
-	m.GetRepoCommitChangelistBatchFunc.appendCall(RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRepoCommitChangelistBatch method of the parent
-// MockRepoCommitsChangelistsStore instance is invoked and the hook queue is
-// empty.
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) SetDefaultHook(hook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepoCommitChangelistBatch method of the parent
-// MockRepoCommitsChangelistsStore instance invokes the hook at the front of
-// the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) PushHook(hook func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) SetDefaultReturn(r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) PushReturn(r0 map[api.RepoID]map[int64]*types.RepoCommit, r1 error) {
-	f.PushHook(func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
-		return r0, r1
-	})
-}
-
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) nextHook() func(context.Context, ...database.RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) appendCall(r0 RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall objects
-// describing the invocations of this function.
-func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFunc) History() []RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall is an
-// object that describes an invocation of method
-// GetRepoCommitChangelistBatch on an instance of
-// MockRepoCommitsChangelistsStore.
-type RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []database.RepoChangelistIDs
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[api.RepoID]map[int64]*types.RepoCommit
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistBatchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -177,7 +177,7 @@ func TestRepoCommitsChangelists(t *testing.T) {
 		})
 	})
 
-	t.Run("GetRepoCommitChangelistBatch", func(t *testing.T) {
+	t.Run("BatchGetRepoCommitChangelist", func(t *testing.T) {
 		changelistIds := []RepoChangelistIDs{
 			{
 				RepoID:        api.RepoID(1),
@@ -189,7 +189,7 @@ func TestRepoCommitsChangelists(t *testing.T) {
 			},
 		}
 		t.Run("existing rows", func(t *testing.T) {
-			got, err := s.GetRepoCommitChangelistBatch(ctx, changelistIds...)
+			got, err := s.BatchGetRepoCommitChangelist(ctx, changelistIds...)
 			require.NoError(t, err)
 			// Make sure every items from changelist ids is present in the result.
 			for _, ids := range changelistIds {
@@ -201,7 +201,7 @@ func TestRepoCommitsChangelists(t *testing.T) {
 		})
 
 		t.Run("return empty map if no result", func(t *testing.T) {
-			got, err := s.GetRepoCommitChangelistBatch(ctx, RepoChangelistIDs{RepoID: 3})
+			got, err := s.BatchGetRepoCommitChangelist(ctx, RepoChangelistIDs{RepoID: 3})
 			require.NoError(t, err)
 			require.Len(t, got[3], 0)
 		})

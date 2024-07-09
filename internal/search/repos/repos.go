@@ -524,7 +524,7 @@ func (r *Resolver) resolvePerforceChangeListIdsToCommitSHAs(
 		return repoRevs
 	}
 
-	changelistIDsToCommits, err := r.db.RepoCommitsChangelists().GetRepoCommitChangelistBatch(ctx, reposToMap...)
+	changelistIDsToCommits, err := r.db.RepoCommitsChangelists().BatchGetRepoCommitChangelist(ctx, reposToMap...)
 	if err != nil {
 		r.logger.Warn("failed to get repo commit changelists", log.Error(err))
 		return repoRevs
