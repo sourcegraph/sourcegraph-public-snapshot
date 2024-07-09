@@ -66,10 +66,11 @@ func (c *client) Complete(
 		// Empty response.
 		return &types.CompletionResponse{}, nil
 	}
+	modelID := c.modelConfigInfo.Model.ModelRef.ModelID()
 	err = c.tokenManager.UpdateTokenCountsFromModelUsage(
 		response.Usage.PromptTokens,
 		response.Usage.CompletionTokens,
-		tokenizer.OpenAIModel+"/"+requestParams.Model,
+		tokenizer.OpenAIModel+"/"+string(modelID),
 		string(feature),
 		tokenusage.OpenAI)
 	if err != nil {
@@ -155,7 +156,8 @@ func (c *client) Stream(
 	if dec.Err() != nil {
 		return dec.Err()
 	}
-	err = c.tokenManager.UpdateTokenCountsFromModelUsage(promptTokens, completionTokens, tokenizer.OpenAIModel+"/"+requestParams.Model, string(feature), tokenusage.OpenAI)
+	modelID := c.modelConfigInfo.Model.ModelRef.ModelID()
+	err = c.tokenManager.UpdateTokenCountsFromModelUsage(promptTokens, completionTokens, tokenizer.OpenAIModel+"/"+string(modelID), string(feature), tokenusage.OpenAI)
 	if err != nil {
 		logger.Warn("Failed to count tokens with the token manager %w", log.Error(err))
 	}
@@ -171,22 +173,22 @@ func (c *client) makeRequest(ctx context.Context, requestParams types.Completion
 		requestParams.TopP = 0
 	}
 
-	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
+	// TODO(slimsag): self-hosted-models: there are other parameters here which we could allow
+	// configuration of, which we do not specify as fields today:
 	payload := openAIChatCompletionsRequestParameters{
+		// TODO(slimsag): self-hosted-models: allow customization of model request param
 		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
-		// TODO(sqs): map requestParams.TopK to openai
+		// TODO(slimsag): self-hosted-models: allow customization of N (TopK?)
 		N:         1,
 		Stream:    stream,
 		MaxTokens: requestParams.MaxTokensToSample,
-		// TODO: Our clients are currently heavily biased towards Anthropic,
-		// so the stop sequences we send might not actually be very useful
-		// for OpenAI.
+		// TODO(slimsag): self-hosted-models: allow customization of stop sequences
 		Stop: requestParams.StopSequences,
 	}
 	for _, m := range requestParams.Messages {
-		// TODO(sqs): map these 'roles' to openai system/user/assistant
+		// TODO(slimsag): map these 'roles' to openai system/user/assistant
 		var role string
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
@@ -252,14 +254,17 @@ func (c *client) makeCompletionRequest(ctx context.Context, requestParams types.
 	}
 
 	payload := openAICompletionsRequestParameters{
+		// TODO(slimsag): self-hosted-models: allow customization of model request param
 		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
-		N:           1,
-		Stream:      stream,
-		MaxTokens:   requestParams.MaxTokensToSample,
-		Stop:        requestParams.StopSequences,
-		Prompt:      prompt,
+		// TODO(slimsag): self-hosted-models: allow customization of N (TopK?)
+		N:         1,
+		Stream:    stream,
+		MaxTokens: requestParams.MaxTokensToSample,
+		// TODO(slimsag): self-hosted-models: allow customization of stop sequences
+		Stop:   requestParams.StopSequences,
+		Prompt: prompt,
 	}
 
 	reqBody, err := json.Marshal(payload)
