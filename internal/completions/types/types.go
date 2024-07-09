@@ -72,7 +72,7 @@ func NewModelConfigInfo(
 		}
 	}
 	if model == nil {
-		return nil, fmt.Errorf("model %q not found in model configuration", modelRef)
+		return nil, errors.Newf("model %q not found in model configuration", modelRef)
 	}
 
 	wantProviderID := modelRef.ProviderID()
@@ -84,7 +84,7 @@ func NewModelConfigInfo(
 		}
 	}
 	if provider == nil {
-		return nil, fmt.Errorf("model provider %q not found in model configuration", wantProviderID)
+		return nil, errors.Newf("model provider %q not found in model configuration", wantProviderID)
 	}
 	return &ModelConfigInfo{
 		Provider: *provider,
