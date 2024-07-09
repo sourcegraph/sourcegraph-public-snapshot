@@ -155,6 +155,9 @@ resources:
           frontend:
             disabled: true
 
+          grafana:
+            disabled: true
+
           gitServer: {}
 
           indexedSearch:

@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/dev/sg/sams"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -185,16 +186,20 @@ var sg = &cli.App{
 			printSkippedInDevWarning()
 		}
 
+		// Set up access to secrets
+		secretsStore, err := loadSecrets()
+		if err != nil {
+			std.Out.WriteWarningf("failed to open secrets: %s", err)
+		} else {
+			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
+		}
+
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
 		if !cmd.Bool("disable-analytics") {
-			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
-			if err != nil {
-				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			if err := analytics.InitIdentity(cmd.Context, std.Out, secretsStore); err != nil {
+				std.Out.WriteWarningf("Failed to persist identity for analytics, continuing: %s", err)
 			}
-
-			// Ensure analytics are persisted
-			interrupt.Register(func() { _ = analytics.Persist(cmd.Context) })
 
 			// Add analytics to each command
 			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
@@ -203,10 +208,14 @@ var sg = &cli.App{
 		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
-			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
+			std.Out.WriteWarningf("Unable to infer user shell context: %s", err)
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
+
+		// start the analytics publisher
+		analytics.BackgroundEventPublisher(cmd.Context)
+		interrupt.Register(analytics.StopBackgroundEventPublisher)
 
 		// Configure logger, for commands that use components that use loggers
 		if _, set := os.LookupEnv(log.EnvDevelopment); !set {
@@ -226,27 +235,15 @@ var sg = &cli.App{
 			return errors.Newf("--overwrite must not be empty")
 		}
 
-		// Set up access to secrets
-		secretsStore, err := loadSecrets()
-		if err != nil {
-			std.Out.WriteWarningf("failed to open secrets: %s", err)
-		} else {
-			cmd.Context = secrets.WithContext(cmd.Context, secretsStore)
-		}
-
 		// We always try to set this, since we often want to watch files, start commands, etc...
 		if err := setMaxOpenFiles(); err != nil {
 			std.Out.WriteWarningf("Failed to set max open files: %s", err)
 		}
 
 		// Check for updates, unless we are running update manually.
-		skipBackgroundTasks := map[string]struct{}{
-			"update":   {},
-			"version":  {},
-			"live":     {},
-			"teammate": {},
-		}
-		if _, skipped := skipBackgroundTasks[cmd.Args().First()]; !skipped {
+		skipBackgroundTasks := collections.NewSet("update", "version", "live", "teammate")
+
+		if !skipBackgroundTasks.Has(cmd.Args().First()) {
 			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
 				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
@@ -266,8 +263,6 @@ var sg = &cli.App{
 		if !bashCompletionsMode {
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
-			// Persist analytics
-			_ = analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -312,7 +307,6 @@ var sg = &cli.App{
 		enterprise.Command,
 
 		// Util
-		analyticsCommand,
 		doctorCommand,
 		funkyLogoCommand,
 		helpCommand,

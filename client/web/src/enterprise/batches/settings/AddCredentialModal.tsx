@@ -7,7 +7,6 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form, Select } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { ExternalServiceKind, GitHubAppKind, type UserAreaUserFields } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
@@ -105,7 +104,6 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     const [authStrategy, setAuthStrategy] = useState<AuthenticationStrategyType>(
         AuthenticationStrategy.PERSONAL_ACCESS_TOKEN
     )
-    const [isGithubAppIntegrationEnabled] = useFeatureFlag('batches-github-app-integration')
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
@@ -156,7 +154,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
     )
 
     const isTokenSection = step === 'add-token'
-    const isGitHubKind = externalServiceKind === ExternalServiceKind.GITHUB
+    const isExternalServiceKindGitHub = externalServiceKind === ExternalServiceKind.GITHUB
 
     // addCredentialModalStepRuler
     return (
@@ -167,7 +165,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                {isGitHubKind && isGithubAppIntegrationEnabled && isTokenSection && (
+                {isExternalServiceKindGitHub && isTokenSection && (
                     <Select
                         id="credential-kind"
                         selectSize="sm"

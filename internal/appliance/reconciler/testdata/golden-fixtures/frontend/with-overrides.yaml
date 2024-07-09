@@ -228,6 +228,9 @@ resources:
             replicas: 9
             migrator: false
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 

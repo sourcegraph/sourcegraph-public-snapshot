@@ -42,6 +42,17 @@
         color: var(--icon-color);
         visibility: hidden;
     }
+
+    &-title {
+        overflow: hidden;
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        margin-bottom: 0;
+    }
 }
 
 .footer {

@@ -566,11 +566,11 @@ type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
+	GitHubAppID() int
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
-
-	IsGitHubApp() bool
+	GitHubApp(context.Context) (GitHubAppResolver, error)
 }
 
 // Only GitHubApps are supported for commit signing for now.

@@ -41,6 +41,7 @@
 
     import { afterNavigate, goto } from '$app/navigation'
     import { page } from '$app/stores'
+    import CodySidebar from '$lib/cody/CodySidebar.svelte'
     import { isErrorLike, SourcegraphURL } from '$lib/common'
     import { openFuzzyFinder } from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import { filesHotkey } from '$lib/fuzzyfinder/keys'
@@ -50,6 +51,7 @@
     import { fetchSidebarFileTree } from '$lib/repo/api/tree'
     import HistoryPanel from '$lib/repo/HistoryPanel.svelte'
     import LastCommit from '$lib/repo/LastCommit.svelte'
+    import { rightPanelOpen } from '$lib/repo/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
@@ -95,7 +97,7 @@
     let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
-    $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
+    $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
     $: lastCommitQuery = data.lastCommit
@@ -249,8 +251,22 @@
 
     <Panel id="blob-content-panels" order={2}>
         <PanelGroup id="content-panels" direction="vertical">
-            <Panel id="main-content-panel" order={1}>
-                <slot />
+            <Panel id="content-panel" order={1}>
+                <PanelGroup id="content-sidebar-panels">
+                    <Panel order={1} id="main-content-panel">
+                        <slot />
+                    </Panel>
+                    {#if $isCodyAvailable && $rightPanelOpen}
+                        <PanelResizeHandle id="right-sidebar-resize-handle" />
+                        <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
+                            <CodySidebar
+                                repository={data.resolvedRevision.repo}
+                                filePath={data.filePath}
+                                on:close={() => ($rightPanelOpen = false)}
+                            />
+                        </Panel>
+                    {/if}
+                </PanelGroup>
             </Panel>
             <PanelResizeHandle />
             <Panel
@@ -345,6 +361,7 @@
         isolation: isolate;
     }
 
+    :global([data-panel-resize-handle-id='right-sidebar-resize-handle']),
     :global([data-panel-resize-handle-id='blob-page-panels-separator']) {
         &::before {
             // Even though side-panel shadow should be rendered over
@@ -436,6 +453,11 @@
     :global([data-panel-id='bottom-actions-panel']) {
         min-height: 2.5625rem; // 41px which is bottom panel compact size
         box-shadow: var(--bottom-panel-shadow);
+    }
+
+    :global([data-panel-id='right-sidebar-panel']) {
+        z-index: 1;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     }
 
     .bottom-panel {

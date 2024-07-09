@@ -8,6 +8,7 @@ import {
     type BatchChangesCredentialFields,
     type CheckBatchChangesCredentialResult,
     ExternalServiceKind,
+    GitHubAppKind,
     type UserAreaUserFields,
 } from '../../../graphql-operations'
 
@@ -34,6 +35,7 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     isSiteCredential,
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+    gitHubApp: null,
 })
 
 export const Overview: StoryFn = () => (
@@ -58,6 +60,7 @@ export const Overview: StoryFn = () => (
             >
                 <CodeHostConnectionNode
                     {...props}
+                    gitHubAppKind={GitHubAppKind.SITE_CREDENTIAL}
                     node={{
                         credential: sshCredential(false),
                         externalServiceKind: ExternalServiceKind.GITHUB,

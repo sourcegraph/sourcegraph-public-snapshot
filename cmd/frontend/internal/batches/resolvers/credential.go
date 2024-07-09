@@ -3,9 +3,12 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"strconv"
 	"strings"
+
+	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -16,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,7 +78,10 @@ type batchChangesUserCredentialResolver struct {
 	credential *database.UserCredential
 
 	repo    *types.Repo
-	ghStore ghstore.GitHubAppsStore
+	ghStore ghastore.GitHubAppsStore
+
+	db     database.DB
+	logger log.Logger
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesUserCredentialResolver{}
@@ -124,13 +130,39 @@ func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesUserCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
+
+func (c *batchChangesUserCredentialResolver) GitHubAppID() int {
+	return c.credential.GitHubAppID
+}
 
 type batchChangesSiteCredentialResolver struct {
 	credential *btypes.SiteCredential
 
 	repo    *types.Repo
-	ghStore ghstore.GitHubAppsStore
+	ghStore ghastore.GitHubAppsStore
+
+	db     database.DB
+	logger log.Logger
+}
+
+func (c *batchChangesUserCredentialResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
+	if !c.IsGitHubApp() {
+		return nil, nil
+	}
+	switch c.credential.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		ghapp, err := c.ghStore.GetByID(ctx, c.GitHubAppID())
+		if err != nil {
+			if _, ok := err.(ghastore.ErrNoGitHubAppFound); ok {
+				return nil, nil
+			} else {
+				return nil, err
+			}
+		}
+		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
+	}
+	return nil, nil
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
@@ -179,4 +211,25 @@ func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) 
 	})
 }
 
-func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID != 0 }
+func (c *batchChangesSiteCredentialResolver) IsGitHubApp() bool { return c.credential.GitHubAppID > 0 }
+
+func (c *batchChangesSiteCredentialResolver) GitHubAppID() int { return c.credential.GitHubAppID }
+
+func (c *batchChangesSiteCredentialResolver) GitHubApp(ctx context.Context) (graphqlbackend.GitHubAppResolver, error) {
+	if !c.IsGitHubApp() {
+		return nil, nil
+	}
+	switch c.credential.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		ghapp, err := c.ghStore.GetByID(ctx, c.GitHubAppID())
+		if err != nil {
+			if _, ok := err.(ghastore.ErrNoGitHubAppFound); ok {
+				return nil, nil
+			} else {
+				return nil, err
+			}
+		}
+		return githubapp.NewGitHubAppResolver(c.db, ghapp, c.logger), nil
+	}
+	return nil, nil
+}

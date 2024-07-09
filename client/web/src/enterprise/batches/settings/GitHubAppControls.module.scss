@@ -1,0 +1,43 @@
+.app-details-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-shrink: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.app-logo,
+.app-logo-large {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    background-color: var(--gray-02);
+}
+
+.app-logo-large {
+    width: 2.125rem;
+    height: 2.125rem;
+}
+
+.git-hub-app-controls {
+    // stylelint-disable-next-line property-no-unknown
+    composes: d-flex align-items-center from global;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}
+
+.menu-items {
+    position: relative;
+    z-index: 1;
+}
+
+.menu-list {
+    width: 13rem;
+}

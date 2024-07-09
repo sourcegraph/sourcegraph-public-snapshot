@@ -10,6 +10,7 @@
     import Readme from '$lib/repo/Readme.svelte'
     import { createPromiseStore } from '$lib/utils'
     import { Alert } from '$lib/wildcard'
+    import OpenCodyAction from '$lib/repo/OpenCodyAction.svelte'
 
     import { getRepositoryPageContext } from '../../../../../context'
 
@@ -21,6 +22,7 @@
     const treeEntriesWithCommitInfo = createPromiseStore<TreeEntryWithCommitInfo[]>()
 
     $: treeEntriesWithCommitInfo.set(data.treeEntriesWithCommitInfo)
+    $: isCodyAvailable = data.isCodyAvailable
 
     afterNavigate(() => {
         repositoryContext.set({ directoryPath: data.filePath })
@@ -37,6 +39,9 @@
 <FileHeader type="tree" repoName={data.repoName} revision={data.revision} path={data.filePath}>
     <svelte:fragment slot="actions">
         <Permalink commitID={data.resolvedRevision.commitID} />
+        {#if isCodyAvailable}
+            <OpenCodyAction />
+        {/if}
     </svelte:fragment>
 </FileHeader>
 

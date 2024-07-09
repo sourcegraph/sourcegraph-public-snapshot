@@ -1,0 +1,141 @@
+<script lang="ts">
+    import { CodyWebChat, CodyWebChatProvider } from 'cody-web-experimental'
+    import { createElement } from 'react'
+    import { createRoot, type Root } from 'react-dom/client'
+    import { onDestroy } from 'svelte'
+    import type { CodySidebar_ResolvedRevision } from './CodySidebar.gql'
+
+    import 'cody-web-experimental/dist/style.css'
+    import { createLocalWritable } from '$lib/stores'
+
+    export let repository: CodySidebar_ResolvedRevision
+    export let filePath: string
+
+    const chatIDs = createLocalWritable<Record<string, string>>('cody.context-to-chat-ids', {})
+    let container: HTMLDivElement
+    let root: Root | null
+
+    $: if (container) {
+        render(repository, filePath)
+    }
+
+    onDestroy(() => {
+        root?.unmount()
+        root = null
+    })
+
+    function render(repository: CodySidebar_ResolvedRevision, filePath: string) {
+        if (!root) {
+            root = createRoot(container)
+        }
+        const chat = createElement(CodyWebChat)
+        const provider = createElement(
+            CodyWebChatProvider,
+            {
+                accessToken: '',
+                chatID: $chatIDs[`${repository.id}-${filePath}`] ?? null,
+                initialContext: {
+                    repositories: [repository],
+                    fileURL: filePath ? (!filePath.startsWith('/') ? `/${filePath}` : filePath) : undefined,
+                },
+                serverEndpoint: window.location.origin,
+                onNewChatCreated: (chatID: string) => {
+                    chatIDs.update(ids => {
+                        ids[`${repository.id}-${filePath}`] = chatID
+                        return ids
+                    })
+                },
+            },
+            [chat]
+        )
+        root.render(provider)
+    }
+</script>
+
+<div class="chat" bind:this={container} />
+
+<style lang="scss">
+    .chat {
+        --vscode-editor-background: var(--body-bg);
+        --vscode-editor-foreground: var(--body-color);
+        --vscode-input-background: var(--input-bg);
+        --vscode-input-foreground: var(--body-color);
+        --vscode-textLink-foreground: var(--primary);
+        --vscode-input-border: var(--border-color-2);
+        --vscode-inputOption-activeBackground: var(--search-input-token-filter);
+        --vscode-inputOption-activeForeground: var(--body-color);
+        --vscode-loading-dot-color: var(--body-color);
+        --vscode-textPreformat-foreground: var(--body-color);
+        --vscode-textPreformat-background: var(--secondary);
+        --vscode-sideBarSectionHeader-border: var(--border-color);
+        --vscode-editor-font-family: var(--code-font-family);
+        --vscode-editor-font-size: var(--code-font-size);
+        --mention-color-opacity: 100%;
+
+        line-height: 1.55;
+        flex: 1;
+        min-height: 0;
+
+        :global(h3) {
+            font-size: inherit;
+            margin: 0;
+        }
+
+        :global(ul) {
+            margin: 0;
+        }
+
+        :global(a) {
+            color: var(--link-color) !important;
+        }
+
+        :global(code) {
+            padding: 1px 3px;
+            border-radius: 0.25rem;
+            color: var(--vscode-textPreformat-foreground);
+            background-color: var(--vscode-textPreformat-background);
+        }
+
+        :global(pre) {
+            // Controls cody snippets (i.e. 'pre code' blocks)
+            --code-foreground: var(--body-color);
+            --code-background: transparent;
+
+            border-top-right-radius: 2px;
+            border-top-left-radius: 2px;
+
+            :global(code) {
+                // Overwrite the code styles set above
+                padding: initial;
+                background-color: inherit;
+            }
+        }
+
+        // Sourcegraph styles already add [hidden] display none
+        // and this breaks chat animation since there is no starting point
+        // with display:none element. Override this logic back to visibility: hidden;
+        // so chat animation would work again.
+        :global([hidden]) {
+            visibility: hidden;
+            display: block !important;
+        }
+
+        // Target all possible animated elements (radix accordions)
+        // and disable animation since there are flashes with exit
+        // animations.
+        :global(.tw-transition-all) {
+            animation: none !important;
+        }
+    }
+
+    :global([data-floating-ui-portal]) {
+        --vscode-quickInput-background: var(--secondary-2);
+        --vscode-widget-border: var(--border-color);
+        --vscode-list-activeSelectionBackground: var(--primary);
+        --vscode-foreground: var(--body-color);
+        --vscode-widget-shadow: rgba(36, 41, 54, 0.2);
+        // Turn off background color for picker popover element
+        // Which causes glitch effect in Cody Web
+        --vscode-sideBar-background: transparent;
+    }
+</style>

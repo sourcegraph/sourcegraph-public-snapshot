@@ -3,9 +3,13 @@ package http
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
 
@@ -118,5 +122,77 @@ func TestFrontendClient(t *testing.T) {
 
 	if d := cmp.Diff(want, got); d != "" {
 		t.Fatalf("mismatch (-want +got):\n%s", d)
+	}
+}
+
+func TestNewRequestWithVersion(t *testing.T) {
+	baseURL := "http://example.com"
+	patternTypeKeyword := query.SearchTypeKeyword
+
+	tests := []struct {
+		name          string
+		query         string
+		version       string
+		patternType   *query.SearchType
+		expectedQuery string
+	}{
+		{
+			name:          "No version, no patternType",
+			query:         "test",
+			version:       "",
+			patternType:   nil,
+			expectedQuery: "q=test",
+		},
+		{
+			name:          "Only version",
+			query:         "test",
+			version:       "V4",
+			patternType:   nil,
+			expectedQuery: "q=test&v=V4",
+		},
+		{
+			name:          "Only patternType",
+			query:         "test",
+			version:       "",
+			patternType:   &patternTypeKeyword,
+			expectedQuery: "q=test&t=keyword",
+		},
+		{
+			name:          "Version and patternType",
+			query:         "test query",
+			version:       "V3",
+			patternType:   &patternTypeKeyword,
+			expectedQuery: "q=test+query&v=V3&t=keyword",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := NewRequestWithVersion(baseURL, tt.query, tt.version, tt.patternType)
+			require.NoError(t, err)
+
+			// Check the request method
+			require.Equal(t, "GET", req.Method)
+
+			// Check the request URL
+			parsedURL, err := url.Parse(req.URL.String())
+			require.NoError(t, err)
+
+			expectedBaseURL, err := url.Parse(baseURL)
+			require.NoError(t, err)
+			require.Equal(t, expectedBaseURL.Host, parsedURL.Host)
+			require.Equal(t, expectedBaseURL.Scheme, parsedURL.Scheme)
+			require.Equal(t, "/search/stream", parsedURL.Path)
+
+			// Check the query parameters
+			queryParams := parsedURL.Query()
+			expectedParams, err := url.ParseQuery(tt.expectedQuery)
+			require.NoError(t, err)
+
+			require.Equal(t, expectedParams, queryParams)
+
+			// Check the Accept header
+			require.Equal(t, "text/event-stream", req.Header.Get("Accept"))
+		})
 	}
 }

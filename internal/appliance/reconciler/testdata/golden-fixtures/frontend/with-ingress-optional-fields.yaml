@@ -330,6 +330,9 @@ resources:
               ingressClassName: an-ingress-class
               tlsSecret: ingress-tls-secret
 
+          grafana:
+            disabled: true
+
           gitServer:
             disabled: true
 

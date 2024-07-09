@@ -1,24 +1,27 @@
 import React, { useCallback, useRef, useState } from 'react'
 
 import type { ApolloError } from '@apollo/client'
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiEye } from '@mdi/js'
+import { mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline, mdiDelete, mdiEye, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import type {
+import {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
     CheckBatchChangesCredentialVariables,
+    GitHubAppByIDFields,
+    GitHubAppKind,
     UserAreaUserFields,
 } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
 import { CHECK_BATCH_CHANGES_CREDENTIAL } from './backend'
 import { CheckButton } from './CheckButton'
+import { GitHubAppControls } from './GitHubAppControls'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -28,6 +31,7 @@ export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
     refetchAll: () => void
     user: UserAreaUserFields | null
+    gitHubAppKind: GitHubAppKind
 }
 
 type OpenModal = 'add' | 'view' | 'delete'
@@ -36,6 +40,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     node,
     refetchAll,
     user,
+    gitHubAppKind,
 }) => {
     const [checkCredError, setCheckCredError] = useState<ApolloError | undefined>()
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
@@ -90,6 +95,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
         logger.error(checkCredError.message)
     }
 
+    const gitHubApp: Pick<GitHubAppByIDFields, 'id' | 'name' | 'appURL' | 'logo' | 'appID'> | null =
+        gitHubAppKind === GitHubAppKind.COMMIT_SIGNING
+            ? node.commitSigningConfiguration
+            : node.credential?.gitHubApp ?? null
+
     return (
         <>
             <li
@@ -138,36 +148,46 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         {isEnabled ? (
-                            <>
-                                <CheckButton
-                                    label={`Check credentials for ${codeHostDisplayName}`}
-                                    onClick={onClickCheck}
-                                    loading={checkCredLoading}
-                                    successMessage={checkCredData ? 'Credential is valid' : undefined}
-                                    failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
+                            gitHubApp ? (
+                                <GitHubAppControls
+                                    baseURL={node.externalServiceURL}
+                                    config={gitHubApp}
+                                    refetch={refetchAll}
+                                    gitHubAppKind={gitHubAppKind}
+                                    credentialID={node.credential?.id}
                                 />
+                            ) : (
+                                <>
+                                    <CheckButton
+                                        label={`Check credentials for ${codeHostDisplayName}`}
+                                        onClick={onClickCheck}
+                                        loading={checkCredLoading}
+                                        successMessage={checkCredData ? 'Credential is valid' : undefined}
+                                        failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
+                                    />
 
-                                <Button
-                                    className="ml-2 text-nowrap test-code-host-connection-node-btn-remove"
-                                    aria-label={`Remove credentials for ${codeHostDisplayName}`}
-                                    onClick={onClickRemove}
-                                    variant="danger"
-                                    size="sm"
-                                    ref={buttonReference}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
-                                </Button>
-                                {node.requiresSSH && (
                                     <Button
-                                        onClick={onClickView}
-                                        className="text-nowrap ml-2"
-                                        variant="secondary"
+                                        className="ml-2 text-nowrap test-code-host-connection-node-btn-remove"
+                                        aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                        onClick={onClickRemove}
+                                        variant="link"
                                         size="sm"
+                                        ref={buttonReference}
                                     >
-                                        <Icon aria-hidden={true} svgPath={mdiEye} /> View public key
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                                     </Button>
-                                )}
-                            </>
+                                    {node.requiresSSH && (
+                                        <Button
+                                            onClick={onClickView}
+                                            className="text-nowrap ml-2"
+                                            variant="secondary"
+                                            size="sm"
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiEye} /> View public key
+                                        </Button>
+                                    )}
+                                </>
+                            )
                         ) : (
                             /*
                                 a11y-ignore
@@ -178,11 +198,11 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 className="a11y-ignore text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
                                 aria-label={`Add credentials for ${codeHostDisplayName}`}
-                                variant="success"
+                                variant="secondary"
                                 ref={buttonReference}
                                 size="sm"
                             >
-                                Add credentials
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add credentials
                             </Button>
                         )}
                     </div>

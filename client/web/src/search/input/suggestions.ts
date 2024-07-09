@@ -16,7 +16,7 @@ import {
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { gql } from '@sourcegraph/http-client'
-import { getUserSearchContextNamespaces } from '@sourcegraph/shared/src/search'
+import { getUserSearchContextNamespaces } from '@sourcegraph/shared/src/search/backend'
 import { getRelevantTokens } from '@sourcegraph/shared/src/search/query/analyze'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 import {

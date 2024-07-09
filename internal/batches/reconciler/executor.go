@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -197,7 +198,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		return afterDone, errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(remoteRepo)
+	pushConf, err := css.GitserverPushConfig(ctx, remoteRepo)
 	if err != nil {
 		return afterDone, err
 	}
@@ -593,7 +594,9 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential, repo)
+	css, err := sourcer.ForChangeset(ctx, s, ch, repo, sources.SourcerOpts{
+		AuthenticationStrategy: sources.AuthenticationStrategyUserCredential,
+	})
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -651,7 +654,11 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
-		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, e.remote, sources.SourcerOpts{
+			AuthenticationStrategy: sources.AuthenticationStrategyGitHubApp,
+			GitHubAppKind:          ghtypes.CommitSigningGitHubAppKind,
+			AsNonCredential:        true,
+		})
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:

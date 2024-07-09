@@ -2,8 +2,6 @@
     import type { ComponentProps } from 'svelte'
     import { writable } from 'svelte/store'
 
-    import { getButtonClassName } from '@sourcegraph/wildcard'
-
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import { sizeToFit } from '$lib/dom'
@@ -18,6 +16,7 @@
     import { default as TabsHeader } from '$lib/TabsHeader.svelte'
     import { TELEMETRY_RECORDER } from '$lib/telemetry'
     import { DropdownMenu, MenuLink } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
 
     import type { LayoutData } from './$types'
     import { setRepositoryPageContext, type RepositoryPageContext } from './context'
@@ -186,6 +185,10 @@
 <slot />
 
 <style lang="scss">
+    :root {
+        --repo-header-height: 2rem;
+    }
+
     .search-header {
         width: 100%;
         z-index: 1;

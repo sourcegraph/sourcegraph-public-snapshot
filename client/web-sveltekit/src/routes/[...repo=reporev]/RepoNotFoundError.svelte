@@ -22,3 +22,10 @@
         <p>To access this repository, contact the Sourcegraph admin.</p>
     {/if}
 </HeroPage>
+
+<style lang="scss">
+    p {
+        text-align: center;
+        max-width: var(--viewport-md);
+    }
+</style>
