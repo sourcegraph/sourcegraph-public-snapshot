@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	githubapps_auth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -76,6 +77,20 @@ func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.
 		au:     auther,
 		client: github.NewV4Client(urn, apiURL, auther, cli),
 	}, nil
+}
+
+func (s GitHubSource) AuthenticationStrategy() AuthenticationStrategy {
+	// If the authenticator isn't set, we default to user credentials.
+	if s.au == nil {
+		return AuthenticationStrategyUserCredential
+	}
+
+	switch s.au.(type) {
+	case *githubapps_auth.GitHubAppAuthenticator:
+	case *githubapps_auth.InstallationAuthenticator:
+		return AuthenticationStrategyGitHubApp
+	}
+	return AuthenticationStrategyUserCredential
 }
 
 func (s GitHubSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
