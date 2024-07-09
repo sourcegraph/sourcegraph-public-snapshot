@@ -66,7 +66,7 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
     >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
 
     return config ? (
-        <>
+        <div>
             {removeModalOpen && (
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
@@ -140,11 +140,15 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
                 </NodeAlert>
             )}
             {!checkCredLoading && (checkCredResult || checkCredErr) && (
-                <NodeAlert variant={checkCredErr ? 'danger' : 'success'}>
-                    <span className="font-weight-bold">"{config.name}"</span> is {checkCredErr ? 'not' : ''} accessible.
-                </NodeAlert>
+                <>
+                    <br />
+                    <NodeAlert variant={checkCredErr ? 'danger' : 'success'}>
+                        <span className="font-weight-bold">{config.name}</span> is {checkCredErr ? 'not' : ''}{' '}
+                        accessible.
+                    </NodeAlert>
+                </>
             )}
-        </>
+        </div>
     ) : (
         <ButtonLink to={createURL} className="ml-auto text-nowrap" variant="success" as={Link} size="sm">
             Create GitHub App

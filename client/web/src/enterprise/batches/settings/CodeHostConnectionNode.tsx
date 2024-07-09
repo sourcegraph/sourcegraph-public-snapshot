@@ -146,7 +146,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                             </Badge>
                         )}
                     </H3>
-                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
+                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline flex-wrap">
                         {isEnabled ? (
                             gitHubApp ? (
                                 <GitHubAppControls
