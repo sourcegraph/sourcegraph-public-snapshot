@@ -17,19 +17,23 @@ import (
 )
 
 // Experimental: some additional networking options to account for some odd
-// behaviour exhibited in Cloud Run.
+// behaviour exhibited in Cloudflare when using gRPC.
 var cloudRunDialOptions = []grpc.DialOption{
 	grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		// Keep idle connections alive by pinging in this internval.
+		// Keep idle connections alive by pinging in this interval.
 		// Default: Infinity.
-		Time: 30 * time.Second,
+		Time: 20 * time.Second,
+		// Keepalive timeout duration.
+		// Default: 20 seconds.
+		Timeout: 10 * time.Second,
 		// Ensure idle connections remain alive even if there is no traffic.
 		// Default: False.
 		PermitWithoutStream: true,
 	}),
 	// Ensure idle connections are not retained for a long time, to avoid
 	// potential networking issues.
-	grpc.WithIdleTimeout(5 * time.Minute),
+	// Default: 30 minutes
+	grpc.WithIdleTimeout(1 * time.Minute),
 }
 
 // Dial establishes a connection to the Enterprise Portal gRPC service with

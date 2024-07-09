@@ -2,7 +2,7 @@ import { startCase } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchMode } from '@sourcegraph/shared/src/search'
+import { SearchMode } from '@sourcegraph/shared/src/search/types'
 import type { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
 import type { AuthenticatedUser } from '../auth'

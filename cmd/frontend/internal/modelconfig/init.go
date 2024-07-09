@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/modelconfig/embedded"
-	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -50,18 +49,10 @@ func Init(
 		return errors.New("embedded model data is missing or corrupt")
 	}
 
-	// TODO(chrsmith): Load the newer form of LLM model configuration data. For now, we just
-	// load the older-stype completions configuration data if available.
-	var siteModelConfig *types.SiteModelConfiguration
-	if compConfig := conf.GetCompletionsConfig(initialSiteConfig); compConfig == nil {
-		logger.Info("ignoring site modelconfig data, completions config not set")
-	} else {
-		logger.Info("converting completions configuration data", log.String("apiProvider", string(compConfig.Provider)))
-		siteModelConfig, err = convertCompletionsConfig(compConfig)
-		if err != nil {
-			logger.Error("error loading LLM model configuration data via site config", log.Error(err))
-			return errors.Wrap(err, "converting completions config")
-		}
+	siteModelConfig, err := maybeGetSiteModelConfiguration(logger, initialSiteConfig)
+	if err != nil {
+		logger.Error("error loading LLM model configuration data via site config", log.Error(err))
+		return errors.Wrap(err, "loading LLM configuration info")
 	}
 
 	// Now build the initial view of the Sourcegraph instance's model configuration using this data.
@@ -87,20 +78,15 @@ func Init(
 
 		latestSiteConfig := conf.Get().SiteConfiguration
 
-		// TODO(chrsmith): Load the newer form of LLM model configuration data. For now, we just
-		// load the older-stype completions configuration data if available.
-		var latestSiteModelConfiguration *types.SiteModelConfiguration
-		if compConfig := conf.GetCompletionsConfig(latestSiteConfig); compConfig != nil {
-			latestSiteModelConfiguration, err = convertCompletionsConfig(compConfig)
-			if err != nil {
-				// BUG: If the site configuration data is somehow bad, we silently ignore
-				// the changes. This is bad, because there is no signal to the Sourcegraph
-				// admin that their configuration is invalid. Hopefully we can put the necessary
-				// validation logic inside the site configuration validation checks, so
-				// that they will be prevented from saving invalid config data.
-				logger.Error("errror loading updated site configuration", log.Error(err))
-				latestSiteModelConfiguration = nil
-			}
+		latestSiteModelConfiguration, err := maybeGetSiteModelConfiguration(logger, latestSiteConfig)
+		if err != nil {
+			// BUG: If the site configuration data is somehow bad, we silently ignore
+			// the changes. This is bad, because there is no signal to the Sourcegraph
+			// admin that their configuration is invalid. Hopefully we can put the necessary
+			// validation logic inside the site configuration validation checks, so
+			// that they will be prevented from saving invalid config data.
+			logger.Error("error loading updated site configuration", log.Error(err))
+			latestSiteModelConfiguration = nil
 		}
 
 		// Update and rebuild the LLM model configuration.

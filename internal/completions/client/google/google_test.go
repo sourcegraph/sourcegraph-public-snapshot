@@ -70,66 +70,62 @@ func TestGetAPIURL(t *testing.T) {
 		accessToken: "test-token",
 	}
 
-	t.Run("valid v1 endpoint", func(t *testing.T) {
-		params := types.CompletionRequestParameters{
-			Model: "test-model",
+	buildRequestForModel := func(model string) types.CompletionRequest {
+		return types.CompletionRequest{
+			Parameters: types.CompletionRequestParameters{
+				Model: model,
+			},
 		}
-		url := client.getAPIURL(params, false).String()
+	}
+
+	t.Run("valid v1 endpoint", func(t *testing.T) {
+		req := buildRequestForModel("test-model")
+		url := client.getAPIURL(req, false).String()
 		expected := "https://generativelanguage.googleapis.com/v1/models/test-model:generateContent?key=test-token"
 		require.Equal(t, expected, url)
 	})
 
 	//
 	t.Run("valid endpoint for Vertex AI", func(t *testing.T) {
-		params := types.CompletionRequestParameters{
-			Model: "gemini-1.5-pro",
-		}
+		req := buildRequestForModel("gemini-1.5-pro")
 		c := &googleCompletionStreamClient{
 			endpoint:    "https://vertex-ai.example.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models",
 			accessToken: "test-token",
 		}
-		url := c.getAPIURL(params, true).String()
+		url := c.getAPIURL(req, true).String()
 		expected := "https://vertex-ai.example.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/gemini-1.5-pro:streamGenerateContent"
 		require.Equal(t, expected, url)
 	})
 
 	t.Run("valid custom endpoint", func(t *testing.T) {
-		params := types.CompletionRequestParameters{
-			Model: "test-model",
-		}
+		req := buildRequestForModel("test-model")
 		c := &googleCompletionStreamClient{
 			endpoint:    "https://example.com/api/models",
 			accessToken: "test-token",
 		}
-		url := c.getAPIURL(params, true).String()
+		url := c.getAPIURL(req, true).String()
 		expected := "https://example.com/api/models/test-model:streamGenerateContent"
 		require.Equal(t, expected, url)
 	})
 
 	t.Run("invalid endpoint", func(t *testing.T) {
 		client.endpoint = "://invalid"
-		params := types.CompletionRequestParameters{
-			Model: "test-model",
-		}
-		url := client.getAPIURL(params, false).String()
+		req := buildRequestForModel("test-model")
+		url := client.getAPIURL(req, false).String()
 		expected := "https://generativelanguage.googleapis.com/v1beta/models/test-model:generateContent?key=test-token"
 		require.Equal(t, expected, url)
 	})
 
 	t.Run("streaming", func(t *testing.T) {
-		params := types.CompletionRequestParameters{
-			Model: "test-model",
-		}
-		url := client.getAPIURL(params, true).String()
+		req := buildRequestForModel("test-model")
+		url := client.getAPIURL(req, true).String()
 		expected := "https://generativelanguage.googleapis.com/v1beta/models/test-model:streamGenerateContent?alt=sse&key=test-token"
 		require.Equal(t, expected, url)
 	})
 
 	t.Run("empty model", func(t *testing.T) {
-		params := types.CompletionRequestParameters{
-			Model: "",
-		}
-		url := client.getAPIURL(params, false).String()
+		req := buildRequestForModel("")
+		url := client.getAPIURL(req, false).String()
 		expected := "https://generativelanguage.googleapis.com/v1beta/models:generateContent?key=test-token"
 		require.Equal(t, expected, url)
 	})

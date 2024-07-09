@@ -60,6 +60,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const success = searchParams.get('success') === 'true'
     const appName = searchParams.get('app_name')
     const setupError = searchParams.get('error')
+    const gitHubAppKind = searchParams.get('kind')
     const shouldShowError = !success && setupError && !readOnly && kind === GitHubAppKind.COMMIT_SIGNING
     return (
         <Container>
@@ -80,11 +81,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                {success && !readOnly && (
+                {success && !readOnly && gitHubAppKind === GitHubAppKind.COMMIT_SIGNING && (
                     <DismissibleAlert
                         className="mb-3"
                         variant="success"
-                        partialStorageKey="batch-changes-commit-signing-integration-success"
+                        partialStorageKey={`batch-changes-commit-signing-integration-success-${appName}`}
                     >
                         GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
                     </DismissibleAlert>

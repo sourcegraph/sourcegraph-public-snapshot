@@ -97,7 +97,7 @@
     let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
 
-    $: ({ revision = '', parentPath, repoName, resolvedRevision } = data)
+    $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
     $: lastCommitQuery = data.lastCommit
@@ -256,7 +256,7 @@
                     <Panel order={1} id="main-content-panel">
                         <slot />
                     </Panel>
-                    {#if $rightPanelOpen}
+                    {#if $isCodyAvailable && $rightPanelOpen}
                         <PanelResizeHandle id="right-sidebar-resize-handle" />
                         <Panel id="right-sidebar-panel" order={2} minSize={20} maxSize={70}>
                             <CodySidebar

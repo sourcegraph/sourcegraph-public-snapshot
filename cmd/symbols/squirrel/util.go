@@ -260,7 +260,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 }
 
 func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) { //nolint:unparam
-	root, err := s.parse(context.Background(), repoCommitPath)
+	root, err := s.parse(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}

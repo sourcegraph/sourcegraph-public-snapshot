@@ -81,6 +81,7 @@ func dialRedis(rawEndpoint string) (redis.Conn, error) {
 var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
 	MaxIdle:     3,
 	IdleTimeout: 240 * time.Second,
+	MaxActive:   1000,
 })
 
 // Store is a redis configured for persisting data. Do not abuse this pool,
@@ -90,4 +91,5 @@ var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
 var Store = NewKeyValue(addresses.Store, &redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
+	MaxActive:   1000,
 })
