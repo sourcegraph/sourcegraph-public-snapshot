@@ -34,7 +34,8 @@ type openAIChatCompletionStreamClient struct {
 func (c *openAIChatCompletionStreamClient) Complete(
 	ctx context.Context,
 	logger log.Logger,
-	request types.CompletionRequest) (*types.CompletionResponse, error) {
+	request types.CompletionRequest,
+) (*types.CompletionResponse, error) {
 	feature := request.Feature
 	requestParams := request.Parameters
 
@@ -84,7 +85,8 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
 	logger log.Logger,
 	request types.CompletionRequest,
-	sendEvent types.SendCompletionEvent) error {
+	sendEvent types.SendCompletionEvent,
+) error {
 	feature := request.Feature
 	requestParams := request.Parameters
 
@@ -104,6 +106,7 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	if err != nil {
 		return err
 	}
+
 	dec := NewDecoder(resp.Body)
 	var content string
 	var ev types.CompletionResponse
@@ -292,72 +295,9 @@ func (c *openAIChatCompletionStreamClient) makeCompletionRequest(ctx context.Con
 	return resp, nil
 }
 
-// openAIChatCompletionsRequestParameters request object for openAI chat endpoint https://platform.openai.com/docs/api-reference/chat/create
-type openAIChatCompletionsRequestParameters struct {
-	Model            string             `json:"model"`                       // request.Model
-	Messages         []message          `json:"messages"`                    // request.Messages
-	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
-	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
-	N                int                `json:"n,omitempty"`                 // always 1
-	Stream           bool               `json:"stream,omitempty"`            // request.Stream
-	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
-	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
-	User             string             `json:"user,omitempty"`              // unused
-}
-
-// openAICompletionsRequestParameters payload for openAI completions endpoint https://platform.openai.com/docs/api-reference/completions/create
-type openAICompletionsRequestParameters struct {
-	Model            string             `json:"model"`                       // request.Model
-	Prompt           string             `json:"prompt"`                      // request.Messages[0] - formatted prompt expected to be the only message
-	Temperature      float32            `json:"temperature,omitempty"`       // request.Temperature
-	TopP             float32            `json:"top_p,omitempty"`             // request.TopP
-	N                int                `json:"n,omitempty"`                 // always 1
-	Stream           bool               `json:"stream,omitempty"`            // request.Stream
-	Stop             []string           `json:"stop,omitempty"`              // request.StopSequences
-	MaxTokens        int                `json:"max_tokens,omitempty"`        // request.MaxTokensToSample
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`  // unused
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"` // unused
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`        // unused
-	Suffix           string             `json:"suffix,omitempty"`            // unused
-	User             string             `json:"user,omitempty"`              // unused
-}
-
-type message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type openaiUsage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type openaiChoiceDelta struct {
-	Content string `json:"content"`
-}
-
-type openaiChoice struct {
-	Delta        openaiChoiceDelta `json:"delta"`
-	Role         string            `json:"role"`
-	Text         string            `json:"text"`
-	FinishReason string            `json:"finish_reason"`
-}
-
-type openaiResponse struct {
-	// Usage is only available for non-streaming requests.
-	Usage   openaiUsage    `json:"usage"`
-	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
-}
-
 func getPrompt(messages []types.Message) (string, error) {
 	if l := len(messages); l != 1 {
 		return "", errors.Errorf("expected to receive exactly one message with the prompt (got %d)", l)
 	}
-
 	return messages[0].Text, nil
 }
