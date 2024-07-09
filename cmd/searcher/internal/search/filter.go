@@ -13,41 +13,42 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewFilter calls gitserver to retrieve the ignore-file. If the file doesn't
-// exist we return an empty ignore.Matcher.
-func NewFilter(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
-	r, err := client.NewFileReader(ctx, repo, commit, ignore.IgnoreFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// We do not ignore anything if the ignore file does not exist.
-			return func(*tar.Header) bool {
-				return false
-			}, nil
+// NewFilterFactory creates a filter function that calls gitserver to retrieve the
+// ignore-file. If the file doesn't exist we return an empty ignore.Matcher.
+func NewFilterFactory(client gitserver.Client) func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
+	return func(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
+		r, err := client.NewFileReader(ctx, repo, commit, ignore.IgnoreFile)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// We do not ignore anything if the ignore file does not exist.
+				return func(*tar.Header) bool {
+					return false
+				}, nil
+			}
+
+			return nil, err
+		}
+		defer r.Close()
+
+		ig, err := ignore.ParseIgnoreFile(r)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, err
+		return func(header *tar.Header) bool {
+			if header.Size > maxFileSize {
+				return true
+			}
+			return ig.Match(header.Name)
+		}, nil
 	}
-	defer r.Close()
-
-	ig, err := ignore.ParseIgnoreFile(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(header *tar.Header) bool {
-		if header.Size > maxFileSize {
-			return true
-		}
-		return ig.Match(header.Name)
-	}, nil
 }
 
-func newSearchableFilter(c *schema.SiteConfiguration) *searchableFilter {
+func newSearchableFilter(searchLargeFiles []string) *searchableFilter {
 	return &searchableFilter{
-		SearchLargeFiles: c.SearchLargeFiles,
+		SearchLargeFiles: searchLargeFiles,
 	}
 }
 

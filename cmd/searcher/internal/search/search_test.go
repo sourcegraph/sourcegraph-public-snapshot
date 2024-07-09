@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -392,7 +391,7 @@ file contains invalid utf8 � characters
 
 	zoektURL := newZoekt(t, &zoekt.Repository{}, nil)
 	s := newStore(t, files)
-	s.FilterTar = func(_ context.Context, _ gitserver.Client, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
+	s.FilterTar = func(_ context.Context, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil
@@ -403,15 +402,13 @@ file contains invalid utf8 � characters
 		t.Run(fmt.Sprintf("withHybridSearch=%t", withHybridSearch), func(t *testing.T) {
 			service := &search.Service{
 				Store:               s,
-				Log:                 s.Log,
+				Logger:              s.Logger,
 				Indexed:             backend.ZoektDial(zoektURL),
 				DisableHybridSearch: !withHybridSearch,
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
-			proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
-				Service: service,
-			})
+			proto.RegisterSearcherServiceServer(grpcServer, search.NewGRPCServer(service, false))
 
 			handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
@@ -434,7 +431,6 @@ file contains invalid utf8 � characters
 
 					req := protocol.Request{
 						Repo:            "foo",
-						URL:             "u",
 						Commit:          "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 						PatternInfo:     test.arg,
 						FetchTimeout:    fetchTimeoutForCI(t),
@@ -475,7 +471,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Empty pattern and no file filters
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -486,7 +481,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad regexp
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -499,7 +493,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Unsupported regex
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -511,7 +504,6 @@ func TestSearch_badrequest(t *testing.T) {
 
 		// No repo
 		{
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -523,7 +515,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// No commit
 		{
 			Repo: "foo",
-			URL:  "u",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
 					Value: "test",
@@ -534,7 +525,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Non-absolute commit
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "HEAD",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -546,7 +536,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad include glob
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -559,7 +548,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad exclude glob
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -572,7 +560,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad include regexp
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -585,7 +572,6 @@ func TestSearch_badrequest(t *testing.T) {
 		// Bad exclude regexp
 		{
 			Repo:   "foo",
-			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Query: &protocol.PatternNode{
@@ -600,14 +586,12 @@ func TestSearch_badrequest(t *testing.T) {
 	store := newStore(t, nil)
 	service := &search.Service{
 		Store:   store,
-		Log:     store.Log,
+		Logger:  store.Logger,
 		Indexed: backend.ZoektDial(zoektURL),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
-		Service: service,
-	})
+	proto.RegisterSearcherServiceServer(grpcServer, search.NewGRPCServer(service, false))
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(http.NotFound))
 
@@ -713,7 +697,6 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		GitserverClient: gitserver.NewTestClient(t),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {
@@ -730,8 +713,13 @@ func newStore(t *testing.T, files map[string]struct {
 			}()
 			return r, nil
 		},
-		Path: t.TempDir(),
-		Log:  logtest.Scoped(t),
+		FilterTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (search.FilterFunc, error) {
+			return func(hdr *tar.Header) bool {
+				return false
+			}, nil
+		},
+		Path:   t.TempDir(),
+		Logger: logtest.Scoped(t),
 
 		ObservationCtx: observation.TestContextTB(t),
 	}
