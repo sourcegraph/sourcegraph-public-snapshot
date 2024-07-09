@@ -145,7 +145,7 @@ func newCompletionsHandler(
 		accessToken := completionsConfig.AccessToken
 		// TODO(slimsag): self-hosted-models: Note we are disabling Cody Gateway if "modelConfiguration" is in use currently.
 		// this logic only handles Cody Enterprise with Self-hosted models
-		isProviderCodyGateway := conf.Get().SiteConfig().ModelConfiguration == nil && completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		isProviderCodyGateway := !conf.UseExperimentalModelConfiguration() && completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
 		if isDotcom && isProviderCodyGateway {
 			// Note: if we have no Authorization header, that's fine too, this will return an error
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
@@ -181,7 +181,7 @@ func newCompletionsHandler(
 		}
 
 		var modelConfigInfo *types.ModelConfigInfo
-		if conf.Get().SiteConfig().ModelConfiguration != nil {
+		if conf.UseExperimentalModelConfiguration() {
 			// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 			modelConfig, err := modelconfig.Get().Get()
 			if err != nil {

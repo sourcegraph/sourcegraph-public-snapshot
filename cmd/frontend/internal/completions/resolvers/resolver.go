@@ -55,7 +55,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	}
 
 	var modelConfigInfo *types.ModelConfigInfo
-	if conf.Get().SiteConfig().ModelConfiguration != nil {
+	if conf.UseExperimentalModelConfiguration() {
 		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 		modelConfig, err := modelconfig.Get().Get()
 		if err != nil {

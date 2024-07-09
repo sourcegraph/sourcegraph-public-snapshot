@@ -37,7 +37,7 @@ func Get(
 func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string, modelConfigInfo *types.ModelConfigInfo) (types.CompletionsClient, error) {
 	tokenManager := tokenusage.NewManager()
 
-	if conf.Get().SiteConfig().ModelConfiguration != nil {
+	if conf.UseExperimentalModelConfiguration() {
 		// Using the new "modelConfiguration" site config
 		// TODO(slimsag): self-hosted-models: this logic only handles Cody Enterprise with Self-hosted models
 		// Only in this case do we have modelConfigInfo != nil

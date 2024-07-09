@@ -27,7 +27,7 @@ type getModelFn func(ctx context.Context, requestParams types.CodyCompletionRequ
 
 func getCodeCompletionModelFn() getModelFn {
 	return func(_ context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
-		if modelConfig := conf.Get().SiteConfig().ModelConfiguration; modelConfig != nil {
+		if conf.UseExperimentalModelConfiguration() {
 			// Using new "modelConfiguration" site config.
 			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
 			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
@@ -61,7 +61,7 @@ func getCodeCompletionModelFn() getModelFn {
 
 func getChatModelFn(db database.DB) getModelFn {
 	return func(ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
-		if modelConfig := conf.Get().SiteConfig().ModelConfiguration; modelConfig != nil {
+		if conf.UseExperimentalModelConfiguration() {
 			// Using new "modelConfiguration" site config.
 			// TODO(slimsag): self-hosted-models: currently this logic only handles Cody Enterprise with Self-hosted models
 			if err := modelconfig.ValidateModelRef(modelconfigSDK.ModelRef(requestParams.Model)); err != nil {
