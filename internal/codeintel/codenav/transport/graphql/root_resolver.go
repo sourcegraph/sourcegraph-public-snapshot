@@ -28,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var ErrNotEnabled = errors.New("experimentalFeatures.scipBasedAPIs is not enabled")
+
 type rootResolver struct {
 	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
@@ -118,7 +120,7 @@ func (r *rootResolver) CodeGraphData(ctx context.Context, opts *resolverstubs.Co
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, nil
+		return nil, ErrNotEnabled
 	}
 
 	makeResolvers := func(prov resolverstubs.CodeGraphDataProvenance) ([]resolverstubs.CodeGraphDataResolver, error) {
@@ -198,7 +200,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	ctx, _, endObservation := r.operations.usagesForSymbol.WithErrors(ctx, &err, observation.Args{Attrs: unresolvedArgs.Attrs()})
 
 	if !conf.SCIPBasedAPIsEnabled() {
-		return nil, nil
+		return nil, ErrNotEnabled
 	}
 
 	numPreciseResults := 0
@@ -219,6 +221,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 	}
 	remainingCount := int(args.RemainingCount)
 	provsForSCIPData := args.Symbol.ProvenancesForSCIPData()
+	linesGetter := newCachedLinesGetter(r.gitserverClient, 5*1024*1024 /* 5MB */)
 	usageResolvers := []resolverstubs.UsageResolver{}
 
 	if provsForSCIPData.Precise {
@@ -248,7 +251,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range syntacticResult.Matches {
-				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSyntacticUsageResolver(result, args.Repo, args.CommitID, linesGetter))
 			}
 			numSyntacticResults = len(syntacticResult.Matches)
 			remainingCount = remainingCount - numSyntacticResults
@@ -268,7 +271,7 @@ func (r *rootResolver) UsagesForSymbol(ctx context.Context, unresolvedArgs *reso
 			}
 		} else {
 			for _, result := range results {
-				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID))
+				usageResolvers = append(usageResolvers, NewSearchBasedUsageResolver(result, args.Repo, args.CommitID, linesGetter))
 			}
 		}
 	}
