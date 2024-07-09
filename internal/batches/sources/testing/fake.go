@@ -36,6 +36,10 @@ func (s *fakeSourcer) ForExternalService(_ context.Context, _ sources.SourcerSto
 	return s.source, s.err
 }
 
+func (s *fakeSourcer) AuthenticationStrategy() sources.AuthenticationStrategy {
+	return s.source.AuthenticationStrategy()
+}
+
 // FakeChangesetSource is a fake implementation of the ChangesetSource
 // interface to be used in tests.
 type FakeChangesetSource struct {
@@ -103,6 +107,8 @@ type FakeChangesetSource struct {
 
 	// IsArchivedPushErrorTrue is returned when IsArchivedPushError is invoked.
 	IsArchivedPushErrorTrue bool
+
+	authenticationStrategy sources.AuthenticationStrategy
 }
 
 var (
@@ -110,6 +116,10 @@ var (
 	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
 	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
 )
+
+func (s *FakeChangesetSource) AuthenticationStrategy() sources.AuthenticationStrategy {
+	return s.authenticationStrategy
+}
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
