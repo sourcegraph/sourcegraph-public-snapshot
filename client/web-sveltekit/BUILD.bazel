@@ -92,6 +92,7 @@ BUILD_DEPS = [
     ":node_modules/@iconify-json/devicon-plain",
     ":node_modules/@iconify-json/file-icons",
     ":node_modules/@iconify-json/lucide",
+    ":node_modules/@iconify-json/mdi",
     ":node_modules/@iconify-json/ph",
     ":node_modules/@iconify-json/simple-icons",
     ":node_modules/@melt-ui/svelte",
