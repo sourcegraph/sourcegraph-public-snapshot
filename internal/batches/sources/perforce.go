@@ -40,7 +40,7 @@ func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, sv
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.
-func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+func (s PerforceSource) GitserverPushConfig(_ context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
 	if s.perforceCreds == nil {
 		return nil, errors.New("no credentials set for Perforce Source")
 	}

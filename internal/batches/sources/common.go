@@ -64,7 +64,7 @@ type ForkableChangesetSource interface {
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
 	// commits to the code host.
-	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
+	GitserverPushConfig(context.Context, *types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.

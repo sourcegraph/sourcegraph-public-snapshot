@@ -61,8 +61,8 @@ func NewBitbucketServerSource(ctx context.Context, svc *types.ExternalService, c
 	}, nil
 }
 
-func (s BitbucketServerSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.au)
+func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(ctx, repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
