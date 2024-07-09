@@ -211,10 +211,12 @@ func TestGitCommitResolver(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
 
+		body, err := commitResolver.Body(ctx)
+		require.NoError(t, err)
 		if multiLine {
-			body, err := commitResolver.Body(ctx)
-			require.NoError(t, err)
 			require.Equal(t, "Multi-line message", *body)
+		} else {
+			require.Empty(t, *body)
 		}
 
 		f, err := ioutil.TempFile("/tmp", "foo")

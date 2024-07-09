@@ -186,11 +186,11 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	if p4Body := maybeTransformP4Body(ctx, r.repoResolver, commit); p4Body != nil {
-		return p4Body, nil
+	body := commit.Message.Body()
+	if r.repoResolver.isPerforceDepot(ctx) {
+		return maybeTransformP4Body(body), nil
 	}
 
-	body := commit.Message.Body()
 	if body == "" {
 		return nil, nil
 	}
