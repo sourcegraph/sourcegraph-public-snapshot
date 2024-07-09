@@ -2877,8 +2877,8 @@ def go_dependencies():
         name = "com_github_gorilla_schema",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/gorilla/schema",
-        sum = "h1:YufUaxZYCKGFuAq3c96BOhjgd5nmXiOY9NGzF247Tsc=",
-        version = "v1.2.0",
+        sum = "h1:jUg5hUjCSDZpNGLuXQOgIWGdlgrIdYvgQ0wZtdK1M3E=",
+        version = "v1.4.1",
     )
     go_repository(
         name = "com_github_gorilla_securecookie",
