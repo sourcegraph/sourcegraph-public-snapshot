@@ -343,9 +343,12 @@ var allCodeCompletionModels = slices.Concat([]string{"anthropic/" + anthropic.Cl
 	"fireworks/" + fireworks.StarcoderTwo15b,
 	"fireworks/" + fireworks.StarcoderTwo7b,
 	"fireworks/" + fireworks.DeepseekCoder1p3b,
+	"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
 	"fireworks/" + fireworks.DeepseekCoder7b},
 	prefix("fireworks/", fireworks.FineTunedMixtralModelVariants),
-	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants))
+	prefix("fireworks/", fireworks.FineTunedLlamaModelVariants),
+	prefix("fireworks/", fireworks.FineTunedDeepseekLogsTrainedModelVariants),
+	prefix("fireworks/", fireworks.FineTunedDeepseekStackTrainedModelVariants))
 
 func allowedModels(scope types.CompletionsFeature, isProUser bool) []string {
 	switch scope {

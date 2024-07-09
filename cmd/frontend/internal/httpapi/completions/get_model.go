@@ -92,6 +92,7 @@ func isAllowedCodeCompletionModel(model string) bool {
 		"fireworks/" + fireworks.FineTunedFIMLangSpecificMixtral,
 		"fireworks/" + fireworks.DeepseekCoder1p3b,
 		"fireworks/" + fireworks.DeepseekCoder7b,
+		"fireworks/" + fireworks.DeepseekCoderV2LiteBase,
 		"anthropic/claude-instant-1.2",
 		"anthropic/claude-3-haiku-20240307",
 		// Deprecated model identifiers

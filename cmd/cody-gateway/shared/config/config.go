@@ -296,7 +296,8 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/starcoder-1b-w8a16",
 			fireworks.DeepseekCoder1p3b,
 			fireworks.DeepseekCoder7b,
-		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants), ","),
+			fireworks.DeepseekCoderV2LiteBase,
+		}, fireworks.FineTunedLlamaModelVariants, fireworks.FineTunedMixtralModelVariants, fireworks.FineTunedDeepseekLogsTrainedModelVariants, fireworks.FineTunedDeepseekStackTrainedModelVariants), ","),
 		"Fireworks models that can be used."))
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
