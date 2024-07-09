@@ -57,7 +57,6 @@
     import Tooltip from '$lib/Tooltip.svelte'
     import { Alert, PanelGroup, Panel, PanelResizeHandle, Button } from '$lib/wildcard'
     import { getButtonClassName } from '$lib/wildcard/Button'
-    import type { LastCommitFragment } from '$testing/graphql-type-mocks'
 
     import RepositoryRevPicker from '../RepositoryRevPicker.svelte'
 
@@ -92,7 +91,6 @@
     let fileTreeSidePanel: Panel
     let historyPanel: HistoryPanel
     let selectedTab: number | null = null
-    let lastCommit: LastCommitFragment | null
     let commitHistory: GitHistory_HistoryConnection | null
     let references: RepoPage_ReferencesLocationConnection | null
     const fileTreeStore = createFileTreeStore({ fetchFileTreeData: fetchSidebarFileTree })
@@ -100,7 +98,6 @@
     $: ({ revision = '', parentPath, repoName, resolvedRevision, isCodyAvailable } = data)
     $: fileTreeStore.set({ repoName, revision: resolvedRevision.commitID, path: parentPath })
     $: commitHistoryQuery = data.commitHistory
-    $: lastCommitQuery = data.lastCommit
     $: if (!!commitHistoryQuery) {
         // Reset commit history when the query observable changes. Without
         // this we are showing the commit history of the previously selected
@@ -108,15 +105,7 @@
         commitHistory = null
     }
 
-    $: if (!!lastCommitQuery) {
-        // Reset last commit when the query observable changes. Without
-        // this we are showing the last commit of the previously selected
-        // file/folder until the last commit is loaded.
-        lastCommit = null
-    }
-
     $: commitHistory = $commitHistoryQuery?.data?.repository?.commit?.ancestors ?? null
-    $: lastCommit = $lastCommitQuery?.data?.repository?.lastCommit?.ancestors?.nodes[0] ?? null
 
     // The observable query to fetch references (due to infinite scrolling)
     $: sgURL = SourcegraphURL.from($page.url)
@@ -329,11 +318,13 @@
                             {/if}
                         </TabPanel>
                     </Tabs>
-                    {#if lastCommit && isCollapsed}
-                        <div class="last-commit">
-                            <LastCommit {lastCommit} />
-                        </div>
-                    {/if}
+                    {#await data.lastCommit then lastCommit}
+                        {#if lastCommit && isCollapsed}
+                            <div class="last-commit">
+                                <LastCommit {lastCommit} />
+                            </div>
+                        {/if}
+                    {/await}
                 </div>
             </Panel>
         </PanelGroup>

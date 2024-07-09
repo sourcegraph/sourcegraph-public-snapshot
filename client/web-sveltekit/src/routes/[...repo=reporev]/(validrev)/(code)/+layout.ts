@@ -41,11 +41,15 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         filePath,
         parentPath,
         isCodyAvailable: createCodyAvailableStore(client, repoName),
-        lastCommit: client.query(LastCommitQuery, {
-            repoName,
-            revspec: revision,
-            filePath,
-        }),
+        lastCommit: resolvedRevision
+            .then(revspec =>
+                client.query(LastCommitQuery, {
+                    repoName,
+                    revspec,
+                    filePath,
+                })
+            )
+            .then(result => result.data?.repository?.lastCommit?.ancestors.nodes[0]),
         // Fetches the most recent commits for current blob, tree or repo root
         commitHistory: infinityQuery({
             client,
