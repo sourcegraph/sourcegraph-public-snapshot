@@ -1,43 +1,38 @@
 package appliance
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 )
 
-const (
-	queryKeyUserMessage      = "sourcegraph-appliance-user-message"
-	errMsgSomethingWentWrong = "Something went wrong - please contact support."
-)
-
-func (a *Appliance) redirectToErrorPage(w http.ResponseWriter, req *http.Request, userMsg string, err error, userError bool) {
-	a.redirectWithError(w, req, "/appliance/error", userMsg, err, userError)
+func (a *Appliance) logError(r *http.Request, err error) {
+	a.logger.Error(err.Error(), log.String("method", r.Method), log.String("uri", r.URL.RequestURI()))
 }
 
-func (a *Appliance) redirectWithError(w http.ResponseWriter, req *http.Request, path, userMsg string, err error, userError bool) {
-	logFn := a.logger.Error
-	if userError {
-		logFn = a.logger.Info
+func (a *Appliance) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
+	resp := responseData{"error": message}
+
+	if err := a.writeJSON(w, status, resp, nil); err != nil {
+		a.logError(r, err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
-	logFn("an error occurred", log.Error(err))
-	req = req.Clone(req.Context())
-	req.URL.Path = path
-	queryValues := req.URL.Query()
-	queryValues.Set(queryKeyUserMessage, userMsg)
-	req.URL.RawQuery = queryValues.Encode()
-	http.Redirect(w, req, req.URL.String(), http.StatusFound)
 }
 
-func (a *Appliance) errorHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if err := renderTemplate("error", w, struct {
-			Msg string
-		}{
-			Msg: req.URL.Query().Get(queryKeyUserMessage),
-		}); err != nil {
-			a.handleError(w, err, "executing template")
-			return
-		}
-	})
+func (a *Appliance) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	a.errorResponse(w, r, http.StatusBadRequest, err.Error())
+}
+
+func (a *Appliance) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	a.logError(r, err)
+	a.errorResponse(w, r, http.StatusInternalServerError, "the server encountered a problem and could not process your request")
+}
+
+func (a *Appliance) notFoundResponse(w http.ResponseWriter, r *http.Request) {
+	a.errorResponse(w, r, http.StatusInternalServerError, "the requested resource could not be found")
+}
+
+func (a *Appliance) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
+	a.errorResponse(w, r, http.StatusInternalServerError, fmt.Sprintf("the %s method is not supported", r.Method))
 }

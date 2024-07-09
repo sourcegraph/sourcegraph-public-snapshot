@@ -43,9 +43,13 @@ type Appliance struct {
 type Status string
 
 const (
-	StatusUnknown    Status = "unknown"
-	StatusSetup      Status = "setup"
-	StatusInstalling Status = "installing"
+	StatusUnknown         Status = "unknown"
+	StatusSetup           Status = "setup"
+	StatusInstalling      Status = "installing"
+	StatusIdle            Status = "idle"
+	StatusUpgrading       Status = "upgrading"
+	StatusWaitingForAdmin Status = "wait-for-admin"
+	StatusRefresh         Status = "refresh"
 
 	// Secret and key names
 	dataSecretName                   = "appliance-data"
