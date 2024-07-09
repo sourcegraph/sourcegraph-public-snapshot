@@ -61,6 +61,10 @@ func (s AzureDevOpsSource) GitserverPushConfig(ctx context.Context, repo *types.
 	return GitserverPushConfig(ctx, repo, s.client.Authenticator())
 }
 
+func (s AzureDevOpsSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.

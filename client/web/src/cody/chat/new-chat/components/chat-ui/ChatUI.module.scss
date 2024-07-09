@@ -21,6 +21,12 @@
     --vscode-sideBarSectionHeader-border: var(--border-color);
     --mention-color-opacity: 100%;
 
+    // LLM picker tokens
+    --vscode-quickInput-background: var(--dropdown-bg);
+    --vscode-dropdown-border: var(--border-color);
+    --vscode-dropdown-foreground: var(--body-color);
+    --vscode-foreground: var(--body-color);
+
     line-height: 1.55;
 
     h3 {

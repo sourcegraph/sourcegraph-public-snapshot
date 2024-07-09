@@ -16,6 +16,7 @@ go_library(
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/background",
+        "//dev/sg/internal/open",
         "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//dev/sg/root",
