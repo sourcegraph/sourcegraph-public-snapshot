@@ -3,7 +3,7 @@ import { dirname } from 'path'
 import { from } from 'rxjs'
 import { readable, derived, type Readable } from 'svelte/store'
 
-import { CodyContextFilters, getFiltersFromCodyContextFilters } from '$lib/cody/config'
+import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
 import type { LineOrPositionOrRange } from '$lib/common'
 import { getGraphQLClient, infinityQuery, type GraphQLClient } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
@@ -196,7 +196,7 @@ function createCodyAvailableStore(client: GraphQLClient, repoName: string): Read
             return
         }
 
-        CodyContextFilters.safeParseAsync(filters).then(result => {
+        CodyContextFiltersSchema.safeParseAsync(filters).then(result => {
             if (!result.success) {
                 // codyContextFilters cannot be parsed properly, disable Cody
                 // TODO: log error with sentry

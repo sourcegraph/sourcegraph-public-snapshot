@@ -28,7 +28,7 @@ const CodyContextFilterItem = z.object({
  * It imports the RE2 parsing library and therefore needs to be
  * called with parseSync or safeParseAsync.
  */
-export const CodyContextFilters = z
+export const CodyContextFiltersSchema = z
     .object({
         include: z.array(CodyContextFilterItem),
         exclude: z.array(CodyContextFilterItem),
@@ -38,7 +38,7 @@ export const CodyContextFilters = z
 /**
  * CodyContextFilters describes the filters used to enable/disable cody for specific repositories.
  */
-export type CodyContextFilters = z.infer<typeof CodyContextFilters>
+export type CodyContextFilters = z.infer<typeof CodyContextFiltersSchema>
 
 /**
  * getFiltersFromCodyContextFilters imports the RE2 parsing library and returns a validation function.

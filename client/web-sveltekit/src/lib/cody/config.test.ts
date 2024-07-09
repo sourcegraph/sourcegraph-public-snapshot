@@ -2,12 +2,12 @@ import { describe, test, expect } from 'vitest'
 
 import { testCases } from '@sourcegraph/cody-context-filters-test-dataset/dataset.json'
 
-import { CodyContextFilters, getFiltersFromCodyContextFilters } from './config'
+import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from './config'
 
 describe('CodyContextFilters', () => {
     test('invalid re2 regex', async () => {
         const regexWithLookahead = '\\d(?=\\D)' // not supported in RE2
-        const result = await CodyContextFilters.safeParseAsync({ exclude: [{ repoNamePattern: regexWithLookahead }] })
+        const result = await CodyContextFiltersSchema.safeParseAsync({ exclude: [{ repoNamePattern: regexWithLookahead }] })
         expect(result.success).toBe(false)
     })
 })
@@ -20,7 +20,7 @@ describe('getFiltersFromCodyContextFilters', () => {
                 return
             }
 
-            const filter = getFiltersFromCodyContextFilters(await CodyContextFilters.parseAsync(filters))
+            const filter = getFiltersFromCodyContextFilters(await CodyContextFiltersSchema.parseAsync(filters))
 
             const gotRepos = testCase.repos.filter(repo => filter(repo.name))
             expect(gotRepos).toEqual(testCase.includedRepos)
