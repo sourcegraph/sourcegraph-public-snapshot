@@ -35,6 +35,8 @@ const Mixtral8x7bInstruct = "accounts/fireworks/models/mixtral-8x7b-instruct"
 const Mixtral8x22Instruct = "accounts/fireworks/models/mixtral-8x22b-instruct"
 const DeepseekCoder1p3b = "accounts/sourcegraph/models/custom-deepseek-1p3b-base-hf-version"
 const DeepseekCoder7b = "accounts/sourcegraph/models/deepseek-coder-7b-base"
+const DeepseekCoderV2LiteBase = "accounts/sourcegraph/models/deepseek-coder-v2-lite-base"
+const CodeQwen7B = "accounts/sourcegraph/models/code-qwen-1p5-7b"
 
 const FineTunedFIMVariant1 = "fim-fine-tuned-model-variant-1"
 const FineTunedFIMVariant2 = "fim-fine-tuned-model-variant-2"
@@ -58,6 +60,18 @@ const FineTunedLlamaPython = "accounts/sourcegraph/models/lang-python-context-fi
 const FineTunedLlamaAll = "accounts/sourcegraph/models/finetuned-fim-lang-all-model-meta-llama-3-8b"
 
 var FineTunedLlamaModelVariants = []string{FineTunedLlamaTypescript, FineTunedLlamaJavascript, FineTunedLlamaPhp, FineTunedLlamaPython, FineTunedLlamaAll}
+
+const FineTunedDeepseekStackTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-model-deepseek-7b-stack-trained-v1"
+const FineTunedDeepseekStackTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-stack-trained-v1"
+const FineTunedFIMLangDeepSeekStackTrained = "fim-lang-specific-model-deepseek-stack-trained"
+
+const FineTunedDeepseekLogsTrainedTypescript = "accounts/sourcegraph/models/finetuned-fim-lang-ts-model-deepseek-7b-logs-trained-v1"
+const FineTunedDeepseekLogsTrainedJavascript = "accounts/sourcegraph/models/finetuned-fim-lang-js-model-deepseek-7b-logs-trained-v1"
+const FineTunedDeepseekLogsTrainedPython = "accounts/sourcegraph/models/finetuned-fim-lang-py-model-deepseek-7b-logs-trained-v1"
+const FineTunedFIMLangDeepSeekLogsTrained = "fim-lang-specific-model-deepseek-logs-trained"
+
+var FineTunedDeepseekStackTrainedModelVariants = []string{FineTunedDeepseekStackTrainedTypescript, FineTunedDeepseekStackTrainedPython, FineTunedFIMLangDeepSeekStackTrained}
+var FineTunedDeepseekLogsTrainedModelVariants = []string{FineTunedDeepseekLogsTrainedTypescript, FineTunedDeepseekLogsTrainedJavascript, FineTunedDeepseekLogsTrainedPython, FineTunedFIMLangDeepSeekLogsTrained}
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &fireworksClient{
