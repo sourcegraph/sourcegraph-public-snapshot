@@ -22,9 +22,12 @@ type RepoCommitsChangelistsStore interface {
 	// GetLatestForRepo will return the latest commit that has been mapped in the database.
 	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
 
-	// GetRepoCommit will return the mathcing row from the table for the given repo ID and the
+	// GetRepoCommit will return the matching row from the table for the given repo ID and the
 	// given changelist ID.
 	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
+
+	// BatchGetRepoCommitChangelist bulk loads repo commits for given repo ids and changelistIds
+	BatchGetRepoCommitChangelist(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error)
 }
 
 type repoCommitsChangelistsStore struct {
@@ -118,4 +121,67 @@ func (s *repoCommitsChangelistsStore) GetRepoCommitChangelist(ctx context.Contex
 		return nil, err
 	}
 	return repoCommit, nil
+}
+
+type RepoChangelistIDs struct {
+	RepoID        api.RepoID
+	ChangelistIDs []int64
+}
+
+var getRepoCommitFmtBatchStr = `
+SELECT
+	id,
+	repo_id,
+	commit_sha,
+	perforce_changelist_id
+FROM
+	repo_commits_changelists
+WHERE
+	%s;
+`
+
+func (s *repoCommitsChangelistsStore) BatchGetRepoCommitChangelist(ctx context.Context, rcs ...RepoChangelistIDs) (map[api.RepoID]map[int64]*types.RepoCommit, error) {
+	res := make(map[api.RepoID]map[int64]*types.RepoCommit, len(rcs))
+	for _, rc := range rcs {
+		res[rc.RepoID] = make(map[int64]*types.RepoCommit, len(rc.ChangelistIDs))
+	}
+
+	var where []*sqlf.Query
+	for _, rc := range rcs {
+		changeListIdsLength := len(rc.ChangelistIDs)
+		if changeListIdsLength == 0 {
+			continue
+		}
+		items := make([]*sqlf.Query, changeListIdsLength)
+		for i, id := range rc.ChangelistIDs {
+			items[i] = sqlf.Sprintf("%d", id)
+		}
+		where = append(where, sqlf.Sprintf("(repo_id=%d AND perforce_changelist_id IN (%s))", rc.RepoID, sqlf.Join(items, ",")))
+	}
+
+	var whereClause *sqlf.Query
+	if len(where) > 0 {
+		whereClause = sqlf.Join(where, "\n OR ")
+	} else {
+		// If input has no changeList ids just return an empty result
+		return res, nil
+	}
+
+	q := sqlf.Sprintf(getRepoCommitFmtBatchStr, whereClause)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if repoCommit, err := scanRepoCommitRow(rows); err != nil {
+			return nil, err
+		} else {
+			res[repoCommit.RepoID][repoCommit.PerforceChangelistID] = repoCommit
+		}
+	}
+
+	return res, rows.Err()
 }

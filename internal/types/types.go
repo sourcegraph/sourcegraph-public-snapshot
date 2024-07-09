@@ -521,11 +521,14 @@ type RepoIDName struct {
 	Name api.RepoName
 }
 
-// MinimalRepo represents a source code repository name, its ID and number of stars.
+// MinimalRepo represents a source code repository name, its ID, number of stars and service type.
 type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName
 	Stars int
+	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// service itself).
+	ExternalRepo api.ExternalRepoSpec
 }
 
 // MinimalRepos is an utility type with convenience methods for operating on lists of repo names

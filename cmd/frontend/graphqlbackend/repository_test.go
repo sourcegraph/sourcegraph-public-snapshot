@@ -117,6 +117,36 @@ func TestRepository_Changelist(t *testing.T) {
 				}
 			`, exampleCommitSHA1),
 	})
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+				{
+					repository(name: "perforce.sgdev.org/gorilla/mux") {
+						changelist(cid: "changelist/123") {
+							cid
+							canonicalURL
+							commit {
+								oid
+							}
+						}
+					}
+				}
+			`,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"repository": {
+						"changelist": {
+							"cid": "123",
+							"canonicalURL": "/perforce.sgdev.org/gorilla/mux/-/changelist/123",
+"commit": {
+	"oid": "%s"
+}
+						}
+					}
+				}
+			`, exampleCommitSHA1),
+	})
 }
 
 func TestRepositoryHydration(t *testing.T) {

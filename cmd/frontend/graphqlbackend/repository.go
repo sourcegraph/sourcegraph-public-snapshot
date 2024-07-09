@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -318,6 +319,8 @@ func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryCha
 		attribute.String("changelist", args.CID))
 	defer tr.EndWithErr(&err)
 
+	// Strip "changelist/" prefix if present since we will sometimes append it in the UI.
+	args.CID = strings.TrimPrefix(args.CID, "changelist/")
 	cid, err := strconv.ParseInt(args.CID, 10, 64)
 	if err != nil {
 		// NOTE: From the UI, the user may visit a URL like:

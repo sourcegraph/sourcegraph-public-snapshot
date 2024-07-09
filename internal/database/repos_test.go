@@ -145,7 +145,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
 	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
-		rnames = append(rnames, types.MinimalRepo{ID: repo.ID, Name: repo.Name})
+		rnames = append(rnames, types.MinimalRepo{ID: repo.ID, Name: repo.Name, ExternalRepo: repo.ExternalRepo})
 	}
 
 	return rnames
