@@ -656,8 +656,11 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
 		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, e.remote, sources.SourcerOpts{
 			AuthenticationStrategy: sources.AuthenticationStrategyGitHubApp,
-			GitHubAppKind:          ghtypes.CommitSigningGitHubAppKind,
-			AsNonCredential:        true,
+
+			// If the authentication strategy for the original Push is not GitHub App, we want to make use
+			// of a commit signing GitHub app to sign the commit.
+			AsNonCredential: css.AuthenticationStrategy() == sources.AuthenticationStrategyGitHubApp,
+			GitHubAppKind:   ghtypes.CommitSigningGitHubAppKind,
 		})
 		if err != nil {
 			switch err {
