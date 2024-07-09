@@ -35,9 +35,8 @@ def oci_deps():
     # Tag: docker:27.0.3-dind
     oci_pull(
         name = "upstream_dind_base",
-        digest = "sha256:2632da0d24924b179adf1c2e6f4ea6fb866747e84baea6b2ffaa8bff982ce102",
+        digest = "sha256:4e52dcbcf86f5222648bc411cb32287f7b8480c97558eab0fee7b8b5a9376ab5",
         image = "index.docker.io/library/docker",
-        platforms = ["linux/amd64"],
     )
 
     oci_pull(
