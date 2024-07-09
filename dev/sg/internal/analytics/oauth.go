@@ -46,7 +46,7 @@ func InitIdentity(ctx context.Context, out *std.Output, sec secretStore) error {
 
 	whoamiPath := path.Join(sgHome, "whoami.json")
 
-	// In CI who do not have to prompt for an identity
+	// In CI we do not have to prompt for an identity
 	if os.Getenv("CI") == "true" {
 		return writeIdentity(whoamiPath, CIIdentity)
 	}
