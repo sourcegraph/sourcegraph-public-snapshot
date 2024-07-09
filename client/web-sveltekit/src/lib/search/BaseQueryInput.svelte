@@ -98,8 +98,10 @@
     }))
 
     function createEditor(container: HTMLDivElement, doc: string, extensions: Extension): EditorView {
+        // Moves the cursor to the end of the document by default
+        const selection = { anchor: doc.length }
         const view = new EditorView({
-            state: EditorState.create({ doc, extensions }),
+            state: EditorState.create({ doc, extensions, selection }),
             parent: container,
         })
         return view
