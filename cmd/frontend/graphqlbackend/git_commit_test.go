@@ -180,7 +180,7 @@ func TestGitCommitResolver(t *testing.T) {
 		}
 	})
 
-	runPerforceTests := func(t *testing.T, commit *gitdomain.Commit) {
+	runPerforceTests := func(t *testing.T, commit *gitdomain.Commit, multiLine bool) {
 		repo := &types.Repo{
 			ID:           1,
 			Name:         "perforce/test-depot",
@@ -211,6 +211,12 @@ func TestGitCommitResolver(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
 
+		if multiLine {
+			body, err := commitResolver.Body(ctx)
+			require.NoError(t, err)
+			require.Equal(t, "Multi-line message", *body)
+		}
+
 		f, err := ioutil.TempFile("/tmp", "foo")
 		require.NoError(t, err)
 
@@ -235,7 +241,7 @@ func TestGitCommitResolver(t *testing.T) {
 		)
 	}
 
-	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
+	t.Run("perforce depot, git-p4 commit, single line", func(t *testing.T) {
 		commit := &gitdomain.Commit{
 			ID: "c1",
 			Message: `subject: Changes things
@@ -251,10 +257,30 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}
 
-		runPerforceTests(t, commit)
+		runPerforceTests(t, commit, false)
 	})
 
-	t.Run("perforce depot, p4-fusion commit", func(t *testing.T) {
+	t.Run("perforce depot, git-p4 commit, multi line", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `subject: Changes things
+Multi-line message
+[git-p4: depot-paths = "//test-depot/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+			},
+		}
+
+		runPerforceTests(t, commit, true)
+	})
+
+	t.Run("perforce depot, p4-fusion commit, single line", func(t *testing.T) {
 		commit := &gitdomain.Commit{
 			ID: "c1",
 			Message: `123 - subject: Changes things
@@ -270,7 +296,27 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}
 
-		runPerforceTests(t, commit)
+		runPerforceTests(t, commit, false)
+	})
+
+	t.Run("perforce depot, p4-fusion commit, multi line", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `123 - subject: Changes things
+Multi-line message
+[p4-fusion: depot-paths = "//test-perms/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+			},
+		}
+
+		runPerforceTests(t, commit, true)
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -120,13 +121,30 @@ func parseP4FusionCommitSubject(subject string) (string, error) {
 	return matches[2], nil
 }
 
+// maybeTransformP4Body is used for special handling of perforce depots converted to git using
+// p4-fusion. We want to strip out the p4-fusion generated commit message and use the original
+// We handle both p4-fusion and git-p4 so that we stripe the system message from both.
+func maybeTransformP4Body(ctx context.Context, repoResolver *RepositoryResolver, commit *gitdomain.Commit) *string {
+	if repoResolver.isPerforceDepot(ctx) {
+		body := commit.Message.Body()
+		if idx := strings.Index(body, "[p4-fusion"); idx != -1 {
+			body = body[:idx]
+		} else if idx := strings.Index(body, "[git-p4"); idx != -1 {
+			body = body[:idx]
+		}
+		trimmedBody := strings.TrimSpace(body)
+		return &trimmedBody
+	}
+	return nil
+}
+
 // maybeTransformP4Subject is used for special handling of perforce depots converted to git using
 // p4-fusion. We want to parse and use the subject from the original changelist and not the subject
 // that is generated during the conversion.
 //
 // For depots converted with git-p4, this special handling is NOT required.
 func maybeTransformP4Subject(ctx context.Context, repoResolver *RepositoryResolver, commit *gitdomain.Commit) *string {
-	if repoResolver.isPerforceDepot(ctx) && strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
+	if repoResolver.isPerforceDepot(ctx) && strings.Contains(commit.Message.Body(), "[p4-fusion") {
 		subject, err := parseP4FusionCommitSubject(commit.Message.Subject())
 		if err == nil {
 			return &subject
