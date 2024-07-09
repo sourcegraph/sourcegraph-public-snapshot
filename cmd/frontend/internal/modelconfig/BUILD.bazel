@@ -8,6 +8,7 @@ go_library(
         "httpapi.go",
         "init.go",
         "service.go",
+        "siteconfig.go",
         "siteconfig_completions.go",
         "util.go",
     ],
@@ -27,6 +28,7 @@ go_library(
         "//internal/modelconfig/types",
         "//internal/observation",
         "//lib/errors",
+        "//schema",
         "@com_github_sourcegraph_log//:log",
     ],
 )
