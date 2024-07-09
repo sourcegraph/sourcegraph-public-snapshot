@@ -33,7 +33,7 @@ interface IndexedBlameHunkData extends Pick<BlameHunkData, 'externalURLs'> {
 }
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
-const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
+const startOfHunkDecoration = Decoration.line({ class: 'sg-blame-border-top' })
 
 const highlightedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'highlighted-line'
@@ -268,7 +268,7 @@ class RecencyMarker extends GutterMarker {
         dom.className = 'sg-recency-marker'
         if (this.hunk) {
             if (this.hunk.startLine === this.line) {
-                dom.classList.add('border-top')
+                dom.classList.add('sg-blame-border-top')
             }
             dom.style.backgroundColor = getBlameRecencyColor(new Date(this.hunk.author.date), !!this.darkTheme)
         }
@@ -276,52 +276,83 @@ class RecencyMarker extends GutterMarker {
     }
 }
 
-const blameGutter: Extension = [
-    // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
-    // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
-    gutters({ fixed: false }),
+interface BlameGutterConfig {
+    /**
+     * If set will add another gutter for reblaming.
+     */
+    createReblameMarker?: (line: number, hunk: BlameHunk) => GutterMarker
+}
 
-    // Gutter for recency indicator
-    gutter({
-        class: 'sg-recency-gutter',
-        lineMarker(view, line) {
-            const lineNumber = view.state.doc.lineAt(line.from).number
-            const hunks = view.state.facet(blameDataFacet).lines
-            return new RecencyMarker(lineNumber, hunks[lineNumber], view.state.facet(EditorView.darkTheme))
-        },
-        lineMarkerChange(update) {
-            return (
-                update.state.facet(blameDataFacet) !== update.startState.facet(blameDataFacet) ||
-                update.state.facet(EditorView.darkTheme) !== update.startState.facet(EditorView.darkTheme)
-            )
-        },
-    }),
+function blameGutter(config: BlameGutterConfig): Extension {
+    return [
+        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
+        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
+        gutters({ fixed: false }),
 
-    // Render gutter with no content only to create a column with specified background.
-    // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
-    // to achieve column-like view of inline blame decorations.
-    gutter({
-        class: 'blame-gutter',
-    }),
+        // Gutter for recency indicator
+        gutter({
+            class: 'sg-recency-gutter',
+            lineMarker(view, line) {
+                const lineNumber = view.state.doc.lineAt(line.from).number
+                const hunks = view.state.facet(blameDataFacet).lines
+                return new RecencyMarker(lineNumber, hunks[lineNumber], view.state.facet(EditorView.darkTheme))
+            },
+            lineMarkerChange(update) {
+                return (
+                    update.state.facet(blameDataFacet) !== update.startState.facet(blameDataFacet) ||
+                    update.state.facet(EditorView.darkTheme) !== update.startState.facet(EditorView.darkTheme)
+                )
+            },
+        }),
 
-    EditorView.theme({
-        '.blame-gutter': {
-            background: 'var(--body-bg)',
-            width: 'var(--blame-decoration-width)',
-        },
-        '.sg-recency-gutter': {
-            width: 'var(--blame-recency-width)',
-            minWidth: 'var(--blame-recency-width)',
-        },
-        '.sg-recency-marker': {
-            position: 'relative',
-            height: '100%',
-            width: 'var(--blame-recency-width)',
-        },
-    }),
-]
+        config.createReblameMarker
+            ? gutter({
+                  class: 'sg-blame-reblame-gutter',
+                  lineMarker(view, line) {
+                      const lineNumber = view.state.doc.lineAt(line.from).number
+                      const hunk = view.state.facet(blameDataFacet).lines[lineNumber]
+                      return hunk && lineNumber === hunk.startLine
+                          ? config.createReblameMarker!(lineNumber, hunk)
+                          : null
+                  },
+                  lineMarkerChange(update) {
+                      return update.state.facet(blameDataFacet) !== update.startState.facet(blameDataFacet)
+                  },
+              })
+            : [],
 
-interface BlameConfig {
+        // Render gutter with no content only to create a column with specified background.
+        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
+        // to achieve column-like view of inline blame decorations.
+        gutter({
+            class: 'blame-gutter',
+        }),
+
+        EditorView.theme({
+            '.blame-gutter': {
+                background: 'var(--body-bg)',
+                width: 'var(--blame-decoration-width)',
+            },
+            '.sg-blame-reblame-gutter': {
+                background: 'var(--body-bg)',
+            },
+            '.sg-recency-gutter': {
+                width: 'var(--blame-recency-width)',
+                minWidth: 'var(--blame-recency-width)',
+            },
+            '.sg-recency-marker': {
+                position: 'relative',
+                height: '100%',
+                width: 'var(--blame-recency-width)',
+            },
+            '.sg-blame-border-top': {
+                borderTop: 'var(--border-width) solid var(--border-color)',
+            },
+        }),
+    ]
+}
+
+interface BlameConfig extends BlameGutterConfig {
     createBlameDecoration: (
         container: HTMLElement,
         spec: {
@@ -332,6 +363,7 @@ interface BlameConfig {
             externalURLs: BlameHunkData['externalURLs']
         }
     ) => { destroy?: () => void }
+    createReblameMarker?: BlameGutterConfig['createReblameMarker']
 }
 
 /**
@@ -339,7 +371,7 @@ interface BlameConfig {
  */
 export function showBlame(config: BlameConfig): Extension {
     return [
-        blameGutter,
+        blameGutter(config),
         hoveredHunk,
         blameDecorationTheme,
         ViewPlugin.define(view => new BlameDecorationViewPlugin(view, config), {
