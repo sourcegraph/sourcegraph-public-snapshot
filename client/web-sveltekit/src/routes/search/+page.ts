@@ -12,9 +12,6 @@ import {
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
-    filterExists,
-    FilterType,
-    getGlobalSearchContextFilter,
     emptyAggregateResults,
 } from '$lib/shared'
 
