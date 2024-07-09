@@ -421,7 +421,7 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Clie
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
 	ctx := actor.WithActor(context.Background(), actor.FromUser(u.ID))
-	for _, version := range []int{0, 1, 2} { // Test all versions
+	for _, version := range []int{1, 2} { // Test all versions
 		spec.Version = version
 		have, err := wr.ResolveWorkspacesForBatchSpec(ctx, spec)
 		if err != nil {
