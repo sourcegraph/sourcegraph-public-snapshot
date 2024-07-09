@@ -71,6 +71,7 @@
         background-color: var(--input-bg);
         border-bottom: 1px solid var(--border-color-2);
         padding: 0.25rem 1rem;
+        height: var(--repo-header-height);
 
         // Shows the cody icon in color
         --icon-color: initial;
