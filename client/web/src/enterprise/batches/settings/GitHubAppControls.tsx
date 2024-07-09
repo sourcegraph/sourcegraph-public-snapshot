@@ -136,14 +136,12 @@ export const GitHubAppControls: React.FunctionComponent<GitHubAppControlsProps> 
             {error && <NodeAlert variant="danger">{error.message}</NodeAlert>}
             {!loading && data && (
                 <NodeAlert variant="success">
-                    Installations for <span className="font-weight-bold">"{config.name}"</span> successfully
-                    refreshed.
+                    Installations for <span className="font-weight-bold">"{config.name}"</span> successfully refreshed.
                 </NodeAlert>
             )}
             {!checkCredLoading && (checkCredResult || checkCredErr) && (
                 <NodeAlert variant={checkCredErr ? 'danger' : 'success'}>
-                    <span className="font-weight-bold">"{config.name}"</span> is {checkCredErr ? 'not' : ''}{' '}
-                    accessible.
+                    <span className="font-weight-bold">"{config.name}"</span> is {checkCredErr ? 'not' : ''} accessible.
                 </NodeAlert>
             )}
         </>
