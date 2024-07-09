@@ -8,33 +8,33 @@ go_library(
         "analytics.go",
         "background.go",
         "bigquery.go",
-        "sqlite.go",
         "oauth.go",
+        "sqlite.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics",
     tags = [TAG_INFRA_DEVINFRA],
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
         "//dev/sg/internal/background",
+        "//dev/sg/internal/secrets",
         "//dev/sg/internal/std",
         "//dev/sg/root",
         "//lib/errors",
         "@com_github_google_uuid//:uuid",
+        "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_bigquery//:bigquery",
-        "@org_modernc_sqlite//:sqlite",
-        "@org_modernc_sqlite//lib",
-
-
         "@org_golang_google_api//oauth2/v2:oauth2",
-        "@org_golang_google_protobuf//encoding/protojson",
         "@org_golang_x_oauth2//:oauth2",
         "@org_golang_x_oauth2//google",
+        "@org_modernc_sqlite//:sqlite",
+        "@org_modernc_sqlite//lib",
     ],
 )
 
 go_test(
     name = "analytics_test",
     srcs = [
+        "analytics_test.go",
         "mocks_test.go",
         "oauth_test.go",
     ],
@@ -56,11 +56,4 @@ go_mockgen(
         "//:mockgen.temp.yaml",
     ],
     deps = [":analytics"],
-)
-
-go_test(
-    name = "analytics_test",
-    srcs = ["analytics_test.go"],
-    embed = [":analytics"],
-    deps = ["//dev/sg/root"],
 )
