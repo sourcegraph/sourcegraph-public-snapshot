@@ -206,8 +206,8 @@ importers:
         specifier: ^2.2.6
         version: 2.3.2
       cody-web-experimental:
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.2.3
+        version: 0.2.3
       comlink:
         specifier: ^4.3.0
         version: 4.3.0
@@ -14547,6 +14547,10 @@ packages:
 
   /cody-web-experimental@0.2.1:
     resolution: {integrity: sha512-ci7wRIOaxpD+xZ5ecR0IYeJhxAai4meIUNVGXzjUATYiRx3+755kWtrWRbvPGhmE+2jF1KB2DKKd+pyGKmfbdg==}
+    dev: false
+
+  /cody-web-experimental@0.2.3:
+    resolution: {integrity: sha512-Wymn3jVlnZMC/ww16x8RtCuoFwVfkk3A43Bzb16xIszZpDGS1DUBsyuqw+gHkO96w1GxfH+phP3EZpZrTm3X3w==}
     dev: false
 
   /color-convert@1.9.3:

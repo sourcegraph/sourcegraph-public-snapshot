@@ -81,7 +81,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
     const shouldShowError = !success && setupError && gitHubAppKind !== GitHubAppKind.COMMIT_SIGNING
     return (
         <Container className="mb-3">
-            <H3>Code host tokens</H3>
+            <H3>Code host credentials</H3>
             {headerLine}
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}

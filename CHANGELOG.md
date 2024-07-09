@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The default and recommended chat model for Anthropic and Cody Gateway configurations is now `claude-3-sonnet-20240229`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
 - The default and recommended autocomplete model for Cody Gateway configurations is now `fireworks/starcoder`. [#62757](https://github.com/sourcegraph/sourcegraph/pull/62757)
+- The keyword search toggle has been removed from the search results page. [Keyword search](https://sourcegraph.com/docs/code-search/queries#keyword-search-default) is now enabled by default for all searches in the Sourcegraph web app. [#63584](https://github.com/sourcegraph/sourcegraph/pull/63584)
 
 ### Fixed
 
