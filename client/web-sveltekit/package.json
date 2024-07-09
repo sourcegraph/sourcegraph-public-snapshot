@@ -92,7 +92,7 @@
     "@sourcegraph/wildcard": "workspace:*",
     "@storybook/test": "^8.0.5",
     "@urql/core": "^4.2.3",
-    "cody-web-experimental": "^0.1.4",
+    "cody-web-experimental": "^0.2.1",
     "copy-to-clipboard": "^3.3.1",
     "fzf": "^0.5.2",
     "highlight.js": "^10.0.0",
