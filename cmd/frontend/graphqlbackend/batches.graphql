@@ -3559,12 +3559,7 @@ type BatchChangesCredential implements Node {
     isSiteCredential: Boolean!
 
     """
-    Whether the credential is tied to a GitHub App installation.
-    """
-    isGitHubApp: Boolean!
-
-    """
-    If the field isGitHubApp is true, this field contains the details of the GitHubApp.
+    If the credential is a gitHubApp, this field contains the details of the GitHubApp.
     """
     gitHubApp: GitHubApp
 }

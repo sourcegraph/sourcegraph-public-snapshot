@@ -27,7 +27,6 @@ const credential = {
     isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-    isGitHubApp: false,
     gitHubApp: null,
 }
 
