@@ -86,6 +86,10 @@ func (s GitLabSource) GitserverPushConfig(ctx context.Context, repo *types.Repo)
 	return GitserverPushConfig(ctx, repo, s.au)
 }
 
+func (s GitLabSource) AuthenticationStrategy() AuthenticationStrategy {
+	return AuthenticationStrategyUserCredential
+}
+
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,

@@ -248,6 +248,30 @@ func pickStarCoderModel(model string, config config.FireworksConfig) string {
 
 func pickFineTunedModel(model string, language string) string {
 	switch model {
+	case fireworks.FineTunedFIMLangDeepSeekStackTrained:
+		{
+			switch language {
+			case "typescript", "typescriptreact", "javascript", "javascriptreact":
+				return fireworks.FineTunedDeepseekStackTrainedTypescript
+			case "python":
+				return fireworks.FineTunedDeepseekStackTrainedPython
+			default:
+				return fireworks.DeepseekCoder7b
+			}
+		}
+	case fireworks.FineTunedFIMLangDeepSeekLogsTrained:
+		{
+			switch language {
+			case "typescript", "typescriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedTypescript
+			case "javascript", "javascriptreact":
+				return fireworks.FineTunedDeepseekLogsTrainedJavascript
+			case "python":
+				return fireworks.FineTunedDeepseekLogsTrainedPython
+			default:
+				return fireworks.DeepseekCoder7b
+			}
+		}
 	case fireworks.FineTunedFIMLangSpecificMixtral:
 		{
 			switch language {

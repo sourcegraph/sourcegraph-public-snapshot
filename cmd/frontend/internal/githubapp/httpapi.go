@@ -48,7 +48,7 @@ type gitHubAppServer struct {
 
 func (srv *gitHubAppServer) siteAdminMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 🚨 SECURITY: only site admins can create github apps
+		// 🚨 SECURITY: only site admins can create GitHub apps
 		if err := authcheck.CheckCurrentUserIsSiteAdmin(r.Context(), srv.db); err != nil {
 			if errors.Is(err, authcheck.ErrMustBeSiteAdmin) {
 				http.Error(w, "User must be site admin", http.StatusForbidden)
@@ -371,7 +371,7 @@ func (srv *gitHubAppServer) setupHandler(w http.ResponseWriter, r *http.Request)
 	state := query.Get("state")
 	instID := query.Get("installation_id")
 	if state == "" || instID == "" {
-		// If neither state or installation ID is set, we redirect to the GitHub Apps page.
+		// If neither state nor installation ID is set, we redirect to the GitHub Apps page.
 		// This can happen when someone installs the App directly from GitHub, instead of
 		// following the link from within Sourcegraph.
 		http.Redirect(w, r, "/site-admin/github-apps", http.StatusFound)
@@ -555,7 +555,7 @@ func generateRedirectURL(stateDetails gitHubAppStateDetails, installationID *int
 
 	kind, err := parseKind(&stateDetails.Kind)
 	if err != nil {
-		return fmt.Sprintf("/site-admin/github-apps?success=false&kind=%s&error=%s", stateDetails.Kind, url.QueryEscape(creationErr.Error()))
+		return fmt.Sprintf("/site-admin/github-apps?success=false&kind=%s&error=%s", stateDetails.Kind, url.QueryEscape(err.Error()))
 	}
 
 	if kind == nil {
